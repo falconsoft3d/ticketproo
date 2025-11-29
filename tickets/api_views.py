@@ -1482,3 +1482,26 @@ def dynamic_table_api_detail(request, table_name, record_id):
             'message': 'Registro eliminado exitosamente'
         })
 
+
+@api_view(['GET'])
+def qa_ratings_count(request):
+    """
+    Obtener el conteo total de evaluaciones QA
+    """
+    try:
+        from .models import QARating
+        
+        count = QARating.objects.count()
+        
+        return Response({
+            'count': count,
+            'success': True
+        })
+        
+    except Exception as e:
+        return Response({
+            'error': str(e),
+            'count': 0,
+            'success': False
+        }, status=500)
+

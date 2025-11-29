@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ plan.title }} - Planificación</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .header-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        .days-container {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+        }
+        .day-card {
+            min-width: 320px;
+            flex-shrink: 0;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        .day-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .day-header:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #65398b 100%);
+            transform: scale(1.02);
+        }
+        .day-body {
+            padding: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .task-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.2s ease;
+        }
+        .task-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        .task-card.completed {
+            opacity: 0.7;
+            border-left-color: #28a745;
+            background: #e7f5ec;
+        }
+        .task-card.completed .task-title {
+            text-decoration: line-through;
+        }
+        .priority-critical { border-left-color: #dc3545 !important; }
+        .priority-high { border-left-color: #ffc107 !important; }
+        .priority-medium { border-left-color: #0dcaf0 !important; }
+        .priority-low { border-left-color: #6c757d !important; }
+        .task-order {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-right: 10px;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        @media (max-width: 768px) {
+            .day-card {
+                min-width: 280px;
+            }
+            .header-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="header-card">
+            <div class="text-center">
+                <h1 class="mb-3">
+                    <i class="bi bi-calendar-week text-primary"></i>
+                    {{ plan.title }}
+                </h1>
+                {% if plan.description %}
+                <p class="lead text-muted">{{ plan.description }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if days %}
+        <div class="days-container">
+            {% for day in days %}
+            <div class="day-card">
+                <div class="day-header" onclick="openDayModal('{{ day.title|escapejs }}', {{ forloop.counter0 }})">
+                    <h3 class="mb-0">{{ day.title }}</h3>
+                    {% if day.description %}
+                    <small class="d-block mt-2">{{ day.description }}</small>
+                    {% endif %}
+                    <div class="mt-2">
+                        <span class="badge bg-light text-dark">
+                            {{ day.tasks.all|length }} tarea{{ day.tasks.all|length|pluralize:",s" }}
+                        </span>
+                    </div>
+                </div>
+                <div class="day-body">
+                    {% if day.tasks.all %}
+                        {% for task in day.tasks.all %}
+                        <div class="task-card priority-{{ task.priority }} {% if task.is_completed %}completed{% endif %}">
+                            <div class="d-flex align-items-start">
+                                <span class="task-order">{{ forloop.counter }}</span>
+                                <div class="flex-grow-1">
+                                    <h6 class="task-title mb-2">
+                                        {% if task.is_completed %}
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                        {% endif %}
+                                        {{ task.title }}
+                                    </h6>
+                                    
+                                    {% if task.description %}
+                                    <p class="small text-muted mb-2">{{ task.description }}</p>
+                                    {% endif %}
+
+                                    <div class="d-flex gap-1 flex-wrap">
+                                        {% if task.priority == 'critical' %}
+                                            <span class="badge bg-danger">Crítica</span>
+                                        {% elif task.priority == 'high' %}
+                                            <span class="badge bg-warning text-dark">Alta</span>
+                                        {% elif task.priority == 'medium' %}
+                                            <span class="badge bg-info">Media</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Baja</span>
+                                        {% endif %}
+
+                                        {% if task.estimated_hours %}
+                                        <span class="badge bg-light text-dark">
+                                            <i class="bi bi-clock"></i> {{ task.estimated_hours }}h
+                                        </span>
+                                        {% endif %}
+
+                                        {% if task.is_completed and task.completed_at %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check"></i> Completada
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-1"></i>
+                            <p class="mb-0 mt-2">Sin tareas asignadas</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="header-card">
+            <div class="text-center py-5">
+                <i class="bi bi-calendar-x fs-1 text-muted"></i>
+                <h4 class="text-muted mt-3">No hay días en esta planificación</h4>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Modal para vista de día individual -->
+    <div class="modal fade" id="dayModal" tabindex="-1" aria-labelledby="dayModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h5 class="modal-title" id="dayModalLabel"><i class="bi bi-calendar-day"></i> Día</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="dayModalBody" style="min-height: 400px;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Guardar los datos de los días
+        const daysData = [
+            {% for day in days %}
+            {
+                title: "{{ day.title|escapejs }}",
+                description: "{{ day.description|escapejs }}",
+                tasks: [
+                    {% for task in day.tasks.all %}
+                    {
+                        order: {{ forloop.counter }},
+                        title: "{{ task.title|escapejs }}",
+                        description: "{{ task.description|escapejs }}",
+                        priority: "{{ task.priority }}",
+                        estimated_hours: {% if task.estimated_hours %}"{{ task.estimated_hours }}"{% else %}null{% endif %},
+                        is_completed: {{ task.is_completed|lower }},
+                        completed_at: {% if task.completed_at %}"{{ task.completed_at|date:'d/m/Y H:i' }}"{% else %}null{% endif %}
+                    }{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ]
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        function openDayModal(dayTitle, dayIndex) {
+            const day = daysData[dayIndex];
+            
+            // Actualizar título
+            document.getElementById('dayModalLabel').innerHTML = `<i class="bi bi-calendar-day"></i> ${day.title}`;
+            
+            // Construir contenido
+            let html = '<div class="container-fluid">';
+            
+            if (day.description) {
+                html += `
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle"></i> ${day.description}
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-muted">
+                            <i class="bi bi-list-check"></i> ${day.tasks.length} tarea${day.tasks.length !== 1 ? 's' : ''}
+                        </h6>
+                    </div>
+                </div>
+            `;
+            
+            if (day.tasks.length > 0) {
+                html += '<div class="row">';
+                day.tasks.forEach(task => {
+                    const borderColor = task.is_completed ? '#28a745' : '#0d6efd';
+                    const completedClass = task.is_completed ? 'text-decoration-line-through text-muted' : '';
+                    
+                    let priorityBadge = '';
+                    switch(task.priority) {
+                        case 'critical':
+                            priorityBadge = '<span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill"></i> Prioridad Crítica</span>';
+                            break;
+                        case 'high':
+                            priorityBadge = '<span class="badge bg-warning text-dark"><i class="bi bi-arrow-up-circle-fill"></i> Prioridad Alta</span>';
+                            break;
+                        case 'medium':
+                            priorityBadge = '<span class="badge bg-info"><i class="bi bi-dash-circle-fill"></i> Prioridad Media</span>';
+                            break;
+                        default:
+                            priorityBadge = '<span class="badge bg-secondary"><i class="bi bi-arrow-down-circle-fill"></i> Prioridad Baja</span>';
+                    }
+                    
+                    html += `
+                        <div class="col-12 mb-3">
+                            <div class="card" style="border-width: 2px; border-left-width: 8px !important; border-color: ${borderColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-start gap-3">
+                                        <div class="d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; background: ${borderColor}; color: white; border-radius: 50%; font-weight: bold; flex-shrink: 0;">
+                                            ${task.order}
+                                        </div>
+                                        
+                                        <div class="flex-grow-1">
+                                            <h5 class="mb-2 ${completedClass}">
+                                                ${task.is_completed ? '<i class="bi bi-check-circle-fill text-success"></i> ' : ''}
+                                                ${task.title}
+                                            </h5>
+                                            
+                                            ${task.description ? `<p class="text-muted mb-3">${task.description}</p>` : ''}
+                                            
+                                            <div class="d-flex gap-2 flex-wrap">
+                                                ${priorityBadge}
+                                                
+                                                ${task.estimated_hours ? `
+                                                    <span class="badge bg-light text-dark">
+                                                        <i class="bi bi-clock-fill"></i> ${task.estimated_hours} hora${task.estimated_hours != 1 ? 's' : ''}
+                                                    </span>
+                                                ` : ''}
+                                                
+                                                ${task.is_completed && task.completed_at ? `
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-check-circle-fill"></i> Completada ${task.completed_at}
+                                                    </span>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            } else {
+                html += `
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                        <h5>Sin tareas en este día</h5>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            
+            // Insertar contenido
+            document.getElementById('dayModalBody').innerHTML = html;
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('dayModal'));
+            modal.show();
+        }
+    </script>
+</body>
+</html>

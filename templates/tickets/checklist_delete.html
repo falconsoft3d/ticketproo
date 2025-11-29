@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Checklist - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'checklist_list' %}">Checklists</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'checklist_detail' checklist.id %}">{{ checklist.title }}</a></li>
+                    <li class="breadcrumb-item active">Eliminar</li>
+                </ol>
+            </nav>
+
+            <div class="card border-danger shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        Esta acción no se puede deshacer. Se eliminarán todas las tareas asociadas.
+                    </div>
+
+                    <h5>¿Está seguro que desea eliminar este checklist?</h5>
+                    <p class="mb-3">
+                        <strong>Checklist:</strong> {{ checklist.title }}<br>
+                        {% if checklist.company %}
+                        <strong>Empresa:</strong> {{ checklist.company }}<br>
+                        {% endif %}
+                        <strong>Tareas:</strong> {{ checklist.items.count }}
+                    </p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sí, Eliminar
+                            </button>
+                            <a href="{% url 'checklist_detail' checklist.id %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

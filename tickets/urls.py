@@ -1449,5 +1449,82 @@ urlpatterns += [
     
     # URLs de API
     path('api/', include('tickets.api_urls')),
+    
+    # ============= URLs GRUPOS DE ACCESOS =============
+    # URLs de gestión (solo para usuarios autenticados)
+    path('access-groups/', views.access_group_list, name='access_group_list'),
+    path('access-groups/create/', views.access_group_create, name='access_group_create'),
+    path('access-groups/<int:pk>/', views.access_group_detail, name='access_group_detail'),
+    path('access-groups/<int:pk>/edit/', views.access_group_edit, name='access_group_edit'),
+    path('access-groups/<int:pk>/delete/', views.access_group_delete, name='access_group_delete'),
+    path('access-groups/<int:pk>/toggle-public/', views.access_group_toggle_public, name='access_group_toggle_public'),
+    
+    # URLs de gestión de enlaces
+    path('access-groups/<int:group_pk>/links/create/', views.access_link_create, name='access_link_create'),
+    path('access-links/<int:pk>/edit/', views.access_link_edit, name='access_link_edit'),
+    path('access-links/<int:pk>/delete/', views.access_link_delete, name='access_link_delete'),
+    
+    # URL pública para acceso móvil (sin autenticación)
+    path('access/<str:token>/', views.access_group_public, name='access_group_public'),
+    
+    # ============= URLs PLANIFICACIÓN DE TAREAS =============
+    # URLs de gestión (solo para usuarios autenticados)
+    path('task-plans/', views.task_plan_list, name='task_plan_list'),
+    path('task-plans/create/', views.task_plan_create, name='task_plan_create'),
+    path('task-plans/<int:pk>/', views.task_plan_detail, name='task_plan_detail'),
+    path('task-plans/<int:pk>/edit/', views.task_plan_edit, name='task_plan_edit'),
+    path('task-plans/<int:pk>/delete/', views.task_plan_delete, name='task_plan_delete'),
+    path('task-plans/<int:pk>/toggle-public/', views.task_plan_toggle_public, name='task_plan_toggle_public'),
+    
+    # URLs de gestión de días
+    path('task-plans/<int:plan_pk>/days/create/', views.task_plan_day_create, name='task_plan_day_create'),
+    path('task-plan-days/<int:pk>/view/', views.task_plan_day_view, name='task_plan_day_view'),
+    path('task-plan-days/<int:pk>/edit/', views.task_plan_day_edit, name='task_plan_day_edit'),
+    path('task-plan-days/<int:pk>/delete/', views.task_plan_day_delete, name='task_plan_day_delete'),
+    
+    # URLs de gestión de tareas
+    path('task-plan-days/<int:day_pk>/tasks/create/', views.task_plan_item_create, name='task_plan_item_create'),
+    path('task-plan-items/<int:pk>/edit/', views.task_plan_item_edit, name='task_plan_item_edit'),
+    path('task-plan-items/<int:pk>/delete/', views.task_plan_item_delete, name='task_plan_item_delete'),
+    path('task-plan-items/<int:pk>/toggle/', views.task_plan_item_toggle, name='task_plan_item_toggle'),
+    
+    # URL pública para vista de planificación (sin autenticación)
+    path('plan/<str:token>/', views.task_plan_public, name='task_plan_public'),
+    
+    # URLs de Checklist
+    path('checklists/', views.checklist_list, name='checklist_list'),
+    path('checklists/create/', views.checklist_create, name='checklist_create'),
+    path('checklists/<int:pk>/', views.checklist_detail, name='checklist_detail'),
+    path('checklists/<int:pk>/edit/', views.checklist_edit, name='checklist_edit'),
+    path('checklists/<int:pk>/delete/', views.checklist_delete, name='checklist_delete'),
+    path('checklists/<int:pk>/duplicate/', views.checklist_duplicate, name='checklist_duplicate'),
+    path('checklists/<int:pk>/toggle-public/', views.checklist_toggle_public, name='checklist_toggle_public'),
+    
+    # URLs de gestión de items del checklist
+    path('checklists/<int:checklist_pk>/items/create/', views.checklist_item_create, name='checklist_item_create'),
+    path('checklist-items/<int:pk>/edit/', views.checklist_item_edit, name='checklist_item_edit'),
+    path('checklist-items/<int:pk>/delete/', views.checklist_item_delete, name='checklist_item_delete'),
+    path('checklist-items/<int:pk>/toggle/', views.checklist_item_toggle, name='checklist_item_toggle'),
+    path('checklist-items/<int:pk>/move-up/', views.checklist_item_move_up, name='checklist_item_move_up'),
+    path('checklist-items/<int:pk>/move-down/', views.checklist_item_move_down, name='checklist_item_move_down'),
+    
+    # URLs públicas para vista de checklist (sin autenticación)
+    path('checklist/<str:token>/', views.checklist_public, name='checklist_public'),
+    path('checklist/<str:token>/item/<int:item_pk>/toggle/', views.checklist_item_toggle_public, name='checklist_item_toggle_public'),
+    
+    # URLs de transacciones
+    path('transactions/', views.transaction_list, name='transaction_list'),
+    path('transactions/create/', views.transaction_create, name='transaction_create'),
+    path('transactions/<int:pk>/edit/', views.transaction_edit, name='transaction_edit'),
+    path('transactions/<int:pk>/delete/', views.transaction_delete, name='transaction_delete'),
+    path('transactions/search/', views.transaction_search, name='transaction_search'),
+    
+    # Base de Conocimientos
+    path('knowledge-base/', views.knowledge_base_list, name='knowledge_base_list'),
+    path('knowledge-base/<int:pk>/', views.knowledge_base_detail, name='knowledge_base_detail'),
+    path('knowledge-base/create/', views.knowledge_base_create, name='knowledge_base_create'),
+    path('knowledge-base/<int:pk>/edit/', views.knowledge_base_edit, name='knowledge_base_edit'),
+    path('knowledge-base/<int:pk>/delete/', views.knowledge_base_delete, name='knowledge_base_delete'),
+    path('knowledge-base/search/', views.knowledge_base_search, name='knowledge_base_search'),
 ]
 

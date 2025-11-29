@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Eliminar Base de Conocimiento{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'knowledge_base_list' %}">Base de Conocimientos</a></li>
+            <li class="breadcrumb-item active">Eliminar</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <h2 class="mb-4 text-danger">
+        <i class="bi bi-exclamation-triangle"></i> Eliminar Base de Conocimiento
+    </h2>
+
+    <!-- Card de confirmación -->
+    <div class="card border-danger shadow">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Confirmación de Eliminación</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                ¿Estás seguro de que deseas eliminar esta base de conocimiento?
+                <strong>Esta acción no se puede deshacer.</strong>
+            </div>
+
+            <dl class="row">
+                <dt class="col-sm-3">Título:</dt>
+                <dd class="col-sm-9">{{ knowledge_base.title }}</dd>
+
+                {% if knowledge_base.category %}
+                <dt class="col-sm-3">Categoría:</dt>
+                <dd class="col-sm-9">{{ knowledge_base.category }}</dd>
+                {% endif %}
+
+                {% if knowledge_base.description %}
+                <dt class="col-sm-3">Descripción:</dt>
+                <dd class="col-sm-9">{{ knowledge_base.description|truncatewords:50 }}</dd>
+                {% endif %}
+
+                {% if knowledge_base.source_code %}
+                <dt class="col-sm-3">Código:</dt>
+                <dd class="col-sm-9">
+                    <span class="badge bg-info">
+                        <i class="bi bi-code-slash"></i> Contiene código fuente
+                    </span>
+                </dd>
+                {% endif %}
+            </dl>
+
+            <form method="POST" class="mt-4">
+                {% csrf_token %}
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Sí, Eliminar
+                    </button>
+                    <a href="{% url 'knowledge_base_detail' knowledge_base.id %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -20181,6 +20181,366 @@ class FunctionalRequirementComment(models.Model):
         return f"Comentario de {self.author_name} en Req #{self.requirement.number}"
 
 
+class AccessGroup(models.Model):
+    """Modelo para grupos de accesos rápidos"""
+    title = models.CharField(max_length=200, verbose_name='Título del Grupo')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    is_public = models.BooleanField(default=False, verbose_name='Público')
+    share_token = models.CharField(max_length=50, unique=True, blank=True, verbose_name='Token de Compartir')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='access_groups', verbose_name='Creado por')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última Actualización')
+    order = models.IntegerField(default=0, verbose_name='Orden')
+    
+    class Meta:
+        ordering = ['order', '-created_at']
+        verbose_name = 'Grupo de Accesos'
+        verbose_name_plural = 'Grupos de Accesos'
+    
+    def __str__(self):
+        return self.title
+    
+    def save(self, *args, **kwargs):
+        if not self.share_token:
+            self.share_token = str(uuid.uuid4())[:12]
+        super().save(*args, **kwargs)
+    
+    def get_public_url(self):
+        """Retorna la URL pública del grupo"""
+        if self.is_public and self.share_token:
+            from django.urls import reverse
+            return reverse('access_group_public', kwargs={'token': self.share_token})
+        return None
+
+
+class AccessLink(models.Model):
+    """Modelo para enlaces dentro de un grupo de accesos"""
+    group = models.ForeignKey(AccessGroup, on_delete=models.CASCADE, related_name='links', verbose_name='Grupo')
+    title = models.CharField(max_length=200, verbose_name='Título del Enlace')
+    url = models.URLField(max_length=500, verbose_name='URL')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    icon = models.CharField(
+        max_length=50, 
+        blank=True, 
+        verbose_name='Icono',
+        help_text='Clase de icono Bootstrap (ej: bi-link-45deg)'
+    )
+    color = models.CharField(
+        max_length=20,
+        default='primary',
+        verbose_name='Color',
+        help_text='Color del botón (primary, success, info, warning, danger, etc.)'
+    )
+    order = models.IntegerField(default=0, verbose_name='Orden')
+    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
+    
+    class Meta:
+        ordering = ['order', 'created_at']
+        verbose_name = 'Enlace de Acceso'
+        verbose_name_plural = 'Enlaces de Acceso'
+    
+    def __str__(self):
+        return f"{self.title} ({self.group.title})"
+
+
+# ============= MODELOS DE PLANIFICACIÓN DE TAREAS =============
+
+class TaskPlan(models.Model):
+    """Modelo para plan de tareas con días"""
+    title = models.CharField(max_length=200, verbose_name='Título del Plan')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='task_plans', verbose_name='Creado por')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última Actualización')
+    is_public = models.BooleanField(default=False, verbose_name='Vista Pública Activada')
+    share_token = models.CharField(max_length=50, unique=True, blank=True, verbose_name='Token de Compartir')
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Plan de Tareas'
+        verbose_name_plural = 'Planes de Tareas'
+    
+    def __str__(self):
+        return self.title
+    
+    def save(self, *args, **kwargs):
+        if not self.share_token:
+            self.share_token = str(uuid.uuid4())[:12]
+        super().save(*args, **kwargs)
+    
+    def get_public_url(self):
+        """Retorna la URL pública del plan"""
+        if self.is_public and self.share_token:
+            from django.urls import reverse
+            return reverse('task_plan_public', kwargs={'token': self.share_token})
+        return None
+
+
+class TaskPlanDay(models.Model):
+    """Modelo para días dentro de un plan de tareas"""
+    plan = models.ForeignKey(TaskPlan, on_delete=models.CASCADE, related_name='days', verbose_name='Plan')
+    title = models.CharField(max_length=100, verbose_name='Título del Día', help_text='Ej: Día 1, Lunes, Semana 1')
+    description = models.TextField(blank=True, verbose_name='Descripción del Día')
+    order = models.IntegerField(default=0, verbose_name='Orden')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
+    
+    class Meta:
+        ordering = ['order', 'created_at']
+        verbose_name = 'Día del Plan'
+        verbose_name_plural = 'Días del Plan'
+        unique_together = ['plan', 'order']
+    
+    def __str__(self):
+        return f"{self.title} - {self.plan.title}"
+
+
+class TaskPlanItem(models.Model):
+    """Modelo para tareas individuales dentro de un día"""
+    day = models.ForeignKey(TaskPlanDay, on_delete=models.CASCADE, related_name='tasks', verbose_name='Día')
+    title = models.CharField(max_length=300, verbose_name='Título de la Tarea')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    order = models.IntegerField(default=0, verbose_name='Orden')
+    is_completed = models.BooleanField(default=False, verbose_name='Completada')
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name='Completada el')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
+    
+    # Campos opcionales para mayor detalle
+    estimated_hours = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        null=True, 
+        blank=True, 
+        verbose_name='Horas Estimadas'
+    )
+    priority = models.CharField(
+        max_length=20,
+        choices=[
+            ('low', 'Baja'),
+            ('medium', 'Media'),
+            ('high', 'Alta'),
+            ('critical', 'Crítica')
+        ],
+        default='medium',
+        verbose_name='Prioridad'
+    )
+    
+    class Meta:
+        ordering = ['order', 'created_at']
+        verbose_name = 'Tarea del Plan'
+        verbose_name_plural = 'Tareas del Plan'
+    
+    def __str__(self):
+        return f"{self.title} ({self.day.title})"
+
+
+# ===================================
+# MODELOS DE CHECKLIST
+# ===================================
+
+class Checklist(models.Model):
+    """Modelo para checklist con tareas"""
+    title = models.CharField(max_length=300, verbose_name='Título del Checklist')
+    company = models.CharField(max_length=200, blank=True, verbose_name='Empresa')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    is_public = models.BooleanField(default=False, verbose_name='Público')
+    share_token = models.CharField(max_length=100, unique=True, blank=True, verbose_name='Token de Compartir')
+    views_count = models.IntegerField(default=0, verbose_name='Visualizaciones')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Creado por')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última Actualización')
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Checklist'
+        verbose_name_plural = 'Checklists'
+    
+    def __str__(self):
+        return f"{self.title} - {self.company}" if self.company else self.title
+    
+    def save(self, *args, **kwargs):
+        if not self.share_token:
+            self.share_token = str(uuid.uuid4())[:12]
+        super().save(*args, **kwargs)
+    
+    def get_public_url(self):
+        return f"/checklist/{self.share_token}/"
+    
+    def get_completion_percentage(self):
+        """Calcular porcentaje de completado"""
+        total = self.items.count()
+        if total == 0:
+            return 0
+        completed = self.items.filter(is_completed=True).count()
+        return int((completed / total) * 100)
+
+
+class ChecklistItem(models.Model):
+    """Modelo para items individuales del checklist"""
+    checklist = models.ForeignKey(Checklist, on_delete=models.CASCADE, related_name='items', verbose_name='Checklist')
+    title = models.CharField(max_length=500, verbose_name='Título de la Tarea')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='Costo')
+    order = models.IntegerField(default=0, verbose_name='Orden')
+    is_completed = models.BooleanField(default=False, verbose_name='Completada')
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name='Completada el')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
+    
+    class Meta:
+        ordering = ['order', 'created_at']
+        verbose_name = 'Item del Checklist'
+        verbose_name_plural = 'Items del Checklist'
+    
+    def __str__(self):
+        return f"{self.title} ({self.checklist.title})"
+
+
+class Transaction(models.Model):
+    """Modelo para transacciones rápidas - accesos directos a URLs del sistema"""
+    
+    code = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name='Código',
+        help_text='Código único de la transacción (ej: T001, TICKET, REPORTE)'
+    )
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre',
+        help_text='Nombre descriptivo de la transacción'
+    )
+    
+    url = models.CharField(
+        max_length=500,
+        verbose_name='URL',
+        help_text='URL de acceso (puede ser relativa o absoluta)'
+    )
+    
+    visible_for_all = models.BooleanField(
+        default=True,
+        verbose_name='Visible para Todos',
+        help_text='Si está marcado, todos pueden ver esta transacción. Si no, solo agentes.'
+    )
+    
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción opcional de la transacción'
+    )
+    
+    icon = models.CharField(
+        max_length=50,
+        blank=True,
+        default='bi-link-45deg',
+        verbose_name='Ícono Bootstrap',
+        help_text='Clase del ícono Bootstrap (ej: bi-link-45deg, bi-file-text)'
+    )
+    
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activa',
+        help_text='Solo las transacciones activas aparecen en la búsqueda'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='created_transactions',
+        verbose_name='Creado por'
+    )
+    
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última Actualización')
+    
+    class Meta:
+        ordering = ['code']
+        verbose_name = 'Transacción'
+        verbose_name_plural = 'Transacciones'
+        indexes = [
+            models.Index(fields=['code']),
+            models.Index(fields=['name']),
+            models.Index(fields=['is_active']),
+        ]
+    
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+
+class KnowledgeBase(models.Model):
+    """Modelo para Base de Conocimientos - conceptos técnicos y código fuente"""
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Título del concepto o tema'
+    )
+    
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción detallada del concepto'
+    )
+    
+    source_code = models.TextField(
+        blank=True,
+        verbose_name='Código Fuente',
+        help_text='Código fuente de ejemplo o snippet'
+    )
+    
+    tags = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='Etiquetas',
+        help_text='Etiquetas separadas por comas (ej: python, django, api)'
+    )
+    
+    category = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Categoría',
+        help_text='Categoría del conocimiento (ej: Backend, Frontend, Base de Datos)'
+    )
+    
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='knowledge_bases_created',
+        verbose_name='Creado por'
+    )
+    
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última Actualización')
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Base de Conocimiento'
+        verbose_name_plural = 'Base de Conocimientos'
+        indexes = [
+            models.Index(fields=['title']),
+            models.Index(fields=['category']),
+            models.Index(fields=['is_active']),
+        ]
+    
+    def __str__(self):
+        return self.title
+
+
+
+
+
+
+
+
+
+
 
 
 

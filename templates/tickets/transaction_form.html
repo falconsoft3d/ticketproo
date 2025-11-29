@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ action }} Transacción - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'transaction_list' %}">Transacciones</a></li>
+                    <li class="breadcrumb-item active">{{ action }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> {{ action }} Transacción</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Código <span class="text-danger">*</span></label>
+                                <input type="text" name="code" class="form-control text-uppercase" 
+                                       value="{{ transaction.code|default:'' }}" 
+                                       placeholder="T001, TICKET, REPORTE" 
+                                       required maxlength="50">
+                                <small class="text-muted">Código único para identificar la transacción</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Ícono Bootstrap</label>
+                                <input type="text" name="icon" class="form-control" 
+                                       value="{{ transaction.icon|default:'bi-link-45deg' }}" 
+                                       placeholder="bi-link-45deg" 
+                                       maxlength="50">
+                                <small class="text-muted">Clase del ícono (ver <a href="https://icons.getbootstrap.com/" target="_blank">Bootstrap Icons</a>)</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" 
+                                   value="{{ transaction.name|default:'' }}" 
+                                   placeholder="Crear Nuevo Ticket" 
+                                   required maxlength="200">
+                            <small class="text-muted">Nombre descriptivo de la transacción</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">URL <span class="text-danger">*</span></label>
+                            <input type="text" name="url" class="form-control" 
+                                   value="{{ transaction.url|default:'' }}" 
+                                   placeholder="/tickets/create/" 
+                                   required maxlength="500">
+                            <small class="text-muted">URL de acceso (relativa o absoluta)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descripción</label>
+                            <textarea name="description" class="form-control" rows="3" 
+                                      placeholder="Descripción opcional de la transacción">{{ transaction.description|default:'' }}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="visible_for_all" class="form-check-input" 
+                                           id="visible_for_all" 
+                                           {% if not transaction or transaction.visible_for_all %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold" for="visible_for_all">
+                                        Visible para Todos
+                                    </label>
+                                    <div class="form-text">Si está desmarcado, solo agentes pueden ver esta transacción</div>
+                                </div>
+                            </div>
+                            
+                            {% if transaction %}
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="is_active" class="form-check-input" 
+                                           id="is_active" 
+                                           {% if transaction.is_active %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold" for="is_active">
+                                        Transacción Activa
+                                    </label>
+                                    <div class="form-text">Solo las transacciones activas aparecen en la búsqueda</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Guardar
+                            </button>
+                            <a href="{% url 'transaction_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

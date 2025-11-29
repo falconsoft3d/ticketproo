@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Base de Conocimientos{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+            <li class="breadcrumb-item active">Base de Conocimientos</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-book"></i> Base de Conocimientos
+        </h2>
+        <a href="{% url 'knowledge_base_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nuevo Conocimiento
+        </a>
+    </div>
+
+    <!-- Lista de conocimientos -->
+    {% if knowledge_bases %}
+    <div class="row">
+        {% for kb in knowledge_bases %}
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title">
+                            <i class="bi bi-lightbulb text-warning"></i>
+                            {{ kb.title }}
+                        </h5>
+                        {% if kb.source_code %}
+                        <span class="badge bg-info">
+                            <i class="bi bi-code-slash"></i> Código
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if kb.category %}
+                    <span class="badge bg-secondary mb-2">{{ kb.category }}</span>
+                    {% endif %}
+                    
+                    {% if kb.description %}
+                    <p class="card-text text-muted small">
+                        {{ kb.description|truncatewords:30 }}
+                    </p>
+                    {% endif %}
+                    
+                    {% if kb.tags %}
+                    <div class="mb-2">
+                        <small class="text-muted">{{ kb.tags }}</small>
+                    </div>
+                    {% endif %}
+                    
+                    <small class="text-muted d-block mb-2">
+                        <i class="bi bi-clock"></i> {{ kb.updated_at|date:"d/m/Y H:i" }}
+                    </small>
+                    
+                    <div class="btn-group w-100" role="group">
+                        <a href="{% url 'knowledge_base_detail' kb.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                        <a href="{% url 'knowledge_base_edit' kb.id %}" class="btn btn-sm btn-outline-warning">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a href="{% url 'knowledge_base_delete' kb.id %}" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
+        <h4 class="text-muted mt-3">No hay conocimientos registrados</h4>
+        <p class="text-muted">Comienza creando tu primer conocimiento</p>
+        <a href="{% url 'knowledge_base_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Crear Conocimiento
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -52,7 +52,8 @@ from .models import (
     MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint, ScheduledTask,
     ClientRequest, ClientRequestResponse, ClientRequestTemplate, ClientRequestTemplateItem, Event, Trip, TripStop,
     MultiMeasurement, MultiMeasurementRecord, PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
-    DynamicTable, DynamicTableField, WorkOrderRating, WorkOrderComment, FunctionalRequirementDocument, FunctionalRequirement
+    DynamicTable, DynamicTableField, WorkOrderRating, WorkOrderComment, FunctionalRequirementDocument, FunctionalRequirement,
+    TaskPlan, TaskPlanDay, TaskPlanItem, Checklist, ChecklistItem
 )
 
 class CategoryForm(forms.ModelForm):
@@ -9348,5 +9349,156 @@ class RequirementCommentForm(forms.Form):
             'rows': 3
         })
     )
+
+
+class TaskPlanForm(forms.ModelForm):
+    """Formulario para crear y editar planes de tareas"""
+    
+    class Meta:
+        model = TaskPlan
+        fields = ['title', 'description']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del plan',
+                'required': True
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Descripción del plan (opcional)',
+                'rows': 3
+            })
+        }
+        labels = {
+            'title': 'Título del Plan',
+            'description': 'Descripción'
+        }
+
+
+class TaskPlanDayForm(forms.ModelForm):
+    """Formulario para crear y editar días de un plan"""
+    
+    class Meta:
+        model = TaskPlanDay
+        fields = ['title', 'description']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Día 1, Lunes, Semana 1',
+                'required': True
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Información adicional sobre este día (opcional)',
+                'rows': 3
+            })
+        }
+        labels = {
+            'title': 'Título del Día',
+            'description': 'Descripción'
+        }
+
+
+class TaskPlanItemForm(forms.ModelForm):
+    """Formulario para crear y editar tareas de un día"""
+    
+    class Meta:
+        model = TaskPlanItem
+        fields = ['title', 'description', 'priority', 'estimated_hours']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la tarea',
+                'required': True
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Detalles de la tarea (opcional)',
+                'rows': 3
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'estimated_hours': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.0',
+                'step': '0.5',
+                'min': '0'
+            })
+        }
+        labels = {
+            'title': 'Título de la Tarea',
+            'description': 'Descripción',
+            'priority': 'Prioridad',
+            'estimated_hours': 'Horas Estimadas'
+        }
+
+
+# ===================================
+# FORMULARIOS DE CHECKLIST
+# ===================================
+
+class ChecklistForm(forms.ModelForm):
+    """Formulario para crear y editar checklists"""
+    
+    class Meta:
+        model = Checklist
+        fields = ['title', 'company', 'description']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título del checklist',
+                'required': True
+            }),
+            'company': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre de la empresa (opcional)'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Descripción del checklist (opcional)',
+                'rows': 3
+            })
+        }
+        labels = {
+            'title': 'Título del Checklist',
+            'company': 'Empresa',
+            'description': 'Descripción'
+        }
+
+
+class ChecklistItemForm(forms.ModelForm):
+    """Formulario para crear y editar items del checklist"""
+    
+    class Meta:
+        model = ChecklistItem
+        fields = ['title', 'description', 'cost']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la tarea',
+                'required': True
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Descripción de la tarea (opcional)',
+                'rows': 3
+            }),
+            'cost': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.00',
+                'step': '0.01',
+                'min': '0'
+            })
+        }
+        labels = {
+            'title': 'Título de la Tarea',
+            'description': 'Descripción',
+            'cost': 'Costo en Euros (opcional)'
+        }
+
+
+
+
 
 

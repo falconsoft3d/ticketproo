@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ action }} Base de Conocimiento{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'knowledge_base_list' %}">Base de Conocimientos</a></li>
+            <li class="breadcrumb-item active">{{ action }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <h2 class="mb-4">
+        <i class="bi bi-book"></i> {{ action }} Base de Conocimiento
+    </h2>
+
+    <!-- Formulario -->
+    <div class="card shadow">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                
+                <!-- Título -->
+                <div class="mb-3">
+                    <label for="title" class="form-label fw-bold">
+                        <i class="bi bi-card-heading"></i> Título *
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="title" 
+                           name="title" 
+                           value="{{ knowledge_base.title|default:'' }}"
+                           required
+                           maxlength="200">
+                </div>
+
+                <!-- Categoría -->
+                <div class="mb-3">
+                    <label for="category" class="form-label fw-bold">
+                        <i class="bi bi-folder"></i> Categoría
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="category" 
+                           name="category" 
+                           value="{{ knowledge_base.category|default:'' }}"
+                           placeholder="Backend, Frontend, Base de Datos, etc."
+                           maxlength="100">
+                    <small class="text-muted">Ejemplo: Backend, Frontend, Base de Datos, DevOps, etc.</small>
+                </div>
+
+                <!-- Etiquetas -->
+                <div class="mb-3">
+                    <label for="tags" class="form-label fw-bold">
+                        <i class="bi bi-tags"></i> Etiquetas
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="tags" 
+                           name="tags" 
+                           value="{{ knowledge_base.tags|default:'' }}"
+                           placeholder="python, django, api, postgresql"
+                           maxlength="500">
+                    <small class="text-muted">Separa las etiquetas con comas</small>
+                </div>
+
+                <!-- Descripción -->
+                <div class="mb-3">
+                    <label for="description" class="form-label fw-bold">
+                        <i class="bi bi-file-text"></i> Descripción
+                    </label>
+                    <textarea class="form-control" 
+                              id="description" 
+                              name="description" 
+                              rows="6"
+                              placeholder="Describe el concepto, problema que resuelve, casos de uso, etc.">{{ knowledge_base.description|default:'' }}</textarea>
+                    <small class="text-muted">Explicación detallada del concepto</small>
+                </div>
+
+                <!-- Código Fuente -->
+                <div class="mb-3">
+                    <label for="source_code" class="form-label fw-bold">
+                        <i class="bi bi-code-slash"></i> Código Fuente
+                    </label>
+                    <textarea class="form-control" 
+                              id="source_code" 
+                              name="source_code" 
+                              rows="15"
+                              style="font-family: 'Courier New', monospace; font-size: 0.9rem;"
+                              placeholder="// Pega aquí tu código fuente, snippet o ejemplo">{{ knowledge_base.source_code|default:'' }}</textarea>
+                    <small class="text-muted">Código de ejemplo, snippet o implementación</small>
+                </div>
+
+                <!-- Activo (solo en edición) -->
+                {% if knowledge_base %}
+                <div class="mb-3 form-check form-switch">
+                    <input class="form-check-input" 
+                           type="checkbox" 
+                           id="is_active" 
+                           name="is_active"
+                           {% if knowledge_base.is_active %}checked{% endif %}>
+                    <label class="form-check-label" for="is_active">
+                        <i class="bi bi-toggle-on"></i> Activo
+                    </label>
+                </div>
+                {% endif %}
+
+                <!-- Botones -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Guardar
+                    </button>
+                    <a href="{% if knowledge_base %}{% url 'knowledge_base_detail' knowledge_base.id %}{% else %}{% url 'knowledge_base_list' %}{% endif %}" 
+                       class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

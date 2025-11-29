@@ -58,6 +58,7 @@ from .models import (
     ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote, CrmQuestion,
     SupportMeeting, SupportMeetingPoint, ScheduledTask, ScheduledTaskExecution,
     FunctionalRequirementDocument, FunctionalRequirement, FunctionalRequirementDocumentView,
+    Checklist, ChecklistItem,
     # ...existing code...
 )
 
@@ -231,7 +232,8 @@ from .models import (
     WebsiteTracker, LegalContract, Asset, AssetHistory,
     AITutor, AITutorProgressReport, AITutorAttachment,
     ExpenseReport, ExpenseItem, ExpenseComment, VideoMeeting, MeetingNote, QuoteGenerator, Procedure,
-    PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction
+    PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
+    AccessGroup, AccessLink, TaskPlan, TaskPlanDay, TaskPlanItem
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -254,7 +256,8 @@ from .forms import (
     VideoMeetingForm, MeetingTranscriptionForm, MeetingFilterForm, QuoteGeneratorForm, AbsenceTypeForm,
     CrmQuestionForm, PublicCrmQuestionForm, ScheduledTaskForm,
     PersonalBudgetForm, BudgetIncomeItemForm, BudgetExpenseItemForm, BudgetTransactionForm,
-    FunctionalRequirementDocumentForm
+    FunctionalRequirementDocumentForm, TaskPlanForm, TaskPlanDayForm, TaskPlanItemForm,
+    ChecklistForm, ChecklistItemForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -45032,3 +45035,1149 @@ def frd_requirement_create_ticket(request, requirement_pk):
     }
     
     return render(request, 'tickets/frd_requirement_create_ticket.html', context)
+
+
+# ============= VISTAS DE GRUPOS DE ACCESOS =============
+
+@login_required
+def access_group_list(request):
+    """Listar todos los grupos de accesos"""
+    groups = AccessGroup.objects.filter(created_by=request.user).prefetch_related('links')
+    
+    context = {
+        'groups': groups,
+        'page_title': 'Grupos de Accesos'
+    }
+    return render(request, 'tickets/access_group_list.html', context)
+
+
+@login_required
+def access_group_create(request):
+    """Crear nuevo grupo de accesos"""
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
+        
+        group = AccessGroup.objects.create(
+            title=title,
+            description=description,
+            created_by=request.user
+        )
+        
+        messages.success(request, f'Grupo "{group.title}" creado exitosamente')
+        return redirect('access_group_detail', pk=group.id)
+    
+    context = {
+        'page_title': 'Crear Grupo de Accesos'
+    }
+    return render(request, 'tickets/access_group_form.html', context)
+
+
+@login_required
+def access_group_detail(request, pk):
+    """Ver detalle de un grupo de accesos"""
+    group = get_object_or_404(AccessGroup, id=pk, created_by=request.user)
+    links = group.links.filter(is_active=True)
+    
+    context = {
+        'group': group,
+        'links': links,
+        'page_title': f'Grupo: {group.title}'
+    }
+    return render(request, 'tickets/access_group_detail.html', context)
+
+
+@login_required
+def access_group_edit(request, pk):
+    """Editar grupo de accesos"""
+    group = get_object_or_404(AccessGroup, id=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        group.title = request.POST.get('title')
+        group.description = request.POST.get('description', '')
+        group.save()
+        
+        messages.success(request, f'Grupo "{group.title}" actualizado exitosamente')
+        return redirect('access_group_detail', pk=group.id)
+    
+    context = {
+        'group': group,
+        'page_title': f'Editar: {group.title}'
+    }
+    return render(request, 'tickets/access_group_form.html', context)
+
+
+@login_required
+def access_group_delete(request, pk):
+    """Eliminar grupo de accesos"""
+    group = get_object_or_404(AccessGroup, id=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        title = group.title
+        group.delete()
+        messages.success(request, f'Grupo "{title}" eliminado exitosamente')
+        return redirect('access_group_list')
+    
+    context = {
+        'group': group,
+        'page_title': f'Eliminar Grupo'
+    }
+    return render(request, 'tickets/access_group_delete.html', context)
+
+
+@login_required
+def access_group_toggle_public(request, pk):
+    """Activar/desactivar acceso público"""
+    group = get_object_or_404(AccessGroup, id=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        group.is_public = not group.is_public
+        group.save()
+        
+        status = 'público' if group.is_public else 'privado'
+        messages.success(request, f'Grupo "{group.title}" ahora es {status}')
+    
+    return redirect('access_group_detail', pk=group.id)
+
+
+@login_required
+def access_link_create(request, group_pk):
+    """Crear nuevo enlace en un grupo"""
+    group = get_object_or_404(AccessGroup, id=group_pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        url = request.POST.get('url')
+        description = request.POST.get('description', '')
+        icon = request.POST.get('icon', 'bi-link-45deg')
+        color = request.POST.get('color', 'primary')
+        
+        link = AccessLink.objects.create(
+            group=group,
+            title=title,
+            url=url,
+            description=description,
+            icon=icon,
+            color=color
+        )
+        
+        messages.success(request, f'Enlace "{link.title}" agregado exitosamente')
+        return redirect('access_group_detail', pk=group.id)
+    
+    context = {
+        'group': group,
+        'page_title': f'Agregar Enlace a {group.title}'
+    }
+    return render(request, 'tickets/access_link_form.html', context)
+
+
+@login_required
+def access_link_edit(request, pk):
+    """Editar enlace"""
+    link = get_object_or_404(AccessLink, id=pk, group__created_by=request.user)
+    
+    if request.method == 'POST':
+        link.title = request.POST.get('title')
+        link.url = request.POST.get('url')
+        link.description = request.POST.get('description', '')
+        link.icon = request.POST.get('icon', 'bi-link-45deg')
+        link.color = request.POST.get('color', 'primary')
+        link.save()
+        
+        messages.success(request, f'Enlace "{link.title}" actualizado exitosamente')
+        return redirect('access_group_detail', pk=link.group.id)
+    
+    context = {
+        'link': link,
+        'group': link.group,
+        'page_title': f'Editar Enlace'
+    }
+    return render(request, 'tickets/access_link_form.html', context)
+
+
+@login_required
+def access_link_delete(request, pk):
+    """Eliminar enlace"""
+    link = get_object_or_404(AccessLink, id=pk, group__created_by=request.user)
+    group_id = link.group.id
+    
+    if request.method == 'POST':
+        title = link.title
+        link.delete()
+        messages.success(request, f'Enlace "{title}" eliminado exitosamente')
+        return redirect('access_group_detail', pk=group_id)
+    
+    context = {
+        'link': link,
+        'page_title': 'Eliminar Enlace'
+    }
+    return render(request, 'tickets/access_link_delete.html', context)
+
+
+def access_group_public(request, token):
+    """Vista pública de un grupo de accesos (sin login requerido)"""
+    group = get_object_or_404(AccessGroup, share_token=token, is_public=True)
+    links = group.links.filter(is_active=True)
+    
+    context = {
+        'group': group,
+        'links': links,
+        'page_title': group.title,
+        'is_public_view': True
+    }
+    return render(request, 'tickets/access_group_public.html', context)
+
+
+# ============= VISTAS DE PLANIFICACIÓN DE TAREAS =============
+
+@login_required
+def task_plan_list(request):
+    """Listar todos los planes de tareas"""
+    plans = TaskPlan.objects.filter(created_by=request.user).prefetch_related('days')
+    
+    context = {
+        'plans': plans,
+        'page_title': 'Planes de Tareas'
+    }
+    return render(request, 'tickets/task_plan_list.html', context)
+
+
+@login_required
+def task_plan_create(request):
+    """Crear nuevo plan de tareas"""
+    if request.method == 'POST':
+        form = TaskPlanForm(request.POST)
+        if form.is_valid():
+            plan = form.save(commit=False)
+            plan.created_by = request.user
+            plan.save()
+            messages.success(request, f'Plan "{plan.title}" creado exitosamente')
+            return redirect('task_plan_detail', pk=plan.id)
+    else:
+        form = TaskPlanForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Plan de Tareas'
+    }
+    return render(request, 'tickets/task_plan_form.html', context)
+
+
+@login_required
+def task_plan_detail(request, pk):
+    """Ver detalle de un plan de tareas"""
+    plan = get_object_or_404(TaskPlan, id=pk, created_by=request.user)
+    days = plan.days.prefetch_related('tasks')
+    
+    context = {
+        'plan': plan,
+        'days': days,
+        'page_title': f'Plan: {plan.title}'
+    }
+    return render(request, 'tickets/task_plan_detail.html', context)
+
+
+@login_required
+def task_plan_edit(request, pk):
+    """Editar plan de tareas"""
+    plan = get_object_or_404(TaskPlan, id=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        plan.title = request.POST.get('title')
+        plan.description = request.POST.get('description', '')
+        plan.save()
+        
+        messages.success(request, f'Plan "{plan.title}" actualizado exitosamente')
+        return redirect('task_plan_detail', pk=plan.id)
+    
+    context = {
+        'plan': plan,
+        'page_title': f'Editar: {plan.title}'
+    }
+    return render(request, 'tickets/task_plan_form.html', context)
+
+
+@login_required
+def task_plan_delete(request, pk):
+    """Eliminar plan de tareas"""
+    plan = get_object_or_404(TaskPlan, id=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        title = plan.title
+        plan.delete()
+        messages.success(request, f'Plan "{title}" eliminado exitosamente')
+        return redirect('task_plan_list')
+    
+    context = {
+        'plan': plan,
+        'page_title': 'Eliminar Plan'
+    }
+    return render(request, 'tickets/task_plan_delete.html', context)
+
+
+@login_required
+def task_plan_toggle_public(request, pk):
+    """Activar/desactivar vista pública"""
+    plan = get_object_or_404(TaskPlan, id=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        plan.is_public = not plan.is_public
+        plan.save()
+        
+        status = 'activada' if plan.is_public else 'desactivada'
+        messages.success(request, f'Vista pública {status}')
+    
+    return redirect('task_plan_detail', pk=plan.id)
+
+
+@login_required
+def task_plan_day_create(request, plan_pk):
+    """Crear nuevo día en el plan"""
+    plan = get_object_or_404(TaskPlan, id=plan_pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        form = TaskPlanDayForm(request.POST)
+        if form.is_valid():
+            day = form.save(commit=False)
+            day.plan = plan
+            # Obtener el siguiente número de orden
+            last_order = plan.days.aggregate(models.Max('order'))['order__max'] or 0
+            day.order = last_order + 1
+            day.save()
+            messages.success(request, f'Día "{day.title}" agregado exitosamente')
+            return redirect('task_plan_detail', pk=plan.id)
+    else:
+        form = TaskPlanDayForm()
+    
+    context = {
+        'form': form,
+        'plan': plan,
+        'page_title': f'Agregar Día a {plan.title}'
+    }
+    return render(request, 'tickets/task_plan_day_form.html', context)
+
+
+@login_required
+def task_plan_day_edit(request, pk):
+    """Editar día del plan"""
+    day = get_object_or_404(TaskPlanDay, id=pk, plan__created_by=request.user)
+    
+    if request.method == 'POST':
+        form = TaskPlanDayForm(request.POST, instance=day)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Día "{day.title}" actualizado exitosamente')
+            return redirect('task_plan_detail', pk=day.plan.id)
+    else:
+        form = TaskPlanDayForm(instance=day)
+    
+    context = {
+        'form': form,
+        'day': day,
+        'plan': day.plan,
+        'page_title': f'Editar Día'
+    }
+    return render(request, 'tickets/task_plan_day_form.html', context)
+
+
+@login_required
+def task_plan_day_view(request, pk):
+    """Vista de un día individual para modal"""
+    day = get_object_or_404(TaskPlanDay, id=pk, plan__created_by=request.user)
+    
+    context = {
+        'day': day,
+        'tasks': day.tasks.all()
+    }
+    return render(request, 'tickets/task_plan_day_view.html', context)
+
+
+@login_required
+def task_plan_day_delete(request, pk):
+    """Eliminar día del plan"""
+    day = get_object_or_404(TaskPlanDay, id=pk, plan__created_by=request.user)
+    plan_id = day.plan.id
+    
+    if request.method == 'POST':
+        title = day.title
+        day.delete()
+        messages.success(request, f'Día "{title}" eliminado exitosamente')
+        return redirect('task_plan_detail', pk=plan_id)
+    
+    context = {
+        'day': day,
+        'page_title': 'Eliminar Día'
+    }
+    return render(request, 'tickets/task_plan_day_delete.html', context)
+
+
+@login_required
+def task_plan_item_create(request, day_pk):
+    """Crear nueva tarea en un día"""
+    day = get_object_or_404(TaskPlanDay, id=day_pk, plan__created_by=request.user)
+    
+    if request.method == 'POST':
+        form = TaskPlanItemForm(request.POST)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.day = day
+            # Obtener el siguiente número de orden
+            last_order = day.tasks.aggregate(models.Max('order'))['order__max'] or 0
+            task.order = last_order + 1
+            task.save()
+            messages.success(request, f'Tarea "{task.title}" agregada exitosamente')
+            return redirect('task_plan_detail', pk=day.plan.id)
+    else:
+        form = TaskPlanItemForm()
+    
+    context = {
+        'form': form,
+        'day': day,
+        'plan': day.plan,
+        'page_title': f'Agregar Tarea a {day.title}'
+    }
+    return render(request, 'tickets/task_plan_item_form.html', context)
+
+
+@login_required
+def task_plan_item_edit(request, pk):
+    """Editar tarea del plan"""
+    task = get_object_or_404(TaskPlanItem, id=pk, day__plan__created_by=request.user)
+    
+    if request.method == 'POST':
+        form = TaskPlanItemForm(request.POST, instance=task)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Tarea "{task.title}" actualizada exitosamente')
+            return redirect('task_plan_detail', pk=task.day.plan.id)
+    else:
+        form = TaskPlanItemForm(instance=task)
+    
+    context = {
+        'form': form,
+        'task': task,
+        'day': task.day,
+        'plan': task.day.plan,
+        'page_title': f'Editar Tarea'
+    }
+    return render(request, 'tickets/task_plan_item_form.html', context)
+
+
+@login_required
+def task_plan_item_delete(request, pk):
+    """Eliminar tarea del plan"""
+    task = get_object_or_404(TaskPlanItem, id=pk, day__plan__created_by=request.user)
+    plan_id = task.day.plan.id
+    
+    if request.method == 'POST':
+        title = task.title
+        task.delete()
+        messages.success(request, f'Tarea "{title}" eliminada exitosamente')
+        return redirect('task_plan_detail', pk=plan_id)
+    
+    context = {
+        'task': task,
+        'page_title': 'Eliminar Tarea'
+    }
+    return render(request, 'tickets/task_plan_item_delete.html', context)
+
+
+@login_required
+def task_plan_item_toggle(request, pk):
+    """Marcar tarea como completada/pendiente"""
+    task = get_object_or_404(TaskPlanItem, id=pk, day__plan__created_by=request.user)
+    
+    if request.method == 'POST':
+        task.is_completed = not task.is_completed
+        task.completed_at = timezone.now() if task.is_completed else None
+        task.save()
+    
+    return redirect('task_plan_detail', pk=task.day.plan.id)
+
+
+def task_plan_public(request, token):
+    """Vista pública del plan de tareas (sin login requerido)"""
+    plan = get_object_or_404(TaskPlan, share_token=token, is_public=True)
+    days = plan.days.prefetch_related('tasks').order_by('order')
+    
+    # Contar tareas totales y completadas
+    total_tasks = 0
+    completed_tasks = 0
+    for day in days:
+        total_tasks += day.tasks.count()
+        completed_tasks += day.tasks.filter(is_completed=True).count()
+    
+    context = {
+        'plan': plan,
+        'days': days,
+        'total_tasks': total_tasks,
+        'completed_tasks': completed_tasks,
+        'page_title': plan.title,
+        'is_public_view': True
+    }
+    return render(request, 'tickets/task_plan_public.html', context)
+
+
+# ===================================
+# VISTAS DE CHECKLIST
+# ===================================
+
+@login_required
+def checklist_list(request):
+    """Listar todos los checklists del usuario"""
+    checklists = Checklist.objects.filter(created_by=request.user).prefetch_related('items')
+    
+    # Agregar estadísticas a cada checklist
+    checklists_data = []
+    for checklist in checklists:
+        total_items = checklist.items.count()
+        completed_items = checklist.items.filter(is_completed=True).count()
+        checklists_data.append({
+            'checklist': checklist,
+            'total_items': total_items,
+            'completed_items': completed_items
+        })
+    
+    context = {
+        'checklists_data': checklists_data,
+        'page_title': 'Mis Checklists'
+    }
+    return render(request, 'tickets/checklist_list.html', context)
+
+
+@login_required
+def checklist_create(request):
+    """Crear nuevo checklist"""
+    if request.method == 'POST':
+        form = ChecklistForm(request.POST)
+        if form.is_valid():
+            checklist = form.save(commit=False)
+            checklist.created_by = request.user
+            checklist.save()
+            messages.success(request, f'Checklist "{checklist.title}" creado exitosamente')
+            return redirect('checklist_detail', pk=checklist.id)
+    else:
+        form = ChecklistForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Checklist'
+    }
+    return render(request, 'tickets/checklist_form.html', context)
+
+
+@login_required
+def checklist_detail(request, pk):
+    """Ver detalle de checklist con sus items"""
+    checklist = get_object_or_404(Checklist, id=pk, created_by=request.user)
+    items = checklist.items.all()
+    
+    # Calcular estadísticas
+    total_items = items.count()
+    completed_items = items.filter(is_completed=True).count()
+    
+    # Calcular subtotal de costos
+    from decimal import Decimal
+    total_cost = sum([item.cost for item in items if item.cost], Decimal('0'))
+    
+    context = {
+        'checklist': checklist,
+        'items': items,
+        'total_items': total_items,
+        'completed_items': completed_items,
+        'total_cost': total_cost,
+        'page_title': checklist.title
+    }
+    return render(request, 'tickets/checklist_detail.html', context)
+
+
+@login_required
+def checklist_edit(request, pk):
+    """Editar checklist"""
+    checklist = get_object_or_404(Checklist, id=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        form = ChecklistForm(request.POST, instance=checklist)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Checklist "{checklist.title}" actualizado exitosamente')
+            return redirect('checklist_detail', pk=checklist.id)
+    else:
+        form = ChecklistForm(instance=checklist)
+    
+    context = {
+        'form': form,
+        'checklist': checklist,
+        'page_title': f'Editar {checklist.title}'
+    }
+    return render(request, 'tickets/checklist_form.html', context)
+
+
+@login_required
+def checklist_delete(request, pk):
+    """Eliminar checklist"""
+    checklist = get_object_or_404(Checklist, id=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        title = checklist.title
+        checklist.delete()
+        messages.success(request, f'Checklist "{title}" eliminado exitosamente')
+        return redirect('checklist_list')
+    
+    context = {
+        'checklist': checklist,
+        'page_title': 'Eliminar Checklist'
+    }
+    return render(request, 'tickets/checklist_delete.html', context)
+
+
+@login_required
+def checklist_duplicate(request, pk):
+    """Duplicar checklist con todos sus items"""
+    original = get_object_or_404(Checklist, id=pk, created_by=request.user)
+    
+    # Crear copia del checklist
+    new_checklist = Checklist.objects.create(
+        title=f"{original.title} (Copia)",
+        company=original.company,
+        description=original.description,
+        created_by=request.user,
+        is_public=False
+    )
+    
+    # Copiar todos los items
+    for item in original.items.all():
+        ChecklistItem.objects.create(
+            checklist=new_checklist,
+            title=item.title,
+            description=item.description,
+            order=item.order
+        )
+    
+    messages.success(request, f'Checklist duplicado exitosamente como "{new_checklist.title}"')
+    return redirect('checklist_detail', pk=new_checklist.id)
+
+
+@login_required
+def checklist_toggle_public(request, pk):
+    """Alternar estado público/privado del checklist"""
+    checklist = get_object_or_404(Checklist, id=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        checklist.is_public = not checklist.is_public
+        checklist.save()
+        
+        status = 'público' if checklist.is_public else 'privado'
+        messages.success(request, f'Checklist marcado como {status}')
+    
+    return redirect('checklist_detail', pk=checklist.id)
+
+
+@login_required
+def checklist_item_create(request, checklist_pk):
+    """Crear nuevo item en el checklist"""
+    checklist = get_object_or_404(Checklist, id=checklist_pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        form = ChecklistItemForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.checklist = checklist
+            # Obtener el siguiente número de orden
+            last_order = checklist.items.aggregate(models.Max('order'))['order__max'] or 0
+            item.order = last_order + 1
+            item.save()
+            messages.success(request, f'Tarea "{item.title}" agregada exitosamente')
+            return redirect('checklist_detail', pk=checklist.id)
+    else:
+        form = ChecklistItemForm()
+    
+    context = {
+        'form': form,
+        'checklist': checklist,
+        'page_title': f'Agregar Tarea a {checklist.title}'
+    }
+    return render(request, 'tickets/checklist_item_form.html', context)
+
+
+@login_required
+def checklist_item_edit(request, pk):
+    """Editar item del checklist"""
+    item = get_object_or_404(ChecklistItem, id=pk, checklist__created_by=request.user)
+    
+    if request.method == 'POST':
+        form = ChecklistItemForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Tarea "{item.title}" actualizada exitosamente')
+            return redirect('checklist_detail', pk=item.checklist.id)
+    else:
+        form = ChecklistItemForm(instance=item)
+    
+    context = {
+        'form': form,
+        'item': item,
+        'checklist': item.checklist,
+        'page_title': f'Editar {item.title}'
+    }
+    return render(request, 'tickets/checklist_item_form.html', context)
+
+
+@login_required
+def checklist_item_delete(request, pk):
+    """Eliminar item del checklist"""
+    item = get_object_or_404(ChecklistItem, id=pk, checklist__created_by=request.user)
+    checklist_id = item.checklist.id
+    
+    if request.method == 'POST':
+        title = item.title
+        item.delete()
+        messages.success(request, f'Tarea "{title}" eliminada exitosamente')
+        return redirect('checklist_detail', pk=checklist_id)
+    
+    context = {
+        'item': item,
+        'page_title': 'Eliminar Tarea'
+    }
+    return render(request, 'tickets/checklist_item_delete.html', context)
+
+
+@login_required
+def checklist_item_toggle(request, pk):
+    """Marcar/desmarcar item como completado"""
+    item = get_object_or_404(ChecklistItem, id=pk, checklist__created_by=request.user)
+    
+    if request.method == 'POST':
+        item.is_completed = not item.is_completed
+        item.completed_at = timezone.now() if item.is_completed else None
+        item.save()
+    
+    return redirect('checklist_detail', pk=item.checklist.id)
+
+
+def checklist_public(request, token):
+    """Vista pública del checklist (sin autenticación)"""
+    checklist = get_object_or_404(Checklist, share_token=token, is_public=True)
+    
+    # Incrementar contador de visualizaciones
+    checklist.views_count += 1
+    checklist.save(update_fields=['views_count'])
+    
+    items = checklist.items.all()
+    
+    # Calcular estadísticas
+    total_items = items.count()
+    completed_items = items.filter(is_completed=True).count()
+    percentage = int((completed_items / total_items * 100)) if total_items > 0 else 0
+    
+    # Calcular subtotal de costos
+    from decimal import Decimal
+    total_cost = sum([item.cost for item in items if item.cost], Decimal('0'))
+    
+    context = {
+        'checklist': checklist,
+        'items': items,
+        'total_items': total_items,
+        'completed_items': completed_items,
+        'percentage': percentage,
+        'total_cost': total_cost,
+        'page_title': checklist.title,
+        'is_public_view': True
+    }
+    return render(request, 'tickets/checklist_public.html', context)
+
+
+def checklist_item_toggle_public(request, token, item_pk):
+    """Toggle estado de item desde vista pública (sin autenticación)"""
+    checklist = get_object_or_404(Checklist, share_token=token, is_public=True)
+    item = get_object_or_404(ChecklistItem, id=item_pk, checklist=checklist)
+    
+    if request.method == 'POST':
+        item.is_completed = not item.is_completed
+        item.completed_at = timezone.now() if item.is_completed else None
+        item.save()
+    
+    return redirect('checklist_public', token=token)
+
+@login_required
+def checklist_item_move_up(request, pk):
+    """Mover item del checklist una posición arriba"""
+    item = get_object_or_404(ChecklistItem, id=pk, checklist__created_by=request.user)
+    
+    if request.method == 'POST':
+        # Buscar el item anterior en el orden
+        previous_item = ChecklistItem.objects.filter(
+            checklist=item.checklist,
+            order__lt=item.order
+        ).order_by('-order').first()
+        
+        if previous_item:
+            # Intercambiar los valores de order
+            item.order, previous_item.order = previous_item.order, item.order
+            item.save(update_fields=['order'])
+            previous_item.save(update_fields=['order'])
+    
+    return redirect('checklist_detail', pk=item.checklist.id)
+
+@login_required
+def checklist_item_move_down(request, pk):
+    """Mover item del checklist una posición abajo"""
+    item = get_object_or_404(ChecklistItem, id=pk, checklist__created_by=request.user)
+    
+    if request.method == 'POST':
+        # Buscar el item siguiente en el orden
+        next_item = ChecklistItem.objects.filter(
+            checklist=item.checklist,
+            order__gt=item.order
+        ).order_by('order').first()
+        
+        if next_item:
+            # Intercambiar los valores de order
+            item.order, next_item.order = next_item.order, item.order
+            item.save(update_fields=['order'])
+            next_item.save(update_fields=['order'])
+    
+    return redirect('checklist_detail', pk=item.checklist.id)
+
+
+# ========== VISTAS DE TRANSACCIONES ==========
+
+@login_required
+def transaction_list(request):
+    """Lista de transacciones - accesible desde menú CG"""
+    from .models import Transaction
+    
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
+    
+    transactions = Transaction.objects.all().order_by('code')
+    
+    context = {
+        'transactions': transactions,
+    }
+    
+    return render(request, 'tickets/transaction_list.html', context)
+
+
+@login_required
+def transaction_create(request):
+    """Crear nueva transacción"""
+    from .models import Transaction
+    
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para crear transacciones.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        code = request.POST.get('code', '').strip().upper()
+        name = request.POST.get('name', '').strip()
+        url = request.POST.get('url', '').strip()
+        visible_for_all = request.POST.get('visible_for_all') == 'on'
+        description = request.POST.get('description', '').strip()
+        icon = request.POST.get('icon', 'bi-link-45deg').strip()
+        
+        if not all([code, name, url]):
+            messages.error(request, 'Los campos Código, Nombre y URL son obligatorios.')
+            return redirect('transaction_create')
+        
+        # Verificar que el código no exista
+        if Transaction.objects.filter(code=code).exists():
+            messages.error(request, f'Ya existe una transacción con el código {code}.')
+            return redirect('transaction_create')
+        
+        transaction = Transaction.objects.create(
+            code=code,
+            name=name,
+            url=url,
+            visible_for_all=visible_for_all,
+            description=description,
+            icon=icon,
+            created_by=request.user
+        )
+        
+        messages.success(request, f'Transacción {transaction.code} creada exitosamente.')
+        return redirect('transaction_list')
+    
+    return render(request, 'tickets/transaction_form.html', {'action': 'Crear'})
+
+
+@login_required
+def transaction_edit(request, pk):
+    """Editar transacción existente"""
+    from .models import Transaction
+    
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para editar transacciones.')
+        return redirect('home')
+    
+    transaction = get_object_or_404(Transaction, id=pk)
+    
+    if request.method == 'POST':
+        code = request.POST.get('code', '').strip().upper()
+        name = request.POST.get('name', '').strip()
+        url = request.POST.get('url', '').strip()
+        visible_for_all = request.POST.get('visible_for_all') == 'on'
+        description = request.POST.get('description', '').strip()
+        icon = request.POST.get('icon', 'bi-link-45deg').strip()
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if not all([code, name, url]):
+            messages.error(request, 'Los campos Código, Nombre y URL son obligatorios.')
+            return redirect('transaction_edit', pk=pk)
+        
+        # Verificar que el código no exista en otra transacción
+        if Transaction.objects.filter(code=code).exclude(id=pk).exists():
+            messages.error(request, f'Ya existe otra transacción con el código {code}.')
+            return redirect('transaction_edit', pk=pk)
+        
+        transaction.code = code
+        transaction.name = name
+        transaction.url = url
+        transaction.visible_for_all = visible_for_all
+        transaction.description = description
+        transaction.icon = icon
+        transaction.is_active = is_active
+        transaction.save()
+        
+        messages.success(request, f'Transacción {transaction.code} actualizada exitosamente.')
+        return redirect('transaction_list')
+    
+    context = {
+        'transaction': transaction,
+        'action': 'Editar'
+    }
+    
+    return render(request, 'tickets/transaction_form.html', context)
+
+
+@login_required
+def transaction_delete(request, pk):
+    """Eliminar transacción"""
+    from .models import Transaction
+    
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para eliminar transacciones.')
+        return redirect('home')
+    
+    transaction = get_object_or_404(Transaction, id=pk)
+    
+    if request.method == 'POST':
+        code = transaction.code
+        transaction.delete()
+        messages.success(request, f'Transacción {code} eliminada exitosamente.')
+        return redirect('transaction_list')
+    
+    context = {
+        'transaction': transaction,
+    }
+    
+    return render(request, 'tickets/transaction_delete.html', context)
+
+
+@login_required
+def transaction_search(request):
+    """API para buscar transacciones por código o nombre"""
+    from .models import Transaction
+    from django.http import JsonResponse
+    
+    query = request.GET.get('q', '').strip()
+    
+    # Filtrar transacciones según permisos del usuario
+    transactions_qs = Transaction.objects.filter(is_active=True)
+    
+    if not is_agent(request.user):
+        transactions_qs = transactions_qs.filter(visible_for_all=True)
+    
+    # Si hay query, buscar por código o nombre
+    if query:
+        transactions_qs = transactions_qs.filter(
+            Q(code__icontains=query) | Q(name__icontains=query)
+        )
+    
+    # Ordenar por código y limitar resultados
+    transactions_qs = transactions_qs.order_by('code')[:20]
+    
+    transactions = [{
+        'id': t.id,
+        'code': t.code,
+        'name': t.name,
+        'url': t.url,
+        'icon': t.icon,
+        'description': t.description
+    } for t in transactions_qs]
+    
+    return JsonResponse({'results': transactions})
+
+
+# ============================================
+# VIEWS PARA BASE DE CONOCIMIENTOS
+# ============================================
+
+@login_required
+def knowledge_base_list(request):
+    """Listar todas las bases de conocimiento"""
+    from .models import KnowledgeBase
+    
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para acceder a la base de conocimientos.')
+        return redirect('home')
+    
+    knowledge_bases = KnowledgeBase.objects.filter(is_active=True).order_by('-created_at')
+    
+    context = {
+        'knowledge_bases': knowledge_bases,
+    }
+    
+    return render(request, 'tickets/knowledge_base_list.html', context)
+
+
+@login_required
+def knowledge_base_detail(request, pk):
+    """Ver detalle de una base de conocimiento"""
+    from .models import KnowledgeBase
+    
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para acceder a la base de conocimientos.')
+        return redirect('home')
+    
+    knowledge_base = get_object_or_404(KnowledgeBase, id=pk)
+    
+    context = {
+        'knowledge_base': knowledge_base,
+    }
+    
+    return render(request, 'tickets/knowledge_base_detail.html', context)
+
+
+@login_required
+def knowledge_base_create(request):
+    """Crear nueva base de conocimiento"""
+    from .models import KnowledgeBase
+    
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para crear bases de conocimiento.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        source_code = request.POST.get('source_code', '').strip()
+        tags = request.POST.get('tags', '').strip()
+        category = request.POST.get('category', '').strip()
+        
+        if not title:
+            messages.error(request, 'El título es obligatorio.')
+            return redirect('knowledge_base_create')
+        
+        knowledge_base = KnowledgeBase.objects.create(
+            title=title,
+            description=description,
+            source_code=source_code,
+            tags=tags,
+            category=category,
+            created_by=request.user
+        )
+        
+        messages.success(request, f'Base de conocimiento "{title}" creada exitosamente.')
+        return redirect('knowledge_base_detail', pk=knowledge_base.id)
+    
+    context = {
+        'action': 'Crear'
+    }
+    
+    return render(request, 'tickets/knowledge_base_form.html', context)
+
+
+@login_required
+def knowledge_base_edit(request, pk):
+    """Editar base de conocimiento existente"""
+    from .models import KnowledgeBase
+    
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para editar bases de conocimiento.')
+        return redirect('home')
+    
+    knowledge_base = get_object_or_404(KnowledgeBase, id=pk)
+    
+    if request.method == 'POST':
+        knowledge_base.title = request.POST.get('title', '').strip()
+        knowledge_base.description = request.POST.get('description', '').strip()
+        knowledge_base.source_code = request.POST.get('source_code', '').strip()
+        knowledge_base.tags = request.POST.get('tags', '').strip()
+        knowledge_base.category = request.POST.get('category', '').strip()
+        knowledge_base.is_active = request.POST.get('is_active') == 'on'
+        
+        if not knowledge_base.title:
+            messages.error(request, 'El título es obligatorio.')
+            return redirect('knowledge_base_edit', pk=pk)
+        
+        knowledge_base.save()
+        messages.success(request, 'Base de conocimiento actualizada exitosamente.')
+        return redirect('knowledge_base_detail', pk=knowledge_base.id)
+    
+    context = {
+        'knowledge_base': knowledge_base,
+        'action': 'Editar'
+    }
+    
+    return render(request, 'tickets/knowledge_base_form.html', context)
+
+
+@login_required
+def knowledge_base_delete(request, pk):
+    """Eliminar base de conocimiento"""
+    from .models import KnowledgeBase
+    
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para eliminar bases de conocimiento.')
+        return redirect('home')
+    
+    knowledge_base = get_object_or_404(KnowledgeBase, id=pk)
+    
+    if request.method == 'POST':
+        title = knowledge_base.title
+        knowledge_base.delete()
+        messages.success(request, f'Base de conocimiento "{title}" eliminada exitosamente.')
+        return redirect('knowledge_base_list')
+    
+    context = {
+        'knowledge_base': knowledge_base,
+    }
+    
+    return render(request, 'tickets/knowledge_base_delete.html', context)
+
+
+@login_required
+def knowledge_base_search(request):
+    """API para buscar en la base de conocimientos"""
+    from .models import KnowledgeBase
+    from django.http import JsonResponse
+    
+    query = request.GET.get('q', '').strip()
+    
+    # Filtrar solo bases de conocimiento activas
+    knowledge_bases_qs = KnowledgeBase.objects.filter(is_active=True)
+    
+    # Si hay query, buscar por título, descripción o tags
+    if query:
+        knowledge_bases_qs = knowledge_bases_qs.filter(
+            Q(title__icontains=query) | 
+            Q(description__icontains=query) | 
+            Q(tags__icontains=query) |
+            Q(category__icontains=query)
+        )
+    
+    # Ordenar alfabéticamente por título y limitar resultados
+    knowledge_bases_qs = knowledge_bases_qs.order_by('title')[:20]
+    
+    knowledge_bases = [{
+        'id': kb.id,
+        'title': kb.title,
+        'description': kb.description[:200] if kb.description else '',
+        'category': kb.category,
+        'tags': kb.tags,
+        'has_code': bool(kb.source_code)
+    } for kb in knowledge_bases_qs]
+    
+    return JsonResponse({'results': knowledge_bases})

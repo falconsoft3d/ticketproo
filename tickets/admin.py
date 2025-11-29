@@ -27,7 +27,8 @@ from .models import (
     PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
     DynamicTable, DynamicTableField, DynamicTableRecord, SavedApiRequest, PublicAIMessageShare,
     FunctionalRequirementDocument, FunctionalRequirement, FunctionalRequirementDocumentView,
-    FunctionalRequirementComment
+    FunctionalRequirementComment, AccessGroup, AccessLink, TaskPlan, TaskPlanDay, TaskPlanItem,
+    Checklist, ChecklistItem, Transaction, KnowledgeBase
 )
 
 # Configuración del sitio de administración
@@ -5950,3 +5951,483 @@ class FunctionalRequirementCommentAdmin(admin.ModelAdmin):
     
     def has_add_permission(self, request):
         return False
+
+
+# ============= ADMIN GRUPOS DE ACCESOS =============
+
+@admin.register(AccessGroup)
+class AccessGroupAdmin(admin.ModelAdmin):
+    list_display = ('title', 'created_by', 'is_public', 'link_count', 'created_at')
+    list_filter = ('is_public', 'created_at')
+    search_fields = ('title', 'description', 'created_by__username')
+    readonly_fields = ('share_token', 'created_at')
+    ordering = ('order', '-created_at')
+    
+    fieldsets = (
+        ('Información del Grupo', {
+            'fields': ('title', 'description', 'created_by', 'order')
+        }),
+        ('Acceso Público', {
+            'fields': ('is_public', 'share_token')
+        }),
+        ('Fechas', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def link_count(self, obj):
+        count = obj.links.count()
+        return format_html('<span class="badge bg-primary">{}</span>', count)
+    link_count.short_description = 'Enlaces'
+
+
+@admin.register(AccessLink)
+class AccessLinkAdmin(admin.ModelAdmin):
+    list_display = ('title', 'group', 'url_preview', 'color_badge', 'icon_preview', 'is_active', 'created_at')
+    list_filter = ('is_active', 'color', 'group', 'created_at')
+    search_fields = ('title', 'url', 'description', 'group__title')
+    readonly_fields = ('created_at',)
+    list_editable = ('is_active',)
+    ordering = ('group', 'order', 'title')
+    
+    fieldsets = (
+        ('Información del Enlace', {
+            'fields': ('group', 'title', 'url', 'description')
+        }),
+        ('Apariencia', {
+            'fields': ('icon', 'color', 'order')
+        }),
+        ('Estado', {
+            'fields': ('is_active',)
+        }),
+        ('Fechas', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def url_preview(self, obj):
+        url_short = obj.url[:50] + '...' if len(obj.url) > 50 else obj.url
+        return format_html('<a href="{}" target="_blank">{}</a>', obj.url, url_short)
+    url_preview.short_description = 'URL'
+    
+    def color_badge(self, obj):
+        colors = {
+            'primary': '#0d6efd',
+            'success': '#198754',
+            'danger': '#dc3545',
+            'warning': '#ffc107',
+            'info': '#0dcaf0',
+            'secondary': '#6c757d',
+            'dark': '#212529'
+        }
+        color_hex = colors.get(obj.color, '#0d6efd')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 5px;">{}</span>',
+            color_hex, obj.color
+        )
+    color_badge.short_description = 'Color'
+    
+    def icon_preview(self, obj):
+        return format_html('<i class="bi bi-{}"></i> {}', obj.icon, obj.icon)
+    icon_preview.short_description = 'Icono'
+
+
+@admin.register(TaskPlan)
+class TaskPlanAdmin(admin.ModelAdmin):
+    """Administración de planes de tareas"""
+    
+    list_display = (
+        'title',
+        'created_by',
+        'day_count',
+        'task_count',
+        'public_badge',
+        'created_at'
+    )
+    
+    list_filter = (
+        'is_public',
+        'created_at',
+        'created_by'
+    )
+    
+    search_fields = (
+        'title',
+        'description',
+        'created_by__username',
+        'created_by__first_name',
+        'created_by__last_name'
+    )
+    
+    readonly_fields = ('share_token', 'created_at', 'updated_at', 'public_url_preview')
+    
+    fieldsets = (
+        ('Información del Plan', {
+            'fields': ('title', 'description', 'created_by')
+        }),
+        ('Visibilidad', {
+            'fields': ('is_public', 'share_token', 'public_url_preview')
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def day_count(self, obj):
+        count = obj.days.count()
+        return format_html('<span class="badge badge-primary">{} día{}</span>', count, 's' if count != 1 else '')
+    day_count.short_description = 'Días'
+    
+    def task_count(self, obj):
+        count = sum(day.tasks.count() for day in obj.days.all())
+        return format_html('<span class="badge badge-info">{} tarea{}</span>', count, 's' if count != 1 else '')
+    task_count.short_description = 'Tareas'
+    
+    def public_badge(self, obj):
+        if obj.is_public:
+            return format_html('<span class="badge badge-success"><i class="bi bi-globe"></i> Público</span>')
+        return format_html('<span class="badge badge-secondary"><i class="bi bi-lock"></i> Privado</span>')
+    public_badge.short_description = 'Visibilidad'
+    
+    def public_url_preview(self, obj):
+        if obj.is_public:
+            url = obj.get_public_url()
+            return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+        return '-'
+    public_url_preview.short_description = 'URL Pública'
+
+
+@admin.register(TaskPlanDay)
+class TaskPlanDayAdmin(admin.ModelAdmin):
+    """Administración de días de planes"""
+    
+    list_display = (
+        'title',
+        'plan',
+        'order',
+        'task_count',
+        'created_at'
+    )
+    
+    list_filter = (
+        'plan',
+        'created_at'
+    )
+    
+    search_fields = (
+        'title',
+        'description',
+        'plan__title'
+    )
+    
+    readonly_fields = ('created_at',)
+    
+    fieldsets = (
+        ('Información del Día', {
+            'fields': ('plan', 'title', 'description', 'order')
+        }),
+        ('Fechas', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def task_count(self, obj):
+        count = obj.tasks.count()
+        return format_html('<span class="badge badge-info">{} tarea{}</span>', count, 's' if count != 1 else '')
+    task_count.short_description = 'Tareas'
+
+
+@admin.register(TaskPlanItem)
+class TaskPlanItemAdmin(admin.ModelAdmin):
+    """Administración de tareas de días"""
+    
+    list_display = (
+        'title',
+        'day',
+        'order',
+        'priority_badge',
+        'estimated_hours',
+        'completion_badge',
+        'created_at'
+    )
+    
+    list_filter = (
+        'priority',
+        'is_completed',
+        'day__plan',
+        'created_at'
+    )
+    
+    search_fields = (
+        'title',
+        'description',
+        'day__title',
+        'day__plan__title'
+    )
+    
+    readonly_fields = ('created_at', 'completed_at')
+    
+    fieldsets = (
+        ('Información de la Tarea', {
+            'fields': ('day', 'title', 'description', 'order')
+        }),
+        ('Configuración', {
+            'fields': ('priority', 'estimated_hours')
+        }),
+        ('Estado', {
+            'fields': ('is_completed', 'completed_at')
+        }),
+        ('Fechas', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def priority_badge(self, obj):
+        colors = {
+            'low': 'secondary',
+            'medium': 'info',
+            'high': 'warning',
+            'critical': 'danger'
+        }
+        labels = {
+            'low': 'Baja',
+            'medium': 'Media',
+            'high': 'Alta',
+            'critical': 'Crítica'
+        }
+        return format_html(
+            '<span class="badge badge-{}">{}</span>',
+            colors.get(obj.priority, 'secondary'),
+            labels.get(obj.priority, obj.priority)
+        )
+    priority_badge.short_description = 'Prioridad'
+    
+    def completion_badge(self, obj):
+        if obj.is_completed:
+            return format_html('<span class="badge badge-success"><i class="bi bi-check-circle"></i> Completada</span>')
+        return format_html('<span class="badge badge-warning"><i class="bi bi-clock"></i> Pendiente</span>')
+    completion_badge.short_description = 'Estado'
+
+
+# ===================================
+# ADMIN DE CHECKLIST
+# ===================================
+
+@admin.register(Checklist)
+class ChecklistAdmin(admin.ModelAdmin):
+    """Administración de checklists"""
+    
+    list_display = (
+        'title',
+        'company',
+        'created_by',
+        'item_count',
+        'completion_percentage',
+        'public_badge',
+        'created_at'
+    )
+    
+    list_filter = (
+        'is_public',
+        'created_by',
+        'created_at'
+    )
+    
+    search_fields = (
+        'title',
+        'company',
+        'description',
+        'created_by__username'
+    )
+    
+    readonly_fields = ('share_token', 'created_at', 'updated_at', 'public_url_preview')
+    
+    fieldsets = (
+        ('Información del Checklist', {
+            'fields': ('title', 'company', 'description')
+        }),
+        ('Configuración', {
+            'fields': ('created_by', 'is_public', 'share_token', 'public_url_preview')
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def item_count(self, obj):
+        count = obj.items.count()
+        return format_html(
+            '<span class="badge badge-primary">{} item{}</span>',
+            count,
+            's' if count != 1 else ''
+        )
+    item_count.short_description = 'Items'
+    
+    def completion_percentage(self, obj):
+        percentage = obj.get_completion_percentage()
+        color = 'success' if percentage == 100 else 'info' if percentage >= 50 else 'warning'
+        return format_html(
+            '<span class="badge badge-{}">{} %</span>',
+            color,
+            percentage
+        )
+    completion_percentage.short_description = 'Completado'
+    
+    def public_badge(self, obj):
+        if obj.is_public:
+            return format_html('<span class="badge badge-success"><i class="bi bi-globe"></i> Público</span>')
+        return format_html('<span class="badge badge-secondary"><i class="bi bi-lock"></i> Privado</span>')
+    public_badge.short_description = 'Visibilidad'
+    
+    def public_url_preview(self, obj):
+        if obj.is_public and obj.share_token:
+            url = obj.get_public_url()
+            return format_html(
+                '<a href="{}" target="_blank">{}</a>',
+                url,
+                url
+            )
+        return '-'
+    public_url_preview.short_description = 'URL Pública'
+
+
+@admin.register(ChecklistItem)
+class ChecklistItemAdmin(admin.ModelAdmin):
+    """Administración de items del checklist"""
+    
+    list_display = (
+        'title',
+        'checklist',
+        'order',
+        'completion_badge',
+        'created_at'
+    )
+    
+    list_filter = (
+        'is_completed',
+        'checklist',
+        'created_at'
+    )
+    
+    search_fields = (
+        'title',
+        'description',
+        'checklist__title'
+    )
+    
+    readonly_fields = ('created_at', 'completed_at')
+    
+    fieldsets = (
+        ('Información del Item', {
+            'fields': ('checklist', 'title', 'description', 'order')
+        }),
+        ('Estado', {
+            'fields': ('is_completed', 'completed_at')
+        }),
+        ('Fechas', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def completion_badge(self, obj):
+        if obj.is_completed:
+            return format_html('<span class="badge badge-success"><i class="bi bi-check-circle"></i> Completada</span>')
+        return format_html('<span class="badge badge-warning"><i class="bi bi-clock"></i> Pendiente</span>')
+    completion_badge.short_description = 'Estado'
+
+
+@admin.register(Transaction)
+class TransactionAdmin(admin.ModelAdmin):
+    """Admin para transacciones rápidas"""
+    list_display = ('code', 'name', 'url_preview', 'visibility_badge', 'status_badge', 'created_by', 'created_at')
+    list_filter = ('visible_for_all', 'is_active', 'created_at')
+    search_fields = ('code', 'name', 'url', 'description')
+    readonly_fields = ('created_at', 'updated_at')
+    list_per_page = 50
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('code', 'name', 'url', 'icon')
+        }),
+        ('Descripción', {
+            'fields': ('description',)
+        }),
+        ('Configuración', {
+            'fields': ('visible_for_all', 'is_active')
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def url_preview(self, obj):
+        return format_html(
+            '<a href="{}" target="_blank" class="text-primary"><i class="bi bi-box-arrow-up-right"></i> {}</a>',
+            obj.url,
+            obj.url[:50] + '...' if len(obj.url) > 50 else obj.url
+        )
+    url_preview.short_description = 'URL'
+    
+    def visibility_badge(self, obj):
+        if obj.visible_for_all:
+            return format_html('<span class="badge badge-success"><i class="bi bi-globe"></i> Todos</span>')
+        return format_html('<span class="badge badge-warning"><i class="bi bi-shield-lock"></i> Solo Agentes</span>')
+    visibility_badge.short_description = 'Visibilidad'
+    
+    def status_badge(self, obj):
+        if obj.is_active:
+            return format_html('<span class="badge badge-success">Activa</span>')
+        return format_html('<span class="badge badge-secondary">Inactiva</span>')
+    status_badge.short_description = 'Estado'
+
+
+@admin.register(KnowledgeBase)
+class KnowledgeBaseAdmin(admin.ModelAdmin):
+    """Admin para base de conocimientos"""
+    list_display = ('title', 'category_badge', 'has_code_badge', 'status_badge', 'created_by', 'updated_at')
+    list_filter = ('is_active', 'category', 'created_at')
+    search_fields = ('title', 'description', 'tags', 'category')
+    readonly_fields = ('created_at', 'updated_at')
+    list_per_page = 50
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('title', 'category', 'tags')
+        }),
+        ('Contenido', {
+            'fields': ('description', 'source_code')
+        }),
+        ('Configuración', {
+            'fields': ('is_active',)
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def category_badge(self, obj):
+        if obj.category:
+            return format_html('<span class="badge badge-secondary">{}</span>', obj.category)
+        return format_html('<span class="text-muted">Sin categoría</span>')
+    category_badge.short_description = 'Categoría'
+    
+    def has_code_badge(self, obj):
+        if obj.source_code:
+            return format_html('<span class="badge badge-info"><i class="bi bi-code-slash"></i> Sí</span>')
+        return format_html('<span class="text-muted">No</span>')
+    has_code_badge.short_description = 'Código'
+    
+    def status_badge(self, obj):
+        if obj.is_active:
+            return format_html('<span class="badge badge-success">Activo</span>')
+        return format_html('<span class="badge badge-secondary">Inactivo</span>')
+    status_badge.short_description = 'Estado'

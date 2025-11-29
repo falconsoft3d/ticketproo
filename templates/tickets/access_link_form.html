@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ link.title|default:"Nuevo Enlace" }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-{% if link %}pencil{% else %}plus-circle{% endif %}"></i>
+                        {% if link %}Editar Enlace{% else %}Agregar Nuevo Enlace{% endif %}
+                    </h4>
+                    <small>Grupo: {{ group.title }}</small>
+                </div>
+
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título del Enlace <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{{ link.title|default:'' }}" required maxlength="200"
+                                   placeholder="Ej: Panel de Control, Documentación, Soporte">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="url" class="form-label">URL <span class="text-danger">*</span></label>
+                            <input type="url" class="form-control" id="url" name="url" 
+                                   value="{{ link.url|default:'' }}" required maxlength="500"
+                                   placeholder="https://ejemplo.com">
+                            <small class="text-muted">URL completa incluyendo https://</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="2" placeholder="Descripción breve (opcional)">{{ link.description|default:'' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="icon" class="form-label">Icono Bootstrap</label>
+                                <select class="form-select" id="icon" name="icon">
+                                    <option value="bi-link-45deg" {% if link.icon == 'bi-link-45deg' or not link %}selected{% endif %}>🔗 Enlace</option>
+                                    <option value="bi-house-door" {% if link.icon == 'bi-house-door' %}selected{% endif %}>🏠 Casa</option>
+                                    <option value="bi-gear" {% if link.icon == 'bi-gear' %}selected{% endif %}>⚙️ Configuración</option>
+                                    <option value="bi-book" {% if link.icon == 'bi-book' %}selected{% endif %}>📖 Documentación</option>
+                                    <option value="bi-headset" {% if link.icon == 'bi-headset' %}selected{% endif %}>🎧 Soporte</option>
+                                    <option value="bi-graph-up" {% if link.icon == 'bi-graph-up' %}selected{% endif %}>📈 Estadísticas</option>
+                                    <option value="bi-cloud" {% if link.icon == 'bi-cloud' %}selected{% endif %}>☁️ Nube</option>
+                                    <option value="bi-folder2-open" {% if link.icon == 'bi-folder2-open' %}selected{% endif %}>📂 Carpeta</option>
+                                    <option value="bi-terminal" {% if link.icon == 'bi-terminal' %}selected{% endif %}>💻 Terminal</option>
+                                    <option value="bi-tools" {% if link.icon == 'bi-tools' %}selected{% endif %}>🔧 Herramientas</option>
+                                    <option value="bi-shield-check" {% if link.icon == 'bi-shield-check' %}selected{% endif %}>🛡️ Seguridad</option>
+                                    <option value="bi-people" {% if link.icon == 'bi-people' %}selected{% endif %}>👥 Usuarios</option>
+                                    <option value="bi-envelope" {% if link.icon == 'bi-envelope' %}selected{% endif %}>✉️ Email</option>
+                                    <option value="bi-calendar" {% if link.icon == 'bi-calendar' %}selected{% endif %}>📅 Calendario</option>
+                                    <option value="bi-chat-dots" {% if link.icon == 'bi-chat-dots' %}selected{% endif %}>💬 Chat</option>
+                                    <option value="bi-camera-video" {% if link.icon == 'bi-camera-video' %}selected{% endif %}>📹 Video</option>
+                                    <option value="bi-bell" {% if link.icon == 'bi-bell' %}selected{% endif %}>🔔 Notificaciones</option>
+                                    <option value="bi-star" {% if link.icon == 'bi-star' %}selected{% endif %}>⭐ Favorito</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="color" class="form-label">Color del Botón</label>
+                                <select class="form-select" id="color" name="color">
+                                    <option value="primary" {% if link.color == 'primary' or not link %}selected{% endif %}>Azul (Primary)</option>
+                                    <option value="success" {% if link.color == 'success' %}selected{% endif %}>Verde (Success)</option>
+                                    <option value="danger" {% if link.color == 'danger' %}selected{% endif %}>Rojo (Danger)</option>
+                                    <option value="warning" {% if link.color == 'warning' %}selected{% endif %}>Amarillo (Warning)</option>
+                                    <option value="info" {% if link.color == 'info' %}selected{% endif %}>Celeste (Info)</option>
+                                    <option value="secondary" {% if link.color == 'secondary' %}selected{% endif %}>Gris (Secondary)</option>
+                                    <option value="dark" {% if link.color == 'dark' %}selected{% endif %}>Negro (Dark)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Vista Previa:</strong>
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-{{ link.color|default:'primary' }} disabled">
+                                    <i class="bi bi-{{ link.icon|default:'bi-link-45deg' }}"></i>
+                                    {{ link.title|default:"Título del Enlace" }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i>
+                                {% if link %}Actualizar{% else %}Agregar{% endif %} Enlace
+                            </button>
+                            <a href="{% url 'access_group_detail' group.id %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Actualizar vista previa en tiempo real
+document.getElementById('title').addEventListener('input', updatePreview);
+document.getElementById('icon').addEventListener('change', updatePreview);
+document.getElementById('color').addEventListener('change', updatePreview);
+
+function updatePreview() {
+    const title = document.getElementById('title').value || 'Título del Enlace';
+    const icon = document.getElementById('icon').value;
+    const color = document.getElementById('color').value;
+    
+    const preview = document.querySelector('.alert-info button');
+    preview.className = `btn btn-${color} disabled`;
+    preview.innerHTML = `<i class="bi bi-${icon}"></i> ${title}`;
+}
+</script>
+{% endblock %}

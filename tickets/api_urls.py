@@ -7,7 +7,7 @@ from .api_views import (
     active_users_count, active_users_list, open_tickets_count, direct_ai_chat,
     system_info_api, short_url_stats_api, upcoming_events_list, web_counter_track,
     web_counter_stats, quick_create_task, pending_tasks_count, get_all_users_for_tasks,
-    dynamic_table_api_list, dynamic_table_api_detail, my_pending_work_orders
+    dynamic_table_api_list, dynamic_table_api_detail, my_pending_work_orders, qa_ratings_count
 )
 
 # Router para los ViewSets
@@ -45,6 +45,9 @@ api_urlpatterns = [
     
     # URLs de tickets
     path('open-tickets/count/', open_tickets_count, name='api-open-tickets-count'),
+    
+    # URLs de QA ratings
+    path('qa-ratings/count/', qa_ratings_count, name='api-qa-ratings-count'),
     
     # URLs de chat directo con IA
     path('ai-chat/direct/', direct_ai_chat, name='api-direct-ai-chat'),

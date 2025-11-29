@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'checklist_list' %}">Checklists</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'checklist_detail' checklist.id %}">{{ checklist.title }}</a></li>
+                    <li class="breadcrumb-item active">{% if item %}Editar{% else %}Nueva{% endif %} Tarea</li>
+                </ol>
+            </nav>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-{% if item %}pencil{% else %}plus-circle{% endif %}"></i>
+                        {{ page_title }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label fw-bold">
+                                {{ form.title.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="text-danger small mt-1">{{ form.title.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">
+                                {{ form.description.label }}
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small mt-1">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.cost.id_for_label }}" class="form-label fw-bold">
+                                {{ form.cost.label }}
+                            </label>
+                            <div class="input-group">
+                                {{ form.cost }}
+                                <span class="input-group-text">€</span>
+                            </div>
+                            {% if form.cost.errors %}
+                                <div class="text-danger small mt-1">{{ form.cost.errors }}</div>
+                            {% endif %}
+                            <small class="text-muted">Deja en blanco si la tarea no tiene costo</small>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Guardar
+                            </button>
+                            <a href="{% url 'checklist_detail' checklist.id %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

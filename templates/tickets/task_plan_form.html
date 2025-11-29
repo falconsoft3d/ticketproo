@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ plan.title|default:"Nuevo Plan" }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-{% if plan %}pencil{% else %}plus-circle{% endif %}"></i>
+                        {% if plan %}Editar Plan{% else %}Crear Nuevo Plan{% endif %}
+                    </h4>
+                </div>
+
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título del Plan <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{{ plan.title|default:'' }}" required maxlength="200"
+                                   placeholder="Ej: Plan de Entrenamiento, Plan Semanal de Trabajo">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="3" placeholder="Descripción opcional del plan">{{ plan.description|default:'' }}</textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i>
+                                {% if plan %}Actualizar{% else %}Crear{% endif %} Plan
+                            </button>
+                            <a href="{% if plan %}{% url 'task_plan_detail' plan.id %}{% else %}{% url 'task_plan_list' %}{% endif %}" 
+                               class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

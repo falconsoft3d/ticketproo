@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Plan - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Confirmar Eliminación
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle"></i>
+                        Esta acción no se puede deshacer.
+                    </div>
+
+                    <h5>¿Estás seguro de que deseas eliminar este plan?</h5>
+                    
+                    <div class="card mt-3 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title"><strong>{{ plan.title }}</strong></h6>
+                            {% if plan.description %}
+                            <p class="card-text text-muted">{{ plan.description }}</p>
+                            {% endif %}
+                            <div class="mt-2">
+                                <span class="badge bg-primary">
+                                    {{ plan.days.count }} día{{ plan.days.count|pluralize:",s" }}
+                                </span>
+                                <span class="badge bg-info">
+                                    {% with total_tasks=plan.days.all|length %}
+                                    {{ total_tasks }} tarea{{ total_tasks|pluralize:",s" }}
+                                    {% endwith %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-danger mt-3 mb-0">
+                        <strong>Se eliminarán:</strong>
+                    </p>
+                    <ul class="text-danger">
+                        <li>El plan de tareas</li>
+                        <li>Todos los días asociados</li>
+                        <li>Todas las tareas de cada día</li>
+                    </ul>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sí, eliminar permanentemente
+                            </button>
+                            <a href="{% url 'task_plan_detail' plan.id %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Grupos de Accesos - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .group-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #0d6efd;
+    }
+    .group-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .badge-public {
+        background-color: #28a745;
+    }
+    .badge-private {
+        background-color: #6c757d;
+    }
+    .link-count {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1><i class="bi bi-collection"></i> Grupos de Accesos</h1>
+                <a href="{% url 'access_group_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Crear Grupo
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if groups %}
+    <div class="row">
+        {% for group in groups %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card group-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-folder2-open text-primary"></i>
+                            {{ group.title }}
+                        </h5>
+                        <span class="badge {% if group.is_public %}badge-public{% else %}badge-private{% endif %}">
+                            {% if group.is_public %}
+                                <i class="bi bi-globe"></i> Público
+                            {% else %}
+                                <i class="bi bi-lock"></i> Privado
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    {% if group.description %}
+                    <p class="card-text text-muted small">{{ group.description|truncatewords:15 }}</p>
+                    {% endif %}
+
+                    <div class="link-count mb-3">
+                        <i class="bi bi-link-45deg"></i>
+                        {{ group.links.count }} enlace{{ group.links.count|pluralize:",s" }}
+                    </div>
+
+                    {% if group.is_public %}
+                    <div class="mb-3">
+                        <small class="text-muted">URL Pública:</small>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" readonly 
+                                   value="{{ request.scheme }}://{{ request.get_host }}{{ group.get_public_url }}"
+                                   id="url-{{ group.id }}">
+                            <button class="btn btn-outline-secondary" type="button" 
+                                    onclick="copyToClipboard('url-{{ group.id }}')">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'access_group_detail' group.id %}" 
+                           class="btn btn-sm btn-outline-primary flex-fill">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                        <a href="{% url 'access_group_edit' group.id %}" 
+                           class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'access_group_delete' group.id %}" 
+                           class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-footer text-muted small">
+                    Creado: {{ group.created_at|date:"d/m/Y H:i" }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
+        <h4>No hay grupos de accesos creados</h4>
+        <p>Crea tu primer grupo para organizar enlaces de acceso rápido</p>
+        <a href="{% url 'access_group_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Crear Primer Grupo
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+    const input = document.getElementById(elementId);
+    input.select();
+    document.execCommand('copy');
+    
+    // Mostrar feedback
+    const button = event.target.closest('button');
+    const originalIcon = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i>';
+    setTimeout(() => {
+        button.innerHTML = originalIcon;
+    }, 2000);
+}
+</script>
+{% endblock %}

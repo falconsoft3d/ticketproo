@@ -394,6 +394,12 @@
                                     <i class="bi bi-qr-code"></i> Generador QR
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item {% if 'knowledge_base' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'knowledge_base_list' %}">
+                                    <i class="bi bi-lightbulb"></i> Base de Conocimientos
+                                </a>
+                            </li>
                             
                             <!-- Opciones adicionales para Agentes y Profesores -->
                             {% if user|can_manage_courses %}
@@ -771,6 +777,14 @@
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Navegación</li>
+                            <li>
+                                <a class="dropdown-item {% if 'transaction' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'transaction_list' %}">
+                                    <i class="bi bi-search"></i> Transacciones Rápidas
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
                             <li class="dropdown-header">Generadores</li>
                             <!-- Aquí se pueden agregar futuros generadores de código -->
                             <li><hr class="dropdown-divider"></li>
@@ -831,6 +845,28 @@
                                 <a class="dropdown-item {% if 'monthly_cumplimiento' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'monthly_cumplimiento_list' %}">
                                     <i class="fas fa-calendar-check"></i> Cumplimiento Mensual
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Accesos</li>
+                            <li>
+                                <a class="dropdown-item {% if 'access_group' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'access_group_list' %}">
+                                    <i class="bi bi-collection"></i> Grupo de Accesos
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Planificación</li>
+                            <li>
+                                <a class="dropdown-item {% if 'task_plan' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'task_plan_list' %}">
+                                    <i class="bi bi-calendar-week"></i> Planificación de Tareas
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'checklist' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'checklist_list' %}">
+                                    <i class="bi bi-check2-square"></i> Checklists
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
@@ -1547,11 +1583,22 @@
         <i class="bi bi-sticky"></i>
     </button>
 
-    <!-- Botón flotante para eventos (izquierda) - Solo para agentes -->
+    <!-- Botón flotante para transacciones (izquierda superior) -->
     {% load tickets_tags %}
     {% if user.is_authenticated and user|is_agent %}
-    <button id="eventsSidebarToggle" class="btn btn-primary shadow-lg" 
-            style="position: fixed; left: 0; top: calc(50% - 145px); transform: translateY(-50%); z-index: 1050; 
+    <button id="transactionToggle" class="btn btn-primary shadow-lg floating-button-left" 
+            style="position: fixed; left: 0; top: calc(50% - 240px); transform: translateY(-50%); z-index: 1050; 
+                   border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                   border-left: none; transition: all 0.3s ease;"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
+            title="Transacciones Rápidas">
+        <i class="bi bi-search" style="font-size: 1.2em;"></i>
+    </button>
+
+    <!-- Botón flotante para eventos (izquierda) - Solo para agentes -->
+    <button id="eventsSidebarToggle" class="btn btn-primary shadow-lg floating-button-left" 
+            style="position: fixed; left: 0; top: calc(50% - 160px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-left: none; transition: all 0.3s ease;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
@@ -1563,8 +1610,8 @@
     </button>
     
     <!-- Botón flotante para órdenes de trabajo pendientes (izquierda) - Solo para agentes -->
-    <button id="workOrdersSidebarToggle" class="btn shadow-lg" 
-            style="position: fixed; left: 0; top: calc(50% - 65px); transform: translateY(-50%); z-index: 1050; 
+    <button id="workOrdersSidebarToggle" class="btn shadow-lg floating-button-left" 
+            style="position: fixed; left: 0; top: calc(50% - 80px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-left: none; transition: all 0.3s ease; background-color: #ff6b6b; color: white;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'; this.style.backgroundColor = '#ff5252'"
@@ -1576,20 +1623,23 @@
         </span>
     </button>
 
-    <!-- Botón flotante para calificar servicio (izquierda) -->
-    <a id="ratingToggle" href="{% url 'qa_rating_public' %}" class="btn btn-warning shadow-lg" 
-            style="position: fixed; left: 0; top: calc(50% + 15px); transform: translateY(-50%); z-index: 1050; 
+    <!-- Botón flotante para tareas rápidas (izquierda) - Solo para agentes -->
+    <button id="quickTaskToggle" class="btn btn-success shadow-lg floating-button-left" 
+            style="position: fixed; left: 0; top: calc(50% + 0px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-left: none; transition: all 0.3s ease;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
-            title="Calificar Nuestro Servicio">
-        <span style="font-size: 24px;">😊</span>
-    </a>
+            title="Crear Tarea Rápida">
+        <i class="bi bi-clipboard-check-fill"></i>
+        <span id="pendingTasksBadge" class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em;">
+            0
+        </span>
+    </button>
     
-    <!-- Botón flotante para Red Social (izquierda) -->
-    <a id="socialFeedToggle" href="{% url 'social_feed' %}" class="btn btn-info shadow-lg" 
-            style="position: fixed; left: 0; top: calc(50% - 305px); transform: translateY(-50%); z-index: 1050; 
+    <!-- Botón flotante para Red Social (izquierda) - Solo para agentes -->
+    <a id="socialFeedToggle" href="{% url 'social_feed' %}" class="btn btn-info shadow-lg floating-button-left" 
+            style="position: fixed; left: 0; top: calc(50% + 80px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-left: none; transition: all 0.3s ease;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
@@ -1601,18 +1651,29 @@
         </span>
     </a>
     
-    <!-- Botón flotante para tareas rápidas (izquierda) - Solo para agentes -->
-    <button id="quickTaskToggle" class="btn btn-success shadow-lg" 
-            style="position: fixed; left: 0; top: calc(50% - 225px); transform: translateY(-50%); z-index: 1050; 
+    <!-- Botón flotante para calificar servicio (izquierda) - Solo para agentes -->
+    <a id="ratingToggle" href="{% url 'qa_rating_public' %}" class="btn btn-warning shadow-lg floating-button-left" 
+            style="position: fixed; left: 0; top: calc(50% + 160px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-left: none; transition: all 0.3s ease;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
-            title="Crear Tarea Rápida">
-        <i class="bi bi-clipboard-check-fill"></i>
-        <span id="pendingTasksBadge" class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em;">
+            title="Calificar Nuestro Servicio">
+        <span style="font-size: 24px;">😊</span>
+        <span id="qaRatingsBadge" class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em; display: none;">
             0
         </span>
+    </a>
+    
+    <!-- Botón flotante para Base de Conocimientos (izquierda) - Solo para agentes -->
+    <button id="knowledgeBaseToggle" class="btn shadow-lg floating-button-left" 
+            style="position: fixed; left: 0; top: calc(50% + 240px); transform: translateY(-50%); z-index: 1050; 
+                   border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                   border-left: none; transition: all 0.3s ease; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
+            title="Base de Conocimientos">
+        <i class="bi bi-lightbulb-fill"></i>
     </button>
     {% endif %}
 
@@ -1750,6 +1811,92 @@
             <a href="{% url 'work_order_list' %}" class="btn w-100 text-white" style="background-color: #ff6b6b;">
                 <i class="bi bi-list-check me-2"></i>
                 Ver Todas las Órdenes
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra lateral para transacciones -->
+    <div id="transactionsSidebar" class="shadow-lg" 
+         style="position: fixed; left: -400px; top: 0; width: 400px; height: 100vh; 
+                background: white; z-index: 1040; transition: left 0.3s ease; border-right: 3px solid #0d6efd;
+                overflow: hidden; display: flex; flex-direction: column;">
+        
+        <!-- Header de la barra lateral -->
+        <div class="p-3 bg-primary text-white d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <i class="bi bi-search me-2"></i>
+                    Transacciones Rápidas
+                </h6>
+                <small class="opacity-75">Accesos directos del sistema</small>
+            </div>
+            <button id="closeTransactionsSidebar" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Buscador -->
+        <div class="p-3 bg-light border-bottom">
+            <input type="text" 
+                   id="transactionSearchSidebar" 
+                   class="form-control" 
+                   placeholder="Buscar por código o nombre..."
+                   autocomplete="off">
+        </div>
+
+        <!-- Contenedor del listado (con scroll) -->
+        <div id="transactionsListSidebar" class="flex-grow-1 overflow-auto p-3">
+            <!-- Aquí se cargarán las transacciones dinámicamente -->
+        </div>
+
+        <!-- Footer con botón para gestionar -->
+        <div class="p-3 border-top bg-light">
+            <a href="{% url 'transaction_list' %}" class="btn btn-primary w-100">
+                <i class="bi bi-gear me-2"></i>
+                Gestionar Transacciones
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra lateral para Base de Conocimientos -->
+    <div id="knowledgeBaseSidebar" class="shadow-lg" 
+         style="position: fixed; left: -400px; top: 0; width: 400px; height: 100vh; 
+                background: white; z-index: 1040; transition: left 0.3s ease; border-right: 3px solid #f5576c;
+                overflow: hidden; display: flex; flex-direction: column;">
+        
+        <!-- Header de la barra lateral -->
+        <div class="p-3 text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div>
+                <h6 class="mb-0">
+                    <i class="bi bi-lightbulb-fill me-2"></i>
+                    Base de Conocimientos
+                </h6>
+                <small class="opacity-75">Busca conceptos y código</small>
+            </div>
+            <button id="closeKnowledgeBaseSidebar" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Buscador -->
+        <div class="p-3 bg-light border-bottom">
+            <input type="text" 
+                   id="knowledgeBaseSearchSidebar" 
+                   class="form-control" 
+                   placeholder="Buscar por título, categoría o tags..."
+                   autocomplete="off">
+        </div>
+
+        <!-- Contenedor del listado (con scroll) -->
+        <div id="knowledgeBaseListSidebar" class="flex-grow-1 overflow-auto p-3">
+            <!-- Aquí se cargarán los conocimientos dinámicamente -->
+        </div>
+
+        <!-- Footer con botón para gestionar -->
+        <div class="p-3 border-top bg-light">
+            <a href="{% url 'knowledge_base_list' %}" class="btn w-100 text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <i class="bi bi-gear me-2"></i>
+                Gestionar Conocimientos
             </a>
         </div>
     </div>
@@ -5253,6 +5400,298 @@
         }
         // ========== FIN FUNCIONES PARA SIDEBAR DE ÓRDENES DE TRABAJO ==========
 
+        // ========== FUNCIONES PARA SIDEBAR DE TRANSACCIONES ==========
+        let transactionsSidebarOpen = false;
+        let transactionSearchTimeout = null;
+
+        function toggleTransactionsSidebar() {
+            const sidebar = document.getElementById('transactionsSidebar');
+            const toggle = document.getElementById('transactionToggle');
+            
+            if (!transactionsSidebarOpen) {
+                // Abrir barra lateral
+                sidebar.style.left = '0px';
+                toggle.style.left = '400px';
+                transactionsSidebarOpen = true;
+                
+                // Ocultar todos los demás botones flotantes del lado izquierdo
+                hideLeftFloatingButtons(['transactionToggle']);
+                
+                // Cargar transacciones cuando se abre
+                loadTransactions();
+                
+                // Focus en el buscador
+                setTimeout(() => {
+                    document.getElementById('transactionSearchSidebar').focus();
+                }, 300);
+            } else {
+                // Cerrar barra lateral
+                closeTransactionsSidebar();
+            }
+        }
+
+        function closeTransactionsSidebar() {
+            const sidebar = document.getElementById('transactionsSidebar');
+            const toggle = document.getElementById('transactionToggle');
+            
+            sidebar.style.left = '-400px';
+            toggle.style.left = '0';
+            transactionsSidebarOpen = false;
+            
+            // Mostrar todos los botones flotantes del lado izquierdo de nuevo
+            showLeftFloatingButtons();
+            
+            // Limpiar búsqueda
+            document.getElementById('transactionSearchSidebar').value = '';
+        }
+
+        function loadTransactions(query = '') {
+            const listContainer = document.getElementById('transactionsListSidebar');
+            
+            // Mostrar loading
+            listContainer.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Cargando transacciones...</p>
+                </div>
+            `;
+            
+            // Llamada a la API
+            const url = query ? `/transactions/search/?q=${encodeURIComponent(query)}` : '/transactions/search/';
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    displayTransactions(data.results || []);
+                })
+                .catch(error => {
+                    console.log('[Transacciones] Error al cargar:', error);
+                    listContainer.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-2">Error al cargar transacciones</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function displayTransactions(transactions) {
+            const listContainer = document.getElementById('transactionsListSidebar');
+            
+            if (transactions.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">No se encontraron transacciones</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div class="list-group list-group-flush">';
+            
+            transactions.forEach(transaction => {
+                html += `
+                    <a href="${transaction.url}" 
+                       class="list-group-item list-group-item-action border-0 mb-2 rounded" 
+                       style="background: #f8f9fa;">
+                        <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="${transaction.icon} text-primary fs-5"></i>
+                                <code class="badge bg-light text-dark">${transaction.code}</code>
+                            </div>
+                            <i class="bi bi-arrow-right-circle text-primary"></i>
+                        </div>
+                        <h6 class="mb-1">${transaction.name}</h6>
+                        ${transaction.description ? `<p class="mb-0 small text-muted">${transaction.description}</p>` : ''}
+                    </a>
+                `;
+            });
+            
+            html += '</div>';
+            listContainer.innerHTML = html;
+        }
+
+        // Event listeners para transacciones
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle sidebar
+            const transactionToggle = document.getElementById('transactionToggle');
+            if (transactionToggle) {
+                transactionToggle.addEventListener('click', toggleTransactionsSidebar);
+            }
+            
+            // Cerrar sidebar
+            const closeTransactionsSidebarBtn = document.getElementById('closeTransactionsSidebar');
+            if (closeTransactionsSidebarBtn) {
+                closeTransactionsSidebarBtn.addEventListener('click', function() {
+                    closeTransactionsSidebar();
+                });
+            }
+            
+            // Búsqueda en tiempo real
+            const searchInput = document.getElementById('transactionSearchSidebar');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    clearTimeout(transactionSearchTimeout);
+                    const query = e.target.value.trim();
+                    
+                    transactionSearchTimeout = setTimeout(() => {
+                        loadTransactions(query);
+                    }, 300);
+                });
+            }
+        });
+        // ========== FIN FUNCIONES PARA SIDEBAR DE TRANSACCIONES ==========
+
+        // ========== FUNCIONES PARA SIDEBAR DE BASE DE CONOCIMIENTOS ==========
+        let knowledgeBaseSidebarOpen = false;
+        let knowledgeBaseSearchTimeout = null;
+
+        function toggleKnowledgeBaseSidebar() {
+            const sidebar = document.getElementById('knowledgeBaseSidebar');
+            const toggle = document.getElementById('knowledgeBaseToggle');
+            const leftButtons = document.querySelectorAll('.floating-button-left');
+
+            if (!knowledgeBaseSidebarOpen) {
+                // Abrir sidebar
+                sidebar.style.left = '0';
+                toggle.style.left = '400px';
+                
+                // Ocultar otros botones flotantes
+                leftButtons.forEach(btn => {
+                    if (btn.id !== 'knowledgeBaseToggle') {
+                        btn.style.opacity = '0';
+                        btn.style.pointerEvents = 'none';
+                    }
+                });
+                
+                knowledgeBaseSidebarOpen = true;
+                loadKnowledgeBase(); // Cargar todos los conocimientos al abrir
+                
+                // Focus en el input de búsqueda después de la animación
+                setTimeout(() => {
+                    document.getElementById('knowledgeBaseSearchSidebar').focus();
+                }, 300);
+            } else {
+                closeKnowledgeBaseSidebar();
+            }
+        }
+
+        function closeKnowledgeBaseSidebar() {
+            const sidebar = document.getElementById('knowledgeBaseSidebar');
+            const toggle = document.getElementById('knowledgeBaseToggle');
+            const leftButtons = document.querySelectorAll('.floating-button-left');
+            const searchInput = document.getElementById('knowledgeBaseSearchSidebar');
+
+            sidebar.style.left = '-400px';
+            toggle.style.left = '0'; // Regresar a la posición original
+            
+            // Mostrar otros botones flotantes
+            leftButtons.forEach(btn => {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            });
+            
+            knowledgeBaseSidebarOpen = false;
+            
+            // Limpiar búsqueda
+            searchInput.value = '';
+        }
+
+        function loadKnowledgeBase(query = '') {
+            const listContainer = document.getElementById('knowledgeBaseListSidebar');
+            
+            // Mostrar loading
+            listContainer.innerHTML = '<div class="text-center p-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
+            
+            // Construir URL con query si existe
+            let url = '/knowledge-base/search/';
+            if (query) {
+                url += '?q=' + encodeURIComponent(query);
+            }
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    displayKnowledgeBase(data.results);
+                })
+                .catch(error => {
+                    console.error('Error al cargar base de conocimientos:', error);
+                    listContainer.innerHTML = '<div class="alert alert-danger m-3">Error al cargar conocimientos</div>';
+                });
+        }
+
+        function displayKnowledgeBase(items) {
+            const listContainer = document.getElementById('knowledgeBaseListSidebar');
+            
+            if (!items || items.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center p-4 text-muted">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p class="mt-2">No se encontraron conocimientos</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div class="list-group list-group-flush">';
+            
+            items.forEach(kb => {
+                // Truncar descripción si es muy larga
+                const description = kb.description && kb.description.length > 100 
+                    ? kb.description.substring(0, 100) + '...' 
+                    : kb.description || '';
+                
+                html += `
+                    <a href="/knowledge-base/${kb.id}/" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 align-items-start">
+                            <i class="bi bi-lightbulb-fill me-2 mt-1" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <h6 class="mb-0">${kb.title}</h6>
+                                    ${kb.has_code ? '<i class="bi bi-code-slash text-info" title="Incluye código fuente"></i>' : ''}
+                                </div>
+                                ${kb.category ? `<span class="badge bg-secondary me-1">${kb.category}</span>` : ''}
+                                ${kb.tags ? `<small class="text-muted">${kb.tags}</small>` : ''}
+                                ${description ? `<p class="mb-0 mt-1 small text-muted">${description}</p>` : ''}
+                            </div>
+                            <i class="bi bi-chevron-right ms-2 text-muted"></i>
+                        </div>
+                    </a>
+                `;
+            });
+            
+            html += '</div>';
+            listContainer.innerHTML = html;
+        }
+
+        // Event listeners para Base de Conocimientos
+        document.addEventListener('DOMContentLoaded', function() {
+            const knowledgeBaseToggle = document.getElementById('knowledgeBaseToggle');
+            const closeKnowledgeBaseBtn = document.getElementById('closeKnowledgeBaseSidebar');
+            const knowledgeBaseSearch = document.getElementById('knowledgeBaseSearchSidebar');
+
+            if (knowledgeBaseToggle) {
+                knowledgeBaseToggle.addEventListener('click', toggleKnowledgeBaseSidebar);
+            }
+
+            if (closeKnowledgeBaseBtn) {
+                closeKnowledgeBaseBtn.addEventListener('click', closeKnowledgeBaseSidebar);
+            }
+
+            if (knowledgeBaseSearch) {
+                knowledgeBaseSearch.addEventListener('input', function(e) {
+                    clearTimeout(knowledgeBaseSearchTimeout);
+                    knowledgeBaseSearchTimeout = setTimeout(() => {
+                        loadKnowledgeBase(e.target.value);
+                    }, 300); // Debounce de 300ms
+                });
+            }
+        });
+        // ========== FIN FUNCIONES PARA SIDEBAR DE BASE DE CONOCIMIENTOS ==========
+
         // ========== FUNCIONES PARA TAREAS RÁPIDAS ==========
         function createQuickTask() {
             // Buscar elementos con logging para debug
@@ -6715,6 +7154,34 @@
                     console.error('Error cargando menciones del badge:', error);
                 });
         }
+        
+        // Función para cargar el contador de evaluaciones QA
+        function loadQARatingsCount() {
+            fetch('/api/qa-ratings/count/')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById('qaRatingsBadge');
+                    if (badge && data.count !== undefined) {
+                        if (data.count > 0) {
+                            badge.textContent = data.count;
+                            badge.style.display = 'inline-block';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando contador de evaluaciones:', error);
+                });
+        }
+        
+        // Cargar contador de evaluaciones al inicio
+        loadQARatingsCount();
+        
+        // Actualizar cada 30 segundos
+        setInterval(loadQARatingsCount, 30000);
+        
+
     </script>
     {% endif %}
 

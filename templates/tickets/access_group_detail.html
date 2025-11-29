@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ group.title }} - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .link-item {
+        transition: all 0.3s ease;
+        border-left: 4px solid #0d6efd;
+    }
+    .link-item:hover {
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        transform: translateX(4px);
+    }
+    .link-icon {
+        font-size: 2rem;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'access_group_list' %}">Grupos de Accesos</a></li>
+                    <li class="breadcrumb-item active">{{ group.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h2><i class="bi bi-collection"></i> {{ group.title }}</h2>
+                            {% if group.description %}
+                            <p class="text-muted">{{ group.description }}</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <span class="badge {% if group.is_public %}bg-success{% else %}bg-secondary{% endif %} fs-6">
+                                {% if group.is_public %}
+                                    <i class="bi bi-globe"></i> Público
+                                {% else %}
+                                    <i class="bi bi-lock"></i> Privado
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-3">
+                        <a href="{% url 'access_link_create' group.id %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Agregar Enlace
+                        </a>
+                        <a href="{% url 'access_group_edit' group.id %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-pencil"></i> Editar Grupo
+                        </a>
+                        <form method="post" action="{% url 'access_group_toggle_public' group.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-{% if group.is_public %}warning{% else %}success{% endif %}">
+                                <i class="bi bi-{% if group.is_public %}lock{% else %}globe{% endif %}"></i>
+                                {% if group.is_public %}Hacer Privado{% else %}Hacer Público{% endif %}
+                            </button>
+                        </form>
+                        <a href="{% url 'access_group_delete' group.id %}" class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </div>
+
+                    {% if group.is_public %}
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-link-45deg"></i> URL Pública:
+                        </label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" readonly 
+                                   value="{{ request.scheme }}://{{ request.get_host }}{{ group.get_public_url }}"
+                                   id="public-url">
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyPublicUrl()">
+                                <i class="bi bi-clipboard"></i> Copiar
+                            </button>
+                            <a href="{{ group.get_public_url }}" target="_blank" class="btn btn-outline-primary">
+                                <i class="bi bi-eye"></i> Vista Previa
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <h4 class="mb-3">
+                <i class="bi bi-link-45deg"></i> 
+                Enlaces ({{ links.count }})
+            </h4>
+
+            {% if links %}
+            <div class="row">
+                {% for link in links %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card link-item h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="link-icon bg-{{ link.color }} text-white">
+                                    <i class="bi bi-{{ link.icon }}"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-1">{{ link.title }}</h5>
+                                    {% if link.description %}
+                                    <p class="card-text small text-muted mb-2">{{ link.description|truncatewords:10 }}</p>
+                                    {% endif %}
+                                    <a href="{{ link.url }}" target="_blank" class="small text-primary text-break">
+                                        {{ link.url|truncatechars:40 }} <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="mt-3 d-flex gap-2">
+                                <a href="{% url 'access_link_edit' link.id %}" class="btn btn-sm btn-outline-secondary flex-fill">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
+                                <a href="{% url 'access_link_delete' link.id %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
+                <h5>No hay enlaces en este grupo</h5>
+                <p>Agrega tu primer enlace para comenzar</p>
+                <a href="{% url 'access_link_create' group.id %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Agregar Primer Enlace
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function copyPublicUrl() {
+    const input = document.getElementById('public-url');
+    input.select();
+    document.execCommand('copy');
+    
+    // Mostrar feedback
+    const button = event.target.closest('button');
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i> Copiado';
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+    }, 2000);
+}
+</script>
+{% endblock %}

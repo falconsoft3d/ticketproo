@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Enlace - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Confirmar Eliminación
+                    </h4>
+                </div>
+
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+
+                    <h5>¿Estás seguro de eliminar el enlace "{{ link.title }}"?</h5>
+
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <p class="mb-1"><strong>Grupo:</strong> {{ link.group.title }}</p>
+                        <p class="mb-1"><strong>URL:</strong> {{ link.url }}</p>
+                        {% if link.description %}
+                        <p class="mb-0"><strong>Descripción:</strong> {{ link.description }}</p>
+                        {% endif %}
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sí, Eliminar Enlace
+                            </button>
+                            <a href="{% url 'access_group_detail' link.group.id %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

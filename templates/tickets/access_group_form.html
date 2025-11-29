@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ group.title|default:"Nuevo Grupo" }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-{% if group %}pencil{% else %}plus-circle{% endif %}"></i>
+                        {% if group %}Editar Grupo{% else %}Crear Nuevo Grupo{% endif %}
+                    </h4>
+                </div>
+
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título del Grupo <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{{ group.title|default:'' }}" required maxlength="200"
+                                   placeholder="Ej: Enlaces Importantes, Herramientas, Recursos">
+                            <small class="text-muted">Nombre descriptivo para el grupo</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="3" placeholder="Descripción opcional del grupo">{{ group.description|default:'' }}</textarea>
+                            <small class="text-muted">Información adicional sobre el grupo (opcional)</small>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i>
+                                {% if group %}Actualizar{% else %}Crear{% endif %} Grupo
+                            </button>
+                            <a href="{% if group %}{% url 'access_group_detail' group.id %}{% else %}{% url 'access_group_list' %}{% endif %}" 
+                               class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if group %}
+            <div class="alert alert-info mt-3">
+                <i class="bi bi-info-circle"></i>
+                <strong>Nota:</strong> Después de guardar, podrás agregar enlaces al grupo desde la página de detalle.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
