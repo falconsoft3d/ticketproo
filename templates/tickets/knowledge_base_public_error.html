@@ -1,0 +1,35 @@
+{% extends "public_base.html" %}
+{% load static %}
+
+{% block title %}Error de Acceso{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-x-circle"></i> Error de Acceso
+                    </h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="bi bi-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
+                    </div>
+                    <h5 class="mb-3">{{ error }}</h5>
+                    <p class="text-muted">
+                        El contenido que estás buscando no está disponible o el enlace ha expirado.
+                    </p>
+                </div>
+                <div class="card-footer text-center text-muted">
+                    <small>
+                        <i class="bi bi-info-circle"></i>
+                        Si crees que esto es un error, contacta al propietario del enlace.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

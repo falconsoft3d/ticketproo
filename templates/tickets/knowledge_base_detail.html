@@ -14,6 +14,33 @@
         </ol>
     </nav>
 
+    <!-- Alerta de URL pública activa -->
+    {% if share_url and knowledge_base.public_share_enabled %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi bi-link-45deg"></i>
+                <strong>Enlace Público Activo:</strong>
+                <code id="shareUrlAlert" class="ms-2">{{ share_url }}</code>
+                {% if knowledge_base.public_share_password %}
+                <span class="badge bg-warning text-dark ms-2">
+                    <i class="bi bi-lock"></i> Protegido con contraseña
+                </span>
+                {% endif %}
+                {% if knowledge_base.public_share_expires_at %}
+                <span class="badge bg-danger ms-2">
+                    <i class="bi bi-clock"></i> Expira: {{ knowledge_base.public_share_expires_at|date:"d/m/Y H:i" }}
+                </span>
+                {% endif %}
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-info" onclick="copyShareUrlQuick()">
+                <i class="bi bi-clipboard"></i> Copiar
+            </button>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>
@@ -21,6 +48,11 @@
             {{ knowledge_base.title }}
         </h2>
         <div>
+            <button type="button" 
+                    class="btn {% if knowledge_base.public_share_enabled %}btn-success{% else %}btn-secondary{% endif %}" 
+                    onclick="showShareModal()">
+                <i class="bi bi-share"></i> Compartir Públicamente
+            </button>
             <a href="{% url 'knowledge_base_edit' knowledge_base.id %}" class="btn btn-warning">
                 <i class="bi bi-pencil"></i> Editar
             </a>
@@ -89,6 +121,70 @@
     {% endif %}
 </div>
 
+<!-- Modal de Compartir Públicamente -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-share"></i> Compartir Públicamente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Switch Activar/Desactivar -->
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="shareEnabled" onchange="toggleShareUrl()">
+                        <label class="form-check-label" for="shareEnabled">
+                            <strong>Activar enlace público</strong>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Opciones de compartir -->
+                <div id="shareOptions" style="display:none;">
+                    <!-- Contraseña -->
+                    <div class="mb-3">
+                        <label for="sharePassword" class="form-label">
+                            <i class="bi bi-lock"></i> Contraseña (opcional)
+                        </label>
+                        <input type="text" class="form-control" id="sharePassword" 
+                               placeholder="Deja vacío para acceso sin contraseña">
+                        <small class="text-muted">Si defines una contraseña, será requerida para ver el contenido</small>
+                    </div>
+
+                    <!-- Fecha de expiración -->
+                    <div class="mb-3">
+                        <label for="shareExpires" class="form-label">
+                            <i class="bi bi-clock"></i> Fecha de expiración (opcional)
+                        </label>
+                        <input type="datetime-local" class="form-control" id="shareExpires">
+                        <small class="text-muted">Si defines una fecha, el enlace expirará automáticamente</small>
+                    </div>
+
+                    <!-- URL generada -->
+                    <div class="mb-3" id="shareUrlSection" style="display:none;">
+                        <label class="form-label"><i class="bi bi-link-45deg"></i> URL Pública</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="shareUrl" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyShareUrl()">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="generateShareUrl()">
+                    <i class="bi bi-save"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function copyCode() {
     const codeElement = document.getElementById('sourceCode');
@@ -99,8 +195,108 @@ function copyCode() {
     document.execCommand('copy');
     document.body.removeChild(textArea);
     
-    // Mostrar feedback
     alert('Código copiado al portapapeles');
+}
+
+function copyShareUrlQuick() {
+    const urlElement = document.getElementById('shareUrlAlert');
+    const textArea = document.createElement('textarea');
+    textArea.value = urlElement.textContent;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    
+    alert('URL copiada al portapapeles');
+}
+
+function copyShareUrl() {
+    const urlInput = document.getElementById('shareUrl');
+    urlInput.select();
+    document.execCommand('copy');
+    
+    alert('URL copiada al portapapeles');
+}
+
+function showShareModal() {
+    // Cargar estado actual
+    fetch("{% url 'knowledge_base_share_status' knowledge_base.id %}")
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('shareEnabled').checked = data.enabled;
+            document.getElementById('sharePassword').value = '';
+            
+            if (data.expires_at) {
+                const date = new Date(data.expires_at);
+                const localDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+                    .toISOString()
+                    .slice(0, 16);
+                document.getElementById('shareExpires').value = localDateTime;
+            } else {
+                document.getElementById('shareExpires').value = '';
+            }
+            
+            if (data.url) {
+                document.getElementById('shareUrl').value = data.url;
+                document.getElementById('shareUrlSection').style.display = 'block';
+            }
+            
+            toggleShareUrl();
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('shareModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar el estado de compartir');
+        });
+}
+
+function toggleShareUrl() {
+    const enabled = document.getElementById('shareEnabled').checked;
+    document.getElementById('shareOptions').style.display = enabled ? 'block' : 'none';
+}
+
+function generateShareUrl() {
+    const enabled = document.getElementById('shareEnabled').checked;
+    const password = document.getElementById('sharePassword').value;
+    const expires = document.getElementById('shareExpires').value;
+    
+    const data = {
+        enabled: enabled,
+        password: password,
+        expires_at: expires ? new Date(expires).toISOString() : null
+    };
+    
+    fetch("{% url 'knowledge_base_generate_share_url' knowledge_base.id %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.url) {
+                document.getElementById('shareUrl').value = data.url;
+                document.getElementById('shareUrlSection').style.display = 'block';
+            }
+            
+            alert('Configuración guardada exitosamente');
+            
+            // Recargar página para mostrar la alerta
+            location.reload();
+        } else {
+            alert('Error al guardar la configuración');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al generar URL de compartir');
+    });
 }
 </script>
 {% endblock %}

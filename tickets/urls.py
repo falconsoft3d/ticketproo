@@ -1526,6 +1526,9 @@ urlpatterns += [
     path('knowledge-base/<int:pk>/edit/', views.knowledge_base_edit, name='knowledge_base_edit'),
     path('knowledge-base/<int:pk>/delete/', views.knowledge_base_delete, name='knowledge_base_delete'),
     path('knowledge-base/search/', views.knowledge_base_search, name='knowledge_base_search'),
+    path('knowledge-base/<int:kb_id>/share-status/', views.knowledge_base_share_status, name='knowledge_base_share_status'),
+    path('knowledge-base/<int:kb_id>/generate-share-url/', views.knowledge_base_generate_share_url, name='knowledge_base_generate_share_url'),
+    path('public/knowledge/<str:token>/', views.knowledge_base_public, name='knowledge_base_public'),
     
     # Traducciones
     path('translations/', views.translation_tool, name='translation_tool'),

@@ -9276,25 +9276,25 @@ def support_meeting_list(request):
     """Vista para listar reuniones de soporte"""
     from .models import SupportMeeting
     
-    meetings = SupportMeeting.objects.all()
+    meetings_base = SupportMeeting.objects.all()
     
     # Filtros
     company_id = request.GET.get('company')
     if company_id:
-        meetings = meetings.filter(company_id=company_id)
+        meetings_base = meetings_base.filter(company_id=company_id)
     
     search = request.GET.get('search')
     if search:
-        meetings = meetings.filter(
+        meetings_base = meetings_base.filter(
             models.Q(company__name__icontains=search) | 
             models.Q(description__icontains=search) |
             models.Q(sequence__icontains=search)
         )
     
-    meetings = meetings.order_by('-created_at')
+    meetings_base = meetings_base.order_by('-created_at')
     
     # Paginación
-    paginator = Paginator(meetings, 20)
+    paginator = Paginator(meetings_base, 20)
     page_number = request.GET.get('page')
     meetings = paginator.get_page(page_number)
     
@@ -9312,6 +9312,7 @@ def support_meeting_list(request):
     context = {
         'page_title': 'Reuniones de Soporte',
         'meetings': meetings,
+        'all_meetings': meetings_base,  # Para el calendario sin paginación
         'stats': stats,
         'companies': companies,
         'current_company': company_id,
@@ -46043,8 +46044,14 @@ def knowledge_base_detail(request, pk):
     
     knowledge_base = get_object_or_404(KnowledgeBase, id=pk)
     
+    # Generar URL de compartir si existe
+    share_url = None
+    if knowledge_base.public_share_token:
+        share_url = knowledge_base.get_share_url(request)
+    
     context = {
         'knowledge_base': knowledge_base,
+        'share_url': share_url,
     }
     
     return render(request, 'tickets/knowledge_base_detail.html', context)
@@ -49490,3 +49497,112 @@ def odoo_rpc_export_odoo_data(request, table_id):
     messages.success(request, f'Se exportaron {len(records)} registros a Excel')
     
     return response
+
+
+# ==================== KNOWLEDGE BASE PUBLIC SHARING ====================
+
+@login_required
+def knowledge_base_share_status(request, kb_id):
+    """Obtiene el estado de compartir público de una base de conocimiento"""
+    from .models import KnowledgeBase
+    from django.http import JsonResponse
+    
+    knowledge_base = get_object_or_404(KnowledgeBase, id=kb_id)
+    
+    return JsonResponse({
+        'enabled': knowledge_base.public_share_enabled,
+        'has_password': bool(knowledge_base.public_share_password),
+        'expires_at': knowledge_base.public_share_expires_at.isoformat() if knowledge_base.public_share_expires_at else None,
+        'url': knowledge_base.get_share_url(request) if knowledge_base.public_share_token else None
+    })
+
+
+@login_required
+def knowledge_base_generate_share_url(request, kb_id):
+    """Genera o actualiza la URL de compartir público"""
+    from .models import KnowledgeBase
+    from django.http import JsonResponse
+    from django.utils import timezone
+    import json
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    knowledge_base = get_object_or_404(KnowledgeBase, id=kb_id)
+    
+    data = json.loads(request.body)
+    enabled = data.get('enabled', False)
+    password = data.get('password', '').strip()
+    expires_at = data.get('expires_at', None)
+    
+    knowledge_base.public_share_enabled = enabled
+    knowledge_base.public_share_password = password
+    
+    if expires_at:
+        from datetime import datetime
+        knowledge_base.public_share_expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+    else:
+        knowledge_base.public_share_expires_at = None
+    
+    # Generar token si no existe
+    if not knowledge_base.public_share_token:
+        knowledge_base.generate_share_token()
+    
+    knowledge_base.save()
+    
+    return JsonResponse({
+        'success': True,
+        'enabled': knowledge_base.public_share_enabled,
+        'has_password': bool(knowledge_base.public_share_password),
+        'expires_at': knowledge_base.public_share_expires_at.isoformat() if knowledge_base.public_share_expires_at else None,
+        'url': knowledge_base.get_share_url(request)
+    })
+
+
+def knowledge_base_public(request, token):
+    """Vista pública de una base de conocimiento (sin login)"""
+    from .models import KnowledgeBase
+    from django.utils import timezone
+    
+    try:
+        knowledge_base = get_object_or_404(KnowledgeBase, public_share_token=token)
+        
+        # Verificar si está activo
+        if not knowledge_base.is_share_valid():
+            return render(request, 'tickets/knowledge_base_public_error.html', {
+                'error': 'Este enlace ha expirado o ya no está disponible.'
+            })
+        
+        # Verificar contraseña si está configurada
+        if knowledge_base.public_share_password:
+            # Si viene del formulario de contraseña
+            if request.method == 'POST' and 'password' in request.POST:
+                password = request.POST.get('password', '').strip()
+                
+                if password == knowledge_base.public_share_password:
+                    # Contraseña correcta, mostrar contenido
+                    pass
+                else:
+                    return render(request, 'tickets/knowledge_base_public_password.html', {
+                        'error': 'Contraseña incorrecta',
+                        'token': token,
+                        'knowledge_base': knowledge_base
+                    })
+            else:
+                # Mostrar formulario de contraseña
+                return render(request, 'tickets/knowledge_base_public_password.html', {
+                    'token': token,
+                    'knowledge_base': knowledge_base
+                })
+        
+        context = {
+            'knowledge_base': knowledge_base,
+            'token': token
+        }
+        
+        return render(request, 'tickets/knowledge_base_public.html', context)
+        
+    except KnowledgeBase.DoesNotExist:
+        return render(request, 'tickets/knowledge_base_public_error.html', {
+            'error': 'Enlace no encontrado o token inválido.'
+        })

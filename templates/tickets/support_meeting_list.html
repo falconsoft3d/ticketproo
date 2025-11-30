@@ -3,6 +3,7 @@
 {% block title %}{{ page_title }}{% endblock %}
 
 {% block extra_css %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
 <style>
     .stats-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -20,6 +21,14 @@
     .sequence-badge {
         font-size: 1.2rem;
         font-weight: bold;
+    }
+    #calendar {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+    }
+    .fc-event {
+        cursor: pointer;
     }
 </style>
 {% endblock %}
@@ -86,16 +95,16 @@
         </div>
     </div>
 
-    <!-- Filtros -->
+    <!-- Filtros y Vista -->
     <div class="card mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="search" class="form-label">Buscar</label>
                     <input type="text" class="form-control" id="search" name="search" 
                            value="{{ search_query }}" placeholder="Buscar por empresa, descripción o secuencia...">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="company" class="form-label">Empresa</label>
                     <select class="form-control" id="company" name="company">
                         <option value="">Todas las empresas</option>
@@ -106,7 +115,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
+                <div class="col-md-3 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary me-2">
                         <i class="fas fa-search"></i> Filtrar
                     </button>
@@ -114,87 +123,183 @@
                         <i class="fas fa-times"></i> Limpiar
                     </a>
                 </div>
+                <div class="col-md-3 d-flex align-items-end justify-content-end">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary active" id="listViewBtn" onclick="changeView('list')">
+                            <i class="fas fa-list"></i> Lista
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="cardViewBtn" onclick="changeView('card')">
+                            <i class="fas fa-th"></i> Tarjetas
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="calendarViewBtn" onclick="changeView('calendar')">
+                            <i class="fas fa-calendar"></i> Calendario
+                        </button>
+                    </div>
+                </div>
             </form>
         </div>
     </div>
 
-    <!-- Lista de reuniones -->
-    <div class="row">
-        {% for meeting in meetings %}
-            <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card meeting-card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <span class="badge bg-primary sequence-badge">#{{ meeting.sequence }}</span>
-                            <small class="text-muted">{{ meeting.date|date:"d/m/Y" }}</small>
-                        </div>
-                        
-                        <h5 class="card-title">
-                            <i class="fas fa-building" style="color: {{ meeting.company.color }}"></i>
-                            {{ meeting.company.name }}
-                        </h5>
-                        
-                        <p class="card-text text-truncate">
-                            {{ meeting.description|truncatewords:15 }}
-                        </p>
-                        
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <small class="text-muted">
-                                <i class="fas fa-user"></i> {{ meeting.created_by.get_full_name|default:meeting.created_by.username }}
-                            </small>
-                            <small class="text-muted">
-                                <i class="fas fa-calendar"></i> {{ meeting.created_at|date:"d/m/Y" }}
-                            </small>
-                        </div>
-                        
-                        <div class="row text-center mb-3">
-                            <div class="col-6">
-                                <div class="badge bg-info">
-                                    {{ meeting.points_count }} puntos
+    <!-- Lista de reuniones - Vista de Lista (Por defecto) -->
+    <div id="listView">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 80px;">Secuencia</th>
+                            <th>Empresa</th>
+                            <th>Descripción</th>
+                            <th style="width: 120px;">Fecha</th>
+                            <th style="width: 100px;">Puntos</th>
+                            <th style="width: 120px;">Seleccionados</th>
+                            <th style="width: 150px;">Creado por</th>
+                            <th style="width: 200px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for meeting in meetings %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-primary">#{{ meeting.sequence }}</span>
+                            </td>
+                            <td>
+                                <i class="fas fa-building" style="color: {{ meeting.company.color }}"></i>
+                                <strong>{{ meeting.company.name }}</strong>
+                            </td>
+                            <td>{{ meeting.description|truncatewords:20 }}</td>
+                            <td>
+                                <small>{{ meeting.date|date:"d/m/Y" }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ meeting.points_count }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">{{ meeting.selected_points_count }}</span>
+                            </td>
+                            <td>
+                                <small>{{ meeting.created_by.get_full_name|default:meeting.created_by.username }}</small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'support_meeting_detail' meeting.pk %}" class="btn btn-outline-primary" title="Ver">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'support_meeting_edit' meeting.pk %}" class="btn btn-outline-secondary" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'support_meeting_delete' meeting.pk %}" class="btn btn-outline-danger" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <i class="fas fa-handshake fa-4x text-muted mb-3 d-block"></i>
+                                <h4 class="text-muted">No hay reuniones de soporte</h4>
+                                <p class="text-muted">Comienza creando tu primera reunión de soporte.</p>
+                                <a href="{% url 'support_meeting_create' %}" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Crear Primera Reunión
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vista de Tarjetas -->
+    <div id="cardView" style="display: none;">
+        <div class="row">
+            {% for meeting in meetings %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card meeting-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span class="badge bg-primary sequence-badge">#{{ meeting.sequence }}</span>
+                                <small class="text-muted">{{ meeting.date|date:"d/m/Y" }}</small>
+                            </div>
+                            
+                            <h5 class="card-title">
+                                <i class="fas fa-building" style="color: {{ meeting.company.color }}"></i>
+                                {{ meeting.company.name }}
+                            </h5>
+                            
+                            <p class="card-text text-truncate">
+                                {{ meeting.description|truncatewords:15 }}
+                            </p>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-user"></i> {{ meeting.created_by.get_full_name|default:meeting.created_by.username }}
+                                </small>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar"></i> {{ meeting.created_at|date:"d/m/Y" }}
+                                </small>
+                            </div>
+                            
+                            <div class="row text-center mb-3">
+                                <div class="col-6">
+                                    <div class="badge bg-info">
+                                        {{ meeting.points_count }} puntos
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="badge bg-success">
+                                        {{ meeting.selected_points_count }} seleccionados
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-6">
-                                <div class="badge bg-success">
-                                    {{ meeting.selected_points_count }} seleccionados
-                                </div>
+                        </div>
+                        
+                        <div class="card-footer bg-transparent">
+                            <div class="btn-group w-100" role="group">
+                                <a href="{% url 'support_meeting_detail' meeting.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye"></i> Ver
+                                </a>
+                                <a href="{% url 'support_meeting_edit' meeting.pk %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                                <a href="{% url 'support_meeting_delete' meeting.pk %}" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </a>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="card-footer bg-transparent">
-                        <div class="btn-group w-100" role="group">
-                            <a href="{% url 'support_meeting_detail' meeting.pk %}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-eye"></i> Ver
-                            </a>
-                            <a href="{% url 'support_meeting_edit' meeting.pk %}" class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-edit"></i> Editar
-                            </a>
-                            <a href="{% url 'support_meeting_delete' meeting.pk %}" class="btn btn-outline-danger btn-sm">
-                                <i class="fas fa-trash"></i> Eliminar
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-handshake fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">No hay reuniones de soporte</h4>
+                            <p class="text-muted">Comienza creando tu primera reunión de soporte.</p>
+                            <a href="{% url 'support_meeting_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Crear Primera Reunión
                             </a>
                         </div>
                     </div>
                 </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Vista de Calendario -->
+    <div id="calendarView" style="display: none;">
+        <div class="card">
+            <div class="card-body">
+                <div id="calendar"></div>
             </div>
-        {% empty %}
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body text-center py-5">
-                        <i class="fas fa-handshake fa-4x text-muted mb-3"></i>
-                        <h4 class="text-muted">No hay reuniones de soporte</h4>
-                        <p class="text-muted">Comienza creando tu primera reunión de soporte.</p>
-                        <a href="{% url 'support_meeting_create' %}" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Crear Primera Reunión
-                        </a>
-                    </div>
-                </div>
-            </div>
-        {% endfor %}
+        </div>
     </div>
 
     <!-- Paginación -->
     {% if meetings.has_other_pages %}
-        <div class="row mt-4">
+        <div class="row mt-4" id="paginationSection">
             <div class="col-12">
                 <nav aria-label="Paginación de reuniones">
                     <ul class="pagination justify-content-center">
@@ -238,7 +343,11 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales/es.global.min.js'></script>
 <script>
+let calendar;
+
 $(document).ready(function() {
     // Auto-submit del formulario de filtros después de cambios
     $('#company').change(function() {
@@ -253,6 +362,116 @@ $(document).ready(function() {
             $(this).closest('form').submit();
         }, 500);
     });
+    
+    // Inicializar calendario
+    initCalendar();
+    
+    // Cargar vista guardada al iniciar
+    const savedView = localStorage.getItem('meetingView') || 'list';
+    changeView(savedView);
 });
+
+function initCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    
+    // Preparar eventos desde todas las reuniones (sin paginación)
+    const events = [
+        {% for meeting in all_meetings %}
+        {
+            id: '{{ meeting.pk }}',
+            title: '#{{ meeting.sequence }} - {{ meeting.company.name|escapejs }}',
+            start: '{{ meeting.date|date:"Y-m-d" }}',
+            description: '{{ meeting.description|truncatewords:20|escapejs }}',
+            url: '{% url "support_meeting_detail" meeting.pk %}',
+            backgroundColor: '{{ meeting.company.color|default:"#007bff" }}',
+            borderColor: '{{ meeting.company.color|default:"#007bff" }}',
+            extendedProps: {
+                points: {{ meeting.points_count }},
+                selected: {{ meeting.selected_points_count }},
+                creator: '{{ meeting.created_by.get_full_name|default:meeting.created_by.username|escapejs }}'
+            }
+        },
+        {% endfor %}
+    ];
+    
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'es',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,listWeek'
+        },
+        buttonText: {
+            today: 'Hoy',
+            month: 'Mes',
+            week: 'Semana',
+            list: 'Lista'
+        },
+        events: events,
+        eventClick: function(info) {
+            info.jsEvent.preventDefault();
+            window.location.href = info.event.url;
+        },
+        eventDidMount: function(info) {
+            // Tooltip con información adicional
+            const tooltip = `
+                <div style="padding: 8px;">
+                    <strong>${info.event.title}</strong><br>
+                    ${info.event.extendedProps.description || ''}<br>
+                    <small>Puntos: ${info.event.extendedProps.points} | Seleccionados: ${info.event.extendedProps.selected}</small><br>
+                    <small>Por: ${info.event.extendedProps.creator}</small>
+                </div>
+            `;
+            $(info.el).tooltip({
+                title: info.event.extendedProps.description,
+                html: true,
+                placement: 'top',
+                trigger: 'hover',
+                container: 'body'
+            });
+        },
+        height: 'auto',
+        contentHeight: 650,
+        aspectRatio: 1.8
+    });
+}
+
+function changeView(viewType) {
+    // Guardar preferencia
+    localStorage.setItem('meetingView', viewType);
+    
+    // Ocultar todas las vistas
+    $('#listView').hide();
+    $('#cardView').hide();
+    $('#calendarView').hide();
+    $('#paginationSection').hide();
+    
+    // Remover clase active de todos los botones
+    $('#listViewBtn').removeClass('active');
+    $('#cardViewBtn').removeClass('active');
+    $('#calendarViewBtn').removeClass('active');
+    
+    // Mostrar vista seleccionada
+    if (viewType === 'list') {
+        $('#listView').show();
+        $('#listViewBtn').addClass('active');
+        $('#paginationSection').show();
+    } else if (viewType === 'card') {
+        $('#cardView').show();
+        $('#cardViewBtn').addClass('active');
+        $('#paginationSection').show();
+    } else if (viewType === 'calendar') {
+        $('#calendarView').show();
+        $('#calendarViewBtn').addClass('active');
+        
+        // Renderizar calendario si no se ha hecho
+        if (calendar) {
+            setTimeout(() => {
+                calendar.render();
+            }, 100);
+        }
+    }
+}
 </script>
 {% endblock %}

@@ -20519,6 +20519,12 @@ class KnowledgeBase(models.Model):
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última Actualización')
     
+    # Campos para compartir públicamente
+    public_share_enabled = models.BooleanField(default=False, verbose_name='Compartir Públicamente')
+    public_share_token = models.CharField(max_length=64, unique=True, null=True, blank=True, verbose_name='Token de Compartir')
+    public_share_password = models.CharField(max_length=128, blank=True, verbose_name='Contraseña de Acceso')
+    public_share_expires_at = models.DateTimeField(null=True, blank=True, verbose_name='Fecha de Expiración')
+    
     class Meta:
         ordering = ['-created_at']
         verbose_name = 'Base de Conocimiento'
@@ -20531,6 +20537,39 @@ class KnowledgeBase(models.Model):
     
     def __str__(self):
         return self.title
+    
+    def generate_share_token(self):
+        """Genera un token único para compartir"""
+        import secrets
+        self.public_share_token = secrets.token_urlsafe(32)
+        self.save()
+        return self.public_share_token
+    
+    def get_share_url(self, request=None):
+        """Obtiene la URL pública de compartir"""
+        if not self.public_share_token:
+            return None
+        
+        from django.urls import reverse
+        try:
+            path = reverse('knowledge_base_public', kwargs={'token': self.public_share_token})
+            if request:
+                return request.build_absolute_uri(path)
+            return path
+        except:
+            return None
+    
+    def is_share_valid(self):
+        """Verifica si el compartir está activo y no ha expirado"""
+        if not self.public_share_enabled:
+            return False
+        
+        if self.public_share_expires_at:
+            from django.utils import timezone
+            if timezone.now() > self.public_share_expires_at:
+                return False
+        
+        return True
 
 
 class Translation(models.Model):
