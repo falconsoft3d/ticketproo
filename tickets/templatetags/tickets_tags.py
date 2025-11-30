@@ -41,3 +41,27 @@ def highlight_hashtags(text):
     highlighted = re.sub(pattern_mention, r'<strong style="color: #198754;">\1</strong>', highlighted)
     
     return mark_safe(highlighted)
+
+
+@register.filter(name='multiply')
+def multiply(value, arg):
+    """
+    Filtro de template para multiplicar dos valores.
+    Uso: {{ value|multiply:100 }}
+    """
+    try:
+        return float(value) * float(arg)
+    except (ValueError, TypeError):
+        return 0
+
+
+@register.filter(name='divide')
+def divide(value, arg):
+    """
+    Filtro de template para dividir dos valores.
+    Uso: {{ value|divide:total }}
+    """
+    try:
+        return float(value) / float(arg) if float(arg) != 0 else 0
+    except (ValueError, TypeError):
+        return 0

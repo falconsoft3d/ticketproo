@@ -21506,6 +21506,12 @@ class Chatbot(models.Model):
         verbose_name='Total de mensajes'
     )
     
+    total_clicks = models.IntegerField(
+        default=0,
+        verbose_name='Total de clicks en el botón',
+        help_text='Número de veces que han dado click para abrir el chat'
+    )
+    
     class Meta:
         ordering = ['-created_at']
         verbose_name = 'Chatbot'

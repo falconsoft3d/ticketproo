@@ -692,8 +692,17 @@
             window.style.display = isOpening ? 'block' : 'none';
             isChatOpen = isOpening;
             
-            // Al abrir, hacer scroll pero mantener contador
+            // Al abrir, registrar el click y hacer scroll
             if (isOpening) {
+                // Registrar click en el servidor
+                fetch('{% url "chatbot_register_click" token=active_internal_chatbot.script_token %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                }).catch(error => console.log('Error registrando click:', error));
+                
                 const messagesDiv = document.getElementById('chatbot-messages');
                 setTimeout(() => {
                     messagesDiv.scrollTop = messagesDiv.scrollHeight;

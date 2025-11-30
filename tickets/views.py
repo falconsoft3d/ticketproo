@@ -50043,6 +50043,20 @@ def chatbot_unreviewed_conversations(request):
     })
 
 
+@require_http_methods(["POST"])
+def chatbot_register_click(request, token):
+    """Registrar click en el botón del chatbot"""
+    from .models import Chatbot
+    
+    try:
+        chatbot = Chatbot.objects.get(script_token=token)
+        chatbot.total_clicks += 1
+        chatbot.save(update_fields=['total_clicks'])
+        return JsonResponse({'success': True, 'total_clicks': chatbot.total_clicks})
+    except Chatbot.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Chatbot no encontrado'}, status=404)
+
+
 @login_required
 def chatbot_edit(request, pk):
     """Editar chatbot"""

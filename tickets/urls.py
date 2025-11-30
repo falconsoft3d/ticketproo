@@ -276,6 +276,7 @@ urlpatterns = [
     path('chatbot/script/<str:token>/', views.chatbot_script, name='chatbot_script'),
     path('chatbot/chat/<str:token>/', views.chatbot_chat, name='chatbot_chat'),
     path('chatbot/messages/<str:token>/', views.chatbot_get_new_messages, name='chatbot_get_new_messages'),
+    path('chatbot/click/<str:token>/', views.chatbot_register_click, name='chatbot_register_click'),
     path('api/chatbot/unreviewed/', views.chatbot_unreviewed_conversations, name='chatbot_unreviewed_conversations'),
     
     # URLs de control diario de tareas
