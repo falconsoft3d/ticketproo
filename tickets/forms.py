@@ -49,6 +49,7 @@ from .models import (
     EmployeeRequest, InternalAgreement, Asset, AssetHistory, 
     AITutor, AITutorProgressReport, AITutorAttachment, ExpenseReport, ExpenseItem, ExpenseComment,
     VideoMeeting, MeetingNote, QuoteGenerator, CountdownTimer, AbsenceType,
+    Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage,
     MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint, ScheduledTask,
     ClientRequest, ClientRequestResponse, ClientRequestTemplate, ClientRequestTemplateItem, Event, Trip, TripStop,
     MultiMeasurement, MultiMeasurementRecord, PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
@@ -3612,7 +3613,9 @@ class ContactForm(forms.ModelForm):
             'name', 'email', 'phone', 'position', 'company', 'country', 'erp',
             'status', 'assigned_to', 'source', 'company_size', 'notes', 'contact_date',
             'contacted_by_phone', 'contacted_by_web', 'had_meeting', 'meeting_date',
-            'contact_tracking_notes', 'last_contact_date'
+            'contact_tracking_notes', 'last_contact_date',
+            'website', 'facebook_url', 'linkedin_url', 'twitter_url', 'instagram_url',
+            'youtube_url', 'tiktok_url'
         ]
         widgets = {
             'name': forms.TextInput(attrs={
@@ -3687,6 +3690,34 @@ class ContactForm(forms.ModelForm):
                 'class': 'form-control',
                 'type': 'datetime-local'
             }),
+            'website': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://www.ejemplo.com'
+            }),
+            'facebook_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://facebook.com/empresa'
+            }),
+            'linkedin_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://linkedin.com/company/empresa'
+            }),
+            'twitter_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://twitter.com/empresa'
+            }),
+            'instagram_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://instagram.com/empresa'
+            }),
+            'youtube_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://youtube.com/@empresa'
+            }),
+            'tiktok_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://tiktok.com/@empresa'
+            }),
         }
     
     def __init__(self, *args, **kwargs):
@@ -3742,6 +3773,13 @@ class ContactForm(forms.ModelForm):
         self.fields['meeting_date'].label = 'Fecha de reunión'
         self.fields['contact_tracking_notes'].label = 'Notas de seguimiento'
         self.fields['last_contact_date'].label = 'Fecha del último contacto'
+        self.fields['website'].label = 'Sitio Web'
+        self.fields['facebook_url'].label = 'Facebook'
+        self.fields['linkedin_url'].label = 'LinkedIn'
+        self.fields['twitter_url'].label = 'Twitter/X'
+        self.fields['instagram_url'].label = 'Instagram'
+        self.fields['youtube_url'].label = 'YouTube'
+        self.fields['tiktok_url'].label = 'TikTok'
 
 
 class SalesPlanForm(forms.ModelForm):
@@ -9495,6 +9533,157 @@ class ChecklistItemForm(forms.ModelForm):
             'title': 'Título de la Tarea',
             'description': 'Descripción',
             'cost': 'Costo en Euros (opcional)'
+        }
+
+
+# ==================== CHATBOT FORMS ====================
+
+class ChatbotForm(forms.ModelForm):
+    """Formulario para crear/editar chatbots"""
+    
+    class Meta:
+        from .models import Chatbot
+        model = Chatbot
+        fields = [
+            'title', 'type', 'description', 'is_active', 
+            'use_ai', 'ai_context', 'welcome_message',
+            'primary_color', 'secondary_color', 'bot_message_color', 'user_message_color',
+            'icon_choice', 'position', 'allowed_domains', 'response_delay'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del chatbot'
+            }),
+            'type': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Ej: Agente de ventas para capturar leads'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'use_ai': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'ai_context': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Contexto adicional para la IA (opcional)'
+            }),
+            'welcome_message': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': '¡Hola! ¿En qué puedo ayudarte?'
+            }),
+            'primary_color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color'
+            }),
+            'secondary_color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color'
+            }),
+            'bot_message_color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color'
+            }),
+            'user_message_color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color'
+            }),
+            'icon_choice': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'position': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'allowed_domains': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'ejemplo.com\notrodominio.com (uno por línea, solo para externos)'
+            }),
+            'response_delay': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0',
+                'max': '10',
+                'placeholder': '0'
+            })
+        }
+        labels = {
+            'title': 'Nombre del Chatbot',
+            'type': 'Tipo de Chatbot',
+            'description': 'Descripción',
+            'is_active': 'Activo',
+            'use_ai': 'Usar IA para respuestas no configuradas',
+            'ai_context': 'Contexto para la IA',
+            'welcome_message': 'Mensaje de Bienvenida',
+            'primary_color': 'Color Principal',
+            'secondary_color': 'Color Secundario',
+            'bot_message_color': 'Color Mensajes del Bot',
+            'user_message_color': 'Color Mensajes del Usuario',
+            'icon_choice': 'Icono del Botón',
+            'position': 'Posición en la Pantalla',
+            'allowed_domains': 'Dominios Permitidos',
+            'response_delay': 'Tiempo de Espera (segundos)'
+        }
+        help_texts = {
+            'type': 'Interno: Solo en esta web. Externo: Integrable vía script en otros sitios.',
+            'use_ai': 'Si está activado, la IA responderá preguntas no configuradas.',
+            'ai_context': 'Información adicional para que la IA responda mejor.',
+            'allowed_domains': 'Solo para externos. Deja vacío para permitir todos los dominios.',
+            'response_delay': 'Segundos que espera el bot antes de responder (0 = inmediato, simula escritura humana).'
+        }
+
+
+class ChatbotQuestionForm(forms.ModelForm):
+    """Formulario para crear/editar preguntas del chatbot"""
+    
+    class Meta:
+        from .models import ChatbotQuestion
+        model = ChatbotQuestion
+        fields = ['question', 'keywords', 'answer', 'order', 'is_active', 'use_ai']
+        widgets = {
+            'question': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '¿Cuál es tu pregunta frecuente?'
+            }),
+            'keywords': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'palabra1, palabra2, palabra3'
+            }),
+            'answer': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Respuesta que se mostrará al usuario'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0',
+                'value': '0'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'use_ai': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            })
+        }
+        labels = {
+            'question': 'Pregunta',
+            'keywords': 'Palabras Clave',
+            'answer': 'Respuesta',
+            'order': 'Orden',
+            'is_active': 'Activa',
+            'use_ai': 'Permitir que IA mejore esta respuesta'
+        }
+        help_texts = {
+            'keywords': 'Palabras separadas por comas que activarán esta respuesta.',
+            'order': 'Orden de sugerencia (menor número = mayor prioridad).',
+            'use_ai': 'La IA puede mejorar o expandir esta respuesta base.'
         }
 
 

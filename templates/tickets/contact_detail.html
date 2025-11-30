@@ -163,6 +163,58 @@
                         </div>
                     </div>
                     {% endif %}
+                    
+                    <!-- Redes Sociales y Web -->
+                    {% if contact.website or contact.linkedin_url or contact.facebook_url or contact.twitter_url or contact.instagram_url or contact.youtube_url or contact.tiktok_url %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6><i class="bi bi-globe text-primary"></i> Redes Sociales y Web</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% if contact.website %}
+                                <a href="{{ contact.website }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Sitio Web">
+                                    <i class="bi bi-globe2"></i> Sitio Web
+                                </a>
+                                {% endif %}
+                                
+                                {% if contact.linkedin_url %}
+                                <a href="{{ contact.linkedin_url }}" target="_blank" class="btn btn-sm btn-outline-primary" title="LinkedIn">
+                                    <i class="bi bi-linkedin"></i> LinkedIn
+                                </a>
+                                {% endif %}
+                                
+                                {% if contact.facebook_url %}
+                                <a href="{{ contact.facebook_url }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Facebook">
+                                    <i class="bi bi-facebook"></i> Facebook
+                                </a>
+                                {% endif %}
+                                
+                                {% if contact.twitter_url %}
+                                <a href="{{ contact.twitter_url }}" target="_blank" class="btn btn-sm btn-outline-info" title="Twitter/X">
+                                    <i class="bi bi-twitter"></i> Twitter/X
+                                </a>
+                                {% endif %}
+                                
+                                {% if contact.instagram_url %}
+                                <a href="{{ contact.instagram_url }}" target="_blank" class="btn btn-sm btn-outline-danger" title="Instagram">
+                                    <i class="bi bi-instagram"></i> Instagram
+                                </a>
+                                {% endif %}
+                                
+                                {% if contact.youtube_url %}
+                                <a href="{{ contact.youtube_url }}" target="_blank" class="btn btn-sm btn-outline-danger" title="YouTube">
+                                    <i class="bi bi-youtube"></i> YouTube
+                                </a>
+                                {% endif %}
+                                
+                                {% if contact.tiktok_url %}
+                                <a href="{{ contact.tiktok_url }}" target="_blank" class="btn btn-sm btn-outline-dark" title="TikTok">
+                                    <i class="bi bi-tiktok"></i> TikTok
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 

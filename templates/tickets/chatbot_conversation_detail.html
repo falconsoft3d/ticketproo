@@ -1,0 +1,433 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'chatbot_list' %}">Chatbots</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'chatbot_detail' chatbot.pk %}">{{ chatbot.title }}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'chatbot_conversations' chatbot.pk %}">Conversaciones</a></li>
+                    <li class="breadcrumb-item active">{{ conversation.session_id|slice:":8" }}...</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Panel de Información -->
+        <div class="col-lg-3">
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="fas fa-user-circle me-2"></i>Datos del Usuario</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1">Sesión ID</small>
+                        <code class="d-block small text-truncate">{{ conversation.session_id }}</code>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1"><i class="fas fa-user"></i> Nombre</small>
+                        {% if conversation.user_name %}
+                            <strong>{{ conversation.user_name }}</strong>
+                        {% else %}
+                            <span class="text-muted">No capturado</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1"><i class="fas fa-envelope"></i> Email</small>
+                        {% if conversation.user_email %}
+                            <a href="mailto:{{ conversation.user_email }}" class="text-decoration-none">{{ conversation.user_email }}</a>
+                        {% else %}
+                            <span class="text-muted">No capturado</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1"><i class="fas fa-phone"></i> Teléfono</small>
+                        {% if conversation.user_phone %}
+                            <a href="tel:{{ conversation.user_phone }}" class="text-decoration-none">{{ conversation.user_phone }}</a>
+                        {% else %}
+                            <span class="text-muted">No capturado</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Estadísticas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1"><i class="fas fa-map-marker-alt"></i> Ubicación</small>
+                        {% if conversation.country %}
+                            <div><strong>{{ conversation.country }}</strong></div>
+                            {% if conversation.city %}<div class="small">{{ conversation.city }}</div>{% endif %}
+                        {% else %}
+                            <span class="text-muted">No detectada</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1"><i class="fas fa-network-wired"></i> IP</small>
+                        {% if conversation.ip_address %}
+                            <code class="small">{{ conversation.ip_address }}</code>
+                        {% else %}
+                            <span class="text-muted">No detectada</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1"><i class="fas fa-clock"></i> Inicio</small>
+                        <div class="small">{{ conversation.started_at|date:"d/m/Y" }}</div>
+                        <div class="small text-muted">{{ conversation.started_at|date:"H:i:s" }}</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1"><i class="fas fa-history"></i> Última actividad</small>
+                        <div class="small">{{ conversation.last_activity|date:"d/m/Y" }}</div>
+                        <div class="small text-muted">{{ conversation.last_activity|date:"H:i:s" }}</div>
+                    </div>
+                    
+                    <div class="mb-0">
+                        <small class="text-muted d-block mb-1"><i class="fas fa-comments"></i> Total mensajes</small>
+                        <span class="badge bg-primary fs-6">{{ messages|length }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Chat -->
+        <div class="col-lg-9">
+            <div class="card shadow-sm border-0 chat-card">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-comments me-2 text-primary"></i>Historial de Conversación
+                            {% if conversation.reviewed %}
+                                <span class="badge bg-success ms-2" title="Revisada el {{ conversation.reviewed_at|date:'d/m/Y H:i' }} por {{ conversation.reviewed_by }}">
+                                    <i class="fas fa-check-circle"></i> Revisada
+                                </span>
+                            {% endif %}
+                        </h5>
+                        <div class="btn-group">
+                            <a href="{% url 'chatbot_conversation_toggle_reviewed' chatbot.pk conversation.pk %}" 
+                               class="btn btn-sm {% if conversation.reviewed %}btn-outline-warning{% else %}btn-success{% endif %}"
+                               onclick="return confirm('¿Marcar conversación como {{ conversation.reviewed|yesno:'no revisada,revisada' }}?')">
+                                <i class="fas {% if conversation.reviewed %}fa-times-circle{% else %}fa-check-circle{% endif %} me-1"></i>
+                                {{ conversation.reviewed|yesno:'Marcar no revisada,Marcar revisada' }}
+                            </a>
+                            <a href="{% url 'chatbot_conversations' chatbot.pk %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Volver
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0 d-flex flex-column" style="height: 100%;">
+                    <div class="chat-messages p-4 flex-grow-1" id="chatMessagesContainer">
+                        {% for message in messages %}
+                        <div class="message-wrapper mb-4 {% if message.is_bot %}bot-msg{% else %}user-msg{% endif %}" data-msg-id="{{ message.id }}">
+                            <div class="message-bubble">
+                                <div class="message-header mb-2">
+                                    {% if message.is_bot %}
+                                        {% if message.used_ai %}
+                                            <i class="fas fa-robot text-primary me-2"></i>
+                                            <strong class="text-primary">{{ chatbot.title }}</strong>
+                                        {% else %}
+                                            <i class="fas fa-user-shield text-success me-2"></i>
+                                            <strong class="text-success">Administrador</strong>
+                                        {% endif %}
+                                    {% else %}
+                                        <i class="fas fa-user text-white me-2"></i>
+                                        <strong class="text-white">{% if conversation.user_name %}{{ conversation.user_name }}{% else %}Usuario{% endif %}</strong>
+                                    {% endif %}
+                                </div>
+                                <div class="message-content">{{ message.message }}</div>
+                                <div class="message-footer mt-2">
+                                    <small>
+                                        <i class="fas fa-clock me-1"></i>
+                                        {{ message.timestamp|date:"d/m/Y H:i:s" }}
+                                        {% if message.used_ai %}
+                                            <i class="fas fa-brain ms-2" title="Generado con IA"></i>
+                                        {% else %}
+                                            {% if message.is_bot %}
+                                                <i class="fas fa-user-circle ms-2" title="Respuesta manual del administrador"></i>
+                                            {% endif %}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Input para responder -->
+                    <div class="chat-input-container border-top p-3 bg-white">
+                        <form id="adminResponseForm" class="d-flex gap-2">
+                            {% csrf_token %}
+                            <input type="text" 
+                                   id="adminMessageInput" 
+                                   class="form-control" 
+                                   placeholder="Escribe tu respuesta como administrador..."
+                                   autocomplete="off">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i>Enviar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.chat-card {
+    height: calc(100vh - 200px);
+    max-height: 800px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-messages {
+    overflow-y: auto;
+    height: 100%;
+    max-height: 600px;
+    background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.chat-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 10px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+.message-wrapper {
+    display: flex;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message-wrapper.bot-msg {
+    justify-content: flex-start;
+}
+
+.message-wrapper.user-msg {
+    justify-content: flex-end;
+}
+
+.message-bubble {
+    max-width: 70%;
+    padding: 16px 20px;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.bot-msg .message-bubble {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-bottom-left-radius: 4px;
+}
+
+.user-msg .message-bubble {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.message-header strong {
+    font-size: 0.9rem;
+}
+
+.message-content {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    word-wrap: break-word;
+}
+
+.bot-msg .message-content {
+    color: #2d3748;
+}
+
+.user-msg .message-content {
+    color: white;
+}
+
+.message-footer {
+    opacity: 0.7;
+    font-size: 0.75rem;
+}
+
+.bot-msg .message-footer {
+    color: #718096;
+}
+
+.user-msg .message-footer {
+    color: rgba(255,255,255,0.8);
+}
+
+.card-header {
+    padding: 1rem 1.5rem;
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "›";
+    font-size: 1.2rem;
+}
+
+/* Ocultar notificaciones flotantes o listas superpuestas */
+.toast, .notification-list, .floating-messages, 
+[class*="notification"]:not(.breadcrumb):not(.card):not(.alert) {
+    display: none !important;
+}
+
+.chat-input-container {
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+}
+
+.chat-input-container input {
+    border: 1px solid #dee2e6;
+    border-radius: 25px;
+    padding: 10px 20px;
+}
+
+.chat-input-container input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.chat-input-container button {
+    border-radius: 25px;
+    padding: 10px 25px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Eliminar las alertas de mensajes de Django que se muestran arriba
+    const alerts = document.querySelectorAll('.alert.alert-dismissible');
+    alerts.forEach(alert => {
+        if (alert.textContent.includes('Bot:') || alert.textContent.includes('Usuario:')) {
+            alert.remove();
+        }
+    });
+    
+    const chatContainer = document.getElementById('chatMessagesContainer');
+    
+    // Eliminar mensajes duplicados
+    const seenMessages = new Set();
+    const messageWrappers = chatContainer.querySelectorAll('.message-wrapper');
+    
+    messageWrappers.forEach(wrapper => {
+        const msgId = wrapper.getAttribute('data-msg-id');
+        if (seenMessages.has(msgId)) {
+            wrapper.remove();
+        } else {
+            seenMessages.add(msgId);
+        }
+    });
+    
+    // Scroll automático al final
+    setTimeout(() => {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }, 100);
+    
+    // Manejar envío de respuesta del administrador
+    const adminForm = document.getElementById('adminResponseForm');
+    const adminInput = document.getElementById('adminMessageInput');
+    
+    adminForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const message = adminInput.value.trim();
+        if (!message) return;
+        
+        // Deshabilitar el input mientras se envía
+        adminInput.disabled = true;
+        const submitBtn = adminForm.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        
+        try {
+            const response = await fetch('{% url "chatbot_conversation_reply" chatbot.pk conversation.pk %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ message: message })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                // Agregar el mensaje al chat
+                const messageWrapper = document.createElement('div');
+                messageWrapper.className = 'message-wrapper mb-4 bot-msg';
+                messageWrapper.innerHTML = `
+                    <div class="message-bubble">
+                        <div class="message-header mb-2">
+                            <i class="fas fa-user-shield text-success me-2"></i>
+                            <strong class="text-success">{{ user.get_full_name|default:user.username }} (Admin)</strong>
+                        </div>
+                        <div class="message-content">${message}</div>
+                        <div class="message-footer mt-2">
+                            <small>
+                                <i class="fas fa-clock me-1"></i>
+                                ${new Date().toLocaleString('es-ES')}
+                            </small>
+                        </div>
+                    </div>
+                `;
+                chatContainer.appendChild(messageWrapper);
+                
+                // Limpiar input y hacer scroll
+                adminInput.value = '';
+                setTimeout(() => {
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }, 100);
+            } else {
+                alert('Error al enviar el mensaje');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al enviar el mensaje');
+        } finally {
+            adminInput.disabled = false;
+            submitBtn.disabled = false;
+            adminInput.focus();
+        }
+    });
+});
+</script>
+{% endblock %}

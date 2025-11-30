@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <h2><i class="fas fa-comments"></i> Conversaciones - {{ chatbot.title }}</h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'chatbot_detail' chatbot.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al Chatbot
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if conversations %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Sesión</th>
+                            <th>Nombre</th>
+                            <th>País / Ciudad</th>
+                            <th>IP</th>
+                            <th>Inicio</th>
+                            <th>Última actividad</th>
+                            <th>Mensajes</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for conversation in conversations %}
+                        <tr>
+                            <td>
+                                <code>{{ conversation.session_id|slice:":8" }}...</code>
+                            </td>
+                            <td>
+                                {% if conversation.user_name %}
+                                    <i class="fas fa-user"></i> {{ conversation.user_name }}
+                                {% else %}
+                                    <span class="text-muted">Sin nombre</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if conversation.country %}
+                                    <i class="fas fa-map-marker-alt"></i> {{ conversation.country }}
+                                    {% if conversation.city %}/ {{ conversation.city }}{% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if conversation.ip_address %}
+                                    <small class="text-muted">{{ conversation.ip_address }}</small>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ conversation.started_at|date:"d/m/Y H:i" }}</td>
+                            <td>{{ conversation.last_activity|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <span class="badge bg-primary">{{ conversation.messages.count }}</span>
+                                {% if conversation.hide_chat %}
+                                <span class="badge bg-danger ms-1" title="Chat oculto para este usuario">
+                                    <i class="fas fa-eye-slash"></i> Oculto
+                                </span>
+                                {% endif %}
+                                {% if conversation.reviewed %}
+                                <span class="badge bg-success ms-1" title="Revisada el {{ conversation.reviewed_at|date:'d/m/Y H:i' }} por {{ conversation.reviewed_by }}">
+                                    <i class="fas fa-check-circle"></i> Revisada
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'chatbot_conversation_detail' chatbot.pk conversation.pk %}" 
+                                       class="btn btn-sm btn-info"
+                                       title="Ver conversación">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="{% url 'chatbot_conversation_toggle_hide' chatbot.pk conversation.pk %}" 
+                                       class="btn btn-sm {% if conversation.hide_chat %}btn-success{% else %}btn-warning{% endif %}"
+                                       title="{% if conversation.hide_chat %}Mostrar chat{% else %}Ocultar chat{% endif %}"
+                                       onclick="return confirm('{% if conversation.hide_chat %}¿Mostrar el chat para este usuario?{% else %}¿Ocultar el chat para este usuario?{% endif %}')">
+                                        <i class="fas {% if conversation.hide_chat %}fa-eye{% else %}fa-eye-slash{% endif %}"></i>
+                                    </a>
+                                    
+                                    <a href="{% url 'chatbot_conversation_delete' chatbot.pk conversation.pk %}" 
+                                       class="btn btn-sm btn-danger"
+                                       title="Eliminar conversación"
+                                       onclick="return confirm('¿Estás seguro de eliminar esta conversación? Esta acción no se puede deshacer.')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No hay conversaciones registradas aún.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

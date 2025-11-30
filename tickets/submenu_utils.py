@@ -287,6 +287,13 @@ def get_gt_submenu(request, active_item=None):
             'count': None,
             'active': active_item == 'tasks'
         },
+        {
+            'name': 'Chatbots',
+            'url': reverse('chatbot_list'),
+            'icon': 'bi bi-robot',
+            'count': None,
+            'active': active_item == 'chatbots'
+        },
     ]
     
     return submenu

@@ -338,7 +338,7 @@ def register_view(request):
             # Asignar automáticamente al grupo de Usuarios
             assign_user_to_group(user, 'Usuarios')
             
-            messages.success(request, f'Cuenta creada para {username}. Ya puedes iniciar sesión.')
+            messages.success(request, f'Cuenta creada para {username}. Ya puedes iniciar sesion.')
             return redirect('login')
     else:
         form = UserCreationForm()
@@ -11651,6 +11651,151 @@ def contact_create(request):
     }
     
     return render(request, 'tickets/contact_form.html', context)
+
+
+@login_required
+def contact_autocomplete_ai(request):
+    """Autocompletar información del contacto usando IA"""
+    import json
+    from django.http import JsonResponse
+    from .ai_utils import AIContentOptimizer
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        
+        # Extraer datos del contacto
+        name = data.get('name', '').strip()
+        company = data.get('company', '').strip()
+        email = data.get('email', '').strip()
+        position = data.get('position', '').strip()
+        country = data.get('country', '').strip()
+        notes = data.get('notes', '').strip()
+        
+        # Campos actuales de redes sociales
+        current_website = data.get('website', '').strip()
+        current_linkedin = data.get('linkedin_url', '').strip()
+        current_facebook = data.get('facebook_url', '').strip()
+        current_twitter = data.get('twitter_url', '').strip()
+        current_instagram = data.get('instagram_url', '').strip()
+        current_youtube = data.get('youtube_url', '').strip()
+        current_tiktok = data.get('tiktok_url', '').strip()
+        
+        # Validar que tengamos información mínima
+        if not name and not company and not email:
+            return JsonResponse({
+                'success': False,
+                'error': 'Se necesita al menos nombre, empresa o email para autocompletar'
+            })
+        
+        # Construir contexto para la IA
+        context = f"""
+Tengo la siguiente información de un contacto comercial:
+- Nombre: {name if name else 'No especificado'}
+- Empresa: {company if company else 'No especificada'}
+- Email: {email if email else 'No especificado'}
+- Cargo: {position if position else 'No especificado'}
+- País: {country if country else 'No especificado'}
+- Notas: {notes if notes else 'Ninguna'}
+
+Redes sociales conocidas:
+- Sitio web: {current_website if current_website else 'No especificado'}
+- LinkedIn: {current_linkedin if current_linkedin else 'No especificado'}
+- Facebook: {current_facebook if current_facebook else 'No especificado'}
+- Twitter/X: {current_twitter if current_twitter else 'No especificado'}
+- Instagram: {current_instagram if current_instagram else 'No especificado'}
+- YouTube: {current_youtube if current_youtube else 'No especificado'}
+- TikTok: {current_tiktok if current_tiktok else 'No especificado'}
+
+Por favor, sugiere URLs de redes sociales que probablemente tenga esta empresa/contacto.
+Para cada red social que NO tenga URL especificada, proporciona una sugerencia realista basada en el nombre de la empresa.
+También proporciona información adicional relevante para las notas del CRM.
+
+Responde en formato JSON con esta estructura exacta:
+{{
+    "website": "URL sugerida o vacío si ya existe",
+    "linkedin_url": "URL sugerida o vacío si ya existe",
+    "facebook_url": "URL sugerida o vacío si ya existe",
+    "twitter_url": "URL sugerida o vacío si ya existe",
+    "instagram_url": "URL sugerida o vacío si ya existe",
+    "youtube_url": "URL sugerida o vacío si ya existe",
+    "tiktok_url": "URL sugerida o vacío si ya existe",
+    "additional_notes": "Información adicional relevante para el CRM"
+}}
+
+Solo sugiere URLs para campos vacíos. Si el campo ya tiene valor, deja la sugerencia vacía.
+Las URLs deben ser completas y válidas (empezando con https://).
+"""
+        
+        # Usar AIContentOptimizer
+        optimizer = AIContentOptimizer()
+        
+        messages = [
+            {
+                "role": "system",
+                "content": "Eres un asistente de CRM experto que ayuda a completar información de contactos comerciales. Proporcionas URLs realistas de redes sociales basadas en nombres de empresas y contexto. Siempre respondes en formato JSON válido."
+            },
+            {
+                "role": "user",
+                "content": context
+            }
+        ]
+        
+        # Hacer petición a IA
+        result = optimizer._make_ai_request(messages, max_tokens=800, temperature=0.7)
+        
+        if 'error' in result:
+            return JsonResponse({
+                'success': False,
+                'error': result['error']
+            })
+        
+        # Parsear respuesta
+        try:
+            ai_response = result['choices'][0]['message']['content'].strip()
+            
+            # Intentar extraer JSON si viene con markdown
+            if '```json' in ai_response:
+                ai_response = ai_response.split('```json')[1].split('```')[0].strip()
+            elif '```' in ai_response:
+                ai_response = ai_response.split('```')[1].split('```')[0].strip()
+            
+            suggestions = json.loads(ai_response)
+            
+            # Solo mantener sugerencias para campos vacíos
+            if current_website:
+                suggestions['website'] = ''
+            if current_linkedin:
+                suggestions['linkedin_url'] = ''
+            if current_facebook:
+                suggestions['facebook_url'] = ''
+            if current_twitter:
+                suggestions['twitter_url'] = ''
+            if current_instagram:
+                suggestions['instagram_url'] = ''
+            if current_youtube:
+                suggestions['youtube_url'] = ''
+            if current_tiktok:
+                suggestions['tiktok_url'] = ''
+            
+            return JsonResponse({
+                'success': True,
+                'suggestions': suggestions
+            })
+            
+        except json.JSONDecodeError as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Error parseando respuesta de IA: {str(e)}'
+            })
+            
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error interno: {str(e)}'
+        })
 
 
 @login_required
@@ -49606,3 +49751,710 @@ def knowledge_base_public(request, token):
         return render(request, 'tickets/knowledge_base_public_error.html', {
             'error': 'Enlace no encontrado o token inválido.'
         })
+
+
+# ==================== CHATBOT VIEWS ====================
+
+@login_required
+def chatbot_list(request):
+    """Lista de chatbots"""
+    from .models import Chatbot
+    
+    chatbots = Chatbot.objects.all().order_by('-created_at')
+    
+    context = {
+        'chatbots': chatbots,
+        'page_title': 'Chatbots',
+        'module': 'GT',
+        'submenu_active': 'chatbots'
+    }
+    
+    return render(request, 'tickets/chatbot_list.html', context)
+
+
+@login_required
+def chatbot_create(request):
+    """Crear chatbot"""
+    from .models import Chatbot
+    from .forms import ChatbotForm
+    
+    if request.method == 'POST':
+        form = ChatbotForm(request.POST)
+        if form.is_valid():
+            chatbot = form.save(commit=False)
+            chatbot.created_by = request.user
+            chatbot.save()
+            messages.success(request, f'Chatbot "{chatbot.title}" creado exitosamente.')
+            return redirect('chatbot_detail', pk=chatbot.pk)
+    else:
+        form = ChatbotForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Chatbot',
+        'module': 'GT',
+        'submenu_active': 'chatbots'
+    }
+    
+    return render(request, 'tickets/chatbot_form.html', context)
+
+
+@login_required
+def chatbot_detail(request, pk):
+    """Detalle del chatbot"""
+    from .models import Chatbot, ChatbotQuestion
+    
+    chatbot = get_object_or_404(Chatbot, pk=pk)
+    questions = chatbot.questions.all()
+    
+    context = {
+        'chatbot': chatbot,
+        'questions': questions,
+        'page_title': chatbot.title,
+        'module': 'GT',
+        'submenu_active': 'chatbots'
+    }
+    
+    return render(request, 'tickets/chatbot_detail.html', context)
+
+
+@login_required
+def chatbot_conversations(request, pk):
+    """Ver conversaciones del chatbot"""
+    from .models import Chatbot, ChatbotConversation
+    
+    chatbot = get_object_or_404(Chatbot, pk=pk)
+    conversations = chatbot.conversations.all().order_by('-started_at')
+    
+    context = {
+        'chatbot': chatbot,
+        'conversations': conversations,
+        'page_title': f'Conversaciones - {chatbot.title}',
+        'module': 'GT',
+        'submenu_active': 'chatbots'
+    }
+    
+    return render(request, 'tickets/chatbot_conversations.html', context)
+
+
+@login_required
+def chatbot_conversation_detail(request, pk, conversation_id):
+    """Ver detalle de una conversación"""
+    from .models import Chatbot, ChatbotConversation
+    
+    chatbot = get_object_or_404(Chatbot, pk=pk)
+    conversation = get_object_or_404(ChatbotConversation, pk=conversation_id, chatbot=chatbot)
+    # Obtener mensajes únicos ordenados por timestamp
+    messages = conversation.messages.all().order_by('timestamp').distinct()
+    
+    context = {
+        'chatbot': chatbot,
+        'conversation': conversation,
+        'messages': messages,
+        'page_title': f'Conversación {conversation.session_id[:8]}',
+        'module': 'GT',
+        'submenu_active': 'chatbots'
+    }
+    
+    return render(request, 'tickets/chatbot_conversation_detail.html', context)
+
+
+@login_required
+def chatbot_conversation_delete(request, pk, conversation_id):
+    """Eliminar conversación"""
+    from django.contrib import messages
+    from .models import Chatbot, ChatbotConversation
+    
+    chatbot = get_object_or_404(Chatbot, pk=pk)
+    conversation = get_object_or_404(ChatbotConversation, pk=conversation_id, chatbot=chatbot)
+    
+    session_id = conversation.session_id[:8]
+    conversation.delete()
+    
+    messages.success(request, f'Conversación {session_id} eliminada correctamente.')
+    return redirect('chatbot_conversations', pk=pk)
+
+
+@login_required
+def chatbot_conversation_toggle_hide(request, pk, conversation_id):
+    """Ocultar/mostrar chat para una conversación"""
+    from django.contrib import messages
+    from .models import Chatbot, ChatbotConversation
+    
+    chatbot = get_object_or_404(Chatbot, pk=pk)
+    conversation = get_object_or_404(ChatbotConversation, pk=conversation_id, chatbot=chatbot)
+    
+    conversation.hide_chat = not conversation.hide_chat
+    conversation.save()
+    
+    status = 'ocultado' if conversation.hide_chat else 'visible'
+    messages.success(request, f'Chat {status} para esta sesión.')
+    return redirect('chatbot_conversations', pk=pk)
+
+
+@login_required
+def chatbot_conversation_toggle_reviewed(request, pk, conversation_id):
+    """Marcar/desmarcar conversación como revisada"""
+    from django.contrib import messages
+    from django.utils import timezone
+    from .models import Chatbot, ChatbotConversation
+    
+    chatbot = get_object_or_404(Chatbot, pk=pk)
+    conversation = get_object_or_404(ChatbotConversation, pk=conversation_id, chatbot=chatbot)
+    
+    conversation.reviewed = not conversation.reviewed
+    if conversation.reviewed:
+        conversation.reviewed_at = timezone.now()
+        conversation.reviewed_by = request.user
+    else:
+        conversation.reviewed_at = None
+        conversation.reviewed_by = None
+    conversation.save()
+    
+    status = 'revisada' if conversation.reviewed else 'no revisada'
+    messages.success(request, f'Conversación marcada como {status}.')
+    return redirect('chatbot_conversation_detail', pk=pk, conversation_id=conversation_id)
+
+
+@login_required
+def chatbot_conversation_reply(request, pk, conversation_id):
+    """Responder como administrador en una conversación"""
+    import json
+    from django.http import JsonResponse
+    from .models import Chatbot, ChatbotConversation, ChatbotMessage
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    chatbot = get_object_or_404(Chatbot, pk=pk)
+    conversation = get_object_or_404(ChatbotConversation, pk=conversation_id, chatbot=chatbot)
+    
+    try:
+        data = json.loads(request.body)
+        message_text = data.get('message', '').strip()
+        
+        if not message_text:
+            return JsonResponse({'error': 'El mensaje no puede estar vacío'}, status=400)
+        
+        # Crear el mensaje del administrador
+        ChatbotMessage.objects.create(
+            conversation=conversation,
+            message=message_text,
+            is_bot=True,  # Se marca como bot pero es del admin
+            used_ai=False  # No fue generado por IA
+        )
+        
+        # Actualizar última actividad de la conversación
+        from django.utils import timezone
+        conversation.last_activity = timezone.now()
+        conversation.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Mensaje enviado correctamente'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def chatbot_get_new_messages(request, token):
+    """Obtener mensajes nuevos para una conversación (polling)"""
+    import json
+    from django.http import JsonResponse
+    from .models import Chatbot, ChatbotConversation, ChatbotMessage
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        chatbot = Chatbot.objects.get(script_token=token, is_active=True)
+        
+        data = json.loads(request.body)
+        session_id = data.get('session_id', '')
+        last_message_id = data.get('last_message_id', 0)
+        
+        # Obtener la conversación
+        try:
+            conversation = ChatbotConversation.objects.get(
+                chatbot=chatbot,
+                session_id=session_id
+            )
+        except ChatbotConversation.DoesNotExist:
+            return JsonResponse({'messages': []})
+        
+        # Obtener mensajes nuevos desde el último ID
+        # Solo mensajes del admin (is_bot=True y used_ai=False)
+        new_messages = ChatbotMessage.objects.filter(
+            conversation=conversation,
+            id__gt=last_message_id,
+            is_bot=True,
+            used_ai=False  # Solo mensajes del admin, no respuestas automáticas
+        ).order_by('timestamp').values('id', 'message', 'timestamp')
+        
+        messages_list = list(new_messages)
+        
+        # Obtener el ID del último mensaje del admin en la conversación
+        last_admin_message = ChatbotMessage.objects.filter(
+            conversation=conversation,
+            is_bot=True,
+            used_ai=False
+        ).order_by('-id').first()
+        
+        current_last_id = last_admin_message.id if last_admin_message else 0
+        
+        return JsonResponse({
+            'messages': messages_list,
+            'last_message_id': current_last_id
+        })
+        
+    except Chatbot.DoesNotExist:
+        return JsonResponse({'error': 'Chatbot no encontrado'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def chatbot_unreviewed_conversations(request):
+    """API para obtener conversaciones no revisadas"""
+    from django.http import JsonResponse
+    from .models import ChatbotConversation
+    
+    conversations = ChatbotConversation.objects.filter(
+        reviewed=False
+    ).select_related('chatbot').order_by('-last_activity')[:50]
+    
+    data = [{
+        'id': conv.id,
+        'chatbot_id': conv.chatbot.id,
+        'chatbot_name': conv.chatbot.title,
+        'session_id': conv.session_id[:8],
+        'user_name': conv.user_name or 'Usuario anónimo',
+        'message_count': conv.messages.count(),
+        'last_activity': conv.last_activity.strftime('%d/%m/%Y %H:%M'),
+        'url': f'/chatbots/{conv.chatbot.id}/conversations/{conv.id}/'
+    } for conv in conversations]
+    
+    return JsonResponse({
+        'count': len(data),
+        'conversations': data
+    })
+
+
+@login_required
+def chatbot_edit(request, pk):
+    """Editar chatbot"""
+    from .models import Chatbot
+    from .forms import ChatbotForm
+    
+    chatbot = get_object_or_404(Chatbot, pk=pk)
+    
+    if request.method == 'POST':
+        form = ChatbotForm(request.POST, instance=chatbot)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Chatbot "{chatbot.title}" actualizado exitosamente.')
+            return redirect('chatbot_detail', pk=chatbot.pk)
+    else:
+        form = ChatbotForm(instance=chatbot)
+    
+    context = {
+        'form': form,
+        'chatbot': chatbot,
+        'page_title': f'Editar {chatbot.title}',
+        'module': 'GT',
+        'submenu_active': 'chatbots'
+    }
+    
+    return render(request, 'tickets/chatbot_form.html', context)
+
+
+@login_required
+def chatbot_delete(request, pk):
+    """Eliminar chatbot"""
+    from .models import Chatbot
+    
+    chatbot = get_object_or_404(Chatbot, pk=pk)
+    
+    if request.method == 'POST':
+        title = chatbot.title
+        chatbot.delete()
+        messages.success(request, f'Chatbot "{title}" eliminado exitosamente.')
+        return redirect('chatbot_list')
+    
+    context = {
+        'chatbot': chatbot,
+        'page_title': f'Eliminar {chatbot.title}',
+        'module': 'GT',
+        'submenu_active': 'chatbots'
+    }
+    
+    return render(request, 'tickets/chatbot_confirm_delete.html', context)
+
+
+@login_required
+def chatbot_question_create(request, pk):
+    """Crear pregunta para chatbot"""
+    from .models import Chatbot, ChatbotQuestion
+    from .forms import ChatbotQuestionForm
+    
+    chatbot = get_object_or_404(Chatbot, pk=pk)
+    
+    if request.method == 'POST':
+        form = ChatbotQuestionForm(request.POST)
+        if form.is_valid():
+            question = form.save(commit=False)
+            question.chatbot = chatbot
+            question.save()
+            messages.success(request, 'Pregunta agregada exitosamente.')
+            return redirect('chatbot_detail', pk=chatbot.pk)
+    else:
+        form = ChatbotQuestionForm()
+    
+    context = {
+        'form': form,
+        'chatbot': chatbot,
+        'page_title': f'Nueva Pregunta - {chatbot.title}',
+        'module': 'GT',
+        'submenu_active': 'chatbots'
+    }
+    
+    return render(request, 'tickets/chatbot_question_form.html', context)
+
+
+@login_required
+def chatbot_question_edit(request, pk, question_id):
+    """Editar pregunta del chatbot"""
+    from .models import Chatbot, ChatbotQuestion
+    from .forms import ChatbotQuestionForm
+    
+    chatbot = get_object_or_404(Chatbot, pk=pk)
+    question = get_object_or_404(ChatbotQuestion, pk=question_id, chatbot=chatbot)
+    
+    if request.method == 'POST':
+        form = ChatbotQuestionForm(request.POST, instance=question)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Pregunta actualizada exitosamente.')
+            return redirect('chatbot_detail', pk=chatbot.pk)
+    else:
+        form = ChatbotQuestionForm(instance=question)
+    
+    context = {
+        'form': form,
+        'chatbot': chatbot,
+        'question': question,
+        'page_title': f'Editar Pregunta - {chatbot.title}',
+        'module': 'GT',
+        'submenu_active': 'chatbots'
+    }
+    
+    return render(request, 'tickets/chatbot_question_form.html', context)
+
+
+@login_required
+def chatbot_question_delete(request, pk, question_id):
+    """Eliminar pregunta del chatbot"""
+    from .models import Chatbot, ChatbotQuestion
+    
+    chatbot = get_object_or_404(Chatbot, pk=pk)
+    question = get_object_or_404(ChatbotQuestion, pk=question_id, chatbot=chatbot)
+    
+    if request.method == 'POST':
+        question.delete()
+        messages.success(request, 'Pregunta eliminada exitosamente.')
+        return redirect('chatbot_detail', pk=chatbot.pk)
+    
+    return redirect('chatbot_detail', pk=chatbot.pk)
+
+
+def chatbot_widget(request, token):
+    """Widget del chatbot para integración externa"""
+    from .models import Chatbot
+    
+    try:
+        chatbot = Chatbot.objects.get(script_token=token, is_active=True)
+        
+        context = {
+            'chatbot': chatbot,
+            'token': token
+        }
+        
+        return render(request, 'tickets/chatbot_widget.html', context)
+        
+    except Chatbot.DoesNotExist:
+        return HttpResponse('Chatbot no encontrado', status=404)
+
+
+def chatbot_script(request, token):
+    """Script JS para integración externa del chatbot"""
+    from .models import Chatbot
+    from django.http import HttpResponse
+    
+    try:
+        chatbot = Chatbot.objects.get(script_token=token, is_active=True)
+        
+        script = f"""
+(function() {{
+    var chatbotToken = '{token}';
+    var chatbotUrl = '{request.build_absolute_uri('/chatbot/widget/' + token + '/')}';
+    
+    // Crear botón flotante
+    var button = document.createElement('div');
+    button.id = 'ticketproo-chatbot-button';
+    button.style.cssText = 'position:fixed;bottom:20px;right:20px;width:60px;height:60px;border-radius:50%;background:{chatbot.primary_color};cursor:pointer;box-shadow:0 4px 8px rgba(0,0,0,0.2);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    button.innerHTML = '<svg width="30" height="30" fill="white" viewBox="0 0 16 16"><path d="M8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6-.097 1.016-.417 2.13-.771 2.966-.079.186.074.394.273.362 2.256-.37 3.597-.938 4.18-1.234A9.06 9.06 0 0 0 8 15z"/></svg>';
+    
+    // Crear iframe para el chat
+    var iframe = document.createElement('iframe');
+    iframe.id = 'ticketproo-chatbot-iframe';
+    iframe.src = chatbotUrl;
+    iframe.style.cssText = 'display:none;position:fixed;bottom:90px;right:20px;width:350px;height:500px;border:none;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:9998;';
+    
+    // Toggle chat
+    button.onclick = function() {{
+        if (iframe.style.display === 'none') {{
+            iframe.style.display = 'block';
+        }} else {{
+            iframe.style.display = 'none';
+        }}
+    }};
+    
+    document.body.appendChild(button);
+    document.body.appendChild(iframe);
+}})();
+"""
+        
+        return HttpResponse(script, content_type='application/javascript')
+        
+    except Chatbot.DoesNotExist:
+        return HttpResponse('// Chatbot no encontrado', content_type='application/javascript', status=404)
+
+
+def chatbot_chat(request, token):
+    """API para manejar mensajes del chat"""
+    import json
+    import requests
+    from django.http import JsonResponse
+    from .models import Chatbot, ChatbotConversation, ChatbotMessage, ChatbotQuestion
+    
+    def get_client_ip(request):
+        """Obtener IP del cliente"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+    
+    def get_geo_data(ip):
+        """Obtener datos de geolocalización desde IP"""
+        try:
+            # Usar servicio gratuito de geolocalización
+            response = requests.get(f'http://ip-api.com/json/{ip}', timeout=2)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('status') == 'success':
+                    return {
+                        'country': data.get('country', ''),
+                        'city': data.get('city', '')
+                    }
+        except:
+            pass
+        return {'country': '', 'city': ''}
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        chatbot = Chatbot.objects.get(script_token=token, is_active=True)
+        
+        data = json.loads(request.body)
+        message = data.get('message', '').strip()
+        session_id = data.get('session_id', '')
+        user_name = data.get('user_name', '').strip()
+        
+        if not message:
+            return JsonResponse({'error': 'Mensaje vacío'}, status=400)
+        
+        # Obtener IP y datos de geolocalización
+        ip_address = get_client_ip(request)
+        geo_data = get_geo_data(ip_address)
+        
+        # Obtener o crear conversación
+        conversation, created = ChatbotConversation.objects.get_or_create(
+            chatbot=chatbot,
+            session_id=session_id,
+            defaults={
+                'session_id': session_id,
+                'ip_address': ip_address,
+                'country': geo_data['country'],
+                'city': geo_data['city'],
+                'user_name': user_name
+            }
+        )
+        
+        # Verificar si el chat está oculto para esta conversación
+        if conversation.hide_chat:
+            return JsonResponse({
+                'error': 'Chat no disponible',
+                'message': 'El chat ha sido deshabilitado para esta sesión.'
+            }, status=403)
+        
+        # Detectar y capturar email, teléfono y nombre del mensaje
+        import re
+        updated = False
+        
+        # Detectar email
+        if not conversation.user_email:
+            email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+            emails = re.findall(email_pattern, message)
+            if emails:
+                conversation.user_email = emails[0]
+                updated = True
+        
+        # Detectar teléfono
+        if not conversation.user_phone:
+            phone_pattern = r'\b[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}\b'
+            phones = re.findall(phone_pattern, message)
+            if phones:
+                # Filtrar números que parezcan teléfonos reales (más de 7 dígitos)
+                valid_phones = [p for p in phones if len(re.sub(r'[^0-9]', '', p)) >= 7]
+                if valid_phones:
+                    conversation.user_phone = valid_phones[0]
+                    updated = True
+        
+        # Actualizar otros datos si están vacíos
+        if not conversation.ip_address and ip_address:
+            conversation.ip_address = ip_address
+            updated = True
+        if not conversation.country and geo_data['country']:
+            conversation.country = geo_data['country']
+            updated = True
+        if not conversation.city and geo_data['city']:
+            conversation.city = geo_data['city']
+            updated = True
+        if not conversation.user_name and user_name:
+            conversation.user_name = user_name
+            updated = True
+        
+        # Intentar detectar nombre si no existe (palabras capitalizadas al inicio del mensaje)
+        if not conversation.user_name:
+            # Patrones comunes: "Soy Juan", "Me llamo María", "Mi nombre es Pedro"
+            name_patterns = [
+                r'(?:soy|me llamo|mi nombre es)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)?)',
+                r'^([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)?)[,\s]'
+            ]
+            for pattern in name_patterns:
+                match = re.search(pattern, message, re.IGNORECASE)
+                if match:
+                    conversation.user_name = match.group(1).strip()
+                    updated = True
+                    break
+        
+        if updated:
+            conversation.save()
+        
+        # Guardar mensaje del usuario
+        ChatbotMessage.objects.create(
+            conversation=conversation,
+            is_bot=False,
+            message=message
+        )
+        
+        # Buscar respuesta configurada
+        response_text = None
+        matched_question = None
+        used_ai = False
+        
+        # Buscar en preguntas configuradas
+        message_lower = message.lower()
+        for question in chatbot.questions.filter(is_active=True):
+            # Verificar keywords
+            keywords = question.get_keywords_list()
+            if any(keyword in message_lower for keyword in keywords):
+                matched_question = question
+                response_text = question.answer
+                question.times_used += 1
+                question.save()
+                break
+        
+        # Si no hay respuesta y está habilitada la IA
+        if not response_text and chatbot.use_ai:
+            from .ai_utils import AIContentOptimizer
+            
+            optimizer = AIContentOptimizer()
+            
+            # Preparar información de datos capturados
+            captured_data = []
+            if conversation.user_name:
+                captured_data.append(f"Nombre: {conversation.user_name}")
+            if conversation.user_email:
+                captured_data.append(f"Email: {conversation.user_email}")
+            if conversation.user_phone:
+                captured_data.append(f"Teléfono: {conversation.user_phone}")
+            
+            datos_disponibles = "\n".join(captured_data) if captured_data else "Aún no tenemos datos del usuario."
+            
+            context = f"""
+Eres un asistente virtual de {chatbot.title}.
+Descripción: {chatbot.description}
+{f'Contexto adicional: {chatbot.ai_context}' if chatbot.ai_context else ''}
+
+DATOS DEL USUARIO YA CAPTURADOS:
+{datos_disponibles}
+
+INSTRUCCIONES IMPORTANTES:
+- Si ya tienes el nombre del usuario, úsalo en tu respuesta
+- NO pidas datos que ya tenemos (nombre, email o teléfono)
+- Si ya tenemos todos los datos, enfócate en ayudar con lo que necesite
+- Si nos falta algún dato importante, pídelo de forma natural
+{f'- Dirígete al usuario como {conversation.user_name}' if conversation.user_name else '- Pide el nombre si aún no lo tenemos'}
+
+Pregunta del usuario:
+{message}
+"""
+            
+            messages = [
+                {"role": "system", "content": "Eres un asistente virtual profesional y amigable."},
+                {"role": "user", "content": context}
+            ]
+            
+            result = optimizer._make_ai_request(messages, max_tokens=300, temperature=0.7)
+            
+            if 'choices' in result:
+                response_text = result['choices'][0]['message']['content'].strip()
+                used_ai = True
+        
+        # Respuesta por defecto
+        if not response_text:
+            response_text = "Lo siento, no tengo una respuesta para esa pregunta. ¿Puedo ayudarte con algo más?"
+        
+        # Aplicar delay si está configurado
+        if chatbot.response_delay > 0:
+            import time
+            time.sleep(chatbot.response_delay)
+        
+        # Guardar respuesta del bot
+        ChatbotMessage.objects.create(
+            conversation=conversation,
+            is_bot=True,
+            message=response_text,
+            matched_question=matched_question,
+            used_ai=used_ai
+        )
+        
+        # Actualizar estadísticas
+        chatbot.total_messages += 2  # Usuario + Bot
+        chatbot.save()
+        
+        return JsonResponse({
+            'success': True,
+            'response': response_text,
+            'session_id': session_id
+        })
+        
+    except Chatbot.DoesNotExist:
+        return JsonResponse({'error': 'Chatbot no encontrado'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

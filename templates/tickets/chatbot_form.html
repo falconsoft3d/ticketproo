@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}{% if chatbot %}Editar Chatbot{% else %}Crear Chatbot{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-robot me-2"></i>
+            {% if chatbot %}Editar Chatbot{% else %}Crear Chatbot{% endif %}
+        </h2>
+        <a href="{% if chatbot %}{% url 'chatbot_detail' chatbot.pk %}{% else %}{% url 'chatbot_list' %}{% endif %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- General -->
+                        <h5 class="mb-3"><i class="bi bi-info-circle me-2"></i>Información General</h5>
+                        
+                        <div class="mb-3">
+                            {{ form.title.label_tag }}
+                            {{ form.title }}
+                            {% if form.title.help_text %}
+                                <div class="form-text">{{ form.title.help_text }}</div>
+                            {% endif %}
+                            {% if form.title.errors %}
+                                <div class="text-danger">{{ form.title.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.type.label_tag }}
+                            {{ form.type }}
+                            {% if form.type.help_text %}
+                                <div class="form-text">{{ form.type.help_text }}</div>
+                            {% endif %}
+                            {% if form.type.errors %}
+                                <div class="text-danger">{{ form.type.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label_tag }}
+                            {{ form.description }}
+                            {% if form.description.help_text %}
+                                <div class="form-text">{{ form.description.help_text }}</div>
+                            {% endif %}
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4 form-check">
+                            {{ form.is_active }}
+                            {{ form.is_active.label_tag }}
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Configuración de IA -->
+                        <h5 class="mb-3"><i class="bi bi-stars me-2"></i>Configuración de IA</h5>
+                        
+                        <div class="mb-3 form-check">
+                            {{ form.use_ai }}
+                            {{ form.use_ai.label_tag }}
+                            {% if form.use_ai.help_text %}
+                                <div class="form-text">{{ form.use_ai.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4" id="ai-context-field">
+                            {{ form.ai_context.label_tag }}
+                            {{ form.ai_context }}
+                            {% if form.ai_context.help_text %}
+                                <div class="form-text">{{ form.ai_context.help_text }}</div>
+                            {% endif %}
+                            {% if form.ai_context.errors %}
+                                <div class="text-danger">{{ form.ai_context.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Apariencia -->
+                        <h5 class="mb-3"><i class="bi bi-palette me-2"></i>Apariencia</h5>
+                        
+                        <div class="mb-3">
+                            {{ form.welcome_message.label_tag }}
+                            {{ form.welcome_message }}
+                            {% if form.welcome_message.errors %}
+                                <div class="text-danger">{{ form.welcome_message.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.primary_color.label_tag }}
+                                {{ form.primary_color }}
+                                {% if form.primary_color.errors %}
+                                    <div class="text-danger">{{ form.primary_color.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.position.label_tag }}
+                                {{ form.position }}
+                                {% if form.position.errors %}
+                                    <div class="text-danger">{{ form.position.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Integración Externa -->
+                        <div id="external-section">
+                            <h5 class="mb-3"><i class="bi bi-code-square me-2"></i>Integración Externa</h5>
+                            
+                            <div class="mb-3">
+                                {{ form.allowed_domains.label_tag }}
+                                {{ form.allowed_domains }}
+                                {% if form.allowed_domains.help_text %}
+                                    <div class="form-text">{{ form.allowed_domains.help_text }}</div>
+                                {% endif %}
+                                {% if form.allowed_domains.errors %}
+                                    <div class="text-danger">{{ form.allowed_domains.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% if chatbot %}{% url 'chatbot_detail' chatbot.pk %}{% else %}{% url 'chatbot_list' %}{% endif %}" class="btn btn-outline-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>Guardar Chatbot
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-info-circle me-2"></i>Ayuda</h5>
+                    
+                    <h6 class="mt-3">Tipos de Chatbot</h6>
+                    <ul class="small">
+                        <li><strong>Interno:</strong> Solo funciona en tu sitio web</li>
+                        <li><strong>Externo:</strong> Se puede integrar en cualquier sitio mediante un script</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Inteligencia Artificial</h6>
+                    <p class="small">Si activas la IA, el chatbot podrá responder preguntas que no hayas configurado específicamente. Usa el campo "Contexto para la IA" para darle información sobre tu negocio.</p>
+                    
+                    <h6 class="mt-3">Dominios Permitidos</h6>
+                    <p class="small">Solo para chatbots externos. Lista los dominios donde se puede usar el chatbot. Déjalo vacío para permitir todos los dominios.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeField = document.querySelector('#id_type');
+    const externalSection = document.querySelector('#external-section');
+    const useAIField = document.querySelector('#id_use_ai');
+    const aiContextField = document.querySelector('#ai-context-field');
+    
+    // Mostrar/ocultar sección externa
+    function toggleExternalSection() {
+        if (typeField.value === 'external') {
+            externalSection.style.display = 'block';
+        } else {
+            externalSection.style.display = 'none';
+        }
+    }
+    
+    // Mostrar/ocultar campo de contexto IA
+    function toggleAIContext() {
+        if (useAIField.checked) {
+            aiContextField.style.display = 'block';
+        } else {
+            aiContextField.style.display = 'none';
+        }
+    }
+    
+    typeField.addEventListener('change', toggleExternalSection);
+    useAIField.addEventListener('change', toggleAIContext);
+    
+    // Estado inicial
+    toggleExternalSection();
+    toggleAIContext();
+});
+</script>
+{% endblock %}

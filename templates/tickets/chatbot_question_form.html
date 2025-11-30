@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}{% if question %}Editar Pregunta{% else %}Nueva Pregunta{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-question-circle me-2"></i>
+            {% if question %}Editar Pregunta{% else %}Nueva Pregunta{% endif %}
+        </h2>
+        <a href="{% url 'chatbot_detail' chatbot.pk %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Volver al Chatbot
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Configurando pregunta para: <strong>{{ chatbot.title }}</strong>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            {{ form.question.label_tag }}
+                            {{ form.question }}
+                            {% if form.question.errors %}
+                                <div class="text-danger">{{ form.question.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.keywords.label_tag }}
+                            {{ form.keywords }}
+                            {% if form.keywords.help_text %}
+                                <div class="form-text">{{ form.keywords.help_text }}</div>
+                            {% endif %}
+                            {% if form.keywords.errors %}
+                                <div class="text-danger">{{ form.keywords.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.answer.label_tag }}
+                            {{ form.answer }}
+                            {% if form.answer.errors %}
+                                <div class="text-danger">{{ form.answer.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.order.label_tag }}
+                                {{ form.order }}
+                                {% if form.order.help_text %}
+                                    <div class="form-text">{{ form.order.help_text }}</div>
+                                {% endif %}
+                                {% if form.order.errors %}
+                                    <div class="text-danger">{{ form.order.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            {{ form.is_active }}
+                            {{ form.is_active.label_tag }}
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            {{ form.use_ai }}
+                            {{ form.use_ai.label_tag }}
+                            {% if form.use_ai.help_text %}
+                                <div class="form-text">{{ form.use_ai.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'chatbot_detail' chatbot.pk %}" class="btn btn-outline-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>Guardar Pregunta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-lightbulb me-2"></i>Consejos</h5>
+                    
+                    <h6 class="mt-3">Palabras Clave</h6>
+                    <p class="small">Define palabras o frases que activarán esta respuesta. Sepáralas con comas.</p>
+                    <p class="small"><strong>Ejemplo:</strong> precio, costo, cuánto cuesta, tarifa</p>
+                    
+                    <h6 class="mt-3">Orden</h6>
+                    <p class="small">Controla la prioridad de las respuestas. Número menor = mayor prioridad.</p>
+                    
+                    <h6 class="mt-3">Mejora con IA</h6>
+                    <p class="small">Si activas esta opción, la IA puede expandir o personalizar la respuesta base que configures.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

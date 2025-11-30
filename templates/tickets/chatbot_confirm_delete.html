@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar Chatbot{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title text-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación
+                    </h3>
+                    
+                    <p class="mt-3">
+                        ¿Estás seguro de que deseas eliminar el chatbot <strong>"{{ chatbot.title }}"</strong>?
+                    </p>
+                    
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Esta acción no se puede deshacer. Se eliminarán:
+                        <ul class="mb-0 mt-2">
+                            <li>{{ chatbot.questions.count }} preguntas configuradas</li>
+                            <li>{{ chatbot.total_conversations }} conversaciones</li>
+                            <li>{{ chatbot.total_messages }} mensajes</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'chatbot_detail' chatbot.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-1"></i>Eliminar Chatbot
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

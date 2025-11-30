@@ -4636,6 +4636,50 @@ class Contact(models.Model):
         help_text='Fecha del ultimo contacto realizado'
     )
     
+    # Redes sociales y web
+    website = models.URLField(
+        max_length=500,
+        blank=True,
+        verbose_name='Sitio Web',
+        help_text='Sitio web de la empresa o contacto'
+    )
+    facebook_url = models.URLField(
+        max_length=500,
+        blank=True,
+        verbose_name='Facebook',
+        help_text='URL del perfil de Facebook'
+    )
+    linkedin_url = models.URLField(
+        max_length=500,
+        blank=True,
+        verbose_name='LinkedIn',
+        help_text='URL del perfil de LinkedIn'
+    )
+    twitter_url = models.URLField(
+        max_length=500,
+        blank=True,
+        verbose_name='Twitter/X',
+        help_text='URL del perfil de Twitter/X'
+    )
+    instagram_url = models.URLField(
+        max_length=500,
+        blank=True,
+        verbose_name='Instagram',
+        help_text='URL del perfil de Instagram'
+    )
+    youtube_url = models.URLField(
+        max_length=500,
+        blank=True,
+        verbose_name='YouTube',
+        help_text='URL del canal de YouTube'
+    )
+    tiktok_url = models.URLField(
+        max_length=500,
+        blank=True,
+        verbose_name='TikTok',
+        help_text='URL del perfil de TikTok'
+    )
+    
     contact_date = models.DateTimeField(
         default=timezone.now,
         verbose_name='Fecha de Contacto'
@@ -21311,19 +21355,419 @@ class OdooRPCImportFile(models.Model):
         return f"{self.original_filename} - {self.uploaded_at.strftime('%Y-%m-%d %H:%M')}"
 
 
+# ==================== CHATBOT ====================
+
+class Chatbot(models.Model):
+    """Modelo para chatbots configurables"""
+    
+    TYPE_CHOICES = [
+        ('internal', 'Interno (Solo esta web)'),
+        ('external', 'Externo (Script integrable)'),
+    ]
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título del Chatbot'
+    )
+    
+    type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        default='internal',
+        verbose_name='Tipo de Chatbot'
+    )
+    
+    description = models.TextField(
+        verbose_name='Descripción',
+        help_text='Describe el propósito del chatbot (ej: Agente de ventas que se dedica a captar leads)'
+    )
+    
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    
+    use_ai = models.BooleanField(
+        default=True,
+        verbose_name='Usar IA',
+        help_text='Habilitar asistencia de IA para respuestas no configuradas'
+    )
+    
+    ai_context = models.TextField(
+        blank=True,
+        verbose_name='Contexto para IA',
+        help_text='Información adicional para que la IA entienda el contexto del negocio'
+    )
+    
+    welcome_message = models.TextField(
+        default='¡Hola! ¿En qué puedo ayudarte?',
+        verbose_name='Mensaje de bienvenida'
+    )
+    
+    # Personalización visual
+    primary_color = models.CharField(
+        max_length=7,
+        default='#007bff',
+        verbose_name='Color primario',
+        help_text='Color del botón y encabezado (formato: #RRGGBB)'
+    )
+    
+    secondary_color = models.CharField(
+        max_length=7,
+        default='#0056b3',
+        verbose_name='Color secundario',
+        help_text='Color secundario para efectos hover (formato: #RRGGBB)'
+    )
+    
+    bot_message_color = models.CharField(
+        max_length=7,
+        default='#f0f0f0',
+        verbose_name='Color mensajes del bot',
+        help_text='Color de fondo para los mensajes del bot (formato: #RRGGBB)'
+    )
+    
+    user_message_color = models.CharField(
+        max_length=7,
+        default='#007bff',
+        verbose_name='Color mensajes del usuario',
+        help_text='Color de fondo para los mensajes del usuario (formato: #RRGGBB)'
+    )
+    
+    icon_choice = models.CharField(
+        max_length=20,
+        choices=[
+            ('chat', 'Chat (por defecto)'),
+            ('robot', 'Robot'),
+            ('headset', 'Auriculares'),
+            ('person', 'Persona'),
+        ],
+        default='chat',
+        verbose_name='Icono del botón',
+        help_text='Icono que se muestra en el botón flotante'
+    )
+    
+    position = models.CharField(
+        max_length=20,
+        choices=[
+            ('bottom-right', 'Inferior Derecha'),
+            ('bottom-left', 'Inferior Izquierda'),
+        ],
+        default='bottom-right',
+        verbose_name='Posición en pantalla'
+    )
+    
+    # Integración externa
+    script_token = models.CharField(
+        max_length=64,
+        unique=True,
+        blank=True,
+        verbose_name='Token de script',
+        help_text='Token único para integración externa'
+    )
+    
+    allowed_domains = models.TextField(
+        blank=True,
+        verbose_name='Dominios permitidos',
+        help_text='Dominios donde se puede integrar (uno por línea). Dejar vacío para permitir todos.'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='chatbots_created',
+        verbose_name='Creado por'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    # Comportamiento
+    response_delay = models.IntegerField(
+        default=0,
+        verbose_name='Tiempo de espera (segundos)',
+        help_text='Segundos que espera el bot antes de responder (0 = inmediato)'
+    )
+    
+    # Estadísticas
+    total_conversations = models.IntegerField(
+        default=0,
+        verbose_name='Total de conversaciones'
+    )
+    
+    total_messages = models.IntegerField(
+        default=0,
+        verbose_name='Total de mensajes'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Chatbot'
+        verbose_name_plural = 'Chatbots'
+    
+    def __str__(self):
+        return self.title
+    
+    def save(self, *args, **kwargs):
+        # Generar token si no tiene (para todos los chatbots)
+        if not self.script_token:
+            import secrets
+            self.script_token = secrets.token_urlsafe(32)
+        super().save(*args, **kwargs)
+    
+    def get_script_url(self):
+        """Retorna la URL del script para integración"""
+        if self.type == 'external' and self.script_token:
+            from django.urls import reverse
+            return reverse('chatbot_script', kwargs={'token': self.script_token})
+        return None
 
 
+class ChatbotQuestion(models.Model):
+    """Preguntas y respuestas configuradas para el chatbot"""
+    
+    chatbot = models.ForeignKey(
+        Chatbot,
+        on_delete=models.CASCADE,
+        related_name='questions',
+        verbose_name='Chatbot'
+    )
+    
+    question = models.CharField(
+        max_length=500,
+        verbose_name='Pregunta',
+        help_text='Pregunta que el usuario puede hacer'
+    )
+    
+    keywords = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='Palabras clave',
+        help_text='Palabras clave separadas por comas para detectar esta pregunta'
+    )
+    
+    answer = models.TextField(
+        verbose_name='Respuesta',
+        help_text='Respuesta que el chatbot dará'
+    )
+    
+    order = models.IntegerField(
+        default=0,
+        verbose_name='Orden',
+        help_text='Orden de aparición en sugerencias'
+    )
+    
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activa'
+    )
+    
+    use_ai = models.BooleanField(
+        default=False,
+        verbose_name='Mejorar con IA',
+        help_text='La IA puede expandir o mejorar esta respuesta'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    # Estadísticas
+    times_used = models.IntegerField(
+        default=0,
+        verbose_name='Veces utilizada'
+    )
+    
+    class Meta:
+        ordering = ['order', '-created_at']
+        verbose_name = 'Pregunta del Chatbot'
+        verbose_name_plural = 'Preguntas del Chatbot'
+    
+    def __str__(self):
+        return f"{self.question[:50]}..."
+    
+    def get_keywords_list(self):
+        """Retorna lista de keywords"""
+        if self.keywords:
+            return [k.strip().lower() for k in self.keywords.split(',')]
+        return []
 
 
+class ChatbotConversation(models.Model):
+    """Conversación de un usuario con el chatbot"""
+    
+    chatbot = models.ForeignKey(
+        Chatbot,
+        on_delete=models.CASCADE,
+        related_name='conversations',
+        verbose_name='Chatbot'
+    )
+    
+    session_id = models.CharField(
+        max_length=100,
+        verbose_name='ID de sesión'
+    )
+    
+    user_email = models.EmailField(
+        blank=True,
+        verbose_name='Email del usuario',
+        help_text='Email capturado durante la conversación'
+    )
+    
+    user_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre del usuario'
+    )
+    
+    user_phone = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Teléfono del usuario'
+    )
+    
+    ip_address = models.GenericIPAddressField(
+        blank=True,
+        null=True,
+        verbose_name='Dirección IP',
+        help_text='IP del usuario en la sesión'
+    )
+    
+    country = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='País',
+        help_text='País detectado del usuario'
+    )
+    
+    city = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Ciudad',
+        help_text='Ciudad detectada del usuario'
+    )
+    
+    started_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Inicio de conversación'
+    )
+    
+    last_activity = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actividad'
+    )
+    
+    is_lead = models.BooleanField(
+        default=False,
+        verbose_name='Es lead',
+        help_text='Marcado si se capturó información de contacto'
+    )
+    
+    lead_quality = models.CharField(
+        max_length=20,
+        choices=[
+            ('hot', 'Caliente'),
+            ('warm', 'Tibio'),
+            ('cold', 'Frío'),
+        ],
+        blank=True,
+        verbose_name='Calidad del lead'
+    )
+    
+    hide_chat = models.BooleanField(
+        default=False,
+        verbose_name='Ocultar chat',
+        help_text='Si está marcado, el chat no se mostrará a este usuario'
+    )
+    
+    reviewed = models.BooleanField(
+        default=False,
+        verbose_name='Revisada',
+        help_text='Marca si la conversación ya fue revisada por un administrador'
+    )
+    
+    reviewed_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de revisión'
+    )
+    
+    reviewed_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name='Revisada por'
+    )
+    
+    class Meta:
+        ordering = ['-started_at']
+        verbose_name = 'Conversación del Chatbot'
+        verbose_name_plural = 'Conversaciones del Chatbot'
+    
+    def __str__(self):
+        return f"Conversación {self.session_id[:8]} - {self.started_at.strftime('%Y-%m-%d %H:%M')}"
 
 
-
-
-
-
-
-
-
+class ChatbotMessage(models.Model):
+    """Mensajes individuales en una conversación"""
+    
+    conversation = models.ForeignKey(
+        ChatbotConversation,
+        on_delete=models.CASCADE,
+        related_name='messages',
+        verbose_name='Conversación'
+    )
+    
+    is_bot = models.BooleanField(
+        verbose_name='Es del bot',
+        help_text='True si es mensaje del bot, False si es del usuario'
+    )
+    
+    message = models.TextField(
+        verbose_name='Mensaje'
+    )
+    
+    matched_question = models.ForeignKey(
+        ChatbotQuestion,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='matched_messages',
+        verbose_name='Pregunta coincidente'
+    )
+    
+    used_ai = models.BooleanField(
+        default=False,
+        verbose_name='Usó IA',
+        help_text='True si la respuesta fue generada por IA'
+    )
+    
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Hora del mensaje'
+    )
+    
+    class Meta:
+        ordering = ['timestamp']
+        verbose_name = 'Mensaje del Chatbot'
+        verbose_name_plural = 'Mensajes del Chatbot'
+    
+    def __str__(self):
+        sender = "Bot" if self.is_bot else "Usuario"
+        return f"{sender}: {self.message[:50]}..."
 
 
 

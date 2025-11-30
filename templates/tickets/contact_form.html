@@ -14,13 +14,18 @@
                         {% if contact %}Editar Contacto{% else %}Nuevo Contacto{% endif %}
                     </h4>
                     {% if contact %}
-                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="enhanceContactWithAI()">
-                        <i class="bi bi-robot"></i> Mejorar con IA
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="enhanceContactWithAI()">
+                            <i class="bi bi-robot"></i> Mejorar con IA
+                        </button>
+                        <button type="submit" form="contactForm" class="btn btn-primary btn-sm">
+                            <i class="bi bi-check-circle"></i> Guardar Cambios
+                        </button>
+                    </div>
                     {% endif %}
                 </div>
                 <div class="card-body">
-                    <form method="POST">
+                    <form method="POST" id="contactForm">
                         {% csrf_token %}
                         
                         <div class="row">
@@ -182,6 +187,92 @@
                                 {% if form.notes.errors %}
                                     <div class="text-danger small">{{ form.notes.errors }}</div>
                                 {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Sección de Redes Sociales y Web -->
+                        <div class="card bg-light mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-globe text-primary"></i> 
+                                    Redes Sociales y Web
+                                </h6>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="autoCompleteWithAI()" id="aiCompleteBtn">
+                                    <i class="bi bi-magic"></i> Completar con IA
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.website.id_for_label }}" class="form-label">
+                                            <i class="bi bi-globe2"></i> {{ form.website.label }}
+                                        </label>
+                                        {{ form.website }}
+                                        {% if form.website.errors %}
+                                            <div class="text-danger small">{{ form.website.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.linkedin_url.id_for_label }}" class="form-label">
+                                            <i class="bi bi-linkedin text-primary"></i> {{ form.linkedin_url.label }}
+                                        </label>
+                                        {{ form.linkedin_url }}
+                                        {% if form.linkedin_url.errors %}
+                                            <div class="text-danger small">{{ form.linkedin_url.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.facebook_url.id_for_label }}" class="form-label">
+                                            <i class="bi bi-facebook text-primary"></i> {{ form.facebook_url.label }}
+                                        </label>
+                                        {{ form.facebook_url }}
+                                        {% if form.facebook_url.errors %}
+                                            <div class="text-danger small">{{ form.facebook_url.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.twitter_url.id_for_label }}" class="form-label">
+                                            <i class="bi bi-twitter text-info"></i> {{ form.twitter_url.label }}
+                                        </label>
+                                        {{ form.twitter_url }}
+                                        {% if form.twitter_url.errors %}
+                                            <div class="text-danger small">{{ form.twitter_url.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="{{ form.instagram_url.id_for_label }}" class="form-label">
+                                            <i class="bi bi-instagram text-danger"></i> {{ form.instagram_url.label }}
+                                        </label>
+                                        {{ form.instagram_url }}
+                                        {% if form.instagram_url.errors %}
+                                            <div class="text-danger small">{{ form.instagram_url.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="{{ form.youtube_url.id_for_label }}" class="form-label">
+                                            <i class="bi bi-youtube text-danger"></i> {{ form.youtube_url.label }}
+                                        </label>
+                                        {{ form.youtube_url }}
+                                        {% if form.youtube_url.errors %}
+                                            <div class="text-danger small">{{ form.youtube_url.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="{{ form.tiktok_url.id_for_label }}" class="form-label">
+                                            <i class="bi bi-tiktok text-dark"></i> {{ form.tiktok_url.label }}
+                                        </label>
+                                        {{ form.tiktok_url }}
+                                        {% if form.tiktok_url.errors %}
+                                            <div class="text-danger small">{{ form.tiktok_url.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -664,5 +755,129 @@ document.querySelectorAll('.quick-note-btn').forEach(function(button) {
         }, 200);
     });
 });
+
+// Función para autocompletar con IA
+function autoCompleteWithAI() {
+    // Recopilar datos actuales del formulario
+    const formData = {
+        name: document.getElementById('{{ form.name.id_for_label }}').value.trim(),
+        email: document.getElementById('{{ form.email.id_for_label }}').value.trim(),
+        phone: document.getElementById('{{ form.phone.id_for_label }}').value.trim(),
+        position: document.getElementById('{{ form.position.id_for_label }}').value.trim(),
+        company: document.getElementById('{{ form.company.id_for_label }}').value.trim(),
+        country: document.getElementById('{{ form.country.id_for_label }}').value.trim(),
+        notes: document.getElementById('{{ form.notes.id_for_label }}').value.trim(),
+        website: document.getElementById('{{ form.website.id_for_label }}').value.trim(),
+        linkedin_url: document.getElementById('{{ form.linkedin_url.id_for_label }}').value.trim(),
+        facebook_url: document.getElementById('{{ form.facebook_url.id_for_label }}').value.trim(),
+        twitter_url: document.getElementById('{{ form.twitter_url.id_for_label }}').value.trim(),
+        instagram_url: document.getElementById('{{ form.instagram_url.id_for_label }}').value.trim(),
+        youtube_url: document.getElementById('{{ form.youtube_url.id_for_label }}').value.trim(),
+        tiktok_url: document.getElementById('{{ form.tiktok_url.id_for_label }}').value.trim()
+    };
+    
+    // Validar que tengamos al menos algo de información
+    if (!formData.name && !formData.company && !formData.email) {
+        alert('Por favor completa al menos el nombre, empresa o email antes de usar el autocompletado con IA.');
+        return;
+    }
+    
+    // Mostrar indicador de carga en el botón
+    const btn = document.getElementById('aiCompleteBtn');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Completando...';
+    btn.disabled = true;
+    
+    // Llamada AJAX
+    fetch('{% url "contact_autocomplete_ai" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+        
+        if (data.success) {
+            // Aplicar datos sugeridos
+            const suggestions = data.suggestions;
+            let appliedCount = 0;
+            
+            // Completar campos solo si están vacíos
+            if (suggestions.website && !formData.website) {
+                document.getElementById('{{ form.website.id_for_label }}').value = suggestions.website;
+                appliedCount++;
+            }
+            if (suggestions.linkedin_url && !formData.linkedin_url) {
+                document.getElementById('{{ form.linkedin_url.id_for_label }}').value = suggestions.linkedin_url;
+                appliedCount++;
+            }
+            if (suggestions.facebook_url && !formData.facebook_url) {
+                document.getElementById('{{ form.facebook_url.id_for_label }}').value = suggestions.facebook_url;
+                appliedCount++;
+            }
+            if (suggestions.twitter_url && !formData.twitter_url) {
+                document.getElementById('{{ form.twitter_url.id_for_label }}').value = suggestions.twitter_url;
+                appliedCount++;
+            }
+            if (suggestions.instagram_url && !formData.instagram_url) {
+                document.getElementById('{{ form.instagram_url.id_for_label }}').value = suggestions.instagram_url;
+                appliedCount++;
+            }
+            if (suggestions.youtube_url && !formData.youtube_url) {
+                document.getElementById('{{ form.youtube_url.id_for_label }}').value = suggestions.youtube_url;
+                appliedCount++;
+            }
+            if (suggestions.tiktok_url && !formData.tiktok_url) {
+                document.getElementById('{{ form.tiktok_url.id_for_label }}').value = suggestions.tiktok_url;
+                appliedCount++;
+            }
+            
+            // Si hay notas sugeridas, agregarlas
+            if (suggestions.additional_notes) {
+                const notesField = document.getElementById('{{ form.notes.id_for_label }}');
+                const currentNotes = notesField.value.trim();
+                if (currentNotes) {
+                    notesField.value = currentNotes + '\n\n--- Información adicional de IA ---\n' + suggestions.additional_notes;
+                } else {
+                    notesField.value = suggestions.additional_notes;
+                }
+            }
+            
+            // Mostrar mensaje de éxito
+            if (appliedCount > 0) {
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success alert-dismissible fade show';
+                alert.innerHTML = `
+                    <i class="bi bi-check-circle"></i> 
+                    Se completaron ${appliedCount} campo(s) automáticamente con IA.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.querySelector('.card-body form').insertBefore(
+                    alert, 
+                    document.querySelector('.card-body form .row')
+                );
+                
+                // Auto-cerrar después de 5 segundos
+                setTimeout(() => {
+                    if (alert.parentNode) alert.remove();
+                }, 5000);
+            } else {
+                alert('No se encontró información adicional para completar. Los campos ya estaban llenos o no se encontraron datos relevantes.');
+            }
+        } else {
+            alert('Error al completar con IA: ' + (data.error || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+        alert('Error de conexión: ' + error.message);
+    });
+}
 </script>
 {% endblock %}

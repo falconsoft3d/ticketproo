@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}{{ chatbot.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-robot me-2"></i>{{ chatbot.title }}
+            {% if chatbot.type == 'internal' %}
+                <span class="badge bg-info">Interno</span>
+            {% else %}
+                <span class="badge bg-success">Externo</span>
+            {% endif %}
+            {% if not chatbot.is_active %}
+                <span class="badge bg-secondary">Inactivo</span>
+            {% endif %}
+        </h2>
+        <div>
+            <a href="{% url 'chatbot_conversations' chatbot.pk %}" class="btn btn-success">
+                <i class="bi bi-chat-dots me-1"></i>Ver Conversaciones
+            </a>
+            <a href="{% url 'chatbot_edit' chatbot.pk %}" class="btn btn-primary">
+                <i class="bi bi-pencil me-1"></i>Editar
+            </a>
+            <a href="{% url 'chatbot_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información del Chatbot -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-info-circle me-2"></i>Información</h5>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Descripción:</strong>
+                            <p>{{ chatbot.description }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Mensaje de Bienvenida:</strong>
+                            <p>{{ chatbot.welcome_message }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Usar IA:</strong> 
+                            {% if chatbot.use_ai %}
+                                <span class="badge bg-success">Sí</span>
+                            {% else %}
+                                <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Color Principal:</strong> 
+                            <span class="badge" style="background-color: {{ chatbot.primary_color }};">
+                                {{ chatbot.primary_color }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    {% if chatbot.ai_context %}
+                    <div class="mb-3">
+                        <strong>Contexto IA:</strong>
+                        <p class="small text-muted">{{ chatbot.ai_context }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-graph-up me-2"></i>Estadísticas</h5>
+                    
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <h3 class="text-primary">{{ chatbot.total_conversations }}</h3>
+                            <p class="text-muted">Conversaciones</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h3 class="text-success">{{ chatbot.total_messages }}</h3>
+                            <p class="text-muted">Mensajes</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h3 class="text-info">{{ questions.count }}</h3>
+                            <p class="text-muted">Preguntas Configuradas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preguntas y Respuestas -->
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-question-circle me-2"></i>Preguntas y Respuestas</h5>
+                    <a href="{% url 'chatbot_question_create' chatbot.pk %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Agregar Pregunta
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if questions %}
+                        <div class="list-group">
+                            {% for question in questions %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            {{ question.question }}
+                                            {% if not question.is_active %}
+                                                <span class="badge bg-secondary">Inactiva</span>
+                                            {% endif %}
+                                            {% if question.use_ai %}
+                                                <span class="badge bg-primary">
+                                                    <i class="bi bi-stars"></i> IA
+                                                </span>
+                                            {% endif %}
+                                        </h6>
+                                        <p class="mb-2 text-muted small">{{ question.answer|truncatewords:30 }}</p>
+                                        <small class="text-muted">
+                                            <i class="bi bi-tags me-1"></i>
+                                            <strong>Keywords:</strong> {{ question.keywords }}
+                                            <span class="ms-3">
+                                                <i class="bi bi-bar-chart me-1"></i>
+                                                Usada {{ question.times_used }} veces
+                                            </span>
+                                        </small>
+                                    </div>
+                                    <div class="btn-group btn-group-sm ms-3" role="group">
+                                        <a href="{% url 'chatbot_question_edit' chatbot.pk question.pk %}" 
+                                           class="btn btn-outline-secondary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'chatbot_question_delete' chatbot.pk question.pk %}" 
+                                              style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-danger"
+                                                    onclick="return confirm('¿Eliminar esta pregunta?')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            No hay preguntas configuradas. 
+                            <a href="{% url 'chatbot_question_create' chatbot.pk %}" class="alert-link">Agregar la primera</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Integración -->
+            {% if chatbot.type == 'external' and chatbot.script_token %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-code-square me-2"></i>Código de Integración</h5>
+                    
+                    <p class="small text-muted">Copia este código en tu sitio web antes del cierre de la etiqueta <code>&lt;/body&gt;</code>:</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label small">Script de Integración:</label>
+                        <div class="input-group input-group-sm">
+                            <textarea class="form-control font-monospace" rows="3" id="integration-script" readonly><script src="{{ request.scheme }}://{{ request.get_host }}{% url 'chatbot_script' token=chatbot.script_token %}"></script></textarea>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary mt-2 w-100" onclick="copyIntegrationCode()">
+                            <i class="bi bi-clipboard me-1"></i>Copiar Código
+                        </button>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label small">URL del Widget:</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control font-monospace" 
+                                   value="{{ request.scheme }}://{{ request.get_host }}{% url 'chatbot_widget' token=chatbot.script_token %}" 
+                                   id="widget-url" readonly>
+                            <button class="btn btn-outline-secondary" onclick="copyWidgetUrl()">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {% if chatbot.allowed_domains %}
+                    <div class="alert alert-warning small mb-0">
+                        <i class="bi bi-shield-check me-1"></i>
+                        <strong>Dominios Permitidos:</strong><br>
+                        {{ chatbot.allowed_domains|linebreaksbr }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Vista Previa -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-eye me-2"></i>Vista Previa</h5>
+                    
+                    <div class="text-center">
+                        <div style="width: 60px; height: 60px; border-radius: 50%; background: {{ chatbot.primary_color }}; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                            <svg width="30" height="30" fill="white" viewBox="0 0 16 16">
+                                <path d="M8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6-.097 1.016-.417 2.13-.771 2.966-.079.186.074.394.273.362 2.256-.37 3.597-.938 4.18-1.234A9.06 9.06 0 0 0 8 15z"/>
+                            </svg>
+                        </div>
+                        <p class="mt-2 small text-muted">Así se verá el botón del chatbot</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyIntegrationCode() {
+    const textarea = document.getElementById('integration-script');
+    textarea.select();
+    document.execCommand('copy');
+    alert('Código copiado al portapapeles');
+}
+
+function copyWidgetUrl() {
+    const input = document.getElementById('widget-url');
+    input.select();
+    document.execCommand('copy');
+    
+    const button = event.target.closest('button');
+    const icon = button.querySelector('i');
+    icon.className = 'bi bi-check';
+    setTimeout(() => {
+        icon.className = 'bi bi-clipboard';
+    }, 2000);
+}
+</script>
+
+<style>
+.font-monospace {
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}

@@ -29,7 +29,8 @@ from .models import (
     FunctionalRequirementDocument, FunctionalRequirement, FunctionalRequirementDocumentView,
     FunctionalRequirementComment, AccessGroup, AccessLink, TaskPlan, TaskPlanDay, TaskPlanItem,
     Checklist, ChecklistItem, Transaction, KnowledgeBase, Translation, SQLQuery,
-    OdooConnection, OdooRPCTable, OdooRPCField, OdooRPCData, OdooRPCImportFile
+    OdooConnection, OdooRPCTable, OdooRPCField, OdooRPCData, OdooRPCImportFile,
+    Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage
 )
 
 # Configuración del sitio de administración
@@ -6639,3 +6640,69 @@ class OdooRPCImportFileAdmin(admin.ModelAdmin):
             )
         return format_html('<span style="color: gray;">0%</span>')
     success_rate_display.short_description = 'Tasa de Éxito'
+
+
+# ==================== CHATBOT ADMIN ====================
+
+class ChatbotQuestionInline(admin.TabularInline):
+    model = ChatbotQuestion
+    extra = 0
+    fields = ('question', 'keywords', 'order', 'is_active', 'use_ai', 'times_used')
+    readonly_fields = ('times_used',)
+
+
+@admin.register(Chatbot)
+class ChatbotAdmin(admin.ModelAdmin):
+    list_display = ('title', 'type', 'is_active', 'use_ai', 'total_conversations', 'total_messages', 'created_at')
+    list_filter = ('type', 'is_active', 'use_ai', 'created_at')
+    search_fields = ('title', 'description')
+    readonly_fields = ('script_token', 'total_conversations', 'total_messages', 'created_at')
+    inlines = [ChatbotQuestionInline]
+    
+    fieldsets = (
+        ('Información General', {
+            'fields': ('title', 'type', 'description', 'is_active', 'created_by')
+        }),
+        ('Configuración de IA', {
+            'fields': ('use_ai', 'ai_context')
+        }),
+        ('Apariencia', {
+            'fields': ('welcome_message', 'primary_color', 'position')
+        }),
+        ('Integración Externa', {
+            'fields': ('script_token', 'allowed_domains'),
+            'classes': ('collapse',)
+        }),
+        ('Estadísticas', {
+            'fields': ('total_conversations', 'total_messages', 'created_at'),
+            'classes': ('collapse',)
+        })
+    )
+
+
+@admin.register(ChatbotQuestion)
+class ChatbotQuestionAdmin(admin.ModelAdmin):
+    list_display = ('question', 'chatbot', 'is_active', 'use_ai', 'times_used', 'order')
+    list_filter = ('chatbot', 'is_active', 'use_ai')
+    search_fields = ('question', 'answer', 'keywords')
+    list_editable = ('order', 'is_active')
+
+
+@admin.register(ChatbotConversation)
+class ChatbotConversationAdmin(admin.ModelAdmin):
+    list_display = ('chatbot', 'session_id', 'is_lead', 'lead_quality', 'user_email', 'started_at', 'last_activity')
+    list_filter = ('chatbot', 'is_lead', 'lead_quality', 'started_at')
+    search_fields = ('session_id', 'user_email', 'user_name', 'user_phone')
+    readonly_fields = ('session_id', 'started_at')
+
+
+@admin.register(ChatbotMessage)
+class ChatbotMessageAdmin(admin.ModelAdmin):
+    list_display = ('conversation', 'is_bot', 'message_preview', 'matched_question', 'used_ai', 'timestamp')
+    list_filter = ('is_bot', 'used_ai', 'timestamp')
+    search_fields = ('message',)
+    readonly_fields = ('timestamp',)
+    
+    def message_preview(self, obj):
+        return obj.message[:50] + '...' if len(obj.message) > 50 else obj.message
+    message_preview.short_description = 'Mensaje'

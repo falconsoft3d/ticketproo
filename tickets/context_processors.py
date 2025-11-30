@@ -119,3 +119,26 @@ def crm_counters(request):
         }
     except Exception:
         return {}
+
+
+def active_chatbot(request):
+    """
+    Context processor que proporciona el chatbot interno activo
+    para mostrarlo en el home público
+    """
+    try:
+        from tickets.models import Chatbot
+        
+        # Buscar chatbot interno activo
+        chatbot = Chatbot.objects.filter(
+            type='internal',
+            is_active=True
+        ).first()
+        
+        return {
+            'active_internal_chatbot': chatbot
+        }
+    except Exception:
+        return {
+            'active_internal_chatbot': None
+        }

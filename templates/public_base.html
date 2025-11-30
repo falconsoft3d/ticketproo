@@ -220,7 +220,652 @@
     <!-- Footer -->
     {% include 'includes/public_footer.html' %}
 
+    <!-- Widget de Chatbot Interno -->
+    {% if active_internal_chatbot and active_internal_chatbot.script_token %}
+    <div id="chatbot-widget">
+        <!-- Botón flotante -->
+        <button id="chatbot-toggle" class="chatbot-button" style="background-color: {{ active_internal_chatbot.primary_color }};">
+            <span id="chatbot-unread-badge" class="chatbot-unread-badge" style="display: none;">0</span>
+            {% if active_internal_chatbot.icon_choice == 'chat' %}
+            <svg width="30" height="30" fill="white" viewBox="0 0 16 16">
+                <path d="M8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6-.097 1.016-.417 2.13-.771 2.966-.079.186.074.394.273.362 2.256-.37 3.597-.938 4.18-1.234A9.06 9.06 0 0 0 8 15z"/>
+            </svg>
+            {% elif active_internal_chatbot.icon_choice == 'robot' %}
+            <svg width="30" height="30" fill="white" viewBox="0 0 16 16">
+                <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.062C3 6.76 4.235 5.765 5.53 5.886a26.58 26.58 0 0 0 4.94 0C11.765 5.765 13 6.76 13 8.062v1.157a.933.933 0 0 1-.765.935c-.845.147-2.34.346-4.235.346-1.895 0-3.39-.2-4.235-.346A.933.933 0 0 1 3 9.219V8.062Zm4.542-.827a.25.25 0 0 0-.217.068l-.92.9a24.767 24.767 0 0 1-1.871-.183.25.25 0 0 0-.068.495c.55.076 1.232.149 2.02.193a.25.25 0 0 0 .189-.071l.754-.736.847 1.71a.25.25 0 0 0 .404.062l.932-.97a25.286 25.286 0 0 0 1.922-.188.25.25 0 0 0-.068-.495c-.538.074-1.207.145-1.98.189a.25.25 0 0 0-.166.076l-.754.785-.842-1.7a.25.25 0 0 0-.182-.135Z"/>
+                <path d="M8.5 1.866a1 1 0 1 0-1 0V3h-2A4.5 4.5 0 0 0 1 7.5V8a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1v-.5A4.5 4.5 0 0 0 10.5 3h-2V1.866ZM14 7.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.5A3.5 3.5 0 0 1 5.5 4h5A3.5 3.5 0 0 1 14 7.5Z"/>
+            </svg>
+            {% elif active_internal_chatbot.icon_choice == 'headset' %}
+            <svg width="30" height="30" fill="white" viewBox="0 0 16 16">
+                <path d="M8 1a5 5 0 0 0-5 5v1h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a6 6 0 1 1 12 0v6a2.5 2.5 0 0 1-2.5 2.5H9.366a1 1 0 0 1-.866.5h-1a1 1 0 1 1 0-2h1a1 1 0 0 1 .866.5H11.5A1.5 1.5 0 0 0 13 12h-1a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h1V6a5 5 0 0 0-5-5z"/>
+            </svg>
+            {% else %}
+            <svg width="30" height="30" fill="white" viewBox="0 0 16 16">
+                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4Zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10Z"/>
+            </svg>
+            {% endif %}
+        </button>
+
+        <!-- Ventana de chat -->
+        <div id="chatbot-window" class="chatbot-window" style="display: none;">
+            <!-- Header -->
+            <div class="chatbot-header" style="background-color: {{ active_internal_chatbot.primary_color }};">
+                <div>
+                    <h6 class="mb-0">{{ active_internal_chatbot.title }}</h6>
+                    <small class="opacity-75">{{ active_internal_chatbot.description|truncatewords:8 }}</small>
+                </div>
+                <button id="chatbot-close" class="btn btn-sm text-white">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <!-- Mensajes -->
+            <div id="chatbot-messages" class="chatbot-messages">
+                <div class="chatbot-message bot-message">
+                    {{ active_internal_chatbot.welcome_message }}
+                </div>
+            </div>
+
+            <!-- Indicador de escritura -->
+            <div id="chatbot-typing" class="chatbot-typing" style="display: none;">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <!-- Input -->
+            <div class="chatbot-input">
+                <input type="text" id="chatbot-input-field" placeholder="Escribe tu mensaje..." />
+                <button id="chatbot-send" style="background-color: {{ active_internal_chatbot.primary_color }};">
+                    <svg width="20" height="20" fill="white" viewBox="0 0 16 16">
+                        <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        #chatbot-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .chatbot-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .chatbot-button:hover {
+            transform: scale(1.1);
+            background-color: {{ active_internal_chatbot.secondary_color|default:'#0056b3' }} !important;
+        }
+
+        .chatbot-unread-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4);
+            animation: pulse 2s infinite;
+            z-index: 10000;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .chatbot-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 380px;
+            max-height: calc(100vh - 120px);
+            height: 550px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        @media (max-width: 768px) {
+            .chatbot-window {
+                width: 90vw;
+                max-width: 380px;
+                max-height: calc(100vh - 100px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .chatbot-window {
+                position: fixed;
+                bottom: 0;
+                right: 0;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                max-height: 100%;
+                border-radius: 0;
+            }
+        }
+
+        .chatbot-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 53px;
+            padding: 12px 15px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .chatbot-messages {
+            position: absolute;
+            top: 53px;
+            left: 0;
+            right: 0;
+            bottom: 90px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 15px 12px;
+            background: #f5f5f5;
+            scroll-behavior: smooth;
+        }
+
+        .chatbot-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chatbot-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chatbot-messages::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+
+        .chatbot-messages::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+
+        .chatbot-message {
+            margin-bottom: 10px;
+            padding: 9px 14px;
+            border-radius: 16px;
+            max-width: 75%;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s;
+            line-height: 1.4;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .message-sender {
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 2px;
+            display: block;
+            opacity: 0.8;
+        }
+
+        .message-time {
+            font-size: 10px;
+            opacity: 0.6;
+            align-self: flex-end;
+            margin-top: 2px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bot-message {
+            background: {{ active_internal_chatbot.bot_message_color|default:'#f0f0f0' }};
+            border: 1px solid #e0e0e0;
+            margin-right: auto;
+            color: #333;
+        }
+
+        .user-message {
+            background: {{ active_internal_chatbot.user_message_color|default:active_internal_chatbot.primary_color }};
+            color: white;
+            margin-left: auto;
+        }
+
+        .chatbot-typing {
+            padding: 6px 12px;
+            background: #f5f5f5;
+        }
+
+        .chatbot-typing span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #999;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+
+        .chatbot-typing span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .chatbot-typing span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .chatbot-input {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            align-items: center;
+            gap: 10px;
+            height: 90px;
+            box-sizing: border-box;
+        }
+
+        .chatbot-input input {
+            flex: 1;
+            border: 1px solid #e0e0e0;
+            border-radius: 22px;
+            padding: 12px 16px;
+            outline: none;
+            font-size: 14px;
+            height: 44px;
+        }
+
+        .chatbot-input button {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .chatbot-input button:hover {
+            opacity: 0.9;
+        }
+    </style>
+
+    <script>
+        // Variables globales del chatbot
+        let chatbotSessionId = localStorage.getItem('chatbot_session_internal');
+        if (!chatbotSessionId) {
+            chatbotSessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('chatbot_session_internal', chatbotSessionId);
+        }
+
+        // Contador de mensajes totales
+        let isChatOpen = false;
+
+        function getMessageCount() {
+            const savedMessages = localStorage.getItem('chatbot_messages_' + chatbotSessionId);
+            if (savedMessages) {
+                try {
+                    const messages = JSON.parse(savedMessages);
+                    return messages.length;
+                } catch (e) {
+                    return 0;
+                }
+            }
+            return 0;
+        }
+
+        function updateMessageBadge() {
+            const badge = document.getElementById('chatbot-unread-badge');
+            const messageCount = getMessageCount();
+            if (messageCount > 0) {
+                badge.textContent = messageCount > 99 ? '99+' : messageCount;
+                badge.style.display = 'flex';
+                badge.title = `${messageCount} mensajes en esta conversación`;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function resetMessageCount() {
+            localStorage.removeItem('chatbot_messages_' + chatbotSessionId);
+            updateMessageBadge();
+        }
+
+        // Inicializar badge
+        updateMessageBadge();
+
+        // Variable para el último mensaje recibido
+        let lastMessageId = 0;
+
+        // Función para obtener mensajes nuevos del servidor
+        async function checkNewMessages() {
+            if (!chatbotSessionId) return;
+            
+            try {
+                const response = await fetch('{% url "chatbot_get_new_messages" token=active_internal_chatbot.script_token %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        session_id: chatbotSessionId,
+                        last_message_id: lastMessageId
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Sincronizar el último ID del servidor
+                    if (data.last_message_id) {
+                        lastMessageId = data.last_message_id;
+                    }
+                    
+                    // Solo procesar mensajes nuevos si ya inicializamos el polling
+                    // (evita duplicados en la primera carga)
+                    if (window.pollingInitialized && data.messages && data.messages.length > 0) {
+                        data.messages.forEach(msg => {
+                            addChatMessage(msg.message, true);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking messages:', error);
+            }
+        }
+
+        // Polling cada 3 segundos
+        setInterval(checkNewMessages, 3000);
+
+        // Cargar mensajes guardados al iniciar
+        function loadSavedMessages() {
+            const savedMessages = localStorage.getItem('chatbot_messages_' + chatbotSessionId);
+            if (savedMessages) {
+                try {
+                    const messages = JSON.parse(savedMessages);
+                    const messagesDiv = document.getElementById('chatbot-messages');
+                    messages.forEach(msg => {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = 'chatbot-message ' + (msg.isBot ? 'bot-message' : 'user-message');
+                        
+                        if (msg.isBot) {
+                            const nameSpan = document.createElement('strong');
+                            nameSpan.className = 'message-sender';
+                            nameSpan.textContent = '{{ active_internal_chatbot.title }}';
+                            messageDiv.appendChild(nameSpan);
+                        }
+                        
+                        const textSpan = document.createElement('span');
+                        textSpan.textContent = msg.text;
+                        messageDiv.appendChild(textSpan);
+                        
+                        const timeSpan = document.createElement('small');
+                        timeSpan.className = 'message-time';
+                        const timestamp = new Date(msg.timestamp);
+                        timeSpan.textContent = timestamp.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                        messageDiv.appendChild(timeSpan);
+                        
+                        messagesDiv.appendChild(messageDiv);
+                    });
+                    setTimeout(() => {
+                        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                    }, 100);
+                } catch (e) {
+                    console.error('Error cargando mensajes:', e);
+                }
+            }
+            
+            // Inicializar el lastMessageId del servidor sin mostrar mensajes
+            checkNewMessages().then(() => {
+                // Después de sincronizar el ID, activar el polling normal
+                window.pollingInitialized = true;
+            });
+        }
+
+        // Guardar mensajes en localStorage
+        function saveMessage(text, isBot) {
+            const savedMessages = localStorage.getItem('chatbot_messages_' + chatbotSessionId);
+            let messages = [];
+            if (savedMessages) {
+                try {
+                    messages = JSON.parse(savedMessages);
+                } catch (e) {
+                    messages = [];
+                }
+            }
+            messages.push({ text: text, isBot: isBot, timestamp: Date.now() });
+            // Mantener solo los últimos 50 mensajes
+            if (messages.length > 50) {
+                messages = messages.slice(-50);
+            }
+            localStorage.setItem('chatbot_messages_' + chatbotSessionId, JSON.stringify(messages));
+        }
+
+        // Cargar mensajes al iniciar
+        loadSavedMessages();
+
+        // Toggle ventana de chat
+        document.getElementById('chatbot-toggle').addEventListener('click', function() {
+            const window = document.getElementById('chatbot-window');
+            const isOpening = window.style.display === 'none';
+            window.style.display = isOpening ? 'block' : 'none';
+            isChatOpen = isOpening;
+            
+            // Al abrir, hacer scroll pero mantener contador
+            if (isOpening) {
+                const messagesDiv = document.getElementById('chatbot-messages');
+                setTimeout(() => {
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                }, 100);
+            }
+        });
+
+        document.getElementById('chatbot-close').addEventListener('click', function() {
+            document.getElementById('chatbot-window').style.display = 'none';
+            isChatOpen = false;
+        });
+
+        // Enviar mensaje
+        function sendChatbotMessage() {
+            const input = document.getElementById('chatbot-input-field');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // Agregar mensaje del usuario
+            addChatMessage(message, false);
+            input.value = '';
+
+            // Mostrar indicador de escritura
+            document.getElementById('chatbot-typing').style.display = 'block';
+            
+            // Enviar al servidor
+            fetch('{% url "chatbot_chat" token=active_internal_chatbot.script_token %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    message: message,
+                    session_id: chatbotSessionId
+                })
+            })
+            .then(response => {
+                if (response.status === 403) {
+                    // Chat ocultado por administrador
+                    document.getElementById('chatbot-typing').style.display = 'none';
+                    document.getElementById('chatbot-widget').style.display = 'none';
+                    alert('El chat ha sido deshabilitado. Gracias por tu interés.');
+                    return null;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data) return;
+                document.getElementById('chatbot-typing').style.display = 'none';
+                if (data.success) {
+                    addChatMessage(data.response, true);
+                } else {
+                    addChatMessage('Lo siento, ha ocurrido un error. Por favor intenta de nuevo.', true);
+                }
+            })
+            .catch(error => {
+                document.getElementById('chatbot-typing').style.display = 'none';
+                addChatMessage('Error de conexión. Por favor intenta de nuevo.', true);
+            });
+        }
+
+        // Reproducir sonido de notificación mejorado
+        function playNotificationSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Primera nota (más alta)
+                const osc1 = audioContext.createOscillator();
+                const gain1 = audioContext.createGain();
+                osc1.connect(gain1);
+                gain1.connect(audioContext.destination);
+                osc1.frequency.value = 800;
+                osc1.type = 'sine';
+                gain1.gain.setValueAtTime(0.15, audioContext.currentTime);
+                gain1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                osc1.start(audioContext.currentTime);
+                osc1.stop(audioContext.currentTime + 0.15);
+                
+                // Segunda nota (más baja, después de 0.1s)
+                const osc2 = audioContext.createOscillator();
+                const gain2 = audioContext.createGain();
+                osc2.connect(gain2);
+                gain2.connect(audioContext.destination);
+                osc2.frequency.value = 600;
+                osc2.type = 'sine';
+                gain2.gain.setValueAtTime(0.15, audioContext.currentTime + 0.1);
+                gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
+                osc2.start(audioContext.currentTime + 0.1);
+                osc2.stop(audioContext.currentTime + 0.25);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        // Agregar mensaje al chat
+        function addChatMessage(text, isBot) {
+            const messagesDiv = document.getElementById('chatbot-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chatbot-message ' + (isBot ? 'bot-message' : 'user-message');
+            
+            if (isBot) {
+                const nameSpan = document.createElement('strong');
+                nameSpan.className = 'message-sender';
+                nameSpan.textContent = '{{ active_internal_chatbot.title }}';
+                messageDiv.appendChild(nameSpan);
+            }
+            
+            const textSpan = document.createElement('span');
+            textSpan.textContent = text;
+            messageDiv.appendChild(textSpan);
+            
+            const timeSpan = document.createElement('small');
+            timeSpan.className = 'message-time';
+            const now = new Date();
+            timeSpan.textContent = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            messageDiv.appendChild(timeSpan);
+            
+            messagesDiv.appendChild(messageDiv);
+            
+            // Guardar mensaje en localStorage
+            saveMessage(text, isBot);
+            
+            // Scroll suave al final
+            setTimeout(() => {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 100);
+            
+            // Actualizar contador de mensajes totales
+            updateMessageBadge();
+            
+            // Reproducir sonido si es mensaje del bot
+            if (isBot) {
+                playNotificationSound();
+            }
+        }
+
+        // Event listeners
+        document.getElementById('chatbot-send').addEventListener('click', sendChatbotMessage);
+        
+        document.getElementById('chatbot-input-field').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendChatbotMessage();
+            }
+        });
+
+        // Obtener CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+    {% endif %}
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html>

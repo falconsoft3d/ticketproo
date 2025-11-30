@@ -75,6 +75,7 @@ TEMPLATES = [
                 'tickets.context_processors.time_status',
                 'tickets.context_processors.blog_categories',
                 'tickets.context_processors.crm_counters',
+                'tickets.context_processors.active_chatbot',
             ],
         },
     },
