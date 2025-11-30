@@ -338,7 +338,7 @@ def register_view(request):
             # Asignar automáticamente al grupo de Usuarios
             assign_user_to_group(user, 'Usuarios')
             
-            messages.success(request, f'Cuenta creada para {username}. Ya puedes iniciar sesion.')
+            messages.success(request, f'Cuenta creada para {username}. Ya puedes iniciar sesión.')
             return redirect('login')
     else:
         form = UserCreationForm()
@@ -49785,7 +49785,9 @@ def chatbot_create(request):
             chatbot.created_by = request.user
             chatbot.save()
             messages.success(request, f'Chatbot "{chatbot.title}" creado exitosamente.')
-            return redirect('chatbot_detail', pk=chatbot.pk)
+            return redirect('chatbot_list')
+        else:
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
     else:
         form = ChatbotForm()
     

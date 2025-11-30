@@ -9541,6 +9541,15 @@ class ChecklistItemForm(forms.ModelForm):
 class ChatbotForm(forms.ModelForm):
     """Formulario para crear/editar chatbots"""
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Hacer que algunos campos sean opcionales ya que tienen valores por defecto
+        self.fields['secondary_color'].required = False
+        self.fields['bot_message_color'].required = False
+        self.fields['user_message_color'].required = False
+        self.fields['icon_choice'].required = False
+        self.fields['response_delay'].required = False
+    
     class Meta:
         from .models import Chatbot
         model = Chatbot

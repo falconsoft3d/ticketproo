@@ -21,6 +21,25 @@
                     <form method="post">
                         {% csrf_token %}
                         
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+                        
+                        {% if form.errors %}
+                            <div class="alert alert-warning">
+                                <strong>Hay errores en el formulario:</strong>
+                                <ul class="mb-0">
+                                    {% for field, errors in form.errors.items %}
+                                        {% if field != '__all__' %}
+                                            <li>{{ field }}: {{ errors|join:", " }}</li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        
                         <!-- General -->
                         <h5 class="mb-3"><i class="bi bi-info-circle me-2"></i>Información General</h5>
                         
@@ -109,12 +128,59 @@
                             </div>
                             
                             <div class="col-md-6 mb-3">
+                                {{ form.secondary_color.label_tag }}
+                                {{ form.secondary_color }}
+                                {% if form.secondary_color.errors %}
+                                    <div class="text-danger">{{ form.secondary_color.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.bot_message_color.label_tag }}
+                                {{ form.bot_message_color }}
+                                {% if form.bot_message_color.errors %}
+                                    <div class="text-danger">{{ form.bot_message_color.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.user_message_color.label_tag }}
+                                {{ form.user_message_color }}
+                                {% if form.user_message_color.errors %}
+                                    <div class="text-danger">{{ form.user_message_color.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.icon_choice.label_tag }}
+                                {{ form.icon_choice }}
+                                {% if form.icon_choice.errors %}
+                                    <div class="text-danger">{{ form.icon_choice.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
                                 {{ form.position.label_tag }}
                                 {{ form.position }}
                                 {% if form.position.errors %}
                                     <div class="text-danger">{{ form.position.errors }}</div>
                                 {% endif %}
                             </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.response_delay.label_tag }}
+                            {{ form.response_delay }}
+                            {% if form.response_delay.help_text %}
+                                <div class="form-text">{{ form.response_delay.help_text }}</div>
+                            {% endif %}
+                            {% if form.response_delay.errors %}
+                                <div class="text-danger">{{ form.response_delay.errors }}</div>
+                            {% endif %}
                         </div>
                         
                         <hr class="my-4">
