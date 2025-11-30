@@ -560,14 +560,10 @@
 
         function updateMessageBadge() {
             const badge = document.getElementById('chatbot-unread-badge');
-            const messageCount = getMessageCount();
-            if (messageCount > 0) {
-                badge.textContent = messageCount > 99 ? '99+' : messageCount;
-                badge.style.display = 'flex';
-                badge.title = `${messageCount} mensajes en esta conversación`;
-            } else {
-                badge.style.display = 'none';
-            }
+            const messageCount = Math.max(1, getMessageCount()); // Mínimo 1
+            badge.textContent = messageCount > 99 ? '99+' : messageCount;
+            badge.style.display = 'flex';
+            badge.title = `${messageCount} mensajes en esta conversación`;
         }
 
         function resetMessageCount() {
