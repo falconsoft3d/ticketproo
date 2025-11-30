@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Conexiones Odoo - Ticket System{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-cloud-upload"></i> Conexiones Odoo</h2>
+                <a href="{% url 'odoo_connection_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nueva Conexión
+                </a>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            {% if connections %}
+            <div class="row">
+                {% for connection in connections %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                {{ connection.name }}
+                                {% if not connection.is_active %}
+                                <span class="badge bg-secondary">Inactiva</span>
+                                {% endif %}
+                            </h5>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-link text-dark" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item text-primary fw-bold" href="{% url 'odoo_rpc_operations_portal' connection.id %}">
+                                            <i class="bi bi-gear-wide-connected"></i> Portal de Operaciones RPC
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'odoo_rpc_table_list' connection.id %}">
+                                            <i class="bi bi-table"></i> Ver Tablas
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <button class="dropdown-item" onclick="testConnection({{ connection.id }})">
+                                            <i class="bi bi-wifi"></i> Probar Conexión
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'odoo_connection_backup' connection.id %}">
+                                            <i class="bi bi-database-down"></i> Backup Base de Datos
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item {% if connection.public_portal_enabled %}text-success fw-bold{% endif %}" href="{% url 'odoo_connection_manage_portal' connection.id %}">
+                                            <i class="bi bi-globe"></i> Portal Público
+                                            {% if connection.public_portal_enabled %}
+                                            <i class="bi bi-check-circle-fill text-success ms-1"></i>
+                                            {% endif %}
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'odoo_connection_edit' connection.id %}">
+                                            <i class="bi bi-pencil"></i> Editar
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="{% url 'odoo_connection_delete' connection.id %}">
+                                            <i class="bi bi-trash"></i> Eliminar
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-2">
+                                <strong>Base de Datos:</strong> {{ connection.database }}
+                            </p>
+                            <p class="mb-2">
+                                <strong>URL:</strong> {{ connection.url }}:{{ connection.port }}
+                            </p>
+                            <p class="mb-2">
+                                <strong>Usuario:</strong> {{ connection.username }}
+                            </p>
+                            <p class="mb-2">
+                                <strong>Estado:</strong> 
+                                {% if connection.connection_status == 'success' %}
+                                    <span class="badge bg-success">Exitosa</span>
+                                {% elif connection.connection_status == 'failed' %}
+                                    <span class="badge bg-danger">Fallida</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No probada</span>
+                                {% endif %}
+                            </p>
+                            {% if connection.last_tested_at %}
+                            <p class="mb-0 text-muted small">
+                                Última prueba: {{ connection.last_tested_at|date:"d/m/Y H:i" }}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer">
+                            <small class="text-muted">
+                                Creada el {{ connection.created_at|date:"d/m/Y" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No tienes conexiones Odoo configuradas. 
+                <a href="{% url 'odoo_connection_create' %}">Crear una ahora</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function testConnection(connectionId) {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Probando...';
+    button.disabled = true;
+    
+    fetch(`/odoo-rpc/connections/${connectionId}/test/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✓ ' + data.message);
+            location.reload();
+        } else {
+            alert('✗ ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error al probar la conexión: ' + error);
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+</script>
+{% endblock %}

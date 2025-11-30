@@ -20533,6 +20533,747 @@ class KnowledgeBase(models.Model):
         return self.title
 
 
+class Translation(models.Model):
+    """Modelo para almacenar traducciones realizadas con IA"""
+    
+    LANGUAGES = [
+        ('es', 'Español'),
+        ('en', 'Inglés'),
+        ('fr', 'Francés'),
+        ('de', 'Alemán'),
+        ('it', 'Italiano'),
+        ('pt', 'Portugués'),
+        ('ru', 'Ruso'),
+        ('zh', 'Chino'),
+        ('ja', 'Japonés'),
+        ('ko', 'Coreano'),
+        ('ar', 'Árabe'),
+        ('hi', 'Hindi'),
+        ('tr', 'Turco'),
+        ('nl', 'Neerlandés'),
+        ('pl', 'Polaco'),
+        ('sv', 'Sueco'),
+        ('no', 'Noruego'),
+        ('da', 'Danés'),
+        ('fi', 'Finlandés'),
+        ('cs', 'Checo'),
+        ('ca', 'Catalán'),
+        ('val', 'Valenciano'),
+    ]
+    
+    source_language = models.CharField(
+        max_length=10,
+        choices=LANGUAGES,
+        default='en',
+        verbose_name='Idioma Origen'
+    )
+    
+    target_language = models.CharField(
+        max_length=10,
+        choices=LANGUAGES,
+        default='es',
+        verbose_name='Idioma Destino'
+    )
+    
+    source_text = models.TextField(
+        verbose_name='Texto Original',
+        help_text='Texto a traducir'
+    )
+    
+    translated_text = models.TextField(
+        verbose_name='Texto Traducido',
+        help_text='Resultado de la traducción'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Creado por'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['source_language']),
+            models.Index(fields=['target_language']),
+            models.Index(fields=['created_at']),
+        ]
+        verbose_name = 'Traducción'
+        verbose_name_plural = 'Traducciones'
+    
+    def __str__(self):
+        return f"{self.get_source_language_display()} → {self.get_target_language_display()} ({self.created_at.strftime('%Y-%m-%d')})"
+
+
+class SQLQuery(models.Model):
+    """Modelo para almacenar consultas SQL y sus resultados"""
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre de la Consulta',
+        help_text='Nombre descriptivo para identificar la consulta'
+    )
+    
+    query = models.TextField(
+        verbose_name='Consulta SQL',
+        help_text='Solo se permiten consultas SELECT'
+    )
+    
+    result = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Resultado',
+        help_text='Resultado de la última ejecución'
+    )
+    
+    row_count = models.IntegerField(
+        default=0,
+        verbose_name='Cantidad de Filas',
+        help_text='Número de filas retornadas'
+    )
+    
+    execution_time = models.FloatField(
+        default=0.0,
+        verbose_name='Tiempo de Ejecución',
+        help_text='Tiempo de ejecución en segundos'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='sql_queries',
+        verbose_name='Creado por'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    
+    last_executed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Última ejecución'
+    )
+    
+    is_favorite = models.BooleanField(
+        default=False,
+        verbose_name='Favorito'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['created_by']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['is_favorite']),
+        ]
+        verbose_name = 'Consulta SQL'
+        verbose_name_plural = 'Consultas SQL'
+    
+    def __str__(self):
+        return f"{self.name} ({self.created_at.strftime('%Y-%m-%d')})"
+
+
+class OdooConnection(models.Model):
+    """Modelo para almacenar configuraciones de conexión a Odoo"""
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre de la Conexión',
+        help_text='Nombre descriptivo para identificar esta conexión'
+    )
+    
+    url = models.URLField(
+        verbose_name='URL de Odoo',
+        help_text='URL completa del servidor Odoo (ej: https://miodoo.com)'
+    )
+    
+    port = models.IntegerField(
+        default=8069,
+        verbose_name='Puerto',
+        help_text='Puerto del servidor Odoo'
+    )
+    
+    database = models.CharField(
+        max_length=200,
+        verbose_name='Base de Datos',
+        help_text='Nombre de la base de datos en Odoo'
+    )
+    
+    username = models.CharField(
+        max_length=200,
+        verbose_name='Usuario',
+        help_text='Usuario de Odoo'
+    )
+    
+    password = models.CharField(
+        max_length=200,
+        verbose_name='Contraseña',
+        help_text='Contraseña del usuario'
+    )
+    
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    
+    is_private = models.BooleanField(
+        default=False,
+        verbose_name='Privada',
+        help_text='Si está marcada como privada, solo el usuario creador puede verla y usarla'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='odoo_connections',
+        verbose_name='Creado por'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    
+    last_tested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Última prueba de conexión'
+    )
+    
+    connection_status = models.CharField(
+        max_length=50,
+        default='not_tested',
+        choices=[
+            ('not_tested', 'No probada'),
+            ('success', 'Exitosa'),
+            ('failed', 'Fallida'),
+        ],
+        verbose_name='Estado de Conexión'
+    )
+    
+    # Portal público para todas las tablas
+    public_portal_enabled = models.BooleanField(
+        default=False,
+        verbose_name='Portal Público Habilitado',
+        help_text='Permite acceso público a todas las tablas de esta conexión'
+    )
+    
+    public_portal_token = models.CharField(
+        max_length=64,
+        blank=True,
+        unique=True,
+        null=True,
+        verbose_name='Token del Portal Público',
+        help_text='Token único para acceso al portal público'
+    )
+    
+    public_portal_password = models.CharField(
+        max_length=128,
+        blank=True,
+        verbose_name='Contraseña del Portal',
+        help_text='Dejar en blanco para permitir acceso sin contraseña'
+    )
+    
+    public_portal_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Expiración del Portal',
+        help_text='Fecha en que expira el acceso al portal (opcional)'
+    )
+    
+    public_portal_allow_import = models.BooleanField(
+        default=True,
+        verbose_name='Permitir Importación',
+        help_text='Si está activo, los usuarios pueden importar datos. Si no, solo pueden descargar plantillas'
+    )
+    
+    # Portal público de operaciones RPC
+    public_operations_enabled = models.BooleanField(
+        default=False,
+        verbose_name='Portal de Operaciones Público Habilitado',
+        help_text='Permite acceso público al portal de operaciones RPC'
+    )
+    
+    public_operations_token = models.CharField(
+        max_length=64,
+        blank=True,
+        unique=True,
+        null=True,
+        verbose_name='Token del Portal de Operaciones',
+        help_text='Token único para acceso al portal de operaciones RPC'
+    )
+    
+    public_operations_password = models.CharField(
+        max_length=128,
+        blank=True,
+        verbose_name='Contraseña del Portal de Operaciones',
+        help_text='Dejar en blanco para permitir acceso sin contraseña'
+    )
+    
+    public_operations_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Expiración del Portal de Operaciones',
+        help_text='Fecha en que expira el acceso al portal de operaciones (opcional)'
+    )
+    
+    public_operations_read_only = models.BooleanField(
+        default=False,
+        verbose_name='Portal de Operaciones Solo Lectura',
+        help_text='Si está activo, solo permite operaciones de búsqueda (no crear, actualizar o eliminar)'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Conexión Odoo'
+        verbose_name_plural = 'Conexiones Odoo'
+    
+    def __str__(self):
+        return f"{self.name} ({self.database})"
+    
+    def generate_portal_token(self):
+        """Generar token único para portal público"""
+        import secrets
+        self.public_portal_token = secrets.token_urlsafe(32)
+        self.save()
+        return self.public_portal_token
+    
+    def get_portal_url(self, request=None):
+        """Obtener URL del portal público"""
+        if not self.public_portal_enabled or not self.public_portal_token:
+            return None
+        if request:
+            from django.urls import reverse
+            return request.build_absolute_uri(
+                reverse('odoo_rpc_public_portal', kwargs={'token': self.public_portal_token})
+            )
+        return f"/public/odoo-portal/{self.public_portal_token}/"
+    
+    def is_portal_valid(self):
+        """Verificar si el portal público sigue siendo válido"""
+        if not self.public_portal_enabled:
+            return False
+        if self.public_portal_expires_at:
+            from django.utils import timezone
+            return timezone.now() < self.public_portal_expires_at
+        return True
+    
+    def generate_operations_token(self):
+        """Generar token único para portal de operaciones RPC"""
+        import secrets
+        self.public_operations_token = secrets.token_urlsafe(32)
+        self.save()
+        return self.public_operations_token
+    
+    def get_operations_url(self, request=None):
+        """Obtener URL del portal de operaciones público"""
+        if not self.public_operations_enabled or not self.public_operations_token:
+            return None
+        if request:
+            from django.urls import reverse
+            try:
+                return request.build_absolute_uri(
+                    reverse('odoo_rpc_public_operations', kwargs={'token': self.public_operations_token})
+                )
+            except:
+                # Fallback si la ruta no existe aún
+                return request.build_absolute_uri(f"/public/odoo-operations/{self.public_operations_token}/")
+        return f"/public/odoo-operations/{self.public_operations_token}/"
+    
+    def is_operations_valid(self):
+        """Verificar si el portal de operaciones público sigue siendo válido"""
+        if not self.public_operations_enabled:
+            return False
+        if self.public_operations_expires_at:
+            from django.utils import timezone
+            return timezone.now() < self.public_operations_expires_at
+        return True
+
+
+class OdooRPCTable(models.Model):
+    """Modelo para definir tablas de Odoo a sincronizar"""
+    
+    connection = models.ForeignKey(
+        OdooConnection,
+        on_delete=models.CASCADE,
+        related_name='rpc_tables',
+        verbose_name='Conexión'
+    )
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre Descriptivo',
+        help_text='Nombre descriptivo de la tabla'
+    )
+    
+    odoo_model = models.CharField(
+        max_length=200,
+        verbose_name='Modelo Odoo',
+        help_text='Nombre del modelo en Odoo (ej: product.product, res.partner)'
+    )
+    
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción de la tabla y su propósito'
+    )
+    
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='odoo_rpc_tables',
+        verbose_name='Creado por'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    
+    # Campos para URL pública
+    public_url_enabled = models.BooleanField(
+        default=False,
+        verbose_name='URL Pública Habilitada',
+        help_text='Permite acceso público para importar datos'
+    )
+    
+    public_url_token = models.CharField(
+        max_length=64,
+        blank=True,
+        unique=True,
+        null=True,
+        verbose_name='Token de URL Pública',
+        help_text='Token único para acceso público'
+    )
+    
+    public_url_password = models.CharField(
+        max_length=128,
+        blank=True,
+        verbose_name='Contraseña de URL Pública',
+        help_text='Dejar en blanco para permitir acceso sin contraseña'
+    )
+    
+    public_url_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Expiración',
+        help_text='Fecha en que expira el acceso público (opcional)'
+    )
+    
+    # Campos para formulario público de creación
+    public_form_enabled = models.BooleanField(
+        default=False,
+        verbose_name='Formulario Público Habilitado',
+        help_text='Permite crear registros vía formulario público'
+    )
+    
+    public_form_token = models.CharField(
+        max_length=64,
+        blank=True,
+        unique=True,
+        null=True,
+        verbose_name='Token de Formulario Público',
+        help_text='Token único para formulario público'
+    )
+    
+    public_form_password = models.CharField(
+        max_length=128,
+        blank=True,
+        verbose_name='Contraseña de Formulario Público',
+        help_text='Dejar en blanco para permitir acceso sin contraseña'
+    )
+    
+    public_form_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Expiración del Formulario',
+        help_text='Fecha en que expira el formulario público (opcional)'
+    )
+    
+    class Meta:
+        ordering = ['name']
+        unique_together = ['connection', 'odoo_model']
+        verbose_name = 'Tabla RPC Odoo'
+        verbose_name_plural = 'Tablas RPC Odoo'
+    
+    def __str__(self):
+        return f"{self.name} ({self.odoo_model})"
+    
+    def generate_public_token(self):
+        """Generar token único para URL pública"""
+        import secrets
+        self.public_url_token = secrets.token_urlsafe(32)
+        self.save()
+        return self.public_url_token
+    
+    def get_public_url(self, request=None):
+        """Obtener URL pública para importación"""
+        if not self.public_url_enabled or not self.public_url_token:
+            return None
+        if request:
+            from django.urls import reverse
+            return request.build_absolute_uri(
+                reverse('odoo_rpc_public_import', kwargs={'token': self.public_url_token})
+            )
+        return f"/public/odoo-import/{self.public_url_token}/"
+    
+    def is_public_url_valid(self):
+        """Verificar si la URL pública sigue siendo válida"""
+        if not self.public_url_enabled:
+            return False
+        if self.public_url_expires_at:
+            from django.utils import timezone
+            return timezone.now() < self.public_url_expires_at
+        return True
+    
+    def generate_form_token(self):
+        """Generar token único para formulario público"""
+        import secrets
+        self.public_form_token = secrets.token_urlsafe(32)
+        self.save()
+        return self.public_form_token
+    
+    def get_form_url(self, request=None):
+        """Obtener URL pública para formulario de creación"""
+        if not self.public_form_enabled or not self.public_form_token:
+            return None
+        if request:
+            from django.urls import reverse
+            try:
+                return request.build_absolute_uri(
+                    reverse('odoo_rpc_public_form', kwargs={'token': self.public_form_token})
+                )
+            except:
+                return request.build_absolute_uri(f"/public/odoo-form/{self.public_form_token}/")
+        return f"/public/odoo-form/{self.public_form_token}/"
+    
+    def is_form_valid(self):
+        """Verificar si el formulario público sigue siendo válido"""
+        if not self.public_form_enabled:
+            return False
+        if self.public_form_expires_at:
+            from django.utils import timezone
+            return timezone.now() < self.public_form_expires_at
+        return True
+
+
+class OdooRPCField(models.Model):
+    """Modelo para definir campos de las tablas Odoo"""
+    
+    FIELD_TYPES = [
+        ('char', 'Texto'),
+        ('text', 'Texto Largo'),
+        ('integer', 'Entero'),
+        ('float', 'Decimal'),
+        ('boolean', 'Booleano'),
+        ('date', 'Fecha'),
+        ('datetime', 'Fecha y Hora'),
+        ('selection', 'Selección'),
+        ('many2one', 'Relación Many2One'),
+        ('one2many', 'Relación One2Many'),
+        ('many2many', 'Relación Many2Many'),
+    ]
+    
+    table = models.ForeignKey(
+        OdooRPCTable,
+        on_delete=models.CASCADE,
+        related_name='rpc_fields',
+        verbose_name='Tabla'
+    )
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre Descriptivo',
+        help_text='Nombre descriptivo del campo'
+    )
+    
+    odoo_field_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Campo en Odoo',
+        help_text='Nombre técnico del campo en Odoo (ej: name, default_code)'
+    )
+    
+    field_type = models.CharField(
+        max_length=50,
+        choices=FIELD_TYPES,
+        default='char',
+        verbose_name='Tipo de Campo'
+    )
+    
+    is_required = models.BooleanField(
+        default=False,
+        verbose_name='Requerido',
+        help_text='Si el campo es obligatorio'
+    )
+    
+    order = models.IntegerField(
+        default=0,
+        verbose_name='Orden',
+        help_text='Orden de aparición en Excel'
+    )
+    
+    help_text = models.TextField(
+        blank=True,
+        verbose_name='Texto de Ayuda',
+        help_text='Instrucciones para llenar este campo'
+    )
+    
+    class Meta:
+        ordering = ['table', 'order', 'name']
+        unique_together = ['table', 'odoo_field_name']
+        verbose_name = 'Campo RPC Odoo'
+        verbose_name_plural = 'Campos RPC Odoo'
+    
+    def __str__(self):
+        return f"{self.name} ({self.odoo_field_name})"
+
+
+class OdooRPCData(models.Model):
+    """Modelo para almacenar datos temporales antes de enviar a Odoo"""
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('processing', 'Procesando'),
+        ('success', 'Exitoso'),
+        ('failed', 'Fallido'),
+        ('fetched', 'Obtenido'),
+    ]
+    
+    table = models.ForeignKey(
+        OdooRPCTable,
+        on_delete=models.CASCADE,
+        related_name='rpc_data',
+        verbose_name='Tabla'
+    )
+    
+    data = models.JSONField(
+        verbose_name='Datos',
+        help_text='Datos en formato JSON para enviar a Odoo'
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado'
+    )
+    
+    odoo_id = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name='ID en Odoo',
+        help_text='ID del registro creado en Odoo'
+    )
+    
+    error_message = models.TextField(
+        blank=True,
+        verbose_name='Mensaje de Error',
+        help_text='Mensaje de error si la sincronización falló'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='odoo_rpc_data',
+        verbose_name='Creado por'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    
+    processed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de procesamiento'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Dato RPC Odoo'
+        verbose_name_plural = 'Datos RPC Odoo'
+    
+    def __str__(self):
+        return f"{self.table.name} - {self.status} ({self.created_at.strftime('%Y-%m-%d')})"
+
+
+class OdooRPCImportFile(models.Model):
+    """Modelo para almacenar archivos de importación"""
+    
+    table = models.ForeignKey(
+        OdooRPCTable,
+        on_delete=models.CASCADE,
+        related_name='import_files',
+        verbose_name='Tabla'
+    )
+    
+    file = models.FileField(
+        upload_to='odoo_rpc_imports/%Y/%m/',
+        verbose_name='Archivo'
+    )
+    
+    original_filename = models.CharField(
+        max_length=255,
+        verbose_name='Nombre Original'
+    )
+    
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='odoo_rpc_imports',
+        verbose_name='Subido por'
+    )
+    
+    uploaded_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de subida'
+    )
+    
+    records_imported = models.IntegerField(
+        default=0,
+        verbose_name='Registros importados'
+    )
+    
+    records_success = models.IntegerField(
+        default=0,
+        verbose_name='Registros exitosos'
+    )
+    
+    records_failed = models.IntegerField(
+        default=0,
+        verbose_name='Registros fallidos'
+    )
+    
+    class Meta:
+        ordering = ['-uploaded_at']
+        verbose_name = 'Archivo de Importación RPC'
+        verbose_name_plural = 'Archivos de Importación RPC'
+    
+    def __str__(self):
+        return f"{self.original_filename} - {self.uploaded_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+
+
 
 
 

@@ -1,0 +1,1098 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Portal de Operaciones RPC - {{ connection.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="bi bi-gear-wide-connected"></i> Portal de Operaciones RPC
+                    <small class="text-muted">{{ connection.name }}</small>
+                    {% if is_public %}
+                    <span class="badge bg-info ms-2">
+                        <i class="bi bi-globe"></i> Acceso Público
+                    </span>
+                    {% endif %}
+                    {% if is_read_only %}
+                    <span class="badge bg-warning ms-2">
+                        <i class="bi bi-eye"></i> Solo Lectura
+                    </span>
+                    {% endif %}
+                </h2>
+                <div>
+                    {% if not is_public %}
+                    <button class="btn btn-success me-2" onclick="showShareModal()">
+                        <i class="bi bi-share"></i> Compartir Portal
+                    </button>
+                    <a href="{% url 'odoo_connection_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver a Conexiones
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Tabs de operaciones -->
+            <ul class="nav nav-tabs mb-4" id="operationTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="search-tab" data-bs-toggle="tab" data-bs-target="#search" type="button" role="tab">
+                        <i class="bi bi-search"></i> Consultar Registros
+                    </button>
+                </li>
+                {% if not is_read_only %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="create-tab" data-bs-toggle="tab" data-bs-target="#create" type="button" role="tab">
+                        <i class="bi bi-plus-circle"></i> Crear Registro
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="update-tab" data-bs-toggle="tab" data-bs-target="#update" type="button" role="tab">
+                        <i class="bi bi-pencil-square"></i> Editar Registro
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="delete-tab" data-bs-toggle="tab" data-bs-target="#delete" type="button" role="tab">
+                        <i class="bi bi-trash"></i> Eliminar Registro
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link{% if is_read_only %} disabled{% endif %}" id="bulk-tab" data-bs-toggle="tab" data-bs-target="#bulk" type="button" role="tab"{% if is_read_only %} disabled{% endif %}>
+                        <i class="bi bi-lightning-charge"></i> Actualización Masiva
+                    </button>
+                </li>
+                {% endif %}
+            </ul>
+
+            <div class="tab-content" id="operationTabsContent">
+                <!-- Tab: Consultar Registros -->
+                <div class="tab-pane fade show active" id="search" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-search"></i> Consultar Registros</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="searchForm">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Modelo *</label>
+                                        <input type="text" class="form-control" name="model" placeholder="ej: product.product" required>
+                                        <small class="text-muted">Nombre técnico del modelo en Odoo</small>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Dominio (JSON)</label>
+                                        <input type="text" class="form-control" name="domain" value="[]" placeholder='[["active", "=", true]]'>
+                                        <small class="text-muted">Condiciones de búsqueda en formato JSON</small>
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="form-label">Límite</label>
+                                        <input type="number" class="form-control" name="limit" value="100" min="1" max="1000">
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="bi bi-search"></i> Buscar
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Campos (separados por comas, vacío = todos)</label>
+                                    <input type="text" class="form-control" name="fields" placeholder="ej: name, default_code, list_price">
+                                </div>
+                            </form>
+
+                            <!-- Ejemplos de Dominios -->
+                            <div class="alert alert-info mt-3">
+                                <h6 class="alert-heading"><i class="bi bi-lightbulb"></i> Ejemplos de Dominios (haz clic para usar):</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <small class="d-block mb-2">
+                                            <strong>1. Todos los registros:</strong><br>
+                                            <code class="domain-example" style="cursor: pointer;" onclick="useDomainExample('[]')">[] <i class="bi bi-hand-index text-primary"></i></code>
+                                        </small>
+                                        <small class="d-block mb-2">
+                                            <strong>2. Igualdad simple:</strong><br>
+                                            <code class="domain-example" style="cursor: pointer;" onclick="useDomainExample('[[&quot;active&quot;, &quot;=&quot;, true]]')">[["active", "=", true]] <i class="bi bi-hand-index text-primary"></i></code>
+                                        </small>
+                                        <small class="d-block mb-2">
+                                            <strong>3. Búsqueda parcial (like):</strong><br>
+                                            <code class="domain-example" style="cursor: pointer;" onclick="useDomainExample('[[&quot;name&quot;, &quot;ilike&quot;, &quot;producto&quot;]]')">[["name", "ilike", "producto"]] <i class="bi bi-hand-index text-primary"></i></code>
+                                        </small>
+                                        <small class="d-block mb-2">
+                                            <strong>4. Mayor que:</strong><br>
+                                            <code class="domain-example" style="cursor: pointer;" onclick="useDomainExample('[[&quot;list_price&quot;, &quot;&gt;&quot;, 100]]')">[["list_price", "&gt;", 100]] <i class="bi bi-hand-index text-primary"></i></code>
+                                        </small>
+                                        <small class="d-block mb-2">
+                                            <strong>5. Dentro de lista (in):</strong><br>
+                                            <code class="domain-example" style="cursor: pointer;" onclick="useDomainExample('[[&quot;state&quot;, &quot;in&quot;, [&quot;draft&quot;, &quot;confirmed&quot;]]]')">[["state", "in", ["draft", "confirmed"]]] <i class="bi bi-hand-index text-primary"></i></code>
+                                        </small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="d-block mb-2">
+                                            <strong>6. Múltiples condiciones (AND):</strong><br>
+                                            <code class="domain-example" style="cursor: pointer;" onclick="useDomainExample('[[&quot;active&quot;, &quot;=&quot;, true], [&quot;list_price&quot;, &quot;&gt;&quot;, 50]]')">[["active", "=", true], ["list_price", "&gt;", 50]] <i class="bi bi-hand-index text-primary"></i></code>
+                                        </small>
+                                        <small class="d-block mb-2">
+                                            <strong>7. Condición OR:</strong><br>
+                                            <code class="domain-example" style="cursor: pointer;" onclick="useDomainExample('[&quot;|&quot;, [&quot;state&quot;, &quot;=&quot;, &quot;draft&quot;], [&quot;state&quot;, &quot;=&quot;, &quot;open&quot;]]')">["|", ["state", "=", "draft"], ["state", "=", "open"]] <i class="bi bi-hand-index text-primary"></i></code>
+                                        </small>
+                                        <small class="d-block mb-2">
+                                            <strong>8. Campo vacío:</strong><br>
+                                            <code class="domain-example" style="cursor: pointer;" onclick="useDomainExample('[[&quot;description&quot;, &quot;=&quot;, false]]')">[["description", "=", false]] <i class="bi bi-hand-index text-primary"></i></code>
+                                        </small>
+                                        <small class="d-block mb-2">
+                                            <strong>9. Campo NO vacío:</strong><br>
+                                            <code class="domain-example" style="cursor: pointer;" onclick="useDomainExample('[[&quot;email&quot;, &quot;!=&quot;, false]]')">[["email", "!=", false]] <i class="bi bi-hand-index text-primary"></i></code>
+                                        </small>
+                                        <small class="d-block mb-2">
+                                            <strong>10. Rango entre valores:</strong><br>
+                                            <code class="domain-example" style="cursor: pointer;" onclick="useDomainExample('[[&quot;list_price&quot;, &quot;&gt;=&quot;, 100], [&quot;list_price&quot;, &quot;&lt;=&quot;, 500]]')">[["list_price", "&gt;=", 100], ["list_price", "&lt;=", 500]] <i class="bi bi-hand-index text-primary"></i></code>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Historial de Consultas -->
+                            <div id="queryHistory" class="mt-3 d-none">
+                                <div class="card border-secondary">
+                                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0"><i class="bi bi-clock-history"></i> Historial de Consultas</h6>
+                                        <button class="btn btn-sm btn-outline-light" onclick="clearQueryHistory()">
+                                            <i class="bi bi-trash"></i> Limpiar
+                                        </button>
+                                    </div>
+                                    <div class="card-body p-2">
+                                        <div id="queryHistoryList" style="max-height: 300px; overflow-y: auto;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="searchResults" class="mt-4"></div>
+                            
+                            <!-- Botones de acción sobre resultados -->
+                            <div id="resultActions" class="mt-3 d-none">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-success" onclick="exportToExcel()">
+                                        <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+                                    </button>
+                                    <button type="button" class="btn btn-info" onclick="viewAsJson()">
+                                        <i class="bi bi-code-square"></i> Ver JSON
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Crear Registro -->
+                <div class="tab-pane fade" id="create" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Crear Nuevo Registro</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="createForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Modelo *</label>
+                                    <input type="text" class="form-control" name="model" placeholder="ej: product.product" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Valores (JSON) *</label>
+                                    <textarea class="form-control" name="values" rows="10" required placeholder='&#123;
+    "name": "Producto Nuevo",
+    "default_code": "PROD001",
+    "list_price": 100.00,
+    "type": "product"
+&#125;'></textarea>
+                                    <small class="text-muted">Diccionario JSON con los valores del nuevo registro</small>
+                                </div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-plus-circle"></i> Crear Registro
+                                </button>
+                            </form>
+
+                            <div id="createResults" class="mt-4"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Editar Registro -->
+                <div class="tab-pane fade" id="update" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header bg-warning">
+                            <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Editar Registro</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="updateForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Modelo *</label>
+                                        <input type="text" class="form-control" name="model" placeholder="ej: product.product" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">ID del Registro *</label>
+                                        <input type="number" class="form-control" name="record_id" placeholder="ej: 123" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Valores a Actualizar (JSON) *</label>
+                                    <textarea class="form-control" name="values" rows="8" required placeholder='&#123;
+    "list_price": 150.00,
+    "description": "Descripción actualizada"
+&#125;'></textarea>
+                                    <small class="text-muted">Solo incluye los campos que quieres actualizar</small>
+                                </div>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-pencil-square"></i> Actualizar Registro
+                                </button>
+                            </form>
+
+                            <div id="updateResults" class="mt-4"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Eliminar Registro -->
+                <div class="tab-pane fade" id="delete" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0"><i class="bi bi-trash"></i> Eliminar Registro</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>¡Advertencia!</strong> Esta acción no se puede deshacer. El registro será eliminado permanentemente de Odoo.
+                            </div>
+
+                            <form id="deleteForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Modelo *</label>
+                                        <input type="text" class="form-control" name="model" placeholder="ej: product.product" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">ID del Registro *</label>
+                                        <input type="number" class="form-control" name="record_id" placeholder="ej: 123" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="bi bi-trash"></i> Eliminar Registro
+                                </button>
+                            </form>
+
+                            <div id="deleteResults" class="mt-4"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Actualización Masiva -->
+                <div class="tab-pane fade" id="bulk" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Actualización Masiva</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                Esta operación actualizará un campo en todos los registros que cumplan la condición especificada.
+                            </div>
+
+                            <form id="bulkForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Modelo *</label>
+                                    <input type="text" class="form-control" name="model" placeholder="ej: product.product" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Condición (Dominio JSON) *</label>
+                                    <input type="text" class="form-control" name="domain" placeholder='[["list_price", ">", 100]]' required>
+                                    <small class="text-muted">Condición que deben cumplir los registros a actualizar</small>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Campo a Actualizar *</label>
+                                        <input type="text" class="form-control" name="field_to_update" placeholder="ej: active" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Nuevo Valor *</label>
+                                        <input type="text" class="form-control" name="new_value" placeholder="ej: false o 150.00" required>
+                                        <small class="text-muted">Para booleanos: true/false, para números sin comillas</small>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-info">
+                                    <i class="bi bi-lightning-charge"></i> Ejecutar Actualización Masiva
+                                </button>
+                            </form>
+
+                            <div id="bulkResults" class="mt-4"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const connectionId = {{ connection.id }};
+const isPublic = {{ is_public|yesno:"true,false" }};
+const isReadOnly = {{ is_read_only|yesno:"true,false" }};
+const publicToken = {% if is_public %}'{{ token }}'{% else %}null{% endif %};
+let currentSearchResults = null; // Variable global para almacenar resultados
+
+// Historial de consultas (almacenado en localStorage)
+let queryHistory = JSON.parse(localStorage.getItem('queryHistory_' + connectionId) || '[]');
+
+// Helper para construir URLs según el modo (público o privado)
+function getOperationUrl(operation) {
+    if (isPublic) {
+        return `/public/odoo-operations/${publicToken}/${operation}/`;
+    } else {
+        return `/odoo-rpc/connections/${connectionId}/${operation}/`;
+    }
+}
+
+// Buscar registros
+document.getElementById('searchForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const resultsDiv = document.getElementById('searchResults');
+    const actionsDiv = document.getElementById('resultActions');
+    
+    // Guardar consulta en historial
+    const queryData = {
+        timestamp: new Date().toISOString(),
+        model: formData.get('model'),
+        domain: formData.get('domain'),
+        limit: formData.get('limit'),
+        fields: formData.get('fields')
+    };
+    
+    resultsDiv.innerHTML = '<div class="alert alert-info"><i class="bi bi-hourglass-split"></i> Buscando registros...</div>';
+    actionsDiv.classList.add('d-none');
+    
+    fetch(getOperationUrl('search-records'), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Guardar resultados para exportar
+            currentSearchResults = data;
+            
+            let html = `<div class="alert alert-success">
+                <i class="bi bi-check-circle"></i> Se encontraron ${data.count} registros
+            </div>`;
+            
+            if (data.records.length > 0) {
+                // Mostrar botones de acción
+                actionsDiv.classList.remove('d-none');
+                
+                html += '<div class="table-responsive"><table class="table table-striped table-hover table-sm">';
+                html += '<thead class="table-dark"><tr>';
+                
+                // Headers
+                const firstRecord = data.records[0];
+                for (let key in firstRecord) {
+                    html += `<th>${key}</th>`;
+                }
+                html += '</tr></thead><tbody>';
+                
+                // Rows
+                data.records.forEach(record => {
+                    html += '<tr>';
+                    for (let key in record) {
+                        let value = record[key];
+                        if (Array.isArray(value)) {
+                            value = JSON.stringify(value);
+                        } else if (value === null) {
+                            value = '<span class="text-muted">null</span>';
+                        } else if (value === false) {
+                            value = '<span class="text-danger">false</span>';
+                        } else if (value === true) {
+                            value = '<span class="text-success">true</span>';
+                        }
+                        html += `<td>${value}</td>`;
+                    }
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table></div>';
+            }
+            
+            resultsDiv.innerHTML = html;
+            
+            // Agregar consulta exitosa al historial
+            queryData.success = true;
+            queryData.recordCount = data.count;
+            addToQueryHistory(queryData);
+        } else {
+            currentSearchResults = null;
+            actionsDiv.classList.add('d-none');
+            resultsDiv.innerHTML = `<div class="alert alert-danger">
+                <i class="bi bi-x-circle"></i> Error: ${data.error}
+            </div>`;
+            
+            // Agregar consulta fallida al historial
+            queryData.success = false;
+            queryData.error = data.error;
+            addToQueryHistory(queryData);
+        }
+    })
+    .catch(error => {
+        currentSearchResults = null;
+        actionsDiv.classList.add('d-none');
+        resultsDiv.innerHTML = `<div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> Error: ${error}
+        </div>`;
+        
+        // Agregar consulta con error al historial
+        queryData.success = false;
+        queryData.error = String(error);
+        addToQueryHistory(queryData);
+    });
+});
+
+// Crear registro
+document.getElementById('createForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const resultsDiv = document.getElementById('createResults');
+    
+    resultsDiv.innerHTML = '<div class="alert alert-info"><i class="bi bi-hourglass-split"></i> Creando registro...</div>';
+    
+    fetch(getOperationUrl('create-record'), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            resultsDiv.innerHTML = `<div class="alert alert-success">
+                <i class="bi bi-check-circle"></i> ${data.message}
+            </div>`;
+            this.reset();
+        } else {
+            resultsDiv.innerHTML = `<div class="alert alert-danger">
+                <i class="bi bi-x-circle"></i> Error: ${data.error}
+            </div>`;
+        }
+    })
+    .catch(error => {
+        resultsDiv.innerHTML = `<div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> Error: ${error}
+        </div>`;
+    });
+});
+
+// Actualizar registro
+document.getElementById('updateForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const resultsDiv = document.getElementById('updateResults');
+    
+    resultsDiv.innerHTML = '<div class="alert alert-info"><i class="bi bi-hourglass-split"></i> Actualizando registro...</div>';
+    
+    fetch(getOperationUrl('update-record'), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            resultsDiv.innerHTML = `<div class="alert alert-success">
+                <i class="bi bi-check-circle"></i> ${data.message}
+            </div>`;
+        } else {
+            resultsDiv.innerHTML = `<div class="alert alert-danger">
+                <i class="bi bi-x-circle"></i> Error: ${data.error}
+            </div>`;
+        }
+    })
+    .catch(error => {
+        resultsDiv.innerHTML = `<div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> Error: ${error}
+        </div>`;
+    });
+});
+
+// Eliminar registro
+document.getElementById('deleteForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (!confirm('¿Estás seguro de eliminar este registro? Esta acción no se puede deshacer.')) {
+        return;
+    }
+    
+    const formData = new FormData(this);
+    const resultsDiv = document.getElementById('deleteResults');
+    
+    resultsDiv.innerHTML = '<div class="alert alert-info"><i class="bi bi-hourglass-split"></i> Eliminando registro...</div>';
+    
+    fetch(getOperationUrl('delete-record'), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            resultsDiv.innerHTML = `<div class="alert alert-success">
+                <i class="bi bi-check-circle"></i> ${data.message}
+            </div>`;
+            this.reset();
+        } else {
+            resultsDiv.innerHTML = `<div class="alert alert-danger">
+                <i class="bi bi-x-circle"></i> Error: ${data.error}
+            </div>`;
+        }
+    })
+    .catch(error => {
+        resultsDiv.innerHTML = `<div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> Error: ${error}
+        </div>`;
+    });
+});
+
+// Actualización masiva
+document.getElementById('bulkForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (!confirm('¿Estás seguro de realizar esta actualización masiva? Esto afectará a múltiples registros.')) {
+        return;
+    }
+    
+    const formData = new FormData(this);
+    const resultsDiv = document.getElementById('bulkResults');
+    
+    resultsDiv.innerHTML = '<div class="alert alert-info"><i class="bi bi-hourglass-split"></i> Ejecutando actualización masiva...</div>';
+    
+    fetch(getOperationUrl('bulk-update'), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let html = `<div class="alert alert-success">
+                <i class="bi bi-check-circle"></i> ${data.message}
+            </div>`;
+            
+            if (data.errors && data.errors.length > 0) {
+                html += '<div class="alert alert-warning"><strong>Errores:</strong><ul>';
+                data.errors.forEach(error => {
+                    html += `<li>${error}</li>`;
+                });
+                html += '</ul></div>';
+            }
+            
+            resultsDiv.innerHTML = html;
+        } else {
+            resultsDiv.innerHTML = `<div class="alert alert-danger">
+                <i class="bi bi-x-circle"></i> Error: ${data.error}
+            </div>`;
+        }
+    })
+    .catch(error => {
+        resultsDiv.innerHTML = `<div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> Error: ${error}
+        </div>`;
+    });
+});
+
+// Exportar a Excel
+function exportToExcel() {
+    if (!currentSearchResults || !currentSearchResults.records || currentSearchResults.records.length === 0) {
+        alert('No hay datos para exportar');
+        return;
+    }
+    
+    const records = currentSearchResults.records;
+    
+    // Crear hoja de cálculo
+    let csv = [];
+    
+    // Encabezados
+    const headers = Object.keys(records[0]);
+    csv.push(headers.join('\t'));
+    
+    // Datos
+    records.forEach(record => {
+        const row = headers.map(header => {
+            let value = record[header];
+            
+            if (value === null || value === undefined) {
+                return '';
+            }
+            
+            if (Array.isArray(value)) {
+                value = JSON.stringify(value);
+            } else if (typeof value === 'object') {
+                value = JSON.stringify(value);
+            }
+            
+            // Escapar comillas y saltos de línea
+            value = String(value).replace(/"/g, '""');
+            
+            // Si contiene comas, tabuladores o saltos de línea, encerrar entre comillas
+            if (value.includes(',') || value.includes('\t') || value.includes('\n')) {
+                value = `"${value}"`;
+            }
+            
+            return value;
+        });
+        csv.push(row.join('\t'));
+    });
+    
+    // Crear blob y descargar
+    const csvContent = csv.join('\n');
+    const BOM = '\uFEFF'; // BOM para Excel UTF-8
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `odoo_export_${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Ver como JSON
+function viewAsJson() {
+    if (!currentSearchResults) {
+        alert('No hay datos para mostrar');
+        return;
+    }
+    
+    // Crear modal para mostrar JSON
+    const jsonString = JSON.stringify(currentSearchResults, null, 2);
+    
+    // Crear modal dinámicamente
+    const modalHtml = `
+        <div class="modal fade" id="jsonModal" tabindex="-1">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header bg-info text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-code-square"></i> Vista JSON
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex justify-content-between mb-3">
+                            <div>
+                                <span class="badge bg-primary">Total: ${currentSearchResults.count} registros</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="copyJsonToClipboard()">
+                                <i class="bi bi-clipboard"></i> Copiar JSON
+                            </button>
+                        </div>
+                        <pre class="bg-dark text-light p-3 rounded" style="max-height: 70vh; overflow-y: auto;"><code id="jsonContent">${escapeHtml(jsonString)}</code></pre>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Eliminar modal anterior si existe
+    const oldModal = document.getElementById('jsonModal');
+    if (oldModal) {
+        oldModal.remove();
+    }
+    
+    // Insertar modal
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('jsonModal'));
+    modal.show();
+}
+
+// Copiar JSON al portapapeles
+function copyJsonToClipboard() {
+    if (!currentSearchResults) {
+        return;
+    }
+    
+    const jsonString = JSON.stringify(currentSearchResults, null, 2);
+    
+    navigator.clipboard.writeText(jsonString).then(() => {
+        // Mostrar feedback
+        const btn = event.target.closest('button');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i> ¡Copiado!';
+        btn.classList.add('btn-success');
+        btn.classList.remove('btn-outline-secondary');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-secondary');
+        }, 2000);
+    }).catch(err => {
+        alert('Error al copiar al portapapeles: ' + err);
+    });
+}
+
+// Función auxiliar para escapar HTML
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// Usar ejemplo de dominio
+function useDomainExample(domain) {
+    document.querySelector('input[name="domain"]').value = domain.replace(/&quot;/g, '"');
+}
+
+// Agregar consulta al historial
+function addToQueryHistory(queryData) {
+    // Agregar al inicio del array
+    queryHistory.unshift(queryData);
+    
+    // Mantener solo las últimas 20 consultas
+    if (queryHistory.length > 20) {
+        queryHistory = queryHistory.slice(0, 20);
+    }
+    
+    // Guardar en localStorage
+    localStorage.setItem('queryHistory_' + connectionId, JSON.stringify(queryHistory));
+    
+    // Actualizar visualización
+    renderQueryHistory();
+}
+
+// Renderizar historial
+function renderQueryHistory() {
+    const historyDiv = document.getElementById('queryHistory');
+    const historyList = document.getElementById('queryHistoryList');
+    
+    if (queryHistory.length === 0) {
+        historyDiv.classList.add('d-none');
+        return;
+    }
+    
+    historyDiv.classList.remove('d-none');
+    
+    let html = '';
+    queryHistory.forEach((query, index) => {
+        const date = new Date(query.timestamp);
+        const timeStr = date.toLocaleString('es-ES', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+        
+        const statusBadge = query.success 
+            ? `<span class="badge bg-success"><i class="bi bi-check-circle"></i> ${query.recordCount || 0} registros</span>`
+            : `<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Error</span>`;
+        
+        html += `
+            <div class="border-bottom pb-2 mb-2" style="background: ${query.success ? '#f8f9fa' : '#fff3cd'}; padding: 8px; border-radius: 4px;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <small class="text-muted"><i class="bi bi-clock"></i> ${timeStr}</small>
+                        ${statusBadge}
+                        <div class="mt-1">
+                            <strong>Modelo:</strong> <code>${query.model}</code><br>
+                            <strong>Dominio:</strong> <code style="font-size: 0.85em;">${escapeHtml(query.domain || '[]')}</code><br>
+                            ${query.fields ? `<strong>Campos:</strong> <code>${escapeHtml(query.fields)}</code><br>` : ''}
+                            <strong>Límite:</strong> ${query.limit}
+                            ${!query.success && query.error ? `<br><span class="text-danger"><small>${escapeHtml(query.error)}</small></span>` : ''}
+                        </div>
+                    </div>
+                    <div class="ms-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="reuseQuery(${index})" title="Reutilizar consulta">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    historyList.innerHTML = html;
+}
+
+// Reutilizar consulta del historial
+function reuseQuery(index) {
+    const query = queryHistory[index];
+    if (!query) return;
+    
+    // Llenar formulario
+    document.querySelector('input[name="model"]').value = query.model || '';
+    document.querySelector('input[name="domain"]').value = query.domain || '[]';
+    document.querySelector('input[name="limit"]').value = query.limit || 100;
+    document.querySelector('input[name="fields"]').value = query.fields || '';
+    
+    // Scroll al formulario
+    document.getElementById('search').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    // Feedback visual
+    const btn = event.target.closest('button');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check"></i>';
+    btn.classList.add('btn-success');
+    btn.classList.remove('btn-outline-primary');
+    
+    setTimeout(() => {
+        btn.innerHTML = originalHtml;
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-outline-primary');
+    }, 1000);
+}
+
+// Limpiar historial
+function clearQueryHistory() {
+    if (!confirm('¿Estás seguro de eliminar todo el historial de consultas?')) {
+        return;
+    }
+    
+    queryHistory = [];
+    localStorage.removeItem('queryHistory_' + connectionId);
+    renderQueryHistory();
+}
+
+// Renderizar historial al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    renderQueryHistory();
+});
+
+// Funciones para compartir portal
+let shareModal;
+
+function showShareModal() {
+    if (!shareModal) {
+        shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
+    }
+    
+    // Cargar configuración actual
+    fetch(`/odoo-rpc/connections/${connectionId}/share-status/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateShareModalUI(data);
+            }
+        });
+    
+    shareModal.show();
+}
+
+function updateShareModalUI(data) {
+    document.getElementById('shareEnabled').checked = data.enabled;
+    document.getElementById('shareReadOnly').checked = data.read_only;
+    document.getElementById('sharePassword').value = data.password || '';
+    document.getElementById('shareExpires').value = data.expires_at || '';
+    
+    if (data.enabled && data.url) {
+        document.getElementById('shareUrlContainer').classList.remove('d-none');
+        document.getElementById('shareUrl').value = data.url;
+    } else {
+        document.getElementById('shareUrlContainer').classList.add('d-none');
+    }
+}
+
+function toggleShareUrl() {
+    const enabled = document.getElementById('shareEnabled').checked;
+    if (enabled) {
+        generateShareUrl();
+    } else {
+        disableShareUrl();
+    }
+}
+
+function generateShareUrl() {
+    const formData = new FormData();
+    formData.append('enabled', true);
+    formData.append('read_only', document.getElementById('shareReadOnly').checked);
+    formData.append('password', document.getElementById('sharePassword').value);
+    formData.append('expires_at', document.getElementById('shareExpires').value);
+    
+    fetch(`/odoo-rpc/connections/${connectionId}/generate-share-url/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateShareModalUI(data);
+            showAlert('success', 'URL pública generada exitosamente');
+        } else {
+            showAlert('danger', data.error || 'Error al generar URL');
+            document.getElementById('shareEnabled').checked = false;
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error de conexión: ' + error.message);
+        document.getElementById('shareEnabled').checked = false;
+    });
+}
+
+function disableShareUrl() {
+    if (!confirm('¿Desactivar el acceso público al portal de operaciones?')) {
+        document.getElementById('shareEnabled').checked = true;
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('enabled', false);
+    
+    fetch(`/odoo-rpc/connections/${connectionId}/generate-share-url/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateShareModalUI(data);
+            showAlert('success', 'URL pública desactivada');
+        } else {
+            showAlert('danger', data.error || 'Error al desactivar URL');
+        }
+    });
+}
+
+function copyShareUrl() {
+    const urlInput = document.getElementById('shareUrl');
+    urlInput.select();
+    document.execCommand('copy');
+    
+    const btn = event.target.closest('button');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check"></i> Copiado';
+    btn.classList.add('btn-success');
+    btn.classList.remove('btn-primary');
+    
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-primary');
+    }, 2000);
+}
+
+function saveShareSettings() {
+    generateShareUrl();
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+    alertDiv.style.zIndex = '9999';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+</script>
+
+<!-- Modal para compartir portal -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-share"></i> Compartir Portal de Operaciones RPC</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Permite compartir este portal de operaciones RPC con usuarios externos mediante una URL pública.
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="shareEnabled" onchange="toggleShareUrl()">
+                        <label class="form-check-label" for="shareEnabled">
+                            <strong>Habilitar URL Pública</strong>
+                        </label>
+                    </div>
+                </div>
+                
+                <div id="shareUrlContainer" class="d-none">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>URL Pública:</strong></label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="shareUrl" readonly>
+                            <button class="btn btn-primary" onclick="copyShareUrl()">
+                                <i class="bi bi-clipboard"></i> Copiar
+                            </button>
+                        </div>
+                        <small class="text-muted">Comparte esta URL para dar acceso al portal</small>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6><i class="bi bi-gear"></i> Configuración de Acceso:</h6>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="shareReadOnly">
+                        <label class="form-check-label" for="shareReadOnly">
+                            <strong>Solo Lectura</strong>
+                            <br><small class="text-muted">Solo permite operaciones de búsqueda (no crear, editar o eliminar)</small>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="sharePassword" class="form-label">Contraseña (opcional):</label>
+                    <input type="password" class="form-control" id="sharePassword" placeholder="Dejar vacío para acceso sin contraseña">
+                    <small class="text-muted">Si se establece, los usuarios deberán ingresar esta contraseña</small>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="shareExpires" class="form-label">Fecha de Expiración (opcional):</label>
+                    <input type="datetime-local" class="form-control" id="shareExpires">
+                    <small class="text-muted">Dejar vacío para acceso sin expiración</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-success" onclick="saveShareSettings()">
+                    <i class="bi bi-save"></i> Guardar Configuración
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

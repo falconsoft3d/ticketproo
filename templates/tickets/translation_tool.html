@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Traductor con IA - Ticket System{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+            <li class="breadcrumb-item active">Traductor con IA</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Herramienta de Traducción -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-translate"></i> Traductor con IA
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-5">
+                                <label class="form-label">
+                                    <i class="bi bi-flag"></i> Idioma Origen
+                                </label>
+                                <select name="source_language" class="form-select" required>
+                                    {% for code, name in languages %}
+                                        <option value="{{ code }}" {% if code == 'en' %}selected{% endif %}>{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 text-center d-flex align-items-end justify-content-center">
+                                <i class="bi bi-arrow-right fs-3 text-primary"></i>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">
+                                    <i class="bi bi-flag-fill"></i> Idioma Destino
+                                </label>
+                                <select name="target_language" class="form-select" required>
+                                    {% for code, name in languages %}
+                                        <option value="{{ code }}" {% if code == 'es' %}selected{% endif %}>{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-file-text"></i> Texto a Traducir
+                            </label>
+                            <textarea name="source_text" class="form-control" rows="8" required placeholder="Escribe o pega el texto que deseas traducir..."></textarea>
+                            <small class="text-muted">Escribe el texto que deseas traducir</small>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-cpu"></i> Traducir con IA
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Resultado de la Traducción -->
+            {% if translation %}
+            <div class="card shadow-sm mb-4 border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-check-circle"></i> Resultado de la Traducción
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">
+                                <i class="bi bi-file-text"></i> Original ({{ translation.get_source_language_display }})
+                            </h6>
+                            <div class="p-3 bg-light rounded border" style="white-space: pre-wrap;">{{ translation.source_text }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-success mb-0">
+                                    <i class="bi bi-file-check"></i> Traducción ({{ translation.get_target_language_display }})
+                                </h6>
+                                <button class="btn btn-sm btn-outline-primary" onclick="copyTranslation()">
+                                    <i class="bi bi-clipboard"></i> Copiar
+                                </button>
+                            </div>
+                            <div id="translatedText" class="p-3 bg-success bg-opacity-10 rounded border border-success" style="white-space: pre-wrap;">{{ translation.translated_text }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="bi bi-clock"></i> Traducido el {{ translation.created_at|date:"d/m/Y H:i" }}
+                    </small>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Historial de Traducciones Recientes -->
+            {% if recent_translations %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history"></i> Traducciones Recientes
+                    </h5>
+                    <a href="{% url 'translation_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-list-ul"></i> Ver Todas
+                    </a>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for trans in recent_translations %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="badge bg-primary me-2">{{ trans.get_source_language_display }}</span>
+                                    <i class="bi bi-arrow-right text-muted mx-1"></i>
+                                    <span class="badge bg-success me-2">{{ trans.get_target_language_display }}</span>
+                                    <small class="text-muted">{{ trans.created_at|date:"d/m/Y H:i" }}</small>
+                                </div>
+                                <p class="mb-1 text-truncate" style="max-width: 600px;">
+                                    <strong>Original:</strong> {{ trans.source_text|truncatewords:15 }}
+                                </p>
+                                <p class="mb-0 text-muted text-truncate" style="max-width: 600px;">
+                                    <strong>Traducción:</strong> {{ trans.translated_text|truncatewords:15 }}
+                                </p>
+                            </div>
+                            <a href="{% url 'translation_delete' trans.pk %}" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function copyTranslation() {
+    const text = document.getElementById('translatedText').innerText;
+    navigator.clipboard.writeText(text).then(function() {
+        alert('Traducción copiada al portapapeles');
+    }, function(err) {
+        console.error('Error al copiar: ', err);
+    });
+}
+</script>
+{% endblock %}

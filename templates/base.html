@@ -400,6 +400,18 @@
                                     <i class="bi bi-lightbulb"></i> Base de Conocimientos
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item {% if 'translation' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'translation_tool' %}">
+                                    <i class="bi bi-translate"></i> Traducciones
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'odoo' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'odoo_connection_list' %}">
+                                    <i class="bi bi-cloud-upload"></i> Odoo RPC
+                                </a>
+                            </li>
                             
                             <!-- Opciones adicionales para Agentes y Profesores -->
                             {% if user|can_manage_courses %}
@@ -1152,6 +1164,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if 'sql_query' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'sql_query_tool' %}">
+                                    <i class="bi bi-database"></i> Consultas SQL
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if 'dynamic_table' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'dynamic_table_list' %}">
                                     <i class="bi bi-table"></i> Tablas API
@@ -1583,11 +1601,22 @@
         <i class="bi bi-sticky"></i>
     </button>
 
-    <!-- Botón flotante para transacciones (izquierda superior) -->
+    <!-- Botón flotante para traducción rápida (izquierda superior) -->
     {% load tickets_tags %}
     {% if user.is_authenticated and user|is_agent %}
-    <button id="transactionToggle" class="btn btn-primary shadow-lg floating-button-left" 
+    <button id="translationToggle" class="btn shadow-lg floating-button-left" 
             style="position: fixed; left: 0; top: calc(50% - 240px); transform: translateY(-50%); z-index: 1050; 
+                   border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                   border-left: none; transition: all 0.3s ease; background-color: #ff8c00; color: white;"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'; this.style.backgroundColor = '#ff7700'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'; this.style.backgroundColor = '#ff8c00'"
+            title="Traducción Rápida">
+        <i class="bi bi-translate" style="font-size: 1.2em;"></i>
+    </button>
+
+    <!-- Botón flotante para transacciones (izquierda superior) -->
+    <button id="transactionToggle" class="btn btn-primary shadow-lg floating-button-left" 
+            style="position: fixed; left: 0; top: calc(50% - 320px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-left: none; transition: all 0.3s ease;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
@@ -1674,6 +1703,17 @@
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
             title="Base de Conocimientos">
         <i class="bi bi-lightbulb-fill"></i>
+    </button>
+
+    <!-- Botón flotante para Gestión de URLs (izquierda) - Solo para agentes -->
+    <button id="urlManagerToggle" class="btn shadow-lg floating-button-left" 
+            style="position: fixed; left: 0; top: calc(50% + 320px); transform: translateY(-50%); z-index: 1050; 
+                   border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                   border-left: none; transition: all 0.3s ease; background-color: #17a2b8; color: white;"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'; this.style.backgroundColor = '#138496'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'; this.style.backgroundColor = '#17a2b8'"
+            title="Gestión de URLs">
+        <i class="bi bi-link-45deg" style="font-size: 1.5em;"></i>
     </button>
     {% endif %}
 
@@ -1815,6 +1855,132 @@
         </div>
     </div>
 
+    <!-- Barra lateral para traducción rápida -->
+    <div id="translationSidebar" class="shadow-lg" 
+         style="position: fixed; left: -400px; top: 0; width: 400px; height: 100vh; 
+                background: white; z-index: 1040; transition: left 0.3s ease; border-right: 3px solid #ff8c00;
+                overflow: hidden; display: flex; flex-direction: column;">
+        
+        <!-- Header de la barra lateral -->
+        <div class="p-3 text-white d-flex justify-content-between align-items-center" style="background-color: #ff8c00;">
+            <div>
+                <h6 class="mb-0">
+                    <i class="bi bi-translate me-2"></i>
+                    Traducción Rápida
+                </h6>
+                <small class="opacity-75">Traduce texto al instante</small>
+            </div>
+            <button id="closeTranslationSidebar" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Formulario de traducción -->
+        <div class="flex-grow-1 overflow-auto p-3">
+            <form id="quickTranslationForm">
+                <div class="row mb-3">
+                    <div class="col-5">
+                        <label class="form-label small"><i class="bi bi-flag"></i> De</label>
+                        <select id="quickSourceLang" class="form-select form-select-sm">
+                            <option value="en" selected>Inglés</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Francés</option>
+                            <option value="de">Alemán</option>
+                            <option value="it">Italiano</option>
+                            <option value="pt">Portugués</option>
+                            <option value="ru">Ruso</option>
+                            <option value="zh">Chino</option>
+                            <option value="ja">Japonés</option>
+                            <option value="ko">Coreano</option>
+                            <option value="ar">Árabe</option>
+                            <option value="hi">Hindi</option>
+                            <option value="tr">Turco</option>
+                            <option value="nl">Neerlandés</option>
+                            <option value="pl">Polaco</option>
+                            <option value="sv">Sueco</option>
+                            <option value="no">Noruego</option>
+                            <option value="da">Danés</option>
+                            <option value="fi">Finlandés</option>
+                            <option value="cs">Checo</option>
+                            <option value="ca">Catalán</option>
+                            <option value="val">Valenciano</option>
+                        </select>
+                    </div>
+                    <div class="col-2 text-center d-flex align-items-end justify-content-center pb-2">
+                        <i class="bi bi-arrow-right text-warning"></i>
+                    </div>
+                    <div class="col-5">
+                        <label class="form-label small"><i class="bi bi-flag-fill"></i> A</label>
+                        <select id="quickTargetLang" class="form-select form-select-sm">
+                            <option value="es" selected>Español</option>
+                            <option value="en">Inglés</option>
+                            <option value="fr">Francés</option>
+                            <option value="de">Alemán</option>
+                            <option value="it">Italiano</option>
+                            <option value="pt">Portugués</option>
+                            <option value="ru">Ruso</option>
+                            <option value="zh">Chino</option>
+                            <option value="ja">Japonés</option>
+                            <option value="ko">Coreano</option>
+                            <option value="ar">Árabe</option>
+                            <option value="hi">Hindi</option>
+                            <option value="tr">Turco</option>
+                            <option value="nl">Neerlandés</option>
+                            <option value="pl">Polaco</option>
+                            <option value="sv">Sueco</option>
+                            <option value="no">Noruego</option>
+                            <option value="da">Danés</option>
+                            <option value="fi">Finlandés</option>
+                            <option value="cs">Checo</option>
+                            <option value="ca">Catalán</option>
+                            <option value="val">Valenciano</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small"><i class="bi bi-file-text"></i> Texto a traducir</label>
+                    <textarea id="quickSourceText" class="form-control" rows="4" placeholder="Escribe el texto..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-warning w-100 mb-3" id="quickTranslateBtn">
+                    <i class="bi bi-cpu"></i> Traducir
+                </button>
+
+                <div id="quickTranslationResult" style="display: none;">
+                    <label class="form-label small text-success"><i class="bi bi-check-circle"></i> Traducción</label>
+                    <div class="position-relative">
+                        <textarea id="quickTranslatedText" class="form-control bg-success bg-opacity-10 border-success" rows="4" readonly></textarea>
+                        <button type="button" class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 m-1" onclick="copyQuickTranslation()">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Últimas traducciones -->
+                <div class="mt-4">
+                    <h6 class="text-muted mb-2"><i class="bi bi-clock-history"></i> Últimas Traducciones</h6>
+                    <div id="recentTranslationsList" class="list-group list-group-flush">
+                        <!-- Aquí se cargarán las traducciones dinámicamente -->
+                        <div class="text-center p-3 text-muted">
+                            <div class="spinner-border spinner-border-sm" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer con botón para ver historial -->
+        <div class="p-3 border-top bg-light">
+            <a href="{% url 'translation_list' %}" class="btn btn-warning w-100">
+                <i class="bi bi-list-ul me-2"></i>
+                Ver Historial Completo
+            </a>
+        </div>
+    </div>
+
     <!-- Barra lateral para transacciones -->
     <div id="transactionsSidebar" class="shadow-lg" 
          style="position: fixed; left: -400px; top: 0; width: 400px; height: 100vh; 
@@ -1897,6 +2063,49 @@
             <a href="{% url 'knowledge_base_list' %}" class="btn w-100 text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
                 <i class="bi bi-gear me-2"></i>
                 Gestionar Conocimientos
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra lateral para Gestión de URLs -->
+    <div id="urlManagerSidebar" class="shadow-lg" 
+         style="position: fixed; left: -400px; top: 0; width: 400px; height: 100vh; 
+                background: white; z-index: 1040; transition: left 0.3s ease; border-right: 3px solid #17a2b8;
+                overflow: hidden; display: flex; flex-direction: column;">
+        
+        <!-- Header de la barra lateral -->
+        <div class="p-3 text-white d-flex justify-content-between align-items-center" style="background-color: #17a2b8;">
+            <div>
+                <h6 class="mb-0">
+                    <i class="bi bi-link-45deg me-2"></i>
+                    Gestión de URLs
+                </h6>
+                <small class="opacity-75">Busca y accede rápidamente</small>
+            </div>
+            <button id="closeUrlManagerSidebar" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Buscador -->
+        <div class="p-3 bg-light border-bottom">
+            <input type="text" 
+                   id="urlSearchSidebar" 
+                   class="form-control" 
+                   placeholder="Buscar por nombre o URL..."
+                   autocomplete="off">
+        </div>
+
+        <!-- Contenedor del listado (con scroll) -->
+        <div id="urlListSidebar" class="flex-grow-1 overflow-auto p-3">
+            <!-- Aquí se cargarán las URLs dinámicamente -->
+        </div>
+
+        <!-- Footer con botón para gestionar -->
+        <div class="p-3 border-top bg-light">
+            <a href="{% url 'url_manager_list' %}" class="btn btn-info w-100">
+                <i class="bi bi-gear me-2"></i>
+                Gestionar URLs
             </a>
         </div>
     </div>
@@ -2625,11 +2834,15 @@
         // Funciones para botones del lado IZQUIERDO
         function hideLeftFloatingButtons(except = []) {
             const leftButtons = [
+                'translationToggle',
+                'transactionToggle',
                 'eventsSidebarToggle',
                 'workOrdersSidebarToggle',
                 'quickTaskToggle',
                 'ratingToggle',
-                'socialFeedToggle'
+                'socialFeedToggle',
+                'knowledgeBaseToggle',
+                'urlManagerToggle'
             ];
             
             leftButtons.forEach(buttonId => {
@@ -2646,11 +2859,15 @@
         
         function showLeftFloatingButtons() {
             const leftButtons = [
+                'translationToggle',
+                'transactionToggle',
                 'eventsSidebarToggle',
                 'workOrdersSidebarToggle',
                 'quickTaskToggle',
                 'ratingToggle',
-                'socialFeedToggle'
+                'socialFeedToggle',
+                'knowledgeBaseToggle',
+                'urlManagerToggle'
             ];
             
             leftButtons.forEach(buttonId => {
@@ -5691,6 +5908,338 @@
             }
         });
         // ========== FIN FUNCIONES PARA SIDEBAR DE BASE DE CONOCIMIENTOS ==========
+
+        // ========== FUNCIONES PARA SIDEBAR DE TRADUCCIÓN RÁPIDA ==========
+        let translationSidebarOpen = false;
+
+        function toggleTranslationSidebar() {
+            const sidebar = document.getElementById('translationSidebar');
+            const toggle = document.getElementById('translationToggle');
+
+            if (!translationSidebarOpen) {
+                // Abrir sidebar
+                sidebar.style.left = '0';
+                toggle.style.left = '400px';
+                
+                // Ocultar otros botones flotantes
+                hideLeftFloatingButtons(['translationToggle']);
+                
+                translationSidebarOpen = true;
+                
+                // Cargar últimas traducciones
+                loadRecentTranslations();
+                
+                // Focus en el textarea después de la animación
+                setTimeout(() => {
+                    document.getElementById('quickSourceText').focus();
+                }, 300);
+            } else {
+                closeTranslationSidebar();
+            }
+        }
+
+        function loadRecentTranslations() {
+            const listContainer = document.getElementById('recentTranslationsList');
+            
+            // Mostrar loading
+            listContainer.innerHTML = `
+                <div class="text-center p-3 text-muted">
+                    <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            `;
+            
+            fetch('/translations/recent-api/')
+                .then(response => response.json())
+                .then(data => {
+                    displayRecentTranslations(data.translations);
+                })
+                .catch(error => {
+                    console.error('Error al cargar traducciones:', error);
+                    listContainer.innerHTML = '<div class="text-center p-3 text-muted small">Error al cargar</div>';
+                });
+        }
+
+        function displayRecentTranslations(translations) {
+            const listContainer = document.getElementById('recentTranslationsList');
+            
+            if (!translations || translations.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center p-3 text-muted small">
+                        <i class="bi bi-inbox"></i>
+                        <p class="mb-0 mt-2">No hay traducciones</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            translations.forEach(trans => {
+                html += `
+                    <div class="list-group-item list-group-item-action p-2" style="cursor: pointer;" onclick="useTranslation('${trans.source_language}', '${trans.target_language}', \`${trans.source_text.replace(/`/g, '\\`')}\`, \`${trans.translated_text.replace(/`/g, '\\`')}\`)">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-primary" style="font-size: 0.65rem;">${trans.source_language_display}</span>
+                                <i class="bi bi-arrow-right mx-1" style="font-size: 0.7rem;"></i>
+                                <span class="badge bg-success" style="font-size: 0.65rem;">${trans.target_language_display}</span>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.7rem;">${trans.created_at}</small>
+                        </div>
+                        <p class="mb-0 small text-truncate">${trans.source_text}</p>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+        }
+
+        function useTranslation(sourceLang, targetLang, sourceText, translatedText) {
+            document.getElementById('quickSourceLang').value = sourceLang;
+            document.getElementById('quickTargetLang').value = targetLang;
+            document.getElementById('quickSourceText').value = sourceText.replace(/\.\.\.$/, ''); // Remover ... si existe
+            document.getElementById('quickTranslatedText').value = translatedText;
+            document.getElementById('quickTranslationResult').style.display = 'block';
+        }
+
+        function closeTranslationSidebar() {
+            const sidebar = document.getElementById('translationSidebar');
+            const toggle = document.getElementById('translationToggle');
+
+            sidebar.style.left = '-400px';
+            toggle.style.left = '0';
+            
+            // Mostrar otros botones flotantes
+            showLeftFloatingButtons();
+            
+            translationSidebarOpen = false;
+            
+            // Limpiar formulario
+            document.getElementById('quickSourceText').value = '';
+            document.getElementById('quickTranslatedText').value = '';
+            document.getElementById('quickTranslationResult').style.display = 'none';
+        }
+
+        function copyQuickTranslation() {
+            const text = document.getElementById('quickTranslatedText').value;
+            navigator.clipboard.writeText(text).then(function() {
+                alert('Traducción copiada al portapapeles');
+            }, function(err) {
+                console.error('Error al copiar: ', err);
+            });
+        }
+
+        // Event listeners para Traducción
+        document.addEventListener('DOMContentLoaded', function() {
+            const translationToggle = document.getElementById('translationToggle');
+            const closeTranslationBtn = document.getElementById('closeTranslationSidebar');
+            const quickTranslationForm = document.getElementById('quickTranslationForm');
+
+            if (translationToggle) {
+                translationToggle.addEventListener('click', toggleTranslationSidebar);
+            }
+
+            if (closeTranslationBtn) {
+                closeTranslationBtn.addEventListener('click', closeTranslationSidebar);
+            }
+
+            if (quickTranslationForm) {
+                quickTranslationForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const sourceLang = document.getElementById('quickSourceLang').value;
+                    const targetLang = document.getElementById('quickTargetLang').value;
+                    const sourceText = document.getElementById('quickSourceText').value.trim();
+                    const translateBtn = document.getElementById('quickTranslateBtn');
+                    const resultDiv = document.getElementById('quickTranslationResult');
+                    const translatedTextArea = document.getElementById('quickTranslatedText');
+
+                    if (!sourceText) {
+                        alert('Por favor escribe un texto para traducir');
+                        return;
+                    }
+
+                    // Deshabilitar botón y mostrar loading
+                    translateBtn.disabled = true;
+                    translateBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Traduciendo...';
+
+                    // Obtener CSRF token
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                                     document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+                    // Realizar la traducción
+                    fetch('/translations/quick-api/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: `source_language=${sourceLang}&target_language=${targetLang}&source_text=${encodeURIComponent(sourceText)}`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            translatedTextArea.value = data.translated_text;
+                            resultDiv.style.display = 'block';
+                            
+                            // Recargar lista de traducciones recientes
+                            loadRecentTranslations();
+                        } else {
+                            alert('Error: ' + (data.error || 'Error desconocido'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error al traducir. Por favor intenta nuevamente.');
+                    })
+                    .finally(() => {
+                        // Rehabilitar botón
+                        translateBtn.disabled = false;
+                        translateBtn.innerHTML = '<i class="bi bi-cpu"></i> Traducir';
+                    });
+                });
+            }
+        });
+        // ========== FIN FUNCIONES PARA SIDEBAR DE TRADUCCIÓN RÁPIDA ==========
+
+        // ========== FUNCIONES PARA SIDEBAR DE GESTIÓN DE URLs ==========
+        let urlManagerSidebarOpen = false;
+        let urlSearchTimeout = null;
+
+        function toggleUrlManagerSidebar() {
+            const sidebar = document.getElementById('urlManagerSidebar');
+            const toggle = document.getElementById('urlManagerToggle');
+
+            if (!urlManagerSidebarOpen) {
+                // Abrir sidebar
+                sidebar.style.left = '0';
+                toggle.style.left = '400px';
+                
+                // Ocultar otros botones flotantes
+                hideLeftFloatingButtons(['urlManagerToggle']);
+                
+                urlManagerSidebarOpen = true;
+                
+                // Cargar URLs
+                loadUrlManager();
+                
+                // Focus en el buscador después de la animación
+                setTimeout(() => {
+                    document.getElementById('urlSearchSidebar').focus();
+                }, 300);
+            } else {
+                closeUrlManagerSidebar();
+            }
+        }
+
+        function closeUrlManagerSidebar() {
+            const sidebar = document.getElementById('urlManagerSidebar');
+            const toggle = document.getElementById('urlManagerToggle');
+
+            sidebar.style.left = '-400px';
+            toggle.style.left = '0';
+            
+            // Mostrar otros botones flotantes
+            showLeftFloatingButtons();
+            
+            urlManagerSidebarOpen = false;
+            
+            // Limpiar búsqueda
+            document.getElementById('urlSearchSidebar').value = '';
+        }
+
+        function loadUrlManager(query = '') {
+            const listContainer = document.getElementById('urlListSidebar');
+            
+            // Mostrar loading
+            listContainer.innerHTML = '<div class="text-center p-4"><div class="spinner-border text-info" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
+            
+            // Construir URL con query si existe
+            let url = '/urls/search-api/';
+            if (query) {
+                url += '?q=' + encodeURIComponent(query);
+            }
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    displayUrlManager(data.results);
+                })
+                .catch(error => {
+                    console.error('Error al cargar URLs:', error);
+                    listContainer.innerHTML = '<div class="alert alert-danger m-3">Error al cargar URLs</div>';
+                });
+        }
+
+        function displayUrlManager(urls) {
+            const listContainer = document.getElementById('urlListSidebar');
+            
+            if (!urls || urls.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center p-4 text-muted">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p class="mt-2">No se encontraron URLs</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div class="list-group list-group-flush">';
+            
+            urls.forEach(urlItem => {
+                const description = urlItem.description && urlItem.description.length > 80 
+                    ? urlItem.description.substring(0, 80) + '...' 
+                    : urlItem.description || '';
+                
+                html += `
+                    <a href="${urlItem.url}" target="_blank" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 align-items-start">
+                            <i class="bi bi-link-45deg me-2 mt-1 text-info" style="font-size: 1.3em;"></i>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <h6 class="mb-0">${urlItem.title}</h6>
+                                    ${urlItem.is_principal ? '<i class="bi bi-star-fill text-warning" title="URL Principal"></i>' : ''}
+                                </div>
+                                ${urlItem.category ? `<span class="badge bg-info me-1">${urlItem.category}</span>` : ''}
+                                ${urlItem.username ? `<small class="text-muted"><i class="bi bi-person"></i> ${urlItem.username}</small>` : ''}
+                                ${description ? `<p class="mb-0 mt-1 small text-muted">${description}</p>` : ''}
+                                <small class="text-muted d-block mt-1"><i class="bi bi-box-arrow-up-right"></i> ${urlItem.url}</small>
+                            </div>
+                            <i class="bi bi-chevron-right ms-2 text-muted"></i>
+                        </div>
+                    </a>
+                `;
+            });
+            
+            html += '</div>';
+            listContainer.innerHTML = html;
+        }
+
+        // Event listeners para Gestión de URLs
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlManagerToggle = document.getElementById('urlManagerToggle');
+            const closeUrlManagerBtn = document.getElementById('closeUrlManagerSidebar');
+            const urlSearch = document.getElementById('urlSearchSidebar');
+
+            if (urlManagerToggle) {
+                urlManagerToggle.addEventListener('click', toggleUrlManagerSidebar);
+            }
+
+            if (closeUrlManagerBtn) {
+                closeUrlManagerBtn.addEventListener('click', closeUrlManagerSidebar);
+            }
+
+            if (urlSearch) {
+                urlSearch.addEventListener('input', function(e) {
+                    clearTimeout(urlSearchTimeout);
+                    urlSearchTimeout = setTimeout(() => {
+                        loadUrlManager(e.target.value);
+                    }, 300); // Debounce de 300ms
+                });
+            }
+        });
+        // ========== FIN FUNCIONES PARA SIDEBAR DE GESTIÓN DE URLs ==========
 
         // ========== FUNCIONES PARA TAREAS RÁPIDAS ==========
         function createQuickTask() {

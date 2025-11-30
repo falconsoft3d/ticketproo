@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+{% load tickets_tags %}
+{% block title %}Resultados de Búsqueda - {{ table.name }} - Ticket System{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<style>
+    .json-preview {
+        max-height: 400px;
+        overflow: auto;
+        font-size: 0.85rem;
+        font-family: 'Courier New', monospace;
+    }
+    
+    #resultsTable {
+        font-size: 0.9rem;
+    }
+    
+    #resultsTable thead th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+    
+    #resultsTable tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    #resultsTable tbody tr:hover {
+        background-color: #f0f8ff;
+        transform: scale(1.01);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .badge.bg-primary {
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .modal-xl {
+        max-width: 1200px;
+    }
+    
+    .card-header {
+        padding: 0.5rem 1rem;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .nav-tabs .nav-link {
+        color: #495057;
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        font-weight: 600;
+    }
+    
+    .table-dark th {
+        background-color: #2c3e50 !important;
+        color: white !important;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">Conexiones</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'odoo_rpc_table_list' table.connection.id %}">{{ table.connection.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'odoo_rpc_table_detail' table.id %}">{{ table.name }}</a></li>
+            <li class="breadcrumb-item active">Resultados</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+                <i class="bi bi-{% if from_database %}database{% else %}table{% endif %}"></i> 
+                {% if from_database %}Datos Guardados: {{ table.name }}{% else %}Resultados de Búsqueda: {{ table.name }}{% endif %}
+            </h4>
+            <div>
+                {% if from_database %}
+                <a href="{% url 'odoo_rpc_data_export_all' table.id %}" class="btn btn-success">
+                    <i class="bi bi-file-earmark-excel"></i> Exportar Todos
+                </a>
+                {% else %}
+                <a href="{% url 'odoo_rpc_export_odoo_data' table.id %}" class="btn btn-success">
+                    <i class="bi bi-file-earmark-excel"></i> Exportar Resultados
+                </a>
+                {% endif %}
+                <a href="{% url 'odoo_rpc_search_odoo' table.id %}" class="btn btn-warning">
+                    <i class="bi bi-search"></i> Nueva Búsqueda
+                </a>
+                <a href="{% url 'odoo_rpc_table_detail' table.id %}" class="btn btn-primary">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if from_database %}
+            <div class="alert alert-info">
+                <i class="bi bi-database"></i> Mostrando <strong>{{ count }}</strong> registros guardados en el sistema
+            </div>
+            {% else %}
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle"></i> Se encontraron <strong>{{ count }}</strong> registros en Odoo
+            </div>
+            {% endif %}
+
+            {% if records %}
+            <div class="table-responsive">
+                <table class="table table-hover table-sm align-middle" id="resultsTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width: 100px;" class="text-center">ID Odoo</th>
+                            {% for field in fields %}
+                            <th>{{ field.name }}</th>
+                            {% endfor %}
+                            <th style="width: 100px;" class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records %}
+                        <tr>
+                            <td class="text-center">
+                                <span class="badge bg-primary rounded-pill">{{ record.id }}</span>
+                            </td>
+                            {% for field in fields %}
+                            <td>
+                                {% with record|get_item:field.odoo_field_name as value %}
+                                    {% if value %}
+                                        <div style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" 
+                                             title="{{ value }}">
+                                            {{ value }}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            {% endfor %}
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detailModal{{ forloop.counter }}" title="Ver detalles">
+                                    <i class="bi bi-eye-fill"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Modal para ver detalles completos -->
+                        <div class="modal fade" id="detailModal{{ forloop.counter }}" tabindex="-1">
+                            <div class="modal-dialog modal-xl">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-primary text-white">
+                                        <h5 class="modal-title">
+                                            <i class="bi bi-file-earmark-text"></i> Detalles del Registro - ID Odoo: {{ record.id }}
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <ul class="nav nav-tabs mb-3" id="recordTab{{ forloop.counter }}" role="tablist">
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link active" id="fields-tab{{ forloop.counter }}" data-bs-toggle="tab" 
+                                                        data-bs-target="#fields{{ forloop.counter }}" type="button" role="tab">
+                                                    <i class="bi bi-list-ul"></i> Campos
+                                                </button>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link" id="json-tab{{ forloop.counter }}" data-bs-toggle="tab" 
+                                                        data-bs-target="#json{{ forloop.counter }}" type="button" role="tab">
+                                                    <i class="bi bi-code-square"></i> JSON
+                                                </button>
+                                            </li>
+                                        </ul>
+                                        <div class="tab-content" id="recordTabContent{{ forloop.counter }}">
+                                            <div class="tab-pane fade show active" id="fields{{ forloop.counter }}" role="tabpanel">
+                                                <div class="row">
+                                                    {% for field in fields %}
+                                                    <div class="col-md-6 mb-3">
+                                                        <div class="card h-100">
+                                                            <div class="card-header bg-light">
+                                                                <strong><i class="bi bi-tag"></i> {{ field.name }}</strong>
+                                                                <small class="text-muted">({{ field.odoo_field_name }})</small>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                {% with record|get_item:field.odoo_field_name as value %}
+                                                                    {% if value is False %}
+                                                                        <span class="badge bg-secondary">False</span>
+                                                                    {% elif value %}
+                                                                        <div style="word-break: break-word;">{{ value }}</div>
+                                                                    {% else %}
+                                                                        <span class="text-muted fst-italic">Sin datos</span>
+                                                                    {% endif %}
+                                                                {% endwith %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                            <div class="tab-pane fade" id="json{{ forloop.counter }}" role="tabpanel">
+                                                <pre class="json-preview bg-dark text-light p-3 rounded"><code>{{ record|safe }}</code></pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                            <i class="bi bi-x-circle"></i> Cerrar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i> No se encontraron registros
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#resultsTable').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+        },
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
+        order: [[0, 'asc']],
+        scrollX: true,
+        scrollCollapse: true,
+        responsive: true,
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+             '<"row"<"col-sm-12"tr>>' +
+             '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+        initComplete: function() {
+            // Mejorar el diseño de los controles
+            $('.dataTables_length select').addClass('form-select form-select-sm');
+            $('.dataTables_filter input').addClass('form-control form-control-sm');
+        },
+        drawCallback: function() {
+            // Añadir tooltips a los badges
+            $('[title]').tooltip();
+        }
+    });
+});
+</script>
+{% endblock %}

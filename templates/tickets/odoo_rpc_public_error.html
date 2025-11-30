@@ -1,0 +1,54 @@
+{% extends 'public_base.html' %}
+{% block title %}Error - Acceso No Disponible{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Acceso No Disponible</h4>
+                </div>
+                <div class="card-body text-center">
+                    <i class="bi bi-x-circle text-danger" style="font-size: 4rem;"></i>
+                    <h3 class="mt-3">{{ error }}</h3>
+                    
+                    {% if table %}
+                    <p class="text-muted mt-3">
+                        La URL de importación para <strong>{{ table.name }}</strong> no está disponible actualmente.
+                    </p>
+                    {% else %}
+                    <p class="text-muted mt-3">
+                        La URL que intentas acceder no es válida o ha sido deshabilitada.
+                    </p>
+                    {% endif %}
+
+                    <div class="alert alert-light mt-4">
+                        <h6><i class="bi bi-info-circle"></i> Posibles razones:</h6>
+                        <ul class="text-start mb-0">
+                            <li>El enlace ha expirado</li>
+                            <li>El acceso ha sido revocado por el administrador</li>
+                            <li>El enlace es incorrecto o está incompleto</li>
+                        </ul>
+                    </div>
+
+                    <p class="mt-4">
+                        Si crees que esto es un error, contacta al administrador que te proporcionó este enlace.
+                    </p>
+                </div>
+            </div>
+
+            <div class="text-center mt-4 text-muted">
+                <small>
+                    <i class="bi bi-shield-check"></i> Powered by Ticket System
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

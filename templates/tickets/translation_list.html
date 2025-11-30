@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Historial de Traducciones - Ticket System{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'translation_tool' %}">Traductor</a></li>
+            <li class="breadcrumb-item active">Historial</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> Historial de Traducciones
+                    </h5>
+                    <a href="{% url 'translation_tool' %}" class="btn btn-light btn-sm">
+                        <i class="bi bi-translate"></i> Nueva Traducción
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if translations %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Idiomas</th>
+                                        <th>Texto Original</th>
+                                        <th>Traducción</th>
+                                        <th width="100">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for trans in translations %}
+                                    <tr>
+                                        <td>
+                                            <small>{{ trans.created_at|date:"d/m/Y H:i" }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ trans.get_source_language_display }}</span>
+                                            <i class="bi bi-arrow-right"></i>
+                                            <span class="badge bg-success">{{ trans.get_target_language_display }}</span>
+                                        </td>
+                                        <td>
+                                            <div style="max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ trans.source_text }}">
+                                                {{ trans.source_text|truncatewords:10 }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style="max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ trans.translated_text }}">
+                                                {{ trans.translated_text|truncatewords:10 }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="copyText('{{ trans.translated_text|escapejs }}')" title="Copiar traducción">
+                                                <i class="bi bi-clipboard"></i>
+                                            </button>
+                                            <a href="{% url 'translation_delete' trans.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox fs-1 text-muted"></i>
+                            <p class="text-muted mt-3">No hay traducciones en el historial</p>
+                            <a href="{% url 'translation_tool' %}" class="btn btn-primary">
+                                <i class="bi bi-translate"></i> Crear Primera Traducción
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        alert('Texto copiado al portapapeles');
+    }, function(err) {
+        console.error('Error al copiar: ', err);
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Conexión - Ticket System{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Eliminar Conexión
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="lead">
+                        ¿Estás seguro de que deseas eliminar la conexión <strong>{{ connection.name }}</strong>?
+                    </p>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle"></i> <strong>Información de la conexión:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Base de Datos: <strong>{{ connection.database }}</strong></li>
+                            <li>URL: <strong>{{ connection.url }}:{{ connection.port }}</strong></li>
+                            {% if has_tables %}
+                            <li class="text-danger">
+                                <i class="bi bi-exclamation-triangle"></i> 
+                                Esta conexión tiene tablas configuradas que también serán eliminadas
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-octagon"></i>
+                        <strong>¡Advertencia!</strong> Esta acción no se puede deshacer. 
+                        Se eliminarán permanentemente:
+                        <ul class="mb-0 mt-2">
+                            <li>La configuración de conexión</li>
+                            <li>Todas las tablas RPC asociadas</li>
+                            <li>Todos los campos definidos</li>
+                            <li>Todos los datos importados pendientes</li>
+                        </ul>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'odoo_connection_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sí, Eliminar Conexión
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

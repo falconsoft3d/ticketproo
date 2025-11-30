@@ -1,0 +1,187 @@
+{% extends 'public_base.html' %}
+{% block title %}Portal de Importación - {{ connection.name }}{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1><i class="bi bi-globe"></i> Portal de Importación</h1>
+                <p class="text-muted fs-5">{{ connection.name }}</p>
+                {% if expires_at %}
+                <small class="text-warning">
+                    <i class="bi bi-clock"></i> Este portal expira el {{ expires_at|date:"d/m/Y H:i" }}
+                </small>
+                {% endif %}
+            </div>
+
+            <!-- Formulario de Contraseña -->
+            {% if requires_password %}
+            <div class="card mb-4 shadow">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0"><i class="bi bi-lock"></i> Acceso Protegido</h5>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-circle"></i> {{ error }}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control form-control-lg" id="password" name="password" required autofocus>
+                            <small class="form-text text-muted">Ingresa la contraseña proporcionada por el administrador</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-unlock"></i> Acceder al Portal
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+
+            <!-- Bienvenida -->
+            <div class="alert alert-info shadow-sm">
+                <h5 class="alert-heading"><i class="bi bi-info-circle"></i> Bienvenido al Portal de Importación</h5>
+                <p class="mb-0">Selecciona una tabla de abajo para ver su formato de importación y subir tus datos.</p>
+            </div>
+
+            <!-- Lista de Tablas -->
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> Tablas Disponibles ({{ tables|length }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if tables %}
+                    <div class="row g-3">
+                        {% for table in tables %}
+                        <div class="col-md-6">
+                            <div class="card h-100 hover-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="bi bi-table"></i> {{ table.name }}
+                                    </h5>
+                                    <p class="text-muted mb-2">
+                                        <small><code>{{ table.odoo_model }}</code></small>
+                                    </p>
+                                    {% if table.description %}
+                                    <p class="card-text">{{ table.description|truncatewords:20 }}</p>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex gap-2 align-items-center mb-3">
+                                        <span class="badge bg-info">
+                                            <i class="bi bi-input-cursor-text"></i> {{ table.rpc_fields.count }} campos
+                                        </span>
+                                    </div>
+
+                                    <!-- Nombres de las columnas -->
+                                    <div class="mb-3">
+                                        <small class="text-muted fw-bold">Columnas:</small>
+                                        <div class="mt-1">
+                                            {% for field in table.rpc_fields.all|slice:":10" %}
+                                            <span class="badge bg-light text-dark border me-1 mb-1">
+                                                {{ field.name }}
+                                            </span>
+                                            {% endfor %}
+                                            {% if table.rpc_fields.count > 10 %}
+                                            <span class="badge bg-secondary">+{{ table.rpc_fields.count|add:"-10" }} más</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="d-grid gap-2">
+                                        {% if connection.public_portal_allow_import %}
+                                        <a href="{% url 'odoo_rpc_public_portal_table' token table.id %}" class="btn btn-primary">
+                                            <i class="bi bi-upload"></i> Importar Datos
+                                        </a>
+                                        {% else %}
+                                        <button class="btn btn-secondary" disabled title="Importación deshabilitada">
+                                            <i class="bi bi-lock"></i> Importación Deshabilitada
+                                        </button>
+                                        {% endif %}
+                                        <a href="{% url 'odoo_rpc_table_export_template' table.id %}" class="btn btn-outline-success btn-sm">
+                                            <i class="bi bi-download"></i> Descargar Plantilla
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> No hay tablas disponibles en este portal.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Ayuda -->
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="bi bi-question-circle"></i> ¿Cómo importar datos?</h6>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li>Selecciona la tabla donde quieres importar datos</li>
+                        <li>Descarga la plantilla Excel con el formato correcto</li>
+                        <li>Completa la plantilla con tus datos</li>
+                        <li>Sube el archivo Excel completado</li>
+                        <li>El administrador revisará y procesará tus datos</li>
+                    </ol>
+                </div>
+            </div>
+
+            {% endif %}
+
+            <!-- Footer -->
+            <div class="text-center mt-4 text-muted">
+                <small>
+                    <i class="bi bi-shield-check"></i> Conexión segura | 
+                    Powered by Ticket System
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.shadow {
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+}
+
+.shadow-sm {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08) !important;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15) !important;
+}
+
+.card-header {
+    font-weight: 500;
+    border-bottom: 2px solid rgba(0,0,0,0.1);
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.5rem 0.75rem;
+}
+
+code {
+    background-color: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+</style>
+{% endblock %}

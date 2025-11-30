@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% block title %}Gestionar URL Pública - {{ table.name }} - Ticket System{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">Conexiones</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'odoo_rpc_table_list' table.connection.id %}">{{ table.connection.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'odoo_rpc_table_detail' table.id %}">{{ table.name }}</a></li>
+            <li class="breadcrumb-item active">URL Pública</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-link-45deg"></i> Gestionar URL Pública</h2>
+            <p class="text-muted">{{ table.name }} - {{ table.odoo_model }}</p>
+        </div>
+        <div>
+            <a href="{% url 'odoo_rpc_table_detail' table.id %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Estado Actual -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Estado de URL Pública</h5>
+                </div>
+                <div class="card-body">
+                    {% if table.public_url_enabled %}
+                        <div class="alert alert-success">
+                            <h5><i class="bi bi-check-circle"></i> URL Pública Activa</h5>
+                            {% if is_valid %}
+                                <p class="mb-2">La URL pública está habilitada y funcionando correctamente.</p>
+                            {% else %}
+                                <p class="mb-2 text-danger">La URL pública ha expirado.</p>
+                            {% endif %}
+                        </div>
+
+                        {% if public_url %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">URL Pública:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="{{ public_url }}" id="publicUrlInput" readonly>
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">
+                                    <i class="bi bi-clipboard"></i> Copiar
+                                </button>
+                                <a href="{{ public_url }}" target="_blank" class="btn btn-outline-primary">
+                                    <i class="bi bi-box-arrow-up-right"></i> Abrir
+                                </a>
+                            </div>
+                            <small class="form-text text-muted">Comparte esta URL con usuarios externos para permitir importaciones</small>
+                        </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <p class="mb-1"><strong>Protección:</strong></p>
+                                <p>
+                                    {% if table.public_url_password %}
+                                        <span class="badge bg-warning"><i class="bi bi-lock"></i> Con Contraseña</span>
+                                    {% else %}
+                                        <span class="badge bg-info"><i class="bi bi-unlock"></i> Sin Contraseña</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-1"><strong>Expiración:</strong></p>
+                                <p>
+                                    {% if table.public_url_expires_at %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-calendar-x"></i> {{ table.public_url_expires_at|date:"d/m/Y H:i" }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success"><i class="bi bi-infinity"></i> Sin Expiración</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-1"><strong>Token:</strong></p>
+                                <p><code style="font-size: 0.8rem;">{{ table.public_url_token|truncatechars:20 }}</code></p>
+                            </div>
+                        </div>
+
+                        <!-- Acciones -->
+                        <div class="mt-3">
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="disable">
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro de deshabilitar la URL pública?')">
+                                    <i class="bi bi-x-circle"></i> Deshabilitar URL
+                                </button>
+                            </form>
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="regenerate">
+                                <button type="submit" class="btn btn-warning" onclick="return confirm('¿Regenerar el token? La URL anterior dejará de funcionar.')">
+                                    <i class="bi bi-arrow-clockwise"></i> Regenerar Token
+                                </button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <h5><i class="bi bi-exclamation-triangle"></i> URL Pública Deshabilitada</h5>
+                            <p class="mb-0">La URL pública no está habilitada. Configúrala a continuación para permitir importaciones externas.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario de Configuración -->
+    {% if not table.public_url_enabled %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-gear"></i> Habilitar URL Pública</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="enable">
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Contraseña (Opcional)</label>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Dejar en blanco para acceso sin contraseña">
+                            <small class="form-text text-muted">
+                                Si estableces una contraseña, los usuarios deberán ingresarla para acceder
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="expires_days" class="form-label">Días de Validez (Opcional)</label>
+                            <select class="form-select" id="expires_days" name="expires_days">
+                                <option value="">Sin expiración</option>
+                                <option value="1">1 día</option>
+                                <option value="7">7 días</option>
+                                <option value="30" selected>30 días</option>
+                                <option value="90">90 días</option>
+                                <option value="180">180 días</option>
+                                <option value="365">1 año</option>
+                            </select>
+                            <small class="form-text text-muted">
+                                Tiempo después del cual la URL dejará de funcionar
+                            </small>
+                        </div>
+
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Habilitar URL Pública
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Información de Uso -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-question-circle"></i> ¿Cómo funciona?</h5>
+                </div>
+                <div class="card-body">
+                    <ol>
+                        <li><strong>Habilita la URL pública</strong> configurando contraseña y expiración (opcional)</li>
+                        <li><strong>Comparte la URL</strong> generada con usuarios externos</li>
+                        <li><strong>Los usuarios podrán:</strong>
+                            <ul>
+                                <li>Ver la plantilla de importación con los campos configurados</li>
+                                <li>Descargar la plantilla Excel vacía</li>
+                                <li>Completar la plantilla con sus datos</li>
+                                <li>Subir el archivo Excel para importar a Odoo</li>
+                            </ul>
+                        </li>
+                        <li><strong>Los datos importados</strong> quedarán en estado "pending" hasta que ejecutes la importación a Odoo</li>
+                    </ol>
+
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-shield-check"></i> <strong>Seguridad:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Los usuarios externos no necesitan cuenta en el sistema</li>
+                            <li>Solo pueden importar datos en esta tabla específica</li>
+                            <li>No tienen acceso a otras funciones del sistema</li>
+                            <li>Puedes deshabilitar el acceso en cualquier momento</li>
+                            <li>Puedes establecer una contraseña para mayor seguridad</li>
+                            <li>Puedes configurar una fecha de expiración</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard() {
+    const input = document.getElementById('publicUrlInput');
+    input.select();
+    document.execCommand('copy');
+    
+    // Mostrar feedback
+    const button = event.target.closest('button');
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i> Copiado!';
+    button.classList.add('btn-success');
+    button.classList.remove('btn-outline-secondary');
+    
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+</script>
+{% endblock %}

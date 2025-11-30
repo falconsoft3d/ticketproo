@@ -1,0 +1,412 @@
+{% extends 'base.html' %}
+{% block title %}Portal Público - {{ connection.name }} - Ticket System{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">Conexiones</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'odoo_rpc_table_list' connection.id %}">{{ connection.name }}</a></li>
+            <li class="breadcrumb-item active">Portal Público</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-globe"></i> Portal Público Completo</h2>
+            <p class="text-muted">{{ connection.name }} - {{ tables_count }} tabla(s)</p>
+        </div>
+        <div>
+            <a href="{% url 'odoo_connection_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Estado Actual -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Estado del Portal Público</h5>
+                </div>
+                <div class="card-body">
+                    {% if connection.public_portal_enabled %}
+                        <div class="alert alert-success">
+                            <h5><i class="bi bi-check-circle"></i> Portal Público Activo</h5>
+                            {% if is_valid %}
+                                <p class="mb-2">El portal público está habilitado y funcionando correctamente.</p>
+                            {% else %}
+                                <p class="mb-2 text-danger">El portal público ha expirado.</p>
+                            {% endif %}
+                        </div>
+
+                        {% if portal_url %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">URL del Portal Público:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="{{ portal_url }}" id="portalUrlInput" readonly>
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">
+                                    <i class="bi bi-clipboard"></i> Copiar
+                                </button>
+                                <a href="{{ portal_url }}" target="_blank" class="btn btn-outline-primary">
+                                    <i class="bi bi-box-arrow-up-right"></i> Abrir
+                                </a>
+                            </div>
+                            <small class="form-text text-muted">Los usuarios podrán ver todas las tablas e importar datos en cualquiera</small>
+                        </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-3">
+                                <p class="mb-1"><strong>Tablas Disponibles:</strong></p>
+                                <p><span class="badge bg-info fs-6">{{ tables_count }}</span></p>
+                            </div>
+                            <div class="col-md-3">
+                                <p class="mb-1"><strong>Protección:</strong></p>
+                                <p>
+                                    {% if connection.public_portal_password %}
+                                        <span class="badge bg-warning"><i class="bi bi-lock"></i> Con Contraseña</span>
+                                    {% else %}
+                                        <span class="badge bg-info"><i class="bi bi-unlock"></i> Sin Contraseña</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-2">
+                                <p class="mb-1"><strong>Expiración:</strong></p>
+                                <p>
+                                    {% if connection.public_portal_expires_at %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-calendar-x"></i> {{ connection.public_portal_expires_at|date:"d/m/Y H:i" }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success"><i class="bi bi-infinity"></i> Sin Expiración</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-2">
+                                <p class="mb-1"><strong>Importación:</strong></p>
+                                <p>
+                                    {% if connection.public_portal_allow_import %}
+                                        <span class="badge bg-success"><i class="bi bi-upload"></i> Permitida</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary"><i class="bi bi-lock"></i> Solo Lectura</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-2">
+                                <p class="mb-1"><strong>Token:</strong></p>
+                                <p><code style="font-size: 0.8rem;">{{ connection.public_portal_token|truncatechars:20 }}</code></p>
+                            </div>
+                        </div>
+
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <h5><i class="bi bi-exclamation-triangle"></i> Portal Público Deshabilitado</h5>
+                            <p class="mb-0">El portal público no está habilitado. Configúralo a continuación para permitir importaciones externas en todas las tablas.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario de Configuración -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header {% if connection.public_portal_enabled %}bg-primary{% else %}bg-success{% endif %} text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear"></i> 
+                        {% if connection.public_portal_enabled %}
+                            Editar Configuración del Portal
+                        {% else %}
+                            Habilitar Portal Público
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="enable">
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                Contraseña (Opcional)
+                                {% if connection.public_portal_password %}
+                                    <span class="badge bg-success ms-2">
+                                        <i class="bi bi-lock-fill"></i> Configurada
+                                    </span>
+                                {% endif %}
+                            </label>
+                            <input type="password" class="form-control" id="password" name="password" 
+                                   placeholder="{% if connection.public_portal_password %}Dejar en blanco para mantener actual{% else %}Dejar en blanco para acceso sin contraseña{% endif %}"
+                                   value="">
+                            <small class="form-text text-muted">
+                                {% if connection.public_portal_enabled and connection.public_portal_password %}
+                                    Para <strong>quitar la contraseña</strong>, haz clic en el botón "Quitar Contraseña" abajo.
+                                    Para cambiarla, escribe una nueva contraseña aquí.
+                                {% elif connection.public_portal_enabled %}
+                                    Dejar en blanco para mantener sin contraseña. Escribe una para agregar protección.
+                                {% else %}
+                                    Si estableces una contraseña, los usuarios deberán ingresarla para acceder al portal
+                                {% endif %}
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="expires_days" class="form-label">Días de Validez (Opcional)</label>
+                            <select class="form-select" id="expires_days" name="expires_days">
+                                <option value="">Sin expiración</option>
+                                <option value="1">1 día</option>
+                                <option value="7">7 días</option>
+                                <option value="30" selected>30 días</option>
+                                <option value="90">90 días</option>
+                                <option value="180">180 días</option>
+                                <option value="365">1 año</option>
+                            </select>
+                            <small class="form-text text-muted">
+                                Tiempo después del cual el portal dejará de funcionar. Configurar esto extiende o cambia la fecha de expiración.
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="allow_import" name="allow_import" 
+                                       {% if connection.public_portal_allow_import %}checked{% endif %}>
+                                <label class="form-check-label" for="allow_import">
+                                    <i class="bi bi-upload"></i> <strong>Permitir Importación de Datos</strong>
+                                </label>
+                            </div>
+                            <small class="form-text text-muted d-block mt-1">
+                                Si está activo, los usuarios pueden importar datos. Si no, solo pueden ver la información y descargar plantillas (modo lectura).
+                            </small>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn {% if connection.public_portal_enabled %}btn-primary{% else %}btn-success{% endif %}">
+                                <i class="bi bi-check-circle"></i> 
+                                {% if connection.public_portal_enabled %}
+                                    Actualizar Configuración
+                                {% else %}
+                                    Habilitar Portal Público
+                                {% endif %}
+                            </button>
+                            
+                            {% if connection.public_portal_enabled %}
+                            {% if connection.public_portal_password %}
+                            <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#removePasswordModal">
+                                <i class="bi bi-unlock"></i> Quitar Contraseña
+                            </button>
+                            {% endif %}
+                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#disableModal">
+                                <i class="bi bi-x-circle"></i> Deshabilitar Portal
+                            </button>
+                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#regenerateModal">
+                                <i class="bi bi-arrow-clockwise"></i> Regenerar Token
+                            </button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información de Uso -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-question-circle"></i> ¿Cómo funciona el Portal Público?</h5>
+                </div>
+                <div class="card-body">
+                    <h6><i class="bi bi-1-circle"></i> Diferencia entre Portal y URL Individual:</h6>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th></th>
+                                    <th>Portal Público (Conexión)</th>
+                                    <th>URL Individual (Tabla)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Acceso</strong></td>
+                                    <td><span class="badge bg-primary">Todas las tablas</span></td>
+                                    <td><span class="badge bg-info">Una sola tabla</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Vista</strong></td>
+                                    <td>Lista completa de tablas disponibles</td>
+                                    <td>Directo al formulario de importación</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Uso</strong></td>
+                                    <td>Usuarios que trabajan con múltiples modelos</td>
+                                    <td>Usuarios especializados en un modelo</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h6><i class="bi bi-2-circle"></i> Flujo del Portal Público:</h6>
+                    <ol>
+                        <li><strong>Habilita el portal</strong> configurando contraseña y expiración (opcional)</li>
+                        <li><strong>Comparte la URL</strong> del portal con usuarios externos</li>
+                        <li><strong>Los usuarios acceden</strong> e ingresan contraseña (si está configurada)</li>
+                        <li><strong>Ven la lista</strong> de todas las tablas disponibles con sus descripciones</li>
+                        <li><strong>Seleccionan una tabla</strong> para ver su formato</li>
+                        <li><strong>Descargan la plantilla</strong> Excel de esa tabla</li>
+                        <li><strong>Suben sus datos</strong> en la plantilla</li>
+                        <li><strong>Tú revisas</strong> los datos importados y ejecutas la sincronización con Odoo</li>
+                    </ol>
+
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-shield-check"></i> <strong>Seguridad:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Un solo portal para todas las tablas de esta conexión</li>
+                            <li>Los usuarios pueden elegir en qué tabla importar</li>
+                            <li>No necesitan cuenta en el sistema</li>
+                            <li>Solo pueden importar datos, no ver datos existentes</li>
+                            <li>Puedes deshabilitar el acceso en cualquier momento</li>
+                            <li>Los datos quedan pendientes hasta tu aprobación</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard() {
+    const input = document.getElementById('portalUrlInput');
+    input.select();
+    document.execCommand('copy');
+    
+    const button = event.target.closest('button');
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i> ¡Copiado!';
+    button.classList.add('btn-success');
+    button.classList.remove('btn-outline-secondary');
+    
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+</script>
+
+<!-- Modal Deshabilitar -->
+<div class="modal fade" id="disableModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle"></i> Deshabilitar Portal Público
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>¿Estás seguro de deshabilitar el portal público?</strong></p>
+                <p>Al deshabilitar el portal:</p>
+                <ul>
+                    <li>La URL dejará de funcionar inmediatamente</li>
+                    <li>Los usuarios no podrán acceder a ninguna tabla</li>
+                    <li>Puedes volver a habilitarlo cuando quieras</li>
+                    <li>Se mantendrá el mismo token (no necesitas compartir una nueva URL)</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="disable">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle"></i> Sí, Deshabilitar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Regenerar Token -->
+<div class="modal fade" id="regenerateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle"></i> Regenerar Token
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>¿Estás seguro de regenerar el token?</strong></p>
+                <p>Al regenerar el token:</p>
+                <ul>
+                    <li>Se creará una nueva URL del portal</li>
+                    <li>La URL anterior <strong>dejará de funcionar</strong></li>
+                    <li>Deberás compartir la nueva URL con los usuarios</li>
+                    <li>Útil si crees que la URL fue comprometida</li>
+                </ul>
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle"></i> Se mantendrá la configuración de contraseña y expiración.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="regenerate">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-arrow-clockwise"></i> Sí, Regenerar Token
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Quitar Contraseña -->
+<div class="modal fade" id="removePasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle"></i> Quitar Contraseña del Portal
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>¿Estás seguro de quitar la contraseña?</strong></p>
+                <p>Al quitar la contraseña:</p>
+                <ul>
+                    <li>El portal será <strong>totalmente abierto</strong></li>
+                    <li>Cualquier persona con la URL podrá importar datos</li>
+                    <li>No se requerirá autenticación</li>
+                    <li>Los datos seguirán quedando pendientes de tu aprobación</li>
+                </ul>
+                <div class="alert alert-danger">
+                    <i class="bi bi-shield-exclamation"></i> <strong>Advertencia:</strong> Esto reduce la seguridad del portal.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="remove_password">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-unlock"></i> Sí, Quitar Contraseña
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

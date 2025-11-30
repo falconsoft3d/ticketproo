@@ -46181,3 +46181,3312 @@ def knowledge_base_search(request):
     } for kb in knowledge_bases_qs]
     
     return JsonResponse({'results': knowledge_bases})
+
+
+# ============================================
+# VIEWS PARA TRADUCCIONES
+# ============================================
+
+@login_required
+def translation_tool(request):
+    """Vista principal de la herramienta de traducción"""
+    from .models import Translation
+    
+    if request.method == 'POST':
+        source_language = request.POST.get('source_language', 'en')
+        target_language = request.POST.get('target_language', 'es')
+        source_text = request.POST.get('source_text', '').strip()
+        
+        if source_text:
+            try:
+                # Obtener configuración del sistema
+                config = SystemConfiguration.get_config()
+                
+                if not config.openai_api_key:
+                    messages.error(request, 'API key de OpenAI no configurada')
+                    return render(request, 'tickets/translation_tool.html', {
+                        'recent_translations': Translation.objects.filter(created_by=request.user).order_by('-created_at')[:10],
+                        'languages': Translation.LANGUAGES
+                    })
+                
+                from openai import OpenAI
+                client = OpenAI(api_key=config.openai_api_key)
+                
+                # Obtener nombres completos de idiomas
+                language_dict = dict(Translation.LANGUAGES)
+                source_lang_name = language_dict.get(source_language, source_language)
+                target_lang_name = language_dict.get(target_language, target_language)
+                
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": f"Eres un traductor profesional. Traduce el siguiente texto de {source_lang_name} a {target_lang_name}. Solo devuelve la traducción, sin explicaciones adicionales."},
+                        {"role": "user", "content": source_text}
+                    ],
+                    temperature=0.3,
+                )
+                
+                translated_text = response.choices[0].message.content.strip()
+                
+                # Guardar la traducción
+                translation = Translation.objects.create(
+                    source_language=source_language,
+                    target_language=target_language,
+                    source_text=source_text,
+                    translated_text=translated_text,
+                    created_by=request.user
+                )
+                
+                messages.success(request, 'Traducción realizada exitosamente')
+                return render(request, 'tickets/translation_tool.html', {
+                    'translation': translation,
+                    'recent_translations': Translation.objects.filter(created_by=request.user).order_by('-created_at')[:10],
+                    'languages': Translation.LANGUAGES
+                })
+                
+            except Exception as e:
+                messages.error(request, f'Error al traducir: {str(e)}')
+    
+    # Cargar traducciones recientes del usuario
+    recent_translations = Translation.objects.filter(created_by=request.user).order_by('-created_at')[:10]
+    
+    return render(request, 'tickets/translation_tool.html', {
+        'recent_translations': recent_translations,
+        'languages': Translation.LANGUAGES
+    })
+
+
+@login_required
+def translation_list(request):
+    """Lista de todas las traducciones del usuario"""
+    from .models import Translation
+    
+    translations = Translation.objects.filter(created_by=request.user).order_by('-created_at')
+    
+    return render(request, 'tickets/translation_list.html', {
+        'translations': translations
+    })
+
+
+@login_required
+def translation_delete(request, pk):
+    """Eliminar una traducción"""
+    from .models import Translation
+    
+    translation = get_object_or_404(Translation, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        translation.delete()
+        messages.success(request, 'Traducción eliminada exitosamente')
+        return redirect('translation_list')
+    
+    return render(request, 'tickets/translation_delete.html', {
+        'translation': translation
+    })
+
+
+@login_required
+def translation_recent_api(request):
+    """API para obtener las últimas traducciones del usuario"""
+    from .models import Translation
+    from django.http import JsonResponse
+    
+    translations = Translation.objects.filter(created_by=request.user).order_by('-created_at')[:10]
+    
+    data = [{
+        'id': t.id,
+        'source_language': t.source_language,
+        'source_language_display': t.get_source_language_display(),
+        'target_language': t.target_language,
+        'target_language_display': t.get_target_language_display(),
+        'source_text': t.source_text[:80] + '...' if len(t.source_text) > 80 else t.source_text,
+        'translated_text': t.translated_text,
+        'created_at': t.created_at.strftime('%d/%m/%Y %H:%M')
+    } for t in translations]
+    
+    return JsonResponse({'translations': data})
+
+
+@login_required
+def translation_quick_api(request):
+    """API para traducción rápida desde el sidebar"""
+    from .models import Translation
+    from django.http import JsonResponse
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    source_language = request.POST.get('source_language', 'en')
+    target_language = request.POST.get('target_language', 'es')
+    source_text = request.POST.get('source_text', '').strip()
+    
+    if not source_text:
+        return JsonResponse({'error': 'El texto no puede estar vacío'}, status=400)
+    
+    try:
+        # Obtener configuración del sistema
+        config = SystemConfiguration.get_config()
+        
+        if not config.openai_api_key:
+            return JsonResponse({'error': 'API key de OpenAI no configurada'}, status=500)
+        
+        from openai import OpenAI
+        client = OpenAI(api_key=config.openai_api_key)
+        
+        # Obtener nombres completos de idiomas
+        language_dict = dict(Translation.LANGUAGES)
+        source_lang_name = language_dict.get(source_language, source_language)
+        target_lang_name = language_dict.get(target_language, target_language)
+        
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": f"Eres un traductor profesional. Traduce el siguiente texto de {source_lang_name} a {target_lang_name}. Solo devuelve la traducción, sin explicaciones adicionales."},
+                {"role": "user", "content": source_text}
+            ],
+            temperature=0.3,
+        )
+        
+        translated_text = response.choices[0].message.content.strip()
+        
+        # Guardar la traducción
+        translation = Translation.objects.create(
+            source_language=source_language,
+            target_language=target_language,
+            source_text=source_text,
+            translated_text=translated_text,
+            created_by=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'translated_text': translated_text,
+            'translation_id': translation.id
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+# ============================================
+# VIEWS PARA GESTIÓN DE URLs (API SIDEBAR)
+# ============================================
+
+@login_required
+@login_required
+def url_manager_search_api(request):
+    """API para buscar URLs desde el sidebar"""
+    from .models import UrlManager
+    from django.http import JsonResponse
+    
+    query = request.GET.get('q', '').strip()
+    
+    # Filtrar URLs activas del usuario
+    urls_qs = UrlManager.objects.filter(is_active=True, created_by=request.user)
+    
+    # Si hay query, buscar por título, URL o descripción
+    if query:
+        urls_qs = urls_qs.filter(
+            Q(title__icontains=query) | 
+            Q(url__icontains=query) | 
+            Q(description__icontains=query) |
+            Q(category__icontains=query)
+        )
+    
+    # Ordenar por título y limitar resultados
+    urls_qs = urls_qs.order_by('title')[:20]
+    
+    urls = [{
+        'id': url.id,
+        'title': url.title,
+        'url': url.url,
+        'username': url.username,
+        'description': url.description[:100] if url.description else '',
+        'category': url.category,
+        'is_principal': url.is_principal
+    } for url in urls_qs]
+    
+    return JsonResponse({'results': urls})
+
+
+@login_required
+def sql_query_tool(request):
+    """Vista principal para ejecutar consultas SQL"""
+    from .models import SQLQuery
+    from django.db import connection
+    from django.utils import timezone
+    import time
+    import json
+    
+    result = None
+    error = None
+    execution_time = 0
+    row_count = 0
+    
+    # Obtener lista de tablas de la base de datos
+    with connection.cursor() as cursor:
+        # Query compatible con SQLite y PostgreSQL
+        if connection.vendor == 'sqlite':
+            cursor.execute("""
+                SELECT name FROM sqlite_master 
+                WHERE type='table' AND name NOT LIKE 'sqlite_%' 
+                ORDER BY name
+            """)
+        else:
+            cursor.execute("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                ORDER BY table_name
+            """)
+        tables = [row[0] for row in cursor.fetchall()]
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        query = request.POST.get('query', '').strip()
+        save_query = request.POST.get('save_query') == 'on'
+        
+        # Validar que solo sea SELECT
+        query_upper = query.upper().strip()
+        if not query_upper.startswith('SELECT'):
+            error = 'Solo se permiten consultas SELECT'
+        elif any(keyword in query_upper for keyword in ['DROP', 'DELETE', 'UPDATE', 'INSERT', 'CREATE', 'ALTER', 'TRUNCATE', 'EXEC', 'EXECUTE']):
+            error = 'Solo se permiten consultas SELECT. No se permiten comandos que modifiquen datos.'
+        else:
+            try:
+                start_time = time.time()
+                with connection.cursor() as cursor:
+                    cursor.execute(query)
+                    columns = [col[0] for col in cursor.description]
+                    rows = cursor.fetchall()
+                    row_count = len(rows)
+                execution_time = time.time() - start_time
+                
+                # Convertir resultado a formato JSON (manejar datetime y otros tipos)
+                from datetime import datetime, date
+                from decimal import Decimal
+                
+                def serialize_value(val):
+                    """Convierte valores a tipos serializables en JSON"""
+                    if isinstance(val, (datetime, date)):
+                        return val.isoformat()
+                    elif isinstance(val, Decimal):
+                        return float(val)
+                    elif val is None:
+                        return None
+                    else:
+                        return str(val)
+                
+                result = {
+                    'columns': columns,
+                    'rows': [[serialize_value(val) for val in row] for row in rows],
+                    'row_count': row_count,
+                    'execution_time': round(execution_time, 4)
+                }
+                
+                # Guardar la consulta si el usuario lo solicitó
+                if save_query:
+                    if not name:
+                        messages.warning(request, 'Debes proporcionar un nombre para guardar la consulta')
+                    else:
+                        sql_query = SQLQuery.objects.create(
+                            name=name,
+                            query=query,
+                            result=json.dumps(result),
+                            row_count=row_count,
+                            execution_time=execution_time,
+                            created_by=request.user,
+                            last_executed_at=timezone.now()
+                        )
+                        messages.success(request, f'Consulta "{name}" guardada exitosamente. <a href="/sql-queries/list/" class="alert-link">Ver consultas guardadas</a>')
+                
+            except Exception as e:
+                error = str(e)
+    
+    # Consultas recientes del usuario
+    recent_queries = SQLQuery.objects.filter(created_by=request.user)[:10]
+    
+    # Query por defecto
+    default_query = "SELECT * FROM tickets_ticket LIMIT 10;"
+    
+    context = {
+        'result': result,
+        'error': error,
+        'recent_queries': recent_queries,
+        'tables': tables,
+        'default_query': default_query,
+    }
+    
+    return render(request, 'tickets/sql_query_tool.html', context)
+
+
+@login_required
+def sql_query_list(request):
+    """Lista de consultas SQL guardadas"""
+    from .models import SQLQuery
+    
+    queries = SQLQuery.objects.filter(created_by=request.user)
+    
+    context = {
+        'queries': queries,
+    }
+    
+    return render(request, 'tickets/sql_query_list.html', context)
+
+
+@login_required
+def sql_query_detail(request, pk):
+    """Detalle de una consulta SQL guardada"""
+    from .models import SQLQuery
+    from django.db import connection
+    from django.utils import timezone
+    import time
+    import json
+    
+    query_obj = get_object_or_404(SQLQuery, pk=pk, created_by=request.user)
+    result = None
+    error = None
+    
+    # Ejecutar nuevamente la consulta
+    if request.method == 'POST':
+        try:
+            start_time = time.time()
+            with connection.cursor() as cursor:
+                cursor.execute(query_obj.query)
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+                row_count = len(rows)
+            execution_time = time.time() - start_time
+            
+            # Convertir resultado a formato JSON (manejar datetime y otros tipos)
+            from datetime import datetime, date
+            from decimal import Decimal
+            
+            def serialize_value(val):
+                """Convierte valores a tipos serializables en JSON"""
+                if isinstance(val, (datetime, date)):
+                    return val.isoformat()
+                elif isinstance(val, Decimal):
+                    return float(val)
+                elif val is None:
+                    return None
+                else:
+                    return str(val)
+            
+            result = {
+                'columns': columns,
+                'rows': [[serialize_value(val) for val in row] for row in rows],
+                'row_count': row_count,
+                'execution_time': round(execution_time, 4)
+            }
+            
+            # Actualizar la consulta
+            query_obj.result = json.dumps(result)
+            query_obj.row_count = row_count
+            query_obj.execution_time = execution_time
+            query_obj.last_executed_at = timezone.now()
+            query_obj.save()
+            
+            messages.success(request, 'Consulta ejecutada exitosamente')
+            
+        except Exception as e:
+            error = str(e)
+    else:
+        # Cargar resultado guardado
+        if query_obj.result:
+            try:
+                result = json.loads(query_obj.result)
+            except:
+                pass
+    
+    context = {
+        'query': query_obj,
+        'result': result,
+        'error': error,
+    }
+    
+    return render(request, 'tickets/sql_query_detail.html', context)
+
+
+@login_required
+def sql_query_delete(request, pk):
+    """Eliminar una consulta SQL guardada"""
+    from .models import SQLQuery
+    
+    query_obj = get_object_or_404(SQLQuery, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        query_obj.delete()
+        messages.success(request, 'Consulta eliminada exitosamente')
+        return redirect('sql_query_list')
+    
+    context = {
+        'query': query_obj,
+    }
+    
+    return render(request, 'tickets/sql_query_delete.html', context)
+
+
+@login_required
+def sql_query_toggle_favorite(request, pk):
+    """Marcar/desmarcar consulta como favorita"""
+    from .models import SQLQuery
+    
+    query_obj = get_object_or_404(SQLQuery, pk=pk, created_by=request.user)
+    query_obj.is_favorite = not query_obj.is_favorite
+    query_obj.save()
+    
+    return redirect('sql_query_list')
+
+
+# ============================================================================
+# VISTAS DE ODOO RPC
+# ============================================================================
+
+@login_required
+def odoo_connection_list(request):
+    """Lista de conexiones Odoo"""
+    from .models import OdooConnection
+    from django.db.models import Q
+    
+    # Mostrar: conexiones propias O conexiones públicas (no privadas) de otros usuarios
+    connections = OdooConnection.objects.filter(
+        Q(created_by=request.user) | Q(is_private=False)
+    ).order_by('-created_at')
+    
+    context = {
+        'connections': connections,
+    }
+    
+    return render(request, 'tickets/odoo_connection_list.html', context)
+
+
+@login_required
+def odoo_connection_create(request):
+    """Crear nueva conexión Odoo"""
+    from .models import OdooConnection
+    
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        url = request.POST.get('url')
+        port = request.POST.get('port', 8069)
+        database = request.POST.get('database')
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        if not all([name, url, database, username, password]):
+            messages.error(request, 'Todos los campos son obligatorios')
+            return redirect('odoo_connection_create')
+        
+        is_private = request.POST.get('is_private') == 'on'
+        
+        connection = OdooConnection.objects.create(
+            name=name,
+            url=url,
+            port=port,
+            database=database,
+            username=username,
+            password=password,
+            is_private=is_private,
+            created_by=request.user
+        )
+        
+        messages.success(request, f'Conexión {connection.name} creada exitosamente')
+        return redirect('odoo_connection_list')
+    
+    return render(request, 'tickets/odoo_connection_form.html', {'action': 'create'})
+
+
+@login_required
+def odoo_connection_edit(request, pk):
+    """Editar conexión Odoo"""
+    from .models import OdooConnection
+    
+    connection = get_object_or_404(OdooConnection, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        connection.name = request.POST.get('name')
+        connection.url = request.POST.get('url')
+        connection.port = request.POST.get('port', 8069)
+        connection.database = request.POST.get('database')
+        connection.username = request.POST.get('username')
+        connection.is_private = request.POST.get('is_private') == 'on'
+        password = request.POST.get('password')
+        if password:  # Solo actualizar si se proporciona una nueva contraseña
+            connection.password = password
+        connection.save()
+        
+        messages.success(request, f'Conexión {connection.name} actualizada')
+        return redirect('odoo_connection_list')
+    
+    context = {
+        'connection': connection,
+        'action': 'edit'
+    }
+    
+    return render(request, 'tickets/odoo_connection_form.html', context)
+
+
+@login_required
+def odoo_connection_delete(request, pk):
+    """Eliminar conexión Odoo"""
+    from .models import OdooConnection
+    
+    connection = get_object_or_404(OdooConnection, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        name = connection.name
+        connection.delete()
+        messages.success(request, f'Conexión {name} eliminada')
+        return redirect('odoo_connection_list')
+    
+    context = {
+        'connection': connection,
+        'has_tables': connection.rpc_tables.exists()
+    }
+    
+    return render(request, 'tickets/odoo_connection_delete.html', context)
+
+
+@login_required
+def odoo_connection_test(request, pk):
+    """Probar conexión Odoo (AJAX)"""
+    from .models import OdooConnection
+    from .odoo_rpc import test_connection
+    import json
+    
+    connection = get_object_or_404(OdooConnection, pk=pk, created_by=request.user)
+    
+    success, message = test_connection(connection)
+    
+    return JsonResponse({
+        'success': success,
+        'message': message,
+        'status': connection.connection_status
+    })
+
+
+@login_required
+def odoo_rpc_table_list(request, connection_id):
+    """Lista de tablas RPC para una conexión"""
+    from .models import OdooConnection, OdooRPCTable
+    
+    connection = get_object_or_404(OdooConnection, pk=connection_id, created_by=request.user)
+    tables = OdooRPCTable.objects.filter(connection=connection).order_by('name')
+    
+    context = {
+        'connection': connection,
+        'tables': tables,
+    }
+    
+    return render(request, 'tickets/odoo_rpc_table_list.html', context)
+
+
+@login_required
+def odoo_rpc_table_create(request, connection_id):
+    """Crear nueva tabla RPC"""
+    from .models import OdooConnection, OdooRPCTable
+    
+    connection = get_object_or_404(OdooConnection, pk=connection_id, created_by=request.user)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        odoo_model = request.POST.get('odoo_model')
+        description = request.POST.get('description', '')
+        
+        if not all([name, odoo_model]):
+            messages.error(request, 'El nombre y el modelo de Odoo son obligatorios')
+            return redirect('odoo_rpc_table_create', connection_id=connection.id)
+        
+        # Verificar que no exista ya
+        if OdooRPCTable.objects.filter(connection=connection, odoo_model=odoo_model).exists():
+            messages.error(request, f'Ya existe una tabla para el modelo {odoo_model}')
+            return redirect('odoo_rpc_table_create', connection_id=connection.id)
+        
+        table = OdooRPCTable.objects.create(
+            connection=connection,
+            name=name,
+            odoo_model=odoo_model,
+            description=description
+        )
+        
+        messages.success(request, f'Tabla {table.name} creada exitosamente')
+        return redirect('odoo_rpc_table_detail', pk=table.id)
+    
+    context = {
+        'connection': connection,
+        'action': 'create'
+    }
+    
+    return render(request, 'tickets/odoo_rpc_table_form.html', context)
+
+
+@login_required
+def odoo_rpc_get_available_models(request, connection_id):
+    """Obtiene los modelos disponibles en Odoo vía AJAX"""
+    from .models import OdooConnection
+    from .odoo_rpc import get_available_models
+    
+    try:
+        connection = get_object_or_404(OdooConnection, pk=connection_id, created_by=request.user)
+        search_term = request.GET.get('search', '')
+        
+        models = get_available_models(connection, search_term)
+        
+        return JsonResponse({
+            'success': True,
+            'count': len(models),
+            'models': models
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error obteniendo modelos: {str(e)}'
+        })
+
+
+@login_required
+def odoo_rpc_share_status(request, connection_id):
+    """Obtiene el estado actual de compartición del portal de operaciones"""
+    from .models import OdooConnection
+    
+    try:
+        connection = get_object_or_404(OdooConnection, pk=connection_id, created_by=request.user)
+        
+        return JsonResponse({
+            'success': True,
+            'enabled': connection.public_operations_enabled,
+            'read_only': connection.public_operations_read_only,
+            'password': connection.public_operations_password if connection.public_operations_enabled else '',
+            'expires_at': connection.public_operations_expires_at.strftime('%Y-%m-%dT%H:%M') if connection.public_operations_expires_at else '',
+            'url': connection.get_operations_url(request) if connection.public_operations_enabled else ''
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error obteniendo estado: {str(e)}'
+        })
+
+
+@login_required
+def odoo_rpc_generate_share_url(request, connection_id):
+    """Genera o actualiza la URL pública para compartir el portal de operaciones"""
+    from .models import OdooConnection
+    from django.utils import timezone
+    from datetime import datetime
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    try:
+        connection = get_object_or_404(OdooConnection, pk=connection_id, created_by=request.user)
+        
+        enabled = request.POST.get('enabled', 'false') == 'true'
+        
+        if enabled:
+            # Habilitar compartición
+            if not connection.public_operations_token:
+                connection.generate_operations_token()
+            
+            connection.public_operations_enabled = True
+            connection.public_operations_read_only = request.POST.get('read_only') == 'true'
+            connection.public_operations_password = request.POST.get('password', '')
+            
+            # Manejar fecha de expiración
+            expires_at = request.POST.get('expires_at', '')
+            if expires_at:
+                try:
+                    connection.public_operations_expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+                except:
+                    connection.public_operations_expires_at = None
+            else:
+                connection.public_operations_expires_at = None
+            
+            connection.save()
+            
+            return JsonResponse({
+                'success': True,
+                'enabled': True,
+                'read_only': connection.public_operations_read_only,
+                'password': connection.public_operations_password,
+                'expires_at': connection.public_operations_expires_at.strftime('%Y-%m-%dT%H:%M') if connection.public_operations_expires_at else '',
+                'url': connection.get_operations_url(request)
+            })
+        else:
+            # Deshabilitar compartición
+            connection.public_operations_enabled = False
+            connection.save()
+            
+            return JsonResponse({
+                'success': True,
+                'enabled': False,
+                'read_only': False,
+                'password': '',
+                'expires_at': '',
+                'url': ''
+            })
+            
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error generando URL: {str(e)}'
+        })
+
+
+def _validate_public_access(request, token, require_write=False):
+    """
+    Función auxiliar para validar acceso público a operaciones RPC.
+    Retorna (connection, error_response) donde error_response es None si todo está OK.
+    """
+    from .models import OdooConnection
+    from django.utils import timezone
+    
+    try:
+        connection = OdooConnection.objects.get(public_operations_token=token)
+    except OdooConnection.DoesNotExist:
+        return None, JsonResponse({
+            'success': False,
+            'error': 'Token inválido o portal no encontrado'
+        })
+    
+    # Verificar que esté habilitado
+    if not connection.public_operations_enabled:
+        return None, JsonResponse({
+            'success': False,
+            'error': 'Este portal público ha sido deshabilitado'
+        })
+    
+    # Verificar expiración
+    if connection.public_operations_expires_at:
+        if timezone.now() > connection.public_operations_expires_at:
+            return None, JsonResponse({
+                'success': False,
+                'error': 'Este portal público ha expirado'
+            })
+    
+    # Verificar contraseña si está configurada
+    if connection.public_operations_password:
+        session_key = f'odoo_operations_auth_{token}'
+        if not request.session.get(session_key):
+            return None, JsonResponse({
+                'success': False,
+                'error': 'Autenticación requerida'
+            })
+    
+    # Verificar permisos de escritura si es necesario
+    if require_write and connection.public_operations_read_only:
+        return None, JsonResponse({
+            'success': False,
+            'error': 'Este portal es de solo lectura'
+        })
+    
+    return connection, None
+
+
+def odoo_rpc_public_operations(request, token):
+    """Portal de operaciones RPC público accesible mediante token"""
+    from .models import OdooConnection
+    from django.utils import timezone
+    
+    try:
+        connection = get_object_or_404(OdooConnection, public_operations_token=token)
+        
+        # Verificar que esté habilitado
+        if not connection.public_operations_enabled:
+            return render(request, 'tickets/odoo_rpc_public_error.html', {
+                'error': 'Este portal público ha sido deshabilitado.'
+            })
+        
+        # Verificar expiración
+        if connection.public_operations_expires_at:
+            if timezone.now() > connection.public_operations_expires_at:
+                return render(request, 'tickets/odoo_rpc_public_error.html', {
+                    'error': 'Este portal público ha expirado.'
+                })
+        
+        # Verificar contraseña si está configurada
+        if connection.public_operations_password:
+            # Verificar si ya se autenticó
+            session_key = f'odoo_operations_auth_{token}'
+            if not request.session.get(session_key):
+                # Mostrar formulario de contraseña
+                if request.method == 'POST':
+                    password = request.POST.get('password', '')
+                    if password == connection.public_operations_password:
+                        request.session[session_key] = True
+                    else:
+                        return render(request, 'tickets/odoo_rpc_public_password.html', {
+                            'error': 'Contraseña incorrecta',
+                            'token': token
+                        })
+                else:
+                    return render(request, 'tickets/odoo_rpc_public_password.html', {
+                        'token': token
+                    })
+        
+        # Mostrar portal
+        context = {
+            'connection': connection,
+            'is_public': True,
+            'is_read_only': connection.public_operations_read_only,
+            'token': token
+        }
+        
+        return render(request, 'tickets/odoo_rpc_operations_portal.html', context)
+        
+    except OdooConnection.DoesNotExist:
+        return render(request, 'tickets/odoo_rpc_public_error.html', {
+            'error': 'Portal no encontrado o token inválido.'
+        })
+
+
+def odoo_rpc_public_search_records(request, token):
+    """Buscar registros - versión pública"""
+    connection, error = _validate_public_access(request, token, require_write=False)
+    if error:
+        return error
+    
+    # Reutilizar la lógica de búsqueda
+    from .odoo_rpc import search_records, read_records, get_model_fields
+    import json
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    model = request.POST.get('model', '').strip()
+    domain_str = request.POST.get('domain', '[]').strip()
+    limit = request.POST.get('limit', '100')
+    fields_str = request.POST.get('fields', '').strip()
+    
+    if not model:
+        return JsonResponse({'success': False, 'error': 'El modelo es requerido'})
+    
+    try:
+        limit = int(limit)
+        if limit <= 0:
+            limit = 100
+    except ValueError:
+        limit = 100
+    
+    try:
+        if not domain_str or domain_str == '[]':
+            domain = []
+        else:
+            try:
+                domain = json.loads(domain_str)
+                if not isinstance(domain, list):
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'El dominio debe ser una lista JSON válida'
+                    })
+            except json.JSONDecodeError as e:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Error al parsear el dominio JSON: {str(e)}'
+                })
+        
+        # Buscar IDs
+        record_ids = search_records(connection, model, domain, limit=limit)
+        
+        if not record_ids:
+            return JsonResponse({
+                'success': True,
+                'count': 0,
+                'records': [],
+                'fields': []
+            })
+        
+        # Parsear campos
+        if fields_str:
+            fields = [f.strip() for f in fields_str.split(',') if f.strip()]
+        else:
+            fields = []
+        
+        # Leer registros
+        records = read_records(connection, model, record_ids, fields if fields else [])
+        
+        # Obtener información de campos si no se especificaron
+        if not fields:
+            model_fields = get_model_fields(connection, model)
+            fields = list(model_fields.keys())[:20]
+        
+        return JsonResponse({
+            'success': True,
+            'count': len(records),
+            'records': records,
+            'fields': fields,
+            'model': model
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error al buscar registros: {str(e)}'
+        })
+
+
+def odoo_rpc_public_create_record(request, token):
+    """Crear registro - versión pública"""
+    connection, error = _validate_public_access(request, token, require_write=True)
+    if error:
+        return error
+    
+    from .odoo_rpc import create_record
+    import json
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    model = request.POST.get('model', '').strip()
+    values_str = request.POST.get('values', '{}').strip()
+    
+    if not model:
+        return JsonResponse({'success': False, 'error': 'El modelo es requerido'})
+    
+    try:
+        values = json.loads(values_str)
+        if not isinstance(values, dict):
+            return JsonResponse({'success': False, 'error': 'Los valores deben ser un objeto JSON'})
+        
+        record_id = create_record(connection, model, values)
+        
+        return JsonResponse({
+            'success': True,
+            'record_id': record_id,
+            'message': f'Registro creado exitosamente con ID {record_id}'
+        })
+        
+    except json.JSONDecodeError as e:
+        return JsonResponse({'success': False, 'error': f'Error al parsear valores JSON: {str(e)}'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error al crear registro: {str(e)}'})
+
+
+def odoo_rpc_public_update_record(request, token):
+    """Actualizar registro - versión pública"""
+    connection, error = _validate_public_access(request, token, require_write=True)
+    if error:
+        return error
+    
+    from .odoo_rpc import update_record
+    import json
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    model = request.POST.get('model', '').strip()
+    record_id = request.POST.get('record_id', '').strip()
+    values_str = request.POST.get('values', '{}').strip()
+    
+    if not model or not record_id:
+        return JsonResponse({'success': False, 'error': 'El modelo y el ID del registro son requeridos'})
+    
+    try:
+        record_id = int(record_id)
+        values = json.loads(values_str)
+        if not isinstance(values, dict):
+            return JsonResponse({'success': False, 'error': 'Los valores deben ser un objeto JSON'})
+        
+        update_record(connection, model, record_id, values)
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Registro {record_id} actualizado exitosamente'
+        })
+        
+    except ValueError:
+        return JsonResponse({'success': False, 'error': 'ID de registro inválido'})
+    except json.JSONDecodeError as e:
+        return JsonResponse({'success': False, 'error': f'Error al parsear valores JSON: {str(e)}'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error al actualizar registro: {str(e)}'})
+
+
+def odoo_rpc_public_delete_record(request, token):
+    """Eliminar registro - versión pública"""
+    connection, error = _validate_public_access(request, token, require_write=True)
+    if error:
+        return error
+    
+    from .odoo_rpc import delete_record
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    model = request.POST.get('model', '').strip()
+    record_id = request.POST.get('record_id', '').strip()
+    
+    if not model or not record_id:
+        return JsonResponse({'success': False, 'error': 'El modelo y el ID del registro son requeridos'})
+    
+    try:
+        record_id = int(record_id)
+        delete_record(connection, model, record_id)
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Registro {record_id} eliminado exitosamente'
+        })
+        
+    except ValueError:
+        return JsonResponse({'success': False, 'error': 'ID de registro inválido'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error al eliminar registro: {str(e)}'})
+
+
+def odoo_rpc_public_bulk_update(request, token):
+    """Actualización masiva - versión pública"""
+    connection, error = _validate_public_access(request, token, require_write=True)
+    if error:
+        return error
+    
+    from .odoo_rpc import search_records, update_record
+    import json
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    model = request.POST.get('model', '').strip()
+    domain_str = request.POST.get('domain', '[]').strip()
+    values_str = request.POST.get('values', '{}').strip()
+    
+    if not model:
+        return JsonResponse({'success': False, 'error': 'El modelo es requerido'})
+    
+    try:
+        if not domain_str or domain_str == '[]':
+            domain = []
+        else:
+            domain = json.loads(domain_str)
+        
+        values = json.loads(values_str)
+        if not isinstance(values, dict):
+            return JsonResponse({'success': False, 'error': 'Los valores deben ser un objeto JSON'})
+        
+        # Buscar registros que coincidan con el dominio
+        record_ids = search_records(connection, model, domain, limit=0)
+        
+        if not record_ids:
+            return JsonResponse({
+                'success': True,
+                'updated': 0,
+                'message': 'No se encontraron registros que coincidan con el dominio'
+            })
+        
+        # Actualizar cada registro
+        updated = 0
+        errors = []
+        for record_id in record_ids:
+            try:
+                update_record(connection, model, record_id, values)
+                updated += 1
+            except Exception as e:
+                errors.append(f'Error en registro {record_id}: {str(e)}')
+        
+        response = {
+            'success': True,
+            'updated': updated,
+            'message': f'Se actualizaron {updated} registros de {len(record_ids)} encontrados'
+        }
+        
+        if errors:
+            response['errors'] = errors
+        
+        return JsonResponse(response)
+        
+    except json.JSONDecodeError as e:
+        return JsonResponse({'success': False, 'error': f'Error al parsear JSON: {str(e)}'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error en actualización masiva: {str(e)}'})
+
+
+@login_required
+def odoo_rpc_table_detail(request, pk):
+    """Detalle de tabla RPC con sus campos"""
+    from .models import OdooRPCTable, OdooRPCField, OdooRPCData
+    
+    table = get_object_or_404(OdooRPCTable, pk=pk, connection__created_by=request.user)
+    fields = OdooRPCField.objects.filter(table=table).order_by('order', 'name')
+    
+    # Obtener estadísticas de datos
+    pending_count = OdooRPCData.objects.filter(table=table, status='pending').count()
+    success_count = OdooRPCData.objects.filter(table=table, status='success').count()
+    failed_count = OdooRPCData.objects.filter(table=table, status='failed').count()
+    
+    # Generar URLs absolutas para compartir
+    public_url = table.get_public_url(request) if table.public_url_enabled else None
+    form_url = table.get_form_url(request) if table.public_form_enabled else None
+    
+    context = {
+        'table': table,
+        'fields': fields,
+        'pending_count': pending_count,
+        'success_count': success_count,
+        'failed_count': failed_count,
+        'public_url': public_url,
+        'form_url': form_url,
+    }
+    
+    return render(request, 'tickets/odoo_rpc_table_detail.html', context)
+
+
+@login_required
+def odoo_rpc_table_edit(request, pk):
+    """Editar tabla RPC"""
+    from .models import OdooRPCTable
+    
+    table = get_object_or_404(OdooRPCTable, pk=pk, connection__created_by=request.user)
+    
+    if request.method == 'POST':
+        table.name = request.POST.get('name')
+        table.odoo_model = request.POST.get('odoo_model')
+        table.description = request.POST.get('description', '')
+        table.save()
+        
+        messages.success(request, f'Tabla {table.name} actualizada')
+        return redirect('odoo_rpc_table_detail', pk=table.id)
+    
+    context = {
+        'table': table,
+        'connection': table.connection,
+        'action': 'edit'
+    }
+    
+    return render(request, 'tickets/odoo_rpc_table_form.html', context)
+
+
+@login_required
+def odoo_rpc_table_delete(request, pk):
+    """Eliminar tabla RPC"""
+    from .models import OdooRPCTable
+    
+    table = get_object_or_404(OdooRPCTable, pk=pk, connection__created_by=request.user)
+    connection = table.connection
+    
+    if request.method == 'POST':
+        name = table.name
+        table.delete()
+        messages.success(request, f'Tabla {name} eliminada')
+        return redirect('odoo_rpc_table_list', connection_id=connection.id)
+    
+    context = {
+        'table': table,
+        'fields_count': table.rpc_fields.count(),
+        'data_count': table.rpc_data.count()
+    }
+    
+    return render(request, 'tickets/odoo_rpc_table_delete.html', context)
+
+
+@login_required
+def odoo_rpc_field_create(request, table_id):
+    """Crear campo RPC"""
+    from .models import OdooRPCTable, OdooRPCField
+    
+    table = get_object_or_404(OdooRPCTable, pk=table_id, connection__created_by=request.user)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        odoo_field_name = request.POST.get('odoo_field_name')
+        field_type = request.POST.get('field_type')
+        is_required = request.POST.get('is_required') == 'on'
+        order = request.POST.get('order', 0)
+        help_text = request.POST.get('help_text', '')
+        
+        if not all([name, odoo_field_name, field_type]):
+            messages.error(request, 'El nombre, campo de Odoo y tipo son obligatorios')
+            return redirect('odoo_rpc_field_create', table_id=table.id)
+        
+        # Verificar que no exista ya
+        if OdooRPCField.objects.filter(table=table, odoo_field_name=odoo_field_name).exists():
+            messages.error(request, f'Ya existe un campo para {odoo_field_name}')
+            return redirect('odoo_rpc_field_create', table_id=table.id)
+        
+        field = OdooRPCField.objects.create(
+            table=table,
+            name=name,
+            odoo_field_name=odoo_field_name,
+            field_type=field_type,
+            is_required=is_required,
+            order=order,
+            help_text=help_text
+        )
+        
+        messages.success(request, f'Campo {field.name} creado exitosamente')
+        return redirect('odoo_rpc_table_detail', pk=table.id)
+    
+    # Obtener el siguiente número de orden
+    last_order = OdooRPCField.objects.filter(table=table).order_by('-order').first()
+    next_order = (last_order.order + 10) if last_order else 10
+    
+    context = {
+        'table': table,
+        'next_order': next_order,
+        'field_types': OdooRPCField._meta.get_field('field_type').choices,
+        'action': 'create'
+    }
+    
+    return render(request, 'tickets/odoo_rpc_field_form.html', context)
+
+
+@login_required
+def odoo_rpc_field_edit(request, pk):
+    """Editar campo RPC"""
+    from .models import OdooRPCField
+    
+    field = get_object_or_404(OdooRPCField, pk=pk, table__connection__created_by=request.user)
+    
+    if request.method == 'POST':
+        field.name = request.POST.get('name')
+        field.odoo_field_name = request.POST.get('odoo_field_name')
+        field.field_type = request.POST.get('field_type')
+        field.is_required = request.POST.get('is_required') == 'on'
+        field.order = request.POST.get('order', field.order)
+        field.help_text = request.POST.get('help_text', '')
+        field.save()
+        
+        messages.success(request, f'Campo {field.name} actualizado')
+        return redirect('odoo_rpc_table_detail', pk=field.table.id)
+    
+    context = {
+        'field': field,
+        'table': field.table,
+        'field_types': OdooRPCField._meta.get_field('field_type').choices,
+        'action': 'edit'
+    }
+    
+    return render(request, 'tickets/odoo_rpc_field_form.html', context)
+
+
+@login_required
+def odoo_rpc_field_delete(request, pk):
+    """Eliminar campo RPC"""
+    from .models import OdooRPCField
+    
+    field = get_object_or_404(OdooRPCField, pk=pk, table__connection__created_by=request.user)
+    table = field.table
+    
+    if request.method == 'POST':
+        name = field.name
+        field.delete()
+        messages.success(request, f'Campo {name} eliminado')
+        return redirect('odoo_rpc_table_detail', pk=table.id)
+    
+    context = {
+        'field': field,
+        'table': table
+    }
+    
+    return render(request, 'tickets/odoo_rpc_field_delete.html', context)
+
+
+@login_required
+def odoo_rpc_table_export_template(request, table_id):
+    """Exportar plantilla Excel con los campos definidos"""
+    from .models import OdooRPCTable
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from django.http import HttpResponse
+    
+    # Permitir acceso sin login si viene de URL pública
+    if request.user.is_authenticated:
+        table = get_object_or_404(OdooRPCTable, pk=table_id, connection__created_by=request.user)
+    else:
+        # Acceso público: solo permitir si la tabla tiene URL pública habilitada
+        table = get_object_or_404(OdooRPCTable, pk=table_id, public_url_enabled=True)
+    fields = table.rpc_fields.all().order_by('order', 'name')
+    
+    if not fields.exists():
+        if request.user.is_authenticated:
+            messages.error(request, 'Debes agregar al menos un campo antes de exportar la plantilla')
+            return redirect('odoo_rpc_table_detail', pk=table.id)
+        else:
+            from django.http import HttpResponse
+            return HttpResponse('No hay campos configurados para esta plantilla', status=400)
+    
+    # Crear libro de Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Plantilla"
+    
+    # Estilos
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    tech_font = Font(italic=True, color="666666", size=9)
+    tech_fill = PatternFill(start_color="E7E6E6", end_color="E7E6E6", fill_type="solid")
+    center_alignment = Alignment(horizontal='center', vertical='center')
+    
+    # Primera fila: Nombres descriptivos (para el usuario)
+    for idx, field in enumerate(fields, start=1):
+        cell = ws.cell(row=1, column=idx)
+        cell.value = field.name
+        if field.is_required:
+            cell.value += " *"
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center_alignment
+        ws.column_dimensions[cell.column_letter].width = 20
+    
+    # Segunda fila: Nombres técnicos (campo de Odoo)
+    for idx, field in enumerate(fields, start=1):
+        cell = ws.cell(row=2, column=idx)
+        cell.value = field.odoo_field_name
+        cell.font = tech_font
+        cell.fill = tech_fill
+        cell.alignment = center_alignment
+    
+    # Tercera fila: Tipos y ayuda
+    for idx, field in enumerate(fields, start=1):
+        cell = ws.cell(row=3, column=idx)
+        help_info = f"{field.get_field_type_display()}"
+        if field.help_text:
+            help_info += f" - {field.help_text}"
+        cell.value = help_info
+        cell.font = tech_font
+        cell.fill = tech_fill
+        cell.alignment = center_alignment
+    
+    # Guardar archivo
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    filename = f"plantilla_{table.odoo_model.replace('.', '_')}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    wb.save(response)
+    
+    return response
+
+
+@login_required
+def odoo_rpc_table_import_data(request, table_id):
+    """Importar datos desde Excel con checklist de validación"""
+    from .models import OdooRPCTable, OdooRPCData, OdooRPCImportFile
+    from openpyxl import load_workbook
+    from django.core.files.base import ContentFile
+    import json
+    
+    table = get_object_or_404(OdooRPCTable, pk=table_id, connection__created_by=request.user)
+    
+    if request.method == 'POST':
+        excel_file = request.FILES.get('excel_file')
+        
+        # Inicializar contexto con checklist
+        checklist = {
+            'file_received': False,
+            'format_valid': False,
+            'format_message': '',
+            'records_valid': False,
+            'records_message': '',
+            'import_success': False,
+            'import_message': '',
+            'odoo_success': False,
+            'odoo_message': '',
+        }
+        
+        validation_errors = []
+        import_stats = {
+            'imported_count': 0,
+            'success_count': 0,
+            'failed_count': 0,
+            'error_details': []
+        }
+        
+        # PASO 1: Verificar archivo recibido
+        if not excel_file:
+            checklist['format_message'] = 'No se recibió ningún archivo'
+            context = {
+                'table': table,
+                'fields': table.rpc_fields.all().order_by('order', 'name'),
+                'checklist': checklist,
+                'show_results': True
+            }
+            return render(request, 'tickets/odoo_rpc_table_import.html', context)
+        
+        checklist['file_received'] = True
+        
+        # PASO 2: Validar formato
+        if not excel_file.name.endswith(('.xlsx', '.xls')):
+            checklist['format_message'] = f'El archivo debe ser Excel (.xlsx o .xls), se recibió: {excel_file.name}'
+            context = {
+                'table': table,
+                'fields': table.rpc_fields.all().order_by('order', 'name'),
+                'checklist': checklist,
+                'show_results': True
+            }
+            return render(request, 'tickets/odoo_rpc_table_import.html', context)
+        
+        try:
+            # Intentar abrir el archivo
+            excel_file.seek(0)  # Resetear puntero
+            wb = load_workbook(excel_file, read_only=True, data_only=True)
+            ws = wb.active
+            
+            # Obtener campos
+            fields = list(table.rpc_fields.all().order_by('order', 'name'))
+            if not fields:
+                checklist['format_message'] = 'La tabla no tiene campos definidos'
+                context = {
+                    'table': table,
+                    'fields': table.rpc_fields.all().order_by('order', 'name'),
+                    'checklist': checklist,
+                    'show_results': True
+                }
+                return render(request, 'tickets/odoo_rpc_table_import.html', context)
+            
+            # Leer encabezados de la primera fila
+            header_row = list(ws.iter_rows(min_row=1, max_row=1, values_only=True))[0]
+            
+            # Crear mapeo: nombre descriptivo -> campo
+            field_by_name = {field.name: field for field in fields}
+            
+            # Mapear columnas del Excel a campos
+            field_map = {}
+            for idx, header_value in enumerate(header_row):
+                if header_value:
+                    clean_header = str(header_value).strip().rstrip(' *')
+                    if clean_header in field_by_name:
+                        field_map[idx] = field_by_name[clean_header]
+            
+            if not field_map:
+                checklist['format_message'] = 'No se encontraron campos válidos en el archivo. Verifica que los nombres de las columnas coincidan con la plantilla.'
+                context = {
+                    'table': table,
+                    'fields': table.rpc_fields.all().order_by('order', 'name'),
+                    'checklist': checklist,
+                    'show_results': True
+                }
+                return render(request, 'tickets/odoo_rpc_table_import.html', context)
+            
+            checklist['format_valid'] = True
+            checklist['format_message'] = f'Archivo válido: {len(field_map)} columnas reconocidas'
+            
+            # PASO 3: Detectar desde qué fila empiezan los datos
+            # Intentar fila 4 (plantilla estándar), luego fila 2 (plantilla simple)
+            data_start_row = None
+            for test_row in [4, 2]:
+                test_data = list(ws.iter_rows(min_row=test_row, max_row=test_row, values_only=True))
+                if test_data and any(test_data[0]):
+                    # Verificar que no sea una fila de encabezados
+                    first_value = str(test_data[0][0]).lower() if test_data[0][0] else ""
+                    if first_value not in ['name', 'nombre', 'campo', 'field', 'tipo', 'type']:
+                        data_start_row = test_row
+                        break
+            
+            if data_start_row is None:
+                checklist['records_message'] = 'No se encontraron datos en el archivo. Verifica que haya datos después de los encabezados.'
+                context = {
+                    'table': table,
+                    'fields': table.rpc_fields.all().order_by('order', 'name'),
+                    'checklist': checklist,
+                    'show_results': True
+                }
+                return render(request, 'tickets/odoo_rpc_table_import.html', context)
+            
+            # PASO 3: Validar registros
+            total_rows = 0
+            valid_rows = 0
+            
+            for row_idx, row in enumerate(ws.iter_rows(min_row=data_start_row, values_only=True), start=data_start_row):
+                if not any(row):
+                    continue
+                total_rows += 1
+                
+                # Validar registro
+                has_error = False
+                for col_idx, field in field_map.items():
+                    value = row[col_idx] if col_idx < len(row) else None
+                    
+                    if field.is_required and (value is None or value == ''):
+                        validation_errors.append(f"Fila {row_idx}: El campo '{field.name}' es requerido")
+                        has_error = True
+                        break
+                
+                if not has_error:
+                    valid_rows += 1
+            
+            if total_rows == 0:
+                checklist['records_message'] = f'No se encontraron datos válidos (se buscó desde la fila {data_start_row})'
+                context = {
+                    'table': table,
+                    'fields': table.rpc_fields.all().order_by('order', 'name'),
+                    'checklist': checklist,
+                    'show_results': True
+                }
+                return render(request, 'tickets/odoo_rpc_table_import.html', context)
+            
+            checklist['records_valid'] = True
+            checklist['records_message'] = f'{valid_rows} de {total_rows} registros válidos'
+            if validation_errors:
+                checklist['records_message'] += f' ({len(validation_errors)} errores encontrados)'
+            
+            # PASO 4: Importar datos
+            excel_file.seek(0)  # Resetear para releer
+            wb = load_workbook(excel_file, read_only=False, data_only=True)
+            ws = wb.active
+            
+            imported_count = 0
+            import_errors = []
+            
+            for row_idx, row in enumerate(ws.iter_rows(min_row=data_start_row, values_only=True), start=data_start_row):
+                if not any(row):
+                    continue
+                
+                row_data = {}
+                has_error = False
+                
+                for col_idx, field in field_map.items():
+                    value = row[col_idx] if col_idx < len(row) else None
+                    
+                    if field.is_required and (value is None or value == ''):
+                        import_errors.append(f"Fila {row_idx}: El campo '{field.name}' es requerido")
+                        has_error = True
+                        continue
+                    
+                    if value is not None and value != '':
+                        if field.field_type in ['integer', 'float']:
+                            try:
+                                if field.field_type == 'integer':
+                                    value = int(value)
+                                else:
+                                    value = float(value)
+                            except (ValueError, TypeError):
+                                import_errors.append(f"Fila {row_idx}: '{field.name}' debe ser un número")
+                                has_error = True
+                                continue
+                        
+                        elif field.field_type == 'boolean':
+                            if isinstance(value, str):
+                                value = value.lower() in ['true', '1', 'sí', 'si', 'yes']
+                            else:
+                                value = bool(value)
+                        
+                        elif field.field_type in ['date', 'datetime']:
+                            if hasattr(value, 'isoformat'):
+                                value = value.isoformat()
+                            else:
+                                value = str(value)
+                    
+                    row_data[field.odoo_field_name] = value
+                
+                if not has_error:
+                    OdooRPCData.objects.create(
+                        table=table,
+                        data=row_data,
+                        status='pending',
+                        created_by=request.user
+                    )
+                    imported_count += 1
+            
+            import_stats['imported_count'] = imported_count
+            
+            if imported_count > 0:
+                checklist['import_success'] = True
+                checklist['import_message'] = f'Se importaron {imported_count} registros correctamente'
+                if import_errors:
+                    checklist['import_message'] += f' ({len(import_errors)} registros con errores)'
+                    import_stats['error_details'] = import_errors[:10]
+                
+                # PASO 5: Enviar a Odoo automáticamente
+                from .odoo_rpc import create_record
+                from django.utils import timezone
+                
+                pending_data = OdooRPCData.objects.filter(
+                    table=table, 
+                    status='pending',
+                    created_by=request.user
+                ).order_by('-created_at')[:imported_count]
+                
+                success_count = 0
+                failed_count = 0
+                odoo_errors = []
+                
+                for data_obj in pending_data:
+                    try:
+                        data_obj.status = 'processing'
+                        data_obj.save()
+                        
+                        odoo_id = create_record(table.connection, table.odoo_model, data_obj.data)
+                        
+                        if odoo_id:
+                            data_obj.status = 'success'
+                            data_obj.odoo_id = odoo_id
+                            data_obj.processed_at = timezone.now()
+                            data_obj.error_message = ''
+                            success_count += 1
+                        else:
+                            data_obj.status = 'failed'
+                            data_obj.error_message = 'No se pudo crear el registro en Odoo'
+                            odoo_errors.append('No se pudo crear un registro')
+                            failed_count += 1
+                        
+                        data_obj.save()
+                        
+                    except Exception as e:
+                        data_obj.status = 'failed'
+                        data_obj.error_message = str(e)
+                        data_obj.save()
+                        odoo_errors.append(str(e))
+                        failed_count += 1
+                
+                import_stats['success_count'] = success_count
+                import_stats['failed_count'] = failed_count
+                
+                if success_count > 0:
+                    checklist['odoo_success'] = True
+                    checklist['odoo_message'] = f'¡Éxito! {success_count} registros creados en Odoo'
+                    if failed_count > 0:
+                        checklist['odoo_message'] += f' ({failed_count} fallidos)'
+                else:
+                    checklist['odoo_message'] = f'Error: No se pudo crear ningún registro en Odoo'
+                    if odoo_errors:
+                        checklist['odoo_message'] += f' - {odoo_errors[0]}'
+                
+                # Guardar archivo
+                excel_file.seek(0)
+                import_file = OdooRPCImportFile.objects.create(
+                    table=table,
+                    file=excel_file,
+                    original_filename=excel_file.name,
+                    uploaded_by=request.user,
+                    records_imported=imported_count,
+                    records_success=success_count,
+                    records_failed=failed_count
+                )
+            else:
+                checklist['import_message'] = 'No se pudo importar ningún registro'
+                if import_errors:
+                    checklist['import_message'] += f'. Errores: {"; ".join(import_errors[:3])}'
+                    import_stats['error_details'] = import_errors[:10]
+            
+        except Exception as e:
+            checklist['format_message'] = f'Error al procesar el archivo: {str(e)}'
+            import_stats['error_details'] = [str(e)]
+        
+        context = {
+            'table': table,
+            'fields': table.rpc_fields.all().order_by('order', 'name'),
+            'checklist': checklist,
+            'import_stats': import_stats,
+            'show_results': True
+        }
+        
+        return render(request, 'tickets/odoo_rpc_table_import.html', context)
+    
+    context = {
+        'table': table,
+        'fields': table.rpc_fields.all().order_by('order', 'name')
+    }
+    
+    return render(request, 'tickets/odoo_rpc_table_import.html', context)
+
+
+@login_required
+def odoo_rpc_data_execute(request, table_id):
+    """Ejecutar inserción de datos pendientes en Odoo"""
+    from .models import OdooRPCTable, OdooRPCData
+    from .odoo_rpc import create_record
+    from django.utils import timezone
+    
+    table = get_object_or_404(OdooRPCTable, pk=table_id, connection__created_by=request.user)
+    
+    # Obtener datos pendientes
+    pending_data = OdooRPCData.objects.filter(table=table, status='pending')
+    
+    if not pending_data.exists():
+        messages.info(request, 'No hay datos pendientes para procesar')
+        return redirect('odoo_rpc_table_detail', pk=table.id)
+    
+    success_count = 0
+    failed_count = 0
+    
+    for data_obj in pending_data:
+        try:
+            # Marcar como procesando
+            data_obj.status = 'processing'
+            data_obj.save()
+            
+            # Intentar crear en Odoo
+            odoo_id = create_record(table.connection, table.odoo_model, data_obj.data)
+            
+            if odoo_id:
+                data_obj.status = 'success'
+                data_obj.odoo_id = odoo_id
+                data_obj.processed_at = timezone.now()
+                data_obj.error_message = ''
+                success_count += 1
+            else:
+                data_obj.status = 'failed'
+                data_obj.error_message = 'No se pudo crear el registro en Odoo'
+                failed_count += 1
+            
+            data_obj.save()
+            
+        except Exception as e:
+            data_obj.status = 'failed'
+            data_obj.error_message = str(e)
+            data_obj.save()
+            failed_count += 1
+    
+    if failed_count > 0:
+        messages.warning(
+            request,
+            f'Procesamiento completado: {success_count} exitosos, {failed_count} fallidos'
+        )
+    else:
+        messages.success(request, f'Se procesaron {success_count} registros exitosamente')
+    
+    return redirect('odoo_rpc_table_detail', pk=table.id)
+
+
+@login_required
+def odoo_rpc_data_list(request, table_id):
+    """Lista de datos importados con opción de filtrar por estado"""
+    from .models import OdooRPCTable, OdooRPCData
+    
+    table = get_object_or_404(OdooRPCTable, pk=table_id, connection__created_by=request.user)
+    
+    status_filter = request.GET.get('status', '')
+    
+    data_qs = OdooRPCData.objects.filter(table=table).order_by('-created_at')
+    
+    if status_filter:
+        data_qs = data_qs.filter(status=status_filter)
+    
+    context = {
+        'table': table,
+        'data_list': data_qs[:100],  # Limitar a 100 registros
+        'status_filter': status_filter,
+        'status_choices': OdooRPCData._meta.get_field('status').choices,
+    }
+    
+    return render(request, 'tickets/odoo_rpc_data_list.html', context)
+
+
+@login_required
+def odoo_rpc_search_odoo(request, table_id):
+    """Buscar datos en Odoo y mostrarlos"""
+    from .models import OdooRPCTable, OdooRPCData
+    from .odoo_rpc import search_records, read_records
+    import json
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    table = get_object_or_404(OdooRPCTable, pk=table_id, connection__created_by=request.user)
+    
+    if request.method == 'POST':
+        # Obtener parámetros de búsqueda
+        limit = int(request.POST.get('limit', 100))
+        save_to_db = request.POST.get('save_to_db') == 'on'
+        
+        # Si limit es 0, significa sin límite
+        actual_limit = None if limit == 0 else limit
+        
+        # Buscar en Odoo
+        try:
+            limit_text = 'sin límite' if limit == 0 else str(limit)
+            logger.info(f'[Odoo Search] Iniciando búsqueda en {table.odoo_model} con límite {limit_text}')
+            
+            # Buscar IDs
+            logger.info(f'[Odoo Search] Llamando a search_records...')
+            ids = search_records(table.connection, table.odoo_model, [], limit=actual_limit)
+            logger.info(f'[Odoo Search] Se encontraron {len(ids) if ids else 0} IDs')
+            
+            if not ids:
+                messages.info(request, 'No se encontraron registros en Odoo')
+                return redirect('odoo_rpc_table_detail', pk=table.id)
+            
+            # Obtener campos a leer
+            field_names = list(table.rpc_fields.values_list('odoo_field_name', flat=True))
+            logger.info(f'[Odoo Search] Campos a leer: {field_names}')
+            
+            if not field_names:
+                messages.error(request, 'Debes definir campos antes de buscar en Odoo')
+                return redirect('odoo_rpc_table_detail', pk=table.id)
+            
+            # Leer registros
+            logger.info(f'[Odoo Search] Llamando a read_records para {len(ids)} registros...')
+            records = read_records(table.connection, table.odoo_model, ids, field_names)
+            logger.info(f'[Odoo Search] Se leyeron {len(records) if records else 0} registros')
+            
+            if not records:
+                messages.error(request, 'No se pudieron leer los registros de Odoo')
+                return redirect('odoo_rpc_table_detail', pk=table.id)
+            
+            # Guardar en base de datos si está habilitado
+            if save_to_db:
+                logger.info(f'[Odoo Search] Guardando {len(records)} registros en base de datos...')
+                saved_count = 0
+                updated_count = 0
+                
+                for record in records:
+                    odoo_id = record.get('id')
+                    if odoo_id:
+                        # Buscar si ya existe
+                        existing = OdooRPCData.objects.filter(
+                            table=table,
+                            odoo_id=odoo_id,
+                            status='fetched'
+                        ).first()
+                        
+                        if existing:
+                            # Actualizar registro existente
+                            existing.data = record
+                            existing.save()
+                            updated_count += 1
+                        else:
+                            # Crear nuevo registro
+                            OdooRPCData.objects.create(
+                                table=table,
+                                data=record,
+                                status='fetched',
+                                odoo_id=odoo_id
+                            )
+                            saved_count += 1
+                
+                logger.info(f'[Odoo Search] Guardados: {saved_count} nuevos, {updated_count} actualizados')
+                if saved_count > 0 or updated_count > 0:
+                    messages.success(request, f'Se guardaron {saved_count} nuevos registros y se actualizaron {updated_count}')
+            
+            # Guardar en sesión para la vista de resultados
+            logger.info(f'[Odoo Search] Guardando resultados en sesión...')
+            request.session[f'odoo_search_results_{table.id}'] = {
+                'records': records,
+                'count': len(records),
+                'limit': limit,
+                'saved_to_db': save_to_db
+            }
+            logger.info(f'[Odoo Search] Búsqueda completada exitosamente')
+            
+            messages.success(request, f'Se encontraron {len(records)} registros en Odoo')
+            return redirect('odoo_rpc_search_results', table_id=table.id)
+            
+        except Exception as e:
+            logger.error(f'[Odoo Search] Error: {str(e)}', exc_info=True)
+            messages.error(request, f'Error al buscar en Odoo: {str(e)}')
+            return redirect('odoo_rpc_table_detail', pk=table.id)
+    
+    context = {
+        'table': table,
+        'fields': table.rpc_fields.all().order_by('order', 'name')
+    }
+    
+    return render(request, 'tickets/odoo_rpc_search_form.html', context)
+
+
+@login_required
+def odoo_rpc_data_list(request, table_id):
+    """Listar datos guardados localmente"""
+    from .models import OdooRPCTable, OdooRPCData
+    import json
+    
+    table = get_object_or_404(OdooRPCTable, pk=table_id, connection__created_by=request.user)
+    
+    # Obtener datos guardados
+    data_list = OdooRPCData.objects.filter(
+        table=table,
+        status='fetched'
+    ).order_by('-created_at')
+    
+    # Preparar registros para la vista
+    records = []
+    for data_obj in data_list:
+        records.append(data_obj.data)
+    
+    context = {
+        'table': table,
+        'records': records,
+        'count': len(records),
+        'fields': table.rpc_fields.all().order_by('order', 'name'),
+        'from_database': True
+    }
+    
+    return render(request, 'tickets/odoo_rpc_search_results.html', context)
+
+
+@login_required
+def odoo_rpc_data_export_all(request, table_id):
+    """Exportar todos los datos guardados localmente a Excel"""
+    from .models import OdooRPCTable, OdooRPCData
+    from openpyxl import Workbook
+    from django.http import HttpResponse
+    import json
+    
+    table = get_object_or_404(OdooRPCTable, pk=table_id, connection__created_by=request.user)
+    
+    # Obtener todos los datos guardados
+    data_list = OdooRPCData.objects.filter(
+        table=table,
+        status='fetched'
+    ).order_by('-created_at')
+    
+    if not data_list.exists():
+        messages.error(request, 'No hay datos guardados para exportar')
+        return redirect('odoo_rpc_table_detail', pk=table.id)
+    
+    # Crear workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Datos Odoo"
+    
+    # Obtener campos
+    fields = table.rpc_fields.all().order_by('order', 'name')
+    
+    # Escribir encabezados
+    headers = ['ID Odoo']
+    for field in fields:
+        headers.append(field.name)
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col)
+        cell.value = header
+        cell.font = cell.font.copy(bold=True)
+    
+    # Escribir datos
+    for row_idx, data_obj in enumerate(data_list, 2):
+        record = data_obj.data
+        ws.cell(row=row_idx, column=1).value = record.get('id', '')
+        
+        for col_idx, field in enumerate(fields, 2):
+            value = record.get(field.odoo_field_name, '')
+            
+            # Formatear valores especiales
+            if isinstance(value, dict):
+                value = json.dumps(value, ensure_ascii=False)
+            elif isinstance(value, list):
+                if value and len(value) > 0 and isinstance(value[0], (int, str)):
+                    value = ', '.join(str(v) for v in value)
+                else:
+                    value = json.dumps(value, ensure_ascii=False)
+            elif value is False:
+                value = ''
+            
+            ws.cell(row=row_idx, column=col_idx).value = str(value) if value else ''
+    
+    # Crear respuesta HTTP
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{table.name}_todos_los_datos.xlsx"'
+    
+    wb.save(response)
+    return response
+
+
+@login_required
+def odoo_rpc_import_files_list(request, table_id):
+    """Listar todos los archivos importados para esta tabla"""
+    from .models import OdooRPCTable, OdooRPCImportFile
+    
+    table = get_object_or_404(OdooRPCTable, pk=table_id, connection__created_by=request.user)
+    
+    # Obtener todos los archivos importados
+    import_files = OdooRPCImportFile.objects.filter(
+        table=table
+    ).order_by('-uploaded_at')
+    
+    context = {
+        'table': table,
+        'import_files': import_files
+    }
+    
+    return render(request, 'tickets/odoo_rpc_import_files_list.html', context)
+
+
+@login_required
+def odoo_rpc_manage_public_url(request, table_id):
+    """Gestionar URL pública para importación"""
+    from .models import OdooRPCTable
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    table = get_object_or_404(OdooRPCTable, pk=table_id, connection__created_by=request.user)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'enable':
+            # Habilitar URL pública
+            table.public_url_enabled = True
+            if not table.public_url_token:
+                table.generate_public_token()
+            
+            # Configurar contraseña si se proporciona
+            password = request.POST.get('password', '').strip()
+            table.public_url_password = password
+            
+            # Configurar fecha de expiración si se proporciona
+            expires_days = request.POST.get('expires_days')
+            if expires_days and expires_days.isdigit():
+                days = int(expires_days)
+                if days > 0:
+                    table.public_url_expires_at = timezone.now() + timedelta(days=days)
+            else:
+                table.public_url_expires_at = None
+            
+            table.save()
+            messages.success(request, 'URL pública habilitada correctamente')
+            
+        elif action == 'disable':
+            # Deshabilitar URL pública
+            table.public_url_enabled = False
+            table.save()
+            messages.success(request, 'URL pública deshabilitada')
+            
+        elif action == 'regenerate':
+            # Regenerar token
+            table.generate_public_token()
+            messages.success(request, 'Token regenerado correctamente')
+        
+        return redirect('odoo_rpc_manage_public_url', table_id=table.id)
+    
+    context = {
+        'table': table,
+        'public_url': table.get_public_url(request) if table.public_url_enabled else None,
+        'is_valid': table.is_public_url_valid()
+    }
+    
+    return render(request, 'tickets/odoo_rpc_manage_public_url.html', context)
+
+
+@login_required
+def odoo_rpc_form_status(request, table_id):
+    """Obtener estado del formulario público"""
+    from .models import OdooRPCTable
+    
+    table = get_object_or_404(OdooRPCTable, pk=table_id, connection__created_by=request.user)
+    
+    return JsonResponse({
+        'enabled': table.public_form_enabled,
+        'password': table.public_form_password,
+        'expires_at': table.public_form_expires_at.strftime('%Y-%m-%dT%H:%M') if table.public_form_expires_at else '',
+        'url': table.get_form_url(request) if table.public_form_enabled else ''
+    })
+
+
+@login_required
+def odoo_rpc_generate_form_url(request, table_id):
+    """Generar o actualizar URL de formulario público"""
+    from .models import OdooRPCTable
+    from django.utils import timezone
+    from datetime import datetime
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    try:
+        table = get_object_or_404(OdooRPCTable, pk=table_id, connection__created_by=request.user)
+        
+        enabled = request.POST.get('enabled', 'false') == 'true'
+        
+        if enabled:
+            if not table.public_form_token:
+                table.generate_form_token()
+            
+            table.public_form_enabled = True
+            table.public_form_password = request.POST.get('password', '')
+            
+            expires_at = request.POST.get('expires_at', '')
+            if expires_at:
+                try:
+                    table.public_form_expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+                except:
+                    table.public_form_expires_at = None
+            else:
+                table.public_form_expires_at = None
+            
+            table.save()
+            
+            return JsonResponse({
+                'success': True,
+                'enabled': True,
+                'password': table.public_form_password,
+                'expires_at': table.public_form_expires_at.strftime('%Y-%m-%dT%H:%M') if table.public_form_expires_at else '',
+                'url': table.get_form_url(request)
+            })
+        else:
+            table.public_form_enabled = False
+            table.save()
+            
+            return JsonResponse({
+                'success': True,
+                'enabled': False,
+                'password': '',
+                'expires_at': '',
+                'url': ''
+            })
+            
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error: {str(e)}'
+        })
+
+
+def odoo_rpc_public_form(request, token):
+    """Formulario público para crear registros"""
+    from .models import OdooRPCTable, OdooRPCField
+    from django.utils import timezone
+    
+    try:
+        table = get_object_or_404(OdooRPCTable, public_form_token=token)
+        
+        if not table.public_form_enabled:
+            return render(request, 'tickets/odoo_rpc_public_error.html', {
+                'error': 'Este formulario público ha sido deshabilitado.'
+            })
+        
+        if table.public_form_expires_at:
+            if timezone.now() > table.public_form_expires_at:
+                return render(request, 'tickets/odoo_rpc_public_error.html', {
+                    'error': 'Este formulario público ha expirado.'
+                })
+        
+        if table.public_form_password:
+            session_key = f'odoo_form_auth_{token}'
+            if not request.session.get(session_key):
+                if request.method == 'POST' and 'password' in request.POST:
+                    password = request.POST.get('password', '')
+                    if password == table.public_form_password:
+                        request.session[session_key] = True
+                    else:
+                        return render(request, 'tickets/odoo_rpc_public_form_password.html', {
+                            'error': 'Contraseña incorrecta',
+                            'token': token,
+                            'table': table
+                        })
+                else:
+                    return render(request, 'tickets/odoo_rpc_public_form_password.html', {
+                        'token': token,
+                        'table': table
+                    })
+        
+        if request.method == 'POST' and 'password' not in request.POST:
+            from .odoo_rpc import create_record
+            import json
+            
+            try:
+                values = {}
+                
+                for field in table.rpc_fields.all():
+                    field_name = field.odoo_field_name
+                    value = request.POST.get(f'field_{field.id}')
+                    
+                    if value:
+                        if field.field_type == 'integer':
+                            values[field_name] = int(value)
+                        elif field.field_type == 'float':
+                            values[field_name] = float(value)
+                        elif field.field_type == 'boolean':
+                            values[field_name] = value.lower() in ['true', '1', 'yes']
+                        else:
+                            values[field_name] = value
+                
+                record_id = create_record(table.connection, table.odoo_model, values)
+                
+                messages.success(request, f'Registro creado exitosamente con ID {record_id}')
+                return redirect('odoo_rpc_public_form', token=token)
+                
+            except Exception as e:
+                messages.error(request, f'Error al crear registro: {str(e)}')
+        
+        fields = OdooRPCField.objects.filter(table=table).order_by('order', 'name')
+        
+        context = {
+            'table': table,
+            'fields': fields,
+            'token': token
+        }
+        
+        return render(request, 'tickets/odoo_rpc_public_form.html', context)
+        
+    except OdooRPCTable.DoesNotExist:
+        return render(request, 'tickets/odoo_rpc_public_error.html', {
+            'error': 'Formulario no encontrado o token inválido.'
+        })
+
+
+def odoo_rpc_public_import(request, token):
+    """Vista pública para importación de datos (sin login)"""
+    from .models import OdooRPCTable, OdooRPCData
+    from django.utils import timezone
+    import openpyxl
+    import json
+    
+    # Buscar tabla por token
+    try:
+        table = OdooRPCTable.objects.get(
+            public_url_token=token,
+            public_url_enabled=True
+        )
+    except OdooRPCTable.DoesNotExist:
+        return render(request, 'tickets/odoo_rpc_public_error.html', {
+            'error': 'URL no válida o expirada'
+        }, status=404)
+    
+    # Verificar si la URL ha expirado
+    if not table.is_public_url_valid():
+        return render(request, 'tickets/odoo_rpc_public_error.html', {
+            'error': 'Esta URL ha expirado',
+            'table': table
+        }, status=403)
+    
+    # Verificar contraseña si está configurada
+    if table.public_url_password:
+        if request.method == 'POST':
+            password = request.POST.get('password', '')
+            if password != table.public_url_password:
+                return render(request, 'tickets/odoo_rpc_public_import.html', {
+                    'table': table,
+                    'requires_password': True,
+                    'error': 'Contraseña incorrecta'
+                })
+        elif 'authenticated' not in request.session.get(f'public_auth_{token}', {}):
+            # Mostrar formulario de contraseña
+            return render(request, 'tickets/odoo_rpc_public_import.html', {
+                'table': table,
+                'requires_password': True
+            })
+        else:
+            # Ya autenticado en la sesión
+            pass
+    
+    # Marcar como autenticado en la sesión
+    if table.public_url_password and request.method == 'POST':
+        request.session[f'public_auth_{token}'] = {'authenticated': True}
+    
+    # Procesar importación
+    if request.method == 'POST' and 'excel_file' in request.FILES:
+        excel_file = request.FILES['excel_file']
+        
+        try:
+            # Leer archivo Excel
+            wb = openpyxl.load_workbook(excel_file, data_only=True)
+            ws = wb.active
+            
+            # Obtener campos
+            fields = table.rpc_fields.all().order_by('order', 'name')
+            field_mapping = {field.name: field for field in fields}
+            
+            # Leer encabezados
+            headers = []
+            for col in range(1, ws.max_column + 1):
+                header = ws.cell(row=1, column=col).value
+                if header:
+                    headers.append(header)
+            
+            # Validar que los encabezados coincidan
+            expected_headers = ['ID Odoo'] + [f.name for f in fields]
+            
+            # Procesar filas
+            imported_count = 0
+            errors = []
+            
+            for row_idx in range(4, ws.max_row + 1):  # Empezar desde fila 4 (después de headers)
+                try:
+                    # Construir registro
+                    record_data = {}
+                    
+                    for col_idx, header in enumerate(headers, 1):
+                        cell_value = ws.cell(row=row_idx, column=col_idx).value
+                        
+                        if header in field_mapping:
+                            field = field_mapping[header]
+                            if cell_value is not None and cell_value != '':
+                                record_data[field.odoo_field_name] = cell_value
+                    
+                    if record_data:
+                        # Crear registro para importar
+                        OdooRPCData.objects.create(
+                            table=table,
+                            data=record_data,
+                            status='pending',
+                            created_by=None  # Sin usuario porque es público
+                        )
+                        imported_count += 1
+                
+                except Exception as e:
+                    errors.append(f"Fila {row_idx}: {str(e)}")
+            
+            if imported_count > 0:
+                success_message = f'Se importaron {imported_count} registros correctamente'
+                if errors:
+                    success_message += f'. {len(errors)} filas con errores.'
+                
+                return render(request, 'tickets/odoo_rpc_public_import.html', {
+                    'table': table,
+                    'success': success_message,
+                    'imported_count': imported_count,
+                    'errors': errors[:10]  # Mostrar solo los primeros 10 errores
+                })
+            else:
+                return render(request, 'tickets/odoo_rpc_public_import.html', {
+                    'table': table,
+                    'error': 'No se pudo importar ningún registro',
+                    'errors': errors[:10]
+                })
+        
+        except Exception as e:
+            return render(request, 'tickets/odoo_rpc_public_import.html', {
+                'table': table,
+                'error': f'Error al procesar el archivo: {str(e)}'
+            })
+    
+    # Mostrar formulario de importación
+    context = {
+        'table': table,
+        'fields': table.rpc_fields.all().order_by('order', 'name'),
+        'expires_at': table.public_url_expires_at
+    }
+    
+    return render(request, 'tickets/odoo_rpc_public_import.html', context)
+
+
+@login_required
+def odoo_connection_manage_portal(request, connection_id):
+    """Gestionar portal público de la conexión"""
+    from .models import OdooConnection
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    connection = get_object_or_404(OdooConnection, pk=connection_id, created_by=request.user)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'enable':
+            # Habilitar/Actualizar portal público
+            was_enabled = connection.public_portal_enabled
+            connection.public_portal_enabled = True
+            
+            if not connection.public_portal_token:
+                connection.generate_portal_token()
+            
+            # Configurar contraseña si se proporciona (o actualizar)
+            password = request.POST.get('password', '').strip()
+            if password:  # Solo actualizar si se proporciona una nueva contraseña
+                connection.public_portal_password = password
+            elif not was_enabled:  # Si es primera vez, limpiar contraseña si está vacía
+                connection.public_portal_password = ''
+            # Si was_enabled y password está vacío, mantener la contraseña actual
+            
+            # Configurar fecha de expiración
+            expires_days = request.POST.get('expires_days')
+            if expires_days and expires_days.isdigit():
+                days = int(expires_days)
+                if days > 0:
+                    connection.public_portal_expires_at = timezone.now() + timedelta(days=days)
+            else:
+                connection.public_portal_expires_at = None
+            
+            # Configurar permiso de importación
+            connection.public_portal_allow_import = request.POST.get('allow_import') == 'on'
+            
+            connection.save()
+            
+            if was_enabled:
+                messages.success(request, 'Configuración del portal actualizada correctamente')
+            else:
+                messages.success(request, 'Portal público habilitado correctamente')
+            
+        elif action == 'disable':
+            connection.public_portal_enabled = False
+            connection.save()
+            messages.success(request, 'Portal público deshabilitado')
+            
+        elif action == 'regenerate':
+            connection.generate_portal_token()
+            messages.success(request, 'Token del portal regenerado correctamente')
+        
+        elif action == 'remove_password':
+            # Quitar contraseña del portal
+            connection.public_portal_password = ''
+            connection.save()
+            messages.success(request, 'Contraseña eliminada. El portal es ahora totalmente abierto.')
+        
+        return redirect('odoo_connection_manage_portal', connection_id=connection.id)
+    
+    context = {
+        'connection': connection,
+        'portal_url': connection.get_portal_url(request) if connection.public_portal_enabled else None,
+        'is_valid': connection.is_portal_valid(),
+        'tables_count': connection.rpc_tables.filter(is_active=True).count()
+    }
+    
+    return render(request, 'tickets/odoo_connection_manage_portal.html', context)
+
+
+@login_required
+def odoo_rpc_operations_portal(request, connection_id):
+    """Portal de operaciones RPC para consultar, crear, editar y eliminar registros"""
+    from .models import OdooConnection
+    from .odoo_rpc import get_model_fields
+    
+    connection = get_object_or_404(OdooConnection, pk=connection_id, created_by=request.user)
+    
+    context = {
+        'connection': connection,
+    }
+    
+    return render(request, 'tickets/odoo_rpc_operations_portal.html', context)
+
+
+@login_required
+def odoo_rpc_search_records(request, connection_id):
+    """Buscar registros en una tabla Odoo vía RPC"""
+    from .models import OdooConnection
+    from .odoo_rpc import search_records, read_records, get_model_fields
+    import json
+    
+    try:
+        connection = get_object_or_404(OdooConnection, pk=connection_id, created_by=request.user)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Conexión no encontrada: {str(e)}'
+        })
+    
+    if request.method == 'POST':
+        model = request.POST.get('model', '').strip()
+        domain_str = request.POST.get('domain', '[]').strip()
+        limit = request.POST.get('limit', '100')
+        fields_str = request.POST.get('fields', '').strip()
+        
+        # Validar modelo
+        if not model:
+            return JsonResponse({
+                'success': False,
+                'error': 'El modelo es requerido'
+            })
+        
+        try:
+            # Validar y parsear límite
+            limit = int(limit)
+            if limit <= 0:
+                limit = 100
+        except ValueError:
+            limit = 100
+        
+        try:
+            # Parsear dominio - asegurarse que sea válido JSON
+            if not domain_str or domain_str == '[]':
+                domain = []
+            else:
+                try:
+                    domain = json.loads(domain_str)
+                    if not isinstance(domain, list):
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'El dominio debe ser una lista JSON válida. Ejemplo: [["name", "ilike", "test"]]'
+                        })
+                except json.JSONDecodeError as e:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Error al parsear el dominio JSON: {str(e)}. Asegúrate de usar comillas dobles y formato válido.'
+                    })
+            
+            # Buscar IDs
+            ids = search_records(connection, model, domain, limit=limit)
+            
+            # Leer registros
+            fields = [f.strip() for f in fields_str.split(',') if f.strip()] if fields_str else None
+            records = read_records(connection, model, ids, fields=fields)
+            
+            # Obtener información de campos
+            model_fields = get_model_fields(connection, model)
+            
+            return JsonResponse({
+                'success': True,
+                'count': len(records),
+                'records': records,
+                'fields': model_fields
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Error al consultar registros: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido. Use POST.'})
+
+
+@login_required
+def odoo_rpc_create_record(request, connection_id):
+    """Crear un registro en Odoo vía RPC"""
+    from .models import OdooConnection
+    from .odoo_rpc import create_record
+    import json
+    
+    try:
+        connection = get_object_or_404(OdooConnection, pk=connection_id, created_by=request.user)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Conexión no encontrada: {str(e)}'
+        })
+    
+    if request.method == 'POST':
+        model = request.POST.get('model', '').strip()
+        values_str = request.POST.get('values', '{}').strip()
+        
+        # Validar modelo
+        if not model:
+            return JsonResponse({
+                'success': False,
+                'error': 'El modelo es requerido'
+            })
+        
+        try:
+            # Parsear valores
+            try:
+                values = json.loads(values_str)
+                if not isinstance(values, dict):
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Los valores deben ser un objeto JSON válido. Ejemplo: {"name": "Producto 1", "list_price": 100}'
+                    })
+            except json.JSONDecodeError as e:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Error al parsear los valores JSON: {str(e)}. Asegúrate de usar comillas dobles y formato válido.'
+                })
+            
+            record_id = create_record(connection, model, values)
+            
+            if record_id:
+                return JsonResponse({
+                    'success': True,
+                    'record_id': record_id,
+                    'message': f'Registro creado con ID: {record_id}'
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No se pudo crear el registro'
+                })
+                
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Error al crear registro: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido. Use POST.'})
+
+
+@login_required
+def odoo_rpc_update_record(request, connection_id):
+    """Actualizar un registro en Odoo vía RPC"""
+    from .models import OdooConnection
+    from .odoo_rpc import write_record
+    import json
+    
+    try:
+        connection = get_object_or_404(OdooConnection, pk=connection_id, created_by=request.user)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Conexión no encontrada: {str(e)}'
+        })
+    
+    if request.method == 'POST':
+        model = request.POST.get('model', '').strip()
+        record_id_str = request.POST.get('record_id', '').strip()
+        values_str = request.POST.get('values', '{}').strip()
+        
+        # Validar modelo
+        if not model:
+            return JsonResponse({
+                'success': False,
+                'error': 'El modelo es requerido'
+            })
+        
+        # Validar record_id
+        if not record_id_str:
+            return JsonResponse({
+                'success': False,
+                'error': 'El ID del registro es requerido'
+            })
+        
+        try:
+            record_id = int(record_id_str)
+            if record_id <= 0:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'El ID del registro debe ser un número positivo'
+                })
+        except ValueError:
+            return JsonResponse({
+                'success': False,
+                'error': 'El ID del registro debe ser un número válido'
+            })
+        
+        try:
+            # Parsear valores
+            try:
+                values = json.loads(values_str)
+                if not isinstance(values, dict):
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Los valores deben ser un objeto JSON válido. Ejemplo: {"name": "Nuevo Nombre"}'
+                    })
+            except json.JSONDecodeError as e:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Error al parsear los valores JSON: {str(e)}. Asegúrate de usar comillas dobles y formato válido.'
+                })
+            
+            success = write_record(connection, model, record_id, values)
+            
+            if success:
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Registro {record_id} actualizado correctamente'
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No se pudo actualizar el registro'
+                })
+                
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Error al actualizar registro: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido. Use POST.'})
+
+
+@login_required
+def odoo_rpc_delete_record(request, connection_id):
+    """Eliminar un registro en Odoo vía RPC"""
+    from .models import OdooConnection
+    from .odoo_rpc import authenticate, get_models_proxy
+    
+    try:
+        connection = get_object_or_404(OdooConnection, pk=connection_id, created_by=request.user)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Conexión no encontrada: {str(e)}'
+        })
+    
+    if request.method == 'POST':
+        model = request.POST.get('model', '').strip()
+        record_id_str = request.POST.get('record_id', '').strip()
+        
+        # Validar modelo
+        if not model:
+            return JsonResponse({
+                'success': False,
+                'error': 'El modelo es requerido'
+            })
+        
+        # Validar record_id
+        if not record_id_str:
+            return JsonResponse({
+                'success': False,
+                'error': 'El ID del registro es requerido'
+            })
+        
+        try:
+            record_id = int(record_id_str)
+            if record_id <= 0:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'El ID del registro debe ser un número positivo'
+                })
+        except ValueError:
+            return JsonResponse({
+                'success': False,
+                'error': 'El ID del registro debe ser un número válido'
+            })
+        
+        try:
+            uid = authenticate(connection)
+            if not uid:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Error de autenticación con Odoo'
+                })
+            
+            models = get_models_proxy(connection)
+            if not models:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Error obteniendo proxy de modelos'
+                })
+            
+            result = models.execute_kw(
+                connection.database,
+                uid,
+                connection.password,
+                model,
+                'unlink',
+                [[record_id]]
+            )
+            
+            if result:
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Registro {record_id} eliminado correctamente'
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No se pudo eliminar el registro'
+                })
+                
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Error al eliminar registro: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido. Use POST.'})
+
+
+@login_required
+def odoo_rpc_bulk_update(request, connection_id):
+    """Actualizar masivamente registros según condición"""
+    from .models import OdooConnection
+    from .odoo_rpc import search_records, write_record
+    import json
+    
+    try:
+        connection = get_object_or_404(OdooConnection, pk=connection_id, created_by=request.user)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Conexión no encontrada: {str(e)}'
+        })
+    
+    if request.method == 'POST':
+        model = request.POST.get('model', '').strip()
+        domain_str = request.POST.get('domain', '[]').strip()
+        field_to_update = request.POST.get('field_to_update', '').strip()
+        new_value_str = request.POST.get('new_value', '').strip()
+        
+        # Validar modelo
+        if not model:
+            return JsonResponse({
+                'success': False,
+                'error': 'El modelo es requerido'
+            })
+        
+        # Validar campo a actualizar
+        if not field_to_update:
+            return JsonResponse({
+                'success': False,
+                'error': 'El campo a actualizar es requerido'
+            })
+        
+        # Validar nuevo valor
+        if not new_value_str:
+            return JsonResponse({
+                'success': False,
+                'error': 'El nuevo valor es requerido'
+            })
+        
+        try:
+            # Parsear dominio
+            if not domain_str or domain_str == '[]':
+                domain = []
+            else:
+                try:
+                    domain = json.loads(domain_str)
+                    if not isinstance(domain, list):
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'El dominio debe ser una lista JSON válida. Ejemplo: [["state", "=", "draft"]]'
+                        })
+                except json.JSONDecodeError as e:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Error al parsear el dominio JSON: {str(e)}. Asegúrate de usar comillas dobles y formato válido.'
+                    })
+            
+            # Buscar registros que cumplan la condición
+            ids = search_records(connection, model, domain)
+            
+            if not ids:
+                return JsonResponse({
+                    'success': True,
+                    'updated': 0,
+                    'message': 'No se encontraron registros que cumplan la condición'
+                })
+            
+            # Parsear nuevo valor
+            try:
+                new_value = json.loads(new_value_str)
+            except:
+                new_value = new_value_str
+            
+            # Actualizar cada registro
+            updated_count = 0
+            errors = []
+            
+            for record_id in ids:
+                try:
+                    success = write_record(connection, model, record_id, {field_to_update: new_value})
+                    if success:
+                        updated_count += 1
+                    else:
+                        errors.append(f'Error actualizando registro {record_id}')
+                except Exception as e:
+                    errors.append(f'Error en registro {record_id}: {str(e)}')
+            
+            return JsonResponse({
+                'success': True,
+                'updated': updated_count,
+                'total': len(ids),
+                'errors': errors,
+                'message': f'{updated_count} de {len(ids)} registros actualizados'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Error en actualización masiva: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido. Use POST.'})
+
+
+def odoo_rpc_public_portal(request, token):
+    """Portal público para ver todas las tablas y sus formatos (sin login)"""
+    from .models import OdooConnection
+    
+    # Buscar conexión por token
+    try:
+        connection = OdooConnection.objects.get(
+            public_portal_token=token,
+            public_portal_enabled=True
+        )
+    except OdooConnection.DoesNotExist:
+        return render(request, 'tickets/odoo_rpc_public_error.html', {
+            'error': 'Portal no válido o deshabilitado'
+        }, status=404)
+    
+    # Verificar si el portal ha expirado
+    if not connection.is_portal_valid():
+        return render(request, 'tickets/odoo_rpc_public_error.html', {
+            'error': 'Este portal ha expirado',
+            'connection': connection
+        }, status=403)
+    
+    # Verificar contraseña si está configurada
+    if connection.public_portal_password:
+        if request.method == 'POST':
+            password = request.POST.get('password', '')
+            if password != connection.public_portal_password:
+                return render(request, 'tickets/odoo_rpc_public_portal.html', {
+                    'connection': connection,
+                    'requires_password': True,
+                    'error': 'Contraseña incorrecta'
+                })
+            else:
+                # Autenticar en sesión
+                request.session[f'portal_auth_{token}'] = {'authenticated': True}
+        elif not request.session.get(f'portal_auth_{token}', {}).get('authenticated'):
+            # Mostrar formulario de contraseña
+            return render(request, 'tickets/odoo_rpc_public_portal.html', {
+                'connection': connection,
+                'requires_password': True
+            })
+    
+    # Obtener todas las tablas activas
+    tables = connection.rpc_tables.filter(is_active=True).prefetch_related('rpc_fields')
+    
+    context = {
+        'connection': connection,
+        'tables': tables,
+        'expires_at': connection.public_portal_expires_at,
+        'token': token
+    }
+    
+    return render(request, 'tickets/odoo_rpc_public_portal.html', context)
+
+
+def odoo_rpc_public_portal_table(request, token, table_id):
+    """Importación de una tabla específica desde el portal público"""
+    from .models import OdooConnection, OdooRPCTable, OdooRPCData
+    import openpyxl
+    
+    # Verificar que el portal sea válido
+    try:
+        connection = OdooConnection.objects.get(
+            public_portal_token=token,
+            public_portal_enabled=True
+        )
+    except OdooConnection.DoesNotExist:
+        return render(request, 'tickets/odoo_rpc_public_error.html', {
+            'error': 'Portal no válido o deshabilitado'
+        }, status=404)
+    
+    # Verificar expiración
+    if not connection.is_portal_valid():
+        return render(request, 'tickets/odoo_rpc_public_error.html', {
+            'error': 'Este portal ha expirado'
+        }, status=403)
+    
+    # Verificar autenticación si requiere contraseña
+    if connection.public_portal_password:
+        if not request.session.get(f'portal_auth_{token}', {}).get('authenticated'):
+            return redirect('odoo_rpc_public_portal', token=token)
+    
+    # Obtener la tabla
+    table = get_object_or_404(OdooRPCTable, pk=table_id, connection=connection, is_active=True)
+    
+    # Procesar importación
+    if request.method == 'POST' and 'excel_file' in request.FILES:
+        excel_file = request.FILES['excel_file']
+        
+        try:
+            wb = openpyxl.load_workbook(excel_file, data_only=True)
+            ws = wb.active
+            
+            fields = list(table.rpc_fields.all().order_by('order', 'name'))
+            field_by_name = {field.name: field for field in fields}
+            
+            # Leer encabezados de la primera fila
+            header_row = list(ws.iter_rows(min_row=1, max_row=1, values_only=True))[0]
+            
+            # Mapear columnas del Excel a campos
+            field_map = {}
+            for idx, header_value in enumerate(header_row):
+                if header_value:
+                    clean_header = str(header_value).strip().rstrip(' *')
+                    if clean_header in field_by_name:
+                        field_map[idx] = field_by_name[clean_header]
+            
+            if not field_map:
+                return render(request, 'tickets/odoo_rpc_public_portal_table.html', {
+                    'table': table,
+                    'connection': connection,
+                    'token': token,
+                    'error': 'No se encontraron campos válidos en el archivo'
+                })
+            
+            # Detectar desde qué fila empiezan los datos
+            data_start_row = None
+            for test_row in [4, 2]:
+                test_data = list(ws.iter_rows(min_row=test_row, max_row=test_row, values_only=True))
+                if test_data and any(test_data[0]):
+                    first_value = str(test_data[0][0]).lower() if test_data[0][0] else ""
+                    if first_value not in ['name', 'nombre', 'campo', 'field', 'tipo', 'type']:
+                        data_start_row = test_row
+                        break
+            
+            if data_start_row is None:
+                return render(request, 'tickets/odoo_rpc_public_portal_table.html', {
+                    'table': table,
+                    'connection': connection,
+                    'token': token,
+                    'error': 'No se encontraron datos en el archivo'
+                })
+            
+            # Procesar filas de datos
+            imported_count = 0
+            errors = []
+            
+            for row_idx, row in enumerate(ws.iter_rows(min_row=data_start_row, values_only=True), start=data_start_row):
+                if not any(row):
+                    continue
+                
+                try:
+                    row_data = {}
+                    has_error = False
+                    
+                    for col_idx, field in field_map.items():
+                        value = row[col_idx] if col_idx < len(row) else None
+                        
+                        if field.is_required and (value is None or value == ''):
+                            errors.append(f"Fila {row_idx}: El campo '{field.name}' es requerido")
+                            has_error = True
+                            continue
+                        
+                        if value is not None and value != '':
+                            if field.field_type in ['integer', 'float']:
+                                try:
+                                    if field.field_type == 'integer':
+                                        value = int(value)
+                                    else:
+                                        value = float(value)
+                                except (ValueError, TypeError):
+                                    errors.append(f"Fila {row_idx}: '{field.name}' debe ser un número")
+                                    has_error = True
+                                    continue
+                            
+                            elif field.field_type == 'boolean':
+                                if isinstance(value, str):
+                                    value = value.lower() in ['true', '1', 'sí', 'si', 'yes']
+                                else:
+                                    value = bool(value)
+                            
+                            elif field.field_type in ['date', 'datetime']:
+                                if hasattr(value, 'isoformat'):
+                                    value = value.isoformat()
+                                else:
+                                    value = str(value)
+                        
+                        row_data[field.odoo_field_name] = value
+                    
+                    if not has_error and row_data:
+                        OdooRPCData.objects.create(
+                            table=table,
+                            data=row_data,
+                            status='pending',
+                            created_by=None
+                        )
+                        imported_count += 1
+                
+                except Exception as e:
+                    errors.append(f"Fila {row_idx}: {str(e)}")
+            
+            if imported_count > 0:
+                # Ejecutar inserción automática a Odoo
+                from .odoo_rpc import create_record
+                from django.utils import timezone
+                
+                pending_data = OdooRPCData.objects.filter(
+                    table=table,
+                    status='pending',
+                    created_by=None
+                ).order_by('-created_at')[:imported_count]
+                
+                success_count = 0
+                failed_count = 0
+                odoo_errors = []
+                
+                for data_obj in pending_data:
+                    try:
+                        data_obj.status = 'processing'
+                        data_obj.save()
+                        
+                        odoo_id = create_record(table.connection, table.odoo_model, data_obj.data)
+                        
+                        if odoo_id:
+                            data_obj.status = 'success'
+                            data_obj.odoo_id = odoo_id
+                            data_obj.processed_at = timezone.now()
+                            success_count += 1
+                        else:
+                            data_obj.status = 'failed'
+                            data_obj.error_message = 'No se pudo crear el registro en Odoo'
+                            failed_count += 1
+                            odoo_errors.append('No se pudo crear un registro')
+                        
+                        data_obj.save()
+                    except Exception as e:
+                        data_obj.status = 'failed'
+                        data_obj.error_message = str(e)
+                        data_obj.save()
+                        failed_count += 1
+                        odoo_errors.append(str(e))
+                
+                success_message = f'Se importaron {imported_count} registros'
+                if success_count > 0:
+                    success_message += f'. ¡Éxito! {success_count} creados en Odoo'
+                if failed_count > 0:
+                    success_message += f'. {failed_count} fallidos'
+                if errors:
+                    success_message += f'. {len(errors)} errores de validación'
+                
+                return render(request, 'tickets/odoo_rpc_public_portal_table.html', {
+                    'table': table,
+                    'connection': connection,
+                    'token': token,
+                    'success': success_message,
+                    'imported_count': imported_count,
+                    'success_count': success_count,
+                    'failed_count': failed_count,
+                    'errors': errors[:10] + odoo_errors[:5]
+                })
+            else:
+                return render(request, 'tickets/odoo_rpc_public_portal_table.html', {
+                    'table': table,
+                    'connection': connection,
+                    'token': token,
+                    'error': 'No se pudo importar ningún registro',
+                    'errors': errors[:10]
+                })
+        
+        except Exception as e:
+            return render(request, 'tickets/odoo_rpc_public_portal_table.html', {
+                'table': table,
+                'connection': connection,
+                'token': token,
+                'error': f'Error al procesar el archivo: {str(e)}'
+            })
+    
+    # Mostrar formulario
+    context = {
+        'table': table,
+        'connection': connection,
+        'token': token,
+        'fields': table.rpc_fields.all().order_by('order', 'name'),
+        'expires_at': connection.public_portal_expires_at
+    }
+    
+    return render(request, 'tickets/odoo_rpc_public_portal_table.html', context)
+
+
+@login_required
+def odoo_rpc_search_results(request, table_id):
+    """Mostrar resultados de búsqueda en Odoo"""
+    from .models import OdooRPCTable
+    import json
+    
+    table = get_object_or_404(OdooRPCTable, pk=table_id, connection__created_by=request.user)
+    
+    # Obtener resultados de sesión
+    session_key = f'odoo_search_results_{table.id}'
+    search_data = request.session.get(session_key, {})
+    
+    if not search_data:
+        messages.warning(request, 'No hay resultados de búsqueda. Realiza una búsqueda primero.')
+        return redirect('odoo_rpc_search_odoo', table_id=table.id)
+    
+    records = search_data.get('records', [])
+    
+    context = {
+        'table': table,
+        'records': records,
+        'count': search_data.get('count', 0),
+        'limit': search_data.get('limit', 100),
+        'fields': table.rpc_fields.all().order_by('order', 'name')
+    }
+    
+    return render(request, 'tickets/odoo_rpc_search_results.html', context)
+
+
+@login_required
+def odoo_connection_backup(request, pk):
+    """Solicitar backup de base de datos de Odoo"""
+    from .models import OdooConnection
+    
+    connection = get_object_or_404(OdooConnection, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        master_password = request.POST.get('master_password', '')
+        backup_format = request.POST.get('backup_format', 'zip')
+        
+        if not master_password:
+            messages.error(request, 'Debes proporcionar el master password de Odoo')
+            return render(request, 'tickets/odoo_connection_backup.html', {'connection': connection})
+        
+        # Importar la función de backup
+        from .odoo_rpc import backup_database
+        import base64
+        from django.http import HttpResponse
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        logger.info(f'[Odoo Backup] Iniciando backup de {connection.database}...')
+        
+        try:
+            success, backup_data, message = backup_database(connection, master_password, backup_format)
+            
+            if success and backup_data:
+                logger.info(f'[Odoo Backup] Backup creado exitosamente')
+                
+                # Decodificar el backup
+                backup_bytes = base64.b64decode(backup_data)
+                
+                # Crear respuesta HTTP con el archivo
+                response = HttpResponse(backup_bytes, content_type='application/octet-stream')
+                filename = f"{connection.database}_backup.{backup_format}"
+                response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                
+                messages.success(request, f'Backup descargado exitosamente: {filename}')
+                return response
+            else:
+                logger.error(f'[Odoo Backup] Error: {message}')
+                messages.error(request, f'Error al crear backup: {message}')
+                
+        except Exception as e:
+            logger.error(f'[Odoo Backup] Excepción: {str(e)}', exc_info=True)
+            messages.error(request, f'Error inesperado: {str(e)}')
+    
+    context = {
+        'connection': connection
+    }
+    return render(request, 'tickets/odoo_connection_backup.html', context)
+
+
+@login_required
+def odoo_rpc_export_odoo_data(request, table_id):
+    """Exportar datos de Odoo a Excel"""
+    from .models import OdooRPCTable
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from django.http import HttpResponse
+    
+    table = get_object_or_404(OdooRPCTable, pk=table_id, connection__created_by=request.user)
+    
+    # Obtener resultados de sesión
+    session_key = f'odoo_search_results_{table.id}'
+    search_data = request.session.get(session_key, {})
+    
+    if not search_data:
+        messages.warning(request, 'No hay datos para exportar. Realiza una búsqueda primero.')
+        return redirect('odoo_rpc_search_odoo', table_id=table.id)
+    
+    records = search_data.get('records', [])
+    fields = table.rpc_fields.all().order_by('order', 'name')
+    
+    if not records or not fields:
+        messages.error(request, 'No hay datos o campos para exportar')
+        return redirect('odoo_rpc_search_results', table_id=table.id)
+    
+    # Crear libro de Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Datos Odoo"
+    
+    # Estilos
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    center_alignment = Alignment(horizontal='center', vertical='center')
+    
+    # Headers
+    for idx, field in enumerate(fields, start=1):
+        cell = ws.cell(row=1, column=idx)
+        cell.value = field.name
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center_alignment
+        ws.column_dimensions[cell.column_letter].width = 20
+    
+    # Datos
+    for row_idx, record in enumerate(records, start=2):
+        for col_idx, field in enumerate(fields, start=1):
+            cell = ws.cell(row=row_idx, column=col_idx)
+            value = record.get(field.odoo_field_name, '')
+            
+            # Manejar valores especiales
+            if isinstance(value, (list, tuple)) and len(value) == 2:
+                # Many2one: [id, name]
+                value = value[1] if len(value) > 1 else value[0]
+            elif isinstance(value, list):
+                # One2many, Many2many: [ids]
+                value = ', '.join(map(str, value))
+            elif value is False:
+                value = ''
+            
+            cell.value = value
+    
+    # Guardar archivo
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    filename = f"datos_odoo_{table.odoo_model.replace('.', '_')}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    wb.save(response)
+    
+    messages.success(request, f'Se exportaron {len(records)} registros a Excel')
+    
+    return response

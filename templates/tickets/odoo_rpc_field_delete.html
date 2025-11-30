@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Eliminar Campo - Ticket System{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="col-lg-6 offset-lg-3">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white"><h4 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Eliminar Campo</h4></div>
+            <div class="card-body">
+                <p>¿Eliminar el campo <strong>{{ field.name }}</strong> (<code>{{ field.odoo_field_name }}</code>)?</p>
+                <div class="alert alert-warning"><i class="bi bi-info-circle"></i> Esta acción no se puede deshacer.</div>
+                <form method="post">{% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'odoo_rpc_table_detail' table.id %}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Cancelar</a>
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Eliminar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

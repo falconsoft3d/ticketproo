@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% block title %}Archivos Importados - {{ table.name }} - Ticket System{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="col-lg-10 offset-lg-1">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">Conexiones</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'odoo_rpc_table_list' table.connection.id %}">{{ table.connection.name }}</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'odoo_rpc_table_detail' table.id %}">{{ table.name }}</a></li>
+                <li class="breadcrumb-item active">Archivos Importados</li>
+            </ol>
+        </nav>
+
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-file-earmark-excel"></i> Archivos Importados - {{ table.name }}
+                </h4>
+            </div>
+            <div class="card-body">
+                {% if import_files %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Archivo</th>
+                                <th>Fecha</th>
+                                <th>Usuario</th>
+                                <th>Importados</th>
+                                <th>Exitosos</th>
+                                <th>Fallidos</th>
+                                <th>Tasa de Éxito</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for file in import_files %}
+                            <tr>
+                                <td><strong>#{{ file.id }}</strong></td>
+                                <td>
+                                    <i class="bi bi-file-earmark-excel text-success"></i>
+                                    {{ file.original_filename }}
+                                </td>
+                                <td>
+                                    <small>
+                                        {{ file.uploaded_at|date:"d/m/Y H:i" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if file.uploaded_by %}
+                                        <span class="badge bg-info">{{ file.uploaded_by.username }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Público</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ file.records_imported }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">{{ file.records_success }}</span>
+                                </td>
+                                <td>
+                                    {% if file.records_failed > 0 %}
+                                        <span class="badge bg-danger">{{ file.records_failed }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">0</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if file.records_imported > 0 %}
+                                        {% widthratio file.records_success file.records_imported 100 as success_rate %}
+                                        {% if success_rate >= 80 %}
+                                            <span class="badge bg-success">{{ success_rate }}%</span>
+                                        {% elif success_rate >= 50 %}
+                                            <span class="badge bg-warning">{{ success_rate }}%</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">{{ success_rate }}%</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-secondary">0%</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ file.file.url }}" class="btn btn-sm btn-success" download>
+                                        <i class="bi bi-download"></i> Descargar
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Resumen -->
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h4 class="mb-0">{{ import_files.count }}</h4>
+                                <small class="text-muted">Total de Archivos</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h4 class="mb-0">
+                                    {% with total=0 %}
+                                        {% for file in import_files %}
+                                            {% with total=total|add:file.records_imported %}
+                                            {% endwith %}
+                                        {% endfor %}
+                                        {{ total }}
+                                    {% endwith %}
+                                </h4>
+                                <small class="text-muted">Registros Totales</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h4 class="mb-0">
+                                    {% with total=0 %}
+                                        {% for file in import_files %}
+                                            {% with total=total|add:file.records_success %}
+                                            {% endwith %}
+                                        {% endfor %}
+                                        {{ total }}
+                                    {% endwith %}
+                                </h4>
+                                <small>Exitosos</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body text-center">
+                                <h4 class="mb-0">
+                                    {% with total=0 %}
+                                        {% for file in import_files %}
+                                            {% with total=total|add:file.records_failed %}
+                                            {% endwith %}
+                                        {% endfor %}
+                                        {{ total }}
+                                    {% endwith %}
+                                </h4>
+                                <small>Fallidos</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay archivos importados aún.
+                    <a href="{% url 'odoo_rpc_table_import_data' table.id %}">Importar primer archivo</a>
+                </div>
+                {% endif %}
+
+                <div class="mt-3">
+                    <a href="{% url 'odoo_rpc_table_detail' table.id %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver al Detalle
+                    </a>
+                    <a href="{% url 'odoo_rpc_table_import_data' table.id %}" class="btn btn-primary">
+                        <i class="bi bi-upload"></i> Importar Nuevo Archivo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

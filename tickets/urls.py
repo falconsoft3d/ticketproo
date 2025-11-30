@@ -1526,5 +1526,95 @@ urlpatterns += [
     path('knowledge-base/<int:pk>/edit/', views.knowledge_base_edit, name='knowledge_base_edit'),
     path('knowledge-base/<int:pk>/delete/', views.knowledge_base_delete, name='knowledge_base_delete'),
     path('knowledge-base/search/', views.knowledge_base_search, name='knowledge_base_search'),
+    
+    # Traducciones
+    path('translations/', views.translation_tool, name='translation_tool'),
+    path('translations/list/', views.translation_list, name='translation_list'),
+    path('translations/<int:pk>/delete/', views.translation_delete, name='translation_delete'),
+    path('translations/quick-api/', views.translation_quick_api, name='translation_quick_api'),
+    path('translations/recent-api/', views.translation_recent_api, name='translation_recent_api'),
+    
+    # URLs Manager API
+    path('urls/search-api/', views.url_manager_search_api, name='url_manager_search_api'),
+    
+    # SQL Queries
+    path('sql-queries/', views.sql_query_tool, name='sql_query_tool'),
+    path('sql-queries/list/', views.sql_query_list, name='sql_query_list'),
+    path('sql-queries/<int:pk>/', views.sql_query_detail, name='sql_query_detail'),
+    path('sql-queries/<int:pk>/delete/', views.sql_query_delete, name='sql_query_delete'),
+    path('sql-queries/<int:pk>/toggle-favorite/', views.sql_query_toggle_favorite, name='sql_query_toggle_favorite'),
+    
+    # Odoo RPC - Connections
+    path('odoo-rpc/connections/', views.odoo_connection_list, name='odoo_connection_list'),
+    path('odoo-rpc/connections/create/', views.odoo_connection_create, name='odoo_connection_create'),
+    path('odoo-rpc/connections/<int:pk>/edit/', views.odoo_connection_edit, name='odoo_connection_edit'),
+    path('odoo-rpc/connections/<int:pk>/delete/', views.odoo_connection_delete, name='odoo_connection_delete'),
+    path('odoo-rpc/connections/<int:pk>/test/', views.odoo_connection_test, name='odoo_connection_test'),
+    path('odoo-rpc/connections/<int:pk>/backup/', views.odoo_connection_backup, name='odoo_connection_backup'),
+    
+    # Odoo RPC - Operations Portal
+    path('odoo-rpc/connections/<int:connection_id>/operations/', views.odoo_rpc_operations_portal, name='odoo_rpc_operations_portal'),
+    path('odoo-rpc/connections/<int:connection_id>/share-status/', views.odoo_rpc_share_status, name='odoo_rpc_share_status'),
+    path('odoo-rpc/connections/<int:connection_id>/generate-share-url/', views.odoo_rpc_generate_share_url, name='odoo_rpc_generate_share_url'),
+    path('odoo-rpc/connections/<int:connection_id>/search-records/', views.odoo_rpc_search_records, name='odoo_rpc_search_records'),
+    path('odoo-rpc/connections/<int:connection_id>/create-record/', views.odoo_rpc_create_record, name='odoo_rpc_create_record'),
+    path('odoo-rpc/connections/<int:connection_id>/update-record/', views.odoo_rpc_update_record, name='odoo_rpc_update_record'),
+    path('odoo-rpc/connections/<int:connection_id>/delete-record/', views.odoo_rpc_delete_record, name='odoo_rpc_delete_record'),
+    path('odoo-rpc/connections/<int:connection_id>/bulk-update/', views.odoo_rpc_bulk_update, name='odoo_rpc_bulk_update'),
+    
+    # Odoo RPC - Public Portal
+    path('public/odoo-operations/<str:token>/', views.odoo_rpc_public_operations, name='odoo_rpc_public_operations'),
+    path('public/odoo-operations/<str:token>/search-records/', views.odoo_rpc_public_search_records, name='odoo_rpc_public_search_records'),
+    path('public/odoo-operations/<str:token>/create-record/', views.odoo_rpc_public_create_record, name='odoo_rpc_public_create_record'),
+    path('public/odoo-operations/<str:token>/update-record/', views.odoo_rpc_public_update_record, name='odoo_rpc_public_update_record'),
+    path('public/odoo-operations/<str:token>/delete-record/', views.odoo_rpc_public_delete_record, name='odoo_rpc_public_delete_record'),
+    path('public/odoo-operations/<str:token>/bulk-update/', views.odoo_rpc_public_bulk_update, name='odoo_rpc_public_bulk_update'),
+    
+    # Odoo RPC - Tables
+    path('odoo-rpc/connections/<int:connection_id>/tables/', views.odoo_rpc_table_list, name='odoo_rpc_table_list'),
+    path('odoo-rpc/connections/<int:connection_id>/tables/create/', views.odoo_rpc_table_create, name='odoo_rpc_table_create'),
+    path('odoo-rpc/connections/<int:connection_id>/get-available-models/', views.odoo_rpc_get_available_models, name='odoo_rpc_get_available_models'),
+    path('odoo-rpc/tables/<int:pk>/', views.odoo_rpc_table_detail, name='odoo_rpc_table_detail'),
+    path('odoo-rpc/tables/<int:pk>/edit/', views.odoo_rpc_table_edit, name='odoo_rpc_table_edit'),
+    path('odoo-rpc/tables/<int:pk>/delete/', views.odoo_rpc_table_delete, name='odoo_rpc_table_delete'),
+    path('odoo-rpc/tables/<int:table_id>/export-template/', views.odoo_rpc_table_export_template, name='odoo_rpc_table_export_template'),
+    path('odoo-rpc/tables/<int:table_id>/import-data/', views.odoo_rpc_table_import_data, name='odoo_rpc_table_import_data'),
+    path('odoo-rpc/tables/<int:table_id>/execute/', views.odoo_rpc_data_execute, name='odoo_rpc_data_execute'),
+    path('odoo-rpc/tables/<int:table_id>/data/', views.odoo_rpc_data_list, name='odoo_rpc_data_list'),
+    
+    # Odoo RPC - Fields
+    path('odoo-rpc/tables/<int:table_id>/fields/create/', views.odoo_rpc_field_create, name='odoo_rpc_field_create'),
+    path('odoo-rpc/fields/<int:pk>/edit/', views.odoo_rpc_field_edit, name='odoo_rpc_field_edit'),
+    path('odoo-rpc/fields/<int:pk>/delete/', views.odoo_rpc_field_delete, name='odoo_rpc_field_delete'),
+    
+    # Odoo RPC - Search and Export from Odoo
+    path('odoo-rpc/tables/<int:table_id>/search-odoo/', views.odoo_rpc_search_odoo, name='odoo_rpc_search_odoo'),
+    path('odoo-rpc/tables/<int:table_id>/search-results/', views.odoo_rpc_search_results, name='odoo_rpc_search_results'),
+    path('odoo-rpc/tables/<int:table_id>/export-odoo-data/', views.odoo_rpc_export_odoo_data, name='odoo_rpc_export_odoo_data'),
+    
+    # Odoo RPC - Local Data Management
+    path('odoo-rpc/tables/<int:table_id>/data/', views.odoo_rpc_data_list, name='odoo_rpc_data_list'),
+    path('odoo-rpc/tables/<int:table_id>/data/export-all/', views.odoo_rpc_data_export_all, name='odoo_rpc_data_export_all'),
+    path('odoo-rpc/tables/<int:table_id>/import-files/', views.odoo_rpc_import_files_list, name='odoo_rpc_import_files_list'),
+    
+    # Odoo RPC - Public URL Management
+    path('odoo-rpc/tables/<int:table_id>/public-url/', views.odoo_rpc_manage_public_url, name='odoo_rpc_manage_public_url'),
+    
+    # Odoo RPC - Public Form Management
+    path('odoo-rpc/tables/<int:table_id>/form-status/', views.odoo_rpc_form_status, name='odoo_rpc_form_status'),
+    path('odoo-rpc/tables/<int:table_id>/generate-form-url/', views.odoo_rpc_generate_form_url, name='odoo_rpc_generate_form_url'),
+    
+    # Odoo RPC - Public Portal Management (conexión completa)
+    path('odoo-rpc/connections/<int:connection_id>/public-portal/', views.odoo_connection_manage_portal, name='odoo_connection_manage_portal'),
+    
+    # Odoo RPC - Public Import (sin login requerido)
+    path('public/odoo-import/<str:token>/', views.odoo_rpc_public_import, name='odoo_rpc_public_import'),
+    
+    # Odoo RPC - Public Form (sin login requerido)
+    path('public/odoo-form/<str:token>/', views.odoo_rpc_public_form, name='odoo_rpc_public_form'),
+    
+    # Odoo RPC - Public Portal (sin login requerido)
+    path('public/odoo-portal/<str:token>/', views.odoo_rpc_public_portal, name='odoo_rpc_public_portal'),
+    path('public/odoo-portal/<str:token>/table/<int:table_id>/', views.odoo_rpc_public_portal_table, name='odoo_rpc_public_portal_table'),
 ]
 

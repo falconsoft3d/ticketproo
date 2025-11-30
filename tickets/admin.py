@@ -28,7 +28,8 @@ from .models import (
     DynamicTable, DynamicTableField, DynamicTableRecord, SavedApiRequest, PublicAIMessageShare,
     FunctionalRequirementDocument, FunctionalRequirement, FunctionalRequirementDocumentView,
     FunctionalRequirementComment, AccessGroup, AccessLink, TaskPlan, TaskPlanDay, TaskPlanItem,
-    Checklist, ChecklistItem, Transaction, KnowledgeBase
+    Checklist, ChecklistItem, Transaction, KnowledgeBase, Translation, SQLQuery,
+    OdooConnection, OdooRPCTable, OdooRPCField, OdooRPCData, OdooRPCImportFile
 )
 
 # Configuración del sitio de administración
@@ -6431,3 +6432,210 @@ class KnowledgeBaseAdmin(admin.ModelAdmin):
             return format_html('<span class="badge badge-success">Activo</span>')
         return format_html('<span class="badge badge-secondary">Inactivo</span>')
     status_badge.short_description = 'Estado'
+
+
+@admin.register(Translation)
+class TranslationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'language_badge', 'source_preview', 'translation_preview', 'created_by', 'created_at')
+    list_filter = ('source_language', 'target_language', 'created_at')
+    search_fields = ('source_text', 'translated_text', 'created_by__username')
+    readonly_fields = ('created_at',)
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Idiomas', {
+            'fields': ('source_language', 'target_language')
+        }),
+        ('Textos', {
+            'fields': ('source_text', 'translated_text')
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_by', 'created_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def language_badge(self, obj):
+        return format_html(
+            '<span class="badge badge-primary">{}</span> <i class="bi bi-arrow-right"></i> <span class="badge badge-success">{}</span>',
+            obj.get_source_language_display(),
+            obj.get_target_language_display()
+        )
+    language_badge.short_description = 'Idiomas'
+    
+    def source_preview(self, obj):
+        text = obj.source_text[:100] + '...' if len(obj.source_text) > 100 else obj.source_text
+        return text
+    source_preview.short_description = 'Texto Original'
+    
+    def translation_preview(self, obj):
+        text = obj.translated_text[:100] + '...' if len(obj.translated_text) > 100 else obj.translated_text
+        return text
+    translation_preview.short_description = 'Traducción'
+
+
+@admin.register(SQLQuery)
+class SQLQueryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'query_preview', 'row_count', 'execution_time', 'is_favorite', 'created_by', 'created_at', 'last_executed_at')
+    list_filter = ('is_favorite', 'created_at', 'last_executed_at')
+    search_fields = ('name', 'query', 'created_by__username')
+    readonly_fields = ('created_at', 'last_executed_at', 'row_count', 'execution_time')
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('name', 'is_favorite')
+        }),
+        ('Consulta', {
+            'fields': ('query',)
+        }),
+        ('Resultado', {
+            'fields': ('result', 'row_count', 'execution_time'),
+            'classes': ('collapse',)
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_by', 'created_at', 'last_executed_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def query_preview(self, obj):
+        text = obj.query[:100] + '...' if len(obj.query) > 100 else obj.query
+        return format_html('<code>{}</code>', text)
+    query_preview.short_description = 'Consulta'
+
+
+# ============================================================================
+# ODOO RPC ADMINS
+# ============================================================================
+
+class OdooRPCFieldInline(admin.TabularInline):
+    model = OdooRPCField
+    extra = 0
+    fields = ['name', 'odoo_field_name', 'field_type', 'is_required', 'order']
+    ordering = ['order', 'name']
+
+
+@admin.register(OdooConnection)
+class OdooConnectionAdmin(admin.ModelAdmin):
+    list_display = ['name', 'database', 'url', 'port', 'connection_status', 'is_active', 'created_by', 'created_at']
+    list_filter = ['connection_status', 'is_active', 'created_at']
+    search_fields = ['name', 'database', 'url', 'username']
+    readonly_fields = ['created_at', 'last_tested_at', 'connection_status']
+    
+    fieldsets = (
+        ('Información General', {
+            'fields': ('name', 'is_active', 'created_by')
+        }),
+        ('Configuración de Conexión', {
+            'fields': ('url', 'port', 'database', 'username', 'password')
+        }),
+        ('Estado', {
+            'fields': ('connection_status', 'last_tested_at', 'created_at')
+        }),
+    )
+
+
+@admin.register(OdooRPCTable)
+class OdooRPCTableAdmin(admin.ModelAdmin):
+    list_display = ['name', 'connection', 'odoo_model', 'is_active', 'created_at']
+    list_filter = ['is_active', 'created_at', 'connection']
+    search_fields = ['name', 'odoo_model', 'description']
+    readonly_fields = ['created_at']
+    inlines = [OdooRPCFieldInline]
+    
+    fieldsets = (
+        ('Información General', {
+            'fields': ('connection', 'name', 'odoo_model', 'is_active')
+        }),
+        ('Detalles', {
+            'fields': ('description', 'created_at')
+        }),
+    )
+
+
+@admin.register(OdooRPCField)
+class OdooRPCFieldAdmin(admin.ModelAdmin):
+    list_display = ['name', 'table', 'odoo_field_name', 'field_type', 'is_required', 'order']
+    list_filter = ['field_type', 'is_required', 'table']
+    search_fields = ['name', 'odoo_field_name', 'help_text']
+    ordering = ['table', 'order', 'name']
+
+
+@admin.register(OdooRPCData)
+class OdooRPCDataAdmin(admin.ModelAdmin):
+    list_display = ['id', 'table', 'status', 'odoo_id', 'created_at', 'processed_at', 'data_preview']
+    list_filter = ['status', 'created_at', 'processed_at', 'table']
+    search_fields = ['odoo_id', 'error_message']
+    readonly_fields = ['created_at', 'processed_at', 'data_display']
+    
+    fieldsets = (
+        ('Información General', {
+            'fields': ('table', 'status', 'odoo_id')
+        }),
+        ('Datos', {
+            'fields': ('data_display',)
+        }),
+        ('Errores', {
+            'fields': ('error_message',)
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'processed_at')
+        }),
+    )
+    
+    def data_preview(self, obj):
+        import json
+        text = json.dumps(obj.data, ensure_ascii=False)[:100]
+        return text + '...' if len(text) >= 100 else text
+    data_preview.short_description = 'Datos (preview)'
+    
+    def data_display(self, obj):
+        import json
+        formatted = json.dumps(obj.data, indent=2, ensure_ascii=False)
+        return format_html('<pre>{}</pre>', formatted)
+    data_display.short_description = 'Datos Completos'
+
+
+@admin.register(OdooRPCImportFile)
+class OdooRPCImportFileAdmin(admin.ModelAdmin):
+    list_display = ['id', 'table', 'original_filename', 'uploaded_by', 'uploaded_at', 'records_imported', 'records_success', 'records_failed', 'success_rate']
+    list_filter = ['uploaded_at', 'table', 'uploaded_by']
+    search_fields = ['original_filename']
+    readonly_fields = ['uploaded_at', 'file_link', 'success_rate_display']
+    
+    fieldsets = (
+        ('Información del Archivo', {
+            'fields': ('table', 'file', 'file_link', 'original_filename', 'uploaded_by')
+        }),
+        ('Estadísticas de Importación', {
+            'fields': ('records_imported', 'records_success', 'records_failed', 'success_rate_display')
+        }),
+        ('Fechas', {
+            'fields': ('uploaded_at',)
+        }),
+    )
+    
+    def file_link(self, obj):
+        if obj.file:
+            return format_html('<a href="{}" target="_blank">Descargar archivo</a>', obj.file.url)
+        return '-'
+    file_link.short_description = 'Enlace al Archivo'
+    
+    def success_rate(self, obj):
+        if obj.records_imported > 0:
+            rate = (obj.records_success / obj.records_imported) * 100
+            return f'{rate:.1f}%'
+        return '0%'
+    success_rate.short_description = 'Tasa de Éxito'
+    
+    def success_rate_display(self, obj):
+        if obj.records_imported > 0:
+            rate = (obj.records_success / obj.records_imported) * 100
+            color = 'green' if rate >= 80 else 'orange' if rate >= 50 else 'red'
+            return format_html(
+                '<span style="color: {}; font-weight: bold;">{:.1f}%</span>',
+                color, rate
+            )
+        return format_html('<span style="color: gray;">0%</span>')
+    success_rate_display.short_description = 'Tasa de Éxito'

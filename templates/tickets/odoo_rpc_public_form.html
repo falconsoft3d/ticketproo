@@ -1,0 +1,160 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}{{ table.name }} - Formulario Público{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-file-earmark-text"></i> {{ table.name }}
+                    </h4>
+                    <small>Formulario de Creación de Registros</small>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    {% if table.description %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> {{ table.description }}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if fields %}
+                        <div class="row">
+                            {% for field in fields %}
+                            <div class="col-md-{% if field.field_type == 'text' %}12{% else %}6{% endif %} mb-3">
+                                <label for="field_{{ field.id }}" class="form-label">
+                                    {{ field.name }}
+                                    {% if field.is_required %}
+                                    <span class="text-danger">*</span>
+                                    {% endif %}
+                                </label>
+                                
+                                {% if field.field_type == 'text' %}
+                                    <textarea 
+                                        class="form-control" 
+                                        id="field_{{ field.id }}" 
+                                        name="field_{{ field.id }}"
+                                        rows="3"
+                                        {% if field.is_required %}required{% endif %}
+                                        placeholder="{{ field.description|default:'' }}"
+                                    ></textarea>
+                                {% elif field.field_type == 'boolean' %}
+                                    <div class="form-check">
+                                        <input 
+                                            class="form-check-input" 
+                                            type="checkbox" 
+                                            id="field_{{ field.id }}" 
+                                            name="field_{{ field.id }}"
+                                            value="true"
+                                        >
+                                        <label class="form-check-label" for="field_{{ field.id }}">
+                                            {{ field.description|default:'Sí/No' }}
+                                        </label>
+                                    </div>
+                                {% elif field.field_type == 'date' %}
+                                    <input 
+                                        type="date" 
+                                        class="form-control" 
+                                        id="field_{{ field.id }}" 
+                                        name="field_{{ field.id }}"
+                                        {% if field.is_required %}required{% endif %}
+                                    >
+                                {% elif field.field_type == 'datetime' %}
+                                    <input 
+                                        type="datetime-local" 
+                                        class="form-control" 
+                                        id="field_{{ field.id }}" 
+                                        name="field_{{ field.id }}"
+                                        {% if field.is_required %}required{% endif %}
+                                    >
+                                {% elif field.field_type == 'integer' %}
+                                    <input 
+                                        type="number" 
+                                        step="1"
+                                        class="form-control" 
+                                        id="field_{{ field.id }}" 
+                                        name="field_{{ field.id }}"
+                                        {% if field.is_required %}required{% endif %}
+                                        placeholder="{{ field.description|default:'' }}"
+                                    >
+                                {% elif field.field_type == 'float' %}
+                                    <input 
+                                        type="number" 
+                                        step="0.01"
+                                        class="form-control" 
+                                        id="field_{{ field.id }}" 
+                                        name="field_{{ field.id }}"
+                                        {% if field.is_required %}required{% endif %}
+                                        placeholder="{{ field.description|default:'' }}"
+                                    >
+                                {% else %}
+                                    <input 
+                                        type="text" 
+                                        class="form-control" 
+                                        id="field_{{ field.id }}" 
+                                        name="field_{{ field.id }}"
+                                        {% if field.is_required %}required{% endif %}
+                                        placeholder="{{ field.description|default:'' }}"
+                                    >
+                                {% endif %}
+                                
+                                {% if field.description and field.field_type != 'boolean' %}
+                                <small class="text-muted">{{ field.description }}</small>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle"></i> Crear Registro
+                            </button>
+                        </div>
+                        
+                        <div class="text-muted text-center mt-3">
+                            <small><i class="bi bi-lock"></i> Formulario seguro - Todos los datos se envían directamente a Odoo</small>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> Este formulario aún no tiene campos configurados.
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validación de formulario Bootstrap
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+</script>
+{% endblock %}

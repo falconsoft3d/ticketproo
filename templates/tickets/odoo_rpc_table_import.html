@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% block title %}Importar Datos - {{ table.name }} - Ticket System{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="col-lg-10 offset-lg-1">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">Conexiones</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'odoo_rpc_table_list' table.connection.id %}">{{ table.connection.name }}</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'odoo_rpc_table_detail' table.id %}">{{ table.name }}</a></li>
+                <li class="breadcrumb-item active">Importar</li>
+            </ol>
+        </nav>
+
+        {% if show_results and checklist %}
+        <!-- Checklist de Validación -->
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-list-check"></i> Checklist de Validación e Importación</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <!-- 1. Archivo Recibido -->
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                {% if checklist.file_received %}
+                                    <i class="bi bi-check-circle-fill text-success fs-3"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger fs-3"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">1. Archivo Recibido</h6>
+                                <p class="mb-0 text-muted">
+                                    {% if checklist.file_received %}
+                                        <span class="badge bg-success">OK</span> El archivo fue recibido correctamente
+                                    {% else %}
+                                        <span class="badge bg-danger">ERROR</span> No se recibió el archivo
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Formato Válido -->
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                {% if checklist.format_valid %}
+                                    <i class="bi bi-check-circle-fill text-success fs-3"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger fs-3"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">2. Formato Válido</h6>
+                                <p class="mb-0">
+                                    {% if checklist.format_valid %}
+                                        <span class="badge bg-success">OK</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">ERROR</span>
+                                    {% endif %}
+                                    {{ checklist.format_message }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Registros Válidos -->
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                {% if checklist.records_valid %}
+                                    <i class="bi bi-check-circle-fill text-success fs-3"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger fs-3"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">3. Registros Válidos</h6>
+                                <p class="mb-0">
+                                    {% if checklist.records_valid %}
+                                        <span class="badge bg-success">OK</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">ERROR</span>
+                                    {% endif %}
+                                    {{ checklist.records_message }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Importación -->
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                {% if checklist.import_success %}
+                                    <i class="bi bi-check-circle-fill text-success fs-3"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger fs-3"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">4. Importación a Base de Datos</h6>
+                                <p class="mb-0">
+                                    {% if checklist.import_success %}
+                                        <span class="badge bg-success">OK</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">ERROR</span>
+                                    {% endif %}
+                                    {{ checklist.import_message }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. Envío a Odoo -->
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                {% if checklist.odoo_success %}
+                                    <i class="bi bi-check-circle-fill text-success fs-3"></i>
+                                {% elif checklist.import_success %}
+                                    <i class="bi bi-x-circle-fill text-danger fs-3"></i>
+                                {% else %}
+                                    <i class="bi bi-dash-circle-fill text-secondary fs-3"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">5. Envío a Odoo</h6>
+                                <p class="mb-0">
+                                    {% if checklist.odoo_success %}
+                                        <span class="badge bg-success">OK</span>
+                                    {% elif checklist.import_success %}
+                                        <span class="badge bg-danger">ERROR</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">PENDIENTE</span>
+                                    {% endif %}
+                                    {{ checklist.odoo_message|default:"No se ejecutó" }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if import_stats.error_details %}
+                <div class="alert alert-warning mt-3">
+                    <h6><i class="bi bi-exclamation-triangle"></i> Detalles de Errores (primeros 10):</h6>
+                    <ul class="mb-0">
+                        {% for error in import_stats.error_details %}
+                        <li><small>{{ error }}</small></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if import_stats.imported_count > 0 %}
+                <div class="alert alert-info mt-3">
+                    <h6><i class="bi bi-info-circle"></i> Resumen:</h6>
+                    <ul class="mb-0">
+                        <li><strong>Importados:</strong> {{ import_stats.imported_count }}</li>
+                        <li><strong>Exitosos en Odoo:</strong> {{ import_stats.success_count }}</li>
+                        <li><strong>Fallidos en Odoo:</strong> {{ import_stats.failed_count }}</li>
+                    </ul>
+                </div>
+                {% endif %}
+
+                <div class="d-flex justify-content-between mt-3">
+                    <a href="{% url 'odoo_rpc_table_detail' table.id %}" class="btn btn-success">
+                        <i class="bi bi-arrow-left"></i> Volver al Detalle
+                    </a>
+                    <button type="button" class="btn btn-primary" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise"></i> Importar Otro Archivo
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Formulario de Importación -->
+        <div class="card {% if show_results %}d-none{% endif %}">
+            <div class="card-header"><h4 class="mb-0"><i class="bi bi-upload"></i> Importar Datos desde Excel</h4></div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h5><i class="bi bi-info-circle"></i> Instrucciones:</h5>
+                    <ol>
+                        <li>Descarga la plantilla Excel desde el detalle de la tabla</li>
+                        <li>Completa los datos en el archivo Excel (comenzar en la fila 4)</li>
+                        <li>Sube el archivo aquí para importar</li>
+                        <li>Los datos se validarán automáticamente</li>
+                        <li>Se crearán automáticamente en Odoo</li>
+                    </ol>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header"><h6 class="mb-0">Campos Configurados ({{ fields.count }})</h6></div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr><th>Nombre</th><th>Campo Odoo</th><th>Tipo</th><th>Requerido</th></tr>
+                                </thead>
+                                <tbody>
+                                    {% for field in fields %}
+                                    <tr>
+                                        <td>{{ field.name }}</td>
+                                        <td><code>{{ field.odoo_field_name }}</code></td>
+                                        <td><span class="badge bg-secondary">{{ field.get_field_type_display }}</span></td>
+                                        <td>{% if field.is_required %}<span class="badge bg-danger">Sí</span>{% else %}-{% endif %}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="excel_file" class="form-label">Archivo Excel *</label>
+                        <input type="file" class="form-control" id="excel_file" name="excel_file" accept=".xlsx,.xls" required>
+                        <small class="form-text text-muted">Formatos: .xlsx, .xls</small>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'odoo_rpc_table_detail' table.id %}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Cancelar</a>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-upload"></i> Validar e Importar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

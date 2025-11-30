@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% block title %}Backup Base de Datos - {{ connection.name }} - Ticket System{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="col-lg-6 offset-lg-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">Conexiones</a></li>
+                <li class="breadcrumb-item active">Backup de {{ connection.name }}</li>
+            </ol>
+        </nav>
+
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0"><i class="bi bi-database-down"></i> Backup de Base de Datos</h4>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
+                <div class="alert alert-info">
+                    <h5><i class="bi bi-info-circle"></i> Información:</h5>
+                    <ul class="mb-0">
+                        <li><strong>Conexión:</strong> {{ connection.name }}</li>
+                        <li><strong>Base de datos:</strong> <code>{{ connection.database }}</code></li>
+                        <li><strong>Servidor:</strong> {{ connection.url }}{% if connection.port %}:{{ connection.port }}{% endif %}</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Importante:</strong> Necesitas el <strong>master password</strong> de Odoo para crear un backup de la base de datos.
+                    Este es diferente a la contraseña de usuario.
+                </div>
+
+                <form method="post" id="backupForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="master_password" class="form-label">
+                            <i class="bi bi-key-fill"></i> Master Password de Odoo
+                        </label>
+                        <input type="password" class="form-control" id="master_password" name="master_password" 
+                               required placeholder="Ingresa el master password">
+                        <small class="form-text text-muted">
+                            Este password se encuentra en el archivo de configuración de Odoo (odoo.conf)
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="backup_format" class="form-label">
+                            <i class="bi bi-file-earmark-zip"></i> Formato del Backup
+                        </label>
+                        <select class="form-select" id="backup_format" name="backup_format">
+                            <option value="zip" selected>ZIP (Recomendado)</option>
+                            <option value="dump">SQL Dump</option>
+                        </select>
+                        <small class="form-text text-muted">
+                            El formato ZIP incluye la base de datos y los archivos adjuntos
+                        </small>
+                    </div>
+
+                    <!-- Progress Container -->
+                    <div id="progressContainer" class="mb-3" style="display: none;">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="bi bi-clock-history"></i> Progreso del Backup</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="progress mb-3">
+                                    <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                         role="progressbar" style="width: 0%">0%</div>
+                                </div>
+                                <div id="progressLog" class="border rounded p-3" 
+                                     style="max-height: 200px; overflow-y: auto; background: #f8f9fa; font-family: monospace; font-size: 0.9rem;">
+                                    <!-- Log messages will appear here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'odoo_connection_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-warning" id="backupBtn">
+                            <i class="bi bi-database-down"></i> Crear Backup
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-question-circle"></i> Ayuda</h6>
+            </div>
+            <div class="card-body">
+                <h6>¿Dónde encuentro el master password?</h6>
+                <p class="mb-2">El master password se encuentra en el archivo de configuración de Odoo:</p>
+                <ul>
+                    <li><code>/etc/odoo/odoo.conf</code> (Linux)</li>
+                    <li><code>C:\Program Files\Odoo\server\odoo.conf</code> (Windows)</li>
+                </ul>
+                <p class="mb-2">Busca la línea:</p>
+                <pre class="bg-dark text-light p-2 rounded"><code>admin_passwd = tu_master_password</code></pre>
+                
+                <h6 class="mt-3">Formatos de backup:</h6>
+                <ul class="mb-0">
+                    <li><strong>ZIP:</strong> Incluye base de datos y filestore (archivos adjuntos). Recomendado para backup completo.</li>
+                    <li><strong>SQL Dump:</strong> Solo la base de datos PostgreSQL. Más rápido pero sin archivos adjuntos.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let logMessages = [];
+
+function addLogMessage(message, type = 'info') {
+    const timestamp = new Date().toLocaleTimeString('es-ES');
+    const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : '⏳';
+    const color = type === 'error' ? 'text-danger' : type === 'success' ? 'text-success' : 'text-info';
+    
+    const logEntry = `<div class="${color} mb-1">[${timestamp}] ${icon} ${message}</div>`;
+    logMessages.push(logEntry);
+    
+    const logContainer = document.getElementById('progressLog');
+    logContainer.innerHTML = logMessages.join('');
+    logContainer.scrollTop = logContainer.scrollHeight;
+}
+
+function updateProgress(percent, message) {
+    const progressBar = document.getElementById('progressBar');
+    progressBar.style.width = percent + '%';
+    progressBar.textContent = Math.round(percent) + '%';
+    if (message) {
+        addLogMessage(message);
+    }
+}
+
+document.getElementById('backupForm').addEventListener('submit', function(e) {
+    const masterPassword = document.getElementById('master_password').value;
+    
+    if (!masterPassword) {
+        alert('Debes ingresar el master password');
+        e.preventDefault();
+        return false;
+    }
+    
+    // Mostrar progreso
+    const progressContainer = document.getElementById('progressContainer');
+    const btn = document.getElementById('backupBtn');
+    
+    progressContainer.style.display = 'block';
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creando backup...';
+    btn.disabled = true;
+    
+    // Simular progreso
+    addLogMessage('Iniciando proceso de backup...');
+    updateProgress(10);
+    
+    setTimeout(() => {
+        addLogMessage('Conectando con servidor Odoo...');
+        updateProgress(25);
+    }, 200);
+    
+    setTimeout(() => {
+        addLogMessage('Verificando master password...');
+        updateProgress(40);
+    }, 400);
+    
+    setTimeout(() => {
+        addLogMessage('Creando backup de la base de datos...');
+        updateProgress(60);
+    }, 600);
+    
+    setTimeout(() => {
+        addLogMessage('Comprimiendo archivos...');
+        updateProgress(80);
+    }, 800);
+    
+    setTimeout(() => {
+        addLogMessage('Preparando descarga...');
+        updateProgress(95);
+    }, 1000);
+});
+</script>
+{% endblock %}
