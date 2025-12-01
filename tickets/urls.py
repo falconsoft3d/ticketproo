@@ -262,6 +262,7 @@ urlpatterns = [
     path('chatbots/', views.chatbot_list, name='chatbot_list'),
     path('chatbots/create/', views.chatbot_create, name='chatbot_create'),
     path('chatbots/<int:pk>/', views.chatbot_detail, name='chatbot_detail'),
+    path('chatbots/<int:pk>/stats-api/', views.chatbot_stats_api, name='chatbot_stats_api'),
     path('chatbots/<int:pk>/edit/', views.chatbot_edit, name='chatbot_edit'),
     path('chatbots/<int:pk>/delete/', views.chatbot_delete, name='chatbot_delete'),
     path('chatbots/<int:pk>/conversations/', views.chatbot_conversations, name='chatbot_conversations'),

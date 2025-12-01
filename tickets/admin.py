@@ -30,7 +30,7 @@ from .models import (
     FunctionalRequirementComment, AccessGroup, AccessLink, TaskPlan, TaskPlanDay, TaskPlanItem,
     Checklist, ChecklistItem, Transaction, KnowledgeBase, Translation, SQLQuery,
     OdooConnection, OdooRPCTable, OdooRPCField, OdooRPCData, OdooRPCImportFile,
-    Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage
+    Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage, ChatbotClick
 )
 
 # Configuración del sitio de administración
@@ -6706,3 +6706,18 @@ class ChatbotMessageAdmin(admin.ModelAdmin):
     def message_preview(self, obj):
         return obj.message[:50] + '...' if len(obj.message) > 50 else obj.message
     message_preview.short_description = 'Mensaje'
+
+
+@admin.register(ChatbotClick)
+class ChatbotClickAdmin(admin.ModelAdmin):
+    list_display = ('chatbot', 'clicked_at', 'ip_address', 'user_agent_preview')
+    list_filter = ('chatbot', 'clicked_at')
+    search_fields = ('ip_address', 'user_agent')
+    readonly_fields = ('clicked_at',)
+    date_hierarchy = 'clicked_at'
+    
+    def user_agent_preview(self, obj):
+        if obj.user_agent:
+            return obj.user_agent[:50] + '...' if len(obj.user_agent) > 50 else obj.user_agent
+        return '-'
+    user_agent_preview.short_description = 'Navegador'

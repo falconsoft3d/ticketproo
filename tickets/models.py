@@ -21776,6 +21776,45 @@ class ChatbotMessage(models.Model):
         return f"{sender}: {self.message[:50]}..."
 
 
+class ChatbotClick(models.Model):
+    """Registro de clicks en el botón del chatbot"""
+    
+    chatbot = models.ForeignKey(
+        Chatbot,
+        on_delete=models.CASCADE,
+        related_name='clicks',
+        verbose_name='Chatbot'
+    )
+    
+    clicked_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha del click'
+    )
+    
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    
+    user_agent = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name='User Agent'
+    )
+    
+    class Meta:
+        ordering = ['-clicked_at']
+        verbose_name = 'Click del Chatbot'
+        verbose_name_plural = 'Clicks del Chatbot'
+        indexes = [
+            models.Index(fields=['chatbot', '-clicked_at']),
+        ]
+    
+    def __str__(self):
+        return f"Click en {self.chatbot.title} - {self.clicked_at.strftime('%Y-%m-%d %H:%M')}"
+
+
 
 
 

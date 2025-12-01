@@ -49826,6 +49826,81 @@ def chatbot_detail(request, pk):
 
 
 @login_required
+def chatbot_stats_api(request, pk):
+    """API para obtener estadísticas del chatbot por día"""
+    from .models import Chatbot, ChatbotConversation, ChatbotMessage, ChatbotClick
+    from django.db.models import Count
+    from django.db.models.functions import TruncDate
+    from datetime import datetime, timedelta
+    import json
+    
+    chatbot = get_object_or_404(Chatbot, pk=pk)
+    
+    # Obtener últimos 30 días
+    end_date = datetime.now().date()
+    start_date = end_date - timedelta(days=29)
+    
+    # Consultar mensajes agrupados por fecha
+    messages_by_date = ChatbotMessage.objects.filter(
+        conversation__chatbot=chatbot,
+        timestamp__date__gte=start_date,
+        timestamp__date__lte=end_date
+    ).annotate(
+        date=TruncDate('timestamp')
+    ).values('date').annotate(
+        count=Count('id')
+    ).order_by('date')
+    
+    # Consultar clicks agrupados por fecha
+    clicks_by_date = ChatbotClick.objects.filter(
+        chatbot=chatbot,
+        clicked_at__date__gte=start_date,
+        clicked_at__date__lte=end_date
+    ).annotate(
+        date=TruncDate('clicked_at')
+    ).values('date').annotate(
+        count=Count('id')
+    ).order_by('date')
+    
+    # Crear diccionario con todas las fechas
+    date_dict = {}
+    current_date = start_date
+    while current_date <= end_date:
+        date_dict[current_date.isoformat()] = {'messages': 0, 'clicks': 0}
+        current_date += timedelta(days=1)
+    
+    # Rellenar con datos de mensajes
+    for item in messages_by_date:
+        date_str = item['date'].isoformat()
+        if date_str in date_dict:
+            date_dict[date_str]['messages'] = item['count']
+    
+    # Rellenar con datos de clicks
+    for item in clicks_by_date:
+        date_str = item['date'].isoformat()
+        if date_str in date_dict:
+            date_dict[date_str]['clicks'] = item['count']
+    
+    # Preparar datos para el gráfico
+    labels = []
+    messages = []
+    clicks = []
+    
+    for date_str in sorted(date_dict.keys()):
+        labels.append(date_str)
+        messages.append(date_dict[date_str]['messages'])
+        clicks.append(date_dict[date_str]['clicks'])
+    
+    data = {
+        'labels': labels,
+        'messages': messages,
+        'clicks': clicks
+    }
+    
+    return JsonResponse(data)
+
+
+@login_required
 def chatbot_conversations(request, pk):
     """Ver conversaciones del chatbot"""
     from .models import Chatbot, ChatbotConversation
@@ -50051,12 +50126,31 @@ def chatbot_unreviewed_conversations(request):
 @require_http_methods(["POST"])
 def chatbot_register_click(request, token):
     """Registrar click en el botón del chatbot"""
-    from .models import Chatbot
+    from .models import Chatbot, ChatbotClick
     
     try:
         chatbot = Chatbot.objects.get(script_token=token)
+        
+        # Obtener IP y User Agent
+        ip_address = request.META.get('HTTP_X_FORWARDED_FOR')
+        if ip_address:
+            ip_address = ip_address.split(',')[0]
+        else:
+            ip_address = request.META.get('REMOTE_ADDR')
+        
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        
+        # Crear registro del click
+        ChatbotClick.objects.create(
+            chatbot=chatbot,
+            ip_address=ip_address,
+            user_agent=user_agent
+        )
+        
+        # Actualizar contador total
         chatbot.total_clicks += 1
         chatbot.save(update_fields=['total_clicks'])
+        
         return JsonResponse({'success': True, 'total_clicks': chatbot.total_clicks})
     except Chatbot.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Chatbot no encontrado'}, status=404)

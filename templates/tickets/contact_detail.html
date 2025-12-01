@@ -718,9 +718,236 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Línea de Tiempo -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history"></i> Línea de Tiempo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline" style="max-height: 600px; overflow-y: auto;">
+                        {% comment %}
+                        Crear una lista combinada de todos los eventos ordenados por fecha
+                        {% endcomment %}
+                        
+                        {% comment %} Recopilar todos los eventos {% endcomment %}
+                        {% load tz %}
+                        
+                        <!-- Evento: Creación -->
+                        <div class="timeline-item" data-date="{{ contact.created_at|date:'U' }}">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-plus-circle text-primary me-1"></i>
+                                            Contacto Creado
+                                        </h6>
+                                        <p class="text-muted small mb-0">
+                                            {{ contact.created_at|date:"d/m/Y H:i" }}
+                                            {% if contact.created_by %}
+                                                por <strong>{{ contact.created_by.get_full_name|default:contact.created_by.username }}</strong>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actividades -->
+                        {% for activity in activities %}
+                        <div class="timeline-item" data-date="{{ activity.created_at|date:'U' }}">
+                            <div class="timeline-marker {% if activity.status == 'completed' %}bg-success{% elif activity.status == 'in_progress' %}bg-warning{% else %}bg-secondary{% endif %}"></div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            {% if activity.type == 'call' %}
+                                                <i class="bi bi-telephone text-primary me-1"></i>
+                                            {% elif activity.type == 'email' %}
+                                                <i class="bi bi-envelope text-info me-1"></i>
+                                            {% elif activity.type == 'meeting' %}
+                                                <i class="bi bi-calendar-event text-success me-1"></i>
+                                            {% elif activity.type == 'task' %}
+                                                <i class="bi bi-check-square text-warning me-1"></i>
+                                            {% else %}
+                                                <i class="bi bi-activity text-secondary me-1"></i>
+                                            {% endif %}
+                                            {{ activity.get_type_display }}
+                                            <span class="badge badge-sm 
+                                                {% if activity.status == 'completed' %}bg-success
+                                                {% elif activity.status == 'in_progress' %}bg-warning
+                                                {% elif activity.status == 'cancelled' %}bg-danger
+                                                {% else %}bg-secondary{% endif %}">
+                                                {{ activity.get_status_display }}
+                                            </span>
+                                        </h6>
+                                        <p class="mb-1 small">{{ activity.description|truncatewords:20 }}</p>
+                                        <p class="text-muted small mb-0">
+                                            {{ activity.created_at|date:"d/m/Y H:i" }}
+                                            {% if activity.created_by %}
+                                                por <strong>{{ activity.created_by.get_full_name|default:activity.created_by.username }}</strong>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <!-- Comentarios -->
+                        {% for comment in comments %}
+                        <div class="timeline-item" data-date="{{ comment.created_at|date:'U' }}">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-chat-left-text text-info me-1"></i>
+                                            Comentario Agregado
+                                        </h6>
+                                        <p class="mb-1 small">{{ comment.comment|truncatewords:20 }}</p>
+                                        <p class="text-muted small mb-0">
+                                            {{ comment.created_at|date:"d/m/Y H:i" }}
+                                            {% if comment.created_by %}
+                                                por <strong>{{ comment.created_by.get_full_name|default:comment.created_by.username }}</strong>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <!-- Última modificación -->
+                        {% if contact.updated_at != contact.created_at %}
+                        <div class="timeline-item" data-date="{{ contact.updated_at|date:'U' }}">
+                            <div class="timeline-marker bg-warning"></div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-pencil text-warning me-1"></i>
+                                            Contacto Modificado
+                                        </h6>
+                                        <p class="text-muted small mb-0">
+                                            {{ contact.updated_at|date:"d/m/Y H:i" }}
+                                            {% if contact.assigned_to %}
+                                                por <strong>{{ contact.assigned_to.get_full_name|default:contact.assigned_to.username }}</strong>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Adjuntos -->
+                        {% for attachment in attachments %}
+                        <div class="timeline-item" data-date="{{ attachment.uploaded_at|date:'U' }}">
+                            <div class="timeline-marker bg-purple" style="background-color: #6f42c1;"></div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-paperclip" style="color: #6f42c1;" class="me-1"></i>
+                                            Archivo Adjuntado
+                                        </h6>
+                                        <p class="mb-1 small">
+                                            <a href="{{ attachment.file.url }}" target="_blank">{{ attachment.file.name|truncatewords:10 }}</a>
+                                        </p>
+                                        <p class="text-muted small mb-0">
+                                            {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
+                                            {% if attachment.uploaded_by %}
+                                                por <strong>{{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}</strong>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        {% if not activities and not comments and not attachments %}
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                            <p class="mb-0 mt-2">No hay eventos adicionales registrados</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <script>
+            // Ordenar elementos de la línea de tiempo por fecha
+            document.addEventListener('DOMContentLoaded', function() {
+                const timeline = document.querySelector('.timeline');
+                if (timeline) {
+                    const items = Array.from(timeline.querySelectorAll('.timeline-item'));
+                    items.sort((a, b) => {
+                        const dateA = parseInt(a.getAttribute('data-date') || '0');
+                        const dateB = parseInt(b.getAttribute('data-date') || '0');
+                        return dateB - dateA; // Orden descendente (más reciente primero)
+                    });
+                    
+                    // Reordenar en el DOM
+                    items.forEach(item => timeline.appendChild(item));
+                }
+            });
+            </script>
         </div>
     </div>
 </div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 20px;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -26px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border-left: 3px solid #dee2e6;
+}
+
+.timeline-item:hover .timeline-content {
+    background: #e9ecef;
+    transition: background 0.2s ease;
+}
+</style>
 
 <script>
 function crearActividadRapida(tipo, contactId) {

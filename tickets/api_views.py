@@ -498,7 +498,7 @@ def my_pending_work_orders(request):
         
         # Obtener órdenes de trabajo del usuario que no estén terminadas
         # Estados del modelo: 'draft', 'accepted', 'finished'
-        print(f"[WorkOrders API] Usuario: {request.user.username}")
+        # print(f"[WorkOrders API] Usuario: {request.user.username}")
         
         work_orders = WorkOrder.objects.filter(
             Q(assigned_to=request.user) | Q(created_by=request.user)
@@ -508,11 +508,11 @@ def my_pending_work_orders(request):
             'company', 'project', 'created_by', 'assigned_to'
         ).order_by('-priority', 'due_date')[:20]  # Limitar a 20
         
-        print(f"[WorkOrders API] Órdenes encontradas: {work_orders.count()}")
+        # print(f"[] Órdenes encontradas: {work_orders.count()}")
         
         orders_data = []
         for order in work_orders:
-            print(f"[WorkOrders API] Procesando orden {order.id}: {order.title} - Status: {order.status}")
+            # print(f"[WorkOrders API] Procesando orden {order.id}: {order.title} - Status: {order.status}")
             orders_data.append({
                 'id': order.id,
                 'title': order.title,
@@ -525,7 +525,7 @@ def my_pending_work_orders(request):
                 'url': f'/work-orders/{order.id}/',
             })
         
-        print(f"[WorkOrders API] Total órdenes en respuesta: {len(orders_data)}")
+        # print(f"[WorkOrders API] Total órdenes en respuesta: {len(orders_data)}")
         
         return JsonResponse({
             'count': len(orders_data),

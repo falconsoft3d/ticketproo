@@ -114,7 +114,7 @@
             </div>
 
             <!-- Preguntas y Respuestas -->
-            <div class="card shadow-sm">
+            <div class="card shadow-sm mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="bi bi-question-circle me-2"></i>Preguntas y Respuestas</h5>
                     <a href="{% url 'chatbot_question_create' chatbot.pk %}" class="btn btn-sm btn-primary">
@@ -174,6 +174,31 @@
                             <a href="{% url 'chatbot_question_create' chatbot.pk %}" class="alert-link">Agregar la primera</a>
                         </div>
                     {% endif %}
+                </div>
+            </div>
+
+            <!-- Gráfico de Estadísticas -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-graph-up-arrow me-2"></i>
+                        Evolución de Contactos (Últimos 30 días)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="statsChartLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="text-muted mt-3">Cargando estadísticas...</p>
+                    </div>
+                    <div id="statsChartContainer" style="display: none;">
+                        <canvas id="statsChart" style="max-height: 400px;"></canvas>
+                    </div>
+                    <div id="statsChartError" style="display: none;" class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        No se pudieron cargar las estadísticas del gráfico.
+                    </div>
                 </div>
             </div>
         </div>
@@ -260,6 +285,121 @@ function copyWidgetUrl() {
         icon.className = 'bi bi-clipboard';
     }, 2000);
 }
+</script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+// Cargar y mostrar gráfico de estadísticas
+document.addEventListener('DOMContentLoaded', function() {
+    const statsUrl = "{% url 'chatbot_stats_api' chatbot.pk %}";
+    
+    fetch(statsUrl)
+        .then(response => response.json())
+        .then(data => {
+            // Ocultar loading
+            document.getElementById('statsChartLoading').style.display = 'none';
+            document.getElementById('statsChartContainer').style.display = 'block';
+            
+            // Crear gráfico
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            
+            // Formatear fechas para mostrar
+            const formattedLabels = data.labels.map(date => {
+                const d = new Date(date);
+                return d.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+            });
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: formattedLabels,
+                    datasets: [
+                        {
+                            label: 'Mensajes',
+                            data: data.messages,
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Clicks en Botón',
+                            data: data.clicks,
+                            borderColor: '#ffc107',
+                            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            callbacks: {
+                                title: function(context) {
+                                    // Mostrar fecha completa en tooltip
+                                    const index = context[0].dataIndex;
+                                    const d = new Date(data.labels[index]);
+                                    return d.toLocaleDateString('es-ES', { 
+                                        weekday: 'long', 
+                                        year: 'numeric', 
+                                        month: 'long', 
+                                        day: 'numeric' 
+                                    });
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return Number.isInteger(value) ? value : '';
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Cantidad'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Fecha'
+                            }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error al cargar estadísticas:', error);
+            document.getElementById('statsChartLoading').style.display = 'none';
+            document.getElementById('statsChartError').style.display = 'block';
+        });
+});
 </script>
 
 <style>
