@@ -3611,7 +3611,7 @@ class ContactForm(forms.ModelForm):
         model = Contact
         fields = [
             'name', 'email', 'phone', 'position', 'company', 'country', 'erp',
-            'status', 'assigned_to', 'source', 'company_size', 'notes', 'contact_date',
+            'status', 'assigned_to', 'tags', 'source', 'company_size', 'notes', 'contact_date',
             'contacted_by_phone', 'contacted_by_web', 'had_meeting', 'meeting_date',
             'contact_tracking_notes', 'last_contact_date',
             'website', 'facebook_url', 'linkedin_url', 'twitter_url', 'instagram_url',
@@ -3651,6 +3651,11 @@ class ContactForm(forms.ModelForm):
             }),
             'assigned_to': forms.Select(attrs={
                 'class': 'form-select'
+            }),
+            'tags': forms.SelectMultiple(attrs={
+                'class': 'form-select',
+                'multiple': 'multiple',
+                'data-placeholder': 'Seleccionar etiquetas...'
             }),
             'source': forms.TextInput(attrs={
                 'class': 'form-control',

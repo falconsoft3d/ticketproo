@@ -1114,6 +1114,15 @@
                                                 {{ contact.phone }}
                                             </small>
                                         {% endif %}
+                                        {% if contact.tags.all %}
+                                            <br><div class="d-flex flex-wrap gap-1 mt-1">
+                                                {% for tag in contact.tags.all %}
+                                                    <span class="badge" style="background-color: {{ tag.color }}; font-size: 0.7rem; padding: 2px 6px;">
+                                                        {{ tag.name }}
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </td>
                                 <td>

@@ -492,3 +492,77 @@ a:focus .dashboard-stat-card.card-white {
     background-color: #495057 !important;
     color: white !important;
 }
+
+/* ==================== TAG WIDGET STYLES ==================== */
+
+#tags-container {
+    position: relative;
+}
+
+#selected-tags .badge {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+#selected-tags .badge:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+#selected-tags .badge i {
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#tag-search {
+    border: 1px solid #dee2e6;
+    transition: border-color 0.15s ease-in-out;
+}
+
+#tag-search:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+#tag-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    background-color: white;
+    margin-top: 2px;
+}
+
+#tag-dropdown .dropdown-item {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+#tag-dropdown .dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+#tag-dropdown .dropdown-item .badge {
+    font-size: 0.85rem;
+    padding: 4px 8px;
+}
+
+#tag-dropdown .dropdown-divider {
+    margin: 0.5rem 0;
+}
+
+/* Tag creation modal styles */
+#createTagModal .form-control-color {
+    height: 40px;
+}
+
+#createTagModal #color-preview {
+    transition: background-color 0.15s ease;
+}
+

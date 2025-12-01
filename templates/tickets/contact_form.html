@@ -163,6 +163,58 @@
 
                         <div class="row">
                             <div class="col-md-12 mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-tags"></i> Etiquetas
+                                </label>
+                                <div id="tags-container" class="border rounded p-3" style="min-height: 60px; background-color: #f8f9fa;">
+                                    <div id="selected-tags" class="d-flex flex-wrap gap-2 mb-2">
+                                        {% if contact.tags.all %}
+                                            {% for tag in contact.tags.all %}
+                                                <span class="badge" style="background-color: {{ tag.color }}; font-size: 0.9rem; padding: 6px 10px; cursor: pointer;" 
+                                                      data-tag-id="{{ tag.id }}" onclick="removeTag({{ tag.id }})">
+                                                    {{ tag.name }}
+                                                    <i class="bi bi-x ms-1"></i>
+                                                </span>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" id="tag-search" class="form-control" placeholder="Buscar o crear etiqueta..." autocomplete="off">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="toggleTagDropdown()">
+                                            <i class="bi bi-chevron-down"></i>
+                                        </button>
+                                    </div>
+                                    <div id="tag-dropdown" class="dropdown-menu w-100" style="display: none; max-height: 250px; overflow-y: auto;">
+                                        <div id="tag-list">
+                                            {% for tag in form.tags.field.queryset %}
+                                                <a class="dropdown-item tag-option" href="#" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name }}" data-tag-color="{{ tag.color }}" onclick="selectTag(event, {{ tag.id }}, '{{ tag.name }}', '{{ tag.color }}')">
+                                                    <span class="badge me-2" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-primary" href="#" onclick="showCreateTagForm(event)">
+                                            <i class="bi bi-plus-circle me-2"></i>Crear nueva etiqueta
+                                        </a>
+                                    </div>
+                                </div>
+                                <!-- Hidden input para enviar las etiquetas seleccionadas -->
+                                <select id="id_tags" name="tags" multiple style="display: none;">
+                                    {% if contact.tags.all %}
+                                        {% for tag in contact.tags.all %}
+                                            <option value="{{ tag.id }}" selected>{{ tag.name }}</option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                                <small class="text-muted d-block mt-1">
+                                    <i class="bi bi-info-circle"></i> 
+                                    Selecciona etiquetas para categorizar este contacto o crea nuevas
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
                                 <label for="{{ form.notes.id_for_label }}" class="form-label">
                                     <i class="bi bi-sticky"></i> {{ form.notes.label }}
                                 </label>
@@ -874,6 +926,259 @@ function autoCompleteWithAI() {
             }
         } else {
             alert('Error al completar con IA: ' + (data.error || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+        alert('Error de conexión: ' + error.message);
+    });
+}
+
+// ==================== TAG MANAGEMENT ====================
+
+let selectedTags = new Set();
+let allTags = [];
+
+// Inicializar tags seleccionados al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    const hiddenSelect = document.getElementById('id_tags');
+    if (hiddenSelect) {
+        Array.from(hiddenSelect.options).forEach(option => {
+            if (option.selected) {
+                selectedTags.add(parseInt(option.value));
+            }
+        });
+    }
+    
+    // Cargar todas las etiquetas disponibles
+    loadAllTags();
+    
+    // Filtro de búsqueda
+    document.getElementById('tag-search').addEventListener('input', filterTags);
+    
+    // Cerrar dropdown al hacer clic fuera
+    document.addEventListener('click', function(e) {
+        const container = document.getElementById('tags-container');
+        const dropdown = document.getElementById('tag-dropdown');
+        if (!container.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+});
+
+function loadAllTags() {
+    fetch('/api/contact-tags/')
+        .then(response => response.json())
+        .then(data => {
+            allTags = data;
+        })
+        .catch(error => console.error('Error loading tags:', error));
+}
+
+function toggleTagDropdown() {
+    const dropdown = document.getElementById('tag-dropdown');
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+
+function filterTags() {
+    const search = document.getElementById('tag-search').value.toLowerCase();
+    const tagOptions = document.querySelectorAll('.tag-option');
+    
+    tagOptions.forEach(option => {
+        const tagName = option.dataset.tagName.toLowerCase();
+        option.style.display = tagName.includes(search) ? 'block' : 'none';
+    });
+    
+    // Mostrar dropdown si hay texto
+    if (search.length > 0) {
+        document.getElementById('tag-dropdown').style.display = 'block';
+    }
+}
+
+function selectTag(event, tagId, tagName, tagColor) {
+    event.preventDefault();
+    
+    if (selectedTags.has(tagId)) {
+        return; // Ya está seleccionado
+    }
+    
+    selectedTags.add(tagId);
+    
+    // Agregar badge visual
+    const badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.style.backgroundColor = tagColor;
+    badge.style.fontSize = '0.9rem';
+    badge.style.padding = '6px 10px';
+    badge.style.cursor = 'pointer';
+    badge.dataset.tagId = tagId;
+    badge.onclick = () => removeTag(tagId);
+    badge.innerHTML = `${tagName} <i class="bi bi-x ms-1"></i>`;
+    
+    document.getElementById('selected-tags').appendChild(badge);
+    
+    // Actualizar campo oculto
+    updateHiddenField();
+    
+    // Limpiar búsqueda y cerrar dropdown
+    document.getElementById('tag-search').value = '';
+    document.getElementById('tag-dropdown').style.display = 'none';
+}
+
+function removeTag(tagId) {
+    selectedTags.delete(tagId);
+    
+    // Remover badge visual
+    const badge = document.querySelector(`#selected-tags [data-tag-id="${tagId}"]`);
+    if (badge) {
+        badge.remove();
+    }
+    
+    // Actualizar campo oculto
+    updateHiddenField();
+}
+
+function updateHiddenField() {
+    const hiddenSelect = document.getElementById('id_tags');
+    hiddenSelect.innerHTML = '';
+    
+    selectedTags.forEach(tagId => {
+        const option = document.createElement('option');
+        option.value = tagId;
+        option.selected = true;
+        hiddenSelect.appendChild(option);
+    });
+}
+
+function showCreateTagForm(event) {
+    event.preventDefault();
+    
+    const tagName = document.getElementById('tag-search').value.trim();
+    
+    if (!tagName) {
+        alert('Por favor, ingresa un nombre para la etiqueta');
+        return;
+    }
+    
+    // Abrir modal de Bootstrap
+    const modalHTML = `
+        <div class="modal fade" id="createTagModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-tag-fill me-2"></i>Crear Nueva Etiqueta
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre de la Etiqueta</label>
+                            <input type="text" id="new-tag-name" class="form-control" value="${tagName}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Color</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="color" id="new-tag-color" class="form-control form-control-color" value="#0d6efd" style="width: 60px;">
+                                <span id="color-preview" class="badge" style="background-color: #0d6efd; font-size: 0.9rem; padding: 6px 12px;">
+                                    Vista previa
+                                </span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción (opcional)</label>
+                            <textarea id="new-tag-description" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="createNewTag()">
+                            <i class="bi bi-check-lg me-1"></i>Crear Etiqueta
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Eliminar modal anterior si existe
+    const existingModal = document.getElementById('createTagModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Agregar modal al body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('createTagModal'));
+    modal.show();
+    
+    // Actualizar vista previa del color
+    document.getElementById('new-tag-color').addEventListener('input', function() {
+        document.getElementById('color-preview').style.backgroundColor = this.value;
+    });
+}
+
+function createNewTag() {
+    const name = document.getElementById('new-tag-name').value.trim();
+    const color = document.getElementById('new-tag-color').value;
+    const description = document.getElementById('new-tag-description').value.trim();
+    
+    if (!name) {
+        alert('El nombre de la etiqueta es obligatorio');
+        return;
+    }
+    
+    // Mostrar indicador de carga
+    const btn = event.target;
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creando...';
+    btn.disabled = true;
+    
+    // Enviar petición AJAX
+    fetch('/api/contact-tags/create/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ name, color, description })
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+        
+        if (data.success) {
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createTagModal'));
+            modal.hide();
+            
+            // Agregar nueva etiqueta a la lista
+            const newTag = data.tag;
+            allTags.push(newTag);
+            
+            // Agregar opción al dropdown
+            const tagList = document.getElementById('tag-list');
+            const newOption = document.createElement('a');
+            newOption.className = 'dropdown-item tag-option';
+            newOption.href = '#';
+            newOption.dataset.tagId = newTag.id;
+            newOption.dataset.tagName = newTag.name;
+            newOption.dataset.tagColor = newTag.color;
+            newOption.onclick = (e) => selectTag(e, newTag.id, newTag.name, newTag.color);
+            newOption.innerHTML = `<span class="badge me-2" style="background-color: ${newTag.color};">${newTag.name}</span>`;
+            tagList.appendChild(newOption);
+            
+            // Seleccionar automáticamente la nueva etiqueta
+            selectTag({ preventDefault: () => {} }, newTag.id, newTag.name, newTag.color);
+            
+            // Limpiar búsqueda
+            document.getElementById('tag-search').value = '';
+        } else {
+            alert('Error al crear etiqueta: ' + (data.error || 'Error desconocido'));
         }
     })
     .catch(error => {

@@ -354,6 +354,10 @@ urlpatterns = [
     # URL para crear actividad rápida desde contacto (AJAX)
     path('contacts/<int:contact_id>/quick-activity/', views.create_quick_activity, name='create_quick_activity'),
     
+    # APIs de etiquetas de contacto
+    path('api/contact-tags/', views.contact_tags_api, name='contact_tags_api'),
+    path('api/contact-tags/create/', views.contact_tag_create_api, name='contact_tag_create_api'),
+    
     # ============= URLs PLAN DE VENTAS =============
     path('sales-plans/', views.sales_plan_list, name='sales_plan_list'),
     path('sales-plans/create/', views.sales_plan_create, name='sales_plan_create'),

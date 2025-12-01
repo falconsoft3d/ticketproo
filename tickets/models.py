@@ -4516,6 +4516,42 @@ class CourseClassView(models.Model):
         return f"{self.user.username} vio {self.course_class.title}"
 
 
+class ContactTag(models.Model):
+    """Etiquetas para categorizar contactos"""
+    
+    name = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name='Nombre'
+    )
+    
+    color = models.CharField(
+        max_length=7,
+        default='#6c757d',
+        verbose_name='Color',
+        help_text='Color en formato hexadecimal (ej: #FF5733)'
+    )
+    
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Descripción'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Etiqueta de Contacto'
+        verbose_name_plural = 'Etiquetas de Contacto'
+    
+    def __str__(self):
+        return self.name
+
+
 class Contact(models.Model):
     """Modelo para gestionar contactos de ventas"""
     
@@ -4698,6 +4734,15 @@ class Contact(models.Model):
         related_name='contacts_assigned',
         verbose_name='Asignado a'
     )
+    
+    tags = models.ManyToManyField(
+        ContactTag,
+        blank=True,
+        related_name='contacts',
+        verbose_name='Etiquetas',
+        help_text='Etiquetas para categorizar este contacto'
+    )
+    
     created_at = models.DateTimeField(
         default=timezone.now,
         verbose_name='Fecha de creación'

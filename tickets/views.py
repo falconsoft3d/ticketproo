@@ -48,7 +48,7 @@ from .models import (
     UserNote, TimeEntry, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
     Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory, OpportunityActivity,
-    Meeting, MeetingAttendee, MeetingQuestion, Contact,
+    Meeting, MeetingAttendee, MeetingQuestion, Contact, ContactTag,
     BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, PublicAIMessageShare, Concept,
     Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload,
     Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature,
@@ -11199,6 +11199,7 @@ def contact_list(request):
     from django.db.models import Count, Exists, OuterRef, Min
     from django.utils import timezone
     from datetime import timedelta
+    from .models import ContactTag
     
     # Subconsulta para verificar si tiene actividades
     has_activities = OpportunityActivity.objects.filter(contact=OuterRef('pk'))
@@ -11217,6 +11218,11 @@ def contact_list(request):
     status = request.GET.get('status')
     if status:
         contacts = contacts.filter(status=status)
+    
+    # Filtro por etiquetas
+    tags = request.GET.getlist('tags')
+    if tags:
+        contacts = contacts.filter(tags__id__in=tags).distinct()
     
     source = request.GET.get('source')
     if source:
@@ -11625,6 +11631,8 @@ def contact_list(request):
         'comparison_total_contacts': comparison_total_contacts,
         'comparison_label': comparison_label,
         'contact_change_percentage': contact_change_percentage,
+        'all_tags': ContactTag.objects.all().order_by('name'),
+        'selected_tags': request.GET.getlist('tags'),
     }
     
     return render(request, 'tickets/contact_list.html', context)
@@ -50573,3 +50581,77 @@ Pregunta del usuario:
         return JsonResponse({'error': 'Chatbot no encontrado'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+# ==================== CONTACT TAG API ====================
+
+@login_required
+def contact_tags_api(request):
+    """API endpoint para listar todas las etiquetas de contacto"""
+    from .models import ContactTag
+    
+    tags = ContactTag.objects.all().order_by('name')
+    
+    tags_data = [{
+        'id': tag.id,
+        'name': tag.name,
+        'color': tag.color,
+        'description': tag.description or ''
+    } for tag in tags]
+    
+    return JsonResponse(tags_data, safe=False)
+
+
+@login_required
+@require_POST
+def contact_tag_create_api(request):
+    """API endpoint para crear una nueva etiqueta de contacto"""
+    from .models import ContactTag
+    
+    try:
+        data = json.loads(request.body)
+        
+        name = data.get('name', '').strip()
+        color = data.get('color', '#6c757d').strip()
+        description = data.get('description', '').strip()
+        
+        if not name:
+            return JsonResponse({
+                'success': False,
+                'error': 'El nombre de la etiqueta es obligatorio'
+            }, status=400)
+        
+        # Validar que el nombre no exista
+        if ContactTag.objects.filter(name__iexact=name).exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'Ya existe una etiqueta con ese nombre'
+            }, status=400)
+        
+        # Crear la etiqueta
+        tag = ContactTag.objects.create(
+            name=name,
+            color=color,
+            description=description
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'tag': {
+                'id': tag.id,
+                'name': tag.name,
+                'color': tag.color,
+                'description': tag.description or ''
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'JSON inválido'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

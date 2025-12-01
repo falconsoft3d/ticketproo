@@ -21,7 +21,7 @@ from .models import (
     WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
     AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
     ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine, QuotationView,
-    Contact, ContactComment, ContactAttachment, SalesPlan, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord,
+    Contact, ContactTag, ContactComment, ContactAttachment, SalesPlan, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord,
     ClientRequest, ClientRequestResponse, Event, Trip, TripStop, WebCounter, WebCounterVisit, QuickQuote, QuickQuoteView, QuickQuoteComment,
     MultiMeasurement, MultiMeasurementRecord,
     PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
@@ -4543,21 +4543,37 @@ class ContactAttachmentInline(admin.TabularInline):
     fields = ('file', 'description', 'uploaded_by', 'uploaded_at', 'file_size')
 
 
+@admin.register(ContactTag)
+class ContactTagAdmin(admin.ModelAdmin):
+    list_display = ('name', 'color_badge', 'created_at')
+    search_fields = ('name', 'description')
+    ordering = ('name',)
+    
+    def color_badge(self, obj):
+        from django.utils.html import format_html
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; border-radius: 3px;">{}</span>',
+            obj.color, obj.name
+        )
+    color_badge.short_description = 'Vista Previa'
+
+
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
     list_display = ('name', 'email', 'phone', 'company', 'status_badge', 'assigned_to', 'contact_date', 'created_by')
-    list_filter = ('status', 'assigned_to', 'contacted_by_phone', 'contacted_by_web', 'contact_date', 'created_by')
+    list_filter = ('status', 'assigned_to', 'tags', 'contacted_by_phone', 'contacted_by_web', 'contact_date', 'created_by')
     search_fields = ('name', 'email', 'phone', 'company', 'position')
     date_hierarchy = 'contact_date'
     ordering = ('-contact_date',)
     inlines = [ContactCommentInline, ContactAttachmentInline]
+    filter_horizontal = ('tags',)
     
     fieldsets = (
         ('Información Personal', {
             'fields': ('name', 'email', 'phone', 'position', 'company', 'country')
         }),
         ('Información Comercial', {
-            'fields': ('erp', 'status', 'assigned_to', 'source', 'company_size', 'notes')
+            'fields': ('erp', 'status', 'assigned_to', 'tags', 'source', 'company_size', 'notes')
         }),
         ('Seguimiento', {
             'fields': ('contacted_by_phone', 'contacted_by_web', 'contact_tracking_notes', 'last_contact_date')

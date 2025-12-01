@@ -150,6 +150,17 @@
                             <h6><i class="bi bi-arrow-down-circle"></i> Fuente</h6>
                             <p>{{ contact.source }}</p>
                             {% endif %}
+                            
+                            {% if contact.tags.all %}
+                            <h6><i class="bi bi-tags"></i> Etiquetas</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for tag in contact.tags.all %}
+                                    <span class="badge" style="background-color: {{ tag.color }}; font-size: 0.9rem; padding: 6px 12px;">
+                                        {{ tag.name }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                     
