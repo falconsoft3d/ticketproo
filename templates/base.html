@@ -2190,9 +2190,9 @@
     <div id="sidebarOverlay" class="position-fixed w-100 h-100" 
          style="top: 0; left: 0; background: rgba(0,0,0,0.5); z-index: 1030; display: none;"></div>
 
-    <!-- Calculadora tipo Windows -->
+    <!-- Calculadora Científica Mejorada -->
     <div id="calculatorWidget" class="shadow-lg" 
-         style="position: fixed; right: -320px; top: 20%; width: 320px; height: 500px; 
+         style="position: fixed; right: -380px; top: 10%; width: 380px; height: auto; max-height: 85vh;
                 background: white; z-index: 1045; transition: right 0.3s ease; border-radius: 8px;
                 border: 1px solid #ddd; overflow: hidden; display: flex; flex-direction: column;">
         
@@ -2200,63 +2200,112 @@
         <div class="p-2 bg-primary text-white d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center">
                 <i class="bi bi-calculator me-2"></i>
-                <h6 class="mb-0">Calculadora</h6>
+                <h6 class="mb-0">Calculadora Científica</h6>
             </div>
-            <button id="closeCalculator" class="btn btn-sm btn-outline-light">
-                <i class="bi bi-x-lg"></i>
-            </button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-light" onclick="shareCalculator()" title="Compartir calculadora">
+                    <i class="bi bi-share"></i>
+                </button>
+                <button id="closeCalculator" class="btn btn-sm btn-outline-light">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
         </div>
 
         <!-- Pantalla de la calculadora -->
-        <div class="p-3 bg-light border-bottom">
-            <input type="text" id="calculatorDisplay" class="form-control form-control-lg text-end" 
-                   value="0" readonly style="font-family: 'Courier New', monospace; font-size: 1.5rem; background: #f8f9fa;">
+        <div class="p-2 bg-light border-bottom">
+            <!-- Expresión completa -->
+            <div class="mb-1">
+                <input type="text" id="calculatorExpression" class="form-control form-control-sm text-end" 
+                       value="" readonly style="font-family: 'Courier New', monospace; font-size: 0.9rem; background: white; color: #666; border: none;">
+            </div>
+            <!-- Resultado actual -->
+            <div>
+                <input type="text" id="calculatorDisplay" class="form-control form-control-lg text-end" 
+                       value="0" readonly style="font-family: 'Courier New', monospace; font-size: 1.8rem; background: #f8f9fa; font-weight: bold;">
+            </div>
         </div>
 
-        <!-- Botones de la calculadora -->
-        <div class="flex-grow-1 p-3" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+        <!-- Tabs para cambiar entre básica y científica -->
+        <div class="btn-group btn-group-sm m-2" role="group">
+            <button type="button" class="btn btn-outline-primary active" id="btnBasic" onclick="switchCalcMode('basic')">Básica</button>
+            <button type="button" class="btn btn-outline-primary" id="btnScientific" onclick="switchCalcMode('scientific')">Científica</button>
+        </div>
+
+        <!-- Botones básicos -->
+        <div id="basicButtons" class="p-2" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
             <!-- Fila 1 -->
             <button class="btn btn-outline-secondary calc-btn" onclick="clearCalculator()" style="grid-column: span 2;">
-                <strong>C</strong>
+                <strong>AC</strong>
             </button>
             <button class="btn btn-outline-secondary calc-btn" onclick="deleteLast()">
                 <i class="bi bi-backspace"></i>
             </button>
-            <button class="btn btn-outline-warning calc-btn" onclick="appendOperator('/')">
+            <button class="btn btn-outline-warning calc-btn" onclick="appendToExpression('/')">
                 ÷
             </button>
 
             <!-- Fila 2 -->
-            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('7')">7</button>
-            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('8')">8</button>
-            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('9')">9</button>
-            <button class="btn btn-outline-warning calc-btn" onclick="appendOperator('*')">×</button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendToExpression('7')">7</button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendToExpression('8')">8</button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendToExpression('9')">9</button>
+            <button class="btn btn-outline-warning calc-btn" onclick="appendToExpression('*')">×</button>
 
             <!-- Fila 3 -->
-            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('4')">4</button>
-            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('5')">5</button>
-            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('6')">6</button>
-            <button class="btn btn-outline-warning calc-btn" onclick="appendOperator('-')">-</button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendToExpression('4')">4</button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendToExpression('5')">5</button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendToExpression('6')">6</button>
+            <button class="btn btn-outline-warning calc-btn" onclick="appendToExpression('-')">−</button>
 
             <!-- Fila 4 -->
-            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('1')">1</button>
-            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('2')">2</button>
-            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('3')">3</button>
-            <button class="btn btn-outline-warning calc-btn" onclick="appendOperator('+')" style="grid-row: span 2;">
-                +
-            </button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendToExpression('1')">1</button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendToExpression('2')">2</button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendToExpression('3')">3</button>
+            <button class="btn btn-outline-warning calc-btn" onclick="appendToExpression('+')">+</button>
 
             <!-- Fila 5 -->
-            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('0')" style="grid-column: span 2;">
-                0
-            </button>
-            <button class="btn btn-outline-dark calc-btn" onclick="appendDecimal()">.</button>
-            <!-- El botón + ocupa dos filas -->
+            <button class="btn btn-outline-info calc-btn" onclick="appendToExpression('(')">( </button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendToExpression('0')">0</button>
+            <button class="btn btn-outline-info calc-btn" onclick="appendToExpression(')')"> )</button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendToExpression('.')">.</button>
 
             <!-- Fila 6 - Botón igual -->
-            <button class="btn btn-primary calc-btn" onclick="calculate()" style="grid-column: span 3;">
+            <button class="btn btn-primary calc-btn" onclick="calculate()" style="grid-column: span 4;">
                 <strong>=</strong>
             </button>
+        </div>
+
+        <!-- Botones científicos (ocultos por defecto) -->
+        <div id="scientificButtons" class="p-2" style="display: none; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+            <!-- Funciones trigonométricas -->
+            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.sin')">sin</button>
+            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.cos')">cos</button>
+            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.tan')">tan</button>
+            <button class="btn btn-outline-info calc-btn" onclick="appendToExpression('Math.PI')">π</button>
+
+            <!-- Funciones inversas -->
+            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.asin')">asin</button>
+            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.acos')">acos</button>
+            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.atan')">atan</button>
+            <button class="btn btn-outline-info calc-btn" onclick="appendToExpression('Math.E')">e</button>
+
+            <!-- Potencias y raíces -->
+            <button class="btn btn-outline-warning calc-btn" onclick="appendFunction('Math.pow')">x<sup>y</sup></button>
+            <button class="btn btn-outline-warning calc-btn" onclick="appendFunction('Math.sqrt')">√</button>
+            <button class="btn btn-outline-warning calc-btn" onclick="appendToExpression('**2')">x²</button>
+            <button class="btn btn-outline-warning calc-btn" onclick="appendToExpression('**3')">x³</button>
+
+            <!-- Logaritmos -->
+            <button class="btn btn-outline-info calc-btn" onclick="appendFunction('Math.log10')">log</button>
+            <button class="btn btn-outline-info calc-btn" onclick="appendFunction('Math.log')">ln</button>
+            <button class="btn btn-outline-info calc-btn" onclick="appendFunction('Math.exp')">e<sup>x</sup></button>
+            <button class="btn btn-outline-secondary calc-btn" onclick="appendToExpression('!')">n!</button>
+
+            <!-- Otras funciones -->
+            <button class="btn btn-outline-secondary calc-btn" onclick="appendFunction('Math.abs')">|x|</button>
+            <button class="btn btn-outline-secondary calc-btn" onclick="appendFunction('Math.floor')">⌊x⌋</button>
+            <button class="btn btn-outline-secondary calc-btn" onclick="appendFunction('Math.ceil')">⌈x⌉</button>
+            <button class="btn btn-outline-secondary calc-btn" onclick="appendFunction('Math.round')">round</button>
         </div>
     </div>
 
@@ -2585,6 +2634,14 @@
                 </div>
                 <p class="mt-3 text-muted">Cargando conversaciones...</p>
             </div>
+        </div>
+        
+        <!-- Footer con botón para gestión de chatbots -->
+        <div class="p-3 border-top bg-light">
+            <a href="{% url 'chatbot_list' %}" class="btn btn-warning w-100">
+                <i class="bi bi-robot me-2"></i>
+                Gestionar Chatbots
+            </a>
         </div>
     </div>
 
@@ -6177,7 +6234,8 @@
                             </div>
                             <small class="text-muted" style="font-size: 0.7rem;">${trans.created_at}</small>
                         </div>
-                        <p class="mb-0 small text-truncate">${trans.source_text}</p>
+                        <p class="mb-1 small text-truncate" style="color: #666;">${trans.source_text}</p>
+                        <p class="mb-0 small text-truncate fw-bold text-success"><i class="bi bi-arrow-right-short"></i> ${trans.translated_text}</p>
                     </div>
                 `;
             });
@@ -6781,10 +6839,8 @@
 
         // Variables globales para la calculadora
         let calculatorOpen = false;
-        let currentInput = '0';
-        let previousInput = '';
-        let operator = '';
-        let waitingForOperand = false;
+        let calcExpression = '';
+        let calcMode = 'basic';
 
         // Función para alternar la calculadora
         function toggleCalculator() {
@@ -6796,7 +6852,7 @@
                 // Abrir calculadora
                 calculator.style.right = '0px';
                 overlay.style.display = 'block';
-                toggle.style.right = '320px'; // Mover el botón al lado de la calculadora
+                toggle.style.right = '380px'; // Mover el botón al lado de la calculadora
                 calculatorOpen = true;
                 
                 // Ocultar todos los demás botones flotantes
@@ -6813,7 +6869,7 @@
             const overlay = document.getElementById('calculatorOverlay');
             const toggle = document.getElementById('calculatorToggle');
             
-            calculator.style.right = '-320px';
+            calculator.style.right = '-380px';
             overlay.style.display = 'none';
             toggle.style.right = '0'; // Volver a la posición original
             calculatorOpen = false;
@@ -6822,94 +6878,149 @@
             showAllFloatingButtons();
         }
 
-        // Funciones de la calculadora
+        // Funciones de la calculadora mejorada
         function updateDisplay() {
             const display = document.getElementById('calculatorDisplay');
-            display.value = currentInput;
-        }
-
-        function appendNumber(number) {
-            if (waitingForOperand) {
-                currentInput = number;
-                waitingForOperand = false;
+            const expression = document.getElementById('calculatorExpression');
+            
+            if (calcExpression === '') {
+                display.value = '0';
+                expression.value = '';
             } else {
-                currentInput = currentInput === '0' ? number : currentInput + number;
+                expression.value = calcExpression;
+                display.value = calcExpression;
+            }
+        }
+
+        function appendToExpression(value) {
+            if (calcExpression === '0' || calcExpression === 'Error') {
+                calcExpression = value;
+            } else {
+                calcExpression += value;
             }
             updateDisplay();
         }
 
-        function appendDecimal() {
-            if (waitingForOperand) {
-                currentInput = '0.';
-                waitingForOperand = false;
-            } else if (currentInput.indexOf('.') === -1) {
-                currentInput += '.';
+        function appendFunction(func) {
+            const funcName = func.split('.')[1];
+            if (funcName === 'pow') {
+                calcExpression += 'Math.pow(';
+            } else {
+                calcExpression += func + '(';
             }
             updateDisplay();
-        }
-
-        function appendOperator(nextOperator) {
-            const inputValue = parseFloat(currentInput);
-
-            if (previousInput === '') {
-                previousInput = inputValue;
-            } else if (operator) {
-                const result = performCalculation();
-                currentInput = String(result);
-                previousInput = result;
-                updateDisplay();
-            }
-
-            waitingForOperand = true;
-            operator = nextOperator;
         }
 
         function calculate() {
-            if (previousInput === '' || operator === '' || waitingForOperand) {
-                return;
+            try {
+                let expression = calcExpression;
+                
+                // Manejar factorial
+                if (expression.includes('!')) {
+                    expression = expression.replace(/(\d+)!/g, (match, num) => {
+                        return factorial(parseInt(num));
+                    });
+                }
+                
+                // Evaluar la expresión
+                const result = eval(expression);
+                
+                // Mostrar resultado
+                document.getElementById('calculatorDisplay').value = result;
+                document.getElementById('calculatorExpression').value = calcExpression + ' =';
+                
+                // Guardar resultado para continuar operando
+                calcExpression = result.toString();
+            } catch (error) {
+                document.getElementById('calculatorDisplay').value = 'Error';
+                calcExpression = 'Error';
             }
-
-            const result = performCalculation();
-            currentInput = String(result);
-            previousInput = '';
-            operator = '';
-            waitingForOperand = false;
-            updateDisplay();
         }
 
-        function performCalculation() {
-            const prev = parseFloat(previousInput);
-            const current = parseFloat(currentInput);
-
-            switch (operator) {
-                case '+':
-                    return prev + current;
-                case '-':
-                    return prev - current;
-                case '*':
-                    return prev * current;
-                case '/':
-                    return current !== 0 ? prev / current : 0;
-                default:
-                    return current;
+        function factorial(n) {
+            if (n === 0 || n === 1) return 1;
+            let result = 1;
+            for (let i = 2; i <= n; i++) {
+                result *= i;
             }
+            return result;
         }
 
         function clearCalculator() {
-            currentInput = '0';
-            previousInput = '';
-            operator = '';
-            waitingForOperand = false;
+            calcExpression = '';
             updateDisplay();
         }
 
         function deleteLast() {
-            if (currentInput.length > 1) {
-                currentInput = currentInput.slice(0, -1);
-            } else {
-                currentInput = '0';
+            if (calcExpression.length > 0) {
+                calcExpression = calcExpression.slice(0, -1);
             }
             updateDisplay();
+        }
+
+        function switchCalcMode(mode) {
+            calcMode = mode;
+            const basicBtn = document.getElementById('btnBasic');
+            const scientificBtn = document.getElementById('btnScientific');
+            const basicButtons = document.getElementById('basicButtons');
+            const scientificButtons = document.getElementById('scientificButtons');
+            
+            if (mode === 'basic') {
+                basicBtn.classList.add('active');
+                scientificBtn.classList.remove('active');
+                basicButtons.style.display = 'grid';
+                scientificButtons.style.display = 'none';
+            } else {
+                basicBtn.classList.remove('active');
+                scientificBtn.classList.add('active');
+                basicButtons.style.display = 'none';
+                scientificButtons.style.display = 'grid';
+            }
+        }
+
+        function shareCalculator() {
+            const url = window.location.origin + '/calc/';
+            
+            // Intentar usar Web Share API si está disponible
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Calculadora Científica - TicketProo',
+                    text: 'Usa esta calculadora científica gratuita',
+                    url: url
+                }).then(() => {
+                    console.log('Compartido exitosamente');
+                }).catch((error) => {
+                    console.log('Error al compartir:', error);
+                    copyToClipboard(url);
+                });
+            } else {
+                // Fallback: copiar al portapapeles
+                copyToClipboard(url);
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Mostrar notificación
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success position-fixed';
+                alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 250px;';
+                alert.innerHTML = `
+                    <i class="bi bi-check-circle me-2"></i>
+                    ¡Enlace copiado al portapapeles!
+                    <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+                `;
+                document.body.appendChild(alert);
+                
+                setTimeout(() => {
+                    if (alert.parentElement) {
+                        alert.remove();
+                    }
+                }, 3000);
+            }).catch((error) => {
+                console.error('Error al copiar:', error);
+                alert('No se pudo copiar el enlace. URL: ' + text);
+            });
         }
 
         // ============= FUNCIONES QUICK TODO =============

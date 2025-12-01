@@ -6740,6 +6740,11 @@ def calculator_view(request):
     return render(request, 'tickets/calculator.html')
 
 
+def public_calculator_view(request):
+    """Vista pública de la calculadora científica"""
+    return render(request, 'tickets/public_calculator.html')
+
+
 @login_required
 @user_passes_test(is_agent)
 def color_picker_view(request):

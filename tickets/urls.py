@@ -236,6 +236,7 @@ urlpatterns = [
     
     # URLs de herramientas calculadora (solo para agentes)
     path('tools/calculator/', views.calculator_view, name='calculator'),
+    path('calc/', views.public_calculator_view, name='public_calculator'),
     
     # URLs de herramientas color picker (solo para agentes)
     path('tools/color-picker/', views.color_picker_view, name='color_picker'),
