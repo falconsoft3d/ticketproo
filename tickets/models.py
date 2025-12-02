@@ -2148,6 +2148,8 @@ class WorkOrder(models.Model):
         on_delete=models.CASCADE,
         related_name='work_orders',
         verbose_name='Empresa',
+        null=True,
+        blank=True,
         help_text='Empresa a la que se dirige la orden de trabajo'
     )
     project = models.ForeignKey(

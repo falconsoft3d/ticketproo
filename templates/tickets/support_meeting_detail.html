@@ -549,30 +549,58 @@ function deletePoint(pointId) {
 }
 
 function generatePublicLink() {
-    $.post('{% url "support_meeting_generate_link" meeting.pk %}', {
-        'show_company_meetings': true,
-        'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
-    }, function(response) {
-        if (response.success) {
-            // Mostrar modal con el enlace generado
-            showPublicLinkModal(response.public_url);
+    $.ajax({
+        url: '{% url "support_meeting_generate_link" meeting.pk %}',
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        data: {
+            'show_company_meetings': true,
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(response) {
+            console.log('Full Response:', response); // Para debug
+            console.log('Response type:', typeof response);
+            console.log('Response.public_url:', response.public_url);
+            console.log('Response.success:', response.success);
             
-            if (typeof toastr !== 'undefined') {
-                toastr.success('Enlace público generado exitosamente');
+            // Verificar si la respuesta es válida
+            if (response && response.success) {
+                const publicUrl = response.public_url || response.url;
+                
+                if (publicUrl && publicUrl !== 'undefined' && publicUrl.trim() !== '') {
+                    console.log('URL válida, mostrando modal:', publicUrl);
+                    // Mostrar modal con el enlace generado
+                    showPublicLinkModal(publicUrl);
+                    
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success('Enlace público generado exitosamente');
+                    }
+                } else {
+                    console.error('URL inválida o vacía');
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('Error: URL del enlace no válida');
+                    } else {
+                        alert('Error: URL del enlace no válida');
+                    }
+                }
+            } else {
+                console.error('Respuesta sin éxito');
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(response.error || 'Error al generar enlace público');
+                } else {
+                    alert('Error al generar enlace público');
+                }
             }
-            
-            // Recargar página para mostrar botón de deshabilitar
-            setTimeout(function() {
-                location.reload();
-            }, 2000);
-        } else {
+        },
+        error: function(xhr, status, error) {
+            console.error('Error:', error);
             if (typeof toastr !== 'undefined') {
-                toastr.error(response.error || 'Error al generar enlace público');
+                toastr.error('Error de conexión al generar enlace');
+            } else {
+                alert('Error de conexión al generar enlace');
             }
-        }
-    }).fail(function() {
-        if (typeof toastr !== 'undefined') {
-            toastr.error('Error de conexión al generar enlace');
         }
     });
 }
@@ -605,6 +633,17 @@ function disablePublicLink() {
 }
 
 function showPublicLinkModal(publicUrl) {
+    console.log('showPublicLinkModal called with:', publicUrl); // Debug
+    
+    // Validar que la URL no esté vacía o undefined
+    if (!publicUrl || publicUrl === 'undefined') {
+        console.error('URL is invalid:', publicUrl);
+        if (typeof toastr !== 'undefined') {
+            toastr.error('Error: No se pudo generar el enlace público');
+        }
+        return;
+    }
+    
     const modalHtml = `
         <div class="modal fade" id="publicLinkModal" tabindex="-1">
             <div class="modal-dialog">
@@ -620,9 +659,6 @@ function showPublicLinkModal(publicUrl) {
                         <p>Comparte este enlace con tu cliente para que pueda ver la reunión:</p>
                         <div class="input-group mb-3">
                             <input type="text" class="form-control" id="publicUrlInput" value="${publicUrl}" readonly>
-                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">
-                                <i class="fas fa-copy"></i> Copiar
-                            </button>
                         </div>
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
@@ -636,9 +672,9 @@ function showPublicLinkModal(publicUrl) {
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="button" class="btn btn-primary" onclick="copyToClipboard()">
-                            <i class="fas fa-copy me-1"></i>Copiar Enlace
-                        </button>
+                        <a href="${publicUrl}" target="_blank" class="btn btn-primary" onclick="closeModalAfterOpen()">
+                            <i class="fas fa-external-link-alt me-1"></i>Abrir Enlace
+                        </a>
                     </div>
                 </div>
             </div>
@@ -655,25 +691,19 @@ function showPublicLinkModal(publicUrl) {
     $('#publicLinkModal').modal('show');
 }
 
-function copyToClipboard() {
-    const input = document.getElementById('publicUrlInput');
-    input.select();
-    input.setSelectionRange(0, 99999); // Para móviles
-    
-    try {
-        document.execCommand('copy');
-        if (typeof toastr !== 'undefined') {
-            toastr.success('Enlace copiado al portapapeles');
-        } else {
-            alert('Enlace copiado al portapapeles');
+function closeModalAfterOpen() {
+    // Cerrar modal inmediatamente
+    setTimeout(function() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('publicLinkModal'));
+        if (modal) {
+            modal.hide();
         }
-    } catch (err) {
-        if (typeof toastr !== 'undefined') {
-            toastr.error('Error al copiar enlace');
-        } else {
-            alert('Error al copiar enlace');
-        }
-    }
+        
+        // Recargar página para mostrar botón de deshabilitar
+        setTimeout(function() {
+            location.reload();
+        }, 500);
+    }, 100);
 }
 </script>
 {% endblock %}

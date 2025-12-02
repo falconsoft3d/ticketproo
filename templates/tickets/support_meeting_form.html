@@ -206,6 +206,28 @@ $(document).ready(function() {
         const today = new Date().toISOString().split('T')[0];
         $('#{{ form.date.id_for_label }}').val(today);
     {% endif %}
+    
+    // Actualizar descripción cuando se selecciona una empresa
+    $('#{{ form.company.id_for_label }}').on('change', function() {
+        const companySelect = $(this);
+        const selectedText = companySelect.find('option:selected').text();
+        const descriptionField = $('#{{ form.description.id_for_label }}');
+        
+        // Solo actualizar si la empresa está seleccionada y la descripción está vacía o tiene el texto por defecto
+        if (companySelect.val() && (!descriptionField.val().trim() || descriptionField.val().startsWith('Reunión de soporte con'))) {
+            descriptionField.val('Reunión de soporte con ' + selectedText);
+        }
+    });
+    
+    // Si ya hay una empresa seleccionada al cargar y no hay descripción, insertar el texto
+    {% if not meeting %}
+        const companySelect = $('#{{ form.company.id_for_label }}');
+        const descriptionField = $('#{{ form.description.id_for_label }}');
+        if (companySelect.val() && !descriptionField.val().trim()) {
+            const selectedText = companySelect.find('option:selected').text();
+            descriptionField.val('Reunión de soporte con ' + selectedText);
+        }
+    {% endif %}
 });
 </script>
 {% endblock %}
