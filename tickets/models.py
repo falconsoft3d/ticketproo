@@ -1706,6 +1706,20 @@ class SystemConfiguration(models.Model):
         help_text='ID del grupo o chat donde enviar las notificaciones (ej: -100123456789)'
     )
     
+    # Configuración de OCR Facturas - Enlace Público
+    ocr_public_upload_enabled = models.BooleanField(
+        default=True,
+        verbose_name='Habilitar enlace público para subir facturas',
+        help_text='Permite activar o desactivar el enlace público para que usuarios suban facturas'
+    )
+    ocr_public_upload_token = models.CharField(
+        max_length=100,
+        blank=True,
+        unique=True,
+        verbose_name='Token del enlace público',
+        help_text='Token autogenerado para acceso a la API de listado de facturas'
+    )
+    
     # Configuración de Email
     enable_email_notifications = models.BooleanField(
         default=False,
@@ -1812,6 +1826,13 @@ class SystemConfiguration(models.Model):
     
     def __str__(self):
         return f'Configuración del Sistema - {self.site_name}'
+    
+    def save(self, *args, **kwargs):
+        """Autogenerar token para OCR si no existe"""
+        if not self.ocr_public_upload_token:
+            import secrets
+            self.ocr_public_upload_token = secrets.token_urlsafe(32)
+        super().save(*args, **kwargs)
     
     @classmethod
     def get_config(cls):
@@ -17270,6 +17291,316 @@ class SupportMeetingPublicLink(models.Model):
         self.last_accessed = timezone.now()
         self.access_count += 1
         self.save(update_fields=['last_accessed', 'access_count'])
+
+
+class EmailTemplate(models.Model):
+    """Modelo para plantillas de correo electrónico"""
+    
+    CATEGORY_CHOICES = [
+        ('general', 'General'),
+        ('ventas', 'Ventas'),
+        ('soporte', 'Soporte'),
+        ('marketing', 'Marketing'),
+        ('seguimiento', 'Seguimiento'),
+        ('recordatorio', 'Recordatorio'),
+    ]
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Título descriptivo de la plantilla'
+    )
+    body = models.TextField(
+        verbose_name='Cuerpo del mensaje',
+        help_text='Contenido del correo electrónico'
+    )
+    category = models.CharField(
+        max_length=50,
+        choices=CATEGORY_CHOICES,
+        default='general',
+        verbose_name='Categoría'
+    )
+    order = models.PositiveIntegerField(
+        default=1,
+        verbose_name='Orden',
+        help_text='Orden de visualización (menor número = mayor prioridad)'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_email_templates',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['order', 'title']
+        verbose_name = 'Plantilla de Correo'
+        verbose_name_plural = 'Plantillas de Correo'
+    
+    def __str__(self):
+        return f"{self.title} ({self.get_category_display()})"
+
+
+class EmailTemplateHistory(models.Model):
+    """Modelo para historial de cambios de plantillas de correo"""
+    
+    template = models.ForeignKey(
+        EmailTemplate,
+        on_delete=models.CASCADE,
+        related_name='history',
+        verbose_name='Plantilla'
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título'
+    )
+    body = models.TextField(
+        verbose_name='Cuerpo del mensaje'
+    )
+    category = models.CharField(
+        max_length=50,
+        verbose_name='Categoría'
+    )
+    order = models.PositiveIntegerField(
+        verbose_name='Orden'
+    )
+    changed_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Modificado por'
+    )
+    changed_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de modificación'
+    )
+    change_reason = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Motivo del cambio'
+    )
+    
+    class Meta:
+        ordering = ['-changed_at']
+        verbose_name = 'Historial de Plantilla'
+        verbose_name_plural = 'Historiales de Plantillas'
+    
+    def __str__(self):
+        return f"{self.template.title} - {self.changed_at.strftime('%d/%m/%Y %H:%M')}"
+
+
+class Counter(models.Model):
+    """Modelo para contadores diarios"""
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Nombre del contador'
+    )
+    value = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name='Valor',
+        help_text='Valor del contador'
+    )
+    date = models.DateField(
+        verbose_name='Fecha',
+        help_text='Fecha del contador'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='counters',
+        verbose_name='Usuario'
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas',
+        help_text='Notas adicionales (opcional)'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-date', 'title']
+        verbose_name = 'Contador'
+        verbose_name_plural = 'Contadores'
+        unique_together = ['title', 'date', 'user']
+    
+    def __str__(self):
+        return f"{self.title} - {self.value} ({self.date.strftime('%d/%m/%Y')})"
+
+
+class OCRInvoice(models.Model):
+    """Modelo para facturas procesadas con OCR"""
+    
+    STATUS_CHOICES = [
+        ('draft', 'Borrador'),
+        ('scanned', 'Escaneado'),
+        ('downloaded', 'Descargada'),
+    ]
+    
+    sequence_number = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name='Número de Secuencia',
+        help_text='Número de secuencia interno autogenerado'
+    )
+    number = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Número de Factura',
+        help_text='Número de la factura (se extrae automáticamente del OCR)'
+    )
+    supplier = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name='Proveedor',
+        help_text='Nombre del proveedor (se extrae automáticamente del OCR)'
+    )
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        blank=True,
+        verbose_name='Importe',
+        help_text='Importe total de la factura (se extrae automáticamente del OCR)'
+    )
+    neto = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        blank=True,
+        verbose_name='Neto',
+        help_text='Importe neto sin impuestos'
+    )
+    impuesto = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        blank=True,
+        verbose_name='Impuesto',
+        help_text='Importe del impuesto (IVA, etc.)'
+    )
+    total = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        blank=True,
+        verbose_name='Total',
+        help_text='Importe total con impuestos'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='draft',
+        verbose_name='Estado'
+    )
+    image = models.ImageField(
+        upload_to='invoices/%Y/%m/',
+        verbose_name='Imagen de la factura',
+        help_text='Imagen escaneada de la factura'
+    )
+    json_data = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name='Datos OCR',
+        help_text='Datos extraídos por OCR en formato JSON'
+    )
+    public_token = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='Token público',
+        help_text='Token para acceso público y API'
+    )
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='uploaded_invoices',
+        verbose_name='Subido por'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    downloaded = models.BooleanField(
+        default=False,
+        verbose_name='Descargada',
+        help_text='Indica si la factura ha sido descargada vía API'
+    )
+    downloaded_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de descarga',
+        help_text='Fecha y hora en que se descargó la factura por primera vez'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Factura OCR'
+        verbose_name_plural = 'Facturas OCR'
+    
+    def __str__(self):
+        number = self.number or 'Sin número'
+        supplier = self.supplier or 'Sin proveedor'
+        total = self.total or self.amount or 0
+        return f"{number} - {supplier} - ${total}"
+    
+    def save(self, *args, **kwargs):
+        # Generar token público si no existe
+        if not self.public_token:
+            import secrets
+            self.public_token = secrets.token_urlsafe(32)
+        
+        # Generar número de secuencia si no existe
+        if not self.sequence_number:
+            # Obtener el último número de secuencia
+            last_invoice = OCRInvoice.objects.order_by('-id').first()
+            
+            if last_invoice and last_invoice.id:
+                new_num = last_invoice.id + 1
+            else:
+                new_num = 1
+            
+            self.sequence_number = str(new_num)
+        
+        super().save(*args, **kwargs)
+    
+    def get_public_url(self):
+        """Retorna la URL pública para subir facturas"""
+        from django.urls import reverse
+        return reverse('ocr_invoice_public_upload', kwargs={'token': self.public_token})
+    
+    def get_api_url(self):
+        """Retorna la URL de la API para consumir la factura"""
+        from django.urls import reverse
+        return reverse('ocr_invoice_api', kwargs={'token': self.public_token})
 
 
 class ScheduledTask(models.Model):

@@ -1,0 +1,424 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-receipt me-2"></i>{{ page_title }}</h2>
+            <p class="text-muted">Gestiona tus facturas procesadas con OCR</p>
+        </div>
+        <a href="{% url 'ocr_invoice_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Nueva Factura
+        </a>
+    </div>
+
+    <!-- Enlace público para subir facturas desde móvil -->
+    {% if ocr_config.ocr_public_upload_enabled %}
+    <div class="card mb-4 border-primary shadow-sm">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="card-title mb-2">
+                        <i class="bi bi-phone text-primary me-2"></i>
+                        Subir Facturas desde el Móvil
+                    </h5>
+                    <p class="card-text text-muted mb-2">
+                        Usa este enlace para escanear y subir facturas directamente desde tu teléfono. 
+                        El sistema procesará automáticamente las imágenes con OCR.
+                    </p>
+                    {% if ocr_config.ocr_public_upload_token %}
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control" 
+                               value="{{ request.scheme }}://{{ request.get_host }}{% url 'ocr_invoice_public_new_with_token' token=ocr_config.ocr_public_upload_token %}" 
+                               id="publicUrlGlobal" readonly>
+                        <button class="btn btn-outline-secondary" type="button" 
+                                onclick="copyPublicUrlGlobal()" title="Copiar enlace">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                        <a href="{% url 'ocr_invoice_public_new_with_token' token=ocr_config.ocr_public_upload_token %}" target="_blank" 
+                           class="btn btn-primary" title="Abrir enlace">
+                            <i class="bi bi-box-arrow-up-right me-1"></i> Abrir
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Debes generar un token primero para obtener el enlace de subida.
+                    </div>
+                    {% endif %}
+                    <div class="mt-2">
+                        <strong class="text-primary">Token API para listar facturas:</strong>
+                        {% if ocr_config.ocr_public_upload_token %}
+                        <div class="input-group input-group-sm mt-1">
+                            <input type="text" class="form-control font-monospace" 
+                                   value="{{ ocr_config.ocr_public_upload_token }}" 
+                                   id="apiTokenGlobal" readonly>
+                            <button class="btn btn-outline-secondary" type="button" 
+                                    onclick="copyApiToken()" title="Copiar token">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                            <form method="post" action="{% url 'ocr_invoice_generate_api_token' %}" class="d-inline" 
+                                  onsubmit="return confirm('¿Generar nuevo token? El token actual dejará de funcionar.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning" title="Regenerar token">
+                                    <i class="bi bi-arrow-clockwise"></i> Regenerar
+                                </button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning mt-2">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            No hay token de API configurado.
+                            <form method="post" action="{% url 'ocr_invoice_generate_api_token' %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-primary ms-2">
+                                    <i class="bi bi-key me-1"></i> Generar Token
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            URL API: <code>{{ request.scheme }}://{{ request.get_host }}/api/ocr-invoices/list/TOKEN/</code>
+                            <br>
+                            Parámetros: <code>?limit=10&downloaded=false&status=scanned</code>
+                        </small>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center mt-3 mt-md-0">
+                    {% if ocr_config.ocr_public_upload_token %}
+                    <div id="qrcode" class="d-inline-block"></div>
+                    <p class="small text-muted mt-2 mb-0">
+                        <i class="bi bi-qr-code"></i> Escanea con el móvil
+                    </p>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-qr-code-scan"></i>
+                        <p class="mb-0">Genera un token para ver el código QR</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning mb-4">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Enlace público desactivado</strong>
+        <p class="mb-0">El enlace público para subir facturas está desactivado. Puedes activarlo desde la configuración del sistema.</p>
+    </div>
+    {% endif %}
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Estado</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Todos</option>
+                        {% for value, label in statuses %}
+                        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Buscar</label>
+                    <input type="text" class="form-control" id="search" name="search" value="{{ search }}" 
+                           placeholder="Número o proveedor...">
+                </div>
+                <div class="col-md-3">
+                    <label for="view" class="form-label">Vista</label>
+                    <select class="form-select" id="view" name="view">
+                        <option value="table" {% if view_mode == 'table' %}selected{% endif %}>Tabla</option>
+                        <option value="cards" {% if view_mode == 'cards' %}selected{% endif %}>Tarjetas</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search me-1"></i> Filtrar
+                    </button>
+                    <a href="{% url 'ocr_invoice_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle me-1"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de facturas -->
+    {% if view_mode == 'table' %}
+    <!-- Vista de Tabla -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Número</th>
+                            <th>Proveedor</th>
+                            <th>Neto</th>
+                            <th>Impuesto</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if page_obj %}
+                            {% for invoice in page_obj %}
+                            <tr>
+                                <td>{{ invoice.sequence_number }}</td>
+                                <td>
+                                    <strong>{{ invoice.number|default:"Sin número" }}</strong>
+                                    {% if invoice.image %}
+                                    <br><small class="text-muted"><i class="bi bi-image me-1"></i>Con imagen</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ invoice.supplier|default:"Sin proveedor" }}</td>
+                                <td class="text-info">${{ invoice.neto|floatformat:2 }}</td>
+                                <td class="text-warning">${{ invoice.impuesto|floatformat:2 }}</td>
+                                <td class="text-success fw-bold">${{ invoice.total|floatformat:2 }}</td>
+                                <td>
+                                    {% if invoice.status == 'draft' %}
+                                        <span class="badge bg-secondary">{{ invoice.get_status_display }}</span>
+                                    {% elif invoice.status == 'scanned' %}
+                                        <span class="badge bg-success">{{ invoice.get_status_display }}</span>
+                                    {% elif invoice.status == 'downloaded' %}
+                                        <span class="badge bg-info">{{ invoice.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-primary">{{ invoice.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ invoice.created_at|date:"d/m/Y" }}<br>{{ invoice.created_at|date:"H:i" }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'ocr_invoice_detail' invoice.pk %}" class="btn btn-outline-primary" title="Ver detalle">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if invoice.status == 'draft' %}
+                                        <a href="{% url 'ocr_invoice_process' invoice.pk %}" class="btn btn-outline-success" 
+                                           onclick="return confirm('¿Procesar factura con OCR?');" title="Procesar OCR">
+                                            <i class="bi bi-cpu"></i>
+                                        </a>
+                                        {% endif %}
+                                        <a href="{% url 'ocr_invoice_edit' invoice.pk %}" class="btn btn-outline-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'ocr_invoice_delete' invoice.pk %}" class="btn btn-outline-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center py-4">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    No hay facturas registradas.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Vista de Tarjetas -->
+    <div class="row">
+        {% if page_obj %}
+            {% for invoice in page_obj %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 shadow-sm">
+                    {% if invoice.image %}
+                    <img src="{{ invoice.image.url }}" class="card-img-top" alt="Factura" style="height: 200px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <span class="badge bg-primary">{{ invoice.sequence_number }}</span>
+                        </div>
+                        <h5 class="card-title">{{ invoice.number|default:"Sin número" }}</h5>
+                        <p class="card-text">
+                            <strong>Proveedor:</strong> {{ invoice.supplier|default:"Sin proveedor" }}<br>
+                            <strong>Neto:</strong> <span class="text-info">${{ invoice.neto|floatformat:2 }}</span><br>
+                            <strong>Impuesto:</strong> <span class="text-warning">${{ invoice.impuesto|floatformat:2 }}</span><br>
+                            <strong>Total:</strong> <span class="text-success fw-bold">${{ invoice.total|floatformat:2 }}</span><br>
+                            <strong>Estado:</strong> 
+                            {% if invoice.status == 'draft' %}
+                                <span class="badge bg-secondary">{{ invoice.get_status_display }}</span>
+                            {% elif invoice.status == 'scanned' %}
+                                <span class="badge bg-success">{{ invoice.get_status_display }}</span>
+                            {% elif invoice.status == 'downloaded' %}
+                                <span class="badge bg-info">{{ invoice.get_status_display }}</span>
+                            {% else %}
+                                <span class="badge bg-primary">{{ invoice.get_status_display }}</span>
+                            {% endif %}
+                        </p>
+                        <small class="text-muted">
+                            <i class="bi bi-clock me-1"></i>{{ invoice.created_at|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <!-- Link público para subir desde móvil -->
+                        <div class="mb-2">
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" 
+                                       value="{{ request.scheme }}://{{ request.get_host }}{{ invoice.get_public_url }}" 
+                                       id="publicUrl{{ invoice.pk }}" readonly>
+                                <button class="btn btn-outline-secondary" type="button" 
+                                        onclick="copyPublicUrl{{ invoice.pk }}()" title="Copiar link">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                                <a href="{{ invoice.get_public_url }}" target="_blank" 
+                                   class="btn btn-outline-primary" title="Abrir link público">
+                                    <i class="bi bi-phone"></i>
+                                </a>
+                            </div>
+                            <small class="text-muted">
+                                <i class="bi bi-camera me-1"></i>Link para subir desde móvil
+                            </small>
+                        </div>
+                        
+                        <!-- Botones de acción -->
+                        <div class="d-grid gap-2">
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'ocr_invoice_detail' invoice.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Ver
+                                </a>
+                                {% if invoice.status == 'draft' %}
+                                <a href="{% url 'ocr_invoice_process' invoice.pk %}" class="btn btn-sm btn-outline-success" 
+                                   onclick="return confirm('¿Procesar factura con OCR?');">
+                                    <i class="bi bi-cpu"></i> Procesar
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'ocr_invoice_edit' invoice.pk %}" class="btn btn-sm btn-outline-warning">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
+                            </div>
+                            <a href="{% url 'ocr_invoice_delete' invoice.pk %}" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    No hay facturas registradas.
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Paginación -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Paginación" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if view_mode %}&view={{ view_mode }}{% endif %}">Primera</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if view_mode %}&view={{ view_mode }}{% endif %}">Anterior</a>
+            </li>
+            {% endif %}
+            
+            <li class="page-item active">
+                <span class="page-link">
+                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </span>
+            </li>
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if view_mode %}&view={{ view_mode }}{% endif %}">Siguiente</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if view_mode %}&view={{ view_mode }}{% endif %}">Última</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+// Generar QR code para el enlace público global (solo si está habilitado y tiene token)
+{% if ocr_config.ocr_public_upload_enabled and ocr_config.ocr_public_upload_token %}
+document.addEventListener('DOMContentLoaded', function() {
+    const publicUrl = document.getElementById('publicUrlGlobal').value;
+    new QRCode(document.getElementById('qrcode'), {
+        text: publicUrl,
+        width: 150,
+        height: 150,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+    });
+});
+{% endif %}
+
+// Función para copiar el enlace público global
+function copyPublicUrlGlobal() {
+    const input = document.getElementById('publicUrlGlobal');
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value).then(() => {
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i>';
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+        }, 2000);
+    });
+}
+
+// Función para copiar el token de la API
+function copyApiToken() {
+    const input = document.getElementById('apiTokenGlobal');
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value).then(() => {
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i>';
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+        }, 2000);
+    });
+}
+
+// Funciones para copiar enlaces de cada factura individual
+{% for invoice in page_obj %}
+function copyPublicUrl{{ invoice.pk }}() {
+    const input = document.getElementById('publicUrl{{ invoice.pk }}');
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value).then(() => {
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i>';
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+        }, 2000);
+    });
+}
+{% endfor %}
+</script>
+{% endblock %}

@@ -7,7 +7,8 @@ from .api_views import (
     active_users_count, active_users_list, open_tickets_count, direct_ai_chat,
     system_info_api, short_url_stats_api, upcoming_events_list, web_counter_track,
     web_counter_stats, quick_create_task, pending_tasks_count, get_all_users_for_tasks,
-    dynamic_table_api_list, dynamic_table_api_detail, my_pending_work_orders, qa_ratings_count
+    dynamic_table_api_list, dynamic_table_api_detail, my_pending_work_orders, qa_ratings_count,
+    ocr_invoice_api, ocr_invoice_list_api
 )
 
 # Router para los ViewSets
@@ -70,6 +71,10 @@ api_urlpatterns = [
     # URLs para Tablas Dinámicas API (sin autenticación - usa token de tabla)
     path('dynamic-tables/<str:table_name>/', dynamic_table_api_list, name='api-dynamic-table-list'),
     path('dynamic-tables/<str:table_name>/<int:record_id>/', dynamic_table_api_detail, name='api-dynamic-table-detail'),
+    
+    # URLs para Facturas OCR API (sin autenticación - usa token)
+    path('ocr-invoices/<str:token>/', ocr_invoice_api, name='ocr_invoice_api'),
+    path('ocr-invoices/list/<str:token>/', ocr_invoice_list_api, name='ocr_invoice_list_api'),
 ]
 
 # Django espera que la variable se llame urlpatterns

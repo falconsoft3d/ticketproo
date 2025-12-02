@@ -50,7 +50,7 @@ from .models import (
     AITutor, AITutorProgressReport, AITutorAttachment, ExpenseReport, ExpenseItem, ExpenseComment,
     VideoMeeting, MeetingNote, QuoteGenerator, CountdownTimer, AbsenceType,
     Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage,
-    MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint, ScheduledTask,
+    MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint, ScheduledTask, EmailTemplate, EmailTemplateHistory, Counter, OCRInvoice,
     ClientRequest, ClientRequestResponse, ClientRequestTemplate, ClientRequestTemplateItem, Event, Trip, TripStop,
     MultiMeasurement, MultiMeasurementRecord, PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
     DynamicTable, DynamicTableField, WorkOrderRating, WorkOrderComment, FunctionalRequirementDocument, FunctionalRequirement,
@@ -8661,6 +8661,202 @@ class SupportMeetingPointForm(forms.ModelForm):
         if len(description) < 10:
             raise forms.ValidationError('La descripción del punto debe tener al menos 10 caracteres.')
         return description
+
+
+class EmailTemplateForm(forms.ModelForm):
+    """Formulario para plantillas de correo electrónico"""
+    
+    class Meta:
+        model = EmailTemplate
+        fields = ['title', 'body', 'category', 'order', 'is_active']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la plantilla...'
+            }),
+            'body': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Escribe el contenido del correo...',
+                'rows': 10
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'value': '1'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'body': 'Cuerpo del mensaje',
+            'category': 'Categoría',
+            'order': 'Orden',
+            'is_active': 'Activo',
+        }
+        help_texts = {
+            'title': 'Nombre descriptivo para identificar la plantilla',
+            'body': 'Contenido del correo electrónico',
+            'category': 'Categoría para organizar las plantillas',
+            'order': 'Orden de visualización (menor número aparece primero)',
+            'is_active': 'Desmarcar para desactivar la plantilla sin eliminarla',
+        }
+
+
+class CounterForm(forms.ModelForm):
+    """Formulario para contadores diarios"""
+    
+    class Meta:
+        model = Counter
+        fields = ['title', 'value', 'date', 'notes']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ejemplo: Ventas, Llamadas, Tareas...'
+            }),
+            'value': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': '0.00'
+            }),
+            'date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Notas adicionales (opcional)...',
+                'rows': 3
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'value': 'Valor',
+            'date': 'Fecha',
+            'notes': 'Notas',
+        }
+        help_texts = {
+            'title': 'Nombre del contador',
+            'value': 'Valor numérico del contador',
+            'date': 'Fecha del contador',
+            'notes': 'Información adicional (opcional)',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Establecer fecha de hoy por defecto
+        if not self.instance.pk:
+            from datetime import date
+            self.fields['date'].initial = date.today()
+
+
+class OCRInvoiceForm(forms.ModelForm):
+    """Formulario para facturas OCR"""
+    
+    class Meta:
+        model = OCRInvoice
+        fields = ['image', 'number', 'supplier', 'neto', 'impuesto', 'total', 'amount', 'status']
+        widgets = {
+            'image': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*',
+                'required': True
+            }),
+            'number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Número de factura (opcional, se extrae del OCR)...',
+                'required': False
+            }),
+            'supplier': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del proveedor (opcional, se extrae del OCR)...',
+                'required': False
+            }),
+            'neto': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': '0.00 (opcional, se extrae del OCR)',
+                'required': False
+            }),
+            'impuesto': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': '0.00 (opcional, se extrae del OCR)',
+                'required': False
+            }),
+            'total': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': '0.00 (opcional, se extrae del OCR)',
+                'required': False
+            }),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': '0.00 (opcional, se extrae del OCR)',
+                'required': False
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+        }
+        labels = {
+            'image': 'Imagen de la Factura *',
+            'number': 'Número de Factura (opcional)',
+            'supplier': 'Proveedor (opcional)',
+            'neto': 'Neto (opcional)',
+            'impuesto': 'Impuesto (opcional)',
+            'total': 'Total (opcional)',
+            'amount': 'Importe (opcional)',
+            'status': 'Estado',
+        }
+        help_texts = {
+            'image': 'Imagen escaneada de la factura (requerido)',
+            'number': 'Se llenará automáticamente al procesar con OCR',
+            'supplier': 'Se llenará automáticamente al procesar con OCR',
+            'neto': 'Se llenará automáticamente al procesar con OCR',
+            'impuesto': 'Se llenará automáticamente al procesar con OCR',
+            'total': 'Se llenará automáticamente al procesar con OCR',
+            'amount': 'Se llenará automáticamente al procesar con OCR',
+            'status': 'Estado actual de la factura',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Hacer campos opcionales excepto image
+        self.fields['number'].required = False
+        self.fields['supplier'].required = False
+        self.fields['neto'].required = False
+        self.fields['impuesto'].required = False
+        self.fields['total'].required = False
+        self.fields['amount'].required = False
+
+
+class OCRInvoicePublicForm(forms.ModelForm):
+    """Formulario público para subir facturas desde móvil"""
+    
+    class Meta:
+        model = OCRInvoice
+        fields = ['image']
+        widgets = {
+            'image': forms.FileInput(attrs={
+                'class': 'form-control form-control-lg',
+                'accept': 'image/*',
+                'capture': 'environment'  # Activa la cámara en móviles
+            }),
+        }
+        labels = {
+            'image': 'Escanear Factura',
+        }
 
 
 class ScheduledTaskForm(forms.ModelForm):

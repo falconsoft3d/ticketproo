@@ -430,6 +430,34 @@ urlpatterns = [
     # URLs públicas de reuniones de soporte (sin autenticación)
     path('support/meeting/<str:token>/', views.support_meeting_public, name='support_meeting_public'),
     
+    # ============= URLs PLANTILLAS DE CORREO =============
+    path('email-templates/', views.email_template_list, name='email_template_list'),
+    path('email-templates/create/', views.email_template_create, name='email_template_create'),
+    path('email-templates/<int:pk>/', views.email_template_detail, name='email_template_detail'),
+    path('email-templates/<int:pk>/edit/', views.email_template_edit, name='email_template_edit'),
+    path('email-templates/<int:pk>/delete/', views.email_template_delete, name='email_template_delete'),
+    
+    # URLs de Contadores
+    path('counters/', views.counter_list, name='counter_list'),
+    path('counters/create/', views.counter_create, name='counter_create'),
+    path('counters/<int:pk>/', views.counter_detail, name='counter_detail'),
+    path('counters/<int:pk>/edit/', views.counter_edit, name='counter_edit'),
+    path('counters/<int:pk>/delete/', views.counter_delete, name='counter_delete'),
+    
+    # URLs de Facturas OCR
+    path('ocr-invoices/', views.ocr_invoice_list, name='ocr_invoice_list'),
+    path('ocr-invoices/create/', views.ocr_invoice_create, name='ocr_invoice_create'),
+    path('ocr-invoices/generate-api-token/', views.ocr_invoice_generate_api_token, name='ocr_invoice_generate_api_token'),
+    path('ocr-invoices/<int:pk>/', views.ocr_invoice_detail, name='ocr_invoice_detail'),
+    path('ocr-invoices/<int:pk>/edit/', views.ocr_invoice_edit, name='ocr_invoice_edit'),
+    path('ocr-invoices/<int:pk>/delete/', views.ocr_invoice_delete, name='ocr_invoice_delete'),
+    path('ocr-invoices/<int:pk>/process/', views.ocr_invoice_process, name='ocr_invoice_process'),
+    
+    # URLs públicas de facturas OCR (sin autenticación)
+    path('ocr/upload/', views.ocr_invoice_public_new, name='ocr_invoice_public_new'),
+    path('ocr/upload/<str:token>/', views.ocr_invoice_public_new, name='ocr_invoice_public_new_with_token'),
+    path('ocr/upload/invoice/<str:token>/', views.ocr_invoice_public_upload, name='ocr_invoice_public_upload'),
+    
     # URLs públicas de reuniones (sin autenticación)
     path('meetings/public/<str:token>/', views.meeting_public_view, name='meeting_public'),
     path('meetings/public/<str:token>/register/', views.meeting_register_view, name='meeting_register'),

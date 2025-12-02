@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 1rem;
+        }
+        .upload-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .upload-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        .btn-upload {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            width: 100%;
+            margin-top: 1rem;
+            transition: all 0.3s;
+        }
+        .btn-upload:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        #imageInput {
+            display: none;
+        }
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            margin: 1rem auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: block;
+        }
+        .file-label {
+            background: white;
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: block;
+            margin: 0 auto;
+        }
+        .file-label:hover {
+            background: #f8f9fa;
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+        .file-label i {
+            font-size: 3.5rem;
+            color: #667eea;
+            display: block;
+        }
+        .file-label p {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #333;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .file-label small {
+            font-size: 0.9rem;
+        }
+        #previewContainer {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .alert {
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+        }
+        #progressContainer {
+            animation: fadeIn 0.3s;
+        }
+        #resultContainer {
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .spinner-border {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .progress {
+            border-radius: 15px;
+            overflow: hidden;
+            background-color: #e9ecef;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-card">
+        <div class="text-center">
+            <i class="bi bi-receipt-cutoff upload-icon"></i>
+            <h2 class="mb-2">{{ page_title }}</h2>
+            <p class="text-muted mb-4">Escanea tu factura con la cámara del móvil</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show text-center" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" id="uploadForm">
+            {% csrf_token %}
+            
+            <label for="imageInput" class="file-label">
+                <i class="bi bi-camera-fill"></i>
+                <p>Toca para tomar foto</p>
+                <small class="text-muted">o seleccionar imagen</small>
+            </label>
+            
+            <input type="file" 
+                   id="imageInput" 
+                   name="image" 
+                   accept="image/*" 
+                   capture="environment"
+                   required>
+            
+            <div id="previewContainer" style="display: none;">
+                <img id="imagePreview" class="image-preview" alt="Preview">
+                <div class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="changeImage()">
+                        <i class="bi bi-arrow-clockwise"></i> Cambiar imagen
+                    </button>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-upload" id="submitBtn" style="display: none;">
+                <i class="bi bi-cloud-upload me-2"></i> Subir Factura
+            </button>
+        </form>
+
+        <div class="text-center mt-4">
+            <small class="text-muted">
+                <i class="bi bi-shield-check"></i> Conexión segura • Procesamiento automático con IA
+            </small>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewContainer = document.getElementById('previewContainer');
+        const submitBtn = document.getElementById('submitBtn');
+        const uploadForm = document.getElementById('uploadForm');
+
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                    submitBtn.style.display = 'block';
+                    document.querySelector('.file-label').style.display = 'none';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function changeImage() {
+            imageInput.value = '';
+            previewContainer.style.display = 'none';
+            submitBtn.style.display = 'none';
+            document.querySelector('.file-label').style.display = 'block';
+            document.getElementById('resultContainer').style.display = 'none';
+        }
+
+        // Mostrar progreso durante la carga
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(uploadForm);
+            const submitButton = document.getElementById('submitBtn');
+            
+            // Ocultar botón y mostrar progreso
+            submitButton.style.display = 'none';
+            
+            // Crear contenedor de progreso
+            const progressContainer = document.createElement('div');
+            progressContainer.id = 'progressContainer';
+            progressContainer.className = 'text-center mt-3';
+            progressContainer.innerHTML = `
+                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="text-primary fw-bold">Subiendo y procesando factura...</p>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" 
+                         style="width: 0%"
+                         id="uploadProgress">0%</div>
+                </div>
+            `;
+            previewContainer.appendChild(progressContainer);
+            
+            // Simular progreso
+            let progress = 0;
+            const progressBar = progressContainer.querySelector('#uploadProgress');
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 30;
+                if (progress > 90) progress = 90;
+                progressBar.style.width = progress + '%';
+                progressBar.textContent = Math.round(progress) + '%';
+            }, 200);
+            
+            // Enviar formulario
+            fetch(uploadForm.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+                progressBar.textContent = '100%';
+                return response.text();
+            })
+            .then(html => {
+                // Extraer mensaje de éxito
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const successAlert = doc.querySelector('.alert-success');
+                
+                if (successAlert) {
+                    // Ocultar progreso
+                    progressContainer.remove();
+                    
+                    // Mostrar resultado con animación
+                    const resultContainer = document.createElement('div');
+                    resultContainer.id = 'resultContainer';
+                    resultContainer.className = 'mt-3';
+                    
+                    let resultHTML = `
+                        <div class="alert alert-success text-center">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                            <h4 class="mt-2">¡Factura Procesada!</h4>
+                            <p class="mb-0">La factura ha sido procesada exitosamente con OCR.</p>
+                        </div>
+                    `;
+                    
+                    // Intentar extraer datos del mensaje
+                    const messageText = successAlert.textContent;
+                    if (messageText.includes('procesada exitosamente')) {
+                        resultHTML += `
+                            <div class="card shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center mb-3">
+                                        <i class="bi bi-receipt text-primary"></i> Datos Extraídos
+                                    </h5>
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        Los datos de la factura han sido extraídos automáticamente.
+                                        <br>Puedes verificarlos en el panel de administración.
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    resultHTML += `
+                        <div class="text-center mt-3">
+                            <button type="button" class="btn btn-primary btn-lg" onclick="resetForm()">
+                                <i class="bi bi-plus-circle me-2"></i> Subir Otra Factura
+                            </button>
+                        </div>
+                    `;
+                    
+                    resultContainer.innerHTML = resultHTML;
+                    previewContainer.appendChild(resultContainer);
+                } else {
+                    // Error
+                    progressContainer.innerHTML = `
+                        <div class="alert alert-danger text-center">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <p class="mt-2 mb-0">Hubo un error al subir la factura. Por favor intenta de nuevo.</p>
+                        </div>
+                    `;
+                    submitButton.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                progressContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Error de conexión. Por favor intenta de nuevo.
+                    </div>
+                `;
+                submitButton.style.display = 'block';
+            });
+        });
+        
+        function resetForm() {
+            imageInput.value = '';
+            previewContainer.style.display = 'none';
+            document.querySelector('.file-label').style.display = 'block';
+            const resultContainer = document.getElementById('resultContainer');
+            if (resultContainer) resultContainer.remove();
+            const progressContainer = document.getElementById('progressContainer');
+            if (progressContainer) progressContainer.remove();
+        }
+    </script>
+</body>
+</html>

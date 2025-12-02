@@ -4646,7 +4646,7 @@ class SalesPlanAdmin(admin.ModelAdmin):
 
 # ============= ADMIN PARA REUNIONES DE SOPORTE =============
 
-from .models import SupportMeeting, SupportMeetingPoint, SupportMeetingPublicLink
+from .models import SupportMeeting, SupportMeetingPoint, SupportMeetingPublicLink, EmailTemplate, EmailTemplateHistory, Counter, OCRInvoice
 
 class SupportMeetingPointInline(admin.TabularInline):
     model = SupportMeetingPoint
@@ -4710,6 +4710,171 @@ class SupportMeetingPointAdmin(admin.ModelAdmin):
     def description_preview(self, obj):
         return obj.description[:80] + '...' if len(obj.description) > 80 else obj.description
     description_preview.short_description = 'Descripción'
+
+
+@admin.register(EmailTemplate)
+class EmailTemplateAdmin(admin.ModelAdmin):
+    list_display = ('title', 'category_badge', 'order', 'is_active', 'created_by', 'created_at')
+    list_filter = ('category', 'is_active', 'created_at')
+    search_fields = ('title', 'body', 'created_by__username')
+    ordering = ('order', 'title')
+    readonly_fields = ('created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Información Principal', {
+            'fields': ('title', 'category', 'order', 'is_active')
+        }),
+        ('Contenido', {
+            'fields': ('body',)
+        }),
+        ('Auditoría', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def category_badge(self, obj):
+        colors = {
+            'general': 'secondary',
+            'ventas': 'success',
+            'soporte': 'primary',
+            'marketing': 'info',
+            'seguimiento': 'warning',
+            'recordatorio': 'danger',
+        }
+        color = colors.get(obj.category, 'secondary')
+        return format_html(
+            '<span class="badge badge-{}">{}</span>',
+            color, obj.get_category_display()
+        )
+    category_badge.short_description = 'Categoría'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(EmailTemplateHistory)
+class EmailTemplateHistoryAdmin(admin.ModelAdmin):
+    list_display = ('template', 'changed_by', 'changed_at', 'change_reason_preview')
+    list_filter = ('changed_at', 'template__category')
+    search_fields = ('template__title', 'changed_by__username', 'change_reason')
+    ordering = ('-changed_at',)
+    readonly_fields = ('template', 'title', 'body', 'category', 'order', 'changed_by', 'changed_at', 'change_reason')
+    
+    def change_reason_preview(self, obj):
+        if obj.change_reason:
+            return obj.change_reason[:50] + '...' if len(obj.change_reason) > 50 else obj.change_reason
+        return '-'
+    change_reason_preview.short_description = 'Motivo'
+    
+    def has_add_permission(self, request):
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(Counter)
+class CounterAdmin(admin.ModelAdmin):
+    list_display = ('title', 'value', 'date', 'user_display', 'created_at')
+    list_filter = ('date', 'user', 'created_at')
+    search_fields = ('title', 'notes', 'user__username', 'user__first_name', 'user__last_name')
+    ordering = ('-date', 'title')
+    readonly_fields = ('created_at', 'updated_at')
+    date_hierarchy = 'date'
+    
+    fieldsets = (
+        ('Información Principal', {
+            'fields': ('title', 'value', 'date', 'user')
+        }),
+        ('Detalles', {
+            'fields': ('notes',)
+        }),
+        ('Auditoría', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def user_display(self, obj):
+        return obj.user.get_full_name() or obj.user.username
+    user_display.short_description = 'Usuario'
+    user_display.admin_order_field = 'user__username'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.user = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(OCRInvoice)
+class OCRInvoiceAdmin(admin.ModelAdmin):
+    list_display = ('number', 'supplier', 'amount', 'status_badge', 'uploaded_by_display', 'created_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('number', 'supplier', 'uploaded_by__username', 'uploaded_by__first_name', 'uploaded_by__last_name')
+    ordering = ('-created_at',)
+    readonly_fields = ('public_token', 'json_data', 'created_at', 'updated_at', 'public_url_display', 'api_url_display')
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información Principal', {
+            'fields': ('number', 'supplier', 'amount', 'status')
+        }),
+        ('Imagen y Datos', {
+            'fields': ('image', 'json_data')
+        }),
+        ('Enlaces Públicos', {
+            'fields': ('public_token', 'public_url_display', 'api_url_display'),
+            'classes': ('collapse',)
+        }),
+        ('Auditoría', {
+            'fields': ('uploaded_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def status_badge(self, obj):
+        colors = {
+            'draft': 'secondary',
+            'scanned': 'success',
+        }
+        color = colors.get(obj.status, 'secondary')
+        return format_html(
+            '<span class="badge badge-{}">{}</span>',
+            color, obj.get_status_display()
+        )
+    status_badge.short_description = 'Estado'
+    
+    def uploaded_by_display(self, obj):
+        if obj.uploaded_by:
+            return obj.uploaded_by.get_full_name() or obj.uploaded_by.username
+        return '-'
+    uploaded_by_display.short_description = 'Subido por'
+    uploaded_by_display.admin_order_field = 'uploaded_by__username'
+    
+    def public_url_display(self, obj):
+        if obj.pk:
+            from django.urls import reverse
+            from django.contrib.sites.shortcuts import get_current_site
+            url = reverse('ocr_invoice_public_upload', kwargs={'token': obj.public_token})
+            return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+        return '-'
+    public_url_display.short_description = 'URL Pública'
+    
+    def api_url_display(self, obj):
+        if obj.pk:
+            from django.urls import reverse
+            url = reverse('ocr_invoice_api', kwargs={'token': obj.public_token})
+            return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+        return '-'
+    api_url_display.short_description = 'URL API'
+    
+    def save_model(self, request, obj, form, change):
+        if not change and not obj.uploaded_by:
+            obj.uploaded_by = request.user
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(SupportMeetingPublicLink)

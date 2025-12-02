@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-envelope-paper me-2"></i>{{ page_title }}</h1>
+        <a href="{% url 'email_template_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Nueva Plantilla
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" name="search" class="form-control" placeholder="Buscar en título o contenido..." value="{{ search }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Categoría</label>
+                    <select name="category" class="form-select">
+                        <option value="">Todas las categorías</option>
+                        {% for value, label in categories %}
+                            <option value="{{ value }}" {% if category_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                    <a href="{% url 'email_template_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de plantillas -->
+    <div class="row">
+        {% for template in page_obj %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 {% if not template.is_active %}bg-light{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title">
+                            <a href="{% url 'email_template_detail' template.pk %}" class="text-decoration-none">
+                                {{ template.title }}
+                            </a>
+                        </h5>
+                        <span class="badge bg-primary">{{ template.get_category_display }}</span>
+                    </div>
+                    
+                    <p class="card-text text-muted small">
+                        {{ template.body|truncatewords:20 }}
+                    </p>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-sort-numeric-down"></i> Orden: {{ template.order }}
+                        </small>
+                        <div>
+                            {% if not template.is_active %}
+                                <span class="badge bg-secondary">Inactivo</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'email_template_detail' template.pk %}" class="btn btn-sm btn-outline-primary flex-fill">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                        <a href="{% url 'email_template_edit' template.pk %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'email_template_delete' template.pk %}" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No hay plantillas de correo creadas.
+                <a href="{% url 'email_template_create' %}" class="alert-link">Crear la primera plantilla</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if page_obj.has_other_pages %}
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">Anterior</a>
+                </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">Siguiente</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

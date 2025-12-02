@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="mb-4">
+                <a href="{% url 'counter_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Volver a la lista
+                </a>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-calculator me-2"></i>
+                        {{ counter.title }}
+                    </h4>
+                    <span class="badge bg-light text-dark fs-4">{{ counter.value }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="text-muted small">Fecha</label>
+                                <div class="fs-5">
+                                    <i class="bi bi-calendar me-2"></i>
+                                    {{ counter.date|date:"d/m/Y" }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="text-muted small">Usuario</label>
+                                <div class="fs-5">
+                                    <i class="bi bi-person me-2"></i>
+                                    {{ counter.user.get_full_name|default:counter.user.username }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if counter.notes %}
+                    <div class="mb-4">
+                        <label class="text-muted small">Notas</label>
+                        <div class="border rounded p-3 bg-light">
+                            {{ counter.notes|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row text-muted small">
+                        <div class="col-md-6">
+                            <i class="bi bi-clock me-1"></i>
+                            Creado: {{ counter.created_at|date:"d/m/Y H:i" }}
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <i class="bi bi-pencil me-1"></i>
+                            Actualizado: {{ counter.updated_at|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'counter_edit' counter.pk %}" class="btn btn-warning">
+                            <i class="bi bi-pencil me-1"></i> Editar
+                        </a>
+                        <a href="{% url 'counter_delete' counter.pk %}" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

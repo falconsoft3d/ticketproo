@@ -152,6 +152,20 @@
                                     {% endif %}
                                 </a>
                             </li>
+                            
+                            <li>
+                                <a class="dropdown-item {% if 'email_template' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'email_template_list' %}">
+                                    <i class="bi bi-envelope-paper"></i> Plantillas de Correo
+                                </a>
+                            </li>
+                            
+                            <li>
+                                <a class="dropdown-item {% if 'counter' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'counter_list' %}">
+                                    <i class="bi bi-calculator"></i> Contadores
+                                </a>
+                            </li>
 
                             <li><hr class="dropdown-divider"></li>    
 
@@ -1126,6 +1140,12 @@
                                 <a class="dropdown-item {% if 'legal_contract' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'legal_contract_list' %}">
                                     <i class="bi bi-file-earmark-ruled"></i> Contratos Legales
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'ocr_invoice' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'ocr_invoice_list' %}">
+                                    <i class="bi bi-receipt"></i> Facturas OCR
                                 </a>
                             </li>
                             <li>

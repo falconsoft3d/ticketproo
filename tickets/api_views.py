@@ -1505,3 +1505,155 @@ def qa_ratings_count(request):
             'success': False
         }, status=500)
 
+
+@csrf_exempt
+def ocr_invoice_api(request, token):
+    """
+    API para consumir datos de una factura OCR mediante token
+    No requiere autenticación - usa el token público de la factura
+    """
+    from .models import OCRInvoice
+    from django.utils import timezone
+    
+    try:
+        # Buscar la factura por token
+        invoice = OCRInvoice.objects.get(public_token=token)
+        
+        # Marcar como descargada si es la primera vez
+        if not invoice.downloaded:
+            invoice.downloaded = True
+            invoice.downloaded_at = timezone.now()
+            # Cambiar estado a 'downloaded' si estaba en 'scanned'
+            if invoice.status == 'scanned':
+                invoice.status = 'downloaded'
+            invoice.save()
+        
+        # Preparar los datos de respuesta
+        data = {
+            'success': True,
+            'invoice': {
+                'id': invoice.id,
+                'number': invoice.number,
+                'supplier': invoice.supplier,
+                'neto': str(invoice.neto),
+                'impuesto': str(invoice.impuesto),
+                'total': str(invoice.total),
+                'amount': str(invoice.amount),
+                'status': invoice.status,
+                'status_display': invoice.get_status_display(),
+                'created_at': invoice.created_at.isoformat(),
+                'updated_at': invoice.updated_at.isoformat(),
+                'downloaded': invoice.downloaded,
+                'downloaded_at': invoice.downloaded_at.isoformat() if invoice.downloaded_at else None,
+                'uploaded_by': invoice.uploaded_by.get_full_name() if invoice.uploaded_by else None,
+                'json_data': invoice.json_data,
+            }
+        }
+        
+        # Incluir URL de la imagen si existe
+        if invoice.image:
+            data['invoice']['image_url'] = invoice.image.url
+        
+        return JsonResponse(data)
+    
+    except OCRInvoice.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Factura no encontrada'
+        }, status=404)
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@csrf_exempt
+def ocr_invoice_list_api(request, token):
+    """
+    API para listar facturas OCR con filtros
+    No requiere autenticación - usa el token global de configuración
+    
+    Parámetros GET opcionales:
+    - limit: número máximo de facturas (ej: 10, 20, etc.)
+    - downloaded: filtrar por descargadas (true/false)
+    - status: filtrar por estado (draft/scanned)
+    """
+    from .models import OCRInvoice, SystemConfiguration
+    
+    try:
+        # Validar el token contra la configuración del sistema
+        config = SystemConfiguration.get_config()
+        
+        if not config.ocr_public_upload_token or config.ocr_public_upload_token != token:
+            return JsonResponse({
+                'success': False,
+                'error': 'Token inválido'
+            }, status=403)
+        
+        # Iniciar queryset
+        invoices = OCRInvoice.objects.all()
+        
+        # Filtrar por downloaded si se especifica
+        downloaded_param = request.GET.get('downloaded')
+        if downloaded_param:
+            if downloaded_param.lower() == 'true':
+                invoices = invoices.filter(downloaded=True)
+            elif downloaded_param.lower() == 'false':
+                invoices = invoices.filter(downloaded=False)
+        
+        # Filtrar por status si se especifica
+        status_param = request.GET.get('status')
+        if status_param:
+            invoices = invoices.filter(status=status_param)
+        
+        # Aplicar límite si se especifica
+        limit_param = request.GET.get('limit')
+        if limit_param:
+            try:
+                limit = int(limit_param)
+                invoices = invoices[:limit]
+            except ValueError:
+                pass
+        
+        # Preparar datos de respuesta
+        invoices_data = []
+        for invoice in invoices:
+            invoice_dict = {
+                'id': invoice.id,
+                'number': invoice.number,
+                'supplier': invoice.supplier,
+                'neto': str(invoice.neto),
+                'impuesto': str(invoice.impuesto),
+                'total': str(invoice.total),
+                'amount': str(invoice.amount),
+                'status': invoice.status,
+                'status_display': invoice.get_status_display(),
+                'created_at': invoice.created_at.isoformat(),
+                'updated_at': invoice.updated_at.isoformat(),
+                'downloaded': invoice.downloaded,
+                'downloaded_at': invoice.downloaded_at.isoformat() if invoice.downloaded_at else None,
+                'uploaded_by': invoice.uploaded_by.get_full_name() if invoice.uploaded_by else None,
+                'public_token': invoice.public_token,
+            }
+            
+            # Incluir URL de la imagen si existe
+            if invoice.image:
+                invoice_dict['image_url'] = invoice.image.url
+            
+            invoices_data.append(invoice_dict)
+        
+        return JsonResponse({
+            'success': True,
+            'count': len(invoices_data),
+            'invoices': invoices_data
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+

@@ -48,7 +48,7 @@ from .models import (
     UserNote, TimeEntry, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
     Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory, OpportunityActivity,
-    Meeting, MeetingAttendee, MeetingQuestion, Contact, ContactTag,
+    Meeting, MeetingAttendee, MeetingQuestion, Contact, ContactTag, EmailTemplate, EmailTemplateHistory, Counter,
     BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, PublicAIMessageShare, Concept,
     Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload,
     Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature,
@@ -11601,6 +11601,74 @@ def contact_list(request):
     else:
         table_totals['conversion_rate'] = 0
     
+    # Estadísticas de tickets creados hoy por usuario en intervalos de hora
+    from django.db.models.functions import TruncHour
+    from collections import defaultdict
+    from datetime import date
+    
+    # Usar la fecha actual sin zona horaria para comparar solo la fecha
+    today_date = timezone.now().date()
+    
+    # Obtener tickets creados hoy agrupados por usuario y hora
+    tickets_today = Ticket.objects.filter(
+        created_at__date=today_date
+    ).select_related('created_by').order_by('created_at')
+    
+    # Debug: imprimir cantidad de tickets encontrados
+    print(f"DEBUG: Tickets encontrados hoy ({today_date}): {tickets_today.count()}")
+    for t in tickets_today:
+        print(f"  - Ticket #{t.id} creado por {t.created_by.username} a las {t.created_at}")
+    
+    # Agrupar tickets por usuario y hora
+    user_hourly_tickets = defaultdict(lambda: defaultdict(list))
+    
+    for ticket in tickets_today:
+        hour = ticket.created_at.hour
+        user = ticket.created_by
+        user_hourly_tickets[user][hour].append(ticket)
+    
+    # Formatear datos para el template
+    hourly_ticket_stats = []
+    users_with_high_activity = []
+    
+    for user, hourly_data in user_hourly_tickets.items():
+        user_stats = {
+            'user': user,
+            'user_name': user.get_full_name() or user.username,
+            'total_tickets': sum(len(tickets) for tickets in hourly_data.values()),
+            'hourly_breakdown': []
+        }
+        
+        # Crear breakdown por hora
+        for hour in sorted(hourly_data.keys()):
+            tickets_in_hour = hourly_data[hour]
+            count = len(tickets_in_hour)
+            
+            hour_info = {
+                'hour': hour,
+                'hour_label': f"{hour:02d}:00 - {hour:02d}:59",
+                'count': count,
+                'high_activity': count > 2,
+                'tickets': tickets_in_hour[:5]  # Solo los primeros 5 para mostrar
+            }
+            
+            user_stats['hourly_breakdown'].append(hour_info)
+            
+            # Si hay más de 2 tickets en una hora, agregar a lista de alta actividad
+            if count > 2:
+                users_with_high_activity.append({
+                    'user': user,
+                    'user_name': user.get_full_name() or user.username,
+                    'hour': hour,
+                    'hour_label': f"{hour:02d}:00 - {hour:02d}:59",
+                    'count': count
+                })
+        
+        hourly_ticket_stats.append(user_stats)
+    
+    # Ordenar por total de tickets descendente
+    hourly_ticket_stats.sort(key=lambda x: x['total_tickets'], reverse=True)
+    
     context = {
         'page_obj': page_obj,
         'contacts': page_obj.object_list,
@@ -11633,6 +11701,8 @@ def contact_list(request):
         'contact_change_percentage': contact_change_percentage,
         'all_tags': ContactTag.objects.all().order_by('name'),
         'selected_tags': request.GET.getlist('tags'),
+        'hourly_ticket_stats': hourly_ticket_stats,
+        'users_with_high_activity': users_with_high_activity,
     }
     
     return render(request, 'tickets/contact_list.html', context)
@@ -50655,3 +50725,819 @@ def contact_tag_create_api(request):
             'success': False,
             'error': str(e)
         }, status=500)
+
+
+# ==================== EMAIL TEMPLATES ====================
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def email_template_list(request):
+    """Vista para listar plantillas de correo"""
+    from .models import EmailTemplate
+    
+    # Filtros
+    category_filter = request.GET.get('category', '')
+    search = request.GET.get('search', '')
+    
+    templates = EmailTemplate.objects.all()
+    
+    if category_filter:
+        templates = templates.filter(category=category_filter)
+    
+    if search:
+        templates = templates.filter(
+            Q(title__icontains=search) | Q(body__icontains=search)
+        )
+    
+    # Paginación
+    paginator = Paginator(templates, 20)
+    page = request.GET.get('page')
+    page_obj = paginator.get_page(page)
+    
+    # Categorías para filtro
+    categories = EmailTemplate.CATEGORY_CHOICES
+    
+    context = {
+        'page_title': 'Plantillas de Correo',
+        'page_obj': page_obj,
+        'categories': categories,
+        'category_filter': category_filter,
+        'search': search,
+    }
+    return render(request, 'tickets/email_template_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def email_template_create(request):
+    """Vista para crear plantilla de correo"""
+    from .models import EmailTemplate
+    from .forms import EmailTemplateForm
+    
+    if request.method == 'POST':
+        form = EmailTemplateForm(request.POST)
+        if form.is_valid():
+            template = form.save(commit=False)
+            template.created_by = request.user
+            template.save()
+            
+            messages.success(request, f'Plantilla "{template.title}" creada exitosamente.')
+            return redirect('email_template_detail', pk=template.pk)
+    else:
+        form = EmailTemplateForm()
+    
+    context = {
+        'page_title': 'Nueva Plantilla de Correo',
+        'form': form,
+    }
+    return render(request, 'tickets/email_template_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def email_template_detail(request, pk):
+    """Vista de detalle de plantilla de correo"""
+    from .models import EmailTemplate
+    
+    template = get_object_or_404(EmailTemplate, pk=pk)
+    history = template.history.all()[:20]  # Últimos 20 cambios
+    
+    context = {
+        'page_title': f'Plantilla: {template.title}',
+        'template': template,
+        'history': history,
+    }
+    return render(request, 'tickets/email_template_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def email_template_edit(request, pk):
+    """Vista para editar plantilla de correo"""
+    from .models import EmailTemplate, EmailTemplateHistory
+    from .forms import EmailTemplateForm
+    
+    template = get_object_or_404(EmailTemplate, pk=pk)
+    
+    if request.method == 'POST':
+        form = EmailTemplateForm(request.POST, instance=template)
+        if form.is_valid():
+            # Guardar estado anterior en historial
+            EmailTemplateHistory.objects.create(
+                template=template,
+                title=template.title,
+                body=template.body,
+                category=template.category,
+                order=template.order,
+                changed_by=request.user,
+                change_reason=request.POST.get('change_reason', '')
+            )
+            
+            form.save()
+            messages.success(request, f'Plantilla "{template.title}" actualizada exitosamente.')
+            return redirect('email_template_detail', pk=template.pk)
+    else:
+        form = EmailTemplateForm(instance=template)
+    
+    context = {
+        'page_title': f'Editar: {template.title}',
+        'form': form,
+        'template': template,
+    }
+    return render(request, 'tickets/email_template_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def email_template_delete(request, pk):
+    """Vista para eliminar plantilla de correo"""
+    from .models import EmailTemplate
+    
+    template = get_object_or_404(EmailTemplate, pk=pk)
+    
+    if request.method == 'POST':
+        title = template.title
+        template.delete()
+        messages.success(request, f'Plantilla "{title}" eliminada exitosamente.')
+        return redirect('email_template_list')
+    
+    context = {
+        'page_title': f'Eliminar: {template.title}',
+        'template': template,
+    }
+    return render(request, 'tickets/email_template_delete.html', context)
+
+
+# ====== VISTAS DE CONTADORES ======
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def counter_list(request):
+    """Vista para listar contadores"""
+    from .models import Counter
+    from datetime import datetime, timedelta
+    
+    # Filtros
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    search = request.GET.get('search', '')
+    user_filter = request.GET.get('user', '')
+    
+    counters = Counter.objects.select_related('user').all()
+    
+    # Si no hay filtros de fecha, mostrar últimos 30 días
+    if not date_from and not date_to:
+        date_to = datetime.now().date()
+        date_from = date_to - timedelta(days=30)
+        counters = counters.filter(date__gte=date_from, date__lte=date_to)
+    else:
+        if date_from:
+            counters = counters.filter(date__gte=date_from)
+        if date_to:
+            counters = counters.filter(date__lte=date_to)
+    
+    if search:
+        counters = counters.filter(
+            Q(title__icontains=search) | Q(notes__icontains=search)
+        )
+    
+    if user_filter:
+        counters = counters.filter(user_id=user_filter)
+    
+    # Paginación
+    paginator = Paginator(counters, 20)
+    page = request.GET.get('page')
+    page_obj = paginator.get_page(page)
+    
+    # Lista de usuarios para filtro
+    from django.contrib.auth.models import User
+    users = User.objects.filter(counters__isnull=False).distinct()
+    
+    context = {
+        'page_title': 'Contadores',
+        'page_obj': page_obj,
+        'date_from': date_from,
+        'date_to': date_to,
+        'search': search,
+        'user_filter': user_filter,
+        'users': users,
+    }
+    return render(request, 'tickets/counter_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def counter_create(request):
+    """Vista para crear contador"""
+    from .models import Counter
+    from .forms import CounterForm
+    
+    if request.method == 'POST':
+        form = CounterForm(request.POST)
+        if form.is_valid():
+            counter = form.save(commit=False)
+            counter.user = request.user
+            counter.save()
+            
+            messages.success(request, f'Contador "{counter.title}" creado exitosamente.')
+            return redirect('counter_list')
+    else:
+        form = CounterForm()
+    
+    context = {
+        'page_title': 'Nuevo Contador',
+        'form': form,
+    }
+    return render(request, 'tickets/counter_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def counter_detail(request, pk):
+    """Vista de detalle de contador"""
+    from .models import Counter
+    
+    counter = get_object_or_404(Counter, pk=pk)
+    
+    context = {
+        'page_title': f'Contador: {counter.title}',
+        'counter': counter,
+    }
+    return render(request, 'tickets/counter_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def counter_edit(request, pk):
+    """Vista para editar contador"""
+    from .models import Counter
+    from .forms import CounterForm
+    
+    counter = get_object_or_404(Counter, pk=pk)
+    
+    # Solo el usuario creador puede editar
+    if counter.user != request.user and not request.user.is_superuser:
+        messages.error(request, 'No tienes permiso para editar este contador.')
+        return redirect('counter_list')
+    
+    if request.method == 'POST':
+        form = CounterForm(request.POST, instance=counter)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Contador "{counter.title}" actualizado exitosamente.')
+            return redirect('counter_detail', pk=counter.pk)
+    else:
+        form = CounterForm(instance=counter)
+    
+    context = {
+        'page_title': f'Editar: {counter.title}',
+        'form': form,
+        'counter': counter,
+    }
+    return render(request, 'tickets/counter_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def counter_delete(request, pk):
+    """Vista para eliminar contador"""
+    from .models import Counter
+    
+    counter = get_object_or_404(Counter, pk=pk)
+    
+    # Solo el usuario creador puede eliminar
+    if counter.user != request.user and not request.user.is_superuser:
+        messages.error(request, 'No tienes permiso para eliminar este contador.')
+        return redirect('counter_list')
+    
+    if request.method == 'POST':
+        title = counter.title
+        counter.delete()
+        messages.success(request, f'Contador "{title}" eliminado exitosamente.')
+        return redirect('counter_list')
+    
+    context = {
+        'page_title': f'Eliminar: {counter.title}',
+        'counter': counter,
+    }
+    return render(request, 'tickets/counter_delete.html', context)
+
+
+# ====== VISTAS DE FACTURAS OCR ======
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def ocr_invoice_list(request):
+    """Vista para listar facturas OCR"""
+    from .models import OCRInvoice, SystemConfiguration
+    
+    # Obtener configuración del sistema
+    config = SystemConfiguration.get_config()
+    
+    # Filtros
+    status_filter = request.GET.get('status', '')
+    search = request.GET.get('search', '')
+    view_mode = request.GET.get('view', 'table')  # Por defecto tabla
+    
+    invoices = OCRInvoice.objects.select_related('uploaded_by').all()
+    
+    if status_filter:
+        invoices = invoices.filter(status=status_filter)
+    
+    if search:
+        invoices = invoices.filter(
+            Q(number__icontains=search) | 
+            Q(supplier__icontains=search)
+        )
+    
+    # Paginación
+    paginator = Paginator(invoices, 20)
+    page = request.GET.get('page')
+    page_obj = paginator.get_page(page)
+    
+    # Estados para filtro
+    statuses = OCRInvoice.STATUS_CHOICES
+    
+    context = {
+        'page_title': 'Facturas OCR',
+        'page_obj': page_obj,
+        'statuses': statuses,
+        'status_filter': status_filter,
+        'search': search,
+        'ocr_config': config,
+        'view_mode': view_mode,
+    }
+    return render(request, 'tickets/ocr_invoice_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def ocr_invoice_create(request):
+    """Vista para crear factura OCR"""
+    from .models import OCRInvoice
+    from .forms import OCRInvoiceForm
+    
+    if request.method == 'POST':
+        form = OCRInvoiceForm(request.POST, request.FILES)
+        if form.is_valid():
+            invoice = form.save(commit=False)
+            invoice.uploaded_by = request.user
+            invoice.save()
+            
+            messages.success(request, f'Factura "{invoice.number}" creada exitosamente.')
+            return redirect('ocr_invoice_detail', pk=invoice.pk)
+    else:
+        form = OCRInvoiceForm()
+    
+    context = {
+        'page_title': 'Nueva Factura OCR',
+        'form': form,
+    }
+    return render(request, 'tickets/ocr_invoice_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def ocr_invoice_generate_api_token(request):
+    """Vista para generar o regenerar el token de API para OCR"""
+    from .models import SystemConfiguration
+    import secrets
+    
+    if request.method == 'POST':
+        config = SystemConfiguration.get_config()
+        config.ocr_public_upload_token = secrets.token_urlsafe(32)
+        config.save()
+        messages.success(request, 'Token de API generado exitosamente.')
+    
+    return redirect('ocr_invoice_list')
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def ocr_invoice_detail(request, pk):
+    """Vista de detalle de factura OCR"""
+    from .models import OCRInvoice
+    
+    invoice = get_object_or_404(OCRInvoice, pk=pk)
+    
+    # URLs completas
+    public_url = request.build_absolute_uri(invoice.get_public_url())
+    api_url = request.build_absolute_uri(invoice.get_api_url())
+    
+    context = {
+        'page_title': f'Factura: {invoice.number}',
+        'invoice': invoice,
+        'public_url': public_url,
+        'api_url': api_url,
+    }
+    return render(request, 'tickets/ocr_invoice_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def ocr_invoice_delete(request, pk):
+    """Vista para eliminar factura OCR"""
+    from .models import OCRInvoice
+    
+    invoice = get_object_or_404(OCRInvoice, pk=pk)
+    
+    if request.method == 'POST':
+        invoice_number = invoice.number or invoice.sequence_number
+        invoice.delete()
+        messages.success(request, f'Factura "{invoice_number}" eliminada exitosamente.')
+        return redirect('ocr_invoice_list')
+    
+    context = {
+        'page_title': 'Eliminar Factura',
+        'invoice': invoice,
+    }
+    return render(request, 'tickets/ocr_invoice_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def ocr_invoice_edit(request, pk):
+    """Vista para editar factura OCR"""
+    from .models import OCRInvoice
+    from .forms import OCRInvoiceForm
+    
+    invoice = get_object_or_404(OCRInvoice, pk=pk)
+    
+    if request.method == 'POST':
+        form = OCRInvoiceForm(request.POST, request.FILES, instance=invoice)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Factura "{invoice.number}" actualizada exitosamente.')
+            return redirect('ocr_invoice_detail', pk=invoice.pk)
+    else:
+        form = OCRInvoiceForm(instance=invoice)
+    
+    context = {
+        'page_title': f'Editar: {invoice.number}',
+        'form': form,
+        'invoice': invoice,
+    }
+    return render(request, 'tickets/ocr_invoice_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def ocr_invoice_delete(request, pk):
+    """Vista para eliminar factura OCR"""
+    from .models import OCRInvoice
+    
+    invoice = get_object_or_404(OCRInvoice, pk=pk)
+    
+    if request.method == 'POST':
+        number = invoice.number
+        invoice.delete()
+        messages.success(request, f'Factura "{number}" eliminada exitosamente.')
+        return redirect('ocr_invoice_list')
+    
+    context = {
+        'page_title': f'Eliminar: {invoice.number}',
+        'invoice': invoice,
+    }
+    return render(request, 'tickets/ocr_invoice_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def ocr_invoice_process(request, pk):
+    """Vista para procesar factura con OCR usando IA"""
+    from .models import OCRInvoice, SystemConfiguration
+    import json
+    import base64
+    from openai import OpenAI
+    
+    invoice = get_object_or_404(OCRInvoice, pk=pk)
+    
+    try:
+        # Obtener configuración de OpenAI
+        config = SystemConfiguration.get_config()
+        
+        if not config.openai_api_key:
+            messages.error(request, 'API key de OpenAI no configurada')
+            return redirect('ocr_invoice_detail', pk=invoice.pk)
+        
+        # Leer la imagen y codificar en base64
+        invoice.image.seek(0)
+        image_data = invoice.image.read()
+        image_base64 = base64.b64encode(image_data).decode('utf-8')
+        
+        # Crear cliente de OpenAI
+        client = OpenAI(api_key=config.openai_api_key)
+        
+        # Llamar a la API con vision
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Eres un experto en extraer datos de facturas. Analiza la imagen y extrae la información en formato JSON. Responde SOLO con JSON válido, sin texto adicional ni formato Markdown."
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": """Analiza esta imagen de factura y extrae la siguiente información en formato JSON:
+{
+    "numero_factura": "número de la factura",
+    "proveedor": "nombre del proveedor",
+    "neto": "importe neto sin impuestos como número",
+    "impuesto": "importe del impuesto/IVA como número",
+    "total": "importe total con impuestos como número",
+    "importe_total": "importe total como número (sin símbolos de moneda)",
+    "fecha": "fecha de la factura",
+    "conceptos": ["lista de conceptos o items"],
+    "otros_datos": "cualquier información relevante adicional"
+}
+
+Responde SOLO con el JSON válido, sin bloques de código ni texto adicional."""
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{image_base64}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=1000
+        )
+        
+        # Obtener respuesta
+        ai_response = response.choices[0].message.content.strip()
+        
+        # Limpiar la respuesta (remover bloques de código si existen)
+        if ai_response.startswith('```'):
+            # Remover bloques de código markdown
+            ai_response = ai_response.split('```')[1]
+            if ai_response.startswith('json'):
+                ai_response = ai_response[4:]
+            ai_response = ai_response.strip()
+        
+        # Parsear JSON
+        try:
+            extracted_data = json.loads(ai_response)
+        except json.JSONDecodeError:
+            # Intentar extraer JSON usando regex como fallback
+            import re
+            json_match = re.search(r'\{.*\}', ai_response, re.DOTALL)
+            if json_match:
+                extracted_data = json.loads(json_match.group())
+            else:
+                raise ValueError("No se pudo extraer JSON de la respuesta")
+        
+        # Actualizar la factura con los datos extraídos
+        invoice.json_data = extracted_data
+        
+        # Auto-llenar campos si están vacíos
+        if not invoice.number and extracted_data.get('numero_factura'):
+            invoice.number = extracted_data['numero_factura']
+        
+        if not invoice.supplier and extracted_data.get('proveedor'):
+            invoice.supplier = extracted_data['proveedor']
+        
+        # Extraer neto
+        if invoice.neto == 0 and extracted_data.get('neto'):
+            try:
+                neto_str = str(extracted_data['neto']).replace(',', '').replace('€', '').replace('$', '').strip()
+                invoice.neto = float(neto_str)
+            except (ValueError, TypeError):
+                pass
+        
+        # Extraer impuesto
+        if invoice.impuesto == 0 and extracted_data.get('impuesto'):
+            try:
+                impuesto_str = str(extracted_data['impuesto']).replace(',', '').replace('€', '').replace('$', '').strip()
+                invoice.impuesto = float(impuesto_str)
+            except (ValueError, TypeError):
+                pass
+        
+        # Extraer total
+        if invoice.total == 0 and extracted_data.get('total'):
+            try:
+                total_str = str(extracted_data['total']).replace(',', '').replace('€', '').replace('$', '').strip()
+                invoice.total = float(total_str)
+            except (ValueError, TypeError):
+                pass
+        
+        # Extraer importe_total (mantener por compatibilidad)
+        if invoice.amount == 0 and extracted_data.get('importe_total'):
+            try:
+                importe_str = str(extracted_data['importe_total']).replace(',', '').replace('€', '').replace('$', '').strip()
+                invoice.amount = float(importe_str)
+            except (ValueError, TypeError):
+                pass
+        
+        # Si no hay total pero hay neto e impuesto, calcular total
+        if invoice.total == 0 and invoice.neto > 0:
+            invoice.total = invoice.neto + invoice.impuesto
+        
+        # Cambiar estado a escaneado
+        invoice.status = 'scanned'
+        invoice.save()
+        
+        messages.success(request, 'Factura procesada exitosamente con OCR!')
+        return redirect('ocr_invoice_detail', pk=invoice.pk)
+        
+    except Exception as e:
+        messages.error(request, f'Error al procesar factura: {str(e)}')
+        return redirect('ocr_invoice_detail', pk=invoice.pk)
+
+
+# Vista pública para subir facturas (sin autenticación)
+def ocr_invoice_public_upload(request, token):
+    """Vista pública para subir facturas desde móvil (actualizar factura existente)"""
+    from .models import OCRInvoice
+    from .forms import OCRInvoicePublicForm
+    
+    # Verificar que el token exista
+    invoice = get_object_or_404(OCRInvoice, public_token=token)
+    
+    if request.method == 'POST':
+        form = OCRInvoicePublicForm(request.POST, request.FILES, instance=invoice)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '¡Factura actualizada exitosamente!')
+            return redirect('ocr_invoice_public_upload', token=token)
+    else:
+        form = OCRInvoicePublicForm(instance=invoice)
+    
+    context = {
+        'page_title': 'Actualizar Factura',
+        'form': form,
+        'invoice': invoice,
+    }
+    return render(request, 'tickets/ocr_invoice_public_upload.html', context)
+
+
+def ocr_invoice_public_new(request, token=None):
+    """Vista pública para crear nuevas facturas desde móvil (sin autenticación)"""
+    from .models import OCRInvoice, SystemConfiguration
+    from .forms import OCRInvoicePublicForm
+    
+    # Validar token si se proporciona
+    config = SystemConfiguration.get_config()
+    
+    # Si no está habilitado el enlace público, denegar acceso
+    if not config.ocr_public_upload_enabled:
+        messages.error(request, 'El enlace público para subir facturas está desactivado.')
+        return redirect('/')
+    
+    # Si se proporciona token, validarlo
+    if token:
+        if not config.ocr_public_upload_token or config.ocr_public_upload_token != token:
+            messages.error(request, 'Token inválido.')
+            return redirect('/')
+    
+    if request.method == 'POST':
+        form = OCRInvoicePublicForm(request.POST, request.FILES)
+        if form.is_valid():
+            invoice = form.save(commit=False)
+            invoice.status = 'draft'
+            invoice.save()
+            
+            # Procesar automáticamente con OCR
+            try:
+                import json
+                import base64
+                from openai import OpenAI
+                
+                # Obtener configuración de OpenAI
+                if config.openai_api_key:
+                    # Leer la imagen y codificar en base64
+                    invoice.image.seek(0)
+                    image_data = invoice.image.read()
+                    image_base64 = base64.b64encode(image_data).decode('utf-8')
+                    
+                    # Crear cliente de OpenAI
+                    client = OpenAI(api_key=config.openai_api_key)
+                    
+                    # Llamar a la API con vision
+                    response = client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "Eres un experto en extraer datos de facturas. Analiza la imagen y extrae la información en formato JSON. Responde SOLO con JSON válido, sin texto adicional ni formato Markdown."
+                            },
+                            {
+                                "role": "user",
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": """Analiza esta imagen de factura y extrae la siguiente información en formato JSON:
+{
+    "numero_factura": "número de la factura",
+    "proveedor": "nombre del proveedor",
+    "neto": "importe neto sin impuestos como número",
+    "impuesto": "importe del impuesto/IVA como número",
+    "total": "importe total con impuestos como número",
+    "importe_total": "importe total como número (sin símbolos de moneda)",
+    "fecha": "fecha de la factura",
+    "conceptos": ["lista de conceptos o items"],
+    "otros_datos": "cualquier información relevante adicional"
+}
+
+Responde SOLO con el JSON válido, sin bloques de código ni texto adicional."""
+                                    },
+                                    {
+                                        "type": "image_url",
+                                        "image_url": {
+                                            "url": f"data:image/jpeg;base64,{image_base64}"
+                                        }
+                                    }
+                                ]
+                            }
+                        ],
+                        max_tokens=1000
+                    )
+                    
+                    # Obtener respuesta
+                    ai_response = response.choices[0].message.content.strip()
+                    
+                    # Limpiar la respuesta (remover bloques de código si existen)
+                    if ai_response.startswith('```'):
+                        ai_response = ai_response.split('```')[1]
+                        if ai_response.startswith('json'):
+                            ai_response = ai_response[4:]
+                        ai_response = ai_response.strip()
+                    
+                    # Parsear JSON
+                    try:
+                        extracted_data = json.loads(ai_response)
+                    except json.JSONDecodeError:
+                        import re
+                        json_match = re.search(r'\{.*\}', ai_response, re.DOTALL)
+                        if json_match:
+                            extracted_data = json.loads(json_match.group())
+                        else:
+                            extracted_data = {}
+                    
+                    # Actualizar la factura con los datos extraídos
+                    invoice.json_data = extracted_data
+                    
+                    # Auto-llenar campos
+                    if extracted_data.get('numero_factura'):
+                        invoice.number = extracted_data['numero_factura']
+                    
+                    if extracted_data.get('proveedor'):
+                        invoice.supplier = extracted_data['proveedor']
+                    
+                    # Extraer neto
+                    if extracted_data.get('neto'):
+                        try:
+                            neto_str = str(extracted_data['neto']).replace(',', '').replace('€', '').replace('$', '').strip()
+                            invoice.neto = float(neto_str)
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    # Extraer impuesto
+                    if extracted_data.get('impuesto'):
+                        try:
+                            impuesto_str = str(extracted_data['impuesto']).replace(',', '').replace('€', '').replace('$', '').strip()
+                            invoice.impuesto = float(impuesto_str)
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    # Extraer total
+                    if extracted_data.get('total'):
+                        try:
+                            total_str = str(extracted_data['total']).replace(',', '').replace('€', '').replace('$', '').strip()
+                            invoice.total = float(total_str)
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    # Si no hay total pero hay neto e impuesto, calcular total
+                    if invoice.total == 0 and invoice.neto > 0:
+                        invoice.total = invoice.neto + invoice.impuesto
+                    
+                    # Cambiar estado a escaneado
+                    invoice.status = 'scanned'
+                    invoice.save()
+                    
+                    messages.success(request, '¡Factura procesada exitosamente con OCR!')
+                else:
+                    invoice.save()
+                    messages.success(request, '¡Factura creada exitosamente!')
+            except Exception as e:
+                invoice.save()
+                messages.warning(request, f'Factura creada pero no se pudo procesar con OCR: {str(e)}')
+            
+            # Redirigir con token si existe
+            if token:
+                return redirect('ocr_invoice_public_new_with_token', token=token)
+            return redirect('ocr_invoice_public_new')
+    else:
+        form = OCRInvoicePublicForm()
+    
+    context = {
+        'page_title': 'Subir Nueva Factura',
+        'form': form,
+        'token': token,
+    }
+    return render(request, 'tickets/ocr_invoice_public_new.html', context)

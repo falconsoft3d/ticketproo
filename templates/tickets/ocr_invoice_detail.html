@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="mb-4">
+                <a href="{% url 'ocr_invoice_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Volver a la lista
+                </a>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-receipt me-2"></i>
+                        Factura {{ invoice.number }}
+                    </h4>
+                    {% if invoice.status == 'draft' %}
+                        <span class="badge bg-secondary">{{ invoice.get_status_display }}</span>
+                    {% else %}
+                        <span class="badge bg-success">{{ invoice.get_status_display }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if invoice.image %}
+                    <div class="mb-4 text-center">
+                        <img src="{{ invoice.image.url }}" alt="Factura" class="img-fluid rounded shadow-sm" style="max-height: 400px;">
+                    </div>
+                    {% endif %}
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small">Proveedor</label>
+                            <div class="fs-5">{{ invoice.supplier }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Importe</label>
+                            <div class="fs-5 text-success">${{ invoice.amount }}</div>
+                        </div>
+                    </div>
+
+                    {% if invoice.json_data %}
+                    <div class="mb-3">
+                        <label class="text-muted small">Datos Extraídos por OCR</label>
+                        <div class="border rounded p-3 bg-light">
+                            <pre class="mb-0" style="max-height: 300px; overflow-y: auto;">{{ invoice.json_data|safe }}</pre>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row text-muted small mt-3">
+                        <div class="col-md-6">
+                            <i class="bi bi-clock me-1"></i>
+                            Creado: {{ invoice.created_at|date:"d/m/Y H:i" }}
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            {% if invoice.uploaded_by %}
+                            <i class="bi bi-person me-1"></i>
+                            {{ invoice.uploaded_by.get_full_name|default:invoice.uploaded_by.username }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        {% if invoice.status == 'draft' %}
+                        <form method="post" action="{% url 'ocr_invoice_process' invoice.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success" onclick="return confirm('¿Procesar factura con OCR?');">
+                                <i class="bi bi-cpu me-1"></i> Procesar con OCR
+                            </button>
+                        </form>
+                        {% endif %}
+                        <a href="{% url 'ocr_invoice_edit' invoice.pk %}" class="btn btn-warning">
+                            <i class="bi bi-pencil me-1"></i> Editar
+                        </a>
+                        <a href="{% url 'ocr_invoice_delete' invoice.pk %}" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Enlaces -->
+            <div class="card shadow mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Enlaces</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="text-muted small">URL Pública para Subir</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-sm" id="publicUrl" value="{{ public_url }}" readonly>
+                            <button class="btn btn-sm btn-outline-secondary" type="button" onclick="copyToClipboard('publicUrl')">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Comparte este enlace para permitir subir facturas desde móvil</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="text-muted small">URL API</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-sm" id="apiUrl" value="{{ api_url }}" readonly>
+                            <button class="btn btn-sm btn-outline-secondary" type="button" onclick="copyToClipboard('apiUrl')">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Usa esta URL para consumir los datos via API</small>
+                    </div>
+
+                    <div class="d-grid">
+                        <a href="{{ public_url }}" target="_blank" class="btn btn-primary btn-sm">
+                            <i class="bi bi-box-arrow-up-right me-1"></i> Abrir Enlace Público
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Code -->
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-qr-code me-2"></i>Código QR</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div id="qrcode"></div>
+                    <small class="text-muted">Escanea para subir facturas</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+function copyToClipboard(elementId) {
+    const input = document.getElementById(elementId);
+    input.select();
+    document.execCommand('copy');
+    
+    // Mostrar feedback
+    const button = input.nextElementSibling;
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i>';
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+    }, 2000);
+}
+
+// Generar código QR
+new QRCode(document.getElementById("qrcode"), {
+    text: "{{ public_url }}",
+    width: 200,
+    height: 200
+});
+</script>
+{% endblock %}
