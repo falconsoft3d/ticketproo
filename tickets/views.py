@@ -23498,12 +23498,126 @@ def short_url_redirect(request, short_code):
 @login_required
 @user_passes_test(is_agent_or_superuser, login_url='/')
 def short_url_stats(request, pk):
-    """Vista para ver estadísticas detalladas de una URL corta"""
+    """Vista API para obtener estadísticas detalladas de una URL corta"""
     from django.db.models import Count
-    from django.db.models.functions import TruncDate, TruncMonth
-    from datetime import timedelta, date
+    from django.db.models.functions import TruncDate, TruncMonth, ExtractHour
+    from datetime import timedelta
     import json
     
+    short_url = get_object_or_404(ShortUrl, pk=pk, created_by=request.user)
+    
+    # Si es una petición AJAX, devolver JSON
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.path.startswith('/api/'):
+        clicks = short_url.click_records.all()
+        
+        # Clics por mes (últimos 12 meses)
+        from dateutil.relativedelta import relativedelta
+        now = timezone.now()
+        twelve_months_ago = now - relativedelta(months=11)
+        
+        clicks_by_month = clicks.filter(
+            clicked_at__gte=twelve_months_ago.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        ).annotate(
+            month=TruncMonth('clicked_at')
+        ).values('month').annotate(
+            count=Count('id')
+        ).order_by('month')
+        
+        month_labels = []
+        month_values = []
+        month_names = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+        
+        for i in range(12):
+            month_date = twelve_months_ago + relativedelta(months=i)
+            month_labels.append(f"{month_names[month_date.month-1]} {month_date.year}")
+            month_count = next((item['count'] for item in clicks_by_month if item['month'].month == month_date.month and item['month'].year == month_date.year), 0)
+            month_values.append(month_count)
+        
+        # Clics por día (últimos 30 días)
+        thirty_days_ago = now - timedelta(days=29)
+        clicks_by_day = clicks.filter(
+            clicked_at__gte=thirty_days_ago.replace(hour=0, minute=0, second=0, microsecond=0)
+        ).annotate(
+            day=TruncDate('clicked_at')
+        ).values('day').annotate(
+            count=Count('id')
+        ).order_by('day')
+        
+        day_labels = []
+        day_values = []
+        for i in range(30):
+            day_date = (thirty_days_ago + timedelta(days=i)).date()
+            day_labels.append(day_date.strftime('%d/%m'))
+            day_count = next((item['count'] for item in clicks_by_day if item['day'] == day_date), 0)
+            day_values.append(day_count)
+        
+        # Clics por hora del día (agrupados por hora 0-23)
+        from django.db.models.functions import ExtractHour
+        clicks_by_hour = clicks.annotate(
+            hour=ExtractHour('clicked_at')
+        ).values('hour').annotate(
+            count=Count('id')
+        ).order_by('hour')
+        
+        # Crear diccionario con todas las horas del día
+        hour_dict = {h: 0 for h in range(24)}
+        for item in clicks_by_hour:
+            hour_dict[item['hour']] = item['count']
+        
+        hour_labels = [f"{h:02d}:00" for h in range(24)]
+        hour_values = [hour_dict[h] for h in range(24)]
+        
+        # Top países
+        total_clicks = short_url.clicks
+        clicks_by_country = clicks.exclude(country='').values('country').annotate(
+            count=Count('id')
+        ).order_by('-count')[:10]
+        
+        country_data = [{
+            'country': item['country'],
+            'count': item['count'],
+            'percentage': round((item['count'] / total_clicks * 100), 1) if total_clicks > 0 else 0
+        } for item in clicks_by_country]
+        
+        # Top ciudades
+        clicks_by_city = clicks.exclude(city='').values('city').annotate(
+            count=Count('id')
+        ).order_by('-count')[:10]
+        
+        city_data = [{
+            'city': item['city'],
+            'count': item['count'],
+            'percentage': round((item['count'] / total_clicks * 100), 1) if total_clicks > 0 else 0
+        } for item in clicks_by_city]
+        
+        # Detalles de clics recientes (últimos 100)
+        click_details = [{
+            'clicked_at': click.clicked_at.strftime('%d/%m/%Y %H:%M:%S'),
+            'ip_address': click.ip_address,
+            'country': click.country,
+            'city': click.city,
+            'referer': click.referer
+        } for click in clicks.order_by('-clicked_at')[:100]]
+        
+        return JsonResponse({
+            'by_month': {
+                'labels': month_labels,
+                'values': month_values
+            },
+            'by_day': {
+                'labels': day_labels,
+                'values': day_values
+            },
+            'by_hour': {
+                'labels': hour_labels,
+                'values': hour_values
+            },
+            'by_country': country_data,
+            'by_city': city_data,
+            'click_details': click_details
+        })
+    
+    # Vista HTML original (mantener compatibilidad)
     short_url = get_object_or_404(ShortUrl, pk=pk, created_by=request.user)
     
     # Obtener clicks con detalles

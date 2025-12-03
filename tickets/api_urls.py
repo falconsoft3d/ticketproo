@@ -10,6 +10,7 @@ from .api_views import (
     dynamic_table_api_list, dynamic_table_api_detail, my_pending_work_orders, qa_ratings_count,
     ocr_invoice_api, ocr_invoice_list_api
 )
+from .views import short_url_stats
 
 # Router para los ViewSets
 router = DefaultRouter()
@@ -57,7 +58,7 @@ api_urlpatterns = [
     path('system-info/', system_info_api, name='api-system-info'),
     
     # URL para estadísticas de URLs cortas
-    path('short-urls/stats/', short_url_stats_api, name='api-short-url-stats'),
+    path('short-urls/<int:pk>/stats/', short_url_stats, name='api-short-url-stats'),
     
     # URL para tracking de contadores web (sin autenticación)
     path('web-counter/track/', web_counter_track, name='api-web-counter-track'),

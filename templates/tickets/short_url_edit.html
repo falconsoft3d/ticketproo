@@ -48,15 +48,22 @@
                                         <i class="bi bi-scissors"></i> Código Corto
                                     </label>
                                     <div class="input-group">
-                                        <span class="input-group-text">{{ request.build_absolute_uri|slice:':-1' }}/s/</span>
+                                        <span class="input-group-text">{{ request.scheme }}://{{ request.get_host }}/s/</span>
                                         <input type="text" 
                                                class="form-control {% if form.short_code.errors %}is-invalid{% endif %}" 
                                                id="id_short_code" 
                                                name="short_code" 
                                                value="{{ form.short_code.value|default:'' }}"
                                                placeholder="ABC123"
-                                               maxlength="10">
-                                        <span class="input-group-text">/</span>
+                                               pattern="[A-Za-z0-9\-]+"
+                                               maxlength="10"
+                                               required>
+                                        <button class="btn btn-outline-secondary" 
+                                                type="button" 
+                                                onclick="generateRandomCode()"
+                                                title="Generar código aleatorio">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
                                     </div>
                                     {% if form.short_code.errors %}
                                         <div class="invalid-feedback">
@@ -64,7 +71,7 @@
                                         </div>
                                     {% endif %}
                                     <div class="form-text">
-                                        Déjalo vacío para generar automáticamente. Solo letras, números y guiones.
+                                        Puedes configurarlo manualmente o generar uno aleatorio. Solo letras, números y guiones.
                                     </div>
                                 </div>
 
@@ -147,30 +154,161 @@
                                 </div>
                             </div>
                             
-                            {% if object.click_count > 0 %}
                             <div class="card bg-light mt-3">
                                 <div class="card-body">
                                     <h6 class="card-title">
-                                        <i class="bi bi-graph-up"></i> URL Actual
+                                        <i class="bi bi-link-45deg"></i> URL Corta
                                     </h6>
-                                    <div class="input-group">
+                                    <div class="input-group mb-2">
                                         <input type="text" 
                                                class="form-control form-control-sm" 
-                                               value="{{ request.build_absolute_uri|slice:':-1' }}{% url 'short_url_redirect' object.short_code %}" 
+                                               value="{{ request.scheme }}://{{ request.get_host }}/s/{{ object.short_code }}" 
                                                readonly 
                                                id="currentUrl">
                                         <button class="btn btn-outline-secondary btn-sm" 
                                                 type="button" 
-                                                onclick="copyToClipboard('currentUrl')">
+                                                onclick="copyToClipboard('currentUrl')"
+                                                title="Copiar URL">
                                             <i class="bi bi-clipboard"></i>
                                         </button>
                                     </div>
-                                    <small class="text-muted">URL corta actual</small>
+                                    <a href="{{ request.scheme }}://{{ request.get_host }}/s/{{ object.short_code }}" 
+                                       target="_blank" 
+                                       class="btn btn-primary btn-sm w-100">
+                                        <i class="bi bi-box-arrow-up-right"></i> Ir a la URL
+                                    </a>
+                                    <small class="text-muted d-block mt-2">Esta es tu URL corta actual</small>
                                 </div>
                             </div>
-                            {% endif %}
                         </div>
                     </div>
+                    
+                    <!-- Sección de Estadísticas -->
+                    {% if object.clicks > 0 %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5 class="mb-3">
+                                <i class="bi bi-graph-up"></i> Estadísticas de Clics
+                            </h5>
+                        </div>
+                        
+                        <!-- Gráficos -->
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="bi bi-calendar-month"></i> Clics por Mes</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="clicksByMonthChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="bi bi-calendar-day"></i> Clics por Día</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="clicksByDayChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0"><i class="bi bi-clock"></i> Clics por Hora</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="clicksByHourChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tabla de Estadísticas -->
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-header bg-warning">
+                                    <h6 class="mb-0"><i class="bi bi-flag"></i> Top Países</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="table-light sticky-top">
+                                                <tr>
+                                                    <th>País</th>
+                                                    <th class="text-end">Clics</th>
+                                                    <th class="text-end">%</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="countryStats">
+                                                <tr>
+                                                    <td colspan="3" class="text-center text-muted">Cargando...</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-header bg-secondary text-white">
+                                    <h6 class="mb-0"><i class="bi bi-building"></i> Top Ciudades</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="table-light sticky-top">
+                                                <tr>
+                                                    <th>Ciudad</th>
+                                                    <th class="text-end">Clics</th>
+                                                    <th class="text-end">%</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cityStats">
+                                                <tr>
+                                                    <td colspan="3" class="text-center text-muted">Cargando...</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tabla de IPs y Detalles -->
+                        <div class="col-12 mb-3">
+                            <div class="card">
+                                <div class="card-header bg-dark text-white">
+                                    <h6 class="mb-0"><i class="bi bi-list-ul"></i> Registro Detallado de Clics</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                        <table class="table table-sm table-striped table-hover mb-0">
+                                            <thead class="table-dark sticky-top">
+                                                <tr>
+                                                    <th>Fecha y Hora</th>
+                                                    <th>IP</th>
+                                                    <th>País</th>
+                                                    <th>Ciudad</th>
+                                                    <th>Referer</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="clickDetails">
+                                                <tr>
+                                                    <td colspan="5" class="text-center text-muted">Cargando...</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -179,6 +317,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 function copyToClipboard(elementId) {
     const element = document.getElementById(elementId);
@@ -196,35 +335,141 @@ function copyToClipboard(elementId) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Generar código automáticamente si está vacío
-    const shortCodeInput = document.getElementById('id_short_code');
-    const originalUrlInput = document.getElementById('id_original_url');
-    
-    if (shortCodeInput && originalUrlInput) {
-        originalUrlInput.addEventListener('input', function() {
-            if (!shortCodeInput.value && this.value) {
-                // Solo generar si está vacío (para edición)
-                if (!shortCodeInput.dataset.hasValue) {
-                    generateShortCode();
-                }
-            }
-        });
-    }
-    
-    // Marcar si ya tiene valor
-    if (shortCodeInput && shortCodeInput.value) {
-        shortCodeInput.dataset.hasValue = 'true';
-    }
-});
-
-function generateShortCode() {
+function generateRandomCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let code = '';
     for (let i = 0; i < 6; i++) {
         code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    return code;
+    document.getElementById('id_short_code').value = code;
 }
+
+// Cargar estadísticas si hay clics
+{% if object.clicks > 0 %}
+document.addEventListener('DOMContentLoaded', function() {
+    // Cargar estadísticas desde la API
+    fetch('/api/short-urls/{{ object.pk }}/stats/')
+        .then(response => response.json())
+        .then(data => {
+            // Gráfico por mes
+            const ctxMonth = document.getElementById('clicksByMonthChart').getContext('2d');
+            new Chart(ctxMonth, {
+                type: 'bar',
+                data: {
+                    labels: data.by_month.labels,
+                    datasets: [{
+                        label: 'Clics',
+                        data: data.by_month.values,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+            
+            // Gráfico por día
+            const ctxDay = document.getElementById('clicksByDayChart').getContext('2d');
+            new Chart(ctxDay, {
+                type: 'line',
+                data: {
+                    labels: data.by_day.labels,
+                    datasets: [{
+                        label: 'Clics',
+                        data: data.by_day.values,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+            
+            // Gráfico por hora
+            const ctxHour = document.getElementById('clicksByHourChart').getContext('2d');
+            new Chart(ctxHour, {
+                type: 'bar',
+                data: {
+                    labels: data.by_hour.labels,
+                    datasets: [{
+                        label: 'Clics',
+                        data: data.by_hour.values,
+                        backgroundColor: 'rgba(255, 159, 64, 0.5)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+            
+            // Tabla de países
+            const countryStatsHtml = data.by_country.map(item => `
+                <tr>
+                    <td>${item.country || 'Desconocido'}</td>
+                    <td class="text-end">${item.count}</td>
+                    <td class="text-end">${item.percentage}%</td>
+                </tr>
+            `).join('');
+            document.getElementById('countryStats').innerHTML = countryStatsHtml || '<tr><td colspan="3" class="text-center text-muted">Sin datos</td></tr>';
+            
+            // Tabla de ciudades
+            const cityStatsHtml = data.by_city.map(item => `
+                <tr>
+                    <td>${item.city || 'Desconocido'}</td>
+                    <td class="text-end">${item.count}</td>
+                    <td class="text-end">${item.percentage}%</td>
+                </tr>
+            `).join('');
+            document.getElementById('cityStats').innerHTML = cityStatsHtml || '<tr><td colspan="3" class="text-center text-muted">Sin datos</td></tr>';
+            
+            // Tabla de detalles de clics
+            const clickDetailsHtml = data.click_details.map(item => `
+                <tr>
+                    <td>${item.clicked_at}</td>
+                    <td><code>${item.ip_address || 'N/A'}</code></td>
+                    <td>${item.country || '-'}</td>
+                    <td>${item.city || '-'}</td>
+                    <td>${item.referer ? '<small>' + item.referer.substring(0, 50) + '...</small>' : '-'}</td>
+                </tr>
+            `).join('');
+            document.getElementById('clickDetails').innerHTML = clickDetailsHtml || '<tr><td colspan="5" class="text-center text-muted">Sin datos</td></tr>';
+        })
+        .catch(error => {
+            console.error('Error loading stats:', error);
+            document.getElementById('countryStats').innerHTML = '<tr><td colspan="3" class="text-center text-danger">Error al cargar datos</td></tr>';
+            document.getElementById('cityStats').innerHTML = '<tr><td colspan="3" class="text-center text-danger">Error al cargar datos</td></tr>';
+            document.getElementById('clickDetails').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error al cargar datos</td></tr>';
+        });
+});
+{% endif %}
 </script>
 {% endblock %}
