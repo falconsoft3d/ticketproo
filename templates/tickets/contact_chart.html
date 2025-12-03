@@ -64,13 +64,25 @@
                     <h5 class="card-title mb-0">
                         <i class="bi bi-calendar-range"></i> Contactos creados
                     </h5>
-                    <form method="get" class="d-inline-block">
-                        <select name="group_by" class="form-select form-select-sm" onchange="this.form.submit()">
-                            <option value="hour" {% if group_by == 'hour' %}selected{% endif %}>Por hora</option>
-                            <option value="day" {% if group_by == 'day' %}selected{% endif %}>Por día</option>
-                            <option value="month" {% if group_by == 'month' %}selected{% endif %}>Por mes</option>
-                        </select>
-                    </form>
+                    <div class="d-flex gap-2">
+                        <form method="get" class="d-inline-block">
+                            <input type="hidden" name="time_range" value="{{ time_range|default:'week' }}">
+                            <select name="group_by" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="hour" {% if group_by == 'hour' %}selected{% endif %}>Por hora</option>
+                                <option value="day" {% if group_by == 'day' %}selected{% endif %}>Por día</option>
+                                <option value="month" {% if group_by == 'month' %}selected{% endif %}>Por mes</option>
+                            </select>
+                        </form>
+                        <form method="get" class="d-inline-block">
+                            <input type="hidden" name="group_by" value="{{ group_by|default:'day' }}">
+                            <select name="time_range" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="week" {% if time_range == 'week' %}selected{% endif %}>Última semana</option>
+                                <option value="month" {% if time_range == 'month' %}selected{% endif %}>Último mes</option>
+                                <option value="year" {% if time_range == 'year' %}selected{% endif %}>Último año</option>
+                                <option value="all" {% if time_range == 'all' %}selected{% endif %}>Todo</option>
+                            </select>
+                        </form>
+                    </div>
                 </div>
                 <div class="card-body">
                     <canvas id="contactsChart" height="120"></canvas>

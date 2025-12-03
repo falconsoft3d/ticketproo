@@ -509,10 +509,10 @@
             </div>
             
             <a href="{% url 'contact_chart' %}" class="btn btn-outline-info">
-                <i class="bi bi-bar-chart-line"></i> Ver gráfico de creación
+                <i class="bi bi-bar-chart-line"></i> Gráfico
             </a>
             <a href="{% url 'contact_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Nuevo Contacto
+                <i class="bi bi-plus-circle"></i> Crear
             </a>
         </div>
     </div>
@@ -1101,9 +1101,9 @@
             </div>
             <div>
                 <a href="{% url 'contact_stage_tracking' %}" class="btn btn-sm btn-primary me-2">
-                    <i class="fas fa-chart-line"></i> Seguimiento por Etapas
+                    <i class="fas fa-chart-line"></i> Etapas
                 </a>
-                <span class="badge bg-secondary">{{ page_obj.paginator.count }} total</span>
+                
             </div>
         </div>
         <div class="card-body">

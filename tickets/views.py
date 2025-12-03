@@ -65,7 +65,20 @@ from .models import (
 @login_required
 def contact_chart(request):
     """Vista de gráfico de creación de contactos en el tiempo"""
-    group_by = request.GET.get('group_by', 'hour')
+    group_by = request.GET.get('group_by', 'day')
+    time_range = request.GET.get('time_range', 'week')  # week, month, year, all
+    
+    # Calcular filtro de fecha según el rango temporal
+    end_date = timezone.now()
+    if time_range == 'week':
+        start_date = end_date - timedelta(days=7)
+    elif time_range == 'month':
+        start_date = end_date - timedelta(days=30)
+    elif time_range == 'year':
+        start_date = end_date - timedelta(days=365)
+    else:  # all
+        start_date = None
+    
     if group_by == 'day':
         trunc = TruncDay('contact_date')
         label_fmt = '%d/%m/%Y'
@@ -76,9 +89,13 @@ def contact_chart(request):
         trunc = TruncHour('contact_date')
         label_fmt = '%d/%m/%Y %H:00'
 
-    # Obtener datos totales
+    # Obtener datos totales con filtro de fecha
+    contacts_qs = Contact.objects.all()
+    if start_date:
+        contacts_qs = contacts_qs.filter(contact_date__gte=start_date)
+    
     data = (
-        Contact.objects
+        contacts_qs
         .annotate(grp=trunc)
         .values('grp')
         .annotate(count=Count('id'))
@@ -92,9 +109,12 @@ def contact_chart(request):
     users_data = {}
     
     for user in User.objects.filter(contacts_created__isnull=False).distinct():
+        user_contacts_qs = Contact.objects.filter(created_by=user)
+        if start_date:
+            user_contacts_qs = user_contacts_qs.filter(contact_date__gte=start_date)
+        
         user_contacts = (
-            Contact.objects
-            .filter(created_by=user)
+            user_contacts_qs
             .annotate(grp=trunc)
             .values('grp')
             .annotate(count=Count('id'))
@@ -140,7 +160,6 @@ def contact_chart(request):
     max_contributions = max(activity_data.values()) if activity_data.values() else 0
     
     # Generar datos para el gráfico de reuniones por mes (año actual y anterior)
-    from django.db.models.functions import TruncMonth
     from dateutil.relativedelta import relativedelta
     
     current_date = timezone.now().date()
@@ -192,11 +211,12 @@ def contact_chart(request):
         'counts': json.dumps(counts),
         'users_data': json.dumps(users_data),
         'group_by': group_by,
+        'time_range': time_range,
         'page_title': 'Gráfico de Creación de Contactos',
         'activity_data': json.dumps(activity_data),
         'activity_total': total_contributions,
         'activity_max': max_contributions,
-        'activity_start_date': start_date,
+        'activity_start_date': start_date if start_date else None,
         'activity_end_date': end_date,
         'meetings_labels': json.dumps(meetings_labels),
         'meetings_counts_current': json.dumps(meetings_counts_current),
