@@ -1148,7 +1148,7 @@
                         <strong>URLs KPI:</strong>
                         {% for url_stat in short_url_kpi_stats %}
                             <span class="badge bg-success ms-1" title="{{ url_stat.title }}">
-                                {{ url_stat.short_code }}: {{ url_stat.clicks }}
+                                {{ url_stat.short_code }}: {{ url_stat.clicks_today }} / {{ url_stat.clicks_total }}
                             </span>
                         {% endfor %}
                         <span class="text-dark ms-2">|</span>

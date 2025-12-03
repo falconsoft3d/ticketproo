@@ -11748,7 +11748,7 @@ def contact_list(request):
     contacts_today_by_user_list.sort(key=lambda x: x['count'], reverse=True)
     
     # Obtener estadísticas de URLs cortas marcadas como KPI de Ventas
-    from .models import ShortUrl
+    from .models import ShortUrl, ShortUrlClick
     short_url_kpis = ShortUrl.objects.filter(
         is_sales_kpi=True,
         is_active=True
@@ -11756,9 +11756,18 @@ def contact_list(request):
     
     short_url_stats = []
     for url in short_url_kpis:
+        # Clics de hoy
+        clicks_today = ShortUrlClick.objects.filter(
+            short_url=url,
+            clicked_at__year=now.year,
+            clicked_at__month=now.month,
+            clicked_at__day=now.day
+        ).count()
+        
         short_url_stats.append({
             'short_code': url.short_code,
-            'clicks': url.clicks,
+            'clicks_today': clicks_today,
+            'clicks_total': url.clicks,
             'title': url.title or url.short_code
         })
     
