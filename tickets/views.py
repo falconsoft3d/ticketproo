@@ -76,6 +76,7 @@ def contact_chart(request):
         trunc = TruncHour('contact_date')
         label_fmt = '%d/%m/%Y %H:00'
 
+    # Obtener datos totales
     data = (
         Contact.objects
         .annotate(grp=trunc)
@@ -85,6 +86,26 @@ def contact_chart(request):
     )
     labels = [item['grp'].strftime(label_fmt) for item in data if item['grp']]
     counts = [item['count'] for item in data]
+    
+    # Obtener datos por usuario
+    from django.contrib.auth.models import User
+    users_data = {}
+    
+    for user in User.objects.filter(contacts_created__isnull=False).distinct():
+        user_contacts = (
+            Contact.objects
+            .filter(created_by=user)
+            .annotate(grp=trunc)
+            .values('grp')
+            .annotate(count=Count('id'))
+            .order_by('grp')
+        )
+        
+        # Crear diccionario para buscar rápidamente los valores
+        user_dict = {item['grp'].strftime(label_fmt): item['count'] for item in user_contacts if item['grp']}
+        
+        # Llenar con 0 para las fechas sin datos
+        users_data[user.username] = [user_dict.get(label, 0) for label in labels]
     
     # Generar datos para el gráfico de actividad de contactos (estilo GitHub)
     from django.db.models.functions import TruncDate
@@ -169,6 +190,7 @@ def contact_chart(request):
     context = {
         'labels': json.dumps(labels),
         'counts': json.dumps(counts),
+        'users_data': json.dumps(users_data),
         'group_by': group_by,
         'page_title': 'Gráfico de Creación de Contactos',
         'activity_data': json.dumps(activity_data),

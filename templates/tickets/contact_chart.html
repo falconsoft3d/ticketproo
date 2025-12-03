@@ -103,27 +103,70 @@
 <script>
 // Gráfico de contactos creados
 const ctx = document.getElementById('contactsChart').getContext('2d');
+const usersData = {{ users_data|safe }};
+
+// Colores para las líneas de usuarios
+const colors = [
+    { bg: 'rgba(255, 99, 132, 0.2)', border: 'rgba(255, 99, 132, 1)' },
+    { bg: 'rgba(54, 162, 235, 0.2)', border: 'rgba(54, 162, 235, 1)' },
+    { bg: 'rgba(255, 206, 86, 0.2)', border: 'rgba(255, 206, 86, 1)' },
+    { bg: 'rgba(75, 192, 192, 0.2)', border: 'rgba(75, 192, 192, 1)' },
+    { bg: 'rgba(153, 102, 255, 0.2)', border: 'rgba(153, 102, 255, 1)' },
+    { bg: 'rgba(255, 159, 64, 0.2)', border: 'rgba(255, 159, 64, 1)' },
+    { bg: 'rgba(199, 199, 199, 0.2)', border: 'rgba(199, 199, 199, 1)' },
+    { bg: 'rgba(83, 102, 255, 0.2)', border: 'rgba(83, 102, 255, 1)' },
+    { bg: 'rgba(255, 99, 255, 0.2)', border: 'rgba(255, 99, 255, 1)' },
+    { bg: 'rgba(99, 255, 132, 0.2)', border: 'rgba(99, 255, 132, 1)' }
+];
+
+// Crear datasets - primero la línea total
+const datasets = [{
+    label: 'Total',
+    data: {{ counts|safe }},
+    backgroundColor: 'rgba(13, 202, 240, 0.2)',
+    borderColor: 'rgba(13, 202, 240, 1)',
+    borderWidth: 3,
+    pointRadius: 4,
+    pointBackgroundColor: 'rgba(13, 202, 240, 1)',
+    fill: true,
+    tension: 0.3
+}];
+
+// Agregar líneas por usuario
+let colorIndex = 0;
+for (const [username, data] of Object.entries(usersData)) {
+    const color = colors[colorIndex % colors.length];
+    datasets.push({
+        label: username,
+        data: data,
+        backgroundColor: color.bg,
+        borderColor: color.border,
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: color.border,
+        fill: false,
+        tension: 0.3
+    });
+    colorIndex++;
+}
+
 const contactsChart = new Chart(ctx, {
     type: 'line',
     data: {
         labels: {{ labels|safe }},
-        datasets: [{
-            label: 'Contactos creados',
-            data: {{ counts|safe }},
-            backgroundColor: 'rgba(13, 202, 240, 0.2)',
-            borderColor: 'rgba(13, 202, 240, 1)',
-            borderWidth: 2,
-            pointRadius: 4,
-            pointBackgroundColor: 'rgba(13, 202, 240, 1)',
-            fill: true,
-            tension: 0.3
-        }]
+        datasets: datasets
     },
     options: {
         scales: {
             y: {
                 beginAtZero: true,
                 stepSize: 1
+            }
+        },
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
             }
         }
     }
