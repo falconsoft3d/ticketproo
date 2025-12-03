@@ -330,6 +330,8 @@ urlpatterns = [
     
     # ============= URLs CONTACTOS =============
     path('contacts/', views.contact_list, name='contact_list'),
+    path('contacts/stage-tracking/', views.contact_stage_tracking, name='contact_stage_tracking'),
+    path('contacts/<int:pk>/update-stage/', views.contact_update_stage, name='contact_update_stage'),
     path('contacts/generate-sales-report/', views.generate_sales_report, name='generate_sales_report'),
     path('contacts/chart/', views.contact_chart, name='contact_chart'),
     path('contacts/create/', views.contact_create, name='contact_create'),

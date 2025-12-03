@@ -58,6 +58,7 @@ api_urlpatterns = [
     path('system-info/', system_info_api, name='api-system-info'),
     
     # URL para estadísticas de URLs cortas
+    path('short-urls/stats/', short_url_stats_api, name='api-short-urls-stats'),
     path('short-urls/<int:pk>/stats/', short_url_stats, name='api-short-url-stats'),
     
     # URL para tracking de contadores web (sin autenticación)

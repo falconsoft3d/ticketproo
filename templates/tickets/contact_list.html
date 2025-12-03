@@ -1099,7 +1099,12 @@
                     {% endif %}
                 </small>
             </div>
-            <span class="badge bg-secondary">{{ page_obj.paginator.count }} total</span>
+            <div>
+                <a href="{% url 'contact_stage_tracking' %}" class="btn btn-sm btn-primary me-2">
+                    <i class="fas fa-chart-line"></i> Seguimiento por Etapas
+                </a>
+                <span class="badge bg-secondary">{{ page_obj.paginator.count }} total</span>
+            </div>
         </div>
         <div class="card-body">
             {% if page_obj %}
@@ -1109,6 +1114,7 @@
                             <tr>
                                 <th>Contacto</th>
                                 <th>Estado</th>
+                                <th>Etapa</th>
                                 <th>Empresa</th>
                                 <th>Tamaño</th>
                                 <th>País</th>
@@ -1118,12 +1124,11 @@
                                 <th>Fecha</th>
                                 <th>Fuente</th>
                                 <th>Creado por</th>
-                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for contact in page_obj %}
-                            <tr>
+                            <tr style="cursor: pointer;" onclick="window.location.href='{% url 'contact_detail' contact.pk %}'">
                                 <td>
                                     <div>
                                         <strong>
@@ -1170,6 +1175,16 @@
                                             <i class="{{ contact.get_status_icon }}"></i>
                                             {{ contact.get_status_display }}
                                         </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if contact.stage %}
+                                        <span class="badge bg-primary" title="{{ contact.get_stage_display }}">
+                                            <i class="bi bi-ladder"></i>
+                                            {% if contact.stage == 'stage_1' %}1er{% elif contact.stage == 'stage_2' %}2do{% elif contact.stage == 'stage_3' %}3er{% elif contact.stage == 'stage_4' %}4to{% elif contact.stage == 'stage_5' %}5to{% elif contact.stage == 'stage_6' %}6to{% elif contact.stage == 'stage_7' %}7mo{% elif contact.stage == 'stage_8' %}8vo{% endif %}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ contact.company|default:"-" }}</td>
@@ -1248,15 +1263,6 @@
                                 </td>
                                 <td>{{ contact.source|default:"-" }}</td>
                                 <td>{{ contact.created_by.get_full_name|default:contact.created_by.username }}</td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <a href="{% url 'contact_detail' contact.pk %}" 
-                                           class="btn btn-outline-primary btn-sm" title="Ver">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        
-                                    </div>
-                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>

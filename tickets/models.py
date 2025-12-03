@@ -4640,6 +4640,26 @@ class Contact(models.Model):
         default='negative',
         verbose_name='Estado'
     )
+    
+    STAGE_CHOICES = [
+        ('stage_1', '1er contacto - Presentación, apertura'),
+        ('stage_2', '2do contacto - Necesidades reales, diagnóstico'),
+        ('stage_3', '3er contacto - Demo o propuesta inicial'),
+        ('stage_4', '4to contacto - Ajustes, dudas, objeciones'),
+        ('stage_5', '5to contacto - Negociación y cierre'),
+        ('stage_6', '6to contacto - Negociación y cierre'),
+        ('stage_7', '7mo contacto - Negociación y cierre'),
+        ('stage_8', '8vo contacto - Negociación y cierre'),
+    ]
+    
+    stage = models.CharField(
+        max_length=10,
+        choices=STAGE_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name='Etapa',
+        help_text='Etapa del proceso de ventas'
+    )
     source = models.CharField(
         max_length=200,
         blank=True,

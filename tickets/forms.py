@@ -3611,7 +3611,7 @@ class ContactForm(forms.ModelForm):
         model = Contact
         fields = [
             'name', 'email', 'phone', 'position', 'company', 'country', 'erp',
-            'status', 'assigned_to', 'tags', 'source', 'company_size', 'notes', 'contact_date',
+            'status', 'stage', 'assigned_to', 'tags', 'source', 'company_size', 'notes', 'contact_date',
             'contacted_by_phone', 'contacted_by_web', 'had_meeting', 'meeting_date',
             'contact_tracking_notes', 'last_contact_date',
             'website', 'facebook_url', 'linkedin_url', 'twitter_url', 'instagram_url',
@@ -3647,6 +3647,9 @@ class ContactForm(forms.ModelForm):
                 'placeholder': 'SAP, Odoo, Navision, etc.'
             }),
             'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'stage': forms.Select(attrs={
                 'class': 'form-select'
             }),
             'assigned_to': forms.Select(attrs={

@@ -12306,6 +12306,111 @@ def contact_attachment_delete(request, pk):
 
 
 @login_required
+def contact_stage_tracking(request):
+    """Vista de seguimiento de contactos positivos por etapas"""
+    from django.db.models import Count
+    from django.utils import timezone
+    
+    # Obtener todos los contactos positivos agrupados por etapa
+    stages_data = []
+    
+    for stage_code, stage_name in Contact.STAGE_CHOICES:
+        contacts = Contact.objects.filter(
+            status='positive',
+            stage=stage_code
+        ).select_related('created_by').order_by('created_at')
+        
+        # Calcular tiempo promedio desde el primer contacto
+        stage_info = {
+            'code': stage_code,
+            'name': stage_name,
+            'count': contacts.count(),
+            'contacts': contacts,
+        }
+        
+        stages_data.append(stage_info)
+    
+    # Contactos positivos sin etapa asignada
+    contacts_no_stage = Contact.objects.filter(
+        status='positive',
+        stage__isnull=True
+    ).select_related('created_by').order_by('created_at')
+    
+    context = {
+        'page_title': 'Seguimiento de Contactos Positivos por Etapas',
+        'stages_data': stages_data,
+        'contacts_no_stage': contacts_no_stage,
+        'total_positive': Contact.objects.filter(status='positive').count(),
+    }
+    
+    return render(request, 'tickets/contact_stage_tracking.html', context)
+
+
+@login_required
+def contact_update_stage(request, pk):
+    """Actualizar la etapa de un contacto mediante AJAX"""
+    from django.http import JsonResponse
+    from django.views.decorators.http import require_POST
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    logger.info(f"contact_update_stage called for contact {pk}")
+    logger.info(f"Method: {request.method}")
+    logger.info(f"POST data: {request.POST}")
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        contact = get_object_or_404(Contact, pk=pk)
+        new_stage = request.POST.get('stage')
+        
+        logger.info(f"Current stage: {contact.stage}, New stage: {new_stage}")
+        
+        # Validar que la etapa sea válida
+        valid_stages = [code for code, name in Contact.STAGE_CHOICES]
+        
+        if not new_stage:
+            return JsonResponse({'error': 'Etapa no proporcionada'}, status=400)
+        
+        if new_stage not in valid_stages:
+            return JsonResponse({'error': f'Etapa no válida: {new_stage}. Válidas: {valid_stages}'}, status=400)
+        
+        # Actualizar la etapa
+        old_stage = contact.get_stage_display() if contact.stage else 'Sin etapa'
+        contact.stage = new_stage
+        contact.save()
+        
+        logger.info(f"Stage updated successfully from {old_stage} to {contact.get_stage_display()}")
+        
+        # Crear actividad de seguimiento
+        try:
+            from .models import Activity
+            Activity.objects.create(
+                contact=contact,
+                activity_type='call',
+                subject=f'Cambio de etapa: {old_stage} → {contact.get_stage_display()}',
+                notes=f'La etapa del contacto fue actualizada automáticamente desde el pipeline de ventas.',
+                created_by=request.user,
+                status='completed'
+            )
+            logger.info("Activity created successfully")
+        except Exception as e:
+            logger.error(f"Error creating activity: {str(e)}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Etapa actualizada a {contact.get_stage_display()}',
+            'new_stage': contact.stage,
+            'new_stage_name': contact.get_stage_display()
+        })
+    
+    except Exception as e:
+        logger.error(f"Error in contact_update_stage: {str(e)}")
+        return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
+
+
+@login_required
 def contact_ai_comment(request, pk):
     """Generar comentario asistido por IA para un contacto"""
     import json
@@ -46834,6 +46939,7 @@ def translation_quick_api(request):
 # VIEWS PARA GESTIÓN DE URLs (API SIDEBAR)
 # ============================================
 
+@login_required
 @login_required
 @login_required
 def url_manager_search_api(request):

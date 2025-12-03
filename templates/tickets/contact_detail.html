@@ -34,6 +34,11 @@
                     {% endif %}
                 </div>
                 <div class="d-flex gap-2 align-items-center">
+                    <!-- Botón Regresar -->
+                    <a href="{% url 'contact_list' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left"></i> Regresar
+                    </a>
+                    
                     <!-- Navegación entre contactos -->
                     <div class="btn-group" role="group">
                         {% if previous_contact %}

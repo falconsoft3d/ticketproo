@@ -114,6 +114,16 @@
                                     <div class="text-danger small">{{ form.status.errors }}</div>
                                 {% endif %}
                             </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.stage.id_for_label }}" class="form-label">
+                                    <i class="bi bi-ladder"></i> {{ form.stage.label }}
+                                </label>
+                                {{ form.stage }}
+                                {% if form.stage.errors %}
+                                    <div class="text-danger small">{{ form.stage.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">Etapa del proceso de ventas</small>
+                            </div>
                         </div>
 
                         <div class="row">
