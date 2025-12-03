@@ -9197,6 +9197,11 @@ class ShortUrl(models.Model):
         verbose_name='Fecha de expiración',
         help_text='Fecha opcional cuando expira la URL corta'
     )
+    is_sales_kpi = models.BooleanField(
+        default=False,
+        verbose_name='KPI de Ventas',
+        help_text='Marcar si esta URL es parte del seguimiento de KPIs de ventas'
+    )
     
     class Meta:
         verbose_name = 'URL Corta'

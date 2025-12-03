@@ -11747,6 +11747,21 @@ def contact_list(request):
     # Ordenar por count descendente
     contacts_today_by_user_list.sort(key=lambda x: x['count'], reverse=True)
     
+    # Obtener estadísticas de URLs cortas marcadas como KPI de Ventas
+    from .models import ShortUrl
+    short_url_kpis = ShortUrl.objects.filter(
+        is_sales_kpi=True,
+        is_active=True
+    ).order_by('short_code')
+    
+    short_url_stats = []
+    for url in short_url_kpis:
+        short_url_stats.append({
+            'short_code': url.short_code,
+            'clicks': url.clicks,
+            'title': url.title or url.short_code
+        })
+    
     context = {
         'page_obj': page_obj,
         'contacts': page_obj.object_list,
@@ -11788,6 +11803,7 @@ def contact_list(request):
         'contacts_stats_today': contacts_today_count,
         'contacts_stats_hour': contacts_hour,
         'contacts_today_by_user': contacts_today_by_user_list,
+        'short_url_kpi_stats': short_url_stats,
     }
     
     return render(request, 'tickets/contact_list.html', context)
@@ -23376,6 +23392,9 @@ def short_url_edit(request, pk):
                 short_url.expires_at = None
         else:
             short_url.expires_at = None
+        
+        # Actualizar KPI de Ventas
+        short_url.is_sales_kpi = request.POST.get('is_sales_kpi') == 'on'
         
         short_url.save()
         messages.success(request, 'URL corta actualizada exitosamente.')

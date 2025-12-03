@@ -1143,6 +1143,16 @@
             <div>
                 <h5 class="mb-0">Contactos</h5>
                 <small class="text-muted">
+                    {% if short_url_kpi_stats %}
+                        <i class="bi bi-link-45deg text-success"></i>
+                        <strong>URLs KPI:</strong>
+                        {% for url_stat in short_url_kpi_stats %}
+                            <span class="badge bg-success ms-1" title="{{ url_stat.title }}">
+                                {{ url_stat.short_code }}: {{ url_stat.clicks }}
+                            </span>
+                        {% endfor %}
+                        <span class="text-dark ms-2">|</span>
+                    {% endif %}
                     <i class="bi bi-person-check text-primary"></i>
                     <strong>Contactos:</strong>
                     <span class="badge bg-secondary ms-1">Total: {{ contacts_stats_total }}</span>

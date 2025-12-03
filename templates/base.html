@@ -5111,6 +5111,38 @@
         flex-shrink: 0 !important;
         z-index: 1 !important;
     }
+    
+    /* Ocultar botones flotantes en dispositivos móviles */
+    @media (max-width: 768px) {
+        /* Ocultar botones flotantes derechos */
+        #shortUrlStatsToggle,
+        #aiChatToggle,
+        #createTicketToggle,
+        #quickNoteToggle,
+        #activeUsersSidebarToggle,
+        #calculatorToggle,
+        #quickTodoToggle,
+        #systemMonitorToggle,
+        #unreviewedConversationsToggle,
+        #ticketsSidebarToggle,
+        .floating-button-right {
+            display: none !important;
+        }
+        
+        /* Ocultar botones flotantes izquierdos */
+        #translationToggle,
+        #transactionToggle,
+        #eventsSidebarToggle,
+        #workOrdersSidebarToggle,
+        #quickTaskToggle,
+        #socialFeedToggle,
+        #ratingToggle,
+        #knowledgeBaseToggle,
+        #urlManagerToggle,
+        .floating-button-left {
+            display: none !important;
+        }
+    }
     </style>
 
     <!-- Ticker de Acciones Financieras Global -->
