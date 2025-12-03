@@ -17449,6 +17449,47 @@ class Counter(models.Model):
         return f"{self.title} - {self.value} ({self.date.strftime('%d/%m/%Y')})"
 
 
+class CounterHistory(models.Model):
+    """Modelo para historial de cambios en contadores"""
+    
+    counter = models.ForeignKey(
+        Counter,
+        on_delete=models.CASCADE,
+        related_name='history',
+        verbose_name='Contador'
+    )
+    value = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name='Valor',
+        help_text='Valor ingresado'
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas',
+        help_text='Notas sobre este cambio (opcional)'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='counter_history',
+        verbose_name='Usuario',
+        help_text='Usuario que realizó el cambio'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha y hora'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Historial de Contador'
+        verbose_name_plural = 'Historiales de Contadores'
+    
+    def __str__(self):
+        return f"{self.counter.title} - {self.value} ({self.created_at.strftime('%d/%m/%Y %H:%M')})"
+
+
 class OCRInvoice(models.Model):
     """Modelo para facturas procesadas con OCR"""
     

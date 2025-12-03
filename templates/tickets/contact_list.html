@@ -1142,6 +1142,23 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="mb-0">Contactos</h5>
+                <small class="text-muted">
+                    <i class="bi bi-person-check text-primary"></i>
+                    <strong>Contactos:</strong>
+                    <span class="badge bg-secondary ms-1">Total: {{ contacts_stats_total }}</span>
+                    <span class="badge bg-info ms-1">Año: {{ contacts_stats_year }}</span>
+                    <span class="badge bg-primary ms-1">Mes: {{ contacts_stats_month }}</span>
+                    <span class="badge bg-info ms-1">Semana: {{ contacts_stats_week }}</span>
+                    <span class="badge bg-success ms-1">Hoy: {{ contacts_stats_today }}</span>
+                    <span class="badge bg-warning text-dark ms-1">Última Hora: {{ contacts_stats_hour }}</span>
+                    {% if contacts_today_by_user %}
+                        <span class="text-dark ms-2">|</span>
+                        <strong class="ms-2">Hoy por usuario:</strong>
+                        {% for user_contact in contacts_today_by_user %}
+                            <span class="text-dark ms-1">{{ user_contact.username }} {{ user_contact.count }}{% if not forloop.last %},{% endif %}</span>
+                        {% endfor %}
+                    {% endif %}
+                </small>
             </div>
             <span class="badge bg-secondary">{{ page_obj.paginator.count }} total</span>
         </div>

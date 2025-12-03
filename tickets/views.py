@@ -11602,22 +11602,20 @@ def contact_list(request):
         table_totals['conversion_rate'] = 0
     
     # Estadísticas de tickets creados hoy por usuario en intervalos de hora
-    from django.db.models.functions import TruncHour
+    from django.db.models.functions import TruncHour, TruncDate
     from collections import defaultdict
     from datetime import date
     
-    # Usar la fecha actual sin zona horaria para comparar solo la fecha
-    today_date = timezone.now().date()
+    # Obtener fecha actual para filtros simples
+    now = timezone.now()
+    today_date = now.date()
     
-    # Obtener tickets creados hoy agrupados por usuario y hora
+    # Obtener tickets creados hoy - usar el mismo método que funciona en KPIs
     tickets_today = Ticket.objects.filter(
-        created_at__date=today_date
+        created_at__year=now.year,
+        created_at__month=now.month,
+        created_at__day=now.day
     ).select_related('created_by').order_by('created_at')
-    
-    # Debug: imprimir cantidad de tickets encontrados
-    print(f"DEBUG: Tickets encontrados hoy ({today_date}): {tickets_today.count()}")
-    for t in tickets_today:
-        print(f"  - Ticket #{t.id} creado por {t.created_by.username} a las {t.created_at}")
     
     # Agrupar tickets por usuario y hora
     user_hourly_tickets = defaultdict(lambda: defaultdict(list))
@@ -11669,6 +11667,64 @@ def contact_list(request):
     # Ordenar por total de tickets descendente
     hourly_ticket_stats.sort(key=lambda x: x['total_tickets'], reverse=True)
     
+    # Estadísticas generales de contactos
+    from django.db.models import Count
+    from django.contrib.auth.models import User
+    
+    # Total de contactos
+    contacts_total = Contact.objects.count()
+    
+    # Contactos del año actual
+    contacts_year = Contact.objects.filter(
+        created_at__year=now.year
+    ).count()
+    
+    # Contactos del mes actual
+    contacts_month = Contact.objects.filter(
+        created_at__year=now.year,
+        created_at__month=now.month
+    ).count()
+    
+    # Contactos de la semana actual
+    week_start = now - timedelta(days=now.weekday())
+    contacts_week = Contact.objects.filter(
+        created_at__gte=week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+    ).count()
+    
+    # Contactos de hoy
+    contacts_today_count = Contact.objects.filter(
+        created_at__year=now.year,
+        created_at__month=now.month,
+        created_at__day=now.day
+    ).count()
+    
+    # Contactos de la última hora
+    one_hour_ago = now - timedelta(hours=1)
+    contacts_hour = Contact.objects.filter(
+        created_at__gte=one_hour_ago
+    ).count()
+    
+    # Contactos de hoy por usuario
+    contacts_today_by_user_list = []
+    all_users = User.objects.all()
+    
+    for user in all_users:
+        count = Contact.objects.filter(
+            created_by=user,
+            created_at__year=now.year,
+            created_at__month=now.month,
+            created_at__day=now.day
+        ).count()
+        
+        if count > 0:
+            contacts_today_by_user_list.append({
+                'username': user.username,
+                'count': count
+            })
+    
+    # Ordenar por count descendente
+    contacts_today_by_user_list.sort(key=lambda x: x['count'], reverse=True)
+    
     context = {
         'page_obj': page_obj,
         'contacts': page_obj.object_list,
@@ -11703,6 +11759,13 @@ def contact_list(request):
         'selected_tags': request.GET.getlist('tags'),
         'hourly_ticket_stats': hourly_ticket_stats,
         'users_with_high_activity': users_with_high_activity,
+        'contacts_stats_total': contacts_total,
+        'contacts_stats_year': contacts_year,
+        'contacts_stats_month': contacts_month,
+        'contacts_stats_week': contacts_week,
+        'contacts_stats_today': contacts_today_count,
+        'contacts_stats_hour': contacts_hour,
+        'contacts_today_by_user': contacts_today_by_user_list,
     }
     
     return render(request, 'tickets/contact_list.html', context)
@@ -50954,14 +51017,51 @@ def counter_create(request):
 @login_required
 @user_passes_test(is_agent, login_url='/')
 def counter_detail(request, pk):
-    """Vista de detalle de contador"""
-    from .models import Counter
+    """Vista de detalle de contador con historial"""
+    from .models import Counter, CounterHistory
+    from django.db.models import Sum
     
     counter = get_object_or_404(Counter, pk=pk)
+    
+    # Procesar formulario de nuevo valor
+    if request.method == 'POST':
+        value = request.POST.get('value')
+        notes = request.POST.get('notes', '')
+        
+        if value:
+            try:
+                value = float(value)
+                # Crear entrada en el historial
+                CounterHistory.objects.create(
+                    counter=counter,
+                    value=value,
+                    notes=notes,
+                    user=request.user
+                )
+                # Actualizar el valor del contador
+                counter.value = value
+                counter.save()
+                
+                messages.success(request, f'Valor {value} agregado exitosamente al historial.')
+                return redirect('counter_detail', pk=counter.pk)
+            except ValueError:
+                messages.error(request, 'El valor debe ser un número válido.')
+        else:
+            messages.error(request, 'Debes ingresar un valor.')
+    
+    # Obtener historial
+    history = counter.history.all()
+    last_change = history.first() if history.exists() else None
+    
+    # Calcular estadísticas
+    total_entries = history.count()
     
     context = {
         'page_title': f'Contador: {counter.title}',
         'counter': counter,
+        'history': history,
+        'last_change': last_change,
+        'total_entries': total_entries,
     }
     return render(request, 'tickets/counter_detail.html', context)
 
