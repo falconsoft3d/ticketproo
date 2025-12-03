@@ -23482,6 +23482,11 @@ def short_url_edit(request, pk):
     short_url = get_object_or_404(ShortUrl, pk=pk, created_by=request.user)
     
     if request.method == 'POST':
+        # Actualizar título
+        title = request.POST.get('title', '').strip()
+        if title:
+            short_url.title = title
+        
         # Actualizar URL original
         original_url = request.POST.get('original_url', '').strip()
         if original_url:
@@ -23516,6 +23521,7 @@ def short_url_edit(request, pk):
     
     # Preparar datos para el formulario
     form_data = {
+        'title': {'value': short_url.title},
         'original_url': {'value': short_url.original_url},
         'short_code': {'value': short_url.short_code},
         'expires_at': {'value': short_url.expires_at},

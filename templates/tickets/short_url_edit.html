@@ -23,6 +23,27 @@
                                 {% csrf_token %}
                                 
                                 <div class="mb-3">
+                                    <label for="id_title" class="form-label">
+                                        <i class="bi bi-card-heading"></i> Título
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control {% if form.title.errors %}is-invalid{% endif %}" 
+                                           id="id_title" 
+                                           name="title" 
+                                           value="{{ form.title.value|default:'' }}"
+                                           placeholder="Mi URL para proyecto X"
+                                           maxlength="200">
+                                    {% if form.title.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.title.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Dale un título descriptivo a esta URL para identificarla fácilmente.
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
                                     <label for="id_original_url" class="form-label">
                                         <i class="bi bi-link"></i> URL Original
                                     </label>
