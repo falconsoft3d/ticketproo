@@ -1686,7 +1686,7 @@
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'; this.style.backgroundColor = '#ff6b6b'"
             title="Mis Órdenes de Trabajo Pendientes">
         <i class="bi bi-tools" id="workOrdersIcon"></i>
-        <span id="pendingWorkOrdersBadge" class="badge bg-danger" style="position: absolute; top: -5px; right: -5px; font-size: 0.7em; min-width: 18px;">
+        <span id="pendingWorkOrdersBadge" class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-secondary" style="font-size: 0.7em;">
             0
         </span>
     </button>
@@ -1700,7 +1700,7 @@
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
             title="Crear Tarea Rápida">
         <i class="bi bi-clipboard-check-fill"></i>
-        <span id="pendingTasksBadge" class="badge bg-danger" style="position: absolute; top: -5px; right: -5px; font-size: 0.7em; min-width: 18px;">
+        <span id="pendingTasksBadge" class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em;">
             0
         </span>
     </button>
@@ -5956,10 +5956,14 @@
             
             if (badge) {
                 badge.textContent = count;
-                badge.className = count > 0 
-                    ? 'position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger'
-                    : 'position-absolute top-0 end-0 translate-middle badge rounded-pill bg-secondary';
-                badge.style.fontSize = '0.7em';
+                // Solo cambiar el color del badge, mantener las clases de posición
+                if (count > 0) {
+                    badge.classList.remove('bg-secondary');
+                    badge.classList.add('bg-danger');
+                } else {
+                    badge.classList.remove('bg-danger');
+                    badge.classList.add('bg-secondary');
+                }
             }
             
             // Agregar o quitar animación al icono - SOLO si hay órdenes para hoy
