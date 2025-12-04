@@ -1,0 +1,23 @@
+{% extends 'public_base.html' %}
+
+{% block title %}Error - Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body text-center p-5">
+                    <i class="fas fa-exclamation-circle text-danger" style="font-size: 4rem;"></i>
+                    <h2 class="mt-4 mb-3">Acceso Denegado</h2>
+                    <p class="text-muted mb-4">{{ error }}</p>
+                    <p class="text-muted">
+                        El enlace que intentas acceder no es válido o ha expirado.
+                        Por favor, solicita un nuevo enlace al administrador.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

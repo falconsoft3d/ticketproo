@@ -9900,6 +9900,54 @@ class ChatbotQuestionForm(forms.ModelForm):
         }
 
 
+class PublicWorkOrderForm(forms.Form):
+    """Formulario público para crear órdenes de trabajo sin autenticación"""
+    
+    title = forms.CharField(
+        max_length=255,
+        label='Título',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Título descriptivo de la orden de trabajo'
+        })
+    )
+    
+    description = forms.CharField(
+        label='Descripción',
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 5,
+            'placeholder': 'Describa detalladamente el trabajo a realizar'
+        })
+    )
+    
+    company_name = forms.CharField(
+        max_length=255,
+        required=False,
+        label='Empresa',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Nombre de la empresa (opcional)'
+        })
+    )
+    
+    contact_email = forms.EmailField(
+        label='Email de contacto',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'tu@email.com'
+        })
+    )
+    
+    due_date = forms.DateField(
+        required=False,
+        label='Fecha de entrega deseada',
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date'
+        })
+    )
+
 
 
 

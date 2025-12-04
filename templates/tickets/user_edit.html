@@ -18,6 +18,9 @@
                     <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#publicTasksModal">
                         <i class="bi bi-share"></i> Compartir Tareas
                     </button>
+                    <a href="{% url 'user_public_workorder_token' user_to_edit.id %}" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-tools"></i> Órdenes Públicas
+                    </a>
                 </div>
             </div>
             <div class="card-body">

@@ -4997,13 +4997,13 @@ def work_order_edit_view(request, pk):
         return redirect('work_order_detail', pk=work_order.pk)
     
     if request.method == 'POST':
-        form = WorkOrderForm(request.POST, request.FILES, instance=work_order)
+        form = WorkOrderForm(request.POST, request.FILES, instance=work_order, user=request.user)
         if form.is_valid():
-            form.save(commit=False)
+            work_order = form.save()
             messages.success(request, f'Orden de trabajo "{work_order.title}" actualizada exitosamente.')
             return redirect('work_order_detail', pk=work_order.pk)
     else:
-        form = WorkOrderForm(instance=work_order)
+        form = WorkOrderForm(instance=work_order, user=request.user)
     
     context = {
         'form': form,
@@ -12571,6 +12571,345 @@ def contact_individual_stage_tracking(request, pk):
     }
     
     return render(request, 'tickets/contact_individual_stage_tracking.html', context)
+
+
+@login_required
+def business_dashboard(request):
+    """Dashboard empresarial con KPIs principales"""
+    from django.utils import timezone
+    from datetime import timedelta
+    from django.db.models import Count, Q
+    
+    today = timezone.now().date()
+    yesterday = today - timedelta(days=1)
+    today_start = timezone.datetime.combine(today, timezone.datetime.min.time())
+    today_start = timezone.make_aware(today_start)
+    yesterday_start = timezone.datetime.combine(yesterday, timezone.datetime.min.time())
+    yesterday_start = timezone.make_aware(yesterday_start)
+    
+    # Contactos creados hoy
+    contacts_today = Contact.objects.filter(
+        created_at__gte=today_start
+    ).count()
+    
+    # Contactos creados ayer
+    contacts_yesterday = Contact.objects.filter(
+        created_at__gte=yesterday_start,
+        created_at__lt=today_start
+    ).count()
+    
+    # Calcular variación
+    if contacts_yesterday > 0:
+        contacts_variation = ((contacts_today - contacts_yesterday) / contacts_yesterday) * 100
+    else:
+        contacts_variation = 100 if contacts_today > 0 else 0
+    
+    # Tickets creados hoy
+    from .models import Ticket
+    tickets_today = Ticket.objects.filter(
+        created_at__gte=today_start
+    ).count()
+    
+    # Tickets creados ayer
+    tickets_yesterday = Ticket.objects.filter(
+        created_at__gte=yesterday_start,
+        created_at__lt=today_start
+    ).count()
+    
+    # Calcular variación tickets
+    if tickets_yesterday > 0:
+        tickets_variation = ((tickets_today - tickets_yesterday) / tickets_yesterday) * 100
+    else:
+        tickets_variation = 100 if tickets_today > 0 else 0
+    
+    # Reuniones de soporte hoy
+    from .models import SupportMeeting
+    meetings_today = SupportMeeting.objects.filter(
+        created_at__gte=today_start
+    ).count()
+    
+    # Reuniones de soporte ayer
+    meetings_yesterday = SupportMeeting.objects.filter(
+        created_at__gte=yesterday_start,
+        created_at__lt=today_start
+    ).count()
+    
+    # Calcular variación reuniones
+    if meetings_yesterday > 0:
+        meetings_variation = ((meetings_today - meetings_yesterday) / meetings_yesterday) * 100
+    else:
+        meetings_variation = 100 if meetings_today > 0 else 0
+    
+    # Total general de contactos
+    total_contacts = Contact.objects.count()
+    
+    # Total general de tickets
+    total_tickets = Ticket.objects.count()
+    
+    # Total general de reuniones
+    total_meetings = SupportMeeting.objects.count()
+    
+    # Contactos positivos vs negativos
+    contacts_positive = Contact.objects.filter(status='positive').count()
+    contacts_negative = Contact.objects.filter(status='negative').count()
+    
+    # Calcular porcentaje
+    total_with_status = contacts_positive + contacts_negative
+    if total_with_status > 0:
+        positive_percentage = (contacts_positive / total_with_status) * 100
+        negative_percentage = (contacts_negative / total_with_status) * 100
+    else:
+        positive_percentage = 0
+        negative_percentage = 0
+    
+    # Órdenes de trabajo hoy
+    from .models import WorkOrder
+    workorders_today = WorkOrder.objects.filter(
+        created_at__gte=today_start
+    ).count()
+    
+    # Órdenes de trabajo ayer
+    workorders_yesterday = WorkOrder.objects.filter(
+        created_at__gte=yesterday_start,
+        created_at__lt=today_start
+    ).count()
+    
+    # Calcular variación órdenes
+    if workorders_yesterday > 0:
+        workorders_variation = ((workorders_today - workorders_yesterday) / workorders_yesterday) * 100
+    else:
+        workorders_variation = 100 if workorders_today > 0 else 0
+    
+    # Total general de órdenes
+    total_workorders = WorkOrder.objects.count()
+    
+    # Evaluaciones hoy
+    from .models import UserAIPerformanceEvaluation
+    evaluations_today = UserAIPerformanceEvaluation.objects.filter(
+        created_at__gte=today_start
+    ).count()
+    
+    # Evaluaciones ayer
+    evaluations_yesterday = UserAIPerformanceEvaluation.objects.filter(
+        created_at__gte=yesterday_start,
+        created_at__lt=today_start
+    ).count()
+    
+    # Calcular variación evaluaciones
+    if evaluations_yesterday > 0:
+        evaluations_variation = ((evaluations_today - evaluations_yesterday) / evaluations_yesterday) * 100
+    else:
+        evaluations_variation = 100 if evaluations_today > 0 else 0
+    
+    # Total general de evaluaciones
+    total_evaluations = UserAIPerformanceEvaluation.objects.count()
+    
+    context = {
+        'page_title': 'Dashboard Empresarial',
+        'contacts_today': contacts_today,
+        'contacts_yesterday': contacts_yesterday,
+        'contacts_variation': contacts_variation,
+        'tickets_today': tickets_today,
+        'tickets_yesterday': tickets_yesterday,
+        'tickets_variation': tickets_variation,
+        'meetings_today': meetings_today,
+        'meetings_yesterday': meetings_yesterday,
+        'meetings_variation': meetings_variation,
+        'workorders_today': workorders_today,
+        'workorders_yesterday': workorders_yesterday,
+        'workorders_variation': workorders_variation,
+        'evaluations_today': evaluations_today,
+        'evaluations_yesterday': evaluations_yesterday,
+        'evaluations_variation': evaluations_variation,
+        'total_contacts': total_contacts,
+        'total_tickets': total_tickets,
+        'total_meetings': total_meetings,
+        'total_workorders': total_workorders,
+        'total_evaluations': total_evaluations,
+        'contacts_positive': contacts_positive,
+        'contacts_negative': contacts_negative,
+        'positive_percentage': positive_percentage,
+        'negative_percentage': negative_percentage,
+    }
+    
+    return render(request, 'tickets/business_dashboard.html', context)
+
+
+def business_dashboard_public(request, token):
+    """Dashboard empresarial público con token de acceso"""
+    from django.utils import timezone
+    from datetime import timedelta
+    from .models import SystemConfiguration
+    import hashlib
+    
+    # Verificar token
+    try:
+        config = SystemConfiguration.objects.first()
+        if not config:
+            return render(request, 'tickets/public_dashboard_error.html', {'error': 'Configuración no encontrada'})
+        
+        # Generar token esperado
+        secret = getattr(config, 'dashboard_secret', 'default-secret-key')
+        expected_token = hashlib.sha256(f"{secret}-dashboard".encode()).hexdigest()[:32]
+        
+        if token != expected_token:
+            return render(request, 'tickets/public_dashboard_error.html', {'error': 'Token inválido'})
+    except Exception as e:
+        return render(request, 'tickets/public_dashboard_error.html', {'error': str(e)})
+    
+    # Mismo código que business_dashboard pero sin @login_required
+    today = timezone.now().date()
+    yesterday = today - timedelta(days=1)
+    today_start = timezone.datetime.combine(today, timezone.datetime.min.time())
+    today_start = timezone.make_aware(today_start)
+    yesterday_start = timezone.datetime.combine(yesterday, timezone.datetime.min.time())
+    yesterday_start = timezone.make_aware(yesterday_start)
+    
+    contacts_today = Contact.objects.filter(created_at__gte=today_start).count()
+    contacts_yesterday = Contact.objects.filter(created_at__gte=yesterday_start, created_at__lt=today_start).count()
+    
+    if contacts_yesterday > 0:
+        contacts_variation = ((contacts_today - contacts_yesterday) / contacts_yesterday) * 100
+    else:
+        contacts_variation = 100 if contacts_today > 0 else 0
+    
+    from .models import Ticket
+    tickets_today = Ticket.objects.filter(created_at__gte=today_start).count()
+    tickets_yesterday = Ticket.objects.filter(created_at__gte=yesterday_start, created_at__lt=today_start).count()
+    
+    if tickets_yesterday > 0:
+        tickets_variation = ((tickets_today - tickets_yesterday) / tickets_yesterday) * 100
+    else:
+        tickets_variation = 100 if tickets_today > 0 else 0
+    
+    from .models import SupportMeeting
+    meetings_today = SupportMeeting.objects.filter(created_at__gte=today_start).count()
+    meetings_yesterday = SupportMeeting.objects.filter(created_at__gte=yesterday_start, created_at__lt=today_start).count()
+    
+    if meetings_yesterday > 0:
+        meetings_variation = ((meetings_today - meetings_yesterday) / meetings_yesterday) * 100
+    else:
+        meetings_variation = 100 if meetings_today > 0 else 0
+    
+    total_contacts = Contact.objects.count()
+    total_tickets = Ticket.objects.count()
+    total_meetings = SupportMeeting.objects.count()
+    
+    # Contactos positivos vs negativos
+    contacts_positive = Contact.objects.filter(status='positive').count()
+    contacts_negative = Contact.objects.filter(status='negative').count()
+    
+    total_with_status = contacts_positive + contacts_negative
+    if total_with_status > 0:
+        positive_percentage = (contacts_positive / total_with_status) * 100
+        negative_percentage = (contacts_negative / total_with_status) * 100
+    else:
+        positive_percentage = 0
+        negative_percentage = 0
+    
+    # Órdenes de trabajo hoy
+    from .models import WorkOrder
+    workorders_today = WorkOrder.objects.filter(
+        created_at__gte=today_start
+    ).count()
+    
+    # Órdenes de trabajo ayer
+    workorders_yesterday = WorkOrder.objects.filter(
+        created_at__gte=yesterday_start,
+        created_at__lt=today_start
+    ).count()
+    
+    # Calcular variación órdenes
+    if workorders_yesterday > 0:
+        workorders_variation = ((workorders_today - workorders_yesterday) / workorders_yesterday) * 100
+    else:
+        workorders_variation = 100 if workorders_today > 0 else 0
+    
+    # Total general de órdenes
+    total_workorders = WorkOrder.objects.count()
+    
+    # Evaluaciones hoy
+    from .models import UserAIPerformanceEvaluation
+    evaluations_today = UserAIPerformanceEvaluation.objects.filter(
+        created_at__gte=today_start
+    ).count()
+    
+    # Evaluaciones ayer
+    evaluations_yesterday = UserAIPerformanceEvaluation.objects.filter(
+        created_at__gte=yesterday_start,
+        created_at__lt=today_start
+    ).count()
+    
+    # Calcular variación evaluaciones
+    if evaluations_yesterday > 0:
+        evaluations_variation = ((evaluations_today - evaluations_yesterday) / evaluations_yesterday) * 100
+    else:
+        evaluations_variation = 100 if evaluations_today > 0 else 0
+    
+    # Total general de evaluaciones
+    total_evaluations = UserAIPerformanceEvaluation.objects.count()
+    
+    context = {
+        'page_title': 'Dashboard Empresarial',
+        'contacts_today': contacts_today,
+        'contacts_yesterday': contacts_yesterday,
+        'contacts_variation': contacts_variation,
+        'tickets_today': tickets_today,
+        'tickets_yesterday': tickets_yesterday,
+        'tickets_variation': tickets_variation,
+        'meetings_today': meetings_today,
+        'meetings_yesterday': meetings_yesterday,
+        'meetings_variation': meetings_variation,
+        'workorders_today': workorders_today,
+        'workorders_yesterday': workorders_yesterday,
+        'workorders_variation': workorders_variation,
+        'evaluations_today': evaluations_today,
+        'evaluations_yesterday': evaluations_yesterday,
+        'evaluations_variation': evaluations_variation,
+        'total_contacts': total_contacts,
+        'total_tickets': total_tickets,
+        'total_meetings': total_meetings,
+        'total_workorders': total_workorders,
+        'total_evaluations': total_evaluations,
+        'contacts_positive': contacts_positive,
+        'contacts_negative': contacts_negative,
+        'positive_percentage': positive_percentage,
+        'negative_percentage': negative_percentage,
+        'is_public': True,
+    }
+    
+    return render(request, 'tickets/business_dashboard.html', context)
+
+
+@login_required
+def generate_dashboard_token(request):
+    """Generar token para compartir dashboard públicamente"""
+    from django.http import JsonResponse
+    from .models import SystemConfiguration
+    import hashlib
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        config = SystemConfiguration.objects.first()
+        if not config:
+            return JsonResponse({'error': 'Configuración no encontrada'}, status=400)
+        
+        # Generar token único
+        secret = getattr(config, 'dashboard_secret', 'default-secret-key')
+        token = hashlib.sha256(f"{secret}-dashboard".encode()).hexdigest()[:32]
+        
+        # Construir URL pública
+        public_url = request.build_absolute_uri(f'/business-dashboard/public/{token}/')
+        
+        return JsonResponse({
+            'success': True,
+            'token': token,
+            'url': public_url
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required
@@ -52080,3 +52419,99 @@ Responde SOLO con el JSON válido, sin bloques de código ni texto adicional."""
         'token': token,
     }
     return render(request, 'tickets/ocr_invoice_public_new.html', context)
+
+
+@login_required
+def user_public_workorder_token(request, pk):
+    """Vista para mostrar el token público de órdenes de trabajo de un usuario"""
+    user = get_object_or_404(User, pk=pk)
+    
+    # Asegurar que el usuario tiene profile
+    profile, created = UserProfile.objects.get_or_create(user=user)
+    
+    # Construir URL pública
+    public_url = request.build_absolute_uri(
+        reverse('public_workorder_create', kwargs={'token': profile.public_token})
+    )
+    
+    context = {
+        'page_title': 'Token Público Órdenes de Trabajo',
+        'object': user,
+        'public_url': public_url,
+    }
+    return render(request, 'tickets/user_public_workorder_token.html', context)
+
+
+def public_workorder_create(request, token):
+    """Vista pública para crear órdenes de trabajo mediante token de usuario"""
+    from .forms import PublicWorkOrderForm
+    
+    # Buscar el usuario por token
+    try:
+        profile = UserProfile.objects.select_related('user').get(public_token=token)
+        user = profile.user
+    except UserProfile.DoesNotExist:
+        return render(request, 'tickets/public_error.html', {
+            'error': 'Token inválido',
+            'message': 'El enlace que has utilizado no es válido o ha expirado.'
+        })
+    
+    success = False
+    
+    if request.method == 'POST':
+        form = PublicWorkOrderForm(request.POST)
+        if form.is_valid():
+            # Buscar o crear la empresa
+            company = None
+            if form.cleaned_data['company_name']:
+                company, created = Company.objects.get_or_create(
+                    name=form.cleaned_data['company_name'],
+                    defaults={'email': form.cleaned_data['contact_email']}
+                )
+            
+            # Crear la orden de trabajo
+            work_order = WorkOrder.objects.create(
+                title=form.cleaned_data['title'],
+                description=form.cleaned_data['description'],
+                company=company,
+                status='draft',
+                due_date=form.cleaned_data.get('due_date'),
+                is_public=True,
+                created_by=user,
+                assigned_to=user
+            )
+            
+            # Agregar nota con email de contacto
+            from .models import WorkOrderComment
+            WorkOrderComment.objects.create(
+                work_order=work_order,
+                author_name=user.get_full_name() or user.username,
+                author_email=form.cleaned_data['contact_email'],
+                comment=f"Orden creada desde formulario público. Email de contacto: {form.cleaned_data['contact_email']}",
+                is_public=False
+            )
+            
+            success = True
+            # Generar enlace a la orden
+            work_order_url = request.build_absolute_uri(
+                reverse('work_order_detail', kwargs={'pk': work_order.pk})
+            )
+            context = {
+                'user': user,
+                'form': PublicWorkOrderForm(),  # Reset form
+                'success': success,
+                'token': token,
+                'work_order': work_order,
+                'work_order_url': work_order_url,
+            }
+            return render(request, 'tickets/public_workorder_create.html', context)
+    else:
+        form = PublicWorkOrderForm()
+    
+    context = {
+        'user': user,
+        'form': form,
+        'success': False,
+        'token': token,
+    }
+    return render(request, 'tickets/public_workorder_create.html', context)

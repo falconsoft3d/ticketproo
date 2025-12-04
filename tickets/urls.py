@@ -328,6 +328,11 @@ urlpatterns = [
     # URL pública para estadísticas de empresa
     path('company/stats/<str:token>/', views.public_company_stats, name='public_company_stats'),
     
+    # ============= URLs DASHBOARD =============
+    path('business-dashboard/', views.business_dashboard, name='business_dashboard'),
+    path('business-dashboard/public/<str:token>/', views.business_dashboard_public, name='business_dashboard_public'),
+    path('business-dashboard/generate-token/', views.generate_dashboard_token, name='generate_dashboard_token'),
+    
     # ============= URLs CONTACTOS =============
     path('contacts/', views.contact_list, name='contact_list'),
     path('contacts/stage-tracking/', views.contact_stage_tracking, name='contact_stage_tracking'),
@@ -1681,5 +1686,9 @@ urlpatterns += [
     # Odoo RPC - Public Portal (sin login requerido)
     path('public/odoo-portal/<str:token>/', views.odoo_rpc_public_portal, name='odoo_rpc_public_portal'),
     path('public/odoo-portal/<str:token>/table/<int:table_id>/', views.odoo_rpc_public_portal_table, name='odoo_rpc_public_portal_table'),
+    
+    # Public Work Order Creation
+    path('users/<int:pk>/public-workorder-token/', views.user_public_workorder_token, name='user_public_workorder_token'),
+    path('public/workorder/<uuid:token>/', views.public_workorder_create, name='public_workorder_create'),
 ]
 

@@ -103,21 +103,27 @@
                             <h6>Fecha de entrega</h6>
                             <p class="mb-1">
                                 <i class="bi bi-calendar-event me-1"></i>
-                                {{ work_order.due_date|date:"d/m/Y" }}
-                                {% if work_order.is_overdue %}
-                                    <span class="badge bg-danger ms-2">Vencida</span>
-                                {% elif work_order.days_until_due <= 3 and work_order.status != 'finished' %}
-                                    <span class="badge bg-warning ms-2">Próxima a vencer</span>
+                                {% if work_order.due_date %}
+                                    {{ work_order.due_date|date:"d/m/Y" }}
+                                    {% if work_order.is_overdue %}
+                                        <span class="badge bg-danger ms-2">Vencida</span>
+                                    {% elif work_order.days_until_due <= 3 and work_order.status != 'finished' %}
+                                        <span class="badge bg-warning ms-2">Próxima a vencer</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">No especificada</span>
                                 {% endif %}
                             </p>
-                            {% if work_order.days_until_due %}
+                            {% if work_order.due_date %}
                                 <small class="text-muted">
                                     {% if work_order.days_until_due > 0 %}
                                         Faltan {{ work_order.days_until_due }} día{{ work_order.days_until_due|pluralize }}
                                     {% elif work_order.days_until_due == 0 %}
                                         Vence hoy
-                                    {% else %}
-                                        Vencida hace {{ work_order.days_until_due|add:"-1" }} día{{ work_order.days_until_due|add:"-1"|pluralize }}
+                                    {% elif work_order.days_until_due < 0 %}
+                                        {% with days_late=work_order.days_until_due|add:"0"|stringformat:"d"|slice:"1:" %}
+                                            Vencida hace {{ days_late }} día{% if days_late != "1" %}s{% endif %}
+                                        {% endwith %}
                                     {% endif %}
                                 </small>
                             {% endif %}

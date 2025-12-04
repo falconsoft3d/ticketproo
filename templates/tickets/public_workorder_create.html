@@ -1,0 +1,200 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}Crear Orden de Trabajo - {{ user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="display-4 mb-3">
+                <i class="fas fa-clipboard-list text-info"></i> Crear Orden de Trabajo
+            </h1>
+            <p class="lead text-muted">Para: <strong>{{ user.get_full_name }}</strong></p>
+        </div>
+    </div>
+
+    {% if success %}
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="alert alert-success text-center" role="alert">
+                <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                <h4 class="alert-heading">¡Orden de Trabajo Creada!</h4>
+                <p class="mb-3">Tu orden de trabajo ha sido enviada correctamente.</p>
+                
+                <div class="card border-success mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-hashtag"></i> Orden #{{ work_order.id }}
+                        </h5>
+                        <p class="card-text"><strong>{{ work_order.title }}</strong></p>
+                        <div class="mb-3">
+                            <small class="text-muted">Enlace para el usuario:</small>
+                            <div class="input-group mt-2">
+                                <input type="text" class="form-control" id="workOrderUrl" value="{{ work_order_url }}" readonly>
+                                <button class="btn btn-outline-success" type="button" onclick="copyWorkOrderUrl()">
+                                    <i class="fas fa-copy"></i> Copiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                <p class="mb-0">{{ user.get_full_name }} recibirá una notificación y se pondrá en contacto contigo pronto.</p>
+                <div class="mt-4">
+                    <button class="btn btn-primary" onclick="window.location.reload()">
+                        <i class="fas fa-plus"></i> Crear Otra Orden
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="id_title" class="form-label">
+                                <i class="fas fa-heading"></i> Título *
+                            </label>
+                            <input type="text" 
+                                   class="form-control form-control-lg {% if form.title.errors %}is-invalid{% endif %}" 
+                                   id="id_title" 
+                                   name="title" 
+                                   placeholder="Ej: Desarrollo de sitio web corporativo"
+                                   value="{{ form.title.value|default:'' }}"
+                                   required>
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback">{{ form.title.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Título descriptivo del trabajo que necesitas</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="id_description" class="form-label">
+                                <i class="fas fa-align-left"></i> Descripción *
+                            </label>
+                            <textarea class="form-control {% if form.description.errors %}is-invalid{% endif %}" 
+                                      id="id_description" 
+                                      name="description" 
+                                      rows="6" 
+                                      placeholder="Describe detalladamente el trabajo que necesitas realizar..."
+                                      required>{{ form.description.value|default:'' }}</textarea>
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback">{{ form.description.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Proporciona todos los detalles importantes</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="id_company_name" class="form-label">
+                                <i class="fas fa-building"></i> Nombre de tu Empresa
+                            </label>
+                            <input type="text" 
+                                   class="form-control {% if form.company_name.errors %}is-invalid{% endif %}" 
+                                   id="id_company_name" 
+                                   name="company_name" 
+                                   placeholder="Ej: Mi Empresa S.L."
+                                   value="{{ form.company_name.value|default:'' }}">
+                            {% if form.company_name.errors %}
+                                <div class="invalid-feedback">{{ form.company_name.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Opcional: Nombre de tu empresa u organización</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="id_contact_email" class="form-label">
+                                <i class="fas fa-envelope"></i> Email de Contacto *
+                            </label>
+                            <input type="email" 
+                                   class="form-control {% if form.contact_email.errors %}is-invalid{% endif %}" 
+                                   id="id_contact_email" 
+                                   name="contact_email" 
+                                   placeholder="tu@email.com"
+                                   value="{{ form.contact_email.value|default:'' }}"
+                                   required>
+                            {% if form.contact_email.errors %}
+                                <div class="invalid-feedback">{{ form.contact_email.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Para que podamos contactarte</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="id_due_date" class="form-label">
+                                <i class="fas fa-calendar"></i> Fecha de Entrega Deseada
+                            </label>
+                            <input type="date" 
+                                   class="form-control {% if form.due_date.errors %}is-invalid{% endif %}" 
+                                   id="id_due_date" 
+                                   name="due_date"
+                                   value="{{ form.due_date.value|default:'' }}">
+                            {% if form.due_date.errors %}
+                                <div class="invalid-feedback">{{ form.due_date.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Opcional: Cuándo necesitas que esté listo</small>
+                        </div>
+
+                        <div class="alert alert-info" role="alert">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Nota:</strong> Al enviar este formulario, tu orden será revisada por {{ user.get_full_name }} quien se pondrá en contacto contigo.
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane"></i> Enviar Orden de Trabajo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    .card {
+        border: none;
+        border-radius: 15px;
+    }
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+</style>
+
+<script>
+function copyWorkOrderUrl() {
+    const urlInput = document.getElementById('workOrderUrl');
+    urlInput.select();
+    urlInput.setSelectionRange(0, 99999); // Para móviles
+    
+    navigator.clipboard.writeText(urlInput.value).then(function() {
+        const button = event.target.closest('button');
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+        button.classList.remove('btn-outline-success');
+        button.classList.add('btn-success');
+        
+        setTimeout(function() {
+            button.innerHTML = originalHTML;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-success');
+        }, 2000);
+    }).catch(function(err) {
+        alert('Error al copiar: ' + err);
+    });
+}
+</script>
+
+{% endblock %}

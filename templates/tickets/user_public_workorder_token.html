@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Token Público Órdenes de Trabajo - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">
+                                <i class="fas fa-link text-info"></i> Enlace Público para Órdenes de Trabajo
+                            </h2>
+                            <p class="text-muted mb-0">Comparte este enlace para que puedan crear órdenes de trabajo para ti</p>
+                        </div>
+                        <a href="{% url 'user_profile' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">
+                        <i class="fas fa-user text-primary"></i> {{ object.get_full_name }}
+                    </h5>
+                    
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Información:</strong> Este enlace permite que cualquier persona con acceso pueda crear órdenes de trabajo asignadas a este usuario.
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Enlace Público:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="publicUrl" value="{{ public_url }}" readonly>
+                            <button class="btn btn-primary" type="button" id="copyButton">
+                                <i class="fas fa-copy"></i> Copiar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Token:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="tokenValue" value="{{ object.profile.public_token }}" readonly>
+                            <button class="btn btn-outline-secondary" type="button" id="copyTokenButton">
+                                <i class="fas fa-copy"></i> Copiar
+                            </button>
+                        </div>
+                        <small class="text-muted">Este token es único y permanente para este usuario</small>
+                    </div>
+
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Importante:</strong> Cualquier persona con este enlace podrá crear órdenes de trabajo. No compartas este enlace públicamente si no deseas recibir órdenes no solicitadas.
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="{{ public_url }}" target="_blank" class="btn btn-success">
+                            <i class="fas fa-external-link-alt"></i> Abrir Vista Pública
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.getElementById('copyButton').addEventListener('click', function() {
+    const input = document.getElementById('publicUrl');
+    input.select();
+    document.execCommand('copy');
+    
+    const btn = this;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-success');
+    
+    setTimeout(() => {
+        btn.innerHTML = originalHtml;
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-primary');
+    }, 2000);
+});
+
+document.getElementById('copyTokenButton').addEventListener('click', function() {
+    const input = document.getElementById('tokenValue');
+    input.select();
+    document.execCommand('copy');
+    
+    const btn = this;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+    btn.classList.remove('btn-outline-secondary');
+    btn.classList.add('btn-success');
+    
+    setTimeout(() => {
+        btn.innerHTML = originalHtml;
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-outline-secondary');
+    }, 2000);
+});
+</script>
+
+{% endblock %}

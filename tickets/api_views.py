@@ -510,10 +510,20 @@ def my_pending_work_orders(request):
         
         # print(f"[] Órdenes encontradas: {work_orders.count()}")
         
+        from datetime import date
+        today = date.today()
+        
         orders_data = []
+        orders_today = []
+        orders_other = []
+        
         for order in work_orders:
+            # Saltar órdenes vencidas (pasadas)
+            if order.due_date and order.due_date < today:
+                continue
+            
             # print(f"[WorkOrders API] Procesando orden {order.id}: {order.title} - Status: {order.status}")
-            orders_data.append({
+            order_data = {
                 'id': order.id,
                 'title': order.title,
                 'description': order.description[:100] + '...' if order.description and len(order.description) > 100 else (order.description or ''),
@@ -523,7 +533,17 @@ def my_pending_work_orders(request):
                 'due_date': order.due_date.strftime('%d/%m/%Y') if order.due_date else None,
                 'assigned_to': order.assigned_to.get_full_name() if order.assigned_to else None,
                 'url': f'/work-orders/{order.id}/',
-            })
+                'is_due_today': order.due_date == today if order.due_date else False,
+            }
+            
+            # Separar las que vencen hoy
+            if order.due_date == today:
+                orders_today.append(order_data)
+            else:
+                orders_other.append(order_data)
+        
+        # Ordenar: primero las de hoy, luego las demás
+        orders_data = orders_today + orders_other
         
         # print(f"[WorkOrders API] Total órdenes en respuesta: {len(orders_data)}")
         

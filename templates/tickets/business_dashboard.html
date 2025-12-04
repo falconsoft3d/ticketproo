@@ -1,0 +1,550 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4" id="dashboard-container">
+    
+    <!-- Header -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-chart-line text-primary"></i> Dashboard Empresarial
+                    </h2>
+                    <p class="text-muted mb-0">KPIs principales del negocio</p>
+                </div>
+                <div>
+                    {% if not is_public %}
+                    <button class="btn btn-outline-primary me-2" id="shareButton">
+                        <i class="fas fa-share-alt"></i> Compartir Dashboard
+                    </button>
+                    {% endif %}
+                    <span class="badge bg-info">
+                        <i class="fas fa-calendar-day"></i> Hoy: {{ "now"|date:"d/m/Y" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Totales Generales -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'contact_list' %}" class="text-decoration-none">
+                <div class="card shadow-sm border-primary hover-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                        <h3 class="display-6 mb-0">{{ total_contacts }}</h3>
+                        <p class="text-muted text-uppercase small mb-0">Total Contactos</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'ticket_list' %}" class="text-decoration-none">
+                <div class="card shadow-sm border-success hover-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-ticket-alt fa-3x text-success mb-3"></i>
+                        <h3 class="display-6 mb-0">{{ total_tickets }}</h3>
+                        <p class="text-muted text-uppercase small mb-0">Total Tickets</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'support_meeting_list' %}" class="text-decoration-none">
+                <div class="card shadow-sm border-warning hover-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-calendar-check fa-3x text-warning mb-3"></i>
+                        <h3 class="display-6 mb-0">{{ total_meetings }}</h3>
+                        <p class="text-muted text-uppercase small mb-0">Total Reuniones</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    
+    <!-- KPI Cards - Comparativa Hoy vs Ayer -->
+    <div class="row mb-4">
+        <!-- Contactos Creados -->
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'contact_list' %}" class="text-decoration-none">
+                <div class="card shadow-sm h-100 hover-card">
+                    <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted text-uppercase mb-0">Contactos Creados</h6>
+                        <div class="icon-shape bg-primary text-white rounded-circle">
+                            <i class="fas fa-users fa-2x p-3"></i>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h2 class="display-5 text-secondary mb-0">{{ contacts_yesterday }}</h2>
+                                <small class="text-muted">Ayer</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h2 class="display-5 text-primary mb-0">{{ contacts_today }}</h2>
+                                <small class="text-muted">Hoy</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        {% if contacts_variation > 0 %}
+                            <span class="badge bg-success fs-6 p-2">
+                                <i class="fas fa-arrow-up"></i> +{{ contacts_variation|floatformat:1 }}%
+                            </span>
+                        {% elif contacts_variation < 0 %}
+                            <span class="badge bg-danger fs-6 p-2">
+                                <i class="fas fa-arrow-down"></i> {{ contacts_variation|floatformat:1 }}%
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary fs-6 p-2">
+                                <i class="fas fa-minus"></i> 0%
+                            </span>
+                        {% endif %}
+                        <small class="text-muted ms-2">vs ayer</small>
+                    </div>
+                </div>
+            </div>
+            </a>
+        </div>
+        
+        <!-- Tickets Creados -->
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'ticket_list' %}" class="text-decoration-none">
+                <div class="card shadow-sm h-100 hover-card">
+                    <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted text-uppercase mb-0">Tickets Creados</h6>
+                        <div class="icon-shape bg-success text-white rounded-circle">
+                            <i class="fas fa-ticket-alt fa-2x p-3"></i>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h2 class="display-5 text-secondary mb-0">{{ tickets_yesterday }}</h2>
+                                <small class="text-muted">Ayer</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h2 class="display-5 text-success mb-0">{{ tickets_today }}</h2>
+                                <small class="text-muted">Hoy</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        {% if tickets_variation > 0 %}
+                            <span class="badge bg-success fs-6 p-2">
+                                <i class="fas fa-arrow-up"></i> +{{ tickets_variation|floatformat:1 }}%
+                            </span>
+                        {% elif tickets_variation < 0 %}
+                            <span class="badge bg-danger fs-6 p-2">
+                                <i class="fas fa-arrow-down"></i> {{ tickets_variation|floatformat:1 }}%
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary fs-6 p-2">
+                                <i class="fas fa-minus"></i> 0%
+                            </span>
+                        {% endif %}
+                        <small class="text-muted ms-2">vs ayer</small>
+                    </div>
+                </div>
+            </div>
+            </a>
+        </div>
+        
+        <!-- Reuniones de Soporte -->
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'support_meeting_list' %}" class="text-decoration-none">
+                <div class="card shadow-sm h-100 hover-card">
+                    <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted text-uppercase mb-0">Reuniones Soporte</h6>
+                        <div class="icon-shape bg-warning text-white rounded-circle">
+                            <i class="fas fa-calendar-check fa-2x p-3"></i>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h2 class="display-5 text-secondary mb-0">{{ meetings_yesterday }}</h2>
+                                <small class="text-muted">Ayer</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h2 class="display-5 text-warning mb-0">{{ meetings_today }}</h2>
+                                <small class="text-muted">Hoy</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        {% if meetings_variation > 0 %}
+                            <span class="badge bg-success fs-6 p-2">
+                                <i class="fas fa-arrow-up"></i> +{{ meetings_variation|floatformat:1 }}%
+                            </span>
+                        {% elif meetings_variation < 0 %}
+                            <span class="badge bg-danger fs-6 p-2">
+                                <i class="fas fa-arrow-down"></i> {{ meetings_variation|floatformat:1 }}%
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary fs-6 p-2">
+                                <i class="fas fa-minus"></i> 0%
+                            </span>
+                        {% endif %}
+                        <small class="text-muted ms-2">vs ayer</small>
+                    </div>
+                </div>
+            </div>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Segunda fila KPIs -->
+    <div class="row mb-4">
+        <!-- Órdenes de Trabajo -->
+        <div class="col-md-6 mb-3">
+            <a href="{% url 'work_order_list' %}" class="text-decoration-none">
+                <div class="card shadow-sm h-100 hover-card">
+                    <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted text-uppercase mb-0">Órdenes de Trabajo</h6>
+                        <div class="icon-shape bg-info text-white rounded-circle">
+                            <i class="fas fa-clipboard-list fa-2x p-3 {% if workorders_today > 0 %}rotate-icon{% endif %}"></i>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h2 class="display-5 text-secondary mb-0">{{ workorders_yesterday }}</h2>
+                                <small class="text-muted">Ayer</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h2 class="display-5 text-info mb-0">{{ workorders_today }}</h2>
+                                <small class="text-muted">Hoy</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        {% if workorders_variation > 0 %}
+                            <span class="badge bg-success fs-6 p-2">
+                                <i class="fas fa-arrow-up"></i> +{{ workorders_variation|floatformat:1 }}%
+                            </span>
+                        {% elif workorders_variation < 0 %}
+                            <span class="badge bg-danger fs-6 p-2">
+                                <i class="fas fa-arrow-down"></i> {{ workorders_variation|floatformat:1 }}%
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary fs-6 p-2">
+                                <i class="fas fa-minus"></i> 0%
+                            </span>
+                        {% endif %}
+                        <small class="text-muted ms-2">vs ayer</small>
+                    </div>
+                </div>
+            </div>
+            </a>
+        </div>
+        
+        <!-- Evaluaciones -->
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm h-100 hover-card-disabled">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted text-uppercase mb-0">Evaluaciones</h6>
+                        <div class="icon-shape bg-danger text-white rounded-circle">
+                            <i class="fas fa-star fa-2x p-3"></i>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h2 class="display-5 text-secondary mb-0">{{ evaluations_yesterday }}</h2>
+                                <small class="text-muted">Ayer</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h2 class="display-5 text-danger mb-0">{{ evaluations_today }}</h2>
+                                <small class="text-muted">Hoy</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        {% if evaluations_variation > 0 %}
+                            <span class="badge bg-success fs-6 p-2">
+                                <i class="fas fa-arrow-up"></i> +{{ evaluations_variation|floatformat:1 }}%
+                            </span>
+                        {% elif evaluations_variation < 0 %}
+                            <span class="badge bg-danger fs-6 p-2">
+                                <i class="fas fa-arrow-down"></i> {{ evaluations_variation|floatformat:1 }}%
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary fs-6 p-2">
+                                <i class="fas fa-minus"></i> 0%
+                            </span>
+                        {% endif %}
+                        <small class="text-muted ms-2">vs ayer</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contactos Positivos vs Negativos -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase mb-4">
+                        <i class="fas fa-balance-scale"></i> Contactos Positivos vs Negativos
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="text-center p-4 bg-danger bg-opacity-10 rounded">
+                                <i class="fas fa-frown fa-3x text-danger mb-3"></i>
+                                <h2 class="display-5 text-danger mb-0">{{ contacts_negative }}</h2>
+                                <p class="text-muted mb-2">Negativos</p>
+                                <span class="badge bg-danger fs-6 p-2">{{ negative_percentage|floatformat:1 }}%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-center justify-content-center">
+                            <div class="text-center">
+                                <i class="fas fa-exchange-alt fa-2x text-secondary"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="text-center p-4 bg-success bg-opacity-10 rounded">
+                                <i class="fas fa-smile fa-3x text-success mb-3"></i>
+                                <h2 class="display-5 text-success mb-0">{{ contacts_positive }}</h2>
+                                <p class="text-muted mb-2">Positivos</p>
+                                <span class="badge bg-success fs-6 p-2">{{ positive_percentage|floatformat:1 }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Totales de Órdenes y Evaluaciones -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <a href="{% url 'work_order_list' %}" class="text-decoration-none">
+                <div class="card shadow-sm border-info hover-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-clipboard-list fa-3x text-info mb-3 {% if workorders_today > 0 %}rotate-icon{% endif %}"></i>
+                        <h3 class="display-6 mb-0">{{ total_workorders }}</h3>
+                        <p class="text-muted text-uppercase small mb-0">Total Órdenes</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-danger hover-card-disabled">
+                <div class="card-body text-center">
+                    <i class="fas fa-star fa-3x text-danger mb-3"></i>
+                    <h3 class="display-6 mb-0">{{ total_evaluations }}</h3>
+                    <p class="text-muted text-uppercase small mb-0">Total Evaluaciones</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+<style>
+    .icon-shape {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .hover-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .hover-card-disabled {
+        opacity: 0.8;
+        cursor: not-allowed;
+    }
+    
+    {% if not is_public %}
+    a.text-decoration-none:hover .hover-card {
+        background-color: #f8f9fa;
+    }
+    {% endif %}
+    
+    /* Animación de rotación para alarma */
+    @keyframes rotate360 {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+    
+    .rotate-icon {
+        animation: rotate360 2s linear infinite;
+        display: inline-block;
+    }
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+{% if not is_public %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#shareButton').on('click', function() {
+        const $btn = $(this);
+        const originalHtml = $btn.html();
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Generando...');
+        
+        $.ajax({
+            url: '{% url "generate_dashboard_token" %}',
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Crear modal para mostrar el enlace
+                    const modalHtml = `
+                        <div class="modal fade" id="shareModal" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">
+                                            <i class="fas fa-share-alt"></i> Compartir Dashboard
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p class="text-muted">Comparte este enlace para dar acceso público al dashboard:</p>
+                                        <div class="input-group mb-3">
+                                            <input type="text" class="form-control" id="publicUrl" value="${response.url}" readonly>
+                                            <button class="btn btn-primary" type="button" id="copyButton">
+                                                <i class="fas fa-copy"></i> Copiar
+                                            </button>
+                                        </div>
+                                        <div class="alert alert-warning" role="alert">
+                                            <i class="fas fa-exclamation-triangle"></i> 
+                                            <strong>Importante:</strong> Cualquier persona con este enlace podrá ver el dashboard.
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Eliminar modal anterior si existe
+                    $('#shareModal').remove();
+                    
+                    // Agregar modal al body
+                    $('body').append(modalHtml);
+                    
+                    // Mostrar modal
+                    const modal = new bootstrap.Modal(document.getElementById('shareModal'));
+                    modal.show();
+                    
+                    // Copiar al portapapeles
+                    $('#copyButton').on('click', function() {
+                        const input = document.getElementById('publicUrl');
+                        input.select();
+                        document.execCommand('copy');
+                        
+                        $(this).html('<i class="fas fa-check"></i> Copiado!');
+                        setTimeout(() => {
+                            $(this).html('<i class="fas fa-copy"></i> Copiar');
+                        }, 2000);
+                    });
+                }
+                
+                $btn.prop('disabled', false).html(originalHtml);
+            },
+            error: function(xhr) {
+                $btn.prop('disabled', false).html(originalHtml);
+                alert('Error al generar enlace: ' + (xhr.responseJSON?.error || 'Error desconocido'));
+            }
+        });
+    });
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Actualizar dashboard cada segundo
+    function updateDashboard() {
+        $.ajax({
+            url: window.location.href,
+            method: 'GET',
+            dataType: 'html',
+            success: function(response) {
+                // Extraer solo el contenedor del dashboard
+                const $temp = $('<div>').html(response);
+                const $newDashboard = $temp.find('#dashboard-container');
+                
+                if ($newDashboard.length === 0) return;
+                
+                // Actualizar solo los valores numéricos dentro del dashboard
+                $newDashboard.find('.display-5, .display-6').each(function(index) {
+                    const newValue = $(this).text().trim();
+                    $('#dashboard-container .display-5, #dashboard-container .display-6').eq(index).text(newValue);
+                });
+                
+                // Actualizar badges de variación solo dentro del dashboard
+                $newDashboard.find('.badge').each(function(index) {
+                    const newBadge = $(this).clone();
+                    $('#dashboard-container .badge').eq(index).replaceWith(newBadge);
+                });
+            },
+            error: function() {
+                console.log('Error al actualizar dashboard');
+            }
+        });
+    }
+    
+    // Actualizar cada 1 segundo (1000ms)
+    setInterval(updateDashboard, 1000);
+});
+</script>
+{% endif %}
+{% endblock %}
