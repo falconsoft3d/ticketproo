@@ -5865,7 +5865,9 @@
                 .then(response => response.json())
                 .then(data => {
                     displayPendingWorkOrders(data.work_orders);
-                    updatePendingWorkOrdersCount(data.count);
+                    // Contar órdenes que vencen hoy
+                    const ordersToday = data.work_orders.filter(order => order.is_due_today).length;
+                    updatePendingWorkOrdersCount(data.count, ordersToday);
                     
                     // Actualizar tiempo
                     const now = new Date();
@@ -5948,7 +5950,7 @@
             listContainer.innerHTML = ordersHtml;
         }
 
-        function updatePendingWorkOrdersCount(count) {
+        function updatePendingWorkOrdersCount(count, ordersToday = 0) {
             const badge = document.getElementById('pendingWorkOrdersBadge');
             const icon = document.getElementById('workOrdersIcon');
             
@@ -5960,9 +5962,9 @@
                 badge.style.fontSize = '0.7em';
             }
             
-            // Agregar o quitar animación al icono
+            // Agregar o quitar animación al icono - SOLO si hay órdenes para hoy
             if (icon) {
-                if (count > 0) {
+                if (ordersToday > 0) {
                     icon.classList.add('rotate-icon-alarm');
                 } else {
                     icon.classList.remove('rotate-icon-alarm');
@@ -5997,8 +5999,10 @@
             fetch('/api/my-pending-work-orders/')
                 .then(response => response.json())
                 .then(data => {
-                    updatePendingWorkOrdersCount(data.count);
-                    console.log('[Órdenes] Contador actualizado:', data.count);
+                    // Contar órdenes que vencen hoy
+                    const ordersToday = data.work_orders.filter(order => order.is_due_today).length;
+                    updatePendingWorkOrdersCount(data.count, ordersToday);
+                    console.log('[Órdenes] Contador actualizado:', data.count, '- Órdenes hoy:', ordersToday);
                 })
                 .catch(error => {
                     console.log('[Órdenes] Error al cargar contador:', error);
