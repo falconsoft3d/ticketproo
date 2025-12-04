@@ -1262,7 +1262,15 @@
                                     </div>
                                 </td>
                                 <td>{{ contact.source|default:"-" }}</td>
-                                <td>{{ contact.created_by.get_full_name|default:contact.created_by.username }}</td>
+                                <td>
+                                    {% if contact.created_by.first_name and contact.created_by.last_name %}
+                                        {{ contact.created_by.first_name|slice:":1"|upper }}{{ contact.created_by.last_name|slice:":1"|upper }}
+                                    {% elif contact.created_by.first_name %}
+                                        {{ contact.created_by.first_name|slice:":2"|upper }}
+                                    {% else %}
+                                        {{ contact.created_by.username|slice:":2"|upper }}
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>

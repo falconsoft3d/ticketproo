@@ -12331,14 +12331,23 @@ def contact_stage_tracking(request):
     from django.db.models import Count
     from django.utils import timezone
     
+    # Filtro opcional por empresa
+    company_filter = request.GET.get('company', '').strip()
+    
     # Obtener todos los contactos positivos agrupados por etapa
     stages_data = []
     
     for stage_code, stage_name in Contact.STAGE_CHOICES:
-        contacts = Contact.objects.filter(
+        contacts_qs = Contact.objects.filter(
             status='positive',
             stage=stage_code
-        ).select_related('created_by').order_by('created_at')
+        )
+        
+        # Aplicar filtro de empresa si existe
+        if company_filter:
+            contacts_qs = contacts_qs.filter(company__iexact=company_filter)
+        
+        contacts = contacts_qs.select_related('created_by').order_by('created_at')
         
         # Calcular tiempo promedio desde el primer contacto
         stage_info = {
@@ -12351,16 +12360,28 @@ def contact_stage_tracking(request):
         stages_data.append(stage_info)
     
     # Contactos positivos sin etapa asignada
-    contacts_no_stage = Contact.objects.filter(
+    contacts_no_stage_qs = Contact.objects.filter(
         status='positive',
         stage__isnull=True
-    ).select_related('created_by').order_by('created_at')
+    )
+    
+    # Aplicar filtro de empresa si existe
+    if company_filter:
+        contacts_no_stage_qs = contacts_no_stage_qs.filter(company__iexact=company_filter)
+    
+    contacts_no_stage = contacts_no_stage_qs.select_related('created_by').order_by('created_at')
+    
+    # Calcular total considerando el filtro
+    total_positive_qs = Contact.objects.filter(status='positive')
+    if company_filter:
+        total_positive_qs = total_positive_qs.filter(company__iexact=company_filter)
     
     context = {
         'page_title': 'Seguimiento de Contactos Positivos por Etapas',
         'stages_data': stages_data,
         'contacts_no_stage': contacts_no_stage,
-        'total_positive': Contact.objects.filter(status='positive').count(),
+        'total_positive': total_positive_qs.count(),
+        'company_filter': company_filter,
     }
     
     return render(request, 'tickets/contact_stage_tracking.html', context)
@@ -12428,6 +12449,132 @@ def contact_update_stage(request, pk):
     except Exception as e:
         logger.error(f"Error in contact_update_stage: {str(e)}")
         return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
+
+
+@login_required
+def contact_save_stage_comment(request, pk):
+    """Guardar un comentario para una etapa específica del contacto"""
+    from django.http import JsonResponse
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        contact = get_object_or_404(Contact, pk=pk)
+        content = request.POST.get('content', '').strip()
+        stage = request.POST.get('stage', '').strip()
+        
+        if not content:
+            return JsonResponse({'error': 'El comentario no puede estar vacío'}, status=400)
+        
+        if not stage:
+            return JsonResponse({'error': 'La etapa no fue especificada'}, status=400)
+        
+        # Validar que la etapa sea válida
+        valid_stages = [code for code, name in Contact.STAGE_CHOICES]
+        if stage not in valid_stages:
+            return JsonResponse({'error': 'Etapa no válida'}, status=400)
+        
+        # Crear el comentario
+        from .models import ContactComment
+        comment = ContactComment.objects.create(
+            contact=contact,
+            user=request.user,
+            content=content,
+            stage=stage
+        )
+        
+        logger.info(f"Comment created for contact {pk}, stage {stage}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Comentario guardado correctamente',
+            'comment': {
+                'id': comment.id,
+                'content': comment.content,
+                'stage': comment.stage,
+                'user': comment.user.get_full_name() or comment.user.username,
+                'created_at': comment.created_at.strftime('%d/%m/%Y %H:%M')
+            }
+        })
+    
+    except Exception as e:
+        logger.error(f"Error saving stage comment: {str(e)}")
+        return JsonResponse({'error': f'Error al guardar: {str(e)}'}, status=500)
+
+
+@login_required
+def contact_get_stage_comments(request, pk):
+    """Obtener comentarios de una etapa específica del contacto"""
+    from django.http import JsonResponse
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        contact = get_object_or_404(Contact, pk=pk)
+        stage = request.GET.get('stage', '').strip()
+        
+        if not stage:
+            return JsonResponse({'error': 'La etapa no fue especificada'}, status=400)
+        
+        # Obtener comentarios de esta etapa
+        from .models import ContactComment
+        comments = ContactComment.objects.filter(
+            contact=contact,
+            stage=stage
+        ).select_related('user').order_by('-created_at')
+        
+        # Obtener nombre legible de la etapa
+        stage_dict = dict(Contact.STAGE_CHOICES)
+        
+        comments_data = [{
+            'id': c.id,
+            'content': c.content,
+            'stage': c.stage,
+            'stage_name': stage_dict.get(c.stage, c.stage),
+            'user': c.user.get_full_name() or c.user.username,
+            'created_at': c.created_at.strftime('%d/%m/%Y %H:%M')
+        } for c in comments]
+        
+        logger.info(f"Retrieved {len(comments_data)} comments for contact {pk}, stage {stage}")
+        
+        return JsonResponse({
+            'success': True,
+            'comments': comments_data
+        })
+    
+    except Exception as e:
+        logger.error(f"Error getting stage comments: {str(e)}")
+        return JsonResponse({'error': f'Error al cargar: {str(e)}'}, status=500)
+
+
+@login_required
+def contact_individual_stage_tracking(request, pk):
+    """Vista de seguimiento de etapas para un contacto específico"""
+    contact = get_object_or_404(Contact, pk=pk)
+    
+    # Preparar datos de todas las etapas
+    stages_data = []
+    for stage_code, stage_name in Contact.STAGE_CHOICES:
+        stage_info = {
+            'code': stage_code,
+            'name': stage_name,
+            'is_current': contact.stage == stage_code,
+            'is_completed': contact.stage and stage_code < contact.stage if contact.stage else False,
+        }
+        stages_data.append(stage_info)
+    
+    context = {
+        'page_title': f'Pipeline de {contact.name}',
+        'contact': contact,
+        'stages_data': stages_data,
+    }
+    
+    return render(request, 'tickets/contact_individual_stage_tracking.html', context)
 
 
 @login_required

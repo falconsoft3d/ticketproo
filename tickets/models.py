@@ -4856,6 +4856,14 @@ class ContactComment(models.Model):
         verbose_name='Comentario',
         help_text='Escribe tu comentario aquí'
     )
+    stage = models.CharField(
+        max_length=20,
+        choices=Contact.STAGE_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name='Etapa',
+        help_text='Etapa del contacto asociada a este comentario'
+    )
     created_at = models.DateTimeField(
         default=timezone.now,
         verbose_name='Fecha de creación'

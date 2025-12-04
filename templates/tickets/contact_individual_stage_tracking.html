@@ -1,0 +1,434 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    .stage-badge:hover {
+        transform: scale(1.15) !important;
+        opacity: 1 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    
+    <!-- Header -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-chart-line text-primary"></i> Pipeline de {{ contact.name }}
+                    </h2>
+                    <p class="text-muted mb-0">
+                        {% if contact.company %}{{ contact.company }} - {% endif %}
+                        Estado: 
+                        <span class="badge bg-{{ contact.get_status_color }}">
+                            {{ contact.get_status_display }}
+                        </span>
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'contact_detail' contact.pk %}" class="btn btn-outline-info me-2">
+                        <i class="fas fa-user"></i> Ver Detalle
+                    </a>
+                    <a href="{% url 'contact_stage_tracking' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Volver a Pipeline General
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contact Card with Timeline -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-4">
+            
+            <!-- Contact Header -->
+            <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+                <div class="flex-shrink-0">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                         style="width: 55px; height: 55px; font-size: 1.5rem; font-weight: bold;">
+                        {{ contact.name|slice:":1"|upper }}
+                    </div>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                    <h4 class="mb-1">{{ contact.name }}</h4>
+                    <small class="text-muted">
+                        {% if contact.company %}{{ contact.company }} • {% endif %}
+                        {% if contact.email %}{{ contact.email }} • {% endif %}
+                        {% if contact.phone %}{{ contact.phone }}{% endif %}
+                    </small>
+                </div>
+            </div>
+            
+            <!-- Timeline with Bootstrap Progress -->
+            <div class="mb-4">
+                <div class="mb-3">
+                    <div class="progress" style="height: 8px;">
+                        {% if contact.stage %}
+                            {% for stage in stages_data %}
+                                {% if stage.code == contact.stage %}
+                                    <div class="progress-bar bg-primary timeline-progress-bar" 
+                                         role="progressbar" 
+                                         style="width: {% widthratio forloop.counter stages_data|length 100 %}%"
+                                         aria-valuenow="{{ forloop.counter }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="{{ stages_data|length }}"></div>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <div class="progress-bar bg-secondary" role="progressbar" style="width: 0%"></div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Timeline Points using Bootstrap Badges -->
+                <div class="d-flex justify-content-between align-items-start">
+                    {% for stage in stages_data %}
+                    <div class="text-center" style="flex: 1;">
+                        <div class="mb-2">
+                            {% if stage.is_current %}
+                                <span class="badge bg-primary rounded-circle p-2 pulse-animation stage-badge" 
+                                      style="width: 35px; height: 35px; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;"
+                                      data-contact-id="{{ contact.pk }}"
+                                      data-stage-code="{{ stage.code }}"
+                                      data-stage-name="{{ stage.name }}"
+                                      title="Click para cambiar a {{ stage.name }}">
+                                    {{ forloop.counter }}
+                                </span>
+                            {% elif stage.is_completed %}
+                                <span class="badge bg-success rounded-circle p-2 stage-badge" 
+                                      style="width: 30px; height: 30px; font-size: 0.9rem; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;"
+                                      data-contact-id="{{ contact.pk }}"
+                                      data-stage-code="{{ stage.code }}"
+                                      data-stage-name="{{ stage.name }}"
+                                      title="Click para cambiar a {{ stage.name }}">
+                                    {{ forloop.counter }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary rounded-circle p-2 stage-badge" 
+                                      style="width: 30px; height: 30px; font-size: 0.9rem; display: inline-flex; align-items: center; justify-content: center; opacity: 0.4; cursor: pointer;"
+                                      data-contact-id="{{ contact.pk }}"
+                                      data-stage-code="{{ stage.code }}"
+                                      data-stage-name="{{ stage.name }}"
+                                      title="Click para cambiar a {{ stage.name }}">
+                                    {{ forloop.counter }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted d-block" style="font-size: 0.75rem;">
+                            {{ stage.name }}
+                        </small>
+                        {% if stage.is_current %}
+                            <div class="mt-2">
+                                <span class="badge bg-info text-dark" style="font-size: 0.7rem;">
+                                    {% if contact.created_at %}{{ contact.created_at|timesince|truncatewords:2 }}{% else %}--{% endif %}
+                                </span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Stage Details -->
+            {% if contact.stage %}
+            <div class="alert alert-light border mb-3">
+                <h5 class="alert-heading mb-3">
+                    <i class="fas fa-info-circle text-primary"></i> {{ contact.get_stage_display }}
+                </h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex align-items-center bg-transparent px-0">
+                        <i class="fas fa-check-circle text-success me-3" style="width: 30px;"></i>
+                        <span class="text-muted me-3" style="min-width: 150px;">Estado:</span>
+                        <strong class="text-success">Etapa Actual</strong>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center bg-transparent px-0">
+                        <i class="far fa-clock text-primary me-3" style="width: 30px;"></i>
+                        <span class="text-muted me-3" style="min-width: 150px;">Tiempo en etapa:</span>
+                        <strong>{% if contact.created_at %}{{ contact.created_at|timesince }}{% else %}Sin fecha{% endif %}</strong>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center bg-transparent px-0 border-0">
+                        <i class="fas fa-calendar-alt text-primary me-3" style="width: 30px;"></i>
+                        <span class="text-muted me-3" style="min-width: 150px;">Fecha de entrada:</span>
+                        <strong>{% if contact.created_at %}{{ contact.created_at|date:"d/m/Y H:i" }}{% else %}Sin fecha{% endif %}</strong>
+                    </li>
+                </ul>
+            </div>
+            {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i> Este contacto no tiene una etapa asignada.
+                <button class="btn btn-success btn-sm ms-2 assign-first-stage" 
+                        data-contact-id="{{ contact.pk }}"
+                        data-contact-name="{{ contact.name }}">
+                    <i class="fas fa-play"></i> Iniciar en Etapa 1
+                </button>
+            </div>
+            {% endif %}
+            
+            <!-- Comentarios de Etapa -->
+            {% if contact.stage %}
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-comments text-primary"></i> Comentarios de esta etapa
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <!-- Formulario para agregar comentario -->
+                    <div class="mb-3">
+                        <textarea class="form-control stage-comment-input" 
+                                  data-contact-id="{{ contact.pk }}"
+                                  data-stage-code="{{ contact.stage }}"
+                                  rows="2" 
+                                  placeholder="Escribe un comentario sobre esta etapa..."></textarea>
+                        <button class="btn btn-primary btn-sm mt-2 save-stage-comment" 
+                                data-contact-id="{{ contact.pk }}"
+                                data-stage-code="{{ contact.stage }}">
+                            <i class="fas fa-save"></i> Guardar Comentario
+                        </button>
+                    </div>
+                    
+                    <!-- Lista de comentarios -->
+                    <div class="stage-comments-list" 
+                         data-contact-id="{{ contact.pk }}"
+                         data-stage-code="{{ contact.stage }}">
+                        <small class="text-muted">Cargando comentarios...</small>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    
+    // ============= CAMBIO DE ETAPA =============
+    
+    // Click en badge para cambiar etapa
+    $('.stage-badge').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const contactId = $(this).data('contact-id');
+        const stageCode = $(this).data('stage-code');
+        const stageName = $(this).data('stage-name');
+        
+        if (!confirm(`¿Cambiar la etapa de este contacto a "${stageName}"?`)) {
+            return;
+        }
+        
+        const $badge = $(this);
+        const originalHtml = $badge.html();
+        $badge.html('<span class="spinner-border spinner-border-sm"></span>');
+        
+        const csrfToken = getCookie('csrftoken');
+        
+        $.ajax({
+            url: '/contacts/' + contactId + '/update-stage/',
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            data: {
+                stage: stageCode
+            },
+            success: function(response) {
+                window.location.reload();
+            },
+            error: function(xhr, status, error) {
+                $badge.html(originalHtml);
+                const errorMsg = xhr.responseJSON && xhr.responseJSON.error 
+                    ? xhr.responseJSON.error 
+                    : 'Error al actualizar la etapa';
+                alert(errorMsg);
+            }
+        });
+    });
+    
+    // Asignar primera etapa
+    $('.assign-first-stage').on('click', function(e) {
+        e.preventDefault();
+        
+        const contactId = $(this).data('contact-id');
+        const contactName = $(this).data('contact-name');
+        
+        if (!confirm(`¿Iniciar seguimiento de "${contactName}" en la Etapa 1?`)) {
+            return;
+        }
+        
+        const $btn = $(this);
+        const originalHtml = $btn.html();
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Asignando...');
+        
+        const csrfToken = getCookie('csrftoken');
+        
+        $.ajax({
+            url: '/contacts/' + contactId + '/update-stage/',
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            data: {
+                stage: 'stage_1'
+            },
+            success: function(response) {
+                window.location.reload();
+            },
+            error: function(xhr) {
+                $btn.prop('disabled', false).html(originalHtml);
+                const errorMsg = xhr.responseJSON && xhr.responseJSON.error 
+                    ? xhr.responseJSON.error 
+                    : 'Error al asignar etapa';
+                alert(errorMsg);
+            }
+        });
+    });
+    
+    // ============= MANEJO DE COMENTARIOS =============
+    
+    // Cargar comentarios al cargar la página
+    $('.stage-comments-list').each(function() {
+        const $commentsList = $(this);
+        const contactId = $commentsList.data('contact-id');
+        const stageCode = $commentsList.data('stage-code');
+        
+        if (contactId && stageCode) {
+            loadStageComments(contactId, stageCode, $commentsList);
+        }
+    });
+    
+    // Guardar comentario
+    $(document).on('click', '.save-stage-comment', function(e) {
+        e.preventDefault();
+        
+        const $btn = $(this);
+        const $card = $btn.closest('.card');
+        const $textarea = $card.find('.stage-comment-input');
+        const contactId = $btn.data('contact-id');
+        const stageCode = $btn.data('stage-code');
+        const content = $textarea.val().trim();
+        
+        if (!content) {
+            alert('Por favor escribe un comentario');
+            return;
+        }
+        
+        const originalHtml = $btn.html();
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Guardando...');
+        
+        const csrfToken = getCookie('csrftoken');
+        
+        $.ajax({
+            url: '/contacts/' + contactId + '/save-stage-comment/',
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            data: {
+                content: content,
+                stage: stageCode
+            },
+            success: function(response) {
+                $textarea.val('');
+                const $commentsList = $card.find('.stage-comments-list');
+                loadStageComments(contactId, stageCode, $commentsList);
+                $btn.prop('disabled', false).html(originalHtml);
+            },
+            error: function(xhr) {
+                $btn.prop('disabled', false).html(originalHtml);
+                const errorMsg = xhr.responseJSON && xhr.responseJSON.error 
+                    ? xhr.responseJSON.error 
+                    : 'Error al guardar comentario';
+                alert(errorMsg);
+            }
+        });
+    });
+    
+    // Función para cargar comentarios
+    function loadStageComments(contactId, stageCode, $commentsList) {
+        $commentsList.html('<small class="text-muted"><i class="fas fa-spinner fa-spin"></i> Cargando comentarios...</small>');
+        
+        $.ajax({
+            url: '/contacts/' + contactId + '/get-stage-comments/',
+            method: 'GET',
+            data: {
+                stage: stageCode
+            },
+            success: function(response) {
+                if (response.success && response.comments) {
+                    if (response.comments.length === 0) {
+                        $commentsList.html('<small class="text-muted">No hay comentarios para esta etapa</small>');
+                    } else {
+                        let html = '<div class="list-group">';
+                        response.comments.forEach(function(comment) {
+                            html += '<div class="list-group-item list-group-item-action">';
+                            html += '<div class="d-flex w-100 justify-content-between align-items-start">';
+                            html += '<div>';
+                            html += '<small class="text-primary"><i class="fas fa-user"></i> ' + comment.user + '</small>';
+                            html += '<span class="badge bg-info ms-2" style="font-size: 0.7rem;">' + comment.stage_name + '</span>';
+                            html += '</div>';
+                            html += '<small class="text-muted">' + comment.created_at + '</small>';
+                            html += '</div>';
+                            html += '<p class="mb-0 mt-1">' + comment.content + '</p>';
+                            html += '</div>';
+                        });
+                        html += '</div>';
+                        $commentsList.html(html);
+                    }
+                }
+            },
+            error: function(xhr) {
+                $commentsList.html('<small class="text-danger">Error al cargar comentarios</small>');
+            }
+        });
+    }
+    
+    // Función para obtener cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

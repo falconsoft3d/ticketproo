@@ -39,6 +39,15 @@
                         <i class="bi bi-arrow-left"></i> Regresar
                     </a>
                     
+                    <!-- Botón Pipeline de Empresa -->
+                    {% if contact.status == 'positive' %}
+                    <a href="{% url 'contact_individual_stage_tracking' contact.pk %}" 
+                       class="btn btn-outline-info"
+                       title="Ver pipeline individual de este contacto">
+                        <i class="bi bi-diagram-3"></i> Pipeline Etapas
+                    </a>
+                    {% endif %}
+                    
                     <!-- Navegación entre contactos -->
                     <div class="btn-group" role="group">
                         {% if previous_contact %}
@@ -168,6 +177,21 @@
                                     </span>
                                 {% endfor %}
                             </div>
+                            {% endif %}
+                            
+                            {% if contact.status == 'positive' %}
+                            <h6><i class="bi bi-diagram-3"></i> Etapa del Pipeline</h6>
+                            <p>
+                                {% if contact.stage %}
+                                    <span class="badge bg-primary fs-6 p-2">
+                                        {{ contact.get_stage_display }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary fs-6 p-2">
+                                        Sin etapa asignada
+                                    </span>
+                                {% endif %}
+                            </p>
                             {% endif %}
                         </div>
                     </div>
