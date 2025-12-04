@@ -12508,7 +12508,7 @@ def contact_save_stage_comment(request, pk):
 
 @login_required
 def contact_get_stage_comments(request, pk):
-    """Obtener comentarios de una etapa específica del contacto"""
+    """Obtener TODOS los comentarios del contacto (de todas las etapas)"""
     from django.http import JsonResponse
     import logging
     
@@ -12516,16 +12516,12 @@ def contact_get_stage_comments(request, pk):
     
     try:
         contact = get_object_or_404(Contact, pk=pk)
-        stage = request.GET.get('stage', '').strip()
         
-        if not stage:
-            return JsonResponse({'error': 'La etapa no fue especificada'}, status=400)
-        
-        # Obtener comentarios de esta etapa
+        # Obtener TODOS los comentarios del contacto con stage no nulo
         from .models import ContactComment
         comments = ContactComment.objects.filter(
             contact=contact,
-            stage=stage
+            stage__isnull=False
         ).select_related('user').order_by('-created_at')
         
         # Obtener nombre legible de la etapa
@@ -12540,7 +12536,7 @@ def contact_get_stage_comments(request, pk):
             'created_at': c.created_at.strftime('%d/%m/%Y %H:%M')
         } for c in comments]
         
-        logger.info(f"Retrieved {len(comments_data)} comments for contact {pk}, stage {stage}")
+        logger.info(f"Retrieved {len(comments_data)} comments for contact {pk} (all stages)")
         
         return JsonResponse({
             'success': True,
