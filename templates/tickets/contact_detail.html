@@ -78,6 +78,13 @@
                     <a href="{% url 'contact_edit' contact.pk %}" class="btn btn-primary">
                         <i class="bi bi-pencil"></i> Editar
                     </a>
+                    
+                    {% if not contact.linked_company %}
+                    <a href="{% url 'convert_contact_to_company' contact.pk %}" class="btn btn-warning">
+                        <i class="bi bi-building"></i> Convertir en Empresa
+                    </a>
+                    {% endif %}
+                    
                     <a href="{% url 'contact_create' %}" class="btn btn-success">
                         <i class="bi bi-plus-circle"></i> Nuevo
                     </a>
@@ -136,6 +143,24 @@
                             {% if contact.company %}
                             <h6><i class="bi bi-building"></i> Empresa</h6>
                             <p>{{ contact.company }}</p>
+                            {% endif %}
+                            
+                            {% if contact.linked_company %}
+                            <h6><i class="bi bi-building-check"></i> Empresa Vinculada</h6>
+                            <div class="alert alert-success p-2">
+                                <a href="{% url 'company_detail' contact.linked_company.pk %}" class="text-decoration-none">
+                                    <strong>{{ contact.linked_company.name }}</strong>
+                                </a>
+                                <br>
+                                <small class="text-muted">
+                                    {% if contact.linked_company.email %}
+                                        <i class="bi bi-envelope"></i> {{ contact.linked_company.email }}<br>
+                                    {% endif %}
+                                    {% if contact.linked_company.phone %}
+                                        <i class="bi bi-telephone"></i> {{ contact.linked_company.phone }}
+                                    {% endif %}
+                                </small>
+                            </div>
                             {% endif %}
                             
                             {% if contact.country %}

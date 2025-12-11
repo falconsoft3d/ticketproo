@@ -4778,6 +4778,16 @@ class Contact(models.Model):
         verbose_name='Asignado a'
     )
     
+    linked_company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='contacts',
+        verbose_name='Empresa vinculada',
+        help_text='Empresa creada a partir de este contacto'
+    )
+    
     tags = models.ManyToManyField(
         ContactTag,
         blank=True,

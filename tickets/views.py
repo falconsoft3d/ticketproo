@@ -12269,6 +12269,62 @@ def contact_edit(request, pk):
 
 
 @login_required
+def convert_contact_to_company(request, pk):
+    """Convertir contacto en empresa"""
+    contact = get_object_or_404(Contact, pk=pk)
+    
+    # Verificar si ya tiene empresa vinculada
+    if contact.linked_company:
+        messages.warning(request, f'Este contacto ya está vinculado a la empresa "{contact.linked_company.name}".')
+        return redirect('contact_detail', pk=contact.pk)
+    
+    if request.method == 'POST':
+        try:
+            # Crear empresa a partir de los datos del contacto
+            company_name = contact.company if contact.company else contact.name
+            
+            # Verificar si ya existe una empresa con ese nombre
+            existing_company = Company.objects.filter(name=company_name).first()
+            if existing_company:
+                # Vincular a la empresa existente
+                contact.linked_company = existing_company
+                contact.save()
+                messages.success(request, f'Contacto vinculado a la empresa existente "{existing_company.name}".')
+                return redirect('contact_detail', pk=contact.pk)
+            
+            # Crear nueva empresa
+            new_company = Company.objects.create(
+                name=company_name,
+                email=contact.email or '',
+                phone=contact.phone or '',
+                website=contact.website or '',
+                country=contact.country or '',
+                description=f'Empresa creada a partir del contacto: {contact.name}',
+                is_active=True
+            )
+            
+            # Vincular la empresa al contacto
+            contact.linked_company = new_company
+            contact.save()
+            
+            messages.success(request, f'¡Empresa "{new_company.name}" creada y vinculada exitosamente!')
+            return redirect('contact_detail', pk=contact.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al crear la empresa: {str(e)}')
+            return redirect('contact_detail', pk=contact.pk)
+    
+    # GET request - mostrar confirmación
+    context = {
+        'contact': contact,
+        'company_name': contact.company if contact.company else contact.name,
+        'page_title': f'Convertir contacto: {contact.name}'
+    }
+    
+    return render(request, 'tickets/contact_convert_confirm.html', context)
+
+
+@login_required
 def contact_delete(request, pk):
     """Eliminar contacto"""
     contact = get_object_or_404(Contact, pk=pk)
@@ -40074,6 +40130,11 @@ def quotation_edit_view(request, quotation_id):
             quotation.date = request.POST.get('date')
             quotation.status = request.POST.get('status')
             
+            # Actualizar secuencia/código si se proporciona
+            sequence = request.POST.get('sequence')
+            if sequence:
+                quotation.sequence = sequence
+            
             # Manejar fecha de vencimiento
             expiry_date = request.POST.get('expiry_date')
             if expiry_date:
@@ -40512,9 +40573,21 @@ NIF: V-14.677.128"""
     config = SystemConfiguration.get_config()
     currency_symbol = config.get_currency_symbol()
     
+    # Estilo para las descripciones en la tabla
+    description_style = ParagraphStyle(
+        'TableDescription',
+        parent=styles['Normal'],
+        fontSize=9,
+        leading=11,
+        wordWrap='CJK',
+    )
+    
     for line in lines:
+        description_text = line.description or line.product.name
+        description_paragraph = Paragraph(description_text, description_style)
+        
         table_data.append([
-            line.description or line.product.name,
+            description_paragraph,
             f'{line.quantity:,.0f}',
             f'{line.unit_price:,.2f}',
             f'{line.get_total():,.2f} {currency_symbol}'
@@ -40571,8 +40644,11 @@ NIF: V-14.677.128"""
             fontSize=10,
             alignment=0,  # Left
             leading=14,
+            wordWrap='CJK',
         )
-        description_table = Table([[Paragraph(quotation.description, description_cotizacion_style)]], colWidths=[7.4*inch])
+        # Reemplazar saltos de línea con <br/> para que se respeten en el PDF
+        formatted_description = quotation.description.replace('\n', '<br/>')
+        description_table = Table([[Paragraph(formatted_description, description_cotizacion_style)]], colWidths=[7.4*inch])
         description_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, 0), 'LEFT'),
             ('LEFTPADDING', (0, 0), (0, 0), 0),

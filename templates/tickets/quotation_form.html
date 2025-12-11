@@ -69,7 +69,7 @@
 
                         <div class="row">
                             <!-- Fecha -->
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="date" class="form-label">
                                     <i class="bi bi-calendar text-primary"></i>
                                     Fecha <span class="text-danger">*</span>
@@ -78,8 +78,20 @@
                                        value="{% if quotation %}{{ quotation.date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}" required>
                             </div>
 
+                            <!-- Secuencia/Código -->
+                            <div class="col-md-3 mb-3">
+                                <label for="sequence" class="form-label">
+                                    <i class="bi bi-hash text-primary"></i>
+                                    Código <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="sequence" name="sequence" 
+                                       value="{% if quotation %}{{ quotation.sequence }}{% endif %}" 
+                                       placeholder="COT-2025-0001" required>
+                                <small class="text-muted">Código único de la cotización</small>
+                            </div>
+
                             <!-- Fecha de Vencimiento -->
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="expiry_date" class="form-label">
                                     <i class="bi bi-hourglass-split text-warning"></i>
                                     Fecha de Vencimiento
@@ -92,7 +104,7 @@
                             </div>
 
                             <!-- Estado -->
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="status" class="form-label">
                                     <i class="bi bi-flag text-primary"></i>
                                     Estado Interno <span class="text-danger">*</span>
