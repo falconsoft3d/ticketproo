@@ -27,6 +27,7 @@
 {% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <!-- Toast Container -->
 <div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
     <div id="copyToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
@@ -225,6 +226,104 @@
     </div>
     
     <div class="col-lg-4">
+        <!-- Aprobación del Curso -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-check-circle"></i> Aprobación del Curso
+                </h6>
+            </div>
+            <div class="card-body">
+                <!-- Formulario para aprobar/desaprobar -->
+                <p class="text-muted small mb-3">Registra tu aprobación o desaprobación</p>
+                
+                <div class="mb-3">
+                    <label for="approvalName" class="form-label small">Tu nombre <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-sm" id="approvalName" placeholder="Ingresa tu nombre" required>
+                </div>
+                <div class="mb-3">
+                    <label for="approvalEmail" class="form-label small">Tu correo <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control form-control-sm" id="approvalEmail" placeholder="correo@ejemplo.com" required>
+                </div>
+                
+                <div class="d-grid gap-2 mb-3">
+                    <button class="btn btn-success btn-sm" onclick="handleApproval('aprobar')">
+                        <i class="bi bi-check-circle"></i> Aprobar
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="handleApproval('desaprobar')">
+                        <i class="bi bi-x-circle"></i> Desaprobar
+                    </button>
+                </div>
+                
+                <!-- Estadísticas de aprobaciones -->
+                {% if approval_stats.total > 0 %}
+                <hr>
+                <div id="approval-stats" class="text-center">
+                    <h6 class="text-muted mb-2">Estadísticas</h6>
+                    <div class="row">
+                        <div class="col-4">
+                            <div class="text-success">
+                                <i class="bi bi-check-circle-fill"></i>
+                                <div class="fw-bold">{{ approval_stats.aprobado }}</div>
+                                <small class="text-muted">Aprobado</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-danger">
+                                <i class="bi bi-x-circle-fill"></i>
+                                <div class="fw-bold">{{ approval_stats.desaprobado }}</div>
+                                <small class="text-muted">Desaprobado</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-primary">
+                                <i class="bi bi-list-check"></i>
+                                <div class="fw-bold">{{ approval_stats.total }}</div>
+                                <small class="text-muted">Total</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Lista de aprobaciones recientes -->
+                {% if approvals %}
+                <hr>
+                <div class="approval-list" style="max-height: 300px; overflow-y: auto;">
+                    <h6 class="text-muted mb-2">
+                        <i class="bi bi-clock-history"></i> Registros recientes
+                    </h6>
+                    <div id="approvals-container">
+                        {% for approval in approvals %}
+                        <div class="card mb-2 border-{% if approval.status == 'aprobado' %}success{% else %}danger{% endif %}">
+                            <div class="card-body p-2">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <span class="badge bg-{% if approval.status == 'aprobado' %}success{% else %}danger{% endif %} mb-1">
+                                            <i class="bi bi-{% if approval.status == 'aprobado' %}check-circle{% else %}x-circle{% endif %}"></i>
+                                            {{ approval.status|title }}
+                                        </span>
+                                        <div class="small">
+                                            <strong>{{ approval.approved_by_name }}</strong>
+                                        </div>
+                                        <div class="small text-muted">
+                                            {{ approval.approved_by_email }}
+                                        </div>
+                                    </div>
+                                    <small class="text-muted" style="font-size: 0.7rem;">
+                                        {{ approval.created_at|date:"d/m/Y" }}<br>
+                                        {{ approval.created_at|date:"H:i" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
         <!-- Califica este curso -->
         <div class="card mb-4">
             <div class="card-header bg-secondary text-white">
@@ -413,6 +512,155 @@
 </div>
 
 <script>
+// Manejar aprobación del curso
+function handleApproval(action) {
+    const name = document.getElementById('approvalName').value.trim();
+    const email = document.getElementById('approvalEmail').value.trim();
+    
+    if (!name || !email) {
+        alert('Por favor, ingresa tu nombre y correo electrónico');
+        return;
+    }
+    
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        alert('Por favor, ingresa un correo electrónico válido');
+        return;
+    }
+    
+    const confirmMsg = action === 'aprobar' 
+        ? '¿Estás seguro de que deseas APROBAR este curso?' 
+        : '¿Estás seguro de que deseas DESAPROBAR este curso?';
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    // Enviar solicitud
+    fetch(`/public/courses/{{ course.public_token }}/approval/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            action: action,
+            name: name,
+            email: email
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Limpiar formulario
+            document.getElementById('approvalName').value = '';
+            document.getElementById('approvalEmail').value = '';
+            
+            // Actualizar estadísticas
+            const statsHtml = `
+                <h6 class="text-muted mb-2">Estadísticas</h6>
+                <div class="row">
+                    <div class="col-4">
+                        <div class="text-success">
+                            <i class="bi bi-check-circle-fill"></i>
+                            <div class="fw-bold">${data.stats.aprobado}</div>
+                            <small class="text-muted">Aprobado</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-danger">
+                            <i class="bi bi-x-circle-fill"></i>
+                            <div class="fw-bold">${data.stats.desaprobado}</div>
+                            <small class="text-muted">Desaprobado</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-primary">
+                            <i class="bi bi-list-check"></i>
+                            <div class="fw-bold">${data.stats.total}</div>
+                            <small class="text-muted">Total</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            let statsDiv = document.getElementById('approval-stats');
+            if (!statsDiv) {
+                // Crear el div de estadísticas si no existe
+                const container = document.querySelector('.card-body .d-grid');
+                const hr = document.createElement('hr');
+                statsDiv = document.createElement('div');
+                statsDiv.id = 'approval-stats';
+                statsDiv.className = 'text-center';
+                container.parentNode.insertBefore(hr, container.nextSibling);
+                container.parentNode.insertBefore(statsDiv, hr.nextSibling);
+            }
+            statsDiv.innerHTML = statsHtml;
+            
+            // Agregar el nuevo registro a la lista
+            const approval = data.approval;
+            const badgeClass = approval.status === 'aprobado' ? 'success' : 'danger';
+            const iconClass = approval.status === 'aprobado' ? 'check-circle' : 'x-circle';
+            
+            const newApprovalHtml = `
+                <div class="card mb-2 border-${badgeClass}">
+                    <div class="card-body p-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <span class="badge bg-${badgeClass} mb-1">
+                                    <i class="bi bi-${iconClass}"></i>
+                                    ${approval.status.charAt(0).toUpperCase() + approval.status.slice(1)}
+                                </span>
+                                <div class="small">
+                                    <strong>${approval.approved_by_name}</strong>
+                                </div>
+                                <div class="small text-muted">
+                                    ${approval.approved_by_email}
+                                </div>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.7rem;">
+                                ${approval.created_at}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            let approvalsContainer = document.getElementById('approvals-container');
+            if (!approvalsContainer) {
+                // Crear el contenedor de aprobaciones si no existe
+                const cardBody = document.querySelector('.card-body');
+                const hr = document.createElement('hr');
+                const listDiv = document.createElement('div');
+                listDiv.className = 'approval-list';
+                listDiv.style.maxHeight = '300px';
+                listDiv.style.overflowY = 'auto';
+                listDiv.innerHTML = `
+                    <h6 class="text-muted mb-2">
+                        <i class="bi bi-clock-history"></i> Registros recientes
+                    </h6>
+                    <div id="approvals-container"></div>
+                `;
+                cardBody.appendChild(hr);
+                cardBody.appendChild(listDiv);
+                approvalsContainer = document.getElementById('approvals-container');
+            }
+            
+            // Agregar al inicio de la lista
+            approvalsContainer.insertAdjacentHTML('afterbegin', newApprovalHtml);
+            
+            alert(data.message);
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión al procesar la aprobación');
+    });
+}
+
 // Manejar calificaciones con caritas
 document.querySelectorAll('.rating-btn').forEach(btn => {
     btn.addEventListener('click', function() {

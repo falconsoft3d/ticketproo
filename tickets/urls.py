@@ -37,6 +37,7 @@ urlpatterns = [
     
     # URLs públicas de cursos (sin autenticación) - DEBEN IR ANTES que la ruta genérica de tickets
     path('public/courses/<uuid:token>/', views.course_public, name='course_public'),
+    path('public/courses/<uuid:token>/approval/', views.course_approval, name='course_approval'),
     path('public/courses/<uuid:token>/classes/<int:class_id>/', views.course_class_public, name='course_class_public'),
     
     # Vista pública de conceptos (sin autenticación requerida)

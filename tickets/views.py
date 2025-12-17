@@ -9991,13 +9991,21 @@ def course_public(request, token):
         })
     
     # Obtener estadísticas de calificaciones
-    from .models import CourseRating
+    from .models import CourseRating, CourseApproval
     ratings = CourseRating.objects.filter(course=course)
     rating_stats = {
         'total': ratings.count(),
         'happy': ratings.filter(rating='happy').count(),
         'neutral': ratings.filter(rating='neutral').count(),
         'sad': ratings.filter(rating='sad').count()
+    }
+    
+    # Obtener todas las aprobaciones del curso
+    approvals = CourseApproval.objects.filter(course=course).order_by('-created_at')
+    approval_stats = {
+        'total': approvals.count(),
+        'aprobado': approvals.filter(status='aprobado').count(),
+        'desaprobado': approvals.filter(status='desaprobado').count()
     }
     
     context = {
@@ -10008,7 +10016,9 @@ def course_public(request, token):
         'days_since_creation': days_since_creation,
         'total_comments': total_comments,
         'resolved_comments': resolved_comments,
-        'rating_stats': rating_stats
+        'rating_stats': rating_stats,
+        'approvals': approvals,
+        'approval_stats': approval_stats
     }
     
     return render(request, 'tickets/course_public.html', context)
@@ -10072,6 +10082,90 @@ def course_class_public(request, token, class_id):
     }
     
     return render(request, 'tickets/course_class_public.html', context)
+
+def course_approval(request, token):
+    """Vista para aprobar o desaprobar un curso público"""
+    from .models import Course, CourseApproval
+    from django.http import JsonResponse
+    import json
+    
+    if request.method == 'POST':
+        course = get_object_or_404(
+            Course, 
+            public_token=token, 
+            is_public_enabled=True, 
+            is_active=True
+        )
+        
+        try:
+            data = json.loads(request.body)
+            action = data.get('action')  # 'aprobar' o 'desaprobar'
+            name = data.get('name', '').strip()
+            email = data.get('email', '').strip()
+            
+            if not action or action not in ['aprobar', 'desaprobar']:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Acción no válida'
+                }, status=400)
+            
+            if not name or not email:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Nombre y correo son requeridos'
+                }, status=400)
+            
+            # Crear un nuevo registro de aprobación
+            approval = CourseApproval.objects.create(
+                course=course,
+                status='aprobado' if action == 'aprobar' else 'desaprobado',
+                approved_by_name=name,
+                approved_by_email=email
+            )
+            
+            # Actualizar también los campos legacy del curso (para el último registro)
+            course.approval_status = approval.status
+            course.approved_by_name = approval.approved_by_name
+            course.approved_by_email = approval.approved_by_email
+            course.approval_date = approval.created_at
+            course.save()
+            
+            # Obtener todas las aprobaciones del curso
+            approvals = CourseApproval.objects.filter(course=course)
+            total_aprobaciones = approvals.filter(status='aprobado').count()
+            total_desaprobaciones = approvals.filter(status='desaprobado').count()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Curso {approval.status} correctamente',
+                'approval': {
+                    'status': approval.status,
+                    'approved_by_name': approval.approved_by_name,
+                    'approved_by_email': approval.approved_by_email,
+                    'created_at': approval.created_at.strftime('%d/%m/%Y %H:%M')
+                },
+                'stats': {
+                    'total': approvals.count(),
+                    'aprobado': total_aprobaciones,
+                    'desaprobado': total_desaprobaciones
+                }
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Datos inválidos'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Método no permitido'
+    }, status=405)
 
 @login_required
 # ==================== VISTAS DE SOLICITUDES AL CLIENTE ====================

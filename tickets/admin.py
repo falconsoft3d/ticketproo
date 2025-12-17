@@ -30,7 +30,7 @@ from .models import (
     FunctionalRequirementComment, AccessGroup, AccessLink, TaskPlan, TaskPlanDay, TaskPlanItem,
     Checklist, ChecklistItem, Transaction, KnowledgeBase, Translation, SQLQuery,
     OdooConnection, OdooRPCTable, OdooRPCField, OdooRPCData, OdooRPCImportFile,
-    Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage, ChatbotClick
+    Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage, ChatbotClick, CourseApproval
 )
 
 # Configuración del sitio de administración
@@ -6902,3 +6902,18 @@ class ChatbotClickAdmin(admin.ModelAdmin):
             return obj.user_agent[:50] + '...' if len(obj.user_agent) > 50 else obj.user_agent
         return '-'
     user_agent_preview.short_description = 'Navegador'
+
+
+@admin.register(CourseApproval)
+class CourseApprovalAdmin(admin.ModelAdmin):
+    list_display = ('course', 'status', 'approved_by_name', 'approved_by_email', 'created_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('course__title', 'approved_by_name', 'approved_by_email')
+    readonly_fields = ('created_at',)
+    date_hierarchy = 'created_at'
+    
+    def has_add_permission(self, request):
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        return False

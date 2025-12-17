@@ -4324,6 +4324,35 @@ class Course(models.Model):
         help_text='Contraseña para acceder al curso (opcional)'
     )
     
+    # Campos de aprobación
+    APPROVAL_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('aprobado', 'Aprobado'),
+        ('desaprobado', 'Desaprobado'),
+    ]
+    approval_status = models.CharField(
+        max_length=20,
+        choices=APPROVAL_CHOICES,
+        default='pendiente',
+        verbose_name='Estado de aprobación'
+    )
+    approved_by_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Aprobado por (nombre)',
+        help_text='Nombre de la persona que aprobó/desaprobó'
+    )
+    approved_by_email = models.EmailField(
+        blank=True,
+        verbose_name='Aprobado por (correo)',
+        help_text='Correo de la persona que aprobó/desaprobó'
+    )
+    approval_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de aprobación'
+    )
+    
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
     
@@ -4383,6 +4412,46 @@ class Course(models.Model):
     def is_public(self):
         """Retorna True si el curso es público (sin empresa asignada)"""
         return self.company is None
+
+
+class CourseApproval(models.Model):
+    """Modelo para registrar aprobaciones/desaprobaciones de cursos"""
+    
+    APPROVAL_CHOICES = [
+        ('aprobado', 'Aprobado'),
+        ('desaprobado', 'Desaprobado'),
+    ]
+    
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='approvals',
+        verbose_name='Curso'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=APPROVAL_CHOICES,
+        verbose_name='Estado'
+    )
+    approved_by_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre'
+    )
+    approved_by_email = models.EmailField(
+        verbose_name='Correo electrónico'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de aprobación'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Aprobación de Curso'
+        verbose_name_plural = 'Aprobaciones de Cursos'
+    
+    def __str__(self):
+        return f"{self.course.title} - {self.status} por {self.approved_by_name}"
 
 
 class CourseRegistrationToken(models.Model):
