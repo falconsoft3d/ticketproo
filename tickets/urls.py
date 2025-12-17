@@ -545,6 +545,7 @@ urlpatterns = [
     path('courses/<int:pk>/delete/', views.course_delete, name='course_delete'),
     path('courses/<int:pk>/generate-public-token/', views.course_generate_public_token, name='course_generate_public_token'),
     path('courses/<int:pk>/disable-public-access/', views.course_disable_public_access, name='course_disable_public_access'),
+    path('course-comments/<int:comment_id>/resolve/', views.course_comment_resolve, name='course_comment_resolve'),
     
     # URLs de Clases de Curso
     path('courses/<int:course_id>/classes/create/', views.course_class_create, name='course_class_create'),

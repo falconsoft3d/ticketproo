@@ -1677,3 +1677,206 @@ def ocr_invoice_list_api(request, token):
         }, status=500)
 
 
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def increment_class_link_copy_count(request, course_token, class_id):
+    """
+    Incrementa el contador de veces que se ha copiado el link de una clase
+    """
+    try:
+        from .models import Course, CourseClass
+        from django.db.models import F
+        
+        # Verificar que el curso existe y es público
+        course = Course.objects.filter(
+            public_token=course_token,
+            is_public_enabled=True,
+            is_active=True
+        ).first()
+        
+        if not course:
+            return JsonResponse({
+                'success': False,
+                'error': 'Curso no encontrado'
+            }, status=404)
+        
+        # Verificar que la clase existe
+        course_class = CourseClass.objects.filter(
+            pk=class_id,
+            course=course,
+            is_active=True
+        ).first()
+        
+        if not course_class:
+            return JsonResponse({
+                'success': False,
+                'error': 'Clase no encontrada'
+            }, status=404)
+        
+        # Incrementar el contador
+        CourseClass.objects.filter(pk=class_id).update(
+            link_copy_count=F('link_copy_count') + 1
+        )
+        
+        # Obtener el valor actualizado
+        course_class.refresh_from_db()
+        
+        return JsonResponse({
+            'success': True,
+            'new_count': course_class.link_copy_count
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def create_course_comment(request, course_token, class_id):
+    """
+    Crea un comentario en una clase de curso público
+    """
+    try:
+        from .models import Course, CourseClass, CourseComment
+        import json
+        
+        # Verificar que el curso existe y es público
+        course = Course.objects.filter(
+            public_token=course_token,
+            is_public_enabled=True,
+            is_active=True
+        ).first()
+        
+        if not course:
+            return JsonResponse({
+                'success': False,
+                'error': 'Curso no encontrado'
+            }, status=404)
+        
+        # Verificar que la clase existe
+        course_class = CourseClass.objects.filter(
+            pk=class_id,
+            course=course,
+            is_active=True
+        ).first()
+        
+        if not course_class:
+            return JsonResponse({
+                'success': False,
+                'error': 'Clase no encontrada'
+            }, status=404)
+        
+        # Obtener datos del comentario
+        data = json.loads(request.body)
+        name = data.get('name', '').strip()
+        email = data.get('email', '').strip()
+        comment = data.get('comment', '').strip()
+        
+        if not name or not email or not comment:
+            return JsonResponse({
+                'success': False,
+                'error': 'Todos los campos son requeridos'
+            }, status=400)
+        
+        # Obtener IP del usuario
+        def get_client_ip(request):
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                ip = x_forwarded_for.split(',')[0]
+            else:
+                ip = request.META.get('REMOTE_ADDR')
+            return ip
+        
+        # Crear el comentario
+        course_comment = CourseComment.objects.create(
+            course_class=course_class,
+            name=name,
+            email=email,
+            comment=comment,
+            ip_address=get_client_ip(request)
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': '¡Comentario enviado exitosamente!'
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def rate_course(request, course_token):
+    """API para calificar un curso con caritas"""
+    from .models import Course, CourseRating
+    
+    # Función para obtener IP del cliente
+    def get_client_ip(request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+    
+    try:
+        # Validar que el curso existe y es público
+        course = Course.objects.get(
+            public_token=course_token,
+            is_public_enabled=True,
+            is_active=True
+        )
+    except Course.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Curso no encontrado'
+        }, status=404)
+    
+    # Obtener rating del request
+    rating = request.data.get('rating')
+    
+    if not rating or rating not in ['sad', 'neutral', 'happy']:
+        return JsonResponse({
+            'success': False,
+            'error': 'Calificación inválida'
+        }, status=400)
+    
+    try:
+        # Crear la calificación
+        course_rating = CourseRating.objects.create(
+            course=course,
+            rating=rating,
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:500]
+        )
+        
+        # Calcular estadísticas
+        ratings = CourseRating.objects.filter(course=course)
+        stats = {
+            'total': ratings.count(),
+            'happy': ratings.filter(rating='happy').count(),
+            'neutral': ratings.filter(rating='neutral').count(),
+            'sad': ratings.filter(rating='sad').count()
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'message': '¡Gracias por tu calificación!',
+            'stats': stats
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

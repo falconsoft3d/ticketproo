@@ -4302,6 +4302,28 @@ class Course(models.Model):
         help_text='Permite que el curso sea accesible públicamente mediante un enlace'
     )
     is_active = models.BooleanField(default=True, verbose_name='Activo')
+    view_count = models.PositiveIntegerField(default=0, verbose_name='Número de visitas')
+    
+    # Campos de acceso
+    access_url = models.URLField(
+        max_length=500,
+        blank=True,
+        verbose_name='URL de acceso',
+        help_text='URL donde se accede al curso (opcional)'
+    )
+    access_username = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Usuario de acceso',
+        help_text='Usuario para acceder al curso (opcional)'
+    )
+    access_password = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Contraseña de acceso',
+        help_text='Contraseña para acceder al curso (opcional)'
+    )
+    
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
     
@@ -4473,6 +4495,7 @@ class CourseClass(models.Model):
         help_text='Duración estimada de la clase en minutos'
     )
     is_active = models.BooleanField(default=True, verbose_name='Activa')
+    link_copy_count = models.PositiveIntegerField(default=0, verbose_name='Veces copiado el link')
     created_by = models.ForeignKey(
         User, 
         on_delete=models.CASCADE, 
@@ -4537,6 +4560,64 @@ class CourseClassView(models.Model):
     
     def __str__(self):
         return f"{self.user.username} vio {self.course_class.title}"
+
+
+class CourseComment(models.Model):
+    """Modelo para comentarios en clases de cursos públicos"""
+    
+    STATUS_CHOICES = [
+        ('creado', 'Creado'),
+        ('resuelto', 'Resuelto'),
+    ]
+    
+    course_class = models.ForeignKey(
+        CourseClass,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Clase'
+    )
+    name = models.CharField(max_length=200, verbose_name='Nombre')
+    email = models.EmailField(verbose_name='Email')
+    comment = models.TextField(verbose_name='Comentario')
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='creado',
+        verbose_name='Estado'
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    resolved_at = models.DateTimeField(null=True, blank=True, verbose_name='Resuelto el')
+    resolved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Resuelto por'
+    )
+    solution_link = models.URLField(
+        max_length=500,
+        null=True,
+        blank=True,
+        verbose_name='Link de solución'
+    )
+    solution_note = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name='Nota de solución'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Comentario de Clase'
+        verbose_name_plural = 'Comentarios de Clases'
+    
+    def __str__(self):
+        return f"Comentario de {self.name} en {self.course_class.title}"
 
 
 class ContactTag(models.Model):
@@ -17822,6 +17903,50 @@ class ScheduledTaskExecution(models.Model):
     
     def __str__(self):
         return f"{self.task.name} - {self.executed_at.strftime('%d/%m/%Y %H:%M')} ({self.get_status_display()})"
+
+
+class CourseRating(models.Model):
+    """Modelo para calificaciones de cursos con caras (triste, neutro, feliz)"""
+    
+    RATING_CHOICES = [
+        ('sad', '😞 Triste'),
+        ('neutral', '😐 Neutro'),
+        ('happy', '😊 Feliz'),
+    ]
+    
+    course = models.ForeignKey(
+        'Course',
+        on_delete=models.CASCADE,
+        related_name='ratings',
+        verbose_name='Curso'
+    )
+    rating = models.CharField(
+        max_length=10,
+        choices=RATING_CHOICES,
+        verbose_name='Calificación'
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    user_agent = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='User Agent'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Calificación de Curso'
+        verbose_name_plural = 'Calificaciones de Cursos'
+    
+    def __str__(self):
+        return f"{self.get_rating_display()} - {self.course.title}"
 
 
 class QARating(models.Model):

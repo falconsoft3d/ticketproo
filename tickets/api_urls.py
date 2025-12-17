@@ -8,7 +8,8 @@ from .api_views import (
     system_info_api, short_url_stats_api, upcoming_events_list, web_counter_track,
     web_counter_stats, quick_create_task, pending_tasks_count, get_all_users_for_tasks,
     dynamic_table_api_list, dynamic_table_api_detail, my_pending_work_orders, qa_ratings_count,
-    ocr_invoice_api, ocr_invoice_list_api
+    ocr_invoice_api, ocr_invoice_list_api, increment_class_link_copy_count, create_course_comment,
+    rate_course
 )
 from .views import short_url_stats
 
@@ -77,6 +78,11 @@ api_urlpatterns = [
     # URLs para Facturas OCR API (sin autenticación - usa token)
     path('ocr-invoices/<str:token>/', ocr_invoice_api, name='ocr_invoice_api'),
     path('ocr-invoices/list/<str:token>/', ocr_invoice_list_api, name='ocr_invoice_list_api'),
+    
+    # URLs para cursos públicos
+    path('courses/<uuid:course_token>/classes/<int:class_id>/copy-count/', increment_class_link_copy_count, name='api-increment-class-link-copy-count'),
+    path('courses/<uuid:course_token>/classes/<int:class_id>/comments/', create_course_comment, name='api-create-course-comment'),
+    path('courses/<uuid:course_token>/rate/', rate_course, name='api-rate-course'),
 ]
 
 # Django espera que la variable se llame urlpatterns

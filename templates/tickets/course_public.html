@@ -1,17 +1,60 @@
-{% extends 'base.html' %}
+{% extends 'public_base.html' %}
 {% load static %}
 
-{% block title %}{{ page_title }}{% endblock %}
+{% block title %}{{ course.title }} - TicketProo{% endblock %}
+
+{% block extra_head %}
+<!-- SEO Meta Tags -->
+<meta name="description" content="{% if course.description %}{{ course.description|truncatewords:30|striptags }}{% else %}Curso de {{ course.title }} en TicketProo{% endif %}">
+<meta name="keywords" content="{{ course.title }}, curso, educación, TicketProo">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+<meta property="og:title" content="{{ course.title }}">
+<meta property="og:description" content="{% if course.description %}{{ course.description|truncatewords:30|striptags }}{% else %}Curso de {{ course.title }} en TicketProo{% endif %}">
+<meta property="og:site_name" content="TicketProo">
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="{{ request.build_absolute_uri }}">
+<meta property="twitter:title" content="{{ course.title }}">
+<meta property="twitter:description" content="{% if course.description %}{{ course.description|truncatewords:30|striptags }}{% else %}Curso de {{ course.title }} en TicketProo{% endif %}">
+
+<!-- Additional Meta Tags -->
+<meta name="author" content="{{ course.created_by.get_full_name|default:course.created_by.username }}">
+<link rel="canonical" href="{{ request.build_absolute_uri }}">
+{% endblock %}
 
 {% block content %}
+<!-- Toast Container -->
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+    <div id="copyToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <i class="bi bi-check-circle me-2"></i>
+            <strong class="me-auto">¡Éxito!</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            Link copiado al portapapeles
+        </div>
+    </div>
+    <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-danger text-white">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            <strong class="me-auto">Error</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="errorToastMessage">
+            No se pudo copiar el link
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <div class="alert alert-info mb-3">
-                    <i class="bi bi-info-circle"></i> <strong>Vista Pública</strong> - Este curso está disponible sin necesidad de autenticación
-                </div>
-                
                 <h1 class="h3 mb-0 text-primary">
                     <i class="bi bi-collection"></i> {{ course.title }}
                 </h1>
@@ -30,17 +73,6 @@
                     {% endif %}
                 </div>
             </div>
-            
-            {% if not user.is_authenticated %}
-                <div class="btn-group">
-                    <a href="{% url 'login' %}" class="btn btn-outline-primary">
-                        <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
-                    </a>
-                    <a href="{% url 'register' %}" class="btn btn-primary">
-                        <i class="bi bi-person-plus"></i> Registrarse
-                    </a>
-                </div>
-            {% endif %}
         </div>
     </div>
 </div>
@@ -50,7 +82,7 @@
         <!-- Descripción del Curso -->
         {% if course.description %}
         <div class="card mb-4">
-            <div class="card-header bg-info text-white">
+            <div class="card-header bg-secondary text-white">
                 <h5 class="mb-0">
                     <i class="bi bi-info-circle"></i> Descripción del Curso
                 </h5>
@@ -61,106 +93,175 @@
         </div>
         {% endif %}
 
-        <!-- Lista de Clases -->
-        <div class="card">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-play-circle"></i> Clases del Curso ({{ classes_with_views|length }})
-                </h5>
-            </div>
-            <div class="card-body p-0">
-                {% if classes_with_views %}
-                    <div class="list-group list-group-flush">
-                        {% for item in classes_with_views %}
-                        {% with class=item.class %}
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="flex-grow-1 me-3">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <h6 class="mb-0 me-2">{{ class.title }}</h6>
-                                        {% if item.user_has_viewed %}
-                                            <span class="badge bg-success">
-                                                <i class="bi bi-check-circle"></i> Vista
-                                            </span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">
-                                                <i class="bi bi-circle"></i> Sin ver
-                                            </span>
-                                        {% endif %}
+        <!-- Título de Clases -->
+        <div class="mb-3">
+            <h5 class="text-primary">
+                <i class="bi bi-play-circle"></i> Clases del Curso ({{ classes_with_views|length }})
+            </h5>
+        </div>
+
+        <!-- Lista de Clases (cada una en su tarjeta) -->
+        {% if classes_with_views %}
+            {% for item in classes_with_views %}
+            {% with class=item.class %}
+            <div class="card mb-3">
+                <div class="card-header bg-secondary text-white d-flex align-items-center">
+                    <span class="badge bg-white text-secondary fs-5 me-3" style="min-width: 50px;">{{ class.order|default:"#" }}</span>
+                    <h6 class="mb-0">{{ class.title }}</h6>
+                </div>
+                <div class="card-body">
+                    {% if class.description %}
+                        <p class="text-muted mb-3">{{ class.description }}</p>
+                    {% endif %}
+                    
+                    <!-- Botón de copiar link -->
+                    {% if class.video_url %}
+                    <div class="mb-3">
+                        <label class="form-label small text-muted"><i class="bi bi-link-45deg"></i> Enlace del video</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" 
+                                   class="form-control text-truncate" 
+                                   id="class-link-{{ class.pk }}" 
+                                   value="{{ class.video_url }}" 
+                                   readonly 
+                                   style="font-size: 0.875rem;">
+                            <button class="btn btn-outline-primary" 
+                                    type="button" 
+                                    onclick="copyClassLink('{{ class.pk }}', '{{ course.public_token }}')">
+                                <i class="bi bi-clipboard"></i> Copiar
+                            </button>
+                        </div>
+                        <small class="text-muted">
+                            <i class="bi bi-copy"></i> Copiado <span id="copy-count-{{ class.pk }}">{{ class.link_copy_count }}</span> {% if class.link_copy_count == 1 %}vez{% else %}veces{% endif %}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex align-items-center text-muted small mb-3">
+                        <span class="me-3">
+                            <i class="bi bi-calendar"></i> {{ class.created_at|date:"d/m/Y" }}
+                        </span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Formulario de comentarios para esta clase -->
+                    <div class="mt-3">
+                        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#commentForm{{ class.pk }}">
+                            <i class="bi bi-chat-dots"></i> Comentar ({{ item.comments|length }})
+                        </button>
+                        <div class="collapse mt-3" id="commentForm{{ class.pk }}">
+                            <div class="card card-body bg-light">
+                                <form class="comment-form" data-class-id="{{ class.pk }}">
+                                    <div class="mb-2">
+                                        <input type="text" class="form-control form-control-sm" placeholder="Nombre" name="name" required>
                                     </div>
-                                    
-                                    {% if class.description %}
-                                        <p class="text-muted mb-2 small">{{ class.description|truncatewords:20 }}</p>
-                                    {% endif %}
-                                    
-                                    <div class="d-flex align-items-center text-muted small">
-                                        
-                                        <span class="me-3">
-                                            <i class="bi bi-calendar"></i> {{ class.created_at|date:"d/m/Y" }}
-                                        </span>
-                                        {% if class.order %}
-                                            <span class="badge bg-light text-dark">
-                                                Orden: {{ class.order }}
-                                            </span>
-                                        {% endif %}
+                                    <div class="mb-2">
+                                        <input type="email" class="form-control form-control-sm" placeholder="Email" name="email" required>
                                     </div>
-                                    
-                                    <!-- Mostrar video solo si ya fue visto o si no requiere autenticación -->
-                                    {% if class.video_url %}
-                                        {% if item.user_has_viewed or not user.is_authenticated %}
-                                            <div class="mt-2">
-                                                <div class="alert alert-success p-2">
-                                                    <strong>Video disponible:</strong><br>
-                                                    <a href="{{ class.video_url }}" target="_blank" class="text-decoration-none">
-                                                        {{ class.video_url }}
-                                                        <i class="bi bi-box-arrow-up-right ms-1"></i>
-                                                    </a>
-                                                </div>
-                                                <button class="btn btn-sm btn-success" onclick="window.open('{{ class.video_url }}', '_blank')">
-                                                    <i class="bi bi-play-circle"></i> Ver Video
-                                                </button>
-                                            </div>
-                                        {% else %}
-                                            <!-- Usuario autenticado no ha visto la clase -->
-                                            <button class="btn btn-sm btn-outline-success me-2" 
-                                                    onclick="markAsViewedAndShowVideo('{{ class.pk }}', '{{ class.video_url }}', '{{ course.pk }}')">
-                                                <i class="bi bi-play-circle"></i> Ver Video (Primera vez)
-                                            </button>
-                                            <div id="video-{{ class.pk }}" style="display: none;" class="mt-2">
-                                                <div class="alert alert-info">
-                                                    <strong>URL del Video:</strong><br>
-                                                    <a href="{{ class.video_url }}" target="_blank" class="text-decoration-none">
-                                                        {{ class.video_url }}
-                                                        <i class="bi bi-box-arrow-up-right ms-1"></i>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endif %}
-                                </div>
-                                <div class="d-flex flex-column align-items-end">
-                                
-                                    <small class="text-muted">
-                                        Creado {{ class.created_at|date:"d/m/Y" }}
-                                    </small>
-                                </div>
+                                    <div class="mb-2">
+                                        <textarea class="form-control form-control-sm" placeholder="Tu comentario" name="comment" rows="3" required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-send"></i> Enviar
+                                    </button>
+                                </form>
                             </div>
                         </div>
-                        {% endwith %}
-                        {% endfor %}
                     </div>
-                {% else %}
-                    <div class="text-center py-4">
-                        <i class="bi bi-play-circle display-4 text-muted mb-3"></i>
-                        <h5 class="text-muted">No hay clases disponibles</h5>
-                        <p class="text-muted">Este curso aún no tiene clases.</p>
+                    
+                    <!-- Comentarios de la clase -->
+                    {% if item.comments %}
+                    <div class="mt-3">
+                        <h6 class="text-muted"><i class="bi bi-chat-left-text"></i> Comentarios ({{ item.comments|length }})</h6>
+                        <div class="border-start border-primary border-3 ps-3">
+                            {% for comment in item.comments %}
+                            <div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <strong class="text-primary">{{ comment.name }}</strong>
+                                        <span class="badge bg-{% if comment.status == 'resuelto' %}success{% else %}warning{% endif %} ms-2">
+                                            {{ comment.get_status_display }}
+                                        </span>
+                                    </div>
+                                    <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                                </div>
+                                <p class="mb-0">{{ comment.comment }}</p>
+                                
+                                {% if comment.status == 'resuelto' and comment.solution_link or comment.solution_note %}
+                                    <div class="alert alert-success mt-2 mb-0">
+                                        <strong><i class="bi bi-check-circle-fill"></i> Solución:</strong>
+                                        {% if comment.solution_link %}
+                                            <div class="mt-1">
+                                                <i class="bi bi-link-45deg"></i> 
+                                                <a href="{{ comment.solution_link }}" target="_blank" class="text-decoration-none">Ver solución</a>
+                                            </div>
+                                        {% endif %}
+                                        {% if comment.solution_note %}
+                                            <div class="mt-1">
+                                                <small>{{ comment.solution_note }}</small>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
-                {% endif %}
+                    {% endif %}
+                </div>
             </div>
-        </div>
+            {% endwith %}
+            {% endfor %}
+        {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-play-circle display-4 text-muted mb-3"></i>
+                    <h5 class="text-muted">No hay clases disponibles</h5>
+                    <p class="text-muted">Este curso aún no tiene clases.</p>
+                </div>
+            </div>
+        {% endif %}
     </div>
     
     <div class="col-lg-4">
+        <!-- Califica este curso -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-star-fill"></i> Califica este curso
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <p class="text-muted small mb-3">¿Qué te pareció este curso?</p>
+                <div class="d-flex justify-content-center gap-3 mb-3">
+                    <button class="btn btn-outline-danger btn-lg rating-btn" data-rating="sad" title="No me gustó" style="font-size: 2.5rem; border-radius: 50%; width: 80px; height: 80px;">
+                        😞
+                    </button>
+                    <button class="btn btn-outline-secondary btn-lg rating-btn" data-rating="neutral" title="Regular" style="font-size: 2.5rem; border-radius: 50%; width: 80px; height: 80px;">
+                        😐
+                    </button>
+                    <button class="btn btn-outline-success btn-lg rating-btn" data-rating="happy" title="Me gustó" style="font-size: 2.5rem; border-radius: 50%; width: 80px; height: 80px;">
+                        😊
+                    </button>
+                </div>
+                <div id="rating-stats" class="mt-3">
+                    <small class="text-muted">
+                        <strong>{{ rating_stats.total }}</strong> {% if rating_stats.total == 1 %}calificación{% else %}calificaciones{% endif %}
+                    </small>
+                    {% if rating_stats.total > 0 %}
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            Triste: {{ rating_stats.sad }} | 
+                            Regular: {{ rating_stats.neutral }} | 
+                            Feliz: {{ rating_stats.happy }}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
         <!-- Información del Curso -->
         <div class="card mb-4">
             <div class="card-header bg-secondary text-white">
@@ -199,6 +300,57 @@
                     <span>{{ course.updated_at|date:"d/m/Y" }}</span>
                 </div>
                 
+                {% if course.access_url or course.access_username or course.access_password %}
+                <hr>
+                <div class="mt-3">
+                    <h6 class="text-primary mb-3">
+                        <i class="bi bi-key"></i> Datos de Acceso
+                    </h6>
+                    
+                    {% if course.access_url %}
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1"><i class="bi bi-link-45deg"></i> URL:</small>
+                        <a href="{{ course.access_url }}" target="_blank" class="btn btn-sm btn-outline-primary w-100">
+                            <i class="bi bi-box-arrow-up-right"></i> Acceder al sitio
+                        </a>
+                        <div class="input-group input-group-sm mt-2">
+                            <input type="text" class="form-control" value="{{ course.access_url }}" readonly id="accessUrl">
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('accessUrl')">
+                                <i class="bi bi-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if course.access_username %}
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1"><i class="bi bi-person"></i> Usuario:</small>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" value="{{ course.access_username }}" readonly id="accessUsername">
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('accessUsername')">
+                                <i class="bi bi-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if course.access_password %}
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1"><i class="bi bi-lock"></i> Contraseña:</small>
+                        <div class="input-group input-group-sm">
+                            <input type="password" class="form-control" value="{{ course.access_password }}" readonly id="accessPassword">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('accessPassword')">
+                                <i class="bi bi-eye" id="accessPassword-icon"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('accessPassword')">
+                                <i class="bi bi-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
                 <hr>
                 
                 <div class="alert alert-warning p-2">
@@ -212,31 +364,48 @@
                 </div>
             </div>
         </div>
-
-        <!-- Acciones -->
-        <div class="card">
-            <div class="card-header bg-warning text-dark">
-                <h6 class="mb-0">
-                    <i class="bi bi-tools"></i> Acciones
-                </h6>
+        
+        <!-- Contador de Visitas -->
+        <div class="card mt-3">
+            <div class="card-body text-center">
+                <div class="row">
+                    <div class="col-6 border-end">
+                        <div class="display-4 text-primary mb-2">
+                            <i class="bi bi-eye"></i>
+                        </div>
+                        <h2 class="text-primary mb-1">{{ course.view_count }}</h2>
+                        <p class="text-muted mb-0">{% if course.view_count == 1 %}Visita{% else %}Visitas{% endif %}</p>
+                    </div>
+                    <div class="col-6">
+                        <div class="display-4 text-success mb-2">
+                            <i class="bi bi-calendar-check"></i>
+                        </div>
+                        <h2 class="text-success mb-1">{{ days_since_creation }}</h2>
+                        <p class="text-muted mb-0">{% if days_since_creation == 1 %}Día{% else %}Días{% endif %}</p>
+                        <small class="text-muted">desde su creación</small>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'course_list' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left"></i> Volver a Cursos
-                        </a>
-                        <a href="{% url 'course_detail' course.pk %}" class="btn btn-primary">
-                            <i class="bi bi-lock"></i> Ver Versión Privada
-                        </a>
-                    {% else %}
-                        <a href="{% url 'register' %}" class="btn btn-primary">
-                            <i class="bi bi-person-plus"></i> Registrarse
-                        </a>
-                        <a href="{% url 'login' %}" class="btn btn-outline-primary">
-                            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
-                        </a>
-                    {% endif %}
+        </div>
+        
+        <!-- Contador de Comentarios -->
+        <div class="card mt-3">
+            <div class="card-body text-center">
+                <div class="row">
+                    <div class="col-6 border-end">
+                        <div class="display-4 text-info mb-2">
+                            <i class="bi bi-chat-dots"></i>
+                        </div>
+                        <h2 class="text-info mb-1">{{ total_comments }}</h2>
+                        <p class="text-muted mb-0">{% if total_comments == 1 %}Comentario{% else %}Comentarios{% endif %}</p>
+                    </div>
+                    <div class="col-6">
+                        <div class="display-4 text-success mb-2">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <h2 class="text-success mb-1">{{ resolved_comments }}</h2>
+                        <p class="text-muted mb-0">{% if resolved_comments == 1 %}Resuelto{% else %}Resueltos{% endif %}</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -244,6 +413,204 @@
 </div>
 
 <script>
+// Manejar calificaciones con caritas
+document.querySelectorAll('.rating-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const rating = this.getAttribute('data-rating');
+        
+        // Deshabilitar botones mientras se procesa
+        document.querySelectorAll('.rating-btn').forEach(b => b.disabled = true);
+        
+        // Enviar calificación
+        fetch(`/api/courses/{{ course.public_token }}/rate/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                rating: rating
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Actualizar estadísticas
+                const statsDiv = document.getElementById('rating-stats');
+                statsDiv.innerHTML = `
+                    <small class="text-success">
+                        <i class="bi bi-check-circle-fill"></i> ${data.message}
+                    </small>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <strong>${data.stats.total}</strong> ${data.stats.total === 1 ? 'calificación' : 'calificaciones'}
+                        </small>
+                    </div>
+                    ${data.stats.total > 0 ? `
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            😊 ${data.stats.happy} | 
+                            😐 ${data.stats.neutral} | 
+                            😞 ${data.stats.sad}
+                        </small>
+                    </div>
+                    ` : ''}
+                `;
+                
+                // Mantener botones deshabilitados después de calificar
+                setTimeout(() => {
+                    document.querySelectorAll('.rating-btn').forEach(b => {
+                        b.classList.remove('btn-outline-danger', 'btn-outline-secondary', 'btn-outline-success');
+                        b.classList.add('btn-light');
+                    });
+                    
+                    // Destacar el botón seleccionado
+                    this.classList.remove('btn-light');
+                    if (rating === 'sad') this.classList.add('btn-danger');
+                    if (rating === 'neutral') this.classList.add('btn-secondary');
+                    if (rating === 'happy') this.classList.add('btn-success');
+                }, 500);
+            } else {
+                showToast('errorToast');
+                document.getElementById('errorToastMessage').textContent = data.error;
+                document.querySelectorAll('.rating-btn').forEach(b => b.disabled = false);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('errorToast');
+            document.getElementById('errorToastMessage').textContent = 'Error al enviar la calificación';
+            document.querySelectorAll('.rating-btn').forEach(b => b.disabled = false);
+        });
+    });
+});
+
+// Manejar el envío de formularios de comentarios
+document.querySelectorAll('.comment-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const classId = this.getAttribute('data-class-id');
+        const name = this.querySelector('[name="name"]').value.trim();
+        const email = this.querySelector('[name="email"]').value.trim();
+        const comment = this.querySelector('[name="comment"]').value.trim();
+        
+        if (!name || !email || !comment) {
+            showToast('errorToast');
+            document.getElementById('errorToastMessage').textContent = 'Todos los campos son requeridos';
+            return;
+        }
+        
+        // Enviar comentario via API
+        fetch(`/api/courses/{{ course.public_token }}/classes/${classId}/comments/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: name,
+                email: email,
+                comment: comment
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Mostrar mensaje de éxito
+                document.getElementById('copyToast').querySelector('.toast-body').textContent = data.message;
+                showToast('copyToast');
+                
+                // Limpiar el formulario
+                this.reset();
+                
+                // Cerrar el collapse
+                const collapseElement = document.getElementById(`commentForm${classId}`);
+                const bsCollapse = new bootstrap.Collapse(collapseElement, {
+                    toggle: false
+                });
+                bsCollapse.hide();
+            } else {
+                showToast('errorToast');
+                document.getElementById('errorToastMessage').textContent = data.error;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('errorToast');
+            document.getElementById('errorToastMessage').textContent = 'Error al enviar el comentario';
+        });
+    });
+});
+
+function copyClassLink(classId, courseToken) {
+    // Obtener el input con el link
+    const linkInput = document.getElementById(`class-link-${classId}`);
+    
+    // Copiar al portapapeles
+    linkInput.select();
+    linkInput.setSelectionRange(0, 99999); // Para móviles
+    
+    try {
+        document.execCommand('copy');
+        
+        // Incrementar el contador via API
+        fetch(`/api/courses/${courseToken}/classes/${classId}/copy-count/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Actualizar el contador en la UI
+                const counterElement = document.getElementById(`copy-count-${classId}`);
+                if (counterElement) {
+                    counterElement.textContent = data.new_count;
+                }
+                
+                // Mostrar mensaje de éxito
+                showToast('copyToast');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Aunque falle el contador, el link ya se copió
+            showToast('copyToast');
+        });
+    } catch (err) {
+        // Fallback para navegadores que no soportan execCommand
+        navigator.clipboard.writeText(linkInput.value).then(() => {
+            showToast('copyToast');
+            
+            // Intentar incrementar el contador
+            fetch(`/api/courses/${courseToken}/classes/${classId}/copy-count/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const counterElement = document.getElementById(`copy-count-${classId}`);
+                    if (counterElement) {
+                        counterElement.textContent = data.new_count;
+                    }
+                }
+            });
+        }).catch(err => {
+            console.error('Error al copiar:', err);
+            showToast('errorToast');
+        });
+    }
+}
+
+function showToast(toastId) {
+    const toastEl = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}
+
 function markAsViewedAndShowVideo(classId, videoUrl, courseId) {
     // Verificar si el usuario está autenticado
     {% if not user.is_authenticated %}
@@ -299,5 +666,65 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(inputId + '-icon');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+    }
+}
+
+function copyToClipboard(elementId) {
+    const input = document.getElementById(elementId);
+    const originalType = input.type;
+    
+    // Temporalmente cambiar a text para copiar
+    input.type = 'text';
+    input.select();
+    input.setSelectionRange(0, 99999);
+    
+    try {
+        document.execCommand('copy');
+        // Restaurar tipo original
+        input.type = originalType;
+        
+        // Mostrar toast de éxito
+        const toast = document.createElement('div');
+        toast.className = 'toast position-fixed top-0 end-0 m-3';
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="toast-header bg-success text-white">
+                <i class="bi bi-check-circle me-2"></i>
+                <strong class="me-auto">Copiado</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                Texto copiado al portapapeles
+            </div>
+        `;
+        document.body.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    } catch (err) {
+        // Fallback con clipboard API
+        navigator.clipboard.writeText(input.value).then(() => {
+            input.type = originalType;
+            alert('Copiado al portapapeles');
+        });
+    }
+}
+
 </script>
 {% endblock %}

@@ -370,6 +370,114 @@
     </div>
 </div>
 
+<!-- Sección de Comentarios -->
+{% if user|can_manage_courses %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-chat-dots"></i> Comentarios del Curso
+                    {% if total_pending_comments > 0 %}
+                        <span class="badge bg-warning text-dark">{{ total_pending_comments }} pendiente{{ total_pending_comments|pluralize }}</span>
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if all_comments %}
+                    <div class="accordion" id="commentsAccordion">
+                        {% for comment in all_comments %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ comment.pk }}">
+                                <button class="accordion-button {% if forloop.first %}{% else %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ comment.pk }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ comment.pk }}">
+                                    <div class="d-flex justify-content-between align-items-center w-100">
+                                        <div>
+                                            <strong class="text-primary">{{ comment.name }}</strong>
+                                            <span class="badge bg-{% if comment.status == 'resuelto' %}success{% else %}warning{% endif %} ms-2">
+                                                {{ comment.get_status_display }}
+                                            </span>
+                                            <small class="text-muted ms-2">
+                                                Clase: {{ comment.course_class.title }}
+                                            </small>
+                                        </div>
+                                        <small class="text-muted me-3">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ comment.pk }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" aria-labelledby="heading{{ comment.pk }}" data-bs-parent="#commentsAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <div class="mb-3">
+                                                <strong>Email:</strong> {{ comment.email }}<br>
+                                                <strong>IP:</strong> {{ comment.ip_address }}<br>
+                                                <strong>Fecha:</strong> {{ comment.created_at|date:"d/m/Y H:i" }}
+                                            </div>
+                                            <div class="mb-3">
+                                                <strong>Comentario:</strong>
+                                                <p class="mb-0 mt-2">{{ comment.comment }}</p>
+                                            </div>
+                                            {% if comment.status == 'resuelto' %}
+                                                <div class="alert alert-success">
+                                                    <i class="bi bi-check-circle"></i> Resuelto por {{ comment.resolved_by.get_full_name|default:comment.resolved_by.username }} el {{ comment.resolved_at|date:"d/m/Y H:i" }}
+                                                    {% if comment.solution_link or comment.solution_note %}
+                                                        <hr>
+                                                        {% if comment.solution_link %}
+                                                            <p class="mb-1">
+                                                                <strong><i class="bi bi-link-45deg"></i> Link:</strong><br>
+                                                                <a href="{{ comment.solution_link }}" target="_blank" class="text-decoration-none">{{ comment.solution_link }}</a>
+                                                            </p>
+                                                        {% endif %}
+                                                        {% if comment.solution_note %}
+                                                            <p class="mb-0">
+                                                                <strong><i class="bi bi-sticky"></i> Nota:</strong><br>
+                                                                {{ comment.solution_note|linebreaks }}
+                                                            </p>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4">
+                                            {% if comment.status == 'creado' %}
+                                                <form method="post" action="{% url 'course_comment_resolve' comment.pk %}" class="mb-3">
+                                                    {% csrf_token %}
+                                                    <div class="mb-2">
+                                                        <label for="solution_link_{{ comment.pk }}" class="form-label small">Link de solución (opcional)</label>
+                                                        <input type="url" class="form-control form-control-sm" id="solution_link_{{ comment.pk }}" name="solution_link" placeholder="https://...">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="solution_note_{{ comment.pk }}" class="form-label small">Nota de solución (opcional)</label>
+                                                        <textarea class="form-control form-control-sm" id="solution_note_{{ comment.pk }}" name="solution_note" rows="3" placeholder="Describe la solución..."></textarea>
+                                                    </div>
+                                                    <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Marcar como resuelto?')">
+                                                        <i class="bi bi-check-circle"></i> Marcar como Resuelto
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                            <a href="{% url 'course_class_detail' course.pk comment.course_class.pk %}" class="btn btn-outline-primary w-100">
+                                                <i class="bi bi-eye"></i> Ver Clase
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-chat-dots display-4 text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay comentarios</h5>
+                        <p class="text-muted">Los usuarios aún no han dejado comentarios en este curso.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <script>
 function toggleVideo(elementId) {
     const element = document.getElementById(elementId);

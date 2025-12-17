@@ -9945,6 +9945,8 @@ def course_public(request, token):
     """Vista pública del curso (sin autenticación requerida)"""
     from .models import Course, CourseClassView
     from django.shortcuts import get_object_or_404
+    from django.db.models import F
+    from datetime import datetime
     
     course = get_object_or_404(
         Course, 
@@ -9953,10 +9955,20 @@ def course_public(request, token):
         is_active=True
     )
     
+    # Incrementar el contador de visitas
+    Course.objects.filter(pk=course.pk).update(view_count=F('view_count') + 1)
+    course.refresh_from_db()
+    
+    # Calcular días desde la creación
+    days_since_creation = (timezone.now() - course.created_at).days
+    
     classes = course.classes.filter(is_active=True).order_by('order', 'title')
     
-    # Agregar información de visualizaciones para cada clase
+    # Agregar información de visualizaciones y comentarios para cada clase
     classes_with_views = []
+    total_comments = 0
+    resolved_comments = 0
+    
     for course_class in classes:
         view_count = course_class.get_view_count()
         user_has_viewed = False
@@ -9965,18 +9977,38 @@ def course_public(request, token):
         if request.user.is_authenticated:
             user_has_viewed = course_class.is_viewed_by_user(request.user)
         
+        # Obtener comentarios de la clase
+        comments = course_class.comments.all()
+        total_comments += comments.count()
+        resolved_comments += comments.filter(status='resuelto').count()
+        
         classes_with_views.append({
             'class': course_class,
             'view_count': view_count,
             'user_has_viewed': user_has_viewed,
-            'status': 'vista' if user_has_viewed else 'sin ver'
+            'status': 'vista' if user_has_viewed else 'sin ver',
+            'comments': comments
         })
+    
+    # Obtener estadísticas de calificaciones
+    from .models import CourseRating
+    ratings = CourseRating.objects.filter(course=course)
+    rating_stats = {
+        'total': ratings.count(),
+        'happy': ratings.filter(rating='happy').count(),
+        'neutral': ratings.filter(rating='neutral').count(),
+        'sad': ratings.filter(rating='sad').count()
+    }
     
     context = {
         'course': course,
         'classes_with_views': classes_with_views,
         'page_title': f'Curso: {course.title}',
-        'is_public_view': True
+        'is_public_view': True,
+        'days_since_creation': days_since_creation,
+        'total_comments': total_comments,
+        'resolved_comments': resolved_comments,
+        'rating_stats': rating_stats
     }
     
     return render(request, 'tickets/course_public.html', context)
@@ -10906,7 +10938,7 @@ def course_list(request):
 @login_required
 def course_detail(request, pk):
     """Detalle de un curso con sus clases"""
-    from .models import Course
+    from .models import Course, CourseComment
     from . import utils
     
     course = get_object_or_404(Course, pk=pk, is_active=True)
@@ -10921,27 +10953,95 @@ def course_detail(request, pk):
     
     classes = course.classes.filter(is_active=True).order_by('order', 'title')
     
-    # Agregar información de visualizaciones para cada clase
+    # Agregar información de visualizaciones y comentarios para cada clase
     classes_with_views = []
+    total_pending_comments = 0
+    
     for course_class in classes:
         view_count = course_class.get_view_count()
         user_has_viewed = course_class.is_viewed_by_user(request.user)
+        comments_count = course_class.comments.count()
+        pending_comments = course_class.comments.filter(status='creado').count()
+        total_pending_comments += pending_comments
         
         classes_with_views.append({
             'class': course_class,
             'view_count': view_count,
             'user_has_viewed': user_has_viewed,
+            'comments_count': comments_count,
+            'pending_comments': pending_comments,
         })
+    
+    # Obtener todos los comentarios del curso (de todas las clases)
+    all_comments = CourseComment.objects.filter(
+        course_class__course=course
+    ).select_related('course_class', 'resolved_by').order_by('-created_at')
     
     context = {
         'course': course,
         'classes': classes,
         'classes_with_views': classes_with_views,
         'can_manage_courses': can_manage,
-        'page_title': f'Curso: {course.title}'
+        'page_title': f'Curso: {course.title}',
+        'total_pending_comments': total_pending_comments,
+        'all_comments': all_comments
     }
     
     return render(request, 'tickets/course_detail.html', context)
+
+
+@login_required
+def course_comment_resolve(request, comment_id):
+    """Cambiar el estado de un comentario de curso a resuelto"""
+    from .models import CourseComment
+    from . import utils
+    from django.http import JsonResponse
+    
+    if not utils.can_manage_courses(request.user):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': 'No tienes permisos para esta acción'
+            }, status=403)
+        messages.error(request, 'No tienes permisos para esta acción')
+        return redirect('course_list')
+    
+    comment = get_object_or_404(CourseComment, pk=comment_id)
+    course = comment.course_class.course
+    
+    if request.method == 'POST':
+        comment.status = 'resuelto'
+        comment.resolved_at = timezone.now()
+        comment.resolved_by = request.user
+        
+        # Obtener solution_link y solution_note del POST
+        solution_link = request.POST.get('solution_link', '').strip()
+        solution_note = request.POST.get('solution_note', '').strip()
+        
+        if solution_link:
+            comment.solution_link = solution_link
+        if solution_note:
+            comment.solution_note = solution_note
+            
+        comment.save()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': 'Comentario marcado como resuelto'
+            })
+        
+        messages.success(request, 'Comentario marcado como resuelto')
+        return redirect('course_detail', pk=course.pk)
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': False,
+            'error': 'Método no permitido'
+        }, status=405)
+    
+    messages.error(request, 'Método no permitido')
+    return redirect('course_detail', pk=course.pk)
 
 
 @login_required

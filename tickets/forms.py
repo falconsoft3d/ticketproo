@@ -3516,7 +3516,7 @@ class CourseForm(forms.ModelForm):
     
     class Meta:
         model = Course
-        fields = ['title', 'description', 'company', 'is_active']
+        fields = ['title', 'description', 'company', 'access_url', 'access_username', 'access_password', 'is_active']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -3531,6 +3531,18 @@ class CourseForm(forms.ModelForm):
             'company': forms.Select(attrs={
                 'class': 'form-control'
             }),
+            'access_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://ejemplo.com'
+            }),
+            'access_username': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Usuario'
+            }),
+            'access_password': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Contraseña'
+            }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
@@ -3539,6 +3551,9 @@ class CourseForm(forms.ModelForm):
             'title': 'Título del Curso',
             'description': 'Descripción',
             'company': 'Empresa (Opcional)',
+            'access_url': 'URL de acceso (Opcional)',
+            'access_username': 'Usuario (Opcional)',
+            'access_password': 'Contraseña (Opcional)',
             'is_active': 'Activo',
         }
     
