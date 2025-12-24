@@ -649,6 +649,78 @@ else:
 
 ---
 
+## 5. Listar Categorías de Tickets
+
+Obtiene la lista de categorías de tickets activas disponibles en el sistema.
+
+**Endpoint:** `GET /api/categories/`
+
+**Autenticación:** Requerida (Bearer Token)
+
+**Permisos:** Usuario autenticado
+
+**Query Parameters:** Ninguno
+
+**Respuesta Exitosa (200):**
+```json
+[
+  {
+    "id": 1,
+    "name": "Soporte Técnico",
+    "description": "Problemas técnicos y de configuración",
+    "is_active": true
+  },
+  {
+    "id": 2,
+    "name": "Consulta General",
+    "description": "Preguntas y consultas generales",
+    "is_active": true
+  },
+  {
+    "id": 3,
+    "name": "Desarrollo",
+    "description": "Nuevas funcionalidades y mejoras",
+    "is_active": true
+  }
+]
+```
+
+**Nota:** Solo devuelve categorías activas (`is_active=True`).
+
+**Ejemplo con cURL:**
+```bash
+curl -X GET http://localhost:8000/api/categories/ \
+  -H "Authorization: Bearer tu-token-aqui" \
+  -H "Content-Type: application/json"
+```
+
+**Ejemplo con Python:**
+```python
+import requests
+
+url = "http://localhost:8000/api/categories/"
+headers = {
+    "Authorization": "Bearer tu-token-aqui",
+    "Content-Type": "application/json"
+}
+
+response = requests.get(url, headers=headers)
+
+if response.status_code == 200:
+    categories = response.json()
+    print("Categorías disponibles:")
+    for cat in categories:
+        print(f"- {cat['name']}: {cat['description']}")
+else:
+    print(f"Error {response.status_code}: {response.text}")
+```
+
+**Respuestas de Error:**
+- `401 Unauthorized`: Token no válido o no proporcionado
+- `403 Forbidden`: Sin permisos para acceder a las categorías
+
+---
+
 ## Manejo de Errores
 
 Siempre verifica el código de estado de la respuesta:

@@ -1094,6 +1094,26 @@
                                     </button>
                                 </div>
                             </div>
+
+                            <!-- Listar Categorías -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-secondary text-white">
+                                    <h5 class="card-title mb-0">
+                                        <i class="bi bi-tags me-2"></i>
+                                        5. Listar Categorías
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="categoriesToken" class="form-label">Token de API</label>
+                                        <input type="text" class="form-control" id="categoriesToken" placeholder="Pega aquí tu token">
+                                    </div>
+                                    <button type="button" class="btn btn-secondary" onclick="listCategories()">
+                                        <i class="bi bi-list-task me-1"></i>
+                                        Listar Categorías
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Panel de respuestas -->
@@ -1534,6 +1554,44 @@
                     displayResponse('✅ Ticket Obtenido', response.status, data);
                 } else {
                     displayResponse('❌ Error al Obtener Ticket', response.status, data, true);
+                }
+            } catch (error) {
+                displayResponse('❌ Error de Conexión', 'Error', { error: error.message }, true);
+            }
+        };
+
+        // 5. Listar Categorías
+        window.listCategories = async function() {
+            const token = document.getElementById('categoriesToken').value;
+            
+            if (!token) {
+                alert('Por favor, ingresa un token de API');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/categories/`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                // Intentar parsear como JSON
+                let data;
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    data = await response.json();
+                } else {
+                    const text = await response.text();
+                    data = { error: 'Respuesta no es JSON', html: text.substring(0, 500) };
+                }
+                
+                if (response.ok) {
+                    displayResponse('✅ Categorías Obtenidas', response.status, data);
+                } else {
+                    displayResponse('❌ Error al Obtener Categorías', response.status, data, true);
                 }
             } catch (error) {
                 displayResponse('❌ Error de Conexión', 'Error', { error: error.message }, true);
