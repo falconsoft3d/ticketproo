@@ -52798,3 +52798,128 @@ def public_workorder_create(request, token):
         'token': token,
     }
     return render(request, 'tickets/public_workorder_create.html', context)
+
+
+# ========================================
+# POLÍTICAS DE PRIVACIDAD
+# ========================================
+
+@login_required
+@user_passes_test(is_agent)
+def privacy_policy_list(request):
+    """Lista todas las políticas de privacidad (solo agentes)"""
+    from .models import PrivacyPolicy
+    from .submenu_utils import get_qa_submenu
+    
+    policies = PrivacyPolicy.objects.all().order_by('-created_at')
+    
+    # Filtros de búsqueda
+    search = request.GET.get('search', '')
+    status = request.GET.get('status', '')
+    
+    if search:
+        policies = policies.filter(
+            models.Q(title__icontains=search) |
+            models.Q(content__icontains=search)
+        )
+    
+    if status == 'active':
+        policies = policies.filter(is_active=True)
+    elif status == 'inactive':
+        policies = policies.filter(is_active=False)
+    
+    context = {
+        'policies': policies,
+        'search': search,
+        'status': status,
+        'submenu': get_qa_submenu(request, 'privacy_policies'),
+    }
+    return render(request, 'tickets/privacy_policy_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def privacy_policy_create(request):
+    """Crear nueva política de privacidad (solo agentes)"""
+    from .forms import PrivacyPolicyForm
+    from .submenu_utils import get_qa_submenu
+    
+    if request.method == 'POST':
+        form = PrivacyPolicyForm(request.POST)
+        if form.is_valid():
+            policy = form.save(commit=False)
+            policy.created_by = request.user
+            policy.save()
+            messages.success(request, f'Política "{policy.title}" creada exitosamente.')
+            return redirect('privacy_policy_list')
+    else:
+        form = PrivacyPolicyForm()
+    
+    context = {
+        'form': form,
+        'is_edit': False,
+        'submenu': get_qa_submenu(request, 'privacy_policies'),
+    }
+    return render(request, 'tickets/privacy_policy_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def privacy_policy_edit(request, pk):
+    """Editar política de privacidad existente (solo agentes)"""
+    from .models import PrivacyPolicy
+    from .forms import PrivacyPolicyForm
+    from .submenu_utils import get_qa_submenu
+    
+    policy = get_object_or_404(PrivacyPolicy, pk=pk)
+    
+    if request.method == 'POST':
+        form = PrivacyPolicyForm(request.POST, instance=policy)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Política "{policy.title}" actualizada exitosamente.')
+            return redirect('privacy_policy_list')
+    else:
+        form = PrivacyPolicyForm(instance=policy)
+    
+    context = {
+        'form': form,
+        'policy': policy,
+        'is_edit': True,
+        'submenu': get_qa_submenu(request, 'privacy_policies'),
+    }
+    return render(request, 'tickets/privacy_policy_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def privacy_policy_delete(request, pk):
+    """Eliminar política de privacidad (solo agentes)"""
+    from .models import PrivacyPolicy
+    from .submenu_utils import get_qa_submenu
+    
+    policy = get_object_or_404(PrivacyPolicy, pk=pk)
+    
+    if request.method == 'POST':
+        title = policy.title
+        policy.delete()
+        messages.success(request, f'Política "{title}" eliminada exitosamente.')
+        return redirect('privacy_policy_list')
+    
+    context = {
+        'policy': policy,
+        'submenu': get_qa_submenu(request, 'privacy_policies'),
+    }
+    return render(request, 'tickets/privacy_policy_delete.html', context)
+
+
+def public_privacy_policy(request, slug):
+    """Vista pública de política de privacidad (sin autenticación requerida)"""
+    from .models import PrivacyPolicy
+    
+    policy = get_object_or_404(PrivacyPolicy, slug=slug, is_active=True)
+    
+    context = {
+        'policy': policy,
+    }
+    return render(request, 'tickets/public_privacy_policy.html', context)

@@ -30,7 +30,7 @@ from .models import (
     FunctionalRequirementComment, AccessGroup, AccessLink, TaskPlan, TaskPlanDay, TaskPlanItem,
     Checklist, ChecklistItem, Transaction, KnowledgeBase, Translation, SQLQuery,
     OdooConnection, OdooRPCTable, OdooRPCField, OdooRPCData, OdooRPCImportFile,
-    Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage, ChatbotClick, CourseApproval
+    Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage, ChatbotClick, CourseApproval, PrivacyPolicy
 )
 
 # Configuración del sitio de administración
@@ -6917,3 +6917,31 @@ class CourseApprovalAdmin(admin.ModelAdmin):
     
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(PrivacyPolicy)
+class PrivacyPolicyAdmin(admin.ModelAdmin):
+    """Admin para gestión de políticas de privacidad"""
+    list_display = ('title', 'slug', 'is_active', 'created_by', 'created_at', 'updated_at')
+    list_filter = ('is_active', 'created_at', 'updated_at')
+    search_fields = ('title', 'content', 'slug')
+    readonly_fields = ('slug', 'created_by', 'created_at', 'updated_at')
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información General', {
+            'fields': ('title', 'slug', 'is_active')
+        }),
+        ('Contenido', {
+            'fields': ('content',)
+        }),
+        ('Metadatos', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es nuevo
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)

@@ -893,6 +893,14 @@
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Políticas</li>
+                            <li>
+                                <a class="dropdown-item {% if 'privacy_policy' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'privacy_policy_list' %}">
+                                    <i class="bi bi-shield-check"></i> Políticas de Privacidad
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
                             <li class="dropdown-header">Accesos</li>
                             <li>
                                 <a class="dropdown-item {% if 'access_group' in request.resolver_match.url_name %}active{% endif %}" 

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Eliminar Política de Privacidad{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="page-header bg-light p-4 mb-4 rounded">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1>
+                        <i class="bi bi-trash text-danger"></i> 
+                        Eliminar Política de Privacidad
+                    </h1>
+                    <p class="mb-0">Confirma la eliminación de la política</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{% url 'privacy_policy_list' %}" class="btn btn-light">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmación -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> 
+                        Confirmación de Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <strong>Atención:</strong> Esta acción no se puede deshacer.
+                    </div>
+
+                    <h4>{{ policy.title }}</h4>
+                    
+                    <div class="mb-3">
+                        <strong>Estado:</strong> 
+                        {% if policy.is_active %}
+                            <span class="badge bg-success">Activa</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactiva</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Contenido:</strong>
+                        <p class="text-muted">{{ policy.content|truncatechars:200 }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Creada:</strong> {{ policy.created_at|date:"d/m/Y H:i" }}
+                        {% if policy.created_by %}
+                            por {{ policy.created_by.get_full_name }}
+                        {% endif %}
+                    </div>
+
+                    {% if policy.is_active %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-circle"></i>
+                        Esta política está <strong>activa</strong> y visible públicamente. 
+                        Al eliminarla, la URL pública dejará de funcionar.
+                    </div>
+                    {% endif %}
+
+                    <!-- Formulario de confirmación -->
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'privacy_policy_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sí, Eliminar Política
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

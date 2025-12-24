@@ -22491,6 +22491,62 @@ class ChatbotClick(models.Model):
         return f"Click en {self.chatbot.title} - {self.clicked_at.strftime('%Y-%m-%d %H:%M')}"
 
 
+class PrivacyPolicy(models.Model):
+    """Modelo para políticas de privacidad"""
+    title = models.CharField(
+        max_length=200,
+        unique=True,
+        verbose_name='Título',
+        help_text='Título de la política de privacidad'
+    )
+    slug = models.SlugField(
+        max_length=200,
+        unique=True,
+        verbose_name='Slug',
+        help_text='URL amigable (se genera automáticamente del título)'
+    )
+    content = models.TextField(
+        verbose_name='Contenido',
+        help_text='Contenido completo de la política de privacidad'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activa',
+        help_text='Indica si la política está activa y visible públicamente'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_privacy_policies',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Política de Privacidad'
+        verbose_name_plural = 'Políticas de Privacidad'
+    
+    def __str__(self):
+        return self.title
+    
+    def save(self, *args, **kwargs):
+        # Auto-generar slug si no existe
+        if not self.slug:
+            from django.utils.text import slugify
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+
 
 
 

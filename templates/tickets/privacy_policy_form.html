@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if is_edit %}Editar{% else %}Nueva{% endif %} Política de Privacidad{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="page-header bg-light p-4 mb-4 rounded">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1>
+                        <i class="bi bi-shield-check text-primary"></i> 
+                        {% if is_edit %}Editar{% else %}Nueva{% endif %} Política de Privacidad
+                    </h1>
+                    <p class="mb-0">
+                        {% if is_edit %}
+                            Modifica la política "{{ policy.title }}"
+                        {% else %}
+                            Crea una nueva política de privacidad
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{% url 'privacy_policy_list' %}" class="btn btn-light">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-text"></i> Información de la Política
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Título -->
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                {{ form.title.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.title.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                {{ form.title.help_text }}
+                            </small>
+                        </div>
+
+                        <!-- Contenido -->
+                        <div class="mb-3">
+                            <label for="{{ form.content.id_for_label }}" class="form-label">
+                                {{ form.content.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.content }}
+                            {% if form.content.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.content.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                {{ form.content.help_text }}
+                            </small>
+                        </div>
+
+                        <!-- Estado activo -->
+                        <div class="mb-3 form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                {{ form.is_active.label }}
+                            </label>
+                            {% if form.is_active.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.is_active.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted d-block">
+                                {{ form.is_active.help_text }}
+                            </small>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'privacy_policy_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> 
+                                {% if is_edit %}Guardar Cambios{% else %}Crear Política{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if is_edit and policy.is_active %}
+            <!-- Vista previa de URL pública -->
+            <div class="card mt-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-link-45deg"></i> URL Pública
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Esta política está visible públicamente en:</p>
+                    <div class="input-group">
+                        <input type="text" class="form-control" 
+                               value="{{ request.scheme }}://{{ request.get_host }}{% url 'public_privacy_policy' policy.slug %}" 
+                               id="publicUrl" readonly>
+                        <button class="btn btn-outline-success" type="button" 
+                                onclick="copyUrl()">
+                            <i class="bi bi-clipboard"></i> Copiar
+                        </button>
+                        <a href="{% url 'public_privacy_policy' policy.slug %}" 
+                           class="btn btn-outline-primary" target="_blank">
+                            <i class="bi bi-box-arrow-up-right"></i> Abrir
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function copyUrl() {
+    const urlInput = document.getElementById('publicUrl');
+    urlInput.select();
+    document.execCommand('copy');
+    
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check"></i> Copiado';
+    btn.classList.remove('btn-outline-success');
+    btn.classList.add('btn-success');
+    
+    setTimeout(function() {
+        btn.innerHTML = originalHTML;
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-outline-success');
+    }, 2000);
+}
+</script>
+{% endblock %}

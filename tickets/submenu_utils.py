@@ -366,6 +366,13 @@ def get_qa_submenu(request, active_item=None):
             'count': None,
             'active': active_item == 'compliance'
         },
+        {
+            'name': 'Políticas de Privacidad',
+            'url': reverse('privacy_policy_list'),
+            'icon': 'bi bi-shield-check',
+            'count': None,
+            'active': active_item == 'privacy_policies'
+        },
     ]
     
     return submenu

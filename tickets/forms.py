@@ -54,7 +54,7 @@ from .models import (
     ClientRequest, ClientRequestResponse, ClientRequestTemplate, ClientRequestTemplateItem, Event, Trip, TripStop,
     MultiMeasurement, MultiMeasurementRecord, PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
     DynamicTable, DynamicTableField, WorkOrderRating, WorkOrderComment, FunctionalRequirementDocument, FunctionalRequirement,
-    TaskPlan, TaskPlanDay, TaskPlanItem, Checklist, ChecklistItem
+    TaskPlan, TaskPlanDay, TaskPlanItem, Checklist, ChecklistItem, PrivacyPolicy
 )
 
 class CategoryForm(forms.ModelForm):
@@ -9962,6 +9962,40 @@ class PublicWorkOrderForm(forms.Form):
             'type': 'date'
         })
     )
+
+
+class PrivacyPolicyForm(forms.ModelForm):
+    """Formulario para crear y editar políticas de privacidad"""
+    
+    class Meta:
+        model = PrivacyPolicy
+        fields = ['title', 'content', 'is_active']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la política de privacidad',
+                'required': True
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 15,
+                'placeholder': 'Contenido completo de la política de privacidad...',
+                'required': True
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'content': 'Contenido',
+            'is_active': 'Activa (visible públicamente)',
+        }
+        help_texts = {
+            'title': 'Título descriptivo de la política',
+            'content': 'Contenido completo en formato HTML o texto plano',
+            'is_active': 'Marcar para que sea visible públicamente',
+        }
 
 
 

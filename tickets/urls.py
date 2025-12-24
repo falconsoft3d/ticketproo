@@ -1292,6 +1292,15 @@ urlpatterns += [
     # API para contadores de calificaciones
     path('api/qa/rating-counts/', views.qa_rating_counts, name='qa_rating_counts'),
     
+    # URLs de Políticas de Privacidad (QA)
+    path('qa/privacy-policies/', views.privacy_policy_list, name='privacy_policy_list'),
+    path('qa/privacy-policies/create/', views.privacy_policy_create, name='privacy_policy_create'),
+    path('qa/privacy-policies/<int:pk>/edit/', views.privacy_policy_edit, name='privacy_policy_edit'),
+    path('qa/privacy-policies/<int:pk>/delete/', views.privacy_policy_delete, name='privacy_policy_delete'),
+    
+    # URL pública para políticas de privacidad (sin login)
+    path('privacy/<slug:slug>/', views.public_privacy_policy, name='public_privacy_policy'),
+    
     # URLs de Cumplimiento Mensual
     path('qa/cumplimiento/', views.monthly_cumplimiento_list, name='monthly_cumplimiento_list'),
     path('qa/cumplimiento/create/', views.monthly_cumplimiento_create, name='monthly_cumplimiento_create'),
