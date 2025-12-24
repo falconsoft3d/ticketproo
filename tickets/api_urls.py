@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .api_views import (
     TicketViewSet, CategoryViewSet, CompanyViewSet, ProjectViewSet,
-    api_status, generate_api_token, toggle_api_access, whatsapp_receive_message,
+    api_login, api_status, generate_api_token, toggle_api_access, whatsapp_receive_message,
     landing_page_meeting_click, landing_page_contact_click,
     active_users_count, active_users_list, open_tickets_count, direct_ai_chat,
     system_info_api, short_url_stats_api, upcoming_events_list, web_counter_track,
@@ -23,6 +23,9 @@ router.register(r'projects', ProjectViewSet, basename='api-projects')
 api_urlpatterns = [
     # URLs del router
     path('', include(router.urls)),
+    
+    # URLs de autenticación
+    path('auth/login/', api_login, name='api-login'),
     
     # URLs de utilidad
     path('status/', api_status, name='api-status'),

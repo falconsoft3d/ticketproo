@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load markdown_tags %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -31,6 +32,101 @@
         color: #007bff;
         margin-right: 0.5rem;
     }
+    
+    /* Estilos para la documentación API */
+    #api-documentation-content {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+    }
+    
+    #api-documentation-content code {
+        background-color: #f5f5f5;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.9em;
+        color: #d63384;
+    }
+    
+    #api-documentation-content pre {
+        background-color: #282c34;
+        color: #abb2bf;
+        padding: 1rem;
+        border-radius: 5px;
+        overflow-x: auto;
+        margin: 1rem 0;
+    }
+    
+    #api-documentation-content pre code {
+        background-color: transparent;
+        color: #abb2bf;
+        padding: 0;
+    }
+    
+    #api-documentation-content h1 {
+        color: #0d6efd;
+        border-bottom: 2px solid #0d6efd;
+        padding-bottom: 0.5rem;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    #api-documentation-content h2 {
+        color: #198754;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 0.5rem;
+    }
+    
+    #api-documentation-content h3 {
+        color: #0dcaf0;
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    #api-documentation-content ul, 
+    #api-documentation-content ol {
+        margin-left: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    #api-documentation-content li {
+        margin-bottom: 0.5rem;
+    }
+    
+    #api-documentation-content table {
+        width: 100%;
+        margin-bottom: 1rem;
+        border-collapse: collapse;
+    }
+    
+    #api-documentation-content table th,
+    #api-documentation-content table td {
+        border: 1px solid #dee2e6;
+        padding: 0.75rem;
+        text-align: left;
+    }
+    
+    #api-documentation-content table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    
+    #api-documentation-content blockquote {
+        border-left: 4px solid #0d6efd;
+        padding-left: 1rem;
+        margin-left: 0;
+        color: #6c757d;
+        font-style: italic;
+    }
+    
+    .markdown-content hr {
+        border: 0;
+        border-top: 2px solid #dee2e6;
+        margin: 2rem 0;
+    }
 </style>
 {% endblock %}
 
@@ -46,7 +142,7 @@
                         {{ page_title }}
                     </h1>
                     <p class="text-muted mb-0">
-                        Configura los parámetros generales del sistema
+                        Configura los parámetros generales del sistema y consulta la documentación de la API
                     </p>
                 </div>
                 <div>
@@ -57,8 +153,34 @@
                 </div>
             </div>
 
-            <!-- Formulario de configuración -->
-            <div class="row">
+            <!-- Tabs de navegación -->
+            <ul class="nav nav-tabs mb-4" id="configTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="config-tab" data-bs-toggle="tab" data-bs-target="#config-panel" type="button" role="tab">
+                        <i class="bi bi-gear me-1"></i>
+                        Configuración
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="api-doc-tab" data-bs-toggle="tab" data-bs-target="#api-doc-panel" type="button" role="tab">
+                        <i class="bi bi-code-slash me-1"></i>
+                        Documentación API REST
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="api-test-tab" data-bs-toggle="tab" data-bs-target="#api-test-panel" type="button" role="tab">
+                        <i class="bi bi-play-circle me-1"></i>
+                        Probar API
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Contenido de los tabs -->
+            <div class="tab-content" id="configTabsContent">
+                <!-- Tab de Configuración -->
+                <div class="tab-pane fade show active" id="config-panel" role="tabpanel">
+                    <!-- Formulario de configuración -->
+                    <div class="row">
                 <div class="col-lg-8 col-xl-6">
                     <form method="post" class="needs-validation" novalidate>
                         {% csrf_token %}
@@ -783,6 +905,219 @@
                     </div>
                 </div>
             </div>
+                </div> <!-- Fin tab de configuración -->
+                
+                <!-- Tab de Documentación API -->
+                <div class="tab-pane fade" id="api-doc-panel" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-code-slash me-2"></i>
+                                Documentación de la API REST
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>URL Base:</strong> <code>{{ request.scheme }}://{{ request.get_host }}/api/</code>
+                            </div>
+                            
+                            {% if api_documentation %}
+                                <div id="api-documentation-content" class="markdown-content">
+                                    <!-- Contenido de la documentación -->
+                                    <div style="max-width: 100%; overflow-x: auto;">
+                                        {{ api_documentation|markdown_to_html }}
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning" role="alert">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    La documentación de la API no está disponible en este momento.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div> <!-- Fin tab de documentación API -->
+                
+                <!-- Tab de Probar API -->
+                <div class="tab-pane fade" id="api-test-panel" role="tabpanel">
+                    <div class="row">
+                        <!-- Panel de prueba -->
+                        <div class="col-lg-6">
+                            <!-- Login -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="card-title mb-0">
+                                        <i class="bi bi-key me-2"></i>
+                                        1. Autenticación - Obtener Token
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="loginForm">
+                                        <div class="mb-3">
+                                            <label for="loginUsername" class="form-label">Usuario</label>
+                                            <input type="text" class="form-control" id="loginUsername" placeholder="tu_usuario" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="loginPassword" class="form-label">Contraseña</label>
+                                            <input type="password" class="form-control" id="loginPassword" placeholder="tu_contraseña" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-box-arrow-in-right me-1"></i>
+                                            Obtener Token
+                                        </button>
+                                    </form>
+                                    <div id="tokenResult" class="mt-3" style="display: none;">
+                                        <div class="alert alert-success">
+                                            <strong>Token obtenido:</strong>
+                                            <div class="input-group mt-2">
+                                                <input type="text" class="form-control" id="apiToken" readonly>
+                                                <button class="btn btn-outline-secondary" type="button" onclick="copyToken()">
+                                                    <i class="bi bi-clipboard"></i> Copiar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Listar Tickets -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="card-title mb-0">
+                                        <i class="bi bi-list-ul me-2"></i>
+                                        2. Listar Tickets
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="listToken" class="form-label">Token de API</label>
+                                        <input type="text" class="form-control" id="listToken" placeholder="Pega aquí tu token">
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="filterStatus" class="form-label">Filtrar por Estado</label>
+                                            <select class="form-select" id="filterStatus">
+                                                <option value="">Todos</option>
+                                                <option value="open">Abierto</option>
+                                                <option value="in_progress">En Progreso</option>
+                                                <option value="resolved">Resuelto</option>
+                                                <option value="closed">Cerrado</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="filterPriority" class="form-label">Filtrar por Prioridad</label>
+                                            <select class="form-select" id="filterPriority">
+                                                <option value="">Todas</option>
+                                                <option value="low">Baja</option>
+                                                <option value="medium">Media</option>
+                                                <option value="high">Alta</option>
+                                                <option value="urgent">Urgente</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-success" onclick="listTickets()">
+                                        <i class="bi bi-search me-1"></i>
+                                        Listar Tickets
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Crear Ticket -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="card-title mb-0">
+                                        <i class="bi bi-plus-circle me-2"></i>
+                                        3. Crear Ticket
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="createTicketForm">
+                                        <div class="mb-3">
+                                            <label for="createToken" class="form-label">Token de API</label>
+                                            <input type="text" class="form-control" id="createToken" placeholder="Pega aquí tu token" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="ticketTitle" class="form-label">Título</label>
+                                            <input type="text" class="form-control" id="ticketTitle" placeholder="Título del ticket" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="ticketDescription" class="form-label">Descripción</label>
+                                            <textarea class="form-control" id="ticketDescription" rows="3" placeholder="Descripción detallada" required></textarea>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label for="ticketPriority" class="form-label">Prioridad</label>
+                                                <select class="form-select" id="ticketPriority">
+                                                    <option value="low">Baja</option>
+                                                    <option value="medium" selected>Media</option>
+                                                    <option value="high">Alta</option>
+                                                    <option value="urgent">Urgente</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="ticketType" class="form-label">Tipo</label>
+                                                <select class="form-select" id="ticketType">
+                                                    <option value="desarrollo" selected>Desarrollo</option>
+                                                    <option value="error">Error</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-info">
+                                            <i class="bi bi-plus-lg me-1"></i>
+                                            Crear Ticket
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Obtener Ticket Específico -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5 class="card-title mb-0">
+                                        <i class="bi bi-file-text me-2"></i>
+                                        4. Obtener Ticket Específico
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="getToken" class="form-label">Token de API</label>
+                                        <input type="text" class="form-control" id="getToken" placeholder="Pega aquí tu token">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="ticketId" class="form-label">ID del Ticket</label>
+                                        <input type="number" class="form-control" id="ticketId" placeholder="Ej: 1">
+                                    </div>
+                                    <button type="button" class="btn btn-warning" onclick="getTicket()">
+                                        <i class="bi bi-search me-1"></i>
+                                        Obtener Ticket
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel de respuestas -->
+                        <div class="col-lg-6">
+                            <div class="card sticky-top" style="top: 20px;">
+                                <div class="card-header bg-dark text-white">
+                                    <h5 class="card-title mb-0">
+                                        <i class="bi bi-terminal me-2"></i>
+                                        Respuesta de la API
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="apiResponse" style="min-height: 400px; max-height: 80vh; overflow-y: auto;">
+                                        <div class="text-muted text-center py-5">
+                                            <i class="bi bi-code-square" style="font-size: 3rem;"></i>
+                                            <p class="mt-3">Ejecuta una operación para ver la respuesta aquí</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- Fin tab de probar API -->
+            </div> <!-- Fin tab-content -->
         </div>
     </div>
 </div>
@@ -973,6 +1308,237 @@
                 form.submit();
             });
         }
+        
+        // ========================================
+        // FUNCIONES PARA PROBAR LA API
+        // ========================================
+        
+        const API_BASE_URL = window.location.origin + '/api';
+        
+        // Obtener el token CSRF
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+        
+        // Función para mostrar respuesta
+        function displayResponse(title, status, data, isError = false) {
+            const responseDiv = document.getElementById('apiResponse');
+            const statusClass = isError ? 'danger' : 'success';
+            const statusIcon = isError ? 'x-circle' : 'check-circle';
+            
+            const html = `
+                <div class="alert alert-${statusClass} mb-3">
+                    <h6><i class="bi bi-${statusIcon} me-2"></i>${title}</h6>
+                    <small>Status: ${status}</small>
+                </div>
+                <div class="bg-dark text-light p-3 rounded" style="font-family: monospace; font-size: 0.9em; overflow-x: auto;">
+                    <pre class="mb-0" style="color: #abb2bf;">${JSON.stringify(data, null, 2)}</pre>
+                </div>
+            `;
+            
+            responseDiv.innerHTML = html;
+        }
+        
+        // Función para copiar token
+        window.copyToken = function() {
+            const tokenInput = document.getElementById('apiToken');
+            tokenInput.select();
+            document.execCommand('copy');
+            
+            // También copiar a los otros campos de token
+            const token = tokenInput.value;
+            document.getElementById('listToken').value = token;
+            document.getElementById('createToken').value = token;
+            document.getElementById('getToken').value = token;
+            
+            alert('Token copiado al portapapeles y pegado en todos los campos!');
+        };
+        
+        // 1. Login
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayResponse('✅ Login Exitoso', response.status, data);
+                    document.getElementById('apiToken').value = data.token;
+                    document.getElementById('tokenResult').style.display = 'block';
+                    
+                    // Auto-llenar los campos de token
+                    document.getElementById('listToken').value = data.token;
+                    document.getElementById('createToken').value = data.token;
+                    document.getElementById('getToken').value = data.token;
+                } else {
+                    displayResponse('❌ Error de Login', response.status, data, true);
+                }
+            } catch (error) {
+                displayResponse('❌ Error de Conexión', 'Error', { error: error.message }, true);
+            }
+        });
+        
+        // 2. Listar Tickets
+        window.listTickets = async function() {
+            const token = document.getElementById('listToken').value;
+            
+            if (!token) {
+                alert('Por favor, ingresa un token de API');
+                return;
+            }
+            
+            const status = document.getElementById('filterStatus').value;
+            const priority = document.getElementById('filterPriority').value;
+            
+            let url = `${API_BASE_URL}/tickets/`;
+            const params = new URLSearchParams();
+            if (status) params.append('status', status);
+            if (priority) params.append('priority', priority);
+            if (params.toString()) url += '?' + params.toString();
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                // Intentar parsear como JSON
+                let data;
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    data = await response.json();
+                } else {
+                    // Si no es JSON, obtener el texto para mostrar el error real
+                    const text = await response.text();
+                    data = { error: 'Respuesta no es JSON', html: text.substring(0, 500) };
+                }
+                
+                if (response.ok) {
+                    displayResponse('✅ Tickets Obtenidos', response.status, data);
+                } else {
+                    displayResponse('❌ Error al Listar Tickets', response.status, data, true);
+                }
+            } catch (error) {
+                displayResponse('❌ Error de Conexión', 'Error', { error: error.message }, true);
+            }
+        };
+        
+        // 3. Crear Ticket
+        document.getElementById('createTicketForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const token = document.getElementById('createToken').value;
+            const title = document.getElementById('ticketTitle').value;
+            const description = document.getElementById('ticketDescription').value;
+            const priority = document.getElementById('ticketPriority').value;
+            const ticket_type = document.getElementById('ticketType').value;
+            
+            if (!token) {
+                alert('Por favor, ingresa un token de API');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/tickets/`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({
+                        title,
+                        description,
+                        priority,
+                        ticket_type
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayResponse('✅ Ticket Creado', response.status, data);
+                    // Limpiar formulario
+                    document.getElementById('ticketTitle').value = '';
+                    document.getElementById('ticketDescription').value = '';
+                } else {
+                    displayResponse('❌ Error al Crear Ticket', response.status, data, true);
+                }
+            } catch (error) {
+                displayResponse('❌ Error de Conexión', 'Error', { error: error.message }, true);
+            }
+        });
+        
+        // 4. Obtener Ticket Específico
+        window.getTicket = async function() {
+            const token = document.getElementById('getToken').value;
+            const ticketId = document.getElementById('ticketId').value;
+            
+            if (!token) {
+                alert('Por favor, ingresa un token de API');
+                return;
+            }
+            
+            if (!ticketId) {
+                alert('Por favor, ingresa un ID de ticket');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}/`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                // Intentar parsear como JSON
+                let data;
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    data = await response.json();
+                } else {
+                    const text = await response.text();
+                    data = { error: 'Respuesta no es JSON', html: text.substring(0, 500) };
+                }
+                
+                if (response.ok) {
+                    displayResponse('✅ Ticket Obtenido', response.status, data);
+                } else {
+                    displayResponse('❌ Error al Obtener Ticket', response.status, data, true);
+                }
+            } catch (error) {
+                displayResponse('❌ Error de Conexión', 'Error', { error: error.message }, true);
+            }
+        };
     });
 </script>
 {% endblock %}

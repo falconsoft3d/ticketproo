@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes, authenticati
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 from django.utils import timezone
@@ -19,6 +20,7 @@ from .serializers import (
     CategorySerializer, CompanySerializer, ProjectSerializer
 )
 from .utils import is_agent
+from .authentication import TokenAuthentication
 
 
 class TicketPermission(permissions.BasePermission):
@@ -64,6 +66,7 @@ class TicketViewSet(viewsets.ModelViewSet):
     """
     ViewSet para operaciones CRUD de tickets via API
     """
+    authentication_classes = [TokenAuthentication]
     permission_classes = [TicketPermission]
     
     def get_serializer_class(self):
@@ -83,23 +86,21 @@ class TicketViewSet(viewsets.ModelViewSet):
             # Los agentes ven todos los tickets
             queryset = Ticket.objects.all()
         else:
-            # Los usuarios regulares ven sus propios tickets y los de su empresa
+            # Los usuarios regulares SOLO ven tickets de su empresa
             user_company = None
             try:
                 user_company = user.profile.company
             except:
                 pass
             
-            query_conditions = Q(created_by=user)  # Sus propios tickets
-            
-            # Agregar tickets de la empresa del usuario
             if user_company:
-                query_conditions |= Q(company=user_company)
+                # Filtrar SOLO por tickets de su compañía
+                queryset = Ticket.objects.filter(company=user_company)
+            else:
+                # Si no tiene compañía, solo ve sus propios tickets
+                queryset = Ticket.objects.filter(created_by=user)
             
-            # Agregar tickets asignados al usuario
-            query_conditions |= Q(assigned_to=user)
-            
-            queryset = Ticket.objects.filter(query_conditions).distinct()
+            queryset = queryset.distinct()
         
         # Aplicar filtros de query parameters
         status_filter = self.request.query_params.get('status')
@@ -129,8 +130,22 @@ class TicketViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """
-        Asignar el usuario actual como creador del ticket
+        Asignar el usuario actual como creador del ticket y su compañía si la tiene
         """
+        # Obtener los datos validados
+        validated_data = serializer.validated_data
+        
+        # Si el usuario no especificó una compañía, asignar la del perfil del usuario
+        if 'company' not in validated_data or validated_data.get('company') is None:
+            try:
+                user_company = self.request.user.profile.company
+                if user_company:
+                    serializer.save(created_by=self.request.user, company=user_company)
+                    return
+            except:
+                pass
+        
+        # Si no tiene compañía o ya especificó una, solo asignar el usuario
         serializer.save(created_by=self.request.user)
 
 
@@ -138,6 +153,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet de solo lectura para categorías
     """
+    authentication_classes = [TokenAuthentication]
     queryset = Category.objects.filter(is_active=True)
     serializer_class = CategorySerializer
     permission_classes = [TicketPermission]
@@ -147,6 +163,7 @@ class CompanyViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet de solo lectura para empresas
     """
+    authentication_classes = [TokenAuthentication]
     queryset = Company.objects.filter(is_active=True)
     serializer_class = CompanySerializer
     permission_classes = [TicketPermission]
@@ -156,6 +173,7 @@ class ProjectViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet de solo lectura para proyectos
     """
+    authentication_classes = [TokenAuthentication]
     serializer_class = ProjectSerializer
     permission_classes = [TicketPermission]
     
@@ -169,6 +187,84 @@ class ProjectViewSet(viewsets.ReadOnlyModelViewSet):
                 Q(assigned_users=user) | Q(created_by=user),
                 is_active=True
             ).distinct()
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def api_login(request):
+    """
+    Endpoint para autenticación de usuarios via API
+    
+    Recibe username/email y password, retorna token de API si las credenciales son válidas
+    
+    POST /api/auth/login/
+    {
+        "username": "usuario",
+        "password": "contraseña"
+    }
+    
+    Respuesta exitosa:
+    {
+        "token": "uuid-token-here",
+        "user": {
+            "id": 1,
+            "username": "usuario",
+            "email": "usuario@ejemplo.com",
+            "first_name": "Nombre",
+            "last_name": "Apellido"
+        },
+        "message": "Login exitoso"
+    }
+    """
+    username = request.data.get('username')
+    password = request.data.get('password')
+    
+    if not username or not password:
+        return Response({
+            'error': 'Username y password son requeridos'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Autenticar usuario
+    user = authenticate(username=username, password=password)
+    
+    if user is None:
+        return Response({
+            'error': 'Credenciales inválidas'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+    
+    if not user.is_active:
+        return Response({
+            'error': 'Usuario inactivo'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+    
+    # Obtener o crear perfil
+    try:
+        profile = user.profile
+    except:
+        from .models import UserProfile
+        profile = UserProfile.objects.create(user=user)
+    
+    # Generar token si no existe
+    if not profile.api_token:
+        profile.api_token = profile.regenerate_api_token()
+    
+    # Habilitar acceso API si no está habilitado
+    if not profile.enable_api_access:
+        profile.enable_api_access = True
+        profile.save()
+    
+    return Response({
+        'token': str(profile.api_token),
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name
+        },
+        'message': 'Login exitoso'
+    }, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -202,13 +298,13 @@ def generate_api_token(request):
     """
     try:
         profile = request.user.profile
-        token = profile.generate_api_token()
+        token = profile.regenerate_api_token()
         profile.enable_api_access = True
         profile.save()
         
         return Response({
             'message': 'Token de API generado exitosamente',
-            'token': token,
+            'token': str(token),
             'api_enabled': True
         })
     except Exception as e:

@@ -4485,10 +4485,23 @@ def system_configuration_view(request):
     else:
         form = SystemConfigurationForm(instance=config)
     
+    # Leer documentación de la API
+    import os
+    from django.conf import settings
+    api_doc_path = os.path.join(settings.BASE_DIR, 'docs', 'API_REST.md')
+    api_documentation = ""
+    
+    try:
+        with open(api_doc_path, 'r', encoding='utf-8') as f:
+            api_documentation = f.read()
+    except FileNotFoundError:
+        api_documentation = "Documentación no disponible."
+    
     context = {
         'page_title': 'Configuración del Sistema',
         'form': form,
         'config': config,
+        'api_documentation': api_documentation,
     }
     
     return render(request, 'tickets/system_configuration.html', context)

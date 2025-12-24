@@ -998,6 +998,20 @@ class UserProfile(models.Model):
         help_text='Términos y condiciones que se mostrarán en las cotizaciones rápidas'
     )
     
+    # Campos para API REST
+    enable_api_access = models.BooleanField(
+        default=False,
+        verbose_name='Habilitar acceso a la API',
+        help_text='Permite que este usuario utilice la API REST del sistema'
+    )
+    api_token = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=True,
+        verbose_name='Token de API',
+        help_text='Token único para autenticación en la API REST'
+    )
+    
     created_at = models.DateTimeField(
         default=timezone.now,
         verbose_name='Fecha de creación'
@@ -1092,6 +1106,12 @@ class UserProfile(models.Model):
         self.public_token = uuid.uuid4()
         self.save()
         return self.public_token
+
+    def regenerate_api_token(self):
+        """Regenera el token de API"""
+        self.api_token = uuid.uuid4()
+        self.save()
+        return self.api_token
 
 
 @receiver(post_save, sender=User)
