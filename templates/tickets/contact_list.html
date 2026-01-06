@@ -17,6 +17,17 @@
 .activity-info {
     min-width: 80px;
 }
+.column-hidden {
+    display: none !important;
+}
+.column-config-item {
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+}
+.column-config-item:hover {
+    background-color: #f8f9fa;
+}
 </style>
 {% endblock %}
 {% load project_extras %}
@@ -427,6 +438,126 @@
             printWindow.print();
             printWindow.close();
         }, 250);
+    });
+
+    // Sistema de configuración de columnas con persistencia
+    const COLUMN_CONFIG_KEY = 'contactList_columnConfig';
+    
+    // Función para obtener la configuración guardada
+    function getColumnConfig() {
+        const saved = localStorage.getItem(COLUMN_CONFIG_KEY);
+        if (saved) {
+            return JSON.parse(saved);
+        }
+        // Configuración por defecto (todas las columnas visibles)
+        return {
+            'contacto': true,
+            'estado': true,
+            'etapa': true,
+            'empresa': true,
+            'tamano': true,
+            'pais': true,
+            'erp': true,
+            'actividades': true,
+            'reunion': true,
+            'fecha': true,
+            'fuente': true,
+            'creado-por': true
+        };
+    }
+    
+    // Función para guardar la configuración
+    function saveColumnConfig(config) {
+        localStorage.setItem(COLUMN_CONFIG_KEY, JSON.stringify(config));
+    }
+    
+    // Función para aplicar la configuración de visibilidad
+    function applyColumnVisibility() {
+        const config = getColumnConfig();
+        console.log('Aplicando configuración de columnas:', config);
+        
+        Object.keys(config).forEach(function(columnKey) {
+            const isVisible = config[columnKey];
+            const columnClass = '.col-' + columnKey;
+            const elements = $(columnClass);
+            
+            console.log('Columna:', columnKey, 'Visible:', isVisible, 'Elementos encontrados:', elements.length);
+            
+            if (isVisible) {
+                elements.removeClass('column-hidden').show();
+            } else {
+                elements.addClass('column-hidden').hide();
+            }
+            
+            // Actualizar el checkbox
+            const checkbox = $('#col-' + columnKey);
+            checkbox.prop('checked', isVisible);
+        });
+    }
+    
+    // Manejar cambios en los checkboxes
+    $(document).on('change', '.column-toggle', function() {
+        const columnKey = $(this).val();
+        const isChecked = $(this).is(':checked');
+        
+        console.log('Cambio de columna:', columnKey, 'Checked:', isChecked);
+        
+        // Obtener configuración actual
+        const config = getColumnConfig();
+        config[columnKey] = isChecked;
+        
+        // Guardar la nueva configuración
+        saveColumnConfig(config);
+        
+        // Aplicar visibilidad
+        const columnClass = '.col-' + columnKey;
+        const elements = $(columnClass);
+        
+        console.log('Elementos afectados:', elements.length);
+        
+        if (isChecked) {
+            elements.removeClass('column-hidden').show();
+        } else {
+            elements.addClass('column-hidden').hide();
+        }
+    });
+    
+    // Botón de seleccionar todas
+    $(document).on('click', '#selectAllColumns', function() {
+        const config = getColumnConfig();
+        
+        $('.column-toggle').each(function() {
+            if (!$(this).prop('disabled')) {
+                $(this).prop('checked', true);
+                const columnKey = $(this).val();
+                config[columnKey] = true;
+                $('.col-' + columnKey).removeClass('column-hidden').show();
+            }
+        });
+        
+        saveColumnConfig(config);
+    });
+    
+    // Botón de deseleccionar todas
+    $(document).on('click', '#deselectAllColumns', function() {
+        const config = getColumnConfig();
+        
+        $('.column-toggle').each(function() {
+            if (!$(this).prop('disabled')) {
+                $(this).prop('checked', false);
+                const columnKey = $(this).val();
+                config[columnKey] = false;
+                $('.col-' + columnKey).addClass('column-hidden').hide();
+            }
+        });
+        
+        saveColumnConfig(config);
+    });
+    
+    // Inicializar la visibilidad al cargar la página
+    $(document).ready(function() {
+        console.log('Inicializando configuración de columnas...');
+        applyColumnVisibility();
     });
 </script>
 {% endblock %}
@@ -1103,7 +1234,9 @@
                 <a href="{% url 'contact_stage_tracking' %}" class="btn btn-sm btn-primary me-2">
                     <i class="fas fa-chart-line"></i> Etapas
                 </a>
-                
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#columnConfigModal">
+                    <i class="bi bi-gear"></i> CC
+                </button>
             </div>
         </div>
         <div class="card-body">
@@ -1112,24 +1245,24 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Contacto</th>
-                                <th>Estado</th>
-                                <th>Etapa</th>
-                                <th>Empresa</th>
-                                <th>Tamaño</th>
-                                <th>País</th>
-                                <th>ERP</th>
-                                <th>Actividades</th>
-                                <th>Reunión</th>
-                                <th>Fecha</th>
-                                <th>Fuente</th>
-                                <th>Creado por</th>
+                                <th class="col-contacto">Contacto</th>
+                                <th class="col-estado">Estado</th>
+                                <th class="col-etapa">Etapa</th>
+                                <th class="col-empresa">Empresa</th>
+                                <th class="col-tamano">Tamaño</th>
+                                <th class="col-pais">País</th>
+                                <th class="col-erp">ERP</th>
+                                <th class="col-actividades">Actividades</th>
+                                <th class="col-reunion">Reunión</th>
+                                <th class="col-fecha">Fecha</th>
+                                <th class="col-fuente">Fuente</th>
+                                <th class="col-creado-por text-center">Creado</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for contact in page_obj %}
                             <tr style="cursor: pointer;" onclick="window.location.href='{% url 'contact_detail' contact.pk %}'">
-                                <td>
+                                <td class="col-contacto">
                                     <div>
                                         <strong>
                                             <a href="{% url 'contact_detail' contact.pk %}" 
@@ -1159,7 +1292,7 @@
                                         {% endif %}
                                     </div>
                                 </td>
-                                <td>
+                                <td class="col-estado">
                                     {% if contact.status == 'positive' %}
                                         <span class="badge" style="background-color: #5cb85c; color: white;">
                                             😊 <i class="{{ contact.get_status_icon }}"></i>
@@ -1177,7 +1310,7 @@
                                         </span>
                                     {% endif %}
                                 </td>
-                                <td>
+                                <td class="col-etapa">
                                     {% if contact.stage %}
                                         <span class="badge bg-primary" title="{{ contact.get_stage_display }}">
                                             <i class="bi bi-ladder"></i>
@@ -1187,8 +1320,8 @@
                                         <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ contact.company|default:"-" }}</td>
-                                <td>
+                                <td class="col-empresa">{{ contact.company|default:"-" }}</td>
+                                <td class="col-tamano">
                                     {% if contact.company_size %}
                                         {% if contact.company_size == 'small' %}
                                             <span class="badge bg-secondary"><i class="bi bi-building"></i> Pequeña</span>
@@ -1201,15 +1334,15 @@
                                         <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ contact.country|default:"-" }}</td>
-                                <td>
+                                <td class="col-pais">{{ contact.country|default:"-" }}</td>
+                                <td class="col-erp">
                                     {% if contact.erp %}
                                         <span class="badge bg-info">{{ contact.erp }}</span>
                                     {% else %}
                                         <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
-                                <td class="text-center">
+                                <td class="col-actividades text-center">
                                     {% if contact.has_activities %}
                                         <div class="activity-info">
                                             <div class="d-flex align-items-center justify-content-center mb-1">
@@ -1243,7 +1376,7 @@
                                         </div>
                                     {% endif %}
                                 </td>
-                                <td class="text-center">
+                                <td class="col-reunion text-center">
                                     {% if contact.had_meeting %}
                                         <div>
                                             <i class="bi bi-calendar-check-fill text-success" style="font-size: 1.2rem;" title="Reunión realizada"></i>
@@ -1255,14 +1388,14 @@
                                         <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
-                                <td>
+                                <td class="col-fecha">
                                     <div>
                                         <strong>{{ contact.contact_date|date:"d/m/Y" }}</strong>
                                         <br><small class="text-muted">{{ contact.contact_date|time:"H:i" }}</small>
                                     </div>
                                 </td>
-                                <td>{{ contact.source|default:"-" }}</td>
-                                <td>
+                                <td class="col-fuente">{{ contact.source|default:"-" }}</td>
+                                <td class="col-creado-por text-center">
                                     {% if contact.created_by.first_name and contact.created_by.last_name %}
                                         {{ contact.created_by.first_name|slice:":1"|upper }}{{ contact.created_by.last_name|slice:":1"|upper }}
                                     {% elif contact.created_by.first_name %}
@@ -1317,6 +1450,136 @@
                     </a>
                 </div>
             {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para configurar columnas -->
+<div class="modal fade" id="columnConfigModal" tabindex="-1" aria-labelledby="columnConfigModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title" id="columnConfigModalLabel">
+                    <i class="bi bi-gear"></i> Configurar Columnas
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">
+                    <i class="bi bi-info-circle"></i> Selecciona las columnas que deseas mostrar. Tu configuración se guardará automáticamente.
+                </p>
+                <div class="d-flex justify-content-between mb-3">
+                    <button type="button" class="btn btn-sm btn-success" id="selectAllColumns">
+                        <i class="bi bi-check-all"></i> Seleccionar Todas
+                    </button>
+                    <button type="button" class="btn btn-sm btn-warning" id="deselectAllColumns">
+                        <i class="bi bi-x-lg"></i> Deseleccionar Todas
+                    </button>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="column-config-item">
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" value="contacto" id="col-contacto" checked disabled>
+                                <label class="form-check-label" for="col-contacto">
+                                    <strong>Contacto</strong> <span class="badge bg-primary">Obligatorio</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="column-config-item">
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" value="estado" id="col-estado" checked>
+                                <label class="form-check-label" for="col-estado">
+                                    Estado
+                                </label>
+                            </div>
+                        </div>
+                        <div class="column-config-item">
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" value="etapa" id="col-etapa" checked>
+                                <label class="form-check-label" for="col-etapa">
+                                    Etapa
+                                </label>
+                            </div>
+                        </div>
+                        <div class="column-config-item">
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" value="empresa" id="col-empresa" checked>
+                                <label class="form-check-label" for="col-empresa">
+                                    Empresa
+                                </label>
+                            </div>
+                        </div>
+                        <div class="column-config-item">
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" value="tamano" id="col-tamano" checked>
+                                <label class="form-check-label" for="col-tamano">
+                                    Tamaño
+                                </label>
+                            </div>
+                        </div>
+                        <div class="column-config-item">
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" value="pais" id="col-pais" checked>
+                                <label class="form-check-label" for="col-pais">
+                                    País
+                                </label>
+                            </div>
+                        </div>
+                        <div class="column-config-item">
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" value="erp" id="col-erp" checked>
+                                <label class="form-check-label" for="col-erp">
+                                    ERP
+                                </label>
+                            </div>
+                        </div>
+                        <div class="column-config-item">
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" value="actividades" id="col-actividades" checked>
+                                <label class="form-check-label" for="col-actividades">
+                                    Actividades
+                                </label>
+                            </div>
+                        </div>
+                        <div class="column-config-item">
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" value="reunion" id="col-reunion" checked>
+                                <label class="form-check-label" for="col-reunion">
+                                    Reunión
+                                </label>
+                            </div>
+                        </div>
+                        <div class="column-config-item">
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" value="fecha" id="col-fecha" checked>
+                                <label class="form-check-label" for="col-fecha">
+                                    Fecha
+                                </label>
+                            </div>
+                        </div>
+                        <div class="column-config-item">
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" value="fuente" id="col-fuente" checked>
+                                <label class="form-check-label" for="col-fuente">
+                                    Fuente
+                                </label>
+                            </div>
+                        </div>
+                        <div class="column-config-item">
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" value="creado-por" id="col-creado-por" checked>
+                                <label class="form-check-label" for="col-creado-por">
+                                    Creado por
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
         </div>
     </div>
 </div>
