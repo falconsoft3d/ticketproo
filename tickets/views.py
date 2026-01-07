@@ -43789,11 +43789,6 @@ def quick_quote_edit(request, pk):
     
     quote = get_object_or_404(QuickQuote, pk=pk, user=request.user)
     
-    # Solo se pueden editar cotizaciones pendientes
-    if quote.status != 'pending':
-        messages.error(request, 'Solo se pueden editar cotizaciones pendientes')
-        return redirect('quick_quote_detail', pk=quote.pk)
-    
     if request.method == 'POST':
         quote.title = request.POST.get('title')
         quote.hours = request.POST.get('hours')

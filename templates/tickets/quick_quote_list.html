@@ -152,11 +152,9 @@
                                     <a href="{% url 'quick_quote_detail' quote.pk %}" class="btn btn-outline-primary" title="Ver">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    {% if quote.status == 'pending' %}
-                                        <a href="{% url 'quick_quote_edit' quote.pk %}" class="btn btn-outline-secondary" title="Editar">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                    {% endif %}
+                                    <a href="{% url 'quick_quote_edit' quote.pk %}" class="btn btn-outline-secondary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
                                     <a href="{% url 'quick_quote_duplicate' quote.pk %}" class="btn btn-outline-info" title="Duplicar">
                                         <i class="bi bi-files"></i>
                                     </a>
