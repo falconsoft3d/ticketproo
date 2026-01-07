@@ -43988,6 +43988,52 @@ def quick_quote_duplicate(request, pk):
     return redirect('quick_quote_detail', pk=duplicate.pk)
 
 
+def quick_quote_public_list(request, client_name):
+    """Vista pública del listado de cotizaciones de un cliente por nombre"""
+    from .models import QuickQuote
+    from django.db.models import Sum
+    from urllib.parse import unquote
+    
+    # Decodificar el nombre del cliente de la URL
+    client_name_decoded = unquote(client_name)
+    
+    # Filtrar cotizaciones por nombre de cliente (case-insensitive)
+    quotes = QuickQuote.objects.filter(
+        client_name__iexact=client_name_decoded
+    ).order_by('-created_at')
+    
+    if not quotes.exists():
+        from django.http import Http404
+        raise Http404("No se encontraron cotizaciones para este cliente")
+    
+    # Calcular subtotal de todas las cotizaciones
+    subtotal = quotes.aggregate(total=Sum('total_amount'))['total'] or 0
+    
+    # Calcular subtotal solo de cotizaciones aceptadas
+    subtotal_accepted = quotes.filter(status='accepted').aggregate(total=Sum('total_amount'))['total'] or 0
+    
+    # Estadísticas
+    total_quotes = quotes.count()
+    pending_quotes = quotes.filter(status='pending').count()
+    accepted_quotes = quotes.filter(status='accepted').count()
+    rejected_quotes = quotes.filter(status='rejected').count()
+    expired_quotes = quotes.filter(status='expired').count()
+    
+    context = {
+        'quotes': quotes,
+        'client_name': client_name_decoded,
+        'subtotal': subtotal,
+        'subtotal_accepted': subtotal_accepted,
+        'total_quotes': total_quotes,
+        'pending_quotes': pending_quotes,
+        'accepted_quotes': accepted_quotes,
+        'rejected_quotes': rejected_quotes,
+        'expired_quotes': expired_quotes,
+        'page_title': f'Cotizaciones de {client_name_decoded}',
+    }
+    return render(request, 'tickets/quick_quote_public_list.html', context)
+
+
 # ============================================
 # VISTAS DE MEDICIONES MÚLTIPLES
 # ============================================

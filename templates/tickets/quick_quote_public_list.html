@@ -1,0 +1,164 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}Cotizaciones de {{ client_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <!-- Header -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <h2 class="mb-3">
+                        <i class="bi bi-lightning-charge text-primary"></i> 
+                        Cotizaciones de {{ client_name }}
+                    </h2>
+                    <p class="text-muted">Todas tus cotizaciones en un solo lugar</p>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center h-100">
+                        <div class="card-body">
+                            <h5 class="card-title text-muted">Total</h5>
+                            <h2 class="mb-0">{{ total_quotes }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center h-100 border-warning">
+                        <div class="card-body">
+                            <h5 class="card-title text-warning">Pendientes</h5>
+                            <h2 class="mb-0">{{ pending_quotes }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center h-100 border-success">
+                        <div class="card-body">
+                            <h5 class="card-title text-success">Aceptadas</h5>
+                            <h2 class="mb-0">{{ accepted_quotes }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center h-100 border-danger">
+                        <div class="card-body">
+                            <h5 class="card-title text-danger">Rechazadas</h5>
+                            <h2 class="mb-0">{{ rejected_quotes }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subtotales -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h5 class="text-muted mb-2">Subtotal de Todas las Cotizaciones</h5>
+                            <h2 class="mb-0 text-primary">€{{ subtotal|floatformat:2 }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h5 class="mb-2">Subtotal de Cotizaciones Aceptadas</h5>
+                            <h2 class="mb-0">€{{ subtotal_accepted|floatformat:2 }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Listado de Cotizaciones -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> Listado de Cotizaciones</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Título</th>
+                                    <th class="text-center">Horas</th>
+                                    <th class="text-end">Total</th>
+                                    <th class="text-center">Estado</th>
+                                    <th class="text-center">Fecha</th>
+                                    <th class="text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quote in quotes %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ quote.sequence_number }}</strong>
+                                    </td>
+                                    <td>{{ quote.title }}</td>
+                                    <td class="text-center">{{ quote.hours }}</td>
+                                    <td class="text-end">
+                                        <strong>€{{ quote.total_amount|floatformat:2 }}</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge 
+                                            {% if quote.status == 'accepted' %}bg-success
+                                            {% elif quote.status == 'rejected' %}bg-danger
+                                            {% elif quote.status == 'expired' %}bg-secondary
+                                            {% else %}bg-warning text-dark{% endif %}">
+                                            {{ quote.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <small>{{ quote.created_at|date:"d/m/Y" }}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{% url 'quick_quote_public' quote.public_token %}" 
+                                           class="btn btn-sm btn-outline-primary" 
+                                           target="_blank">
+                                            <i class="bi bi-eye"></i> Ver Detalle
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer con información -->
+            <div class="card mt-4 bg-light">
+                <div class="card-body text-center">
+                    <p class="mb-2">
+                        <i class="bi bi-info-circle"></i> 
+                        Este es tu listado personalizado de cotizaciones
+                    </p>
+                    <p class="text-muted small mb-0">
+                        Puedes acceder a cada cotización individual haciendo clic en "Ver Detalle"
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 10px;
+    }
+    
+    .table td, .table th {
+        vertical-align: middle;
+    }
+    
+    .badge {
+        padding: 0.5em 0.8em;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}

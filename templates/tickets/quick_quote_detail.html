@@ -148,6 +148,27 @@
                 </div>
             </div>
             
+            <!-- Enlace Público en Listado -->
+            {% if quote.client_name %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> Enlace Público en Listado</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">Enlace para que el cliente vea todas sus cotizaciones:</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control form-control-sm" id="public-list-url" value="{{ request.scheme }}://{{ request.get_host }}{% url 'quick_quote_public_list' quote.client_name|urlencode %}" readonly>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="copyListToClipboard()">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                    <a href="{% url 'quick_quote_public_list' quote.client_name|urlencode %}" target="_blank" class="btn btn-sm btn-success w-100">
+                        <i class="bi bi-box-arrow-up-right"></i> Abrir Listado Público
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            
             <!-- QR Code (opcional) -->
             <div class="card mb-4">
                 <div class="card-header">
@@ -236,6 +257,20 @@
 <script>
     function copyToClipboard() {
         const input = document.getElementById('public-url');
+        input.select();
+        document.execCommand('copy');
+        
+        // Mostrar feedback
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i>';
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+        }, 2000);
+    }
+    
+    function copyListToClipboard() {
+        const input = document.getElementById('public-list-url');
         input.select();
         document.execCommand('copy');
         

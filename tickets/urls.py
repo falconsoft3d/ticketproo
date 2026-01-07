@@ -1491,6 +1491,7 @@ urlpatterns += [
     path('quick-quotes/<int:pk>/delete/', views.quick_quote_delete, name='quick_quote_delete'),
     path('quick-quotes/<int:pk>/duplicate/', views.quick_quote_duplicate, name='quick_quote_duplicate'),
     path('quote/<str:token>/', views.quick_quote_public, name='quick_quote_public'),
+    path('quotes/client/<str:client_name>/', views.quick_quote_public_list, name='quick_quote_public_list'),
     
     # URLs de Mediciones Múltiples
     path('multi-measurements/', views.multi_measurement_list, name='multi_measurement_list'),
