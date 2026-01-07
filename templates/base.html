@@ -224,6 +224,13 @@
                             </li>
                             
                             <li>
+                                <a class="dropdown-item {% if 'support_contract' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'support_contract_list' %}">
+                                    <i class="bi bi-file-earmark-text"></i> Contratos de Soporte
+                                </a>
+                            </li>
+                            
+                            <li>
                                 <a class="dropdown-item {% if 'multi_measurement' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'multi_measurement_list' %}">
                                     <i class="bi bi-graph-up"></i> Mediciones Múltiples

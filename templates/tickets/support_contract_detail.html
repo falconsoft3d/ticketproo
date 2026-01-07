@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-file-earmark-text"></i> {{ contract.sequence_number }}
+                    </h4>
+                    <span class="badge 
+                        {% if contract.status == 'signed' or contract.status == 'active' %}bg-success
+                        {% elif contract.status == 'pending' %}bg-warning text-dark
+                        {% elif contract.status == 'draft' %}bg-secondary
+                        {% elif contract.status == 'expired' %}bg-dark
+                        {% else %}bg-danger{% endif %} fs-6">
+                        {{ contract.get_status_display }}
+                    </span>
+                </div>
+                
+                <!-- Botones de Acción -->
+                <div class="card-body border-bottom">
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'support_contract_list' %}" class="btn btn-secondary btn-sm">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                        <a href="{% url 'support_contract_edit' contract.pk %}" class="btn btn-warning btn-sm">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a href="{% url 'support_contract_pdf' contract.pk %}" class="btn btn-success btn-sm" target="_blank">
+                            <i class="bi bi-file-pdf"></i> Descargar PDF
+                        </a>
+                        <a href="{% url 'support_contract_delete' contract.pk %}" class="btn btn-danger btn-sm">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Información de la Empresa -->
+                    <div class="mb-4">
+                        <h5><i class="bi bi-building"></i> Empresa</h5>
+                        <p class="mb-1"><strong>{{ contract.company.name }}</strong></p>
+                        {% if contract.company.email %}
+                            <p class="mb-0 text-muted">{{ contract.company.email }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Fechas -->
+                    <div class="mb-4">
+                        <h5><i class="bi bi-calendar"></i> Fechas</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="bi bi-calendar-plus"></i> <strong>Fecha de Inicio:</strong> {{ contract.start_date|date:"d/m/Y" }}
+                            </li>
+                            {% if contract.end_date %}
+                            <li class="mb-2">
+                                <i class="bi bi-calendar-x"></i> <strong>Fecha de Fin:</strong> {{ contract.end_date|date:"d/m/Y" }}
+                            </li>
+                            {% endif %}
+                            <li class="mb-2">
+                                <i class="bi bi-clock-history"></i> <strong>Creado:</strong> {{ contract.created_at|date:"d/m/Y H:i" }}
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Información del Contrato -->
+                    <div class="mb-4">
+                        <h5><i class="bi bi-info-circle"></i> Detalles del Contrato</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <small class="text-muted">Monto Total</small>
+                                        <h3 class="mb-0">€{{ contract.total_amount|floatformat:2 }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <small class="text-muted">Frecuencia</small>
+                                        <h4 class="mb-0">{{ contract.get_payment_frequency_display }}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <small class="text-muted">Número de Cuotas</small>
+                                        <h3 class="mb-0">{{ contract.number_of_payments }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Descripción -->
+                    <div class="mb-4">
+                        <h5><i class="bi bi-file-text"></i> Descripción</h5>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                {{ contract.description|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información de Firma -->
+                    {% if contract.is_signed %}
+                    <div class="mb-4">
+                        <h5><i class="bi bi-pen"></i> Información de Firma</h5>
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <p class="mb-1"><strong>Firmado por:</strong> {{ contract.signed_by_name }}</p>
+                                <p class="mb-1"><strong>Email:</strong> {{ contract.signed_by_email }}</p>
+                                <p class="mb-0"><strong>Fecha de Firma:</strong> {{ contract.signed_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Cuotas de Pago -->
+                    <div class="mb-4">
+                        <h5><i class="bi bi-cash-stack"></i> Cuotas de Pago</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Cuota</th>
+                                        <th>Fecha Vencimiento</th>
+                                        <th>Monto</th>
+                                        <th>Estado</th>
+                                        <th class="text-center">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for payment in payments %}
+                                    <tr>
+                                        <td><strong>#{{ payment.payment_number }}</strong></td>
+                                        <td>{{ payment.due_date|date:"d/m/Y" }}</td>
+                                        <td><strong>€{{ payment.amount|floatformat:2 }}</strong></td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if payment.status == 'paid' %}bg-success
+                                                {% elif payment.status == 'overdue' %}bg-danger
+                                                {% elif payment.status == 'cancelled' %}bg-secondary
+                                                {% else %}bg-warning text-dark{% endif %}">
+                                                {{ payment.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <a href="{% url 'support_contract_payment_update' contract.pk payment.id %}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil"></i> Actualizar
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panel Lateral -->
+        <div class="col-md-4">
+            <!-- Enlace Público -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Enlace Público</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">Comparte este enlace con el cliente para que pueda firmar el contrato:</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control form-control-sm" id="public-url" value="{{ public_url }}" readonly>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="copyToClipboard()">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                    <a href="{{ public_url }}" target="_blank" class="btn btn-sm btn-primary w-100">
+                        <i class="bi bi-box-arrow-up-right"></i> Abrir Vista Pública
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Estadísticas de Pagos -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Estadísticas de Pagos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-2 bg-light">
+                                <h4 class="text-primary mb-0">{{ total_payments }}</h4>
+                                <small class="text-muted">Total Cuotas</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-2 bg-success text-white">
+                                <h4 class="mb-0">{{ paid_payments }}</h4>
+                                <small>Pagadas</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-2 bg-warning">
+                                <h4 class="mb-0">{{ pending_payments }}</h4>
+                                <small>Pendientes</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-2 bg-danger text-white">
+                                <h4 class="mb-0">{{ overdue_payments }}</h4>
+                                <small>Vencidas</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-2">
+                        <strong class="small">Total Pagado:</strong>
+                        <h4 class="text-success">€{{ total_paid|floatformat:2 }}</h4>
+                    </div>
+                    
+                    <div>
+                        <strong class="small">Total Pendiente:</strong>
+                        <h4 class="text-warning">€{{ total_pending|floatformat:2 }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyToClipboard() {
+        const input = document.getElementById('public-url');
+        input.select();
+        document.execCommand('copy');
+        
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i>';
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+        }, 2000);
+    }
+</script>
+{% endblock %}

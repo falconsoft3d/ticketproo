@@ -1493,6 +1493,18 @@ urlpatterns += [
     path('quote/<str:token>/', views.quick_quote_public, name='quick_quote_public'),
     path('quotes/client/<str:client_name>/', views.quick_quote_public_list, name='quick_quote_public_list'),
     
+    # URLs de Contratos de Soporte
+    path('support-contracts/', views.support_contract_list, name='support_contract_list'),
+    path('support-contracts/create/', views.support_contract_create, name='support_contract_create'),
+    path('support-contracts/<int:pk>/', views.support_contract_detail, name='support_contract_detail'),
+    path('support-contracts/<int:pk>/edit/', views.support_contract_edit, name='support_contract_edit'),
+    path('support-contracts/<int:pk>/delete/', views.support_contract_delete, name='support_contract_delete'),
+    path('support-contracts/<int:pk>/payment/<int:payment_id>/', views.support_contract_payment_update, name='support_contract_payment_update'),
+    path('support-contracts/<int:pk>/pdf/', views.support_contract_pdf, name='support_contract_pdf'),
+    path('support-contracts/generate-description/', views.support_contract_generate_description, name='support_contract_generate_description'),
+    path('contract/<str:token>/', views.support_contract_public, name='support_contract_public'),
+    path('contract/<str:token>/pdf/', views.support_contract_public_pdf, name='support_contract_public_pdf'),
+    
     # URLs de Mediciones Múltiples
     path('multi-measurements/', views.multi_measurement_list, name='multi_measurement_list'),
     path('multi-measurements/create/', views.multi_measurement_create, name='multi_measurement_create'),

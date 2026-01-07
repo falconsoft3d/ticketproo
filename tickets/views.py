@@ -44035,6 +44035,679 @@ def quick_quote_public_list(request, client_name):
 
 
 # ============================================
+# VISTAS DE CONTRATOS DE SOPORTE
+# ============================================
+
+@login_required
+def support_contract_list(request):
+    """Lista de contratos de soporte"""
+    from .models import SupportContract
+    
+    contracts = SupportContract.objects.filter(user=request.user).select_related('company').order_by('-created_at')
+    
+    context = {
+        'contracts': contracts,
+        'page_title': 'Contratos de Soporte',
+    }
+    return render(request, 'tickets/support_contract_list.html', context)
+
+
+@login_required
+def support_contract_create(request):
+    """Crear nuevo contrato de soporte"""
+    from .models import SupportContract, SupportContractPayment, Company
+    from datetime import timedelta
+    from dateutil.relativedelta import relativedelta
+    
+    if request.method == 'POST':
+        provider_company_id = request.POST.get('provider_company')
+        company_id = request.POST.get('company')
+        start_date = request.POST.get('start_date')
+        description = request.POST.get('description')
+        total_amount = request.POST.get('total_amount')
+        payment_frequency = request.POST.get('payment_frequency', 'monthly')
+        number_of_payments = int(request.POST.get('number_of_payments', 12))
+        
+        provider_company = get_object_or_404(Company, id=provider_company_id) if provider_company_id else None
+        company = get_object_or_404(Company, id=company_id)
+        
+        # Crear contrato
+        contract = SupportContract.objects.create(
+            user=request.user,
+            provider_company=provider_company,
+            company=company,
+            start_date=start_date,
+            description=description,
+            total_amount=total_amount,
+            payment_frequency=payment_frequency,
+            number_of_payments=number_of_payments,
+            status='draft'
+        )
+        
+        # Calcular y crear las cuotas de pago
+        payment_amount = float(total_amount) / number_of_payments
+        current_date = timezone.datetime.strptime(start_date, '%Y-%m-%d').date()
+        
+        # Determinar el incremento de fecha según la frecuencia
+        if payment_frequency == 'monthly':
+            increment = relativedelta(months=1)
+        elif payment_frequency == 'quarterly':
+            increment = relativedelta(months=3)
+        elif payment_frequency == 'biannual':
+            increment = relativedelta(months=6)
+        elif payment_frequency == 'annual':
+            increment = relativedelta(years=1)
+        else:
+            increment = relativedelta(months=1)
+        
+        # Crear las cuotas
+        for i in range(1, number_of_payments + 1):
+            SupportContractPayment.objects.create(
+                contract=contract,
+                payment_number=i,
+                due_date=current_date,
+                amount=payment_amount,
+                status='pending'
+            )
+            current_date += increment
+        
+        messages.success(request, 'Contrato de soporte creado exitosamente')
+        return redirect('support_contract_detail', pk=contract.pk)
+    
+    # Obtener todas las empresas activas del sistema
+    from .models import Company
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'companies': companies,
+        'page_title': 'Crear Contrato de Soporte',
+    }
+    return render(request, 'tickets/support_contract_form.html', context)
+
+
+@login_required
+def support_contract_detail(request, pk):
+    """Detalle de contrato de soporte"""
+    from .models import SupportContract
+    
+    contract = get_object_or_404(SupportContract, pk=pk, user=request.user)
+    payments = contract.payments.all()
+    
+    # Estadísticas de pagos
+    total_payments = payments.count()
+    paid_payments = payments.filter(status='paid').count()
+    pending_payments = payments.filter(status='pending').count()
+    overdue_payments = payments.filter(status='overdue').count()
+    
+    # Calcular totales
+    total_paid = sum(p.amount for p in payments.filter(status='paid'))
+    total_pending = sum(p.amount for p in payments.filter(status='pending'))
+    
+    context = {
+        'contract': contract,
+        'payments': payments,
+        'public_url': contract.get_public_url(request),
+        'total_payments': total_payments,
+        'paid_payments': paid_payments,
+        'pending_payments': pending_payments,
+        'overdue_payments': overdue_payments,
+        'total_paid': total_paid,
+        'total_pending': total_pending,
+        'page_title': f'Contrato: {contract.sequence_number}',
+    }
+    return render(request, 'tickets/support_contract_detail.html', context)
+
+
+@login_required
+def support_contract_edit(request, pk):
+    """Editar contrato de soporte"""
+    from .models import SupportContract, Company
+    
+    contract = get_object_or_404(SupportContract, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        provider_company_id = request.POST.get('provider_company')
+        company_id = request.POST.get('company')
+        contract.provider_company = get_object_or_404(Company, id=provider_company_id) if provider_company_id else None
+        contract.company = get_object_or_404(Company, id=company_id)
+        contract.start_date = request.POST.get('start_date')
+        contract.description = request.POST.get('description')
+        contract.total_amount = request.POST.get('total_amount')
+        contract.payment_frequency = request.POST.get('payment_frequency', 'monthly')
+        contract.number_of_payments = int(request.POST.get('number_of_payments', 12))
+        contract.status = request.POST.get('status', 'draft')
+        
+        contract.save()
+        
+        messages.success(request, 'Contrato actualizado exitosamente')
+        return redirect('support_contract_detail', pk=contract.pk)
+    
+    # Obtener todas las empresas activas del sistema
+    from .models import Company
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'contract': contract,
+        'companies': companies,
+        'page_title': f'Editar: {contract.sequence_number}',
+    }
+    return render(request, 'tickets/support_contract_form.html', context)
+
+
+@login_required
+def support_contract_generate_description(request):
+    """Generar descripción del contrato con IA"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        from .models import SystemConfiguration, Company
+        import json
+        
+        data = json.loads(request.body)
+        provider_company_id = data.get('provider_company_id')
+        company_id = data.get('company_id')
+        total_amount = data.get('total_amount')
+        payment_frequency = data.get('payment_frequency')
+        number_of_payments = data.get('number_of_payments')
+        
+        # Obtener configuración
+        config = SystemConfiguration.get_config()
+        if not config.openai_api_key:
+            return JsonResponse({'error': 'API key de OpenAI no configurada'}, status=400)
+        
+        # Obtener información de las empresas
+        provider_name = ""
+        client_name = ""
+        
+        if provider_company_id:
+            try:
+                provider_company = Company.objects.get(id=provider_company_id)
+                provider_name = provider_company.name
+            except Company.DoesNotExist:
+                pass
+        
+        if company_id:
+            try:
+                company = Company.objects.get(id=company_id)
+                client_name = company.name
+            except Company.DoesNotExist:
+                pass
+        
+        # Construir prompt para la IA
+        prompt = f"""Genera una descripción profesional y detallada para un contrato de soporte técnico con los siguientes datos:
+
+- Proveedor del servicio: {provider_name if provider_name else "Por definir"}
+- Cliente: {client_name if client_name else "Por definir"}
+- Monto total: €{total_amount if total_amount else "Por definir"}
+- Frecuencia de pago: {payment_frequency if payment_frequency else "Por definir"}
+- Número de cuotas: {number_of_payments if number_of_payments else "Por definir"}
+
+La descripción debe incluir:
+1. Alcance del servicio de soporte
+2. Horarios de atención
+3. Tiempos de respuesta
+4. Canales de soporte disponibles
+5. Servicios incluidos y excluidos
+6. Cualquier otra información relevante
+
+Escribe la descripción de manera clara, profesional y completa. No incluyas saludos ni despedidas, solo el contenido del contrato.
+IMPORTANTE: No uses formato Markdown, escribe en texto plano sin asteriscos, guiones o símbolos de formato."""
+
+        # Llamar a la API de OpenAI
+        from openai import OpenAI
+        client = OpenAI(api_key=config.openai_api_key)
+        
+        response = client.chat.completions.create(
+            model=config.openai_model or 'gpt-4o',
+            messages=[
+                {"role": "system", "content": "Eres un asistente experto en redacción de contratos de soporte técnico profesionales."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1500,
+            temperature=0.7
+        )
+        
+        description = response.choices[0].message.content
+        
+        return JsonResponse({
+            'success': True,
+            'description': description
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def support_contract_delete(request, pk):
+    """Eliminar contrato de soporte"""
+    from .models import SupportContract
+    
+    contract = get_object_or_404(SupportContract, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        sequence_number = contract.sequence_number
+        contract.delete()
+        messages.success(request, f'Contrato "{sequence_number}" eliminado exitosamente')
+        return redirect('support_contract_list')
+    
+    context = {
+        'contract': contract,
+        'page_title': f'Eliminar: {contract.sequence_number}',
+    }
+    return render(request, 'tickets/support_contract_delete.html', context)
+
+
+@login_required
+def support_contract_payment_update(request, pk, payment_id):
+    """Actualizar estado de pago"""
+    from .models import SupportContract, SupportContractPayment
+    
+    contract = get_object_or_404(SupportContract, pk=pk, user=request.user)
+    payment = get_object_or_404(SupportContractPayment, id=payment_id, contract=contract)
+    
+    if request.method == 'POST':
+        payment.amount = request.POST.get('amount')
+        payment.due_date = request.POST.get('due_date')
+        payment.status = request.POST.get('status')
+        payment.payment_method = request.POST.get('payment_method', '')
+        payment.notes = request.POST.get('notes', '')
+        
+        if payment.status == 'paid' and not payment.paid_at:
+            payment.paid_at = timezone.now()
+        
+        payment.save()
+        
+        messages.success(request, f'Pago actualizado exitosamente')
+        return redirect('support_contract_detail', pk=contract.pk)
+    
+    context = {
+        'contract': contract,
+        'payment': payment,
+        'page_title': f'Actualizar Pago - Cuota {payment.payment_number}',
+    }
+    return render(request, 'tickets/support_contract_payment_form.html', context)
+
+
+def support_contract_public(request, token):
+    """Vista pública para que el cliente firme el contrato"""
+    from .models import SupportContract
+    
+    contract = get_object_or_404(SupportContract, public_token=token)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'sign':
+            signed_by_name = request.POST.get('signed_by_name', '').strip()
+            signed_by_email = request.POST.get('signed_by_email', '').strip()
+            
+            if not signed_by_name or not signed_by_email:
+                messages.error(request, 'Por favor complete todos los campos para firmar')
+            else:
+                contract.signed_by_name = signed_by_name
+                contract.signed_by_email = signed_by_email
+                contract.signed_at = timezone.now()
+                contract.status = 'signed'
+                contract.save()
+                
+                messages.success(request, '¡Contrato firmado exitosamente!')
+    
+    payments = contract.payments.all()
+    
+    context = {
+        'contract': contract,
+        'payments': payments,
+        'page_title': f'Contrato: {contract.sequence_number}',
+    }
+    return render(request, 'tickets/support_contract_public.html', context)
+
+
+def support_contract_public_pdf(request, token):
+    """Generar PDF del contrato de soporte desde vista pública"""
+    from .models import SupportContract
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from io import BytesIO
+    
+    contract = get_object_or_404(SupportContract, public_token=token)
+    payments = contract.payments.all()
+    
+    # Crear el PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="Contrato_{contract.sequence_number}.pdf"'
+    
+    # Crear el documento PDF
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=50, bottomMargin=50)
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    
+    # Estilo personalizado para el título
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=22,
+        spaceAfter=10,
+        alignment=TA_CENTER,
+        textColor=colors.black
+    )
+    
+    # Estilo para subtítulos
+    subtitle_style = ParagraphStyle(
+        'SubtitleStyle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=8,
+        alignment=TA_CENTER,
+        textColor=colors.black
+    )
+    
+    # Estilo para secciones
+    section_style = ParagraphStyle(
+        'SectionStyle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=12,
+        spaceBefore=12,
+        textColor=colors.black
+    )
+    
+    # Estilo para el contenido
+    content_style = ParagraphStyle(
+        'ContentStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=8,
+        alignment=TA_LEFT
+    )
+    
+    # Construir el contenido del PDF
+    story = []
+    
+    # Título
+    story.append(Paragraph("CONTRATO DE SOPORTE", title_style))
+    story.append(Paragraph(contract.sequence_number, subtitle_style))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Información de la Compañía Proveedora (si existe)
+    if contract.provider_company:
+        story.append(Paragraph("COMPAÑÍA PROVEEDORA", section_style))
+        story.append(Paragraph(f"<b>Empresa:</b> {contract.provider_company.name}", content_style))
+        if contract.provider_company.email:
+            story.append(Paragraph(f"<b>Email:</b> {contract.provider_company.email}", content_style))
+        if contract.provider_company.phone:
+            story.append(Paragraph(f"<b>Teléfono:</b> {contract.provider_company.phone}", content_style))
+        if contract.provider_company.address:
+            story.append(Paragraph(f"<b>Dirección:</b> {contract.provider_company.address}", content_style))
+        story.append(Spacer(1, 0.2*inch))
+    
+    # Información de la Empresa y Detalles del Contrato en dos columnas
+    # Columna izquierda - Información del Cliente
+    client_info = []
+    client_info.append(Paragraph("INFORMACIÓN DEL CLIENTE", section_style))
+    client_info.append(Paragraph(f"<b>Empresa:</b> {contract.company.name}", content_style))
+    if contract.company.email:
+        client_info.append(Paragraph(f"<b>Email:</b> {contract.company.email}", content_style))
+    if contract.company.phone:
+        client_info.append(Paragraph(f"<b>Teléfono:</b> {contract.company.phone}", content_style))
+    if contract.company.address:
+        client_info.append(Paragraph(f"<b>Dirección:</b> {contract.company.address}", content_style))
+    
+    # Columna derecha - Detalles del Contrato
+    contract_details = []
+    contract_details.append(Paragraph("DETALLES DEL CONTRATO", section_style))
+    contract_details.append(Paragraph(f"<b>Fecha de Inicio:</b> {contract.start_date.strftime('%d/%m/%Y')}", content_style))
+    contract_details.append(Paragraph(f"<b>Monto Total:</b> €{contract.total_amount}", content_style))
+    contract_details.append(Paragraph(f"<b>Frecuencia de Pago:</b> {contract.get_payment_frequency_display()}", content_style))
+    contract_details.append(Paragraph(f"<b>Número de Cuotas:</b> {contract.number_of_payments}", content_style))
+    contract_details.append(Paragraph(f"<b>Fecha de Creación:</b> {contract.created_at.strftime('%d/%m/%Y %H:%M')}", content_style))
+    
+    # Crear tabla de dos columnas
+    two_column_data = [[client_info, contract_details]]
+    two_column_table = Table(two_column_data, colWidths=[3.5*inch, 3.5*inch])
+    two_column_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    
+    story.append(two_column_table)
+    story.append(Spacer(1, 0.2*inch))
+    
+    # Descripción
+    story.append(Paragraph("DESCRIPCIÓN DEL SERVICIO", section_style))
+    description_lines = contract.description.split('\n')
+    for line in description_lines:
+        if line.strip():
+            story.append(Paragraph(line, content_style))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Plan de Pagos
+    story.append(Paragraph("PLAN DE PAGOS", section_style))
+    
+    # Tabla de pagos
+    payment_data = [['Cuota', 'Fecha Vencimiento', 'Monto', 'Estado']]
+    
+    for payment in payments:
+        payment_data.append([
+            f'#{payment.payment_number}',
+            payment.due_date.strftime('%d/%m/%Y'),
+            f'€{payment.amount}',
+            payment.get_status_display()
+        ])
+    
+    payment_table = Table(payment_data, colWidths=[1*inch, 2*inch, 1.5*inch, 1.5*inch])
+    payment_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+    ]))
+    
+    story.append(payment_table)
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Información de Firma (si está firmado)
+    if contract.is_signed():
+        story.append(Paragraph("INFORMACIÓN DE FIRMA", section_style))
+        story.append(Paragraph(f"<b>Firmado por:</b> {contract.signed_by_name}", content_style))
+        story.append(Paragraph(f"<b>Email:</b> {contract.signed_by_email}", content_style))
+        story.append(Paragraph(f"<b>Fecha de Firma:</b> {contract.signed_at.strftime('%d/%m/%Y %H:%M')}", content_style))
+        story.append(Spacer(1, 0.2*inch))
+    
+    # Construir el PDF
+    doc.build(story)
+    
+    # Obtener el valor del buffer y escribirlo en la respuesta
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+    
+    return response
+
+
+@login_required
+def support_contract_pdf(request, pk):
+    """Generar PDF del contrato de soporte"""
+    from .models import SupportContract
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from io import BytesIO
+    
+    contract = get_object_or_404(SupportContract, pk=pk, user=request.user)
+    payments = contract.payments.all()
+    
+    # Crear el PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="Contrato_{contract.sequence_number}.pdf"'
+    
+    # Crear el documento PDF
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=50, bottomMargin=50)
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    
+    # Estilo personalizado para el título
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=22,
+        spaceAfter=10,
+        alignment=TA_CENTER,
+        textColor=colors.black
+    )
+    
+    # Estilo para subtítulos
+    subtitle_style = ParagraphStyle(
+        'SubtitleStyle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=8,
+        alignment=TA_CENTER,
+        textColor=colors.black
+    )
+    
+    # Estilo para secciones
+    section_style = ParagraphStyle(
+        'SectionStyle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=12,
+        spaceBefore=12,
+        textColor=colors.black
+    )
+    
+    # Estilo para el contenido
+    content_style = ParagraphStyle(
+        'ContentStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=8,
+        alignment=TA_LEFT
+    )
+    
+    # Construir el contenido del PDF
+    story = []
+    
+    # Título
+    story.append(Paragraph("CONTRATO DE SOPORTE", title_style))
+    story.append(Paragraph(contract.sequence_number, subtitle_style))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Información de la Compañía Proveedora (si existe)
+    if contract.provider_company:
+        story.append(Paragraph("COMPAÑÍA PROVEEDORA", section_style))
+        story.append(Paragraph(f"<b>Empresa:</b> {contract.provider_company.name}", content_style))
+        if contract.provider_company.email:
+            story.append(Paragraph(f"<b>Email:</b> {contract.provider_company.email}", content_style))
+        if contract.provider_company.phone:
+            story.append(Paragraph(f"<b>Teléfono:</b> {contract.provider_company.phone}", content_style))
+        if contract.provider_company.address:
+            story.append(Paragraph(f"<b>Dirección:</b> {contract.provider_company.address}", content_style))
+        story.append(Spacer(1, 0.2*inch))
+    
+    # Información de la Empresa y Detalles del Contrato en dos columnas
+    # Columna izquierda - Información del Cliente
+    client_info = []
+    client_info.append(Paragraph("INFORMACIÓN DEL CLIENTE", section_style))
+    client_info.append(Paragraph(f"<b>Empresa:</b> {contract.company.name}", content_style))
+    if contract.company.email:
+        client_info.append(Paragraph(f"<b>Email:</b> {contract.company.email}", content_style))
+    if contract.company.phone:
+        client_info.append(Paragraph(f"<b>Teléfono:</b> {contract.company.phone}", content_style))
+    if contract.company.address:
+        client_info.append(Paragraph(f"<b>Dirección:</b> {contract.company.address}", content_style))
+    
+    # Columna derecha - Detalles del Contrato
+    contract_details = []
+    contract_details.append(Paragraph("DETALLES DEL CONTRATO", section_style))
+    contract_details.append(Paragraph(f"<b>Fecha de Inicio:</b> {contract.start_date.strftime('%d/%m/%Y')}", content_style))
+    contract_details.append(Paragraph(f"<b>Monto Total:</b> €{contract.total_amount}", content_style))
+    contract_details.append(Paragraph(f"<b>Frecuencia de Pago:</b> {contract.get_payment_frequency_display()}", content_style))
+    contract_details.append(Paragraph(f"<b>Número de Cuotas:</b> {contract.number_of_payments}", content_style))
+    contract_details.append(Paragraph(f"<b>Fecha de Creación:</b> {contract.created_at.strftime('%d/%m/%Y %H:%M')}", content_style))
+    
+    # Crear tabla de dos columnas
+    two_column_data = [[client_info, contract_details]]
+    two_column_table = Table(two_column_data, colWidths=[3.5*inch, 3.5*inch])
+    two_column_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    
+    story.append(two_column_table)
+    story.append(Spacer(1, 0.2*inch))
+    
+    # Descripción
+    story.append(Paragraph("DESCRIPCIÓN DEL SERVICIO", section_style))
+    description_lines = contract.description.split('\n')
+    for line in description_lines:
+        if line.strip():
+            story.append(Paragraph(line, content_style))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Plan de Pagos
+    story.append(Paragraph("PLAN DE PAGOS", section_style))
+    
+    # Tabla de pagos
+    payment_data = [['Cuota', 'Fecha Vencimiento', 'Monto', 'Estado']]
+    
+    for payment in payments:
+        payment_data.append([
+            f'#{payment.payment_number}',
+            payment.due_date.strftime('%d/%m/%Y'),
+            f'€{payment.amount}',
+            payment.get_status_display()
+        ])
+    
+    payment_table = Table(payment_data, colWidths=[1*inch, 2*inch, 1.5*inch, 1.5*inch])
+    payment_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+    ]))
+    
+    story.append(payment_table)
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Información de Firma (si está firmado)
+    if contract.is_signed():
+        story.append(Paragraph("INFORMACIÓN DE FIRMA", section_style))
+        story.append(Paragraph(f"<b>Firmado por:</b> {contract.signed_by_name}", content_style))
+        story.append(Paragraph(f"<b>Email:</b> {contract.signed_by_email}", content_style))
+        story.append(Paragraph(f"<b>Fecha de Firma:</b> {contract.signed_at.strftime('%d/%m/%Y %H:%M')}", content_style))
+        story.append(Spacer(1, 0.2*inch))
+    
+    # Construir el PDF
+    doc.build(story)
+    
+    # Obtener el valor del buffer y escribirlo en la respuesta
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+    
+    return response
+
+
+# ============================================
 # VISTAS DE MEDICIONES MÚLTIPLES
 # ============================================
 

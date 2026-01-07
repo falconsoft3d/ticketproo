@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load l10n %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-file-earmark-text"></i>
+                        {% if contract %}Editar Contrato{% else %}Nuevo Contrato de Soporte{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="provider_company" class="form-label">Compañía Proveedora <span class="text-danger">*</span></label>
+                            <select class="form-select" id="provider_company" name="provider_company" required>
+                                <option value="">Seleccione una compañía...</option>
+                                {% for company in companies %}
+                                    <option value="{{ company.id }}" 
+                                        {% if contract and contract.provider_company and contract.provider_company.id == company.id %}selected{% endif %}>
+                                        {{ company.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="company" class="form-label">Cliente <span class="text-danger">*</span></label>
+                            <select class="form-select" id="company" name="company" required>
+                                <option value="">Seleccione un cliente...</option>
+                                {% for company in companies %}
+                                    <option value="{{ company.id }}" 
+                                        {% if contract and contract.company.id == company.id %}selected{% endif %}>
+                                        {{ company.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="start_date" class="form-label">Fecha de Inicio <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" 
+                                    value="{% if contract %}{{ contract.start_date|date:'Y-m-d' }}{% endif %}" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="payment_frequency" class="form-label">Frecuencia de Pago <span class="text-danger">*</span></label>
+                                <select class="form-select" id="payment_frequency" name="payment_frequency" required>
+                                    <option value="monthly" {% if contract and contract.payment_frequency == 'monthly' %}selected{% endif %}>Mensual</option>
+                                    <option value="quarterly" {% if contract and contract.payment_frequency == 'quarterly' %}selected{% endif %}>Trimestral</option>
+                                    <option value="biannual" {% if contract and contract.payment_frequency == 'biannual' %}selected{% endif %}>Semestral</option>
+                                    <option value="annual" {% if contract and contract.payment_frequency == 'annual' %}selected{% endif %}>Anual</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="total_amount" class="form-label">Monto Total (€) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="total_amount" name="total_amount" 
+                                    step="0.01" min="0" value="{% if contract %}{{ contract.total_amount|unlocalize }}{% endif %}" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="number_of_payments" class="form-label">Número de Cuotas <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="number_of_payments" name="number_of_payments" 
+                                    min="1" value="{% if contract %}{{ contract.number_of_payments }}{% else %}12{% endif %}" required>
+                            </div>
+                        </div>
+                        
+                        {% if contract %}
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Estado</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="draft" {% if contract.status == 'draft' %}selected{% endif %}>Borrador</option>
+                                <option value="pending" {% if contract.status == 'pending' %}selected{% endif %}>Pendiente de Firma</option>
+                                <option value="signed" {% if contract.status == 'signed' %}selected{% endif %}>Firmado</option>
+                                <option value="active" {% if contract.status == 'active' %}selected{% endif %}>Activo</option>
+                                <option value="expired" {% if contract.status == 'expired' %}selected{% endif %}>Expirado</option>
+                                <option value="cancelled" {% if contract.status == 'cancelled' %}selected{% endif %}>Cancelado</option>
+                            </select>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label for="description" class="form-label mb-0">Descripción <span class="text-danger">*</span></label>
+                                <button type="button" class="btn btn-sm btn-primary" id="generateDescriptionBtn">
+                                    <i class="bi bi-magic"></i> Generar con IA
+                                </button>
+                            </div>
+                            <textarea class="form-control" id="description" name="description" rows="5" required>{% if contract %}{{ contract.description }}{% endif %}</textarea>
+                            <small class="text-muted">Detalle los servicios incluidos en el contrato</small>
+                            <div id="aiLoadingMessage" class="text-primary mt-2" style="display: none;">
+                                <i class="bi bi-hourglass-split"></i> Generando descripción con IA...
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% if contract %}{% url 'support_contract_detail' contract.pk %}{% else %}{% url 'support_contract_list' %}{% endif %}" 
+                               class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Guardar Contrato
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Calcular cuota automáticamente
+    document.getElementById('total_amount').addEventListener('input', calculatePayment);
+    document.getElementById('number_of_payments').addEventListener('input', calculatePayment);
+    
+    function calculatePayment() {
+        const total = parseFloat(document.getElementById('total_amount').value) || 0;
+        const payments = parseInt(document.getElementById('number_of_payments').value) || 1;
+        const perPayment = (total / payments).toFixed(2);
+        
+        // Mostrar info (opcional)
+        console.log(`Cuota: €${perPayment}`);
+    }
+    
+    // Generar descripción con IA
+    document.getElementById('generateDescriptionBtn').addEventListener('click', async function() {
+        const btn = this;
+        const loadingMsg = document.getElementById('aiLoadingMessage');
+        const descriptionTextarea = document.getElementById('description');
+        
+        // Obtener datos del formulario
+        const providerCompanyId = document.getElementById('provider_company').value;
+        const companyId = document.getElementById('company').value;
+        const totalAmount = document.getElementById('total_amount').value;
+        const paymentFrequency = document.getElementById('payment_frequency').value;
+        const numberOfPayments = document.getElementById('number_of_payments').value;
+        
+        // Validar que al menos tengamos algún dato
+        if (!providerCompanyId && !companyId && !totalAmount) {
+            alert('Por favor, complete al menos los campos de compañía proveedora, cliente o monto total antes de generar la descripción.');
+            return;
+        }
+        
+        // Deshabilitar botón y mostrar loading
+        btn.disabled = true;
+        loadingMsg.style.display = 'block';
+        
+        try {
+            const response = await fetch('{% url "support_contract_generate_description" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    provider_company_id: providerCompanyId,
+                    company_id: companyId,
+                    total_amount: totalAmount,
+                    payment_frequency: paymentFrequency,
+                    number_of_payments: numberOfPayments
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                descriptionTextarea.value = data.description;
+                // Opcional: mostrar mensaje de éxito
+                const successMsg = document.createElement('div');
+                successMsg.className = 'alert alert-success alert-dismissible fade show mt-2';
+                successMsg.innerHTML = '<i class="bi bi-check-circle"></i> Descripción generada exitosamente. <button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+                descriptionTextarea.parentElement.appendChild(successMsg);
+                setTimeout(() => successMsg.remove(), 5000);
+            } else {
+                alert('Error al generar la descripción: ' + (data.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al conectar con el servidor. Por favor, intente nuevamente.');
+        } finally {
+            btn.disabled = false;
+            loadingMsg.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

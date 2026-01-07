@@ -19370,6 +19370,255 @@ class QuickQuoteView(models.Model):
         return f"Vista de {self.quote.title} - {self.viewed_at.strftime('%d/%m/%Y %H:%M')}"
 
 
+class SupportContract(models.Model):
+    """Modelo para contratos de soporte"""
+    
+    STATUS_CHOICES = [
+        ('draft', 'Borrador'),
+        ('pending', 'Pendiente de Firma'),
+        ('signed', 'Firmado'),
+        ('active', 'Activo'),
+        ('expired', 'Expirado'),
+        ('cancelled', 'Cancelado'),
+    ]
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='support_contracts',
+        verbose_name='Usuario'
+    )
+    
+    sequence_number = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='Número de Secuencia',
+        help_text='Formato: CS-YYYY-XX'
+    )
+    
+    provider_company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        related_name='provided_support_contracts',
+        verbose_name='Compañía Proveedora',
+        help_text='Compañía que ofrece el servicio',
+        null=True,
+        blank=True
+    )
+    
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        related_name='support_contracts',
+        verbose_name='Cliente',
+        help_text='Empresa cliente del servicio'
+    )
+    
+    start_date = models.DateField(
+        verbose_name='Fecha de Inicio'
+    )
+    
+    end_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Fin'
+    )
+    
+    description = models.TextField(
+        verbose_name='Descripción'
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='draft',
+        verbose_name='Estado'
+    )
+    
+    total_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Monto Total'
+    )
+    
+    payment_frequency = models.CharField(
+        max_length=20,
+        choices=[
+            ('monthly', 'Mensual'),
+            ('quarterly', 'Trimestral'),
+            ('biannual', 'Semestral'),
+            ('annual', 'Anual'),
+        ],
+        default='monthly',
+        verbose_name='Frecuencia de Pago'
+    )
+    
+    number_of_payments = models.IntegerField(
+        verbose_name='Número de Cuotas',
+        default=12
+    )
+    
+    public_token = models.CharField(
+        max_length=64,
+        unique=True,
+        blank=True,
+        verbose_name='Token Público',
+        help_text='Token único para acceso público'
+    )
+    
+    # Campos de firma
+    signed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Firma'
+    )
+    
+    signed_by_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Firmado por (Nombre)'
+    )
+    
+    signed_by_email = models.EmailField(
+        blank=True,
+        verbose_name='Firmado por (Email)'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Creación'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de Actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Contrato de Soporte'
+        verbose_name_plural = 'Contratos de Soporte'
+    
+    def save(self, *args, **kwargs):
+        # Generar token público si no existe
+        if not self.public_token:
+            import secrets
+            self.public_token = secrets.token_urlsafe(48)
+        
+        # Generar número de secuencia si no existe
+        if not self.sequence_number:
+            from django.utils import timezone
+            year = timezone.now().year
+            last_contract = SupportContract.objects.filter(
+                sequence_number__startswith=f'CS-{year}-'
+            ).order_by('-sequence_number').first()
+            
+            if last_contract:
+                try:
+                    last_num = int(last_contract.sequence_number.split('-')[-1])
+                    new_num = last_num + 1
+                except (ValueError, IndexError):
+                    new_num = 1
+            else:
+                new_num = 1
+            
+            self.sequence_number = f'CS-{year}-{new_num:02d}'
+        
+        super().save(*args, **kwargs)
+    
+    def get_public_url(self, request=None):
+        """Retorna la URL pública para que el cliente firme"""
+        from django.urls import reverse
+        path = reverse('support_contract_public', kwargs={'token': self.public_token})
+        if request:
+            return request.build_absolute_uri(path)
+        from django.conf import settings
+        base_url = getattr(settings, 'SITE_DOMAIN', 'localhost:8000')
+        protocol = 'https' if 'localhost' not in base_url else 'http'
+        return f"{protocol}://{base_url}{path}"
+    
+    def is_signed(self):
+        """Verifica si el contrato está firmado"""
+        return self.status == 'signed' or self.status == 'active'
+    
+    def __str__(self):
+        return f"{self.sequence_number} - {self.company.name}"
+
+
+class SupportContractPayment(models.Model):
+    """Modelo para las cuotas/pagos de los contratos de soporte"""
+    
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('paid', 'Pagado'),
+        ('overdue', 'Vencido'),
+        ('cancelled', 'Cancelado'),
+    ]
+    
+    contract = models.ForeignKey(
+        SupportContract,
+        on_delete=models.CASCADE,
+        related_name='payments',
+        verbose_name='Contrato'
+    )
+    
+    payment_number = models.IntegerField(
+        verbose_name='Número de Cuota'
+    )
+    
+    due_date = models.DateField(
+        verbose_name='Fecha de Vencimiento'
+    )
+    
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Monto'
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=PAYMENT_STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado'
+    )
+    
+    paid_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Pago'
+    )
+    
+    payment_method = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Método de Pago'
+    )
+    
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Creación'
+    )
+    
+    class Meta:
+        ordering = ['due_date', 'payment_number']
+        verbose_name = 'Pago de Contrato'
+        verbose_name_plural = 'Pagos de Contratos'
+    
+    def is_overdue(self):
+        """Verifica si el pago está vencido"""
+        from django.utils import timezone
+        return self.status == 'pending' and timezone.now().date() > self.due_date
+    
+    def __str__(self):
+        return f"{self.contract.sequence_number} - Cuota {self.payment_number} - €{self.amount}"
+
+
 class MultiMeasurement(models.Model):
     """Modelo para mediciones múltiples"""
     

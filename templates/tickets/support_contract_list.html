@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-file-earmark-text"></i> Contratos de Soporte</h2>
+                <a href="{% url 'support_contract_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nuevo Contrato
+                </a>
+            </div>
+
+            {% if contracts %}
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Secuencia</th>
+                                        <th>Empresa</th>
+                                        <th>Fecha de Inicio</th>
+                                        <th>Frecuencia</th>
+                                        <th>Total</th>
+                                        <th>Estado</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for contract in contracts %}
+                                    <tr>
+                                        <td><strong>{{ contract.sequence_number }}</strong></td>
+                                        <td>{{ contract.company.name }}</td>
+                                        <td>{{ contract.start_date|date:"d/m/Y" }}</td>
+                                        <td>{{ contract.get_payment_frequency_display }}</td>
+                                        <td><strong>€{{ contract.total_amount|floatformat:2 }}</strong></td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if contract.status == 'signed' or contract.status == 'active' %}bg-success
+                                                {% elif contract.status == 'pending' %}bg-warning text-dark
+                                                {% elif contract.status == 'draft' %}bg-secondary
+                                                {% elif contract.status == 'expired' %}bg-dark
+                                                {% else %}bg-danger{% endif %}">
+                                                {{ contract.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'support_contract_detail' contract.pk %}" 
+                                                   class="btn btn-outline-primary" title="Ver">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{% url 'support_contract_edit' contract.pk %}" 
+                                                   class="btn btn-outline-secondary" title="Editar">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <a href="{% url 'support_contract_pdf' contract.pk %}" 
+                                                   class="btn btn-outline-success" title="Descargar PDF" target="_blank">
+                                                    <i class="bi bi-file-pdf"></i>
+                                                </a>
+                                                <a href="{% url 'support_contract_delete' contract.pk %}" 
+                                                   class="btn btn-outline-danger" title="Eliminar">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    No hay contratos de soporte registrados.
+                    <a href="{% url 'support_contract_create' %}">Crear el primer contrato</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
