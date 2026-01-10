@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Configuración de Secuencia de Facturas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-sliders"></i> Configuración de Secuencia de Facturas</h2>
+                <a href="{% url 'invoice_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-gear"></i> Configuración Personalizada</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Información:</strong> Configura tu propia secuencia de facturas. 
+                                Por ejemplo, si usas el prefijo <code>MCVARQ/2025/</code> y el próximo número es <code>10</code>, 
+                                tu próxima factura tendrá el número <code>MCVARQ/2025/00010</code>.
+                            </div>
+
+                            <form method="post">
+                                {% csrf_token %}
+                                
+                                <div class="mb-4">
+                                    <label for="invoice_sequence_prefix" class="form-label">
+                                        <i class="bi bi-tag"></i> Prefijo de Secuencia
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control form-control-lg" 
+                                           id="invoice_sequence_prefix" 
+                                           name="invoice_sequence_prefix" 
+                                           value="{{ profile.invoice_sequence_prefix }}"
+                                           placeholder="Ej: MCVARQ/2025/">
+                                    <small class="text-muted">
+                                        El prefijo que aparecerá al inicio de cada factura. 
+                                        Puedes incluir tu nombre, empresa, año, etc.
+                                    </small>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="invoice_next_number" class="form-label">
+                                        <i class="bi bi-hash"></i> Próximo Número
+                                    </label>
+                                    <input type="number" 
+                                           class="form-control form-control-lg" 
+                                           id="invoice_next_number" 
+                                           name="invoice_next_number" 
+                                           value="{{ profile.invoice_next_number }}"
+                                           min="1"
+                                           required>
+                                    <small class="text-muted">
+                                        El próximo número secuencial. Este número se incrementará automáticamente con cada nueva factura.
+                                    </small>
+                                </div>
+
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <strong>Importante:</strong> La próxima factura que crees tendrá el número:
+                                    <code class="fs-5">
+                                        <span id="preview">
+                                            {{ profile.invoice_sequence_prefix }}{% if profile.invoice_next_number %}{{ profile.invoice_next_number|stringformat:"05d" }}{% else %}00001{% endif %}
+                                        </span>
+                                    </code>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="bi bi-save"></i> Guardar Configuración
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Información adicional -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0"><i class="bi bi-lightbulb"></i> Consejos</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="mb-0">
+                                <li>El número se formateará automáticamente con 5 dígitos (ej: 00001, 00010, 00123)</li>
+                                <li>Puedes cambiar el prefijo en cualquier momento, pero el número seguirá incrementándose</li>
+                                <li>Si dejas el prefijo vacío, se usará el formato por defecto: FAC-2026-0001</li>
+                                <li>Una vez creada una factura, su número no se puede cambiar</li>
+                                <li>El número se incrementa automáticamente después de crear cada factura</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Actualizar preview en tiempo real
+    document.getElementById('invoice_sequence_prefix').addEventListener('input', updatePreview);
+    document.getElementById('invoice_next_number').addEventListener('input', updatePreview);
+    
+    function updatePreview() {
+        const prefix = document.getElementById('invoice_sequence_prefix').value;
+        const number = parseInt(document.getElementById('invoice_next_number').value) || 1;
+        const formatted = String(number).padStart(5, '0');
+        document.getElementById('preview').textContent = prefix + formatted;
+    }
+</script>
+{% endblock %}

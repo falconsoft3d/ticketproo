@@ -156,6 +156,28 @@ def get_hr_submenu(request, active_item=None):
     return submenu
 
 
+def get_erp3_submenu(request, active_item=None):
+    """Genera el submenú para el módulo ERP3"""
+    submenu = [
+        {
+            'name': 'Facturas de 3ros',
+            'url': reverse('invoice_list'),
+            'icon': 'bi bi-receipt',
+            'count': None,
+            'active': active_item == 'invoices'
+        },
+        {
+            'name': 'Configurar Secuencia',
+            'url': reverse('invoice_sequence_config'),
+            'icon': 'bi bi-sliders',
+            'count': None,
+            'active': active_item == 'config'
+        },
+    ]
+    
+    return submenu
+
+
 def get_cap_submenu(request, active_item=None):
     """Genera el submenú para el módulo CAP (Capacitación)"""
     submenu = [
@@ -525,6 +547,7 @@ def get_ot_submenu(request, active_item=None):
 SUBMENU_FUNCTIONS = {
     'CRM': get_crm_submenu,
     'HR': get_hr_submenu,
+    'ERP3': get_erp3_submenu,
     'CAP': get_cap_submenu,
     'CO': get_co_submenu,
     'GT': get_gt_submenu,

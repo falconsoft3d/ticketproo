@@ -87,9 +87,7 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if 'employee_request' in request.resolver_match.url_name or 'ai_manager' in request.resolver_match.url_name or 'employee_dashboard' in request.resolver_match.url_name or 'internal_agreement' in request.resolver_match.url_name or 'training_plan' in request.resolver_match.url_name or 'my_training_progress' in request.resolver_match.url_name or 'ai_recommendation' in request.resolver_match.url_name or 'employee_absence' in request.resolver_match.url_name or 'absence_type' in request.resolver_match.url_name or 'company_protocol' in request.resolver_match.url_name or 'ai_tutor' in request.resolver_match.url_name or 'video_meeting' in request.resolver_match.url_name or 'expense_report' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownEmployee" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-add">
-
-                            </i> CRM
+                             CRM
                         </a>
                         <ul class="dropdown-menu">
                             
@@ -252,7 +250,7 @@
                         <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if 'employee_request' in request.resolver_match.url_name or 'ai_manager' in request.resolver_match.url_name or 'employee_dashboard' in request.resolver_match.url_name or 'internal_agreement' in request.resolver_match.url_name or 'training_plan' in request.resolver_match.url_name or 'my_training_progress' in request.resolver_match.url_name or 'ai_recommendation' in request.resolver_match.url_name or 'employee_absence' in request.resolver_match.url_name or 'absence_type' in request.resolver_match.url_name or 'company_protocol' in request.resolver_match.url_name or 'ai_tutor' in request.resolver_match.url_name or 'video_meeting' in request.resolver_match.url_name or 'expense_report' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownEmployee" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-badge"></i> HR
+                             HR
                         </a>
                         <ul class="dropdown-menu">
                             <li>
@@ -386,20 +384,56 @@
                         {% endif %}
                     {% endif %}
                     
+                    <!-- Menú ERP3 - Disponible para todos los usuarios autenticados -->
+                    {% if user.is_authenticated %}
+                    {% if user.is_staff or user.is_superuser or user.groups.all and user.groups.first.name == 'Agentes' %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'invoice' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="#" id="navbarDropdownERP3" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-calculator"></i> ERP3
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'invoice_list' %}active{% endif %}" 
+                                   href="{% url 'invoice_list' %}">
+                                    <i class="bi bi-receipt"></i> Facturas de 3ros
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'invoice_create' %}active{% endif %}" 
+                                   href="{% url 'invoice_create' %}">
+                                    <i class="bi bi-plus-circle"></i> Nueva Factura
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'invoice_sequence_config' %}active{% endif %}" 
+                                   href="{% url 'invoice_sequence_config' %}">
+                                    <i class="bi bi-sliders"></i> Configurar Secuencia
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                    {% endif %}
+                    
                     <!-- Menú de Capacitación -->
                     {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if 'course' in request.resolver_match.url_name or 'exam' in request.resolver_match.url_name or 'crm_question' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownTraining" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-book"></i> CAP
+                            CAP
                         </a>
                         <ul class="dropdown-menu">
+                            
+                            {% if user.is_staff or user.is_superuser or user.groups.all and user.groups.first.name == 'Agentes' %}
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'social_feed' %}active{% endif %}" 
                                    href="{% url 'social_feed' %}">
                                     <i class="bi bi-people-fill"></i> Red Social
                                 </a>
                             </li>
+                            {% endif %}
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'course_list' %}active{% endif %}" 
                                    href="{% url 'course_list' %}">
@@ -439,12 +473,14 @@
                                     <i class="bi bi-translate"></i> Traducciones
                                 </a>
                             </li>
+                             {% if user.is_staff or user.is_superuser or user.groups.all and user.groups.first.name == 'Agentes' %}
                             <li>
                                 <a class="dropdown-item {% if 'odoo' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'odoo_connection_list' %}">
                                     <i class="bi bi-cloud-upload"></i> Odoo RPC
                                 </a>
                             </li>
+                            {% endif %}
                             
                             <!-- Opciones adicionales para Agentes y Profesores -->
                             {% if user|can_manage_courses %}
@@ -521,7 +557,7 @@
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'form_list' %}active{% endif %}" 
                                    href="{% url 'form_list' %}">
-                                    <i class="bi bi-list-ul"></i> Ver Formularios
+                                    Ver Formularios
                                 </a>
                             </li>
                             <li>
@@ -648,7 +684,7 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if 'user' in request.resolver_match.url_name or 'category' in request.resolver_match.url_name or 'blog' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownManagement" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-gear"></i> GT
+                            GT
                         </a>
                         <ul class="dropdown-menu">
                             <li>
@@ -770,7 +806,7 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if 'scheduled_task' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownCG" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-code-slash"></i> CG
+                             GE
                         </a>
                         <ul class="dropdown-menu">
                             <li class="dropdown-header">Automatización</li>
@@ -860,7 +896,7 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if 'qa_' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownQA" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-comments"></i> QA
+                            QA
                         </a>
                         <ul class="dropdown-menu">
                             <li class="dropdown-header">Control de Calidad</li>
@@ -962,7 +998,7 @@
                     <!-- Menú Herramientas (Solo para Agentes) -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="toolsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-tools"></i> HM
+                             HM
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="toolsDropdown">
                             <li class="dropdown-header">Herramientas de PDF</li>
@@ -1053,28 +1089,9 @@
                                     <i class="bi bi-receipt-cutoff"></i> Gestionar Nóminas
                                 </a>
                             </li>
+                            
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Gestión de Usuarios</li>
-                            <li>
-                                <a class="dropdown-item {% if request.resolver_match.url_name == 'user_management' %}active{% endif %}" 
-                                   href="{% url 'user_management' %}">
-                                    <i class="bi bi-people"></i> Usuarios
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item {% if request.resolver_match.url_name == 'user_create' %}active{% endif %}" 
-                                   href="{% url 'user_create' %}">
-                                    <i class="bi bi-person-plus"></i> Crear Usuario
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Sistema</li>
-                            <li>
-                                <a class="dropdown-item {% if 'system_configuration' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'system_configuration' %}">
-                                    <i class="bi bi-gear-fill"></i> Configuración del Sistema
-                                </a>
-                            </li>
+                            
                             <li>
                                 <a class="dropdown-item {% if 'url_manager' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'url_manager_list' %}">
@@ -1133,7 +1150,7 @@
                     
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="docDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-file-earmark-text"></i> DC
+                             DC
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="docDropdown">
                             <li>
@@ -1257,7 +1274,7 @@
                     <!-- Menú Otros (Solo para Agentes) -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-graph-up"></i> OT
+                            OT
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
                             <li>
@@ -1403,6 +1420,49 @@
                             </li>
                         </ul>
                     </li>
+
+
+
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'scheduled_task' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="#" id="navbarDropdownCG" role="button" data-bs-toggle="dropdown">
+                             CG
+                        </a>
+                        <ul class="dropdown-menu">
+
+                            <li class="dropdown-header">Usuarios</li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'user_management' %}active{% endif %}" 
+                                   href="{% url 'user_management' %}">
+                                    <i class="bi bi-people"></i> Usuarios
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'user_create' %}active{% endif %}" 
+                                   href="{% url 'user_create' %}">
+                                    <i class="bi bi-person-plus"></i> Crear Usuario
+                                </a>
+                            </li>
+
+                            </li>
+
+                            <li><hr class="dropdown-divider"></li>
+
+
+                            <li class="dropdown-header">Sistema</li>
+                            <li>
+                                <a class="dropdown-item {% if 'system_configuration' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'system_configuration' %}">
+                                    <i class="bi bi-gear-fill"></i> Configuración del Sistema
+                                </a>
+                            </li>
+                        </ul>
+
+
+                                
+
+
                     {% endif %}
                 </ul>
                 

@@ -58,7 +58,7 @@ from .models import (
     ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote, CrmQuestion,
     SupportMeeting, SupportMeetingPoint, ScheduledTask, ScheduledTaskExecution,
     FunctionalRequirementDocument, FunctionalRequirement, FunctionalRequirementDocumentView,
-    Checklist, ChecklistItem,
+    Checklist, ChecklistItem, Invoice, InvoiceLine, Product,
     # ...existing code...
 )
 
@@ -53637,3 +53637,607 @@ def public_privacy_policy(request, slug):
         'policy': policy,
     }
     return render(request, 'tickets/public_privacy_policy.html', context)
+
+# ==================== ERP3 - FACTURAS DE 3ROS ====================
+
+@login_required
+def invoice_list(request):
+    """Vista para listar todas las facturas"""
+    from .models import Invoice
+    from .submenu_utils import get_erp3_submenu
+    from .utils import is_agent
+    
+    # Admin/staff ven todas las facturas
+    # Usuarios normales y agentes solo ven las suyas
+    if request.user.is_staff or request.user.is_superuser:
+        invoices = Invoice.objects.all().select_related('company', 'created_by')
+    else:
+        invoices = Invoice.objects.filter(created_by=request.user).select_related('company', 'created_by')
+    
+    # Filtros
+    search = request.GET.get('search', '')
+    status = request.GET.get('status', '')
+    company_id = request.GET.get('company', '')
+    
+    if search:
+        invoices = invoices.filter(
+            Q(sequence__icontains=search) |
+            Q(company__name__icontains=search) |
+            Q(notes__icontains=search)
+        )
+    
+    if status:
+        invoices = invoices.filter(status=status)
+    
+    if company_id:
+        invoices = invoices.filter(company_id=company_id)
+    
+    # Paginación
+    paginator = Paginator(invoices, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Lista de empresas para el filtro
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'page_obj': page_obj,
+        'search': search,
+        'status': status,
+        'company_id': company_id,
+        'companies': companies,
+        'app_name': 'ERP3',
+        'submenu_items': get_erp3_submenu(request, 'invoices'),
+    }
+    return render(request, 'tickets/invoice_list.html', context)
+
+
+@login_required
+def invoice_detail(request, pk):
+    """Vista para ver detalles de una factura"""
+    from .models import Invoice
+    from .submenu_utils import get_erp3_submenu
+    from .utils import is_agent
+    from django.core.exceptions import PermissionDenied
+    
+    invoice = get_object_or_404(Invoice, pk=pk)
+    
+    # Admin/superuser pueden ver todas las facturas
+    # Usuarios normales y agentes solo pueden ver las suyas
+    if not (request.user.is_staff or request.user.is_superuser):
+        if invoice.created_by != request.user:
+            raise PermissionDenied("No tienes permiso para ver esta factura")
+    
+    lines = invoice.lines.all().select_related('product')
+    invoice_messages = invoice.messages.all().select_related('user')
+    
+    context = {
+        'invoice': invoice,
+        'lines': lines,
+        'invoice_messages': invoice_messages,
+        'app_name': 'ERP3',
+        'submenu_items': get_erp3_submenu(request, 'invoices'),
+    }
+    return render(request, 'tickets/invoice_detail.html', context)
+
+
+@login_required
+def invoice_create(request):
+    """Vista para crear una nueva factura"""
+    from .models import Invoice, Product
+    from .submenu_utils import get_erp3_submenu
+    from decimal import Decimal
+    
+    if request.method == 'POST':
+        # Obtener datos de la cabecera
+        company_id = request.POST.get('company')
+        invoice_date = request.POST.get('invoice_date')
+        due_date = request.POST.get('due_date')
+        notes = request.POST.get('notes', '')
+        footer_message = request.POST.get('footer_message', '')
+        currency = request.POST.get('currency', 'USD')
+        
+        # Crear la factura
+        invoice = Invoice(
+            company_id=company_id,
+            invoice_date=invoice_date,
+            due_date=due_date if due_date else None,
+            notes=notes,
+            footer_message=footer_message,
+            currency=currency,
+            created_by=request.user
+        )
+        invoice.save()
+        
+        # Obtener datos de las líneas
+        product_ids = request.POST.getlist('product_id[]')
+        quantities = request.POST.getlist('quantity[]')
+        unit_prices = request.POST.getlist('unit_price[]')
+        tax_rates = request.POST.getlist('tax_rate[]')
+        descriptions = request.POST.getlist('description[]')
+        
+        # Crear las líneas
+        from .models import InvoiceLine
+        for i, product_id in enumerate(product_ids):
+            if product_id:  # Solo crear si hay producto seleccionado
+                try:
+                    quantity = Decimal(quantities[i]) if i < len(quantities) and quantities[i] else Decimal('1')
+                    unit_price = Decimal(unit_prices[i]) if i < len(unit_prices) and unit_prices[i] else Decimal('0')
+                    tax_rate = Decimal(tax_rates[i]) if i < len(tax_rates) and tax_rates[i] else Decimal('0')
+                except (ValueError, IndexError):
+                    quantity = Decimal('1')
+                    unit_price = Decimal('0')
+                    tax_rate = Decimal('0')
+                    
+                InvoiceLine.objects.create(
+                    invoice=invoice,
+                    product_id=product_id,
+                    quantity=quantity,
+                    unit_price=unit_price,
+                    tax_rate=tax_rate,
+                    description=descriptions[i] if i < len(descriptions) else '',
+                    line_number=i + 1
+                )
+        
+        messages.success(request, f'Factura {invoice.sequence} creada exitosamente.')
+        return redirect('invoice_detail', pk=invoice.pk)
+    
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    products = Product.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'companies': companies,
+        'products': products,
+        'today': timezone.now().date(),
+        'app_name': 'ERP3',
+        'submenu_items': get_erp3_submenu(request, 'invoices'),
+    }
+    return render(request, 'tickets/invoice_form.html', context)
+
+
+@login_required
+def invoice_update(request, pk):
+    """Vista para editar una factura existente"""
+    from .models import Invoice, InvoiceLine, Product
+    from .submenu_utils import get_erp3_submenu
+    from decimal import Decimal
+    
+    invoice = get_object_or_404(Invoice, pk=pk)
+    
+    if request.method == 'POST':
+        # Actualizar datos de la cabecera
+        invoice.sequence = request.POST.get('sequence', invoice.sequence)
+        invoice.company_id = request.POST.get('company')
+        invoice.invoice_date = request.POST.get('invoice_date')
+        invoice.due_date = request.POST.get('due_date') if request.POST.get('due_date') else None
+        invoice.notes = request.POST.get('notes', '')
+        invoice.footer_message = request.POST.get('footer_message', '')
+        invoice.status = request.POST.get('status', 'draft')
+        invoice.currency = request.POST.get('currency', 'USD')
+        invoice.save()
+        
+        # Eliminar líneas existentes
+        invoice.lines.all().delete()
+        
+        # Crear nuevas líneas
+        product_ids = request.POST.getlist('product_id[]')
+        quantities = request.POST.getlist('quantity[]')
+        unit_prices = request.POST.getlist('unit_price[]')
+        tax_rates = request.POST.getlist('tax_rate[]')
+        descriptions = request.POST.getlist('description[]')
+        
+        for i, product_id in enumerate(product_ids):
+            if product_id:
+                try:
+                    quantity = Decimal(quantities[i]) if i < len(quantities) and quantities[i] else Decimal('1')
+                    unit_price = Decimal(unit_prices[i]) if i < len(unit_prices) and unit_prices[i] else Decimal('0')
+                    tax_rate = Decimal(tax_rates[i]) if i < len(tax_rates) and tax_rates[i] else Decimal('0')
+                except (ValueError, IndexError):
+                    quantity = Decimal('1')
+                    unit_price = Decimal('0')
+                    tax_rate = Decimal('0')
+                    
+                InvoiceLine.objects.create(
+                    invoice=invoice,
+                    product_id=product_id,
+                    quantity=quantity,
+                    unit_price=unit_price,
+                    tax_rate=tax_rate,
+                    description=descriptions[i] if i < len(descriptions) else '',
+                    line_number=i + 1
+                )
+        
+        messages.success(request, f'Factura {invoice.sequence} actualizada exitosamente.')
+        return redirect('invoice_detail', pk=invoice.pk)
+    
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    products = Product.objects.filter(is_active=True).order_by('name')
+    lines = invoice.lines.all().select_related('product')
+    
+    context = {
+        'invoice': invoice,
+        'lines': lines,
+        'companies': companies,
+        'products': products,
+        'app_name': 'ERP3',
+        'submenu_items': get_erp3_submenu(request, 'invoices'),
+    }
+    return render(request, 'tickets/invoice_form.html', context)
+
+
+@login_required
+def invoice_delete(request, pk):
+    """Vista para eliminar una factura"""
+    from .models import Invoice
+    from .submenu_utils import get_erp3_submenu
+    
+    invoice = get_object_or_404(Invoice, pk=pk)
+    
+    if request.method == 'POST':
+        sequence = invoice.sequence
+        invoice.delete()
+        messages.success(request, f'Factura {sequence} eliminada exitosamente.')
+        return redirect('invoice_list')
+    
+    context = {
+        'invoice': invoice,
+        'app_name': 'ERP3',
+        'submenu_items': get_erp3_submenu(request, 'invoices'),
+    }
+    return render(request, 'tickets/invoice_delete.html', context)
+
+@login_required
+def invoice_pdf(request, pk):
+    """Genera y descarga el PDF de la factura"""
+    from .models import Invoice
+    from decimal import Decimal
+    
+    invoice = get_object_or_404(Invoice, pk=pk)
+    lines = invoice.lines.all().select_related('product')
+    
+    # Obtener símbolo de moneda
+    currency_symbol = invoice.get_currency_symbol()
+    
+    # Crear el objeto HttpResponse con el tipo de contenido apropiado
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="Factura_{invoice.sequence}.pdf"'
+    
+    # Crear el objeto PDF
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    
+    # Configuración de márgenes
+    margin_left = 50
+    margin_right = width - 50
+    y_position = height - 50
+    
+    # ==================== ENCABEZADO - DATOS DEL EMISOR ====================
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(margin_left, y_position, "FACTURA")
+    
+    # Número de factura
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(margin_right - 150, y_position, invoice.sequence)
+    y_position -= 30
+    
+    # Línea separadora
+    c.setStrokeColor(colors.HexColor('#6c757d'))
+    c.setLineWidth(2)
+    c.line(margin_left, y_position, margin_right, y_position)
+    y_position -= 30
+    
+    # ==================== DATOS EN DOS COLUMNAS ====================
+    # Guardar posición inicial para ambas columnas
+    column_start_y = y_position
+    
+    # COLUMNA IZQUIERDA - CLIENTE
+    y_left = column_start_y
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(margin_left, y_left, "CLIENTE:")
+    y_left -= 20
+    
+    c.setFont("Helvetica", 10)
+    c.drawString(margin_left, y_left, f"Empresa: {invoice.company.name}")
+    y_left -= 15
+    if invoice.company.address:
+        c.drawString(margin_left, y_left, f"Dirección: {invoice.company.address}")
+        y_left -= 15
+    if invoice.company.phone:
+        c.drawString(margin_left, y_left, f"Teléfono: {invoice.company.phone}")
+        y_left -= 15
+    if invoice.company.email:
+        c.drawString(margin_left, y_left, f"Email: {invoice.company.email}")
+        y_left -= 15
+    
+    # COLUMNA DERECHA - EMISOR
+    y_right = column_start_y
+    right_column_x = width / 2 + 20
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(right_column_x, y_right, "EMISOR:")
+    y_right -= 20
+    
+    c.setFont("Helvetica", 10)
+    c.drawString(right_column_x, y_right, f"Usuario: {invoice.created_by.get_full_name() or invoice.created_by.username}")
+    y_right -= 15
+    c.drawString(right_column_x, y_right, f"Email: {invoice.created_by.email}")
+    y_right -= 15
+    c.drawString(right_column_x, y_right, f"Fecha de emisión: {invoice.created_at.strftime('%d/%m/%Y %H:%M')}")
+    y_right -= 15
+    
+    # Usar la posición más baja de las dos columnas
+    y_position = min(y_left, y_right) - 10
+    
+    # Fechas de la factura
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(margin_left, y_position, f"Fecha de Factura: {invoice.invoice_date.strftime('%d/%m/%Y')}")
+    if invoice.due_date:
+        c.drawString(margin_left + 200, y_position, f"Vencimiento: {invoice.due_date.strftime('%d/%m/%Y')}")
+    y_position -= 40
+    
+    # ==================== TABLA DE LÍNEAS ====================
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(margin_left, y_position, "DETALLE DE LA FACTURA")
+    y_position -= 20
+    
+    # Encabezados de la tabla
+    table_headers = ['#', 'Producto', 'Descripción', 'Cant.', 'P. Unit.', 'Subtotal', 'Imp.', 'Total']
+    col_widths = [30, 120, 120, 40, 60, 60, 50, 60]
+    
+    # Dibujar encabezados
+    c.setFillColor(colors.HexColor('#f8f9fa'))
+    c.rect(margin_left, y_position - 15, sum(col_widths), 18, fill=1, stroke=0)
+    c.setFillColor(colors.black)
+    c.setFont("Helvetica-Bold", 9)
+    
+    x_pos = margin_left + 5
+    for i, header in enumerate(table_headers):
+        if i >= 3:  # Alinear a la derecha cantidades y montos
+            c.drawRightString(x_pos + col_widths[i] - 5, y_position - 10, header)
+        else:
+            c.drawString(x_pos, y_position - 10, header)
+        x_pos += col_widths[i]
+    
+    y_position -= 20
+    c.setFont("Helvetica", 8)
+    
+    # Líneas de la factura
+    for line in lines:
+        # Verificar si necesitamos nueva página
+        if y_position < 150:
+            c.showPage()
+            y_position = height - 50
+            c.setFont("Helvetica", 8)
+        
+        x_pos = margin_left + 5
+        row_data = [
+            str(line.line_number),
+            line.product.name[:20],
+            (line.description[:25] if line.description else '-'),
+            f"{line.quantity}",
+            f"{currency_symbol}{line.unit_price:.2f}",
+            f"{currency_symbol}{line.subtotal:.2f}",
+            f"{currency_symbol}{line.tax_amount:.2f}",
+            f"{currency_symbol}{line.line_total:.2f}"
+        ]
+        
+        for i, data in enumerate(row_data):
+            if i >= 3:  # Alinear a la derecha
+                c.drawRightString(x_pos + col_widths[i] - 5, y_position, data)
+            else:
+                c.drawString(x_pos, y_position, data)
+            x_pos += col_widths[i]
+        
+        y_position -= 18
+    
+    # Línea separadora antes de totales
+    y_position -= 10
+    c.setStrokeColor(colors.grey)
+    c.setLineWidth(1)
+    c.line(margin_right - 200, y_position, margin_right, y_position)
+    y_position -= 25
+    
+    # ==================== TOTALES ====================
+    c.setFont("Helvetica-Bold", 10)
+    
+    # Subtotal
+    c.drawString(margin_right - 180, y_position, "Subtotal:")
+    c.drawRightString(margin_right - 10, y_position, f"{currency_symbol}{invoice.subtotal:.2f}")
+    y_position -= 18
+    
+    # Impuestos
+    c.drawString(margin_right - 180, y_position, "Impuestos:")
+    c.drawRightString(margin_right - 10, y_position, f"{currency_symbol}{invoice.tax_amount:.2f}")
+    y_position -= 18
+    
+    # Total
+    c.setFont("Helvetica-Bold", 12)
+    c.setFillColor(colors.HexColor('#6c757d'))
+    c.drawString(margin_right - 180, y_position, "TOTAL:")
+    c.drawRightString(margin_right - 10, y_position, f"{currency_symbol}{invoice.total:.2f}")
+    c.setFillColor(colors.black)
+    y_position -= 30
+    
+    # ==================== NOTAS ====================
+    if invoice.notes:
+        y_position -= 20
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(margin_left, y_position, "Notas:")
+        y_position -= 15
+        c.setFont("Helvetica", 9)
+        
+        # Dividir notas en líneas si es muy largo
+        notes_lines = invoice.notes.split('\n')
+        for note_line in notes_lines:
+            if y_position < 100:
+                c.showPage()
+                y_position = height - 50
+                c.setFont("Helvetica", 9)
+            c.drawString(margin_left, y_position, note_line[:100])
+            y_position -= 12
+    
+    # ==================== MENSAJE AL PIE ====================
+    if invoice.footer_message:
+        y_position -= 20
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(margin_left, y_position, "Mensaje:")
+        y_position -= 15
+        c.setFont("Helvetica", 9)
+        
+        # Dividir mensaje en líneas si es muy largo
+        message_lines = invoice.footer_message.split('\n')
+        for message_line in message_lines:
+            if y_position < 100:
+                c.showPage()
+                y_position = height - 50
+                c.setFont("Helvetica", 9)
+            c.drawString(margin_left, y_position, message_line[:100])
+            y_position -= 12
+    
+    # ==================== PIE DE PÁGINA ====================
+    c.setFont("Helvetica", 8)
+    c.setFillColor(colors.grey)
+    c.drawCentredString(width/2, 30, f"Factura generada el {timezone.now().strftime('%d/%m/%Y %H:%M')}")
+    c.drawCentredString(width/2, 15, "TicketProo - Sistema de Gestión")
+    
+    # Finalizar el PDF
+    c.showPage()
+    c.save()
+    
+    # Obtener el valor del BytesIO buffer y escribirlo en la respuesta
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+    
+    return response
+
+@login_required
+@login_required
+def invoice_sequence_config(request):
+    """Vista para configurar la secuencia de facturas del usuario"""
+    from .models import UserProfile
+    from .submenu_utils import get_erp3_submenu
+    
+    # Obtener o crear el perfil del usuario
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    if request.method == 'POST':
+        prefix = request.POST.get('invoice_sequence_prefix', '')
+        next_number = request.POST.get('invoice_next_number', '1')
+        
+        try:
+            next_number = int(next_number)
+            if next_number < 1:
+                messages.error(request, 'El próximo número debe ser mayor o igual a 1.')
+            else:
+                profile.invoice_sequence_prefix = prefix
+                profile.invoice_next_number = next_number
+                profile.save()
+                messages.success(request, 'Configuración de secuencia actualizada exitosamente.')
+                return redirect('invoice_sequence_config')
+        except ValueError:
+            messages.error(request, 'El próximo número debe ser un número válido.')
+    
+    context = {
+        'profile': profile,
+        'app_name': 'ERP3',
+        'submenu_items': get_erp3_submenu(request, 'config'),
+    }
+    return render(request, 'tickets/invoice_sequence_config.html', context)
+
+@login_required
+def invoice_add_message(request, pk):
+    """Vista para agregar un mensaje a una factura"""
+    from .models import Invoice, InvoiceMessage
+    
+    invoice = get_object_or_404(Invoice, pk=pk)
+    
+    if request.method == 'POST':
+        message_text = request.POST.get('message', '').strip()
+        if message_text:
+            InvoiceMessage.objects.create(
+                invoice=invoice,
+                user=request.user,
+                message=message_text
+            )
+            messages.success(request, 'Mensaje agregado exitosamente.')
+        else:
+            messages.error(request, 'El mensaje no puede estar vacío.')
+    
+    return redirect('invoice_detail', pk=pk)
+
+@login_required
+def invoice_duplicate(request, pk):
+    """Vista para duplicar una factura existente"""
+    from .models import Invoice, InvoiceLine
+    from .utils import is_agent
+    from django.core.exceptions import PermissionDenied
+    from datetime import date
+    
+    original_invoice = get_object_or_404(Invoice, pk=pk)
+    
+    # Si es agente y no es admin, solo puede duplicar sus propias facturas
+    if is_agent(request.user) and not request.user.is_staff:
+        if original_invoice.created_by != request.user:
+            raise PermissionDenied("No tienes permiso para duplicar esta factura")
+    
+    # Crear nueva factura con los mismos datos
+    new_invoice = Invoice(
+        company=original_invoice.company,
+        invoice_date=date.today(),
+        due_date=original_invoice.due_date,
+        notes=original_invoice.notes,
+        footer_message=original_invoice.footer_message,
+        currency=original_invoice.currency,
+        status='draft',
+        created_by=request.user
+    )
+    new_invoice.save()
+    
+    # Copiar todas las líneas de la factura original
+    original_lines = original_invoice.lines.all()
+    for line in original_lines:
+        InvoiceLine.objects.create(
+            invoice=new_invoice,
+            line_number=line.line_number,
+            product=line.product,
+            description=line.description,
+            quantity=line.quantity,
+            unit_price=line.unit_price,
+            tax_rate=line.tax_rate
+        )
+    
+    messages.success(request, f'Factura duplicada exitosamente. Nueva factura: {new_invoice.sequence}')
+    return redirect('invoice_detail', pk=new_invoice.pk)
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def user_change_password(request, user_id):
+    """Vista para cambiar la contraseña de un usuario"""
+    from django.contrib.auth import update_session_auth_hash
+    
+    user_to_edit = get_object_or_404(User, pk=user_id)
+    
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password', '').strip()
+        confirm_password = request.POST.get('confirm_password', '').strip()
+        
+        if not new_password:
+            messages.error(request, 'La contraseña no puede estar vacía.')
+        elif len(new_password) < 4:
+            messages.error(request, 'La contraseña debe tener al menos 4 caracteres.')
+        elif new_password != confirm_password:
+            messages.error(request, 'Las contraseñas no coinciden.')
+        else:
+            user_to_edit.set_password(new_password)
+            user_to_edit.save()
+            
+            # Si estamos cambiando nuestra propia contraseña, actualizamos la sesión
+            # para no desloguear al usuario actual
+            if user_to_edit == request.user:
+                update_session_auth_hash(request, user_to_edit)
+            
+            messages.success(request, f'Contraseña actualizada exitosamente para el usuario "{user_to_edit.username}".')
+            return redirect('user_edit', user_id=user_id)
+    
+    return redirect('user_edit', user_id=user_id)

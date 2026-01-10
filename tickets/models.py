@@ -1012,6 +1012,20 @@ class UserProfile(models.Model):
         help_text='Token único para autenticación en la API REST'
     )
     
+    # Configuración de secuencia de facturas
+    invoice_sequence_prefix = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        verbose_name='Prefijo de Secuencia de Factura',
+        help_text='Prefijo para la secuencia de facturas (ej: MCVARQ/2025/)'
+    )
+    invoice_next_number = models.IntegerField(
+        default=1,
+        verbose_name='Próximo Número de Factura',
+        help_text='Próximo número secuencial para la factura'
+    )
+    
     created_at = models.DateTimeField(
         default=timezone.now,
         verbose_name='Fecha de creación'
@@ -22796,6 +22810,323 @@ class PrivacyPolicy(models.Model):
         super().save(*args, **kwargs)
 
 
+# ==================== ERP3 - FACTURAS DE 3ROS ====================
+
+class Invoice(models.Model):
+    """
+    Modelo para gestionar facturas de terceros
+    """
+    sequence = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name='Secuencia/Número',
+        help_text='Número de factura (ej: FAC-2025-001)'
+    )
+    
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.PROTECT,
+        related_name='invoices',
+        verbose_name='Cliente/Empresa',
+        help_text='Empresa a la que se factura'
+    )
+    
+    invoice_date = models.DateField(
+        default=timezone.now,
+        verbose_name='Fecha de Factura'
+    )
+    
+    due_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de Vencimiento',
+        help_text='Fecha límite de pago (opcional)'
+    )
+    
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas',
+        help_text='Notas o comentarios adicionales'
+    )
+    
+    footer_message = models.TextField(
+        blank=True,
+        verbose_name='Mensaje al pie',
+        help_text='Mensaje que aparecerá al final de la factura (condiciones de pago, términos, etc.)'
+    )
+    
+    subtotal = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name='Subtotal'
+    )
+    
+    tax_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name='Impuestos'
+    )
+    
+    total = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name='Total'
+    )
+    
+    currency = models.CharField(
+        max_length=10,
+        choices=[
+            ('EUR', 'Euro (€)'),
+            ('USD', 'Dólar Americano ($)'),
+            ('GBP', 'Libra Esterlina (£)'),
+            ('JPY', 'Yen Japonés (¥)'),
+            ('CAD', 'Dólar Canadiense (C$)'),
+            ('AUD', 'Dólar Australiano (A$)'),
+            ('CHF', 'Franco Suizo (CHF)'),
+            ('CNY', 'Yuan Chino (¥)'),
+            ('MXN', 'Peso Mexicano ($)'),
+            ('COP', 'Peso Colombiano ($)'),
+        ],
+        default='USD',
+        verbose_name='Moneda',
+        help_text='Moneda en la que se factura'
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('draft', 'Borrador'),
+            ('sent', 'Enviada'),
+            ('paid', 'Pagada'),
+            ('cancelled', 'Cancelada'),
+        ],
+        default='draft',
+        verbose_name='Estado'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_invoices',
+        verbose_name='Creado por'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Creación'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última Actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Factura de 3ros'
+        verbose_name_plural = 'Facturas de 3ros'
+    
+    def __str__(self):
+        return f"{self.sequence} - {self.company.name}"
+    
+    def get_currency_symbol(self):
+        """Obtiene el símbolo de la moneda"""
+        currency_symbols = {
+            'EUR': '€',
+            'USD': '$',
+            'GBP': '£',
+            'JPY': '¥',
+            'CAD': 'C$',
+            'AUD': 'A$',
+            'CHF': 'CHF',
+            'CNY': '¥',
+            'MXN': '$',
+            'COP': '$',
+        }
+        return currency_symbols.get(self.currency, '$')
+    
+    def format_amount(self, amount):
+        """Formatea un monto con la moneda"""
+        symbol = self.get_currency_symbol()
+        if self.currency in ['EUR', 'GBP']:
+            return f"{symbol}{amount:,.2f}"
+        else:
+            return f"{symbol}{amount:,.2f}"
+    
+    def calculate_totals(self):
+        """Calcula los totales de la factura basándose en las líneas"""
+        lines = self.lines.all()
+        self.subtotal = sum(line.subtotal for line in lines)
+        self.tax_amount = sum(line.tax_amount for line in lines)
+        self.total = self.subtotal + self.tax_amount
+    
+    def save(self, *args, **kwargs):
+        # Si es una nueva factura y no tiene secuencia, generarla
+        if not self.pk and not self.sequence:
+            # Obtener el perfil del usuario
+            user_profile = self.created_by.profile
+            
+            # Si el usuario tiene un prefijo personalizado, usarlo
+            if user_profile.invoice_sequence_prefix:
+                # Usar el prefijo y el número siguiente del usuario
+                self.sequence = f"{user_profile.invoice_sequence_prefix}{user_profile.invoice_next_number:05d}"
+                
+                # Incrementar el próximo número en el perfil del usuario
+                user_profile.invoice_next_number += 1
+                user_profile.save(update_fields=['invoice_next_number'])
+            else:
+                # Usar el sistema de secuencia por defecto (fallback)
+                from datetime import datetime
+                year = datetime.now().year
+                # Obtener el último número de secuencia del año para este usuario
+                last_invoice = Invoice.objects.filter(
+                    created_by=self.created_by,
+                    sequence__startswith=f'FAC-{year}-'
+                ).order_by('-sequence').first()
+                
+                if last_invoice:
+                    last_num = int(last_invoice.sequence.split('-')[-1])
+                    new_num = last_num + 1
+                else:
+                    new_num = 1
+                
+                self.sequence = f'FAC-{year}-{new_num:04d}'
+        
+        super().save(*args, **kwargs)
 
 
+class InvoiceLine(models.Model):
+    """
+    Modelo para las líneas/detalles de factura
+    """
+    invoice = models.ForeignKey(
+        Invoice,
+        on_delete=models.CASCADE,
+        related_name='lines',
+        verbose_name='Factura'
+    )
+    
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        related_name='invoice_lines',
+        verbose_name='Producto',
+        help_text='Producto o servicio facturado'
+    )
+    
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción adicional del producto/servicio'
+    )
+    
+    quantity = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=1,
+        verbose_name='Cantidad'
+    )
+    
+    unit_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name='Precio Unitario'
+    )
+    
+    tax_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        verbose_name='Tasa de Impuesto (%)',
+        help_text='Porcentaje de impuesto (ej: 21 para IVA 21%)'
+    )
+    
+    subtotal = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name='Subtotal'
+    )
+    
+    tax_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name='Impuestos'
+    )
+    
+    line_total = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name='Total Línea'
+    )
+    
+    line_number = models.IntegerField(
+        default=1,
+        verbose_name='Número de Línea'
+    )
+    
+    class Meta:
+        ordering = ['line_number']
+        verbose_name = 'Línea de Factura'
+        verbose_name_plural = 'Líneas de Factura'
+    
+    def __str__(self):
+        return f"{self.invoice.sequence} - Línea {self.line_number}: {self.product.name}"
+    
+    def calculate_amounts(self):
+        """Calcula los montos de la línea"""
+        self.subtotal = self.quantity * self.unit_price
+        self.tax_amount = self.subtotal * (self.tax_rate / 100)
+        self.line_total = self.subtotal + self.tax_amount
+    
+    def save(self, *args, **kwargs):
+        # Calcular montos antes de guardar
+        self.calculate_amounts()
+        super().save(*args, **kwargs)
+        
+        # Actualizar totales de la factura
+        if self.invoice:
+            self.invoice.calculate_totals()
+            self.invoice.save()
 
+
+class InvoiceMessage(models.Model):
+    """
+    Modelo para mensajes/comentarios en facturas
+    """
+    invoice = models.ForeignKey(
+        Invoice,
+        on_delete=models.CASCADE,
+        related_name='messages',
+        verbose_name='Factura'
+    )
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='invoice_messages',
+        verbose_name='Usuario'
+    )
+    
+    message = models.TextField(
+        verbose_name='Mensaje',
+        help_text='Mensaje o comentario sobre la factura'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Creación'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Mensaje de Factura'
+        verbose_name_plural = 'Mensajes de Facturas'
+    
+    def __str__(self):
+        return f"Mensaje de {self.user.username} en {self.invoice.sequence}"

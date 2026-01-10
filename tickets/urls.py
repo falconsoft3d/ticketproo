@@ -111,6 +111,7 @@ urlpatterns = [
     path('users/', views.user_management_view, name='user_management'),
     path('users/create/', views.user_create_view, name='user_create'),
     path('users/<int:user_id>/edit/', views.user_edit_view, name='user_edit'),
+    path('users/<int:user_id>/change-password/', views.user_change_password, name='user_change_password'),
     path('users/<int:user_id>/toggle-status/', views.user_toggle_status_view, name='user_toggle_status'),
     path('users/<int:user_id>/tasks/', views.user_tasks_view, name='user_tasks'),
     
@@ -1715,5 +1716,16 @@ urlpatterns += [
     # Public Work Order Creation
     path('users/<int:pk>/public-workorder-token/', views.user_public_workorder_token, name='user_public_workorder_token'),
     path('public/workorder/<uuid:token>/', views.public_workorder_create, name='public_workorder_create'),
+    
+    # ==================== ERP3 - FACTURAS DE 3ROS ====================
+    path('invoices/', views.invoice_list, name='invoice_list'),
+    path('invoices/create/', views.invoice_create, name='invoice_create'),
+    path('invoices/<int:pk>/', views.invoice_detail, name='invoice_detail'),
+    path('invoices/<int:pk>/edit/', views.invoice_update, name='invoice_update'),
+    path('invoices/<int:pk>/delete/', views.invoice_delete, name='invoice_delete'),
+    path('invoices/<int:pk>/pdf/', views.invoice_pdf, name='invoice_pdf'),
+    path('invoices/<int:pk>/duplicate/', views.invoice_duplicate, name='invoice_duplicate'),
+    path('invoices/<int:pk>/add-message/', views.invoice_add_message, name='invoice_add_message'),
+    path('invoices/config/sequence/', views.invoice_sequence_config, name='invoice_sequence_config'),
 ]
 

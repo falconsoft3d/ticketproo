@@ -30,7 +30,8 @@ from .models import (
     FunctionalRequirementComment, AccessGroup, AccessLink, TaskPlan, TaskPlanDay, TaskPlanItem,
     Checklist, ChecklistItem, Transaction, KnowledgeBase, Translation, SQLQuery,
     OdooConnection, OdooRPCTable, OdooRPCField, OdooRPCData, OdooRPCImportFile,
-    Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage, ChatbotClick, CourseApproval, PrivacyPolicy
+    Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage, ChatbotClick, CourseApproval, PrivacyPolicy,
+    Invoice, InvoiceLine
 )
 
 # Configuración del sitio de administración
@@ -6945,3 +6946,57 @@ class PrivacyPolicyAdmin(admin.ModelAdmin):
         if not change:  # Si es nuevo
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
+
+# ==================== ERP3 - FACTURAS DE 3ROS ====================
+
+class InvoiceLineInline(admin.TabularInline):
+    model = InvoiceLine
+    extra = 1
+    fields = ('line_number', 'product', 'description', 'quantity', 'unit_price', 'tax_rate', 'subtotal', 'tax_amount', 'line_total')
+    readonly_fields = ('subtotal', 'tax_amount', 'line_total')
+
+@admin.register(Invoice)
+class InvoiceAdmin(admin.ModelAdmin):
+    list_display = ('sequence', 'company', 'invoice_date', 'due_date', 'total', 'status', 'created_by', 'created_at')
+    list_filter = ('status', 'invoice_date', 'created_at', 'company')
+    search_fields = ('sequence', 'company__name', 'notes')
+    readonly_fields = ('sequence', 'subtotal', 'tax_amount', 'total', 'created_at', 'updated_at')
+    date_hierarchy = 'invoice_date'
+    inlines = [InvoiceLineInline]
+    
+    fieldsets = (
+        ('Información de la Factura', {
+            'fields': ('sequence', 'company', 'invoice_date', 'due_date', 'status', 'notes')
+        }),
+        ('Totales', {
+            'fields': ('subtotal', 'tax_amount', 'total')
+        }),
+        ('Metadatos', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es nuevo
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+@admin.register(InvoiceLine)
+class InvoiceLineAdmin(admin.ModelAdmin):
+    list_display = ('invoice', 'line_number', 'product', 'quantity', 'unit_price', 'tax_rate', 'line_total')
+    list_filter = ('invoice__status', 'product')
+    search_fields = ('invoice__sequence', 'product__name', 'description')
+    readonly_fields = ('subtotal', 'tax_amount', 'line_total')
+    
+    fieldsets = (
+        ('Información de la Línea', {
+            'fields': ('invoice', 'line_number', 'product', 'description')
+        }),
+        ('Cantidades y Precios', {
+            'fields': ('quantity', 'unit_price', 'tax_rate')
+        }),
+        ('Totales Calculados', {
+            'fields': ('subtotal', 'tax_amount', 'line_total')
+        }),
+    )

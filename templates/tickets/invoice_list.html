@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Facturas de 3ros{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-receipt"></i> Facturas de 3ros</h2>
+                <div>
+                    <a href="{% url 'invoice_sequence_config' %}" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-sliders"></i> Configurar Secuencia
+                    </a>
+                    <a href="{% url 'invoice_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Nueva Factura
+                    </a>
+                </div>
+            </div>
+
+            {% if user.profile.invoice_sequence_prefix %}
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle"></i>
+                    Tu secuencia personalizada está configurada: <strong>{{ user.profile.invoice_sequence_prefix }}{{ user.profile.invoice_next_number|stringformat:"05d" }}</strong> será tu próxima factura.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% else %}
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    <i class="bi bi-info-circle"></i>
+                    Puedes personalizar tu secuencia de facturas (ej: MCVARQ/2025/00010). 
+                    <a href="{% url 'invoice_sequence_config' %}" class="alert-link">Configurar ahora</a>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endif %}
+
+            <!-- Filtros -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search }}" placeholder="Número, empresa, notas...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="company" class="form-label">Empresa</label>
+                            <select class="form-select" id="company" name="company">
+                                <option value="">Todas las empresas</option>
+                                {% for company in companies %}
+                                    <option value="{{ company.id }}" {% if company.id|stringformat:"s" == company_id %}selected{% endif %}>
+                                        {{ company.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Estado</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">Todos los estados</option>
+                                <option value="draft" {% if status == 'draft' %}selected{% endif %}>Borrador</option>
+                                <option value="sent" {% if status == 'sent' %}selected{% endif %}>Enviada</option>
+                                <option value="paid" {% if status == 'paid' %}selected{% endif %}>Pagada</option>
+                                <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Cancelada</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="bi bi-search"></i> Filtrar
+                            </button>
+                            <a href="{% url 'invoice_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tabla de facturas -->
+            <div class="card">
+                <div class="card-body">
+                    {% if page_obj %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Secuencia</th>
+                                        <th>Cliente</th>
+                                        <th>Fecha</th>
+                                        <th>Fecha Vencimiento</th>
+                                        <th class="text-end">Total</th>
+                                        <th>Estado</th>
+                                        <th>Creado por</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for invoice in page_obj %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'invoice_detail' invoice.pk %}">
+                                                    <strong>{{ invoice.sequence }}</strong>
+                                                </a>
+                                            </td>
+                                            <td>{{ invoice.company.name }}</td>
+                                            <td>{{ invoice.invoice_date|date:"d/m/Y" }}</td>
+                                            <td>
+                                                {% if invoice.due_date %}
+                                                    {{ invoice.due_date|date:"d/m/Y" }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                <strong>{{ invoice.get_currency_symbol }}{{ invoice.total|floatformat:2 }}</strong>
+                                            </td>
+                                            <td>
+                                                {% if invoice.status == 'draft' %}
+                                                    <span class="badge bg-secondary">Borrador</span>
+                                                {% elif invoice.status == 'sent' %}
+                                                    <span class="badge bg-info">Enviada</span>
+                                                {% elif invoice.status == 'paid' %}
+                                                    <span class="badge bg-success">Pagada</span>
+                                                {% elif invoice.status == 'cancelled' %}
+                                                    <span class="badge bg-danger">Cancelada</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ invoice.created_by.username }}</td>
+                                            <td class="text-end">
+                                                <a href="{% url 'invoice_detail' invoice.pk %}" 
+                                                   class="btn btn-sm btn-info" title="Ver detalle">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{% url 'invoice_pdf' invoice.pk %}" 
+                                                   class="btn btn-sm btn-success" title="Descargar PDF" target="_blank">
+                                                    <i class="bi bi-file-pdf"></i>
+                                                </a>
+                                                <a href="{% url 'invoice_update' invoice.pk %}" 
+                                                   class="btn btn-sm btn-warning" title="Editar">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <a href="{% url 'invoice_delete' invoice.pk %}" 
+                                                   class="btn btn-sm btn-danger" title="Eliminar">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        {% if page_obj.has_other_pages %}
+                            <nav aria-label="Navegación de páginas">
+                                <ul class="pagination justify-content-center">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if company_id %}&company={{ company_id }}{% endif %}">Primera</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if company_id %}&company={{ company_id }}{% endif %}">Anterior</a>
+                                        </li>
+                                    {% endif %}
+
+                                    <li class="page-item active">
+                                        <span class="page-link">
+                                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                        </span>
+                                    </li>
+
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if company_id %}&company={{ company_id }}{% endif %}">Siguiente</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if company_id %}&company={{ company_id }}{% endif %}">Última</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> 
+                            No hay facturas registradas. 
+                            <a href="{% url 'invoice_create' %}">Crear la primera factura</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
