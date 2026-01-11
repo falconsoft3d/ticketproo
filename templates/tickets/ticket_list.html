@@ -99,6 +99,18 @@
         <button type="button" class="btn btn-danger" id="exportSelectedPDF" onclick="exportSelectedTicketsToPDF()" disabled title="Exportar tickets seleccionados a PDF">
             <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
         </button>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-info dropdown-toggle" id="bulkActionsBtn" data-bs-toggle="dropdown" aria-expanded="false" disabled title="Cambiar estado de tickets seleccionados" style="display: none;">
+                <i class="bi bi-arrow-repeat"></i> Cambiar Estado
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="bulkActionsBtn">
+                <li><a class="dropdown-item" href="#" onclick="bulkChangeStatus('open'); return false;"><span class="badge bg-primary">Abierto</span></a></li>
+                <li><a class="dropdown-item" href="#" onclick="bulkChangeStatus('in_progress'); return false;"><span class="badge bg-info">En Progreso</span></a></li>
+                <li><a class="dropdown-item" href="#" onclick="bulkChangeStatus('development'); return false;"><span class="badge bg-warning">Desarrollo</span></a></li>
+                <li><a class="dropdown-item" href="#" onclick="bulkChangeStatus('resolved'); return false;"><span class="badge bg-success">Resuelto</span></a></li>
+                <li><a class="dropdown-item" href="#" onclick="bulkChangeStatus('closed'); return false;"><span class="badge bg-secondary">Cerrado</span></a></li>
+            </ul>
+        </div>
         {% if is_agent %}
         <a href="{% url 'ticket_import' %}" class="btn btn-success" title="Importar tickets desde Excel">
             <i class="bi bi-file-earmark-excel"></i> Importar Excel
@@ -477,6 +489,8 @@ function updateExportButton() {
     const exportButton = document.getElementById('exportSelectedPDF');
     const isFilterSelection = document.body.getAttribute('data-filter-selection') === 'true';
     
+    console.log('updateExportButton called, checked boxes:', checkedBoxes.length);
+    
     if (isFilterSelection) {
         // Si hay selección de filtro completo, mantener ese estado
         const allIds = JSON.parse(document.body.getAttribute('data-selected-all-ids') || '[]');
@@ -493,6 +507,23 @@ function updateExportButton() {
     } else {
         exportButton.disabled = true;
         exportButton.title = 'Selecciona tickets para exportar a PDF';
+    }
+    
+    // Habilitar/deshabilitar botón de cambio de estado
+    const bulkActionsBtn = document.getElementById('bulkActionsBtn');
+    console.log('bulkActionsBtn found:', !!bulkActionsBtn, 'checked boxes:', checkedBoxes.length);
+    if (bulkActionsBtn) {
+        if (checkedBoxes.length > 0) {
+            bulkActionsBtn.disabled = false;
+            bulkActionsBtn.style.display = 'inline-block';
+            bulkActionsBtn.title = `Cambiar estado de ${checkedBoxes.length} tickets seleccionados`;
+            console.log('Enabling bulkActionsBtn');
+        } else {
+            bulkActionsBtn.disabled = true;
+            bulkActionsBtn.style.display = 'none';
+            bulkActionsBtn.title = 'Selecciona tickets para cambiar su estado';
+            console.log('Hiding bulkActionsBtn');
+        }
     }
     
     // Actualizar el estado del checkbox "seleccionar todo"
@@ -572,10 +603,67 @@ function exportSelectedTicketsToPDF() {
     }, 2000);
 }
 
-// Inicializar el estado del botón al cargar la página
-document.addEventListener('DOMContentLoaded', function() {
-    updateExportButton();
-});
+function bulkChangeStatus(newStatus) {
+    const isFilterSelection = document.body.getAttribute('data-filter-selection') === 'true';
+    let ticketIds = [];
+    
+    if (isFilterSelection) {
+        ticketIds = JSON.parse(document.body.getAttribute('data-selected-all-ids') || '[]');
+    } else {
+        const checkedBoxes = document.querySelectorAll('.ticket-checkbox:checked');
+        ticketIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+    }
+    
+    if (ticketIds.length === 0) {
+        alert('Por favor selecciona al menos un ticket para cambiar el estado.');
+        return;
+    }
+    
+    const statusLabels = {
+        'open': 'Abierto',
+        'in_progress': 'En Progreso',
+        'development': 'Desarrollo',
+        'resolved': 'Resuelto',
+        'closed': 'Cerrado'
+    };
+    
+    if (!confirm(`¿Estás seguro de cambiar el estado de ${ticketIds.length} ticket(s) a "${statusLabels[newStatus]}"?`)) {
+        return;
+    }
+    
+    const bulkActionsBtn = document.getElementById('bulkActionsBtn');
+    const originalText = bulkActionsBtn.innerHTML;
+    bulkActionsBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Cambiando...';
+    bulkActionsBtn.disabled = true;
+    
+    fetch('{% url "ticket_bulk_change_status" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            ticket_ids: ticketIds,
+            new_status: newStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`${data.updated} ticket(s) actualizados exitosamente.`);
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.error);
+            bulkActionsBtn.innerHTML = originalText;
+            bulkActionsBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        alert('Error al cambiar el estado: ' + error);
+        bulkActionsBtn.innerHTML = originalText;
+        bulkActionsBtn.disabled = false;
+    });
+}
 </script>
 
 {% endblock %}

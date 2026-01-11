@@ -54241,3 +54241,32 @@ def user_change_password(request, user_id):
             return redirect('user_edit', user_id=user_id)
     
     return redirect('user_edit', user_id=user_id)
+
+@login_required
+def ticket_bulk_change_status(request):
+    """Vista para cambiar el estado de múltiples tickets"""
+    import json
+    
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            ticket_ids = data.get('ticket_ids', [])
+            new_status = data.get('new_status')
+            
+            if not ticket_ids or not new_status:
+                return JsonResponse({'success': False, 'error': 'Faltan parámetros'}, status=400)
+            
+            tickets = Ticket.objects.filter(id__in=ticket_ids)
+            count = tickets.update(status=new_status)
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'{count} ticket(s) actualizado(s) exitosamente',
+                'updated': count
+            })
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'JSON inválido'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)

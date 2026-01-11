@@ -29,6 +29,9 @@ urlpatterns = [
     # URL AJAX para obtener IDs de tickets filtrados
     path('tickets/filtered-ids/', views.get_filtered_ticket_ids, name='get_filtered_ticket_ids'),
     
+    # URL para cambio de estado masivo
+    path('tickets/bulk-change-status/', views.ticket_bulk_change_status, name='ticket_bulk_change_status'),
+    
     # URLs de TODO List para tickets - COMENTADAS TEMPORALMENTE
     # path('tickets/<int:pk>/todo/add/', views.ticket_todo_add, name='ticket_todo_add'),
     # path('tickets/<int:pk>/todo/<int:item_id>/toggle/', views.ticket_todo_toggle, name='ticket_todo_toggle'),
