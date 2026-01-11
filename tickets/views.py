@@ -7986,7 +7986,7 @@ def opportunity_activity_delete(request, pk):
     from .models import OpportunityActivity
     
     activity = get_object_or_404(OpportunityActivity, pk=pk)
-    opportunity_id = activity.opportunity.pk
+    opportunity_id = activity.opportunity.pk if activity.opportunity else None
     
     # Verificar permisos
     from . import utils
@@ -7999,7 +7999,12 @@ def opportunity_activity_delete(request, pk):
         activity_title = activity.title
         activity.delete()
         messages.success(request, f'Actividad "{activity_title}" eliminada exitosamente.')
-        return redirect('opportunity_detail', pk=opportunity_id)
+        
+        # Redirigir a la oportunidad si existe, sino al dashboard de CRM
+        if opportunity_id:
+            return redirect('opportunity_detail', pk=opportunity_id)
+        else:
+            return redirect('business_dashboard')
     
     context = {
         'activity': activity,
