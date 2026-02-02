@@ -352,6 +352,7 @@ urlpatterns = [
     path('contacts/<int:pk>/', views.contact_detail, name='contact_detail'),
     path('contacts/<int:pk>/edit/', views.contact_edit, name='contact_edit'),
     path('contacts/<int:pk>/delete/', views.contact_delete, name='contact_delete'),
+    path('contacts/delete-all/', views.contact_delete_all, name='contact_delete_all'),
     path('contacts/<int:pk>/convert-to-company/', views.convert_contact_to_company, name='convert_contact_to_company'),
     
     # URLs para comentarios de contactos

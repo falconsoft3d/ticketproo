@@ -645,8 +645,75 @@
             <a href="{% url 'contact_create' %}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> Crear
             </a>
+            
+            {% if user.is_superuser %}
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAllContactsModal">
+                <i class="bi bi-trash3"></i> Eliminar Todos
+            </button>
+            {% endif %}
         </div>
     </div>
+
+    <!-- Modal de confirmación para eliminar todos los contactos -->
+    {% if user.is_superuser %}
+    <div class="modal fade" id="deleteAllContactsModal" tabindex="-1" aria-labelledby="deleteAllContactsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-danger">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteAllContactsModalLabel">
+                        <i class="bi bi-exclamation-triangle-fill"></i> ⚠️ ADVERTENCIA CRÍTICA
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger mb-3">
+                        <strong>¡ATENCIÓN!</strong> Esta acción es <strong>IRREVERSIBLE</strong>.
+                    </div>
+                    <p class="mb-3">
+                        <i class="bi bi-trash3 text-danger"></i> Estás a punto de <strong class="text-danger">ELIMINAR PERMANENTEMENTE TODOS LOS CONTACTOS</strong> del sistema.
+                    </p>
+                    <p class="mb-3">
+                        <i class="bi bi-people-fill"></i> Total de contactos a eliminar: <strong class="text-danger">{{ page_obj.paginator.count }}</strong>
+                    </p>
+                    <p class="text-muted small">
+                        <i class="bi bi-info-circle"></i> Esto eliminará todos los contactos y sus datos asociados de forma permanente. No se puede deshacer esta acción.
+                    </p>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                        <label class="form-check-label fw-bold text-danger" for="confirmDelete">
+                            Entiendo que esta acción es irreversible y elimina TODOS los contactos
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <form method="post" action="{% url 'contact_delete_all' %}" id="deleteAllContactsForm">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger" id="confirmDeleteBtn" disabled>
+                            <i class="bi bi-trash3-fill"></i> Sí, Eliminar Todos
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Habilitar el botón solo cuando se marca el checkbox
+        document.getElementById('confirmDelete')?.addEventListener('change', function() {
+            document.getElementById('confirmDeleteBtn').disabled = !this.checked;
+        });
+        
+        // Confirmar antes de enviar el formulario
+        document.getElementById('deleteAllContactsForm')?.addEventListener('submit', function(e) {
+            if (!confirm('⚠️ ÚLTIMA ADVERTENCIA: ¿Estás COMPLETAMENTE SEGURO de que quieres eliminar TODOS los contactos? Esta acción NO SE PUEDE DESHACER.')) {
+                e.preventDefault();
+            }
+        });
+    </script>
+    {% endif %}
 
     <!-- Progreso del Plan de Venta -->
     {% if user_sales_plan and plan_progress %}

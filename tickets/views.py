@@ -12556,6 +12556,25 @@ def contact_delete(request, pk):
 
 
 @login_required
+@user_passes_test(lambda u: u.is_superuser, login_url='/')
+@require_POST
+def contact_delete_all(request):
+    """Eliminar TODOS los contactos - Solo para superusuarios"""
+    try:
+        # Contar contactos antes de eliminar
+        total_contacts = Contact.objects.count()
+        
+        # Eliminar todos los contactos
+        Contact.objects.all().delete()
+        
+        messages.success(request, f'✅ Se eliminaron exitosamente {total_contacts} contactos.')
+    except Exception as e:
+        messages.error(request, f'❌ Error al eliminar contactos: {str(e)}')
+    
+    return redirect('contact_list')
+
+
+@login_required
 def contact_comment_delete(request, pk):
     """Eliminar comentario de contacto"""
     from .models import ContactComment
@@ -18091,28 +18110,22 @@ def landing_page_public(request, slug):
             created_at__date=today
         ).exists()
         
+        # Si ya existe un envío, mostrar éxito pero NO crear contacto (modo silencioso)
         if existing_submission:
-            # Si ya existe un envío, mostrar mensaje de error
             form = LandingPageSubmissionForm(request.POST)
             
-            # Si es una petición AJAX, devolver JSON
+            # Si es una petición AJAX, devolver JSON de éxito
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
-                    'success': False,
-                    'error': 'Ya has enviado el formulario hoy. Por favor, espera hasta mañana para enviar una nueva solicitud o contáctanos directamente.',
-                    'already_submitted_today': True
+                    'success': True,
+                    'message': '¡Formulario enviado con éxito! Nos pondremos en contacto contigo pronto.'
                 })
             
-            messages.error(
-                request, 
-                'Ya has enviado el formulario hoy. Por favor, espera hasta mañana para enviar una nueva solicitud o contáctanos directamente.'
-            )
-            context = {
+            # Redirigir a página de gracias (sin crear nada)
+            return render(request, 'tickets/landing_page_thanks.html', {
                 'landing_page': landing_page,
-                'form': form,
-                'already_submitted_today': True,
-            }
-            return render(request, 'tickets/landing_page_public.html', context)
+                'submission': None,
+            })
         
         form = LandingPageSubmissionForm(request.POST)
         if form.is_valid():
@@ -18128,46 +18141,65 @@ def landing_page_public(request, slug):
             
             submission.save()
             
-            # Crear contacto web automáticamente
-            try:
-                # En vista pública no hay usuario logueado, así que created_by será None
-                contact = create_contact_from_submission(submission, landing_page, created_by=None)
-                
-                # Enviar notificación de creación de contacto
+            # Detectar spam por teléfono (menos de 5 dígitos)
+            is_spam = False
+            if submission.telefono:
+                phone_digits = ''.join(filter(str.isdigit, submission.telefono))
+                if len(phone_digits) < 5:
+                    is_spam = True
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(
+                        f"SPAM detectado en formulario público submission {submission.pk}: "
+                        f"teléfono '{submission.telefono}' ({len(phone_digits)} dígitos). "
+                        f"Email: {submission.email}. No se creará contacto."
+                    )
+            
+            # Crear contacto y enviar notificaciones SOLO si NO es spam
+            if not is_spam:
+                # Crear contacto web automáticamente
                 try:
-                    from .utils import send_contact_creation_notification
-                    send_contact_creation_notification(contact, landing_page)
+                    # En vista pública no hay usuario logueado, así que created_by será None
+                    contact = create_contact_from_submission(submission, landing_page, created_by=None)
+                    
+                    # Enviar notificación de creación de contacto
+                    try:
+                        from .utils import send_contact_creation_notification
+                        send_contact_creation_notification(contact, landing_page)
+                    except Exception as e:
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.error(f"Error enviando notificación de contacto: {str(e)}")
+                        
                 except Exception as e:
                     import logging
                     logger = logging.getLogger(__name__)
-                    logger.error(f"Error enviando notificación de contacto: {str(e)}")
-                    
-            except Exception as e:
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error creando contacto desde landing page: {str(e)}")
+                    logger.error(f"Error creando contacto desde landing page: {str(e)}")
             
-            # Incrementar contador de envíos
+            # Incrementar contador de envíos (siempre, incluso para spam)
             landing_page.increment_submissions()
             
-            # Enviar notificación por email si está configurada
-            try:
-                from .utils import send_landing_page_notification
-                send_landing_page_notification(submission)
-            except Exception as e:
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error enviando notificación de landing page: {str(e)}")
+            # Enviar notificaciones SOLO si NO es spam
+            if not is_spam:
+                # Enviar notificación por email si está configurada
+                try:
+                    from .utils import send_landing_page_notification
+                    send_landing_page_notification(submission)
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Error enviando notificación de landing page: {str(e)}")
+                
+                # Enviar notificación por Telegram si está configurada
+                try:
+                    from .utils import send_telegram_notification
+                    send_telegram_notification(landing_page, submission)
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Error enviando notificación de Telegram: {str(e)}")
             
-            # Enviar notificación por Telegram si está configurada
-            try:
-                from .utils import send_telegram_notification
-                send_telegram_notification(landing_page, submission)
-            except Exception as e:
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error enviando notificación de Telegram: {str(e)}")
-            
+            # SIEMPRE devolver éxito (tanto para spam como para válidos)
             # Si es una petición AJAX, devolver JSON de éxito
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
@@ -18273,32 +18305,48 @@ def landing_page_api_submit(request, pk):
     )
     submission.save()
 
-    # Crear contacto y notificaciones (intentar, registrar errores internamente)
-    try:
-        create_contact_from_submission(submission, landing_page, created_by=None)
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).error(f"Error creando contacto desde API: {e}")
+    # Detectar spam por teléfono (menos de 5 dígitos)
+    is_spam = False
+    if telefono:
+        phone_digits = ''.join(filter(str.isdigit, telefono))
+        if len(phone_digits) < 5:
+            is_spam = True
+            import logging
+            logging.getLogger(__name__).warning(
+                f"SPAM detectado en API submission {submission.pk}: "
+                f"teléfono '{telefono}' ({len(phone_digits)} dígitos). "
+                f"Email: {email}. No se creará contacto."
+            )
 
-    # Incrementar contador de envíos
+    # Crear contacto y notificaciones SOLO si NO es spam
+    if not is_spam:
+        try:
+            create_contact_from_submission(submission, landing_page, created_by=None)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Error creando contacto desde API: {e}")
+
+    # Incrementar contador de envíos (siempre, incluso para spam)
     try:
         landing_page.increment_submissions()
     except Exception:
         pass
 
-    # Enviar notificaciones
-    try:
-        from .utils import send_landing_page_notification
-        send_landing_page_notification(submission)
-    except Exception:
-        pass
+    # Enviar notificaciones SOLO si NO es spam
+    if not is_spam:
+        try:
+            from .utils import send_landing_page_notification
+            send_landing_page_notification(submission)
+        except Exception:
+            pass
 
-    try:
-        from .utils import send_telegram_notification
-        send_telegram_notification(landing_page, submission)
-    except Exception:
-        pass
+        try:
+            from .utils import send_telegram_notification
+            send_telegram_notification(landing_page, submission)
+        except Exception:
+            pass
 
+    # SIEMPRE devolver éxito (incluso si es spam, para no alertar al atacante)
     return JsonResponse({'success': True, 'message': 'Submission created', 'submission_id': submission.pk})
 
 

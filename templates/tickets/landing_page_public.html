@@ -1088,10 +1088,17 @@
                         'X-Requested-With': 'XMLHttpRequest',
                     }
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('✅ Response status:', response.status);
+                    console.log('✅ Response headers:', response.headers.get('content-type'));
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('✅ Response data:', data);
+                    
                     if (data.success === false) {
                         // Error del servidor (como formulario ya enviado)
+                        console.log('❌ Error en respuesta');
                         hideLoadingOverlay();
                         showSpecificErrorMessage(data.error);
                         
@@ -1104,16 +1111,24 @@
                             });
                         }
                         isSubmitting = false;
-                    } else {
+                    } else if (data.success === true) {
                         // Envío exitoso
+                        console.log('✅ Éxito! Mostrando mensaje');
                         showSuccessMessage();
                         setTimeout(() => {
+                            console.log('🔄 Recargando página...');
                             window.location.reload();
-                        }, 2000);
+                        }, 3000);
+                    } else {
+                        // Respuesta inesperada
+                        console.error('⚠️ Respuesta inesperada:', data);
+                        hideLoadingOverlay();
+                        showErrorMessage('Respuesta inesperada del servidor. Por favor, inténtalo de nuevo.');
+                        isSubmitting = false;
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+                    console.error('❌ Error en fetch:', error);
                     hideLoadingOverlay();
                     showErrorMessage('Error de conexión. Por favor, inténtalo de nuevo.');
                     isSubmitting = false;
