@@ -359,6 +359,36 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Permisos de Contactos -->
+                    <div class="card border-success mb-3">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0">
+                                <i class="bi bi-person-lines-fill me-2"></i>
+                                Permisos de Contactos
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    {{ form.can_see_all_contacts }}
+                                    <label class="form-check-label" for="{{ form.can_see_all_contacts.id_for_label }}">
+                                        {{ form.can_see_all_contacts.label }}
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    {{ form.can_see_all_contacts.help_text }}
+                                </small>
+                                {% if form.can_see_all_contacts.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.can_see_all_contacts.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Información adicional -->
                     <div class="card bg-light mb-3">

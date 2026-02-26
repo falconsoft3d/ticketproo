@@ -998,6 +998,13 @@ class UserProfile(models.Model):
         help_text='Términos y condiciones que se mostrarán en las cotizaciones rápidas'
     )
     
+    # Permisos de visibilidad de contactos
+    can_see_all_contacts = models.BooleanField(
+        default=False,
+        verbose_name='Ver todos los contactos',
+        help_text='Si está activo, el usuario puede ver todos los contactos. Si no, solo ve los que creó o tiene asignados.'
+    )
+
     # Campos para API REST
     enable_api_access = models.BooleanField(
         default=False,
@@ -15475,6 +15482,11 @@ class ExpenseItem(models.Model):
         ('office', 'Oficina/Suministros'),
         ('medical', 'Gastos médicos'),
         ('training', 'Capacitación'),
+        ('direct_salary', 'Salarios Directos'),
+        ('indirect_salary', 'Salarios Indirectos'),
+        ('asset_purchase', 'Compra de Activos'),
+        ('marketing', 'Marketing'),
+        ('software', 'Software'),
         ('other', 'Otros'),
     ]
     
@@ -15568,6 +15580,11 @@ class ExpenseItem(models.Model):
             'office': 'bi-file-text',
             'medical': 'bi-heart-pulse',
             'training': 'bi-book',
+            'direct_salary': 'bi-person-badge',
+            'indirect_salary': 'bi-people',
+            'asset_purchase': 'bi-box-seam',
+            'marketing': 'bi-megaphone',
+            'software': 'bi-code-square',
             'other': 'bi-three-dots',
         }
         return icons.get(self.category, 'bi-receipt')
@@ -15612,6 +15629,71 @@ class ExpenseComment(models.Model):
     
     def __str__(self):
         return f"Comentario de {self.user.get_full_name() or self.user.username} - {self.created_at.strftime('%d/%m/%Y')}"
+
+
+class ExpenseFund(models.Model):
+    """Modelo para registrar el dinero disponible/asignado a una rendición de gastos"""
+    SOURCE_CHOICES = [
+        ('cash', 'Efectivo'),
+        ('bank_transfer', 'Transferencia Bancaria'),
+        ('corporate_card', 'Tarjeta Corporativa'),
+        ('advance', 'Anticipo de Viaje'),
+        ('other', 'Otro'),
+    ]
+
+    expense_report = models.ForeignKey(
+        ExpenseReport,
+        on_delete=models.CASCADE,
+        related_name='funds',
+        verbose_name='Rendición de gastos'
+    )
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Monto'
+    )
+    source_name = models.CharField(
+        max_length=100,
+        verbose_name='Fuente / Banco',
+        help_text='Ej: BBVA, efectivo, tarjeta corporativa…'
+    )
+    source_type = models.CharField(
+        max_length=20,
+        choices=SOURCE_CHOICES,
+        default='bank_transfer',
+        verbose_name='Tipo de fuente'
+    )
+    invoice_reference = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name='Referencia de factura / comprobante',
+        help_text='Número de factura, transferencia o comprobante'
+    )
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Notas'
+    )
+    received_at = models.DateField(
+        verbose_name='Fecha de recepción'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+
+    class Meta:
+        ordering = ['-received_at', '-created_at']
+        verbose_name = 'Fondo de Rendición'
+        verbose_name_plural = 'Fondos de Rendición'
+
+    def __str__(self):
+        return f"{self.amount} de {self.source_name} ({self.expense_report.title})"
 
 
 class VideoMeeting(models.Model):

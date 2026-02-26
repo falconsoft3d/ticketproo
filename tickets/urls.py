@@ -1349,7 +1349,12 @@ urlpatterns += [
     
     # URLs de Comentarios de Gastos
     path('expense-reports/<int:report_pk>/comments/create/', views.expense_comment_create, name='expense_comment_create'),
-    
+
+    # URLs de Fondos de Gastos
+    path('expense-reports/<int:report_pk>/funds/create/', views.expense_fund_create, name='expense_fund_create'),
+    path('expense-funds/<int:pk>/edit/', views.expense_fund_edit, name='expense_fund_edit'),
+    path('expense-funds/<int:pk>/delete/', views.expense_fund_delete, name='expense_fund_delete'),
+
     # URLs de Reuniones de Video
     path('video-meetings/', views.video_meeting_list, name='video_meeting_list'),
     path('video-meetings/create/', views.video_meeting_create, name='video_meeting_create'),

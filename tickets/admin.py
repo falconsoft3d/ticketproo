@@ -20,7 +20,7 @@ from .models import (
     AIManager, AIManagerMeeting, AIManagerMeetingAttachment, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
     WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
     AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
-    ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine, QuotationView,
+    ExpenseReport, ExpenseItem, ExpenseComment, ExpenseFund, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine, QuotationView,
     Contact, ContactTag, ContactComment, ContactAttachment, SalesPlan, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord,
     ClientRequest, ClientRequestResponse, Event, Trip, TripStop, WebCounter, WebCounterVisit, QuickQuote, QuickQuoteView, QuickQuoteComment,
     MultiMeasurement, MultiMeasurementRecord,
@@ -4010,6 +4010,14 @@ class ExpenseItemInline(admin.TabularInline):
     fields = ('description', 'category', 'amount', 'date', 'vendor', 'receipt_file', 'created_at')
 
 
+class ExpenseFundInline(admin.TabularInline):
+    """Inline para fondos de gastos"""
+    model = ExpenseFund
+    extra = 0
+    readonly_fields = ('created_at',)
+    fields = ('source_name', 'source_type', 'amount', 'received_at', 'invoice_reference', 'created_at')
+
+
 class ExpenseCommentInline(admin.TabularInline):
     """Inline para comentarios de gastos"""
     model = ExpenseComment
@@ -4050,7 +4058,7 @@ class ExpenseReportAdmin(admin.ModelAdmin):
         }),
     )
     
-    inlines = [ExpenseItemInline, ExpenseCommentInline]
+    inlines = [ExpenseItemInline, ExpenseCommentInline, ExpenseFundInline]
     
     def employee_display(self, obj):
         """Mostrar nombre completo del empleado"""
@@ -4200,6 +4208,31 @@ class ExpenseCommentAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related(
             'expense_report', 'user'
         )
+
+
+@admin.register(ExpenseFund)
+class ExpenseFundAdmin(admin.ModelAdmin):
+    """Administración de fondos de rendiciones de gastos"""
+    list_display = ('source_name', 'source_type', 'amount', 'received_at', 'invoice_reference', 'expense_report')
+    list_filter = ('source_type', 'received_at')
+    search_fields = ('source_name', 'invoice_reference', 'expense_report__title')
+    readonly_fields = ('created_at', 'updated_at')
+    list_per_page = 25
+    date_hierarchy = 'received_at'
+
+    fieldsets = (
+        ('Información', {
+            'fields': ('expense_report', 'amount', 'source_type', 'source_name', 'invoice_reference', 'received_at')
+        }),
+        ('Notas', {
+            'fields': ('notes',),
+            'classes': ('collapse',)
+        }),
+        ('Metadatos', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
 
 
 # ================================

@@ -47,32 +47,36 @@
                                 </div>
                             </div>
                             
-                            <div class="col-md-2">
+                            <div class="col-md-3">
                                 <div class="mb-3">
-                                    {{ form.amount.label_tag }}
+                                    <label class="form-label">Monto y Moneda</label>
                                     <div class="input-group">
-                                        <span class="input-group-text">$</span>
+                                        <span class="input-group-text" id="currency-symbol">$</span>
                                         {{ form.amount }}
                                     </div>
                                     {% if form.amount.errors %}
                                         <div class="text-danger small">
-                                            {% for error in form.amount.errors %}
-                                                {{ error }}
-                                            {% endfor %}
+                                            {% for error in form.amount.errors %}{{ error }}{% endfor %}
                                         </div>
                                     {% endif %}
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-1">
-                                <div class="mb-3">
-                                    {{ form.currency.label_tag }}
-                                    {{ form.currency }}
+                                    <div class="btn-group mt-2 w-100" role="group" aria-label="Moneda">
+                                        {% for radio in form.currency %}
+                                        <input type="radio"
+                                               class="btn-check"
+                                               name="{{ radio.data.name }}"
+                                               id="{{ radio.data.attrs.id }}"
+                                               value="{{ radio.data.value }}"
+                                               autocomplete="off"
+                                               {% if radio.data.selected %}checked{% endif %}>
+                                        <label class="btn btn-outline-primary btn-sm" for="{{ radio.data.attrs.id }}">
+                                            {% if radio.data.value == 'USD' %}$ USD — Dólar
+                                            {% else %}€ EUR — Euro{% endif %}
+                                        </label>
+                                        {% endfor %}
+                                    </div>
                                     {% if form.currency.errors %}
                                         <div class="text-danger small">
-                                            {% for error in form.currency.errors %}
-                                                {{ error }}
-                                            {% endfor %}
+                                            {% for error in form.currency.errors %}{{ error }}{% endfor %}
                                         </div>
                                     {% endif %}
                                 </div>
@@ -269,7 +273,20 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
+    // Actualizar símbolo de moneda al cambiar la selección
+    function updateCurrencySymbol() {
+        const checked = document.querySelector('input[name="currency"]:checked');
+        const symbol = document.getElementById('currency-symbol');
+        if (checked && symbol) {
+            symbol.textContent = checked.value === 'EUR' ? '€' : '$';
+        }
+    }
+    document.querySelectorAll('input[name="currency"]').forEach(function(radio) {
+        radio.addEventListener('change', updateCurrencySymbol);
+    });
+    updateCurrencySymbol(); // ejecutar al cargar
+
     // Actualizar descripción basada en categoría seleccionada
     const categoryField = document.getElementById('id_category');
     const descriptionField = document.getElementById('id_description');

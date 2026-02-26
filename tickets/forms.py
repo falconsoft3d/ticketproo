@@ -47,7 +47,7 @@ from .models import (
     CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
     Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer,
     EmployeeRequest, InternalAgreement, Asset, AssetHistory, 
-    AITutor, AITutorProgressReport, AITutorAttachment, ExpenseReport, ExpenseItem, ExpenseComment,
+    AITutor, AITutorProgressReport, AITutorAttachment, ExpenseReport, ExpenseItem, ExpenseComment, ExpenseFund,
     VideoMeeting, MeetingNote, QuoteGenerator, CountdownTimer, AbsenceType,
     Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage,
     MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint, ScheduledTask, EmailTemplate, EmailTemplateHistory, Counter, OCRInvoice,
@@ -657,6 +657,15 @@ class UserEditForm(forms.ModelForm):
         label='Habilitar acceso público al control de horario',
         help_text='Permite al usuario registrar entrada/salida sin iniciar sesión usando un enlace público'
     )
+
+    can_see_all_contacts = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        label='Ver todos los contactos',
+        help_text='Permite al usuario ver los contactos de todos los usuarios. Si está desactivado, solo verá los contactos que creó o que tiene asignados.'
+    )
     
     require_location = forms.BooleanField(
         required=False,
@@ -732,6 +741,8 @@ class UserEditForm(forms.ModelForm):
                 self.fields['birth_date'].initial = profile.birth_date
                 # Cargar términos y condiciones
                 self.fields['quote_terms_conditions'].initial = profile.quote_terms_conditions
+                # Cargar permiso de contactos
+                self.fields['can_see_all_contacts'].initial = profile.can_see_all_contacts
             except UserProfile.DoesNotExist:
                 pass
                 
@@ -764,6 +775,7 @@ class UserEditForm(forms.ModelForm):
             profile.descripcion_cargo = descripcion_cargo
             profile.birth_date = birth_date
             profile.quote_terms_conditions = self.cleaned_data.get('quote_terms_conditions', '')
+            profile.can_see_all_contacts = self.cleaned_data.get('can_see_all_contacts', False)
             profile.save()
             
             # Manejar configuración de acceso público
@@ -7316,18 +7328,13 @@ class ExpenseItemForm(forms.ModelForm):
     
     currency = forms.ChoiceField(
         choices=[
-            ('USD', 'USD - Dólar estadounidense'),
-            ('EUR', 'EUR - Euro'),
-            ('CLP', 'CLP - Peso chileno'),
-            ('ARS', 'ARS - Peso argentino'),
-            ('COP', 'COP - Peso colombiano'),
-            ('PEN', 'PEN - Sol peruano'),
-            ('MXN', 'MXN - Peso mexicano'),
-            ('BRL', 'BRL - Real brasileño'),
+            ('USD', '$ USD — Dólar'),
+            ('EUR', '€ EUR — Euro'),
         ],
-        widget=forms.Select(attrs={'class': 'form-select'}),
+        widget=forms.RadioSelect(attrs={'class': 'currency-radio'}),
         label='Moneda',
-        required=True
+        required=True,
+        initial='USD',
     )
     
     class Meta:
@@ -7387,16 +7394,14 @@ class ExpenseItemForm(forms.ModelForm):
         expense_report = kwargs.pop('expense_report', None)
         super().__init__(*args, **kwargs)
         
-        # Obtener la moneda por defecto del sistema
-        from .models import SystemConfiguration
-        try:
-            config = SystemConfiguration.objects.first()
-            default_currency = config.default_currency if config else 'USD'
-        except:
-            default_currency = 'USD'
-        
         # Establecer la moneda por defecto del sistema para nuevos items
         if not self.instance.pk:
+            from .models import SystemConfiguration
+            try:
+                config = SystemConfiguration.objects.first()
+                default_currency = config.default_currency if config and config.default_currency in ('USD', 'EUR') else 'USD'
+            except Exception:
+                default_currency = 'USD'
             self.fields['currency'].initial = default_currency
     
     def clean_amount(self):
@@ -7425,6 +7430,50 @@ class ExpenseCommentForm(forms.ModelForm):
         labels = {
             'comment': 'Comentario',
             'is_internal': 'Comentario interno (solo administradores)',
+        }
+
+
+class ExpenseFundForm(forms.ModelForm):
+    """Formulario para agregar una fuente de fondos a una rendición de gastos"""
+
+    class Meta:
+        model = ExpenseFund
+        fields = ['amount', 'source_type', 'source_name', 'invoice_reference', 'received_at', 'notes']
+        widgets = {
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.00',
+                'step': '0.01',
+                'min': '0',
+            }),
+            'source_type': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'source_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: BBVA, Banamex, Efectivo…',
+            }),
+            'invoice_reference': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Número de factura o referencia de transferencia',
+            }),
+            'received_at': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Notas adicionales (opcional)',
+            }),
+        }
+        labels = {
+            'amount': 'Monto recibido',
+            'source_type': 'Tipo de fuente',
+            'source_name': 'Fuente / Banco',
+            'invoice_reference': 'Referencia de factura / comprobante',
+            'received_at': 'Fecha de recepción',
+            'notes': 'Notas',
         }
 
 

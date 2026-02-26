@@ -273,7 +273,7 @@ from .models import (
     AIManager, AIManagerMeeting, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
     WebsiteTracker, LegalContract, Asset, AssetHistory,
     AITutor, AITutorProgressReport, AITutorAttachment,
-    ExpenseReport, ExpenseItem, ExpenseComment, VideoMeeting, MeetingNote, QuoteGenerator, Procedure,
+    ExpenseReport, ExpenseItem, ExpenseComment, ExpenseFund, VideoMeeting, MeetingNote, QuoteGenerator, Procedure,
     PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
     AccessGroup, AccessLink, TaskPlan, TaskPlanDay, TaskPlanItem
 )
@@ -294,7 +294,7 @@ from .forms import (
     CompanyRequestGeneratorForm, PublicCompanyRequestForm, FormForm, FormQuestionForm,
     FormQuestionOptionForm, PublicFormResponseForm, AssetForm, AssetAssignForm, AssetFilterForm,
     AITutorForm, AITutorProgressReportForm, AITutorAttachmentForm, AITutorFilterForm,
-    ExpenseReportForm, ExpenseItemForm, ExpenseCommentForm, ExpenseReportFilterForm,
+    ExpenseReportForm, ExpenseItemForm, ExpenseCommentForm, ExpenseReportFilterForm, ExpenseFundForm,
     VideoMeetingForm, MeetingTranscriptionForm, MeetingFilterForm, QuoteGeneratorForm, AbsenceTypeForm,
     CrmQuestionForm, PublicCrmQuestionForm, ScheduledTaskForm,
     PersonalBudgetForm, BudgetIncomeItemForm, BudgetExpenseItemForm, BudgetTransactionForm,
@@ -11467,6 +11467,13 @@ def contact_list(request):
         next_activity_date=Min('activities__scheduled_date', 
                               filter=Q(activities__scheduled_date__gte=now))
     ).order_by('-created_at')
+
+    # Filtro de visibilidad: solo superusuarios ven todo sin restricción.
+    # El resto (agentes y usuarios) depende del permiso can_see_all_contacts.
+    if not request.user.is_superuser:
+        can_see_all = getattr(getattr(request.user, 'profile', None), 'can_see_all_contacts', False)
+        if not can_see_all:
+            contacts = contacts.filter(assigned_to=request.user)
     
     # Filtros
     status = request.GET.get('status')
@@ -37679,18 +37686,52 @@ def expense_report_list(request):
             )
     
     queryset = queryset.select_related('employee', 'company', 'approved_by').order_by('-created_at')
-    
+
+    # Anotar cada rendición con el total de fondos recibidos
+    from django.db.models import OuterRef, Subquery, DecimalField as DField
+    funds_subq = ExpenseFund.objects.filter(
+        expense_report=OuterRef('pk')
+    ).order_by().values('expense_report').annotate(
+        s=models.Sum('amount')
+    ).values('s')
+    queryset = queryset.annotate(
+        total_funds=models.Subquery(funds_subq, output_field=DField(max_digits=10, decimal_places=2)),
+        row_balance=models.ExpressionWrapper(
+            models.functions.Coalesce(models.Subquery(funds_subq, output_field=DField(max_digits=10, decimal_places=2)), models.Value(0, output_field=DField(max_digits=10, decimal_places=2))) - models.F('total_amount'),
+            output_field=DField(max_digits=10, decimal_places=2)
+        )
+    )
+
+    # Totales generales del queryset filtrado (antes de paginar)
+    totals = queryset.aggregate(
+        grand_total=models.Sum('total_amount'),
+        grand_funds=models.Sum('total_funds'),
+    )
+    grand_total = totals['grand_total'] or 0
+    grand_funds = totals['grand_funds'] or 0
+
     # Paginación
     from django.core.paginator import Paginator
     paginator = Paginator(queryset, 20)
     page_number = request.GET.get('page')
     expense_reports = paginator.get_page(page_number)
+
+    # Totales de la página actual
+    page_total_expenses = sum(r.total_amount for r in expense_reports)
+    page_total_funds = sum(r.total_funds or 0 for r in expense_reports)
+    page_total_balance = sum(r.row_balance or 0 for r in expense_reports)
     
     context = {
         'expense_reports': expense_reports,
         'form': form,
-        'title': 'Rendiciones de Gastos',
+        'title': 'Administración de Gastos',
         'is_agent': is_agent(request.user),
+        'page_total_expenses': page_total_expenses,
+        'page_total_funds': page_total_funds,
+        'page_total_balance': page_total_balance,
+        'grand_total': grand_total,
+        'grand_funds': grand_funds,
+        'grand_balance': grand_funds - grand_total,
     }
     
     return render(request, 'tickets/expense_report_list.html', context)
@@ -37734,9 +37775,18 @@ def expense_report_detail(request, pk):
         messages.error(request, 'No tienes permisos para ver esta rendición.')
         return redirect('expense_report_list')
     
-    # Obtener items de gastos
-    expense_items = expense_report.expense_items.all().order_by('-date', '-created_at')
-    
+    # Obtener items de gastos con paginación
+    expense_items_qs = expense_report.expense_items.all().order_by('-date', '-created_at')
+    from django.core.paginator import Paginator
+    items_paginator = Paginator(expense_items_qs, 20)
+    items_page_number = request.GET.get('items_page', 1)
+    expense_items = items_paginator.get_page(items_page_number)
+
+    # Obtener fondos
+    funds = expense_report.funds.all().order_by('-received_at', '-created_at')
+    total_funds = funds.aggregate(total=models.Sum('amount'))['total'] or 0
+    balance = total_funds - expense_report.total_amount
+
     # Obtener comentarios
     comments = expense_report.comments.all().order_by('-created_at')
     if not is_agent(request.user):
@@ -37749,6 +37799,9 @@ def expense_report_detail(request, pk):
     context = {
         'expense_report': expense_report,
         'expense_items': expense_items,
+        'funds': funds,
+        'total_funds': total_funds,
+        'balance': balance,
         'comments': comments,
         'comment_form': comment_form,
         'title': f'Rendición: {expense_report.title}',
@@ -38075,6 +38128,88 @@ def expense_comment_create(request, report_pk):
             messages.error(request, 'Error al agregar el comentario.')
     
     return redirect('expense_report_detail', pk=report_pk)
+
+
+@login_required
+def expense_fund_create(request, report_pk):
+    """Agregar una fuente de fondos a una rendición de gastos"""
+    expense_report = get_object_or_404(ExpenseReport, pk=report_pk)
+
+    if not is_agent(request.user) and expense_report.employee != request.user:
+        messages.error(request, 'No tienes permisos para agregar fondos a esta rendición.')
+        return redirect('expense_report_detail', pk=report_pk)
+
+    if request.method == 'POST':
+        form = ExpenseFundForm(request.POST)
+        if form.is_valid():
+            fund = form.save(commit=False)
+            fund.expense_report = expense_report
+            fund.save()
+            messages.success(request, 'Fondo agregado exitosamente.')
+            return redirect('expense_report_detail', pk=report_pk)
+    else:
+        from django.utils import timezone
+        form = ExpenseFundForm(initial={'received_at': timezone.now().date()})
+
+    context = {
+        'form': form,
+        'expense_report': expense_report,
+        'title': f'Agregar Fondo - {expense_report.title}',
+        'action': 'Agregar',
+    }
+    return render(request, 'tickets/expense_fund_form.html', context)
+
+
+@login_required
+def expense_fund_edit(request, pk):
+    """Editar una fuente de fondos"""
+    fund = get_object_or_404(ExpenseFund, pk=pk)
+    expense_report = fund.expense_report
+
+    if not is_agent(request.user) and expense_report.employee != request.user:
+        messages.error(request, 'No tienes permisos para editar este fondo.')
+        return redirect('expense_report_detail', pk=expense_report.pk)
+
+    if request.method == 'POST':
+        form = ExpenseFundForm(request.POST, instance=fund)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Fondo actualizado exitosamente.')
+            return redirect('expense_report_detail', pk=expense_report.pk)
+    else:
+        form = ExpenseFundForm(instance=fund)
+
+    context = {
+        'form': form,
+        'fund': fund,
+        'expense_report': expense_report,
+        'title': f'Editar Fondo - {fund.source_name}',
+        'action': 'Actualizar',
+    }
+    return render(request, 'tickets/expense_fund_form.html', context)
+
+
+@login_required
+def expense_fund_delete(request, pk):
+    """Eliminar una fuente de fondos"""
+    fund = get_object_or_404(ExpenseFund, pk=pk)
+    expense_report = fund.expense_report
+
+    if not is_agent(request.user) and expense_report.employee != request.user:
+        messages.error(request, 'No tienes permisos para eliminar este fondo.')
+        return redirect('expense_report_detail', pk=expense_report.pk)
+
+    if request.method == 'POST':
+        fund.delete()
+        messages.success(request, 'Fondo eliminado exitosamente.')
+        return redirect('expense_report_detail', pk=expense_report.pk)
+
+    context = {
+        'fund': fund,
+        'expense_report': expense_report,
+        'title': f'Eliminar Fondo - {fund.source_name}',
+    }
+    return render(request, 'tickets/expense_fund_delete.html', context)
 
 
 # ============================================

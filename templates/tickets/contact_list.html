@@ -1323,7 +1323,7 @@
                                 <th class="col-reunion">Reunión</th>
                                 <th class="col-fecha">Fecha</th>
                                 <th class="col-fuente">Fuente</th>
-                                <th class="col-creado-por text-center">Creado</th>
+                                <th class="col-creado-por text-center">Asignado</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1463,12 +1463,16 @@
                                 </td>
                                 <td class="col-fuente">{{ contact.source|default:"-" }}</td>
                                 <td class="col-creado-por text-center">
-                                    {% if contact.created_by.first_name and contact.created_by.last_name %}
-                                        {{ contact.created_by.first_name|slice:":1"|upper }}{{ contact.created_by.last_name|slice:":1"|upper }}
-                                    {% elif contact.created_by.first_name %}
-                                        {{ contact.created_by.first_name|slice:":2"|upper }}
+                                    {% if contact.assigned_to %}
+                                        {% if contact.assigned_to.first_name and contact.assigned_to.last_name %}
+                                            <span class="badge bg-secondary" title="{{ contact.assigned_to.get_full_name }}">{{ contact.assigned_to.first_name|slice:":1"|upper }}{{ contact.assigned_to.last_name|slice:":1"|upper }}</span>
+                                        {% elif contact.assigned_to.first_name %}
+                                            <span class="badge bg-secondary" title="{{ contact.assigned_to.first_name }}">{{ contact.assigned_to.first_name|slice:":2"|upper }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ contact.assigned_to.username|slice:":2"|upper }}</span>
+                                        {% endif %}
                                     {% else %}
-                                        {{ contact.created_by.username|slice:":2"|upper }}
+                                        <span class="text-muted">—</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -1637,7 +1641,7 @@
                             <div class="form-check">
                                 <input class="form-check-input column-toggle" type="checkbox" value="creado-por" id="col-creado-por" checked>
                                 <label class="form-check-label" for="col-creado-por">
-                                    Creado por
+                                    Asignado
                                 </label>
                             </div>
                         </div>
