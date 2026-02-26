@@ -929,7 +929,6 @@ class TicketHourLineForm(forms.ModelForm):
                 'class': 'form-control',
                 'step': '0.25',
                 'min': '0.25',
-                'max': '24',
                 'placeholder': '0.00',
             }),
             'date': forms.DateInput(attrs={
@@ -945,21 +944,22 @@ class TicketHourLineForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        current_user = kwargs.pop('current_user', None)
         super().__init__(*args, **kwargs)
         self.fields['user'].queryset = User.objects.filter(is_active=True).order_by('first_name', 'username')
         self.fields['user'].empty_label = 'Selecciona un usuario'
-        # Prellenar fecha con hoy si es un formulario nuevo
+        # Prellenar con el usuario actual y la fecha de hoy si es un formulario nuevo
         if not self.instance.pk:
             from django.utils import timezone
             self.fields['date'].initial = timezone.localdate()
+            if current_user:
+                self.fields['user'].initial = current_user.pk
 
     def clean_hours(self):
         hours = self.cleaned_data.get('hours')
         if hours is not None:
             if hours <= 0:
                 raise forms.ValidationError('Las horas deben ser mayores a 0.')
-            if hours > 24:
-                raise forms.ValidationError('No se pueden registrar más de 24 horas por línea.')
         return hours
 
 

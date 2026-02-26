@@ -1267,9 +1267,9 @@ def ticket_detail_view(request, pk):
             return redirect('ticket_detail', pk=pk)
 
     # Formulario para agregar líneas de horas
-    hour_line_form = TicketHourLineForm()
+    hour_line_form = TicketHourLineForm(current_user=request.user)
     if request.method == 'POST' and 'add_hour_line' in request.POST:
-        hour_line_form = TicketHourLineForm(request.POST)
+        hour_line_form = TicketHourLineForm(request.POST, current_user=request.user)
         if hour_line_form.is_valid():
             hour_line = hour_line_form.save(commit=False)
             hour_line.ticket = ticket
@@ -7360,7 +7360,10 @@ def public_company_stats(request, token):
         'priority_filter': priority_filter or 'all',
         'ticket_statuses': ticket_statuses,
         'ticket_priorities': ticket_priorities,
-        'page_title': f'Estadísticas - {company.name}'
+        'page_title': f'Estadísticas - {company.name}',
+        'total_hours': TicketHourLine.objects.filter(
+            ticket__company=company
+        ).aggregate(total=Sum('hours'))['total'] or 0,
     }
     
     return render(request, 'tickets/public_company_stats.html', context)
