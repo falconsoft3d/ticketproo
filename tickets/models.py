@@ -881,6 +881,55 @@ class TicketComment(models.Model):
         return self.user == user or is_agent(user)
 
 
+class TicketHourLine(models.Model):
+    """Modelo para registrar líneas de horas trabajadas en un ticket"""
+    ticket = models.ForeignKey(
+        Ticket,
+        on_delete=models.CASCADE,
+        related_name='hour_lines',
+        verbose_name='Ticket'
+    )
+    description = models.CharField(
+        max_length=300,
+        verbose_name='Descripción',
+        help_text='Descripción de la tarea o actividad realizada'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ticket_hour_lines',
+        verbose_name='Usuario'
+    )
+    hours = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        verbose_name='Horas',
+        help_text='Cantidad de horas trabajadas en esta actividad'
+    )
+    date = models.DateField(
+        default=timezone.now,
+        verbose_name='Fecha'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_hour_lines',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+
+    class Meta:
+        ordering = ['date', 'created_at']
+        verbose_name = 'Línea de Horas'
+        verbose_name_plural = 'Líneas de Horas'
+
+    def __str__(self):
+        return f"{self.description} - {self.user.get_full_name() or self.user.username} - {self.hours}h ({self.date})"
+
+
 class UserProfile(models.Model):
     """Modelo para extender la información del usuario"""
     user = models.OneToOneField(

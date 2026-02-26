@@ -17,6 +17,7 @@ urlpatterns = [
     path('tickets/<int:pk>/delete/', views.ticket_delete_view, name='ticket_delete'),
     path('tickets/<int:pk>/approve/', views.ticket_approve_view, name='ticket_approve'),
     path('tickets/<int:pk>/unassign/', views.unassign_ticket_view, name='unassign_ticket'),
+    path('tickets/<int:pk>/hour-lines/<int:line_id>/delete/', views.ticket_hour_line_delete, name='ticket_hour_line_delete'),
     
     # URLs para impresión de tickets
     path('tickets/print-preview/<int:ticket_id>/', views.ticket_print_preview, name='ticket_print_preview'),

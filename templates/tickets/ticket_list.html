@@ -203,6 +203,7 @@
                         <th class="col-approval">Aprobación</th>
                         <th class="col-age">Antigüedad</th>
                         <th class="col-date">Fecha Creación</th>
+                        <th class="col-hours text-center">Horas</th>
                         <th class="col-actions">Acciones</th>
                     </tr>
                 </thead>
@@ -293,6 +294,13 @@
                         <td class="col-date text-muted">
                             {{ ticket.created_at|date:"d/m/Y H:i" }}
                         </td>
+                        <td class="col-hours text-center">
+                            {% if ticket.total_hour_lines %}
+                                <span class="badge bg-info text-dark">{{ ticket.total_hour_lines }} h</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
                         <td class="col-actions">
                             <div class="btn-group btn-group-sm">
                                 <a href="{% url 'ticket_detail' ticket.pk %}" 
@@ -304,6 +312,17 @@
                     </tr>
                     {% endfor %}
                 </tbody>
+                <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td colspan="{% if is_agent %}10{% else %}9{% endif %}" class="text-end pe-3">
+                            <i class="bi bi-clock-history me-1"></i> Total de horas (todos los resultados):
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-primary">{{ total_hours_all }} h</span>
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>

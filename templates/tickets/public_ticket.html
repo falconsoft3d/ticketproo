@@ -154,6 +154,56 @@
                     </div>
                     {% endif %}
 
+                    <!-- Líneas de Horas -->
+                    {% if hour_lines %}
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clock-history"></i>
+                                Registro de Horas
+                            </h5>
+                            <span class="badge bg-primary">Total: {{ hour_lines_total }} h</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th><i class="bi bi-card-text me-1"></i>Descripción</th>
+                                            <th><i class="bi bi-person me-1"></i>Usuario</th>
+                                            <th class="text-center"><i class="bi bi-clock me-1"></i>Horas</th>
+                                            <th class="text-center"><i class="bi bi-calendar me-1"></i>Fecha</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for line in hour_lines %}
+                                        <tr>
+                                            <td>{{ line.description }}</td>
+                                            <td>{{ line.user.get_full_name|default:line.user.username }}</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-info text-dark">{{ line.hours }} h</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <small>{{ line.date|date:"d/m/Y" }}</small>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot class="table-light fw-bold">
+                                        <tr>
+                                            <td colspan="2">Total</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-primary">{{ hour_lines_total }} h</span>
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- Adjuntos -->
                     {% if attachments %}
                     <div class="card">

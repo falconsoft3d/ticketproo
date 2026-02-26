@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.utils import timezone
 import os
 from .models import (
-    Ticket, TicketAttachment, Category, TicketComment, UserNote, 
+    Ticket, TicketAttachment, Category, TicketComment, TicketHourLine, UserNote, 
     TimeEntry, TimeEntryAuditLog, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UserProfile,
     WorkOrder, WorkOrderAttachment, WorkOrderRating, WorkOrderComment, Task, Opportunity, OpportunityStatus, 
     OpportunityNote, OpportunityStatusHistory, Concept, Exam, ExamQuestion, 
@@ -300,6 +300,31 @@ class TicketCommentAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         if not change:  # Si es un nuevo objeto
             obj.user = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(TicketHourLine)
+class TicketHourLineAdmin(admin.ModelAdmin):
+    list_display = ('ticket', 'description', 'user', 'hours', 'date', 'created_by', 'created_at')
+    list_filter = ('date', 'user', 'created_at')
+    search_fields = ('ticket__ticket_number', 'ticket__title', 'description', 'user__username')
+    ordering = ('-date', '-created_at')
+    date_hierarchy = 'date'
+    readonly_fields = ('created_at',)
+
+    fieldsets = (
+        ('Información de la Línea', {
+            'fields': ('ticket', 'description', 'user', 'hours', 'date')
+        }),
+        ('Auditoría', {
+            'fields': ('created_by', 'created_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
         super().save_model(request, obj, form, change)
 
 

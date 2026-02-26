@@ -313,8 +313,121 @@
                 </form>
             </div>
         </div>
+
+        <!-- Sección de Líneas de Horas -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Líneas de Horas
+                </h5>
+                <span class="badge bg-primary">
+                    Total: {{ hour_lines_total }} h
+                </span>
+            </div>
+            <div class="card-body">
+                <!-- Tabla de líneas de horas -->
+                {% if hour_lines %}
+                <div class="table-responsive mb-4">
+                    <table class="table table-sm table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th><i class="bi bi-card-text me-1"></i>Descripción</th>
+                                <th><i class="bi bi-person me-1"></i>Usuario</th>
+                                <th class="text-center"><i class="bi bi-clock me-1"></i>Horas</th>
+                                <th class="text-center"><i class="bi bi-calendar me-1"></i>Fecha</th>
+                                {% if is_agent %}<th class="text-center">Acciones</th>{% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for line in hour_lines %}
+                            <tr>
+                                <td>{{ line.description }}</td>
+                                <td>{{ line.user.get_full_name|default:line.user.username }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-info text-dark">{{ line.hours }} h</span>
+                                </td>
+                                <td class="text-center">
+                                    <small>{{ line.date|date:"d/m/Y" }}</small>
+                                </td>
+                                {% if is_agent or line.created_by == user %}
+                                <td class="text-center">
+                                    <form method="post" action="{% url 'ticket_hour_line_delete' ticket.pk line.pk %}" class="d-inline"
+                                          onsubmit="return confirm('¿Eliminar esta línea de horas?')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                                {% elif is_agent %}
+                                <td></td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td colspan="2">Total</td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary">{{ hour_lines_total }} h</span>
+                                </td>
+                                <td {% if is_agent %}colspan="2"{% endif %}></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center mb-3">
+                    <i class="bi bi-clock display-6 d-block mb-2"></i>
+                    No hay líneas de horas registradas aún.
+                </p>
+                {% endif %}
+
+                <!-- Formulario para agregar línea de horas -->
+                <hr>
+                <h6 class="mb-3"><i class="bi bi-plus-circle me-1"></i>Agregar línea de horas</h6>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-2">
+                        <div class="col-md-5">
+                            <label class="form-label small fw-semibold">Descripción</label>
+                            {{ hour_line_form.description }}
+                            {% if hour_line_form.description.errors %}
+                                <div class="text-danger small mt-1">{{ hour_line_form.description.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Usuario</label>
+                            {{ hour_line_form.user }}
+                            {% if hour_line_form.user.errors %}
+                                <div class="text-danger small mt-1">{{ hour_line_form.user.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label small fw-semibold">Horas</label>
+                            {{ hour_line_form.hours }}
+                            {% if hour_line_form.hours.errors %}
+                                <div class="text-danger small mt-1">{{ hour_line_form.hours.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label small fw-semibold">Fecha</label>
+                            {{ hour_line_form.date }}
+                            {% if hour_line_form.date.errors %}
+                                <div class="text-danger small mt-1">{{ hour_line_form.date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12 text-end">
+                            <button type="submit" name="add_hour_line" class="btn btn-primary btn-sm">
+                                <i class="bi bi-plus-lg me-1"></i>Agregar Horas
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    
+
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">

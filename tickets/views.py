@@ -44,7 +44,7 @@ except ImportError:
     print("OpenAI library not available")
 
 from .models import (
-    Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
+    Ticket, TicketAttachment, Category, TicketComment, TicketHourLine, UserProfile, 
     UserNote, TimeEntry, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
     Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory, OpportunityActivity,
@@ -254,7 +254,7 @@ except ImportError:
     print("OpenAI library not available")
 
 from .models import (
-    Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
+    Ticket, TicketAttachment, Category, TicketComment, TicketHourLine, UserProfile,
     UserNote, TimeEntry, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
     Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory,
@@ -280,7 +280,7 @@ from .models import (
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
     TicketAttachmentForm, CategoryForm, UserTicketForm, UserTicketEditForm, 
-    TicketCommentForm, UserNoteForm, TimeEntryStartForm, TimeEntryEndForm, 
+    TicketCommentForm, TicketHourLineForm, UserNoteForm, TimeEntryStartForm, TimeEntryEndForm, 
     TimeEntryEditForm, PublicTimeEntryForm, ProjectForm, CompanyForm, SystemConfigurationForm, DocumentForm,
     UrlManagerForm, UrlManagerFilterForm, WorkOrderForm, WorkOrderFilterForm, TaskForm,
     ChatMessageForm, ChatRoomForm, AIChatSessionForm, AIChatMessageForm, ConceptForm,
@@ -934,7 +934,27 @@ def ticket_list_view(request):
     paginator = Paginator(tickets, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
+    # Anotar horas totales por ticket (suma de líneas de horas)
+    from django.db.models import Sum as _Sum
+    tickets_ids = [t.pk for t in page_obj.object_list]
+    hour_lines_by_ticket = (
+        TicketHourLine.objects
+        .filter(ticket_id__in=tickets_ids)
+        .values('ticket_id')
+        .annotate(total=_Sum('hours'))
+    )
+    hours_map = {row['ticket_id']: row['total'] for row in hour_lines_by_ticket}
+    for t in page_obj.object_list:
+        t.total_hour_lines = hours_map.get(t.pk) or 0
+
+    # Total de horas de todos los tickets filtrados (no solo la página)
+    total_hours_all = (
+        TicketHourLine.objects
+        .filter(ticket__in=tickets)
+        .aggregate(total=_Sum('hours'))['total'] or 0
+    )
+
     # Obtener todas las empresas para el filtro
     from .models import Company
     companies = Company.objects.all().order_by('name')
@@ -951,6 +971,7 @@ def ticket_list_view(request):
         'companies': companies,
         'is_agent': is_agent(request.user),
         'user_role': get_user_role(request.user),
+        'total_hours_all': total_hours_all,
     }
     return render(request, 'tickets/ticket_list.html', context)
 
@@ -1231,7 +1252,7 @@ def ticket_detail_view(request, pk):
             messages.success(request, 'Comentario agregado exitosamente.')
             return redirect('ticket_detail', pk=pk)
     
-    # Formulario para subir adjuntos
+    # Formulario para agregar adjuntos
     attachment_form = TicketAttachmentForm()
     if request.method == 'POST' and 'upload_attachment' in request.POST:
         attachment_form = TicketAttachmentForm(request.POST, request.FILES)
@@ -1244,23 +1265,58 @@ def ticket_detail_view(request, pk):
             attachment.save()
             messages.success(request, 'Adjunto subido exitosamente.')
             return redirect('ticket_detail', pk=pk)
-    
+
+    # Formulario para agregar líneas de horas
+    hour_line_form = TicketHourLineForm()
+    if request.method == 'POST' and 'add_hour_line' in request.POST:
+        hour_line_form = TicketHourLineForm(request.POST)
+        if hour_line_form.is_valid():
+            hour_line = hour_line_form.save(commit=False)
+            hour_line.ticket = ticket
+            hour_line.created_by = request.user
+            hour_line.save()
+            messages.success(request, 'Línea de horas agregada exitosamente.')
+            return redirect('ticket_detail', pk=pk)
+
     # Obtener comentarios del ticket
     comments = ticket.comments.all().order_by('created_at')
-    
+
+    # Obtener líneas de horas del ticket
+    hour_lines = ticket.hour_lines.all().select_related('user')
+    from django.db.models import Sum as _Sum
+    hour_lines_total = hour_lines.aggregate(total=_Sum('hours'))['total'] or 0
+
     # Obtener items TODO del ticket
     todo_items = ticket.todo_items.all()
-    
+
     context = {
         'ticket': ticket,
         'comments': comments,
         'comment_form': comment_form,
         'attachment_form': attachment_form,
+        'hour_line_form': hour_line_form,
+        'hour_lines': hour_lines,
+        'hour_lines_total': hour_lines_total,
         'is_agent': is_agent(request.user),
         'user_role': get_user_role(request.user),
         'todo_items': todo_items,
     }
     return render(request, 'tickets/ticket_detail.html', context)
+
+
+@login_required
+def ticket_hour_line_delete(request, pk, line_id):
+    """Vista para eliminar una línea de horas de un ticket"""
+    hour_line = get_object_or_404(TicketHourLine, pk=line_id, ticket__pk=pk)
+    # Solo el creador de la línea o un agente puede eliminarla
+    if not (hour_line.created_by == request.user or is_agent(request.user)):
+        messages.error(request, 'No tienes permisos para eliminar esta línea de horas.')
+        return redirect('ticket_detail', pk=pk)
+    if request.method == 'POST':
+        hour_line.delete()
+        messages.success(request, 'Línea de horas eliminada.')
+    return redirect('ticket_detail', pk=pk)
+
 
 @login_required
 def ticket_edit_view(request, pk):
@@ -1856,15 +1912,22 @@ def public_ticket_view(request, token):
     
     # Verificar si ya tiene aprobación
     has_approval = hasattr(ticket, 'client_approval')
-    
+
+    # Obtener líneas de horas del ticket
+    hour_lines = ticket.hour_lines.all().select_related('user')
+    from django.db.models import Sum as _Sum
+    hour_lines_total = hour_lines.aggregate(total=_Sum('hours'))['total'] or 0
+
     context = {
         'ticket': ticket,
         'comments': comments,
         'attachments': attachments,
         'has_approval': has_approval,
         'approval': ticket.client_approval if has_approval else None,
-        'token': token,  # Agregar el token al contexto
+        'token': token,
         'page_title': f'Ticket Público: {ticket.ticket_number}',
+        'hour_lines': hour_lines,
+        'hour_lines_total': hour_lines_total,
     }
     return render(request, 'tickets/public_ticket.html', context)
 

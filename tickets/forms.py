@@ -36,7 +36,7 @@ class DateInput(forms.DateInput):
 
 
 from .models import (
-    Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
+    Ticket, TicketAttachment, Category, TicketComment, TicketHourLine, UserProfile, 
     UserNote, TimeEntry, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
     Course, CourseClass, Contact, ContactComment, ContactAttachment, SalesPlan, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
@@ -908,6 +908,59 @@ class TicketCommentForm(forms.ModelForm):
             if len(content) > 1000:
                 raise forms.ValidationError('El comentario no puede exceder 1000 caracteres.')
         return content
+
+
+class TicketHourLineForm(forms.ModelForm):
+    """Formulario para agregar líneas de horas a tickets"""
+
+    class Meta:
+        model = TicketHourLine
+        fields = ['description', 'user', 'hours', 'date']
+        widgets = {
+            'description': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Descripción de la actividad realizada...',
+                'maxlength': '300',
+            }),
+            'user': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'hours': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.25',
+                'min': '0.25',
+                'max': '24',
+                'placeholder': '0.00',
+            }),
+            'date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+            }),
+        }
+        labels = {
+            'description': 'Descripción',
+            'user': 'Usuario',
+            'hours': 'Horas',
+            'date': 'Fecha',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['user'].queryset = User.objects.filter(is_active=True).order_by('first_name', 'username')
+        self.fields['user'].empty_label = 'Selecciona un usuario'
+        # Prellenar fecha con hoy si es un formulario nuevo
+        if not self.instance.pk:
+            from django.utils import timezone
+            self.fields['date'].initial = timezone.localdate()
+
+    def clean_hours(self):
+        hours = self.cleaned_data.get('hours')
+        if hours is not None:
+            if hours <= 0:
+                raise forms.ValidationError('Las horas deben ser mayores a 0.')
+            if hours > 24:
+                raise forms.ValidationError('No se pueden registrar más de 24 horas por línea.')
+        return hours
 
 
 class UserProfileForm(forms.ModelForm):
