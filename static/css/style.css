@@ -46,18 +46,29 @@ body {
     text-overflow: ellipsis !important;
 }
 
-/* Forzar texto en una línea para el título */
-.ticket-table td:nth-child(2) a {
-    display: block !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    width: 100% !important;
-    max-width: 250px !important;
+/* Excepción para la columna de título - permitir texto completo */
+.ticket-table td.col-title {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-wrap: break-word !important;
 }
 
-/* Asegurar que todos los elementos de texto estén en una línea */
-.ticket-table td * {
+.ticket-table td.col-title a {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    display: inline !important;
+    max-width: none !important;
+    width: auto !important;
+}
+
+.ticket-table td.col-title * {
+    white-space: normal !important;
+}
+
+/* Asegurar que todos los elementos de texto estén en una línea (excepto col-title) */
+.ticket-table td:not(.col-title) * {
     white-space: nowrap !important;
 }
 

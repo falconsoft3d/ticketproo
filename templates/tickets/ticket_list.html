@@ -36,11 +36,17 @@
 }
 
 /* Alineación específica para columnas */
-.ticket-table .col-checkbox { text-align: center; width: 4%; }
-.ticket-table .col-number { text-align: center; width: 7%; }
-.ticket-table .col-title { text-align: left; width: 20%; }
-.ticket-table .col-category { text-align: center; width: 10%; }
-.ticket-table .col-type { text-align: center; width: 8%; }
+.ticket-table .col-checkbox { text-align: center; width: 3%; }
+.ticket-table .col-number { text-align: center; width: 6%; }
+.ticket-table .col-title { 
+    text-align: left; 
+    width: 25%; 
+    white-space: normal !important; 
+    word-wrap: break-word !important;
+    overflow: visible !important;
+}
+.ticket-table .col-category { text-align: center; width: 9%; }
+.ticket-table .col-type { text-align: center; width: 7%; }
 .ticket-table .col-company { text-align: center; width: 12%; }
 .ticket-table .col-creator { text-align: center; width: 8%; }
 .ticket-table .col-status { text-align: center; width: 8%; }
@@ -99,6 +105,62 @@
         <button type="button" class="btn btn-danger" id="exportSelectedPDF" onclick="exportSelectedTicketsToPDF()" disabled title="Exportar tickets seleccionados a PDF">
             <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
         </button>
+        
+        <!-- Botón para configurar columnas visibles -->
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Configurar columnas visibles">
+                <i class="bi bi-layout-three-columns"></i> Columnas
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end p-3" style="min-width: 250px;" onclick="event.stopPropagation();">
+                <li class="mb-2"><strong><i class="bi bi-eye me-2"></i>Columnas Visibles</strong></li>
+                <li><hr class="dropdown-divider"></li>
+                <li class="form-check mb-2">
+                    <input class="form-check-input column-toggle" type="checkbox" id="col-category" data-column="category" checked>
+                    <label class="form-check-label" for="col-category">Categoría</label>
+                </li>
+                <li class="form-check mb-2">
+                    <input class="form-check-input column-toggle" type="checkbox" id="col-type" data-column="type" checked>
+                    <label class="form-check-label" for="col-type">Tipo</label>
+                </li>
+                <li class="form-check mb-2">
+                    <input class="form-check-input column-toggle" type="checkbox" id="col-company" data-column="company" checked>
+                    <label class="form-check-label" for="col-company">Empresa</label>
+                </li>
+                {% if is_agent %}
+                <li class="form-check mb-2">
+                    <input class="form-check-input column-toggle" type="checkbox" id="col-creator" data-column="creator" checked>
+                    <label class="form-check-label" for="col-creator">Creador</label>
+                </li>
+                {% endif %}
+                <li class="form-check mb-2">
+                    <input class="form-check-input column-toggle" type="checkbox" id="col-status" data-column="status" checked>
+                    <label class="form-check-label" for="col-status">Estado</label>
+                </li>
+                <li class="form-check mb-2">
+                    <input class="form-check-input column-toggle" type="checkbox" id="col-approval" data-column="approval" checked>
+                    <label class="form-check-label" for="col-approval">Aprobación</label>
+                </li>
+                <li class="form-check mb-2">
+                    <input class="form-check-input column-toggle" type="checkbox" id="col-age" data-column="age" checked>
+                    <label class="form-check-label" for="col-age">Antigüedad</label>
+                </li>
+                <li class="form-check mb-2">
+                    <input class="form-check-input column-toggle" type="checkbox" id="col-date" data-column="date" checked>
+                    <label class="form-check-label" for="col-date">Fecha Creación</label>
+                </li>
+                <li class="form-check mb-2">
+                    <input class="form-check-input column-toggle" type="checkbox" id="col-hours" data-column="hours" checked>
+                    <label class="form-check-label" for="col-hours">Horas</label>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <button class="btn btn-sm btn-outline-primary w-100" onclick="resetColumnVisibility()">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Restaurar por defecto
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
         <div class="btn-group" role="group">
             <button type="button" class="btn btn-info dropdown-toggle" id="bulkActionsBtn" data-bs-toggle="dropdown" aria-expanded="false" disabled title="Cambiar estado de tickets seleccionados" style="display: none;">
                 <i class="bi bi-arrow-repeat"></i> Cambiar Estado
@@ -195,15 +257,15 @@
                         </th>
                         <th class="col-number">Número</th>
                         <th class="col-title">Título</th>
-                        <th class="col-category">Categoría</th>
-                        <th class="col-type">Tipo</th>
-                        <th class="col-company">Empresa</th>
-                        {% if is_agent %}<th class="col-creator">Creador</th>{% endif %}
-                        <th class="col-status">Estado</th>
-                        <th class="col-approval">Aprobación</th>
-                        <th class="col-age">Antigüedad</th>
-                        <th class="col-date">Fecha Creación</th>
-                        <th class="col-hours text-center">Horas</th>
+                        <th class="col-category" data-column="category">Categoría</th>
+                        <th class="col-type" data-column="type">Tipo</th>
+                        <th class="col-company" data-column="company">Empresa</th>
+                        {% if is_agent %}<th class="col-creator" data-column="creator">Creador</th>{% endif %}
+                        <th class="col-status" data-column="status">Estado</th>
+                        <th class="col-approval" data-column="approval">Aprobación</th>
+                        <th class="col-age" data-column="age">Antigüedad</th>
+                        <th class="col-date" data-column="date">Fecha Creación</th>
+                        <th class="col-hours text-center" data-column="hours">Horas</th>
                         <th class="col-actions">Acciones</th>
                     </tr>
                 </thead>
@@ -219,7 +281,7 @@
                                 #{{ ticket.ticket_number }}
                             </a>
                         </td>
-                        <td class="col-title" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <td class="col-title">
                             <a href="{% url 'ticket_detail' ticket.pk %}" 
                                class="text-decoration-none" 
                                title="{{ ticket.title }}">
@@ -235,7 +297,7 @@
                                 {{ ticket.title }}
                             </a>
                         </td>
-                        <td class="col-category">
+                        <td class="col-category" data-column="category">
                             {% if ticket.category %}
                                 <span class="badge" style="background-color: {{ ticket.category.color }}; color: white;">
                                     <i class="fas fa-tag me-1"></i>{{ ticket.category.name }}
@@ -244,7 +306,7 @@
                                 <span class="text-muted">Sin categoría</span>
                             {% endif %}
                         </td>
-                        <td class="col-type">
+                        <td class="col-type" data-column="type">
                             <span class="badge {{ ticket.get_type_badge_class }}">
                                 {% if ticket.ticket_type == 'desarrollo' %}
                                     <i class="bi bi-code-slash me-1"></i>{{ ticket.get_ticket_type_display }}
@@ -253,7 +315,7 @@
                                 {% endif %}
                             </span>
                         </td>
-                        <td class="col-company">
+                        <td class="col-company" data-column="company">
                             {% if ticket.company %}
                                 <span class="badge" style="background-color: {{ ticket.company.color }}; color: white;">
                                     <i class="bi bi-building me-1"></i>{{ ticket.company.name }}
@@ -263,19 +325,19 @@
                             {% endif %}
                         </td>
                         {% if is_agent %}
-                        <td class="col-creator">
+                        <td class="col-creator" data-column="creator">
                             <small class="text-muted">
                                 <i class="bi bi-person"></i> 
                                 {{ ticket.created_by.get_full_name|default:ticket.created_by.username }}
                             </small>
                         </td>
                         {% endif %}
-                        <td class="col-status">
+                        <td class="col-status" data-column="status">
                             <span class="badge {{ ticket.get_status_badge_class }}">
                                 {{ ticket.get_status_display }}
                             </span>
                         </td>
-                        <td class="col-approval">
+                        <td class="col-approval" data-column="approval">
                             {% if ticket.is_approved %}
                                 <span class="badge bg-success">
                                     <i class="bi bi-check-circle me-1"></i>Aprobado
@@ -286,15 +348,15 @@
                                 </span>
                             {% endif %}
                         </td>
-                        <td class="col-age">
+                        <td class="col-age" data-column="age">
                             <span class="badge {{ ticket.get_age_badge_class }}" title="{{ ticket.get_age_in_hours|floatformat:1 }} horas">
                                 <i class="bi bi-clock-history me-1"></i>{{ ticket.get_age_display }}
                             </span>
                         </td>
-                        <td class="col-date text-muted">
+                        <td class="col-date text-muted" data-column="date">
                             {{ ticket.created_at|date:"d/m/Y H:i" }}
                         </td>
-                        <td class="col-hours text-center">
+                        <td class="col-hours text-center" data-column="hours">
                             {% if ticket.total_hour_lines %}
                                 <span class="badge bg-info text-dark">{{ ticket.total_hour_lines }} h</span>
                             {% else %}
@@ -683,6 +745,109 @@ function bulkChangeStatus(newStatus) {
         bulkActionsBtn.disabled = false;
     });
 }
+
+// =======================
+// Sistema de Columnas Visibles con Persistencia
+// =======================
+
+// Obtener clave de localStorage única por usuario
+function getStorageKey() {
+    const userId = '{{ user.id }}';
+    return `ticket_columns_visibility_${userId}`;
+}
+
+// Cargar preferencias de visibilidad de columnas
+function loadColumnVisibility() {
+    const storageKey = getStorageKey();
+    const savedPrefs = localStorage.getItem(storageKey);
+    
+    if (savedPrefs) {
+        try {
+            const prefs = JSON.parse(savedPrefs);
+            applyColumnVisibility(prefs);
+        } catch (e) {
+            console.error('Error al cargar preferencias de columnas:', e);
+        }
+    }
+}
+
+// Aplicar visibilidad de columnas
+function applyColumnVisibility(prefs) {
+    Object.keys(prefs).forEach(columnName => {
+        const isVisible = prefs[columnName];
+        const checkbox = document.querySelector(`#col-${columnName}`);
+        
+        if (checkbox) {
+            checkbox.checked = isVisible;
+        }
+        
+        // Mostrar/ocultar las columnas
+        toggleColumn(columnName, isVisible);
+    });
+}
+
+// Toggle de visibilidad de columna
+function toggleColumn(columnName, isVisible) {
+    // Ocultar/mostrar headers
+    const headers = document.querySelectorAll(`th[data-column="${columnName}"]`);
+    headers.forEach(th => {
+        th.style.display = isVisible ? '' : 'none';
+    });
+    
+    // Ocultar/mostrar celdas
+    const cells = document.querySelectorAll(`td[data-column="${columnName}"]`);
+    cells.forEach(td => {
+        td.style.display = isVisible ? '' : 'none';
+    });
+}
+
+// Guardar preferencias de visibilidad
+function saveColumnVisibility() {
+    const storageKey = getStorageKey();
+    const checkboxes = document.querySelectorAll('.column-toggle');
+    const prefs = {};
+    
+    checkboxes.forEach(checkbox => {
+        const columnName = checkbox.dataset.column;
+        prefs[columnName] = checkbox.checked;
+    });
+    
+    localStorage.setItem(storageKey, JSON.stringify(prefs));
+}
+
+// Restaurar visibilidad por defecto
+function resetColumnVisibility() {
+    const storageKey = getStorageKey();
+    localStorage.removeItem(storageKey);
+    
+    // Marcar todos los checkboxes
+    const checkboxes = document.querySelectorAll('.column-toggle');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+        const columnName = checkbox.dataset.column;
+        toggleColumn(columnName, true);
+    });
+    
+    saveColumnVisibility();
+}
+
+// Inicializar el sistema de columnas
+document.addEventListener('DOMContentLoaded', function() {
+    // Cargar preferencias guardadas
+    loadColumnVisibility();
+    
+    // Agregar listeners a los checkboxes
+    const checkboxes = document.querySelectorAll('.column-toggle');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const columnName = this.dataset.column;
+            const isVisible = this.checked;
+            
+            toggleColumn(columnName, isVisible);
+            saveColumnVisibility();
+        });
+    });
+});
 </script>
 
 {% endblock %}
