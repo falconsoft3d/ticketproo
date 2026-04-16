@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load project_extras %}
+
+{% block title %}{{ manual.title }} - Manual{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1><i class="bi bi-book"></i> {{ manual.title }}</h1>
+            {% if manual.description %}
+            <p class="text-muted">{{ manual.description }}</p>
+            {% endif %}
+            <small class="text-muted">
+                <i class="bi bi-calendar3"></i> Creado el {{ manual.created_at|date:"d/m/Y" }}
+                {% if manual.created_by %}
+                 por <strong>{{ manual.created_by.get_full_name|default:manual.created_by.username }}</strong>
+                {% endif %}
+                &mdash; <i class="bi bi-eye"></i> {{ manual.get_access_count }} acceso(s)
+            </small>
+        </div>
+        <div class="d-flex gap-2 flex-shrink-0">
+            <a href="{% url 'manual_access' manual.pk %}" target="_blank" rel="noopener noreferrer" class="btn btn-success">
+                <i class="bi bi-box-arrow-up-right"></i> Abrir Manual
+            </a>
+            {% if can_manage %}
+            <a href="{% url 'manual_edit' manual.pk %}" class="btn btn-outline-secondary">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            <a href="{% url 'manual_delete' manual.pk %}" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i>
+            </a>
+            {% endif %}
+            <a href="{% url 'manual_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Historial de accesos (solo agentes/staff) -->
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-clock-history"></i> Historial de Accesos</h5>
+            <span class="badge bg-secondary">{{ manual.get_access_count }} total</span>
+        </div>
+        <div class="card-body p-0">
+            {% if accesses %}
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Usuario</th>
+                            <th>Fecha y Hora</th>
+                            <th>IP</th>
+                            <th>Navegador</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for access in accesses %}
+                        <tr>
+                            <td class="text-muted small">{{ forloop.counter }}</td>
+                            <td>
+                                {% if access.accessed_by %}
+                                    <i class="bi bi-person-fill text-primary"></i>
+                                    <strong>{{ access.accessed_by.get_full_name|default:access.accessed_by.username }}</strong>
+                                    <br><small class="text-muted">{{ access.accessed_by.email }}</small>
+                                {% else %}
+                                    <span class="text-muted"><i class="bi bi-person-dash"></i> Anónimo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span>{{ access.accessed_at|date:"d/m/Y" }}</span>
+                                <br><small class="text-muted">{{ access.accessed_at|time:"H:i:s" }}</small>
+                            </td>
+                            <td><small class="text-muted font-monospace">{{ access.ip_address|default:"-" }}</small></td>
+                            <td>
+                                <small class="text-muted" style="max-width:250px; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ access.user_agent }}">
+                                    {{ access.user_agent|truncatechars:60|default:"-" }}
+                                </small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-clock-history display-4"></i>
+                <p class="mt-2">Aún no hay accesos registrados para este manual.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

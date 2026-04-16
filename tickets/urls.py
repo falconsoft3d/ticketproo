@@ -680,6 +680,8 @@ urlpatterns = [
     # URLs de manuales
     path('manuals/', views.manual_list, name='manual_list'),
     path('manuals/create/', views.manual_create, name='manual_create'),
+    path('manuals/<int:pk>/', views.manual_detail, name='manual_detail'),
+    path('manuals/<int:pk>/access/', views.manual_access, name='manual_access'),
     path('manuals/<int:pk>/edit/', views.manual_edit, name='manual_edit'),
     path('manuals/<int:pk>/delete/', views.manual_delete, name='manual_delete'),
     

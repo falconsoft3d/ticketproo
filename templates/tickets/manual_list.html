@@ -31,7 +31,9 @@
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">
-                        <i class="bi bi-file-earmark-text"></i> {{ manual.title }}
+                        <a href="{% url 'manual_detail' manual.pk %}" class="text-decoration-none text-dark">
+                            <i class="bi bi-file-earmark-text"></i> {{ manual.title }}
+                        </a>
                     </h5>
                     {% if manual.description %}
                     <p class="card-text text-muted small">{{ manual.description|truncatewords:20 }}</p>
@@ -42,11 +44,12 @@
                             {% if manual.created_by %}
                              &mdash; {{ manual.created_by.get_full_name|default:manual.created_by.username }}
                             {% endif %}
+                            &mdash; <i class="bi bi-eye"></i> {{ manual.get_access_count }} acceso(s)
                         </small>
                     </p>
                 </div>
                 <div class="card-footer d-flex justify-content-between align-items-center">
-                    <a href="{{ manual.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-success btn-sm">
+                    <a href="{% url 'manual_access' manual.pk %}" target="_blank" rel="noopener noreferrer" class="btn btn-success btn-sm">
                         <i class="bi bi-box-arrow-up-right"></i> Abrir Manual
                     </a>
                     {% if user.is_staff or user.is_superuser or user|can_manage_courses %}

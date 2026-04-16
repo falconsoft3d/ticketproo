@@ -89,5 +89,67 @@
             </div>
         </div>
     </div>
+
+    {% if manual and accesses is not None %}
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Historial de Accesos</h5>
+                    <span class="badge bg-secondary">{{ manual.get_access_count }} total</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if accesses %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Usuario</th>
+                                    <th>Fecha y Hora</th>
+                                    <th>IP</th>
+                                    <th>Navegador</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for access in accesses %}
+                                <tr>
+                                    <td class="text-muted small">{{ forloop.counter }}</td>
+                                    <td>
+                                        {% if access.accessed_by %}
+                                            <i class="bi bi-person-fill text-primary"></i>
+                                            <strong>{{ access.accessed_by.get_full_name|default:access.accessed_by.username }}</strong>
+                                            <br><small class="text-muted">{{ access.accessed_by.email }}</small>
+                                        {% else %}
+                                            <span class="text-muted"><i class="bi bi-person-dash"></i> Anónimo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span>{{ access.accessed_at|date:"d/m/Y" }}</span>
+                                        <br><small class="text-muted">{{ access.accessed_at|time:"H:i:s" }}</small>
+                                    </td>
+                                    <td><small class="text-muted font-monospace">{{ access.ip_address|default:"-" }}</small></td>
+                                    <td>
+                                        <small class="text-muted" style="max-width:250px; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ access.user_agent }}">
+                                            {{ access.user_agent|truncatechars:60|default:"-" }}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-clock-history display-4"></i>
+                        <p class="mt-2">Aún no hay accesos registrados para este manual.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    </div>
 </div>
 {% endblock %}

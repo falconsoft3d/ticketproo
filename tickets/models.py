@@ -23299,3 +23299,47 @@ class Manual(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_access_count(self):
+        return self.accesses.count()
+
+
+class ManualAccess(models.Model):
+    """Registro de accesos/descargas de manuales por usuario"""
+
+    manual = models.ForeignKey(
+        Manual,
+        on_delete=models.CASCADE,
+        related_name='accesses',
+        verbose_name='Manual'
+    )
+    accessed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='manual_accesses',
+        verbose_name='Accedido por'
+    )
+    ip_address = models.GenericIPAddressField(
+        blank=True,
+        null=True,
+        verbose_name='Dirección IP'
+    )
+    user_agent = models.TextField(
+        blank=True,
+        verbose_name='User Agent'
+    )
+    accessed_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de acceso'
+    )
+
+    class Meta:
+        ordering = ['-accessed_at']
+        verbose_name = 'Acceso a Manual'
+        verbose_name_plural = 'Accesos a Manuales'
+
+    def __str__(self):
+        user = self.accessed_by.username if self.accessed_by else 'Anónimo'
+        return f"{self.manual.title} - {user} - {self.accessed_at}"

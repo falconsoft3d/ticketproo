@@ -54596,7 +54596,7 @@ def manual_edit(request, pk):
             messages.success(request, 'Manual actualizado exitosamente')
             return redirect('manual_list')
 
-    context = {'manual': manual}
+    context = {'manual': manual, 'accesses': manual.accesses.select_related('accessed_by').order_by('-accessed_at')}
     return render(request, 'tickets/manual_form.html', context)
 
 
@@ -54620,3 +54620,39 @@ def manual_delete(request, pk):
 
     context = {'manual': manual}
     return render(request, 'tickets/manual_delete.html', context)
+
+
+@login_required
+def manual_detail(request, pk):
+    """Detalle del manual con historial de accesos"""
+    from .models import Manual, ManualAccess
+    from .utils import is_agent
+
+    manual = get_object_or_404(Manual, pk=pk)
+
+    can_manage = request.user.is_staff or request.user.is_superuser or is_agent(request.user)
+    accesses = manual.accesses.select_related('accessed_by').order_by('-accessed_at')
+
+    context = {
+        'manual': manual,
+        'accesses': accesses,
+        'can_manage': can_manage,
+    }
+    return render(request, 'tickets/manual_detail.html', context)
+
+
+@login_required
+def manual_access(request, pk):
+    """Registra el acceso del usuario y redirige a la URL del manual"""
+    from .models import Manual, ManualAccess
+
+    manual = get_object_or_404(Manual, pk=pk, is_active=True)
+
+    ManualAccess.objects.create(
+        manual=manual,
+        accessed_by=request.user,
+        ip_address=request.META.get('REMOTE_ADDR', ''),
+        user_agent=request.META.get('HTTP_USER_AGENT', ''),
+    )
+
+    return redirect(manual.url)

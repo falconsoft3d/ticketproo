@@ -31,7 +31,7 @@ from .models import (
     Checklist, ChecklistItem, Transaction, KnowledgeBase, Translation, SQLQuery,
     OdooConnection, OdooRPCTable, OdooRPCField, OdooRPCData, OdooRPCImportFile,
     Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage, ChatbotClick, CourseApproval, PrivacyPolicy,
-    Invoice, InvoiceLine, Manual
+    Invoice, InvoiceLine, Manual, ManualAccess
 )
 
 # Configuración del sitio de administración
@@ -7066,3 +7066,11 @@ class ManualAdmin(admin.ModelAdmin):
     list_filter = ('is_active',)
     search_fields = ('title', 'description', 'url')
     readonly_fields = ('created_at', 'updated_at')
+
+
+@admin.register(ManualAccess)
+class ManualAccessAdmin(admin.ModelAdmin):
+    list_display = ('manual', 'accessed_by', 'ip_address', 'accessed_at')
+    list_filter = ('manual',)
+    search_fields = ('manual__title', 'accessed_by__username', 'accessed_by__email')
+    readonly_fields = ('manual', 'accessed_by', 'ip_address', 'user_agent', 'accessed_at')
