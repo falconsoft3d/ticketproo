@@ -31,7 +31,7 @@ from .models import (
     Checklist, ChecklistItem, Transaction, KnowledgeBase, Translation, SQLQuery,
     OdooConnection, OdooRPCTable, OdooRPCField, OdooRPCData, OdooRPCImportFile,
     Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage, ChatbotClick, CourseApproval, PrivacyPolicy,
-    Invoice, InvoiceLine
+    Invoice, InvoiceLine, Manual
 )
 
 # Configuración del sitio de administración
@@ -7058,3 +7058,11 @@ class InvoiceLineAdmin(admin.ModelAdmin):
             'fields': ('subtotal', 'tax_amount', 'line_total')
         }),
     )
+
+
+@admin.register(Manual)
+class ManualAdmin(admin.ModelAdmin):
+    list_display = ('title', 'url', 'created_by', 'is_active', 'created_at')
+    list_filter = ('is_active',)
+    search_fields = ('title', 'description', 'url')
+    readonly_fields = ('created_at', 'updated_at')

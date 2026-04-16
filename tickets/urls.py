@@ -677,6 +677,12 @@ urlpatterns = [
     path('exams/<int:pk>/take/', views.exam_take_authenticated, name='exam_take_authenticated'),
     path('exams/attempts/', views.exam_attempts_list, name='exam_attempts_list'),
     
+    # URLs de manuales
+    path('manuals/', views.manual_list, name='manual_list'),
+    path('manuals/create/', views.manual_create, name='manual_create'),
+    path('manuals/<int:pk>/edit/', views.manual_edit, name='manual_edit'),
+    path('manuals/<int:pk>/delete/', views.manual_delete, name='manual_delete'),
+    
     # URLs públicas de exámenes (sin autenticación)
     path('exam/<str:token>/', views.exam_take_public, name='exam_take_public'),
     path('exam/<str:token>/start/', views.exam_take_questions, name='exam_take_questions'),

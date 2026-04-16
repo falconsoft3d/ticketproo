@@ -23261,3 +23261,41 @@ class InvoiceMessage(models.Model):
     
     def __str__(self):
         return f"Mensaje de {self.user.username} en {self.invoice.sequence}"
+
+
+class Manual(models.Model):
+    """Modelo para manuales con título y URL"""
+
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título'
+    )
+    url = models.URLField(
+        verbose_name='URL del Manual',
+        help_text='Enlace directo al manual (PDF, sitio web, etc.)'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Creado por'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Manual'
+        verbose_name_plural = 'Manuales'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title

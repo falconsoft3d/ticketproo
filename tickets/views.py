@@ -54524,3 +54524,99 @@ def ticket_bulk_change_status(request):
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
     
     return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+
+
+# ============================================================
+# VISTAS DE MANUALES
+# ============================================================
+
+@login_required
+def manual_list(request):
+    """Lista de manuales"""
+    from .models import Manual
+    manuals = Manual.objects.filter(is_active=True).order_by('-created_at')
+    context = {'manuals': manuals}
+    return render(request, 'tickets/manual_list.html', context)
+
+
+@login_required
+def manual_create(request):
+    """Crear un nuevo manual"""
+    from .models import Manual
+    from .utils import is_agent
+
+    if not (request.user.is_staff or request.user.is_superuser or is_agent(request.user)):
+        messages.error(request, 'No tienes permisos para crear manuales')
+        return redirect('manual_list')
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        url = request.POST.get('url', '').strip()
+        description = request.POST.get('description', '').strip()
+
+        if not title or not url:
+            messages.error(request, 'El título y la URL son obligatorios')
+        else:
+            Manual.objects.create(
+                title=title,
+                url=url,
+                description=description,
+                created_by=request.user,
+            )
+            messages.success(request, f'Manual "{title}" creado exitosamente')
+            return redirect('manual_list')
+
+    return render(request, 'tickets/manual_form.html')
+
+
+@login_required
+def manual_edit(request, pk):
+    """Editar un manual existente"""
+    from .models import Manual
+    from .utils import is_agent
+
+    manual = get_object_or_404(Manual, pk=pk)
+
+    if not (request.user.is_staff or request.user.is_superuser or is_agent(request.user)):
+        messages.error(request, 'No tienes permisos para editar manuales')
+        return redirect('manual_list')
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        url = request.POST.get('url', '').strip()
+        description = request.POST.get('description', '').strip()
+
+        if not title or not url:
+            messages.error(request, 'El título y la URL son obligatorios')
+        else:
+            manual.title = title
+            manual.url = url
+            manual.description = description
+            manual.save()
+            messages.success(request, 'Manual actualizado exitosamente')
+            return redirect('manual_list')
+
+    context = {'manual': manual}
+    return render(request, 'tickets/manual_form.html', context)
+
+
+@login_required
+def manual_delete(request, pk):
+    """Eliminar un manual"""
+    from .models import Manual
+    from .utils import is_agent
+
+    manual = get_object_or_404(Manual, pk=pk)
+
+    if not (request.user.is_staff or request.user.is_superuser or is_agent(request.user)):
+        messages.error(request, 'No tienes permisos para eliminar manuales')
+        return redirect('manual_list')
+
+    if request.method == 'POST':
+        title = manual.title
+        manual.delete()
+        messages.success(request, f'Manual "{title}" eliminado exitosamente')
+        return redirect('manual_list')
+
+    context = {'manual': manual}
+    return render(request, 'tickets/manual_delete.html', context)
