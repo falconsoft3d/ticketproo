@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ rfi.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 800px;">
+    <div class="d-flex align-items-center mb-4 gap-2">
+        <a href="{% url 'rfi_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="mb-0"><i class="bi bi-clipboard-question"></i> RFI</h1>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-start">
+            <div>
+                <span class="badge bg-secondary font-monospace me-2">{{ rfi.code }}</span>
+                {% if rfi.is_closed %}
+                <span class="badge bg-danger me-2"><i class="bi bi-lock"></i> Cerrado</span>
+                {% else %}
+                <span class="badge bg-success me-2"><i class="bi bi-unlock"></i> Abierto</span>
+                {% endif %}
+                <h4 class="d-inline mb-0">{{ rfi.title }}</h4>
+            </div>
+            <div class="d-flex gap-2">
+                {% if can_manage %}
+                {% if not rfi.is_closed %}
+                <a href="{% url 'rfi_edit' rfi.pk %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+                {% endif %}
+                <a href="{% url 'rfi_delete' rfi.pk %}" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-trash"></i> Eliminar
+                </a>
+                {% endif %}
+                <a href="{% url 'rfi_pdf' rfi.pk %}" class="btn btn-outline-dark btn-sm" target="_blank" title="Descargar PDF">
+                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                </a>
+                <button type="button" class="btn btn-outline-info btn-sm" title="Copiar enlace público"
+                    onclick="copyPublicLink('{% url 'rfi_public' rfi.public_token %}')">
+                    <i class="bi bi-share"></i> Compartir
+                </button>
+                {% if not rfi.is_closed %}
+                <form method="post" action="{% url 'rfi_close' rfi.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-check-circle"></i> Cerrar
+                    </button>
+                </form>
+                {% else %}
+                <form method="post" action="{% url 'rfi_reopen' rfi.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reabrir
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3 text-muted small">
+                <div class="col-auto">
+                    <i class="bi bi-person-circle"></i>
+                    <strong>Creado por:</strong>
+                    {{ rfi.created_by.get_full_name|default:rfi.created_by.username }}
+                </div>
+                {% if rfi.assigned_user %}
+                <div class="col-auto">
+                    <i class="bi bi-person-check"></i>
+                    <strong>Asignado a:</strong> {{ rfi.assigned_user.get_full_name|default:rfi.assigned_user.username }}
+                </div>
+                {% endif %}
+                {% if rfi.company %}
+                <div class="col-auto">
+                    <i class="bi bi-building"></i>
+                    <strong>Empresa:</strong> {{ rfi.company.name }}
+                </div>
+                {% endif %}
+                <div class="col-auto">
+                    <i class="bi bi-calendar3"></i>
+                    <strong>Fecha:</strong> {{ rfi.created_at|date:"d/m/Y H:i" }}
+                </div>
+                {% if rfi.is_closed %}
+                <div class="col-auto text-danger">
+                    <i class="bi bi-lock-fill"></i>
+                    <strong>Cerrado el:</strong> {{ rfi.closed_at|date:"d/m/Y H:i" }}
+                </div>
+                {% endif %}
+                <div class="col-auto">
+                    <i class="bi bi-clock-history"></i>
+                    <strong>Días desde la solicitud:</strong>
+                    <span class="badge {% if rfi.days_since_request >= 7 %}bg-danger{% elif rfi.days_since_request >= 3 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                        {{ rfi.days_since_request }} día{{ rfi.days_since_request|pluralize }}
+                    </span>
+                </div>
+            </div>
+            <hr>
+            <div style="white-space: pre-wrap;">{{ rfi.text }}</div>
+        </div>
+    </div>
+
+    <!-- Comentarios -->
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-chat-left-text"></i> Comentarios
+                {% if comments %}<span class="badge bg-secondary ms-2">{{ comments|length }}</span>{% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if comments %}
+            <div class="mb-4">
+                {% for comment in comments %}
+                <div class="d-flex gap-3 mb-3">
+                    <div class="flex-shrink-0">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:36px;height:36px;font-size:0.85rem;font-weight:600;">
+                            {{ comment.author.first_name|first|upper|default:comment.author.username|first|upper }}
+                        </div>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="bg-light rounded p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong class="small">{{ comment.author.get_full_name|default:comment.author.username }}</strong>
+                                <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                            </div>
+                            <div style="white-space: pre-wrap;">{{ comment.text }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted small mb-3">No hay comentarios aún.</p>
+            {% endif %}
+
+            <!-- Formulario nuevo comentario -->
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-2">
+                    <textarea class="form-control" name="comment" rows="3" placeholder="Escribe un comentario..." required></textarea>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-send"></i> Comentar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Toast para confirmar copia del enlace -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    <div id="copyToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle me-2"></i> Enlace público copiado al portapapeles
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function copyPublicLink(path) {
+    const url = window.location.origin + path;
+    navigator.clipboard.writeText(url).then(function() {
+        var toastEl = document.getElementById('copyToast');
+        var toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
+    }).catch(function() {
+        prompt('Copia este enlace público:', window.location.origin + path);
+    });
+}
+</script>
+{% endblock %}
+{% endblock %}

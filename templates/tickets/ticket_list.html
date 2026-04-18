@@ -88,13 +88,16 @@
             {% endif %}
         {% endif %}
     </div>
+    {% if is_agent %}
     <div>
         <a href="{% url 'ticket_chart' %}{% if search or status_filter or priority_filter or assigned_filter or company_filter %}?{% endif %}{% if search %}search={{ search|urlencode }}{% endif %}{% if status_filter %}{% if search %}&{% endif %}status={{ status_filter }}{% endif %}{% if company_filter %}{% if search or status_filter %}&{% endif %}company={{ company_filter }}{% endif %}{% if priority_filter %}{% if search or status_filter or company_filter %}&{% endif %}priority={{ priority_filter }}{% endif %}{% if assigned_filter %}{% if search or status_filter or priority_filter or company_filter %}&{% endif %}assigned_to={{ assigned_filter }}{% endif %}" 
            class="btn btn-outline-info">
             <i class="bi bi-bar-chart-line"></i> Ver gráfico de creación
         </a>
     </div>
+    {% endif %}
     <div class="d-flex gap-2">
+        {% if is_agent %}
         <a href="{% url 'ticket_export_excel' %}{% if search or status_filter or priority_filter or assigned_filter or company_filter %}?{% endif %}{% if search %}search={{ search|urlencode }}{% endif %}{% if status_filter %}{% if search %}&{% endif %}status={{ status_filter }}{% endif %}{% if company_filter %}{% if search or status_filter %}&{% endif %}company={{ company_filter }}{% endif %}{% if priority_filter %}{% if search or status_filter or company_filter %}&{% endif %}priority={{ priority_filter }}{% endif %}{% if assigned_filter %}{% if search or status_filter or priority_filter or company_filter %}&{% endif %}assigned_to={{ assigned_filter }}{% endif %}" 
            class="btn btn-success" title="Exportar a Excel">
             <i class="bi bi-file-earmark-excel"></i> Exportar Excel
@@ -105,61 +108,9 @@
         <button type="button" class="btn btn-danger" id="exportSelectedPDF" onclick="exportSelectedTicketsToPDF()" disabled title="Exportar tickets seleccionados a PDF">
             <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
         </button>
+        {% endif %}
         
-        <!-- Botón para configurar columnas visibles -->
-        <div class="btn-group" role="group">
-            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Configurar columnas visibles">
-                <i class="bi bi-layout-three-columns"></i> Columnas
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end p-3" style="min-width: 250px;" onclick="event.stopPropagation();">
-                <li class="mb-2"><strong><i class="bi bi-eye me-2"></i>Columnas Visibles</strong></li>
-                <li><hr class="dropdown-divider"></li>
-                <li class="form-check mb-2">
-                    <input class="form-check-input column-toggle" type="checkbox" id="col-category" data-column="category" checked>
-                    <label class="form-check-label" for="col-category">Categoría</label>
-                </li>
-                <li class="form-check mb-2">
-                    <input class="form-check-input column-toggle" type="checkbox" id="col-type" data-column="type" checked>
-                    <label class="form-check-label" for="col-type">Tipo</label>
-                </li>
-                <li class="form-check mb-2">
-                    <input class="form-check-input column-toggle" type="checkbox" id="col-company" data-column="company" checked>
-                    <label class="form-check-label" for="col-company">Empresa</label>
-                </li>
-                {% if is_agent %}
-                <li class="form-check mb-2">
-                    <input class="form-check-input column-toggle" type="checkbox" id="col-creator" data-column="creator" checked>
-                    <label class="form-check-label" for="col-creator">Creador</label>
-                </li>
-                {% endif %}
-                <li class="form-check mb-2">
-                    <input class="form-check-input column-toggle" type="checkbox" id="col-status" data-column="status" checked>
-                    <label class="form-check-label" for="col-status">Estado</label>
-                </li>
-                <li class="form-check mb-2">
-                    <input class="form-check-input column-toggle" type="checkbox" id="col-approval" data-column="approval" checked>
-                    <label class="form-check-label" for="col-approval">Aprobación</label>
-                </li>
-                <li class="form-check mb-2">
-                    <input class="form-check-input column-toggle" type="checkbox" id="col-age" data-column="age" checked>
-                    <label class="form-check-label" for="col-age">Antigüedad</label>
-                </li>
-                <li class="form-check mb-2">
-                    <input class="form-check-input column-toggle" type="checkbox" id="col-date" data-column="date" checked>
-                    <label class="form-check-label" for="col-date">Fecha Creación</label>
-                </li>
-                <li class="form-check mb-2">
-                    <input class="form-check-input column-toggle" type="checkbox" id="col-hours" data-column="hours" checked>
-                    <label class="form-check-label" for="col-hours">Horas</label>
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <button class="btn btn-sm btn-outline-primary w-100" onclick="resetColumnVisibility()">
-                        <i class="bi bi-arrow-clockwise me-1"></i> Restaurar por defecto
-                    </button>
-                </li>
-            </ul>
-        </div>
+
         
         <div class="btn-group" role="group">
             <button type="button" class="btn btn-info dropdown-toggle" id="bulkActionsBtn" data-bs-toggle="dropdown" aria-expanded="false" disabled title="Cambiar estado de tickets seleccionados" style="display: none;">
@@ -178,14 +129,40 @@
             <i class="bi bi-file-earmark-excel"></i> Importar Excel
         </a>
         {% endif %}
+        <a href="{% url 'qa_rating_public' %}" class="evaluar-btn" title="¡Dinos cómo lo estamos haciendo!">
+            <span class="evaluar-emoji">😊</span>
+            <span class="evaluar-texto">¡Evalúanos!</span>
+            <span class="evaluar-sub">Tu opinión nos importa</span>
+        </a>
+        <button type="button" class="btn btn-outline-secondary" id="toggleFiltrosBtn" onclick="toggleFiltros()" title="Mostrar / ocultar filtros">
+            <i class="bi bi-funnel" id="toggleFiltrosIcon"></i>
+        </button>
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#kpiModal" title="Ver indicadores">
+            <i class="bi bi-bar-chart-fill"></i>
+        </button>
         <a href="{% url 'ticket_create' %}" class="btn btn-primary">
             <i class="bi bi-plus"></i> Nuevo Ticket
         </a>
     </div>
 </div>
 
+{% if not is_agent and rfi_open_count > 0 %}
+<div class="alert alert-warning border-warning d-flex align-items-center gap-3 mb-4 shadow-sm" role="alert" style="border-left: 5px solid #ffc107;">
+    <i class="bi bi-exclamation-triangle-fill fs-3 text-warning flex-shrink-0"></i>
+    <div>
+        <strong>Tienes {{ rfi_open_count }} RFI{{ rfi_open_count|pluralize }} abierto{{ rfi_open_count|pluralize }}</strong> pendiente{{ rfi_open_count|pluralize }} de completar.
+        {% if rfi_oldest_days > 0 %}
+        La más antigua lleva <strong>{{ rfi_oldest_days }} día{{ rfi_oldest_days|pluralize }}</strong> sin cerrar.
+        {% endif %}
+        <a href="{% url 'rfi_my_list' %}" class="alert-link ms-2">
+            <i class="bi bi-arrow-right-circle"></i> Ver mis RFI
+        </a>
+    </div>
+</div>
+{% endif %}
+
 <!-- Filtros -->
-<div class="card mb-4">
+<div class="card mb-4" id="filtrosCard">
     <div class="card-body">
         <form method="get" class="row g-3">
             <div class="col-md-2">
@@ -446,6 +423,53 @@
         <a href="{% url 'ticket_create' %}" class="btn btn-primary">
             <i class="bi bi-plus"></i> Crear Primer Ticket
         </a>
+    </div>
+</div>
+{% endif %}
+
+{% if not is_agent and rfis_pendientes %}
+<div class="mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0"><i class="bi bi-clipboard-question text-warning"></i> Mis RFI Pendientes</h4>
+        <a href="{% url 'rfi_my_list' %}" class="btn btn-outline-warning btn-sm">Ver todos</a>
+    </div>
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Código</th>
+                        <th>Título</th>
+                        <th>Empresa</th>
+                        <th>Días abierto</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rfi in rfis_pendientes %}
+                    <tr>
+                        <td><span class="badge bg-secondary font-monospace">{{ rfi.code }}</span></td>
+                        <td>{{ rfi.title }}</td>
+                        <td>{{ rfi.company|default:"—" }}</td>
+                        <td>
+                            {% if rfi.days_since_request > 7 %}
+                            <span class="badge bg-danger">{{ rfi.days_since_request }} días</span>
+                            {% elif rfi.days_since_request > 3 %}
+                            <span class="badge bg-warning text-dark">{{ rfi.days_since_request }} días</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ rfi.days_since_request }} días</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'rfi_detail' rfi.pk %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endif %}
@@ -746,108 +770,97 @@ function bulkChangeStatus(newStatus) {
     });
 }
 
-// =======================
-// Sistema de Columnas Visibles con Persistencia
-// =======================
 
-// Obtener clave de localStorage única por usuario
-function getStorageKey() {
-    const userId = '{{ user.id }}';
-    return `ticket_columns_visibility_${userId}`;
-}
-
-// Cargar preferencias de visibilidad de columnas
-function loadColumnVisibility() {
-    const storageKey = getStorageKey();
-    const savedPrefs = localStorage.getItem(storageKey);
-    
-    if (savedPrefs) {
-        try {
-            const prefs = JSON.parse(savedPrefs);
-            applyColumnVisibility(prefs);
-        } catch (e) {
-            console.error('Error al cargar preferencias de columnas:', e);
-        }
+// ---- Toggle filtros con persistencia ----
+function toggleFiltros() {
+    var card = document.getElementById('filtrosCard');
+    var icon = document.getElementById('toggleFiltrosIcon');
+    var oculto = card.style.display === 'none';
+    if (oculto) {
+        card.style.display = '';
+        icon.classList.replace('bi-funnel-fill', 'bi-funnel');
+        localStorage.setItem('ticketFiltrosVisible', '1');
+    } else {
+        card.style.display = 'none';
+        icon.classList.replace('bi-funnel', 'bi-funnel-fill');
+        localStorage.setItem('ticketFiltrosVisible', '0');
     }
 }
 
-// Aplicar visibilidad de columnas
-function applyColumnVisibility(prefs) {
-    Object.keys(prefs).forEach(columnName => {
-        const isVisible = prefs[columnName];
-        const checkbox = document.querySelector(`#col-${columnName}`);
-        
-        if (checkbox) {
-            checkbox.checked = isVisible;
+(function() {
+    var card = document.getElementById('filtrosCard');
+    var icon = document.getElementById('toggleFiltrosIcon');
+    if (card && localStorage.getItem('ticketFiltrosVisible') === '0') {
+        card.style.display = 'none';
+        if (icon) {
+            icon.classList.replace('bi-funnel', 'bi-funnel-fill');
         }
-        
-        // Mostrar/ocultar las columnas
-        toggleColumn(columnName, isVisible);
-    });
-}
+    }
+})();
 
-// Toggle de visibilidad de columna
-function toggleColumn(columnName, isVisible) {
-    // Ocultar/mostrar headers
-    const headers = document.querySelectorAll(`th[data-column="${columnName}"]`);
-    headers.forEach(th => {
-        th.style.display = isVisible ? '' : 'none';
-    });
-    
-    // Ocultar/mostrar celdas
-    const cells = document.querySelectorAll(`td[data-column="${columnName}"]`);
-    cells.forEach(td => {
-        td.style.display = isVisible ? '' : 'none';
-    });
-}
 
-// Guardar preferencias de visibilidad
-function saveColumnVisibility() {
-    const storageKey = getStorageKey();
-    const checkboxes = document.querySelectorAll('.column-toggle');
-    const prefs = {};
-    
-    checkboxes.forEach(checkbox => {
-        const columnName = checkbox.dataset.column;
-        prefs[columnName] = checkbox.checked;
-    });
-    
-    localStorage.setItem(storageKey, JSON.stringify(prefs));
-}
-
-// Restaurar visibilidad por defecto
-function resetColumnVisibility() {
-    const storageKey = getStorageKey();
-    localStorage.removeItem(storageKey);
-    
-    // Marcar todos los checkboxes
-    const checkboxes = document.querySelectorAll('.column-toggle');
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = true;
-        const columnName = checkbox.dataset.column;
-        toggleColumn(columnName, true);
-    });
-    
-    saveColumnVisibility();
-}
-
-// Inicializar el sistema de columnas
-document.addEventListener('DOMContentLoaded', function() {
-    // Cargar preferencias guardadas
-    loadColumnVisibility();
-    
-    // Agregar listeners a los checkboxes
-    const checkboxes = document.querySelectorAll('.column-toggle');
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const columnName = this.dataset.column;
-            const isVisible = this.checked;
-            
-            toggleColumn(columnName, isVisible);
-            saveColumnVisibility();
-        });
-    });
-});
 </script>
+
+<!-- Modal de Indicadores KPI -->
+<div class="modal fade" id="kpiModal" tabindex="-1" aria-labelledby="kpiModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-muted" id="kpiModalLabel">
+                    <i class="bi bi-bar-chart-fill me-2"></i>Indicadores
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4">
+                    <!-- Tickets Pendientes -->
+                    <div class="col-6">
+                        <div class="rounded-4 p-4 text-center h-100 d-flex flex-column justify-content-center"
+                             style="background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);">
+                            <div class="text-white mb-2" style="font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;opacity:0.85;">
+                                <i class="bi bi-hourglass-split me-1"></i> Tickets Pendientes
+                            </div>
+                            <div class="text-white fw-bold lh-1 mb-1" style="font-size:5rem;">
+                                {{ kpi_tickets_pending }}
+                            </div>
+                            <div class="text-white" style="font-size:1.1rem;opacity:0.75;">
+                                de {{ kpi_tickets_total }} total{{ kpi_tickets_total|pluralize:"es" }}
+                            </div>
+                            <div class="mt-3">
+                                {% if kpi_tickets_total > 0 %}
+                                <div class="progress" style="height:6px;background:rgba(255,255,255,0.2);">
+                                    <div class="progress-bar bg-white" style="width:{% widthratio kpi_tickets_pending kpi_tickets_total 100 %}%"></div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <!-- RFI Abiertos -->
+                    <div class="col-6">
+                        <div class="rounded-4 p-4 text-center h-100 d-flex flex-column justify-content-center"
+                             style="background: linear-gradient(135deg, #f72585 0%, #b5179e 100%);">
+                            <div class="text-white mb-2" style="font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;opacity:0.85;">
+                                <i class="bi bi-clipboard-question me-1"></i> RFI Abiertos
+                            </div>
+                            <div class="text-white fw-bold lh-1 mb-1" style="font-size:5rem;">
+                                {{ kpi_rfi_open }}
+                            </div>
+                            <div class="text-white" style="font-size:1.1rem;opacity:0.75;">
+                                de {{ kpi_rfi_total }} total{{ kpi_rfi_total|pluralize:"es" }}
+                            </div>
+                            <div class="mt-3">
+                                {% if kpi_rfi_total > 0 %}
+                                <div class="progress" style="height:6px;background:rgba(255,255,255,0.2);">
+                                    <div class="progress-bar bg-white" style="width:{% widthratio kpi_rfi_open kpi_rfi_total 100 %}%"></div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

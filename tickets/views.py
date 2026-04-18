@@ -643,7 +643,55 @@ def dashboard_view(request):
     ).distinct().order_by('sequence', '-created_at')[:10]
     
     context['user_procedures'] = user_procedures
-    
+
+    # KPI: cursos y documentos
+    from .models import Course, RFI
+    if is_agent(request.user):
+        kpi_courses_total = Course.objects.filter(is_active=True).count()
+        kpi_docs_total = Document.objects.count()
+    else:
+        if user_company:
+            kpi_courses_total = Course.objects.filter(
+                is_active=True
+            ).filter(
+                models.Q(company__isnull=True) | models.Q(company=user_company)
+            ).count()
+            kpi_docs_total = Document.objects.filter(
+                models.Q(company__isnull=True) | models.Q(company=user_company)
+            ).count()
+        else:
+            kpi_courses_total = Course.objects.filter(is_active=True, company__isnull=True).count()
+            kpi_docs_total = Document.objects.filter(company__isnull=True).count()
+
+    # KPI: tickets y RFI
+    _ticket_q = models.Q()
+    _rfi_q = models.Q()
+    if not is_agent(request.user):
+        _user_projects = request.user.assigned_projects.all()
+        _ticket_q = models.Q(created_by=request.user) | models.Q(assigned_to=request.user)
+        if _user_projects.exists():
+            _ticket_q |= models.Q(project__in=_user_projects)
+        if user_company:
+            _ticket_q |= models.Q(company=user_company)
+        _rfi_q = models.Q(created_by=request.user) | models.Q(assigned_user=request.user)
+        if user_company:
+            _rfi_q |= models.Q(company=user_company)
+    kpi_tickets_pending = Ticket.objects.filter(_ticket_q, status__in=['open', 'working']).distinct().count()
+    kpi_tickets_total = Ticket.objects.filter(_ticket_q).distinct().count()
+    _RFI = RFI
+    _all_rfis = _RFI.objects.filter(_rfi_q).distinct() if not is_agent(request.user) else _RFI.objects.all()
+    kpi_rfi_open = _all_rfis.filter(closed_at__isnull=True).count()
+    kpi_rfi_total = _all_rfis.count()
+
+    context.update({
+        'kpi_tickets_pending': kpi_tickets_pending,
+        'kpi_tickets_total': kpi_tickets_total,
+        'kpi_rfi_open': kpi_rfi_open,
+        'kpi_rfi_total': kpi_rfi_total,
+        'kpi_courses_total': kpi_courses_total,
+        'kpi_docs_total': kpi_docs_total,
+    })
+
     return render(request, 'tickets/dashboard.html', context)
 
 @login_required
@@ -958,7 +1006,51 @@ def ticket_list_view(request):
     # Obtener todas las empresas para el filtro
     from .models import Company
     companies = Company.objects.all().order_by('name')
-    
+
+    # RFIs pendientes para no-agentes
+    rfis_pendientes = []
+    if not is_agent(request.user):
+        from .models import RFI
+        user = request.user
+        user_company = None
+        try:
+            user_company = user.profile.company
+        except Exception:
+            pass
+        q = Q(created_by=user) | Q(assigned_user=user)
+        if user_company:
+            q |= Q(company=user_company)
+        rfis_pendientes = RFI.objects.filter(q, closed_at__isnull=True).distinct().select_related('company').order_by('created_at')
+
+    # Contadores para el panel de indicadores
+    from django.db.models import Q as _Q
+    if is_agent(request.user):
+        kpi_tickets_pending = Ticket.objects.filter(status__in=['open', 'working']).count()
+        kpi_tickets_total = Ticket.objects.count()
+        from .models import RFI as _RFI
+        kpi_rfi_open = _RFI.objects.filter(closed_at__isnull=True).count()
+        kpi_rfi_total = _RFI.objects.count()
+    else:
+        _user = request.user
+        _uc = None
+        try:
+            _uc = _user.profile.company
+        except Exception:
+            pass
+        _tq = _Q(created_by=_user) | _Q(assigned_to=_user)
+        if _uc:
+            _tq |= _Q(company=_uc)
+        _all_tickets = Ticket.objects.filter(_tq).distinct()
+        kpi_tickets_pending = _all_tickets.filter(status__in=['open', 'working']).count()
+        kpi_tickets_total = _all_tickets.count()
+        from .models import RFI as _RFI
+        _rq = _Q(created_by=_user) | _Q(assigned_user=_user)
+        if _uc:
+            _rq |= _Q(company=_uc)
+        _all_rfis = _RFI.objects.filter(_rq).distinct()
+        kpi_rfi_open = _all_rfis.filter(closed_at__isnull=True).count()
+        kpi_rfi_total = _all_rfis.count()
+
     context = {
         'page_obj': page_obj,
         'status_filter': status_filter,
@@ -972,6 +1064,11 @@ def ticket_list_view(request):
         'is_agent': is_agent(request.user),
         'user_role': get_user_role(request.user),
         'total_hours_all': total_hours_all,
+        'rfis_pendientes': rfis_pendientes,
+        'kpi_tickets_pending': kpi_tickets_pending,
+        'kpi_tickets_total': kpi_tickets_total,
+        'kpi_rfi_open': kpi_rfi_open,
+        'kpi_rfi_total': kpi_rfi_total,
     }
     return render(request, 'tickets/ticket_list.html', context)
 
@@ -1251,6 +1348,25 @@ def ticket_detail_view(request, pk):
             comment.save()
             messages.success(request, 'Comentario agregado exitosamente.')
             return redirect('ticket_detail', pk=pk)
+
+    # Cambio rápido de estado desde el panel de acciones
+    if request.method == 'POST' and 'quick_change_status' in request.POST:
+        new_status = request.POST.get('new_status', '').strip()
+        valid_statuses = [s[0] for s in Ticket.STATUS_CHOICES]
+        if new_status and new_status in valid_statuses and new_status != ticket.status:
+            old_label = ticket.get_status_display()
+            ticket.status = new_status
+            ticket.save(update_fields=['status'])
+            new_label = ticket.get_status_display()
+            nombre = request.user.get_full_name() or request.user.username
+            TicketComment.objects.create(
+                ticket=ticket,
+                user=request.user,
+                content=f'🔄 Estado cambiado de **{old_label}** → **{new_label}** por {nombre}',
+                is_system=True,
+            )
+            messages.success(request, f'Estado actualizado a "{new_label}".')
+        return redirect('ticket_detail', pk=pk)
     
     # Formulario para agregar adjuntos
     attachment_form = TicketAttachmentForm()
@@ -1359,7 +1475,18 @@ def ticket_edit_view(request, pk):
     if request.method == 'POST':
         form = FormClass(request.POST, instance=ticket)
         if form.is_valid():
-            form.save()
+            old_status = ticket.status
+            updated = form.save()
+            if updated.status != old_status:
+                old_label = dict(Ticket.STATUS_CHOICES).get(old_status, old_status)
+                new_label = updated.get_status_display()
+                nombre = request.user.get_full_name() or request.user.username
+                TicketComment.objects.create(
+                    ticket=updated,
+                    user=request.user,
+                    content=f'🔄 Estado cambiado de **{old_label}** → **{new_label}** por {nombre}',
+                    is_system=True,
+                )
             messages.success(request, 'Ticket actualizado exitosamente.')
             return redirect('ticket_detail', pk=ticket.pk)
     else:
@@ -54656,3 +54783,400 @@ def manual_access(request, pk):
     )
 
     return redirect(manual.url)
+
+
+# =======================
+# Vistas RFI
+# =======================
+
+@login_required
+def rfi_list(request):
+    """Lista de RFIs según permisos del usuario"""
+    from .models import RFI
+    from .utils import is_agent
+
+    if is_agent(request.user) or request.user.is_staff or request.user.is_superuser:
+        rfis = RFI.objects.select_related('created_by', 'company', 'assigned_user').order_by('-created_at')
+    else:
+        # Usuarios normales: los que crearon, los de su empresa o los asignados a ellos
+        user_company = getattr(request.user, 'profile', None)
+        user_company = user_company.company if user_company else None
+        if user_company:
+            rfis = RFI.objects.filter(
+                Q(created_by=request.user) | Q(company=user_company) | Q(assigned_user=request.user)
+            ).select_related('created_by', 'company', 'assigned_user').order_by('-created_at')
+        else:
+            rfis = RFI.objects.filter(
+                Q(created_by=request.user) | Q(assigned_user=request.user)
+            ).select_related('created_by', 'company', 'assigned_user').order_by('-created_at')
+
+    context = {
+        'rfis': rfis,
+        'can_create': True,
+    }
+    return render(request, 'tickets/rfi_list.html', context)
+
+
+@login_required
+def rfi_create(request):
+    """Crear un nuevo RFI"""
+    from .models import RFI
+    from .models import Company
+
+    companies = Company.objects.filter(is_active=True).order_by('name') if hasattr(Company, 'is_active') else Company.objects.order_by('name')
+    users = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        text = request.POST.get('text', '').strip()
+        company_id = request.POST.get('company', '').strip()
+        assigned_user_id = request.POST.get('assigned_user', '').strip()
+
+        if not title or not text:
+            messages.error(request, 'El título y el texto son obligatorios')
+        else:
+            company = Company.objects.filter(pk=company_id).first() if company_id else None
+            assigned_user = User.objects.filter(pk=assigned_user_id).first() if assigned_user_id else None
+            RFI.objects.create(
+                title=title,
+                text=text,
+                created_by=request.user,
+                company=company,
+                assigned_user=assigned_user,
+            )
+            messages.success(request, f'RFI "{title}" creado exitosamente')
+            return redirect('rfi_list')
+
+    context = {
+        'companies': companies,
+        'users': users,
+    }
+    return render(request, 'tickets/rfi_form.html', context)
+
+
+@login_required
+def rfi_detail(request, pk):
+    """Detalle de un RFI"""
+    from .models import RFI, RFIComment
+    from .utils import is_agent
+
+    rfi = get_object_or_404(RFI, pk=pk)
+
+    # Verificar acceso
+    if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
+        user_company = getattr(request.user, 'profile', None)
+        user_company = user_company.company if user_company else None
+        if rfi.created_by != request.user and rfi.company != user_company and rfi.assigned_user != request.user:
+            messages.error(request, 'No tienes acceso a este RFI')
+            return redirect('rfi_list')
+
+    can_manage = is_agent(request.user) or request.user.is_staff or request.user.is_superuser or rfi.created_by == request.user
+
+    if request.method == 'POST':
+        comment_text = request.POST.get('comment', '').strip()
+        if comment_text:
+            RFIComment.objects.create(rfi=rfi, author=request.user, text=comment_text)
+            messages.success(request, 'Comentario agregado')
+        return redirect('rfi_detail', pk=pk)
+
+    comments = rfi.comments.select_related('author').order_by('created_at')
+
+    context = {
+        'rfi': rfi,
+        'can_manage': can_manage,
+        'comments': comments,
+    }
+    return render(request, 'tickets/rfi_detail.html', context)
+
+
+@login_required
+def rfi_delete(request, pk):
+    """Eliminar un RFI"""
+    from .models import RFI
+    from .utils import is_agent
+
+    rfi = get_object_or_404(RFI, pk=pk)
+
+    if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser or rfi.created_by == request.user):
+        messages.error(request, 'No tienes permisos para eliminar este RFI')
+        return redirect('rfi_list')
+
+    if request.method == 'POST':
+        title = rfi.title
+        rfi.delete()
+        messages.success(request, f'RFI "{title}" eliminado exitosamente')
+        return redirect('rfi_list')
+
+    context = {'rfi': rfi}
+    return render(request, 'tickets/rfi_delete.html', context)
+
+
+@login_required
+def rfi_edit(request, pk):
+    """Editar un RFI existente"""
+    from .models import RFI
+    from .models import Company
+    from .utils import is_agent
+
+    rfi = get_object_or_404(RFI, pk=pk)
+
+    if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser or rfi.created_by == request.user):
+        messages.error(request, 'No tienes permisos para editar este RFI')
+        return redirect('rfi_detail', pk=pk)
+
+    companies = Company.objects.filter(is_active=True).order_by('name') if hasattr(Company, 'is_active') else Company.objects.order_by('name')
+    users = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        text = request.POST.get('text', '').strip()
+        company_id = request.POST.get('company', '').strip()
+        assigned_user_id = request.POST.get('assigned_user', '').strip()
+
+        if not title or not text:
+            messages.error(request, 'El título y el texto son obligatorios')
+        else:
+            rfi.title = title
+            rfi.text = text
+            rfi.company = Company.objects.filter(pk=company_id).first() if company_id else None
+            rfi.assigned_user = User.objects.filter(pk=assigned_user_id).first() if assigned_user_id else None
+            rfi.save()
+            messages.success(request, 'RFI actualizado exitosamente')
+            return redirect('rfi_detail', pk=pk)
+
+    context = {
+        'rfi': rfi,
+        'companies': companies,
+        'users': users,
+    }
+    return render(request, 'tickets/rfi_form.html', context)
+
+
+@login_required
+def rfi_close(request, pk):
+    """Cerrar un RFI guardando la fecha de cierre"""
+    from .models import RFI
+    from django.utils import timezone
+
+    rfi = get_object_or_404(RFI, pk=pk)
+
+    if request.method == 'POST':
+        if not rfi.is_closed:
+            rfi.closed_at = timezone.now()
+            rfi.save(update_fields=['closed_at'])
+            messages.success(request, f'RFI {rfi.code} cerrado exitosamente')
+        return redirect('rfi_detail', pk=pk)
+
+    return redirect('rfi_detail', pk=pk)
+
+
+@login_required
+def rfi_reopen(request, pk):
+    """Reabrir un RFI eliminando la fecha de cierre"""
+    from .models import RFI
+
+    rfi = get_object_or_404(RFI, pk=pk)
+
+    if request.method == 'POST':
+        if rfi.is_closed:
+            rfi.closed_at = None
+            rfi.save(update_fields=['closed_at'])
+            messages.success(request, f'RFI {rfi.code} reabierto exitosamente')
+        return redirect('rfi_detail', pk=pk)
+
+    return redirect('rfi_detail', pk=pk)
+
+
+@login_required
+def rfi_my_list(request):
+    """Lista de RFIs del usuario no-agente (propios o de su empresa)"""
+    from .models import RFI
+    from .utils import is_agent
+
+    user = request.user
+    user_company = getattr(user, 'profile', None)
+    user_company = user_company.company if user_company else None
+
+    rfis = RFI.objects.filter(
+        Q(created_by=user) | Q(assigned_user=user) |
+        (Q(company=user_company) if user_company else Q())
+    ).distinct().select_related('created_by', 'company', 'assigned_user')
+
+    context = {
+        'rfis': rfis,
+        'my_view': True,
+    }
+    return render(request, 'tickets/rfi_list.html', context)
+
+
+@login_required
+def ticket_update_commit(request, pk):
+    """Actualizar el campo commit de un ticket (solo agentes)"""
+    if not is_agent(request.user):
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden()
+    ticket = get_object_or_404(Ticket, pk=pk)
+    if request.method == 'POST':
+        ticket.commit = request.POST.get('commit', '').strip()
+        ticket.save(update_fields=['commit'])
+        messages.success(request, 'Commit actualizado.')
+    return redirect('ticket_detail', pk=pk)
+
+
+@login_required
+def ticket_update_rating(request, pk):
+    """Actualizar la calificación de un ticket (1-5 estrellas)"""
+    ticket = get_object_or_404(Ticket, pk=pk)
+    if request.method == 'POST':
+        try:
+            val = int(request.POST.get('rating', 0))
+            ticket.rating = val if 1 <= val <= 5 else None
+            ticket.save(update_fields=['rating'])
+        except (ValueError, TypeError):
+            pass
+    return redirect('ticket_detail', pk=pk)
+
+
+@login_required
+def rfi_pdf(request, pk):
+    """Generar PDF del RFI con ReportLab"""
+    from .models import RFI, RFIComment
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    from reportlab.lib.enums import TA_LEFT, TA_CENTER
+    import io
+
+    rfi = get_object_or_404(RFI, pk=pk)
+    comments = RFIComment.objects.filter(rfi=rfi).select_related('author').order_by('created_at')
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=2*cm,
+        leftMargin=2*cm,
+        topMargin=2*cm,
+        bottomMargin=2*cm,
+    )
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=16, textColor=colors.HexColor('#1a1a2e'), spaceAfter=4)
+    label_style = ParagraphStyle('Label', parent=styles['Normal'], fontSize=9, textColor=colors.HexColor('#666666'), spaceBefore=6)
+    value_style = ParagraphStyle('Value', parent=styles['Normal'], fontSize=11, textColor=colors.HexColor('#1a1a2e'))
+    comment_style = ParagraphStyle('Comment', parent=styles['Normal'], fontSize=10, textColor=colors.HexColor('#333333'), leftIndent=10)
+    comment_meta_style = ParagraphStyle('CommentMeta', parent=styles['Normal'], fontSize=8, textColor=colors.HexColor('#888888'), leftIndent=10)
+
+    story = []
+
+    # Encabezado
+    story.append(Paragraph(f'RFI – Request for Information', title_style))
+    story.append(Paragraph(f'<font color="#555555">Código: <b>{rfi.code}</b> &nbsp;&nbsp; Estado: <b>{"Cerrado" if rfi.is_closed else "Abierto"}</b></font>', styles['Normal']))
+    story.append(Spacer(1, 0.3*cm))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#dddddd')))
+    story.append(Spacer(1, 0.4*cm))
+
+    # Título
+    story.append(Paragraph('Título', label_style))
+    story.append(Paragraph(rfi.title, value_style))
+    story.append(Spacer(1, 0.3*cm))
+
+    # Tabla de metadatos
+    empresa = str(rfi.company) if rfi.company else '—'
+    creado_por = rfi.created_by.get_full_name() or rfi.created_by.username if rfi.created_by else '—'
+    asignado_a = rfi.assigned_user.get_full_name() or rfi.assigned_user.username if rfi.assigned_user else '—'
+    fecha_creacion = rfi.created_at.strftime('%d/%m/%Y %H:%M') if rfi.created_at else '—'
+    fecha_cierre = rfi.closed_at.strftime('%d/%m/%Y %H:%M') if rfi.closed_at else '—'
+
+    meta_data = [
+        ['Empresa', empresa, 'Creado por', creado_por],
+        ['Asignado a', asignado_a, 'Fecha creación', fecha_creacion],
+        ['Fecha cierre', fecha_cierre, 'Días transcurridos', str(rfi.days_since_request)],
+    ]
+    meta_table = Table(meta_data, colWidths=[3.5*cm, 6*cm, 3.5*cm, 4*cm])
+    meta_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f0f0f0')),
+        ('BACKGROUND', (2, 0), (2, -1), colors.HexColor('#f0f0f0')),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#555555')),
+        ('TEXTCOLOR', (2, 0), (2, -1), colors.HexColor('#555555')),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dddddd')),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    story.append(meta_table)
+    story.append(Spacer(1, 0.5*cm))
+
+    # Descripción
+    story.append(Paragraph('Descripción', label_style))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor('#eeeeee')))
+    story.append(Spacer(1, 0.2*cm))
+    for line in rfi.text.split('\n'):
+        story.append(Paragraph(line or '&nbsp;', value_style))
+    story.append(Spacer(1, 0.5*cm))
+
+    # Comentarios
+    if comments.exists():
+        story.append(Paragraph('Comentarios', label_style))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor('#eeeeee')))
+        story.append(Spacer(1, 0.2*cm))
+        for comment in comments:
+            autor = comment.author.get_full_name() or comment.author.username
+            fecha = comment.created_at.strftime('%d/%m/%Y %H:%M')
+            story.append(Paragraph(f'<b>{autor}</b> &nbsp; <font color="#888888">{fecha}</font>', comment_meta_style))
+            for line in comment.text.split('\n'):
+                story.append(Paragraph(line or '&nbsp;', comment_style))
+            story.append(Spacer(1, 0.3*cm))
+
+    doc.build(story)
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="RFI_{rfi.code}.pdf"'
+    return response
+
+
+def rfi_public(request, token):
+    """Vista pública del RFI accesible sin login mediante token UUID"""
+    from .models import RFI, RFIComment
+
+    rfi = get_object_or_404(RFI, public_token=token)
+
+    error = None
+    if request.method == 'POST':
+        guest_name = request.POST.get('guest_name', '').strip()
+        guest_email = request.POST.get('guest_email', '').strip()
+        text = request.POST.get('comment', '').strip()
+
+        if not guest_name:
+            error = 'Por favor ingresa tu nombre.'
+        elif not guest_email:
+            error = 'Por favor ingresa tu correo electrónico.'
+        elif not text:
+            error = 'El comentario no puede estar vacío.'
+        else:
+            RFIComment.objects.create(
+                rfi=rfi,
+                author=None,
+                guest_name=guest_name,
+                guest_email=guest_email,
+                text=text,
+            )
+            from django.http import HttpResponseRedirect
+            return HttpResponseRedirect(request.path + '#comentarios')
+
+    comments = RFIComment.objects.filter(rfi=rfi).select_related('author').order_by('created_at')
+
+    context = {
+        'rfi': rfi,
+        'comments': comments,
+        'error': error,
+        'post_data': request.POST if error else {},
+    }
+    return render(request, 'tickets/rfi_public.html', context)

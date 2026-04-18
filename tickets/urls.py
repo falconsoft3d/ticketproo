@@ -684,6 +684,16 @@ urlpatterns = [
     path('manuals/<int:pk>/access/', views.manual_access, name='manual_access'),
     path('manuals/<int:pk>/edit/', views.manual_edit, name='manual_edit'),
     path('manuals/<int:pk>/delete/', views.manual_delete, name='manual_delete'),
+
+    # URLs de RFI
+    path('rfi/', views.rfi_list, name='rfi_list'),
+    path('rfi/create/', views.rfi_create, name='rfi_create'),
+    path('rfi/<int:pk>/', views.rfi_detail, name='rfi_detail'),
+    path('rfi/<int:pk>/delete/', views.rfi_delete, name='rfi_delete'),
+    path('rfi/<int:pk>/edit/', views.rfi_edit, name='rfi_edit'),
+    path('rfi/<int:pk>/close/', views.rfi_close, name='rfi_close'),
+    path('rfi/<int:pk>/reopen/', views.rfi_reopen, name='rfi_reopen'),
+    path('mis-rfi/', views.rfi_my_list, name='rfi_my_list'),
     
     # URLs públicas de exámenes (sin autenticación)
     path('exam/<str:token>/', views.exam_take_public, name='exam_take_public'),
@@ -1745,5 +1755,19 @@ urlpatterns += [
     path('invoices/<int:pk>/duplicate/', views.invoice_duplicate, name='invoice_duplicate'),
     path('invoices/<int:pk>/add-message/', views.invoice_add_message, name='invoice_add_message'),
     path('invoices/config/sequence/', views.invoice_sequence_config, name='invoice_sequence_config'),
+
+    # ==================== RFI ====================
+    path('rfi/', views.rfi_list, name='rfi_list'),
+    path('rfi/create/', views.rfi_create, name='rfi_create'),
+    path('rfi/<int:pk>/', views.rfi_detail, name='rfi_detail'),
+    path('rfi/<int:pk>/delete/', views.rfi_delete, name='rfi_delete'),
+    path('rfi/<int:pk>/edit/', views.rfi_edit, name='rfi_edit'),
+    path('rfi/<int:pk>/close/', views.rfi_close, name='rfi_close'),
+    path('rfi/<int:pk>/reopen/', views.rfi_reopen, name='rfi_reopen'),
+    path('rfi/<int:pk>/pdf/', views.rfi_pdf, name='rfi_pdf'),
+    path('mis-rfi/', views.rfi_my_list, name='rfi_my_list'),
+    path('public/rfi/<uuid:token>/', views.rfi_public, name='rfi_public'),
+    path('tickets/<int:pk>/commit/', views.ticket_update_commit, name='ticket_update_commit'),
+    path('tickets/<int:pk>/rating/', views.ticket_update_rating, name='ticket_update_rating'),
 ]
 

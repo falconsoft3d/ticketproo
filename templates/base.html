@@ -17,6 +17,51 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/style.css' %}?v=2.0">
+    <style>
+        /* Botón Evaluar animado */
+        .evaluar-btn {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #333;
+            text-decoration: none;
+            border-radius: 12px;
+            padding: 6px 16px 4px;
+            box-shadow: 0 4px 14px rgba(255,180,0,.5);
+            animation: evaluar-pulse 2s ease-in-out infinite;
+            line-height: 1.2;
+            min-width: 90px;
+        }
+        .evaluar-btn:hover {
+            color: #111;
+            transform: scale(1.07);
+            box-shadow: 0 6px 20px rgba(255,180,0,.7);
+            animation: none;
+        }
+        .evaluar-emoji {
+            font-size: 1.6rem;
+            animation: evaluar-bounce 1.2s ease-in-out infinite;
+            display: block;
+        }
+        .evaluar-texto {
+            font-weight: 700;
+            font-size: .82rem;
+        }
+        .evaluar-sub {
+            font-size: .68rem;
+            opacity: .75;
+        }
+        @keyframes evaluar-pulse {
+            0%, 100% { box-shadow: 0 4px 14px rgba(255,180,0,.5); }
+            50%       { box-shadow: 0 4px 22px rgba(255,140,0,.9); }
+        }
+        @keyframes evaluar-bounce {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-4px); }
+        }
+    </style>
 </head>
 <body class="bg-light" style="padding-top: 70px;">
     {% if user.is_authenticated %}
@@ -52,32 +97,28 @@
                                 Todos
                             {% else %}
                                 Mis Tickets
+                                {% if ticket_active_count > 0 %}
+                                <span class="badge bg-danger rounded-pill ms-1" style="font-size:0.65rem;">{{ ticket_active_count }}</span>
+                                {% endif %}
                             {% endif %}
                         </a>
                     </li>
-                    
-                    
-                    <!-- Menú de Chat -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'chat' in request.resolver_match.url_name or 'ai_chat' in request.resolver_match.url_name %}active{% endif %}" 
-                           href="#" id="navbarDropdownChat" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-chat-dots"></i>
+
+                    {% if not is_agent %}
+                    <!-- Mis RFIs - Solo para usuarios no-agentes -->
+                    <li class="nav-item">
+                        <a class="nav-link position-relative {% if request.resolver_match.url_name == 'rfi_my_list' or request.resolver_match.url_name == 'rfi_detail' or request.resolver_match.url_name == 'rfi_create' %}active{% endif %}"
+                           href="{% url 'rfi_my_list' %}">
+                            <i class="bi bi-clipboard-question"></i> Mis RFI
+                            {% if rfi_open_count > 0 %}
+                            <span class="badge bg-danger rounded-pill ms-1" style="font-size:0.65rem;">{{ rfi_open_count }}</span>
+                            {% endif %}
                         </a>
-                        <ul class="dropdown-menu">
-                            <li>
-                                <a class="dropdown-item {% if 'chat' in request.resolver_match.url_name and 'ai_chat' not in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'chat_list' %}">
-                                    <i class="bi bi-people"></i> Chat de Usuarios
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item {% if 'ai_chat' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'ai_chat_list' %}">
-                                    <i class="bi bi-robot"></i> Chat con IA
-                                </a>
-                            </li>
-                        </ul>
                     </li>
+                    {% endif %}
+                    
+                    
+
                     
                     <!-- Menú de Empleado - Solo para Agentes y Administradores -->
                     {% if user.is_authenticated %}
@@ -422,7 +463,7 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if 'course' in request.resolver_match.url_name or 'exam' in request.resolver_match.url_name or 'crm_question' in request.resolver_match.url_name or 'manual' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownTraining" role="button" data-bs-toggle="dropdown">
-                            CAP
+                            <i class="bi bi-mortarboard"></i> CAP
                         </a>
                         <ul class="dropdown-menu">
                             
@@ -453,6 +494,16 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if 'rfi' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'rfi_list' %}">
+                                    <i class="bi bi-file-earmark-text"></i> RFI
+                                    {% if crm_counters.rfi > 0 %}
+                                        <span class="badge bg-secondary ms-2">{{ crm_counters.rfi }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            {% if is_agent %}
+                            <li>
                                 <a class="dropdown-item {% if 'crm_question' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'crm_questions_list' %}">
                                     <i class="bi bi-chat-square-text"></i> Preguntas
@@ -461,6 +512,8 @@
                                     {% endif %}
                                 </a>
                             </li>
+                            {% endif %}
+                            {% if is_agent %}
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'qr_generator' %}active{% endif %}" 
                                    href="{% url 'qr_generator' %}">
@@ -479,6 +532,7 @@
                                     <i class="bi bi-translate"></i> Traducciones
                                 </a>
                             </li>
+                            {% endif %}
                              {% if user.is_staff or user.is_superuser or user.groups.all and user.groups.first.name == 'Agentes' %}
                             <li>
                                 <a class="dropdown-item {% if 'odoo' in request.resolver_match.url_name %}active{% endif %}" 
@@ -1800,7 +1854,7 @@
         </span>
     </a>
     
-    <!-- Botón flotante para calificar servicio (izquierda) - Solo para agentes -->
+    <!-- Botón flotante para calificar servicio (izquierda) - Todos los usuarios -->
     <a id="ratingToggle" href="{% url 'qa_rating_public' %}" class="btn btn-warning shadow-lg floating-button-left" 
             style="position: fixed; left: 0; top: calc(50% + 160px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
@@ -1813,8 +1867,10 @@
             0
         </span>
     </a>
-    
+    {% endif %}
+
     <!-- Botón flotante para Base de Conocimientos (izquierda) - Solo para agentes -->
+    {% if is_agent %}
     <button id="knowledgeBaseToggle" class="btn shadow-lg floating-button-left" 
             style="position: fixed; left: 0; top: calc(50% + 240px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;

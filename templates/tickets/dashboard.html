@@ -18,7 +18,18 @@
                 </p>
             </div>
             
-            <!-- Citas rotativas -->
+            <!-- Evaluar + Citas rotativas -->
+            <div class="d-flex flex-column align-items-end gap-2">
+            <div class="d-flex gap-2 align-items-center">
+            <a href="{% url 'ticket_create' %}" class="btn btn-lg fw-bold px-4 py-2 shadow" style="background:linear-gradient(135deg,#1565c0,#42a5f5);color:#fff;border-radius:12px;font-size:1rem;white-space:nowrap;">
+                <i class="bi bi-plus-circle-fill me-2"></i>Crear Ticket
+            </a>
+            <a href="{% url 'qa_rating_public' %}" class="evaluar-btn" title="¡Dinos cómo lo estamos haciendo!">
+                <span class="evaluar-emoji">😊</span>
+                <span class="evaluar-texto">¡Evalúanos!</span>
+                <span class="evaluar-sub">Tu opinión nos importa</span>
+            </a>
+            </div>
             {% if dashboard_quotes %}
             <div class="text-end" style="max-width: 400px;">
                 <div id="rotating-quote" class="border-start border-primary border-4 ps-3">
@@ -29,12 +40,26 @@
                 </div>
             </div>
             {% endif %}
+            </div>
         </div>
-        
+
+        <!-- Banner RFI pendientes para no-agentes -->
+        {% if not is_agent and rfi_open_count > 0 %}
+        <div class="alert alert-warning d-flex align-items-center gap-3 mb-3" role="alert">
+            <i class="bi bi-clipboard-exclamation-fill fs-4 flex-shrink-0"></i>
+            <div>
+                Tienes <strong>{{ rfi_open_count }} RFI(s) abierto(s)</strong>.
+                {% if rfi_oldest_days > 0 %}
+                La más antigua lleva <strong>{{ rfi_oldest_days }} día(s)</strong> sin cerrar.
+                {% endif %}
+                <a href="{% url 'rfi_my_list' %}" class="alert-link ms-2">Ver mis RFI →</a>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Información del cargo del usuario -->
         {% if user.profile.cargo or user.profile.descripcion_cargo %}
-        <div class="alert alert-light border border-light bg-white mb-4">
-            {% if user.profile.cargo %}
+        <div class="alert alert-light border border-light bg-white mb-4">            {% if user.profile.cargo %}
                 <h5 class="mb-1 text-dark">
                     <i class="bi bi-person-badge"></i> Cargo: {{ user.profile.cargo }}
                 </h5>
@@ -44,6 +69,68 @@
             {% endif %}
         </div>
         {% endif %}
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row mb-4 g-3">
+    <!-- Tickets Pendientes / Totales -->
+    <div class="col-6 col-md-3">
+        <a href="{% url 'ticket_list' %}" class="text-decoration-none">
+            <div class="card h-100 border-0 shadow" style="background: linear-gradient(135deg,#1e3c72,#2a69ac); color:#fff;">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-ticket-perforated-fill" style="font-size:2.5rem;opacity:.8;"></i>
+                    <div class="mt-2" style="font-size:2.2rem;font-weight:700;line-height:1.1;">
+                        {{ kpi_tickets_pending }}
+                        <span style="font-size:1rem;opacity:.7;">/ {{ kpi_tickets_total }}</span>
+                    </div>
+                    <div class="mt-1" style="font-size:.85rem;opacity:.85;">Tickets Pendientes</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <!-- RFI Abiertos / Totales -->
+    <div class="col-6 col-md-3">
+        <a href="{% url 'rfi_list' %}" class="text-decoration-none">
+            <div class="card h-100 border-0 shadow" style="background: linear-gradient(135deg,#c0392b,#e74c3c); color:#fff;">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-file-earmark-text-fill" style="font-size:2.5rem;opacity:.8;"></i>
+                    <div class="mt-2" style="font-size:2.2rem;font-weight:700;line-height:1.1;">
+                        {{ kpi_rfi_open }}
+                        <span style="font-size:1rem;opacity:.7;">/ {{ kpi_rfi_total }}</span>
+                    </div>
+                    <div class="mt-1" style="font-size:.85rem;opacity:.85;">RFI Pendientes</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <!-- Cursos -->
+    <div class="col-6 col-md-3">
+        <a href="{% url 'course_list' %}" class="text-decoration-none">
+            <div class="card h-100 border-0 shadow" style="background: linear-gradient(135deg,#155724,#28a745); color:#fff;">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-mortarboard-fill" style="font-size:2.5rem;opacity:.8;"></i>
+                    <div class="mt-2" style="font-size:2.2rem;font-weight:700;line-height:1.1;">
+                        {{ kpi_courses_total }}
+                    </div>
+                    <div class="mt-1" style="font-size:.85rem;opacity:.85;">Cursos Disponibles</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <!-- Documentos -->
+    <div class="col-6 col-md-3">
+        <a href="{% url 'manual_list' %}" class="text-decoration-none">
+            <div class="card h-100 border-0 shadow" style="background: linear-gradient(135deg,#6a0080,#ab47bc); color:#fff;">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-book" style="font-size:2.5rem;opacity:.8;"></i>
+                    <div class="mt-2" style="font-size:2.2rem;font-weight:700;line-height:1.1;">
+                        {{ kpi_docs_total }}
+                    </div>
+                    <div class="mt-1" style="font-size:.85rem;opacity:.85;">Manuales</div>
+                </div>
+            </div>
+        </a>
     </div>
 </div>
 
@@ -440,7 +527,7 @@
 {% endif %}
 
 <!-- Notas Recientes -->
-{% if recent_notes %}
+{% if is_agent and recent_notes %}
 <div class="row mt-5 mb-4">
     <div class="col">
         <div class="card">
@@ -517,8 +604,7 @@
 {% endif %}
 
 <!-- Documentos Recientes -->
-{% if recent_documents %}
-<div class="row mt-5 mb-4">
+{% if is_agent and recent_documents %}<div class="row mt-5 mb-4">
     <div class="col">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -609,7 +695,7 @@
         </div>
     </div>
 </div>
-{% else %}
+{% elif is_agent %}
 <div class="row mt-5 mb-4">
     <div class="col">
         <div class="card">
@@ -617,11 +703,9 @@
                 <i class="bi bi-file-earmark-text display-4 text-muted mb-3"></i>
                 <h5 class="text-muted">No hay documentos disponibles</h5>
                 <p class="text-muted">Los documentos aparecerán aquí cuando estén disponibles.</p>
-                {% if is_agent %}
                 <a href="{% url 'document_create' %}" class="btn btn-primary">
                     <i class="bi bi-plus"></i> Crear Primer Documento
                 </a>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -629,6 +713,7 @@
 {% endif %}
 
 <!-- Reuniones de Video Recientes -->
+{% if is_agent %}
 {% if recent_video_meetings %}
 <div class="row mt-5 mb-4">
     <div class="col">
@@ -733,9 +818,10 @@
     </div>
 </div>
 {% endif %}
+{% endif %}{# end is_agent - reuniones de video #}
 
 <!-- Procedimientos Disponibles -->
-{% if user_procedures %}
+{% if is_agent and user_procedures %}
 <div class="row mt-5 mb-4">
     <div class="col">
         <div class="card">
@@ -808,7 +894,7 @@
         </div>
     </div>
 </div>
-{% else %}
+{% elif is_agent %}
 <div class="row mt-5 mb-4">
     <div class="col">
         <div class="card">
@@ -816,11 +902,9 @@
                 <i class="bi bi-list-columns-reverse display-4 text-muted mb-3"></i>
                 <h5 class="text-muted">No hay procedimientos disponibles</h5>
                 <p class="text-muted">Los procedimientos aparecerán aquí cuando estén disponibles.</p>
-                {% if is_agent %}
                 <a href="{% url 'procedure_create' %}" class="btn btn-primary">
                     <i class="bi bi-plus"></i> Crear Primer Procedimiento
                 </a>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -828,7 +912,7 @@
 {% endif %}
 
 <!-- Información adicional para usuarios con empresa -->
-{% if not is_agent and user_company %}
+{% if False and not is_agent and user_company %}
 <div class="row mb-5 mt-5">
     <div class="col-12">
         <div class="card border-info">

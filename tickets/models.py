@@ -485,6 +485,7 @@ class Ticket(models.Model):
     
     STATUS_CHOICES = [
         ('open', 'Abierto'),
+        ('working', 'Trabajando'),
         ('in_progress', 'En Progreso'),
         ('resolved', 'Resuelto'),
         ('closed', 'Cerrado'),
@@ -603,6 +604,19 @@ class Ticket(models.Model):
         verbose_name='Fecha de aprobación',
         help_text='Fecha y hora en que fue aprobado el ticket'
     )
+    commit = models.CharField(
+        max_length=500,
+        blank=True,
+        default='',
+        verbose_name='Commit',
+        help_text='Hash, URL o referencia del commit relacionado'
+    )
+    rating = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Calificación',
+        help_text='Calificación del ticket de 1 a 5 estrellas'
+    )
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
     
@@ -696,6 +710,7 @@ class Ticket(models.Model):
         """Retorna la clase CSS para el badge de estado"""
         status_classes = {
             'open': 'bg-primary',
+            'working': 'bg-info text-dark',
             'in_progress': 'bg-warning',
             'resolved': 'bg-success',
             'closed': 'bg-secondary',
@@ -844,12 +859,19 @@ class TicketComment(models.Model):
     )
     user = models.ForeignKey(
         User,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         verbose_name='Usuario'
     )
     content = models.TextField(
         verbose_name='Comentario',
         help_text='Escribe tu comentario aquí'
+    )
+    is_system = models.BooleanField(
+        default=False,
+        verbose_name='Mensaje del sistema',
+        help_text='Comentario generado automáticamente por el sistema'
     )
     created_at = models.DateTimeField(
         default=timezone.now,
@@ -23343,3 +23365,132 @@ class ManualAccess(models.Model):
     def __str__(self):
         user = self.accessed_by.username if self.accessed_by else 'Anónimo'
         return f"{self.manual.title} - {user} - {self.accessed_at}"
+
+
+class RFI(models.Model):
+    """Request for Information - Solicitud de información"""
+
+    code = models.CharField(
+        max_length=10,
+        unique=True,
+        blank=True,
+        verbose_name='Código'
+    )
+    title = models.CharField(
+        max_length=300,
+        verbose_name='Título'
+    )
+    text = models.TextField(
+        verbose_name='Texto'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rfis',
+        verbose_name='Creado por'
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rfis',
+        verbose_name='Empresa'
+    )
+    assigned_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rfis_assigned',
+        verbose_name='Usuario asignado'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    closed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de cierre'
+    )
+    public_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        verbose_name='Token público'
+    )
+
+    class Meta:
+        verbose_name = 'RFI'
+        verbose_name_plural = 'RFIs'
+        ordering = ['-created_at']
+
+    @property
+    def is_closed(self):
+        return self.closed_at is not None
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def days_since_request(self):
+        from django.utils import timezone
+        delta = timezone.now() - self.created_at
+        return delta.days
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            with transaction.atomic():
+                last = RFI.objects.select_for_update().order_by('-id').first()
+                if last and last.code and last.code.startswith('RF'):
+                    try:
+                        seq = int(last.code[2:]) + 1
+                    except ValueError:
+                        seq = 1
+                else:
+                    seq = 1
+                self.code = f"RF{seq:05d}"
+        super().save(*args, **kwargs)
+
+
+class RFIComment(models.Model):
+    """Comentario en un RFI"""
+
+    rfi = models.ForeignKey(
+        RFI,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='RFI'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rfi_comments',
+        verbose_name='Autor'
+    )
+    guest_name = models.CharField(
+        max_length=150,
+        blank=True,
+        default='',
+        verbose_name='Nombre (invitado)'
+    )
+    guest_email = models.EmailField(
+        blank=True,
+        default='',
+        verbose_name='Correo (invitado)'
+    )
+    text = models.TextField(verbose_name='Comentario')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha')
+
+    class Meta:
+        verbose_name = 'Comentario RFI'
+        verbose_name_plural = 'Comentarios RFI'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Comentario de {self.author} en {self.rfi}"

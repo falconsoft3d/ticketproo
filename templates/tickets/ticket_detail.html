@@ -150,7 +150,36 @@
                             </span>
                         </p>
                     </div>
-                    
+
+                    <!-- Calificación -->
+                    <div class="col-md-6 mb-2">
+                        <h6 class="text-muted mb-2"><i class="bi bi-star me-1"></i>Calificación:</h6>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="star-rating" id="starRating" data-current="{{ ticket.rating|default:0 }}" data-pk="{{ ticket.pk }}">
+                                {% for i in "12345" %}
+                                <i class="bi {% if ticket.rating and ticket.rating >= forloop.counter %}bi-star-fill text-warning{% else %}bi-star text-muted{% endif %} star-icon"
+                                   data-value="{{ forloop.counter }}"
+                                   style="font-size: 1.6rem; cursor: pointer; transition: transform 0.1s;"
+                                   title="{{ forloop.counter }} estrella{% if forloop.counter > 1 %}s{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                            {% if ticket.rating %}
+                            <small class="text-muted">{{ ticket.rating }}/5</small>
+                            <form method="post" action="{% url 'ticket_update_rating' ticket.pk %}" id="clearRatingForm" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="rating" value="0">
+                                <button type="submit" class="btn btn-link btn-sm text-muted p-0" title="Quitar calificación">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                        <form method="post" action="{% url 'ticket_update_rating' ticket.pk %}" id="ratingForm" style="display:none;">
+                            {% csrf_token %}
+                            <input type="hidden" name="rating" id="ratingInput" value="">
+                        </form>
+                    </div>
+
                     <div class="col-md-6 mb-3">
                         <h6 class="text-muted mb-2">Última actualización:</h6>
                         <p class="mb-0">
@@ -180,6 +209,36 @@
                             {% endif %}
                         </p>
                     </div>
+
+                    <!-- Commit -->
+                    <div class="col-md-12 mb-3">
+                        <h6 class="text-muted mb-2"><i class="bi bi-git me-1"></i>Commit:</h6>
+                        {% if is_agent %}
+                        <form method="post" action="{% url 'ticket_update_commit' ticket.pk %}" class="d-flex gap-2 align-items-center">
+                            {% csrf_token %}
+                            <input type="text" name="commit" class="form-control form-control-sm font-monospace"
+                                   value="{{ ticket.commit }}" placeholder="Hash, URL o referencia del commit..."
+                                   style="max-width: 480px;">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                        </form>
+                        {% else %}
+                            {% if ticket.commit %}
+                            <span class="font-monospace small">
+                                {% if ticket.commit|slice:":4" == "http" %}
+                                <a href="{{ ticket.commit }}" target="_blank" rel="noopener">{{ ticket.commit }}</a>
+                                {% else %}
+                                {{ ticket.commit }}
+                                {% endif %}
+                            </span>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+
+
                 </div>
             </div>
         </div>
@@ -196,14 +255,21 @@
                 {% if comments %}
                     <div class="mb-4">
                         {% for comment in comments %}
+                        {% if comment.is_system %}
+                        <div class="d-flex align-items-center gap-2 mb-2 px-2 py-2 rounded" style="background:#f0f4ff;border-left:3px solid #6c8ebf;">
+                            <i class="bi bi-arrow-left-right text-primary"></i>
+                            <span class="small text-secondary">{{ comment.content }}</span>
+                            <small class="text-muted ms-auto text-nowrap">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        {% else %}
                         <div class="border rounded p-3 mb-3 {% if comment.user == user %}bg-light{% endif %}">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <div>
                                     <strong>
                                         <i class="bi bi-person-fill"></i>
-                                        {{ comment.user.get_full_name|default:comment.user.username }}
+                                        {% if comment.user %}{{ comment.user.get_full_name|default:comment.user.username }}{% else %}—{% endif %}
                                     </strong>
-                                    {% if comment.user.groups.all %}
+                                    {% if comment.user and comment.user.groups.all %}
                                         {% for group in comment.user.groups.all %}
                                             <span class="badge bg-secondary ms-1">{{ group.name }}</span>
                                         {% endfor %}
@@ -221,6 +287,7 @@
                                 {{ comment.content|linebreaks }}
                             </div>
                         </div>
+                        {% endif %}
                         {% endfor %}
                     </div>
                 {% else %}
@@ -522,6 +589,28 @@
                     </div>
                     <hr>
                     {% endif %}
+
+                    <!-- Cambio rápido de estado -->
+                    <form method="post" class="mb-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="quick_change_status" value="1">
+                        <label class="form-label small fw-semibold text-muted mb-1">
+                            <i class="bi bi-arrow-left-right me-1"></i>Cambiar Estado
+                        </label>
+                        <div class="d-flex gap-2">
+                            <select name="new_status" class="form-select form-select-sm">
+                                <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Abierto</option>
+                                <option value="working" {% if ticket.status == 'working' %}selected{% endif %}>Trabajando</option>
+                                <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>En Progreso</option>
+                                <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>Resuelto</option>
+                                <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Cerrado</option>
+                            </select>
+                            <button type="submit" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                        </div>
+                    </form>
+                    <hr>
                     
                     <a href="{% url 'ticket_edit' ticket.pk %}" class="btn btn-warning">
                         <i class="bi bi-pencil"></i> Editar Ticket
@@ -1018,5 +1107,42 @@ document.addEventListener('DOMContentLoaded', function() {
     // Actualizar contadores al cargar la página
     updateCounters();
 });
+
+// ---- Calificación con estrellas ----
+(function() {
+    var container = document.getElementById('starRating');
+    if (!container) return;
+    var stars = container.querySelectorAll('.star-icon');
+    var form = document.getElementById('ratingForm');
+    var input = document.getElementById('ratingInput');
+    var current = parseInt(container.dataset.current) || 0;
+
+    function paint(n) {
+        stars.forEach(function(s, i) {
+            if (i < n) {
+                s.classList.add('bi-star-fill', 'text-warning');
+                s.classList.remove('bi-star', 'text-muted');
+            } else {
+                s.classList.remove('bi-star-fill', 'text-warning');
+                s.classList.add('bi-star', 'text-muted');
+            }
+        });
+    }
+
+    stars.forEach(function(star) {
+        star.addEventListener('mouseover', function() {
+            paint(parseInt(this.dataset.value));
+        });
+        star.addEventListener('mouseout', function() {
+            paint(current);
+        });
+        star.addEventListener('click', function() {
+            var val = parseInt(this.dataset.value);
+            current = val;
+            input.value = val;
+            form.submit();
+        });
+    });
+})();
 </script>
 {% endblock %}

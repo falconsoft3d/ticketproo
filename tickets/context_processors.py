@@ -68,9 +68,42 @@ def crm_counters(request):
     """
     Context processor que proporciona contadores para los menús del CRM
     """
-    if not request.user.is_authenticated or not is_agent(request.user):
+    if not request.user.is_authenticated:
         return {}
-    
+
+    # Contador de RFIs abiertos para no-agentes (sus propias + empresa + asignadas)
+    if not is_agent(request.user):
+        try:
+            from tickets.models import RFI
+            from django.db.models import Q
+            from django.utils import timezone
+            user = request.user
+            user_company = getattr(user, 'profile', None)
+            user_company = user_company.company if user_company else None
+            open_rfi_q = Q(created_by=user) | Q(assigned_user=user)
+            if user_company:
+                open_rfi_q |= Q(company=user_company)
+            open_rfis = RFI.objects.filter(open_rfi_q, closed_at__isnull=True).distinct()
+            rfi_open_count = open_rfis.count()
+            oldest_rfi = open_rfis.order_by('created_at').first()
+            rfi_oldest_days = (timezone.now() - oldest_rfi.created_at).days if oldest_rfi else 0
+
+            from tickets.models import Ticket
+            ticket_active_q = Q(created_by=user) | Q(assigned_to=user)
+            if user_company:
+                ticket_active_q |= Q(company=user_company)
+            ticket_active_count = Ticket.objects.filter(
+                ticket_active_q, status__in=['open', 'working']
+            ).distinct().count()
+
+            return {
+                'rfi_open_count': rfi_open_count,
+                'rfi_oldest_days': rfi_oldest_days,
+                'ticket_active_count': ticket_active_count,
+            }
+        except Exception:
+            return {}
+
     try:
         from tickets.models import Contact, Company, Opportunity, Meeting, Quotation, QuotationTemplate, OpportunityActivity, CrmQuestion
         
@@ -104,6 +137,10 @@ def crm_counters(request):
             assigned_to=request.user,
             status__in=['pending', 'in_progress']
         ).count()
+
+        # RFIs registradas
+        from tickets.models import RFI
+        rfi_count = RFI.objects.count()
         
         return {
             'crm_counters': {
@@ -115,6 +152,7 @@ def crm_counters(request):
                 'quotations': quotations_count,
                 'templates': templates_count,
                 'pending_activities': pending_activities_count,
+                'rfi': rfi_count,
             }
         }
     except Exception:

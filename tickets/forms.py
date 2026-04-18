@@ -301,7 +301,7 @@ class UserTicketEditForm(forms.ModelForm):
 
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'priority', 'ticket_type', 'company']
+        fields = ['title', 'description', 'category', 'priority', 'ticket_type', 'company', 'status']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -324,6 +324,9 @@ class UserTicketEditForm(forms.ModelForm):
             'company': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
         }
         labels = {
             'title': 'Título',
@@ -332,6 +335,7 @@ class UserTicketEditForm(forms.ModelForm):
             'priority': 'Prioridad',
             'ticket_type': 'Tipo de ticket',
             'company': 'Empresa',
+            'status': 'Estado',
         }
 
 

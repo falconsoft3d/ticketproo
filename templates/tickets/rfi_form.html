@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if rfi %}Editar RFI{% else %}Nueva RFI{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 700px;">
+    <div class="d-flex align-items-center mb-4 gap-2">
+        <a href="{% if rfi %}{% url 'rfi_detail' rfi.pk %}{% else %}{% url 'rfi_list' %}{% endif %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="mb-0">
+            <i class="bi bi-clipboard{% if rfi %}-check{% else %}-plus{% endif %}"></i>
+            {% if rfi %}Editar RFI{% else %}Nueva RFI{% endif %}
+        </h1>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="title" class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="title" name="title"
+                           value="{{ rfi.title|default:'' }}"
+                           placeholder="Título de la solicitud" required>
+                </div>
+                <div class="mb-3">
+                    <label for="text" class="form-label fw-semibold">Texto <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="text" name="text" rows="6"
+                              placeholder="Descripción detallada de la solicitud de información..." required>{{ rfi.text|default:'' }}</textarea>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="company" class="form-label fw-semibold">Empresa</label>
+                        <select class="form-select" id="company" name="company">
+                            <option value="">— Sin empresa —</option>
+                            {% for c in companies %}
+                            <option value="{{ c.pk }}"
+                                {% if rfi and rfi.company_id == c.pk %}selected{% elif request.POST.company == c.pk|stringformat:"s" %}selected{% endif %}>
+                                {{ c.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="assigned_user" class="form-label fw-semibold">Usuario asignado</label>
+                        <select class="form-select" id="assigned_user" name="assigned_user">
+                            <option value="">— Sin asignar —</option>
+                            {% for u in users %}
+                            <option value="{{ u.pk }}"
+                                {% if rfi and rfi.assigned_user_id == u.pk %}selected{% elif request.POST.assigned_user == u.pk|stringformat:"s" %}selected{% endif %}>
+                                {{ u.get_full_name|default:u.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% if rfi %}{% url 'rfi_detail' rfi.pk %}{% else %}{% url 'rfi_list' %}{% endif %}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-{% if rfi %}save{% else %}send{% endif %}"></i>
+                        {% if rfi %}Guardar cambios{% else %}Crear RFI{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFI {{ rfi.code }} – {{ rfi.title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .rfi-card { max-width: 800px; margin: 2rem auto; }
+        .badge-code { font-family: monospace; font-size: 1em; }
+        .comment-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: #6c757d; color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 0.85em; flex-shrink: 0;
+        }
+        .public-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body>
+    <!-- Banner público -->
+    <div class="public-banner text-white py-3 px-4 d-flex align-items-center gap-3">
+        <i class="bi bi-clipboard-question fs-4"></i>
+        <div>
+            <div class="fw-bold">Request for Information (RFI) – Vista Pública</div>
+            <div class="small opacity-75">Este enlace fue compartido contigo. No se requiere inicio de sesión.</div>
+        </div>
+    </div>
+
+    <div class="rfi-card px-3">
+        <div class="card shadow-sm mt-4 mb-4">
+            <div class="card-header d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="badge bg-secondary badge-code me-2">{{ rfi.code }}</span>
+                    {% if rfi.is_closed %}
+                    <span class="badge bg-danger me-2"><i class="bi bi-lock"></i> Cerrado</span>
+                    {% else %}
+                    <span class="badge bg-success me-2"><i class="bi bi-unlock"></i> Abierto</span>
+                    {% endif %}
+                    <h5 class="d-inline mb-0">{{ rfi.title }}</h5>
+                </div>
+                <a href="{% url 'rfi_pdf' rfi.pk %}" class="btn btn-outline-dark btn-sm" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                </a>
+            </div>
+            <div class="card-body">
+                <!-- Metadata -->
+                <div class="row g-2 mb-4 text-sm">
+                    {% if rfi.company %}
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Empresa</div>
+                        <div class="fw-semibold">{{ rfi.company }}</div>
+                    </div>
+                    {% endif %}
+                    {% if rfi.created_by %}
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Creado por</div>
+                        <div class="fw-semibold">{{ rfi.created_by.get_full_name|default:rfi.created_by.username }}</div>
+                    </div>
+                    {% endif %}
+                    {% if rfi.assigned_user %}
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Asignado a</div>
+                        <div class="fw-semibold">{{ rfi.assigned_user.get_full_name|default:rfi.assigned_user.username }}</div>
+                    </div>
+                    {% endif %}
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Creado</div>
+                        <div class="fw-semibold">{{ rfi.created_at|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    {% if rfi.closed_at %}
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Cerrado</div>
+                        <div class="fw-semibold">{{ rfi.closed_at|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    {% endif %}
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Días transcurridos</div>
+                        <div class="fw-semibold">{{ rfi.days_since_request }}</div>
+                    </div>
+                </div>
+
+                <!-- Descripción -->
+                <h6 class="text-muted text-uppercase small mb-2">Descripción</h6>
+                <hr class="mt-0 mb-3">
+                <div style="white-space: pre-wrap;">{{ rfi.text }}</div>
+            </div>
+        </div>
+
+        <!-- Comentarios -->
+        <div class="card shadow-sm mb-5">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-chat-left-text me-2"></i>Comentarios</h6>
+            </div>
+            <div class="card-body">
+                {% if comments %}
+                {% for comment in comments %}
+                <div class="d-flex gap-3 mb-3">
+                    <div class="comment-avatar">
+                        {{ comment.author.get_full_name|default:comment.author.username|slice:":1"|upper }}
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong class="small">{{ comment.author.get_full_name|default:comment.author.username }}</strong>
+                            <span class="text-muted small">{{ comment.created_at|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        <div style="white-space: pre-wrap; font-size: 0.95em;">{{ comment.text }}</div>
+                    </div>
+                </div>
+                {% if not forloop.last %}<hr class="my-2">{% endif %}
+                {% endfor %}
+                {% else %}
+                <p class="text-muted small mb-0">No hay comentarios en este RFI.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <p class="text-center text-muted small mb-5">
+            <i class="bi bi-shield-lock me-1"></i>
+            Este es un enlace de solo lectura. Para interactuar, inicia sesión en el sistema.
+        </p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
