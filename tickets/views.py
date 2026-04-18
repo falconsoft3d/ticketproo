@@ -644,11 +644,11 @@ def dashboard_view(request):
     
     context['user_procedures'] = user_procedures
 
-    # KPI: cursos y documentos
-    from .models import Course, RFI
+    # KPI: cursos y manuales
+    from .models import Course, RFI, Manual
     if is_agent(request.user):
         kpi_courses_total = Course.objects.filter(is_active=True).count()
-        kpi_docs_total = Document.objects.count()
+        kpi_docs_total = Manual.objects.filter(is_active=True).count()
     else:
         if user_company:
             kpi_courses_total = Course.objects.filter(
@@ -656,12 +656,10 @@ def dashboard_view(request):
             ).filter(
                 models.Q(company__isnull=True) | models.Q(company=user_company)
             ).count()
-            kpi_docs_total = Document.objects.filter(
-                models.Q(company__isnull=True) | models.Q(company=user_company)
-            ).count()
+            kpi_docs_total = Manual.objects.filter(is_active=True).count()
         else:
             kpi_courses_total = Course.objects.filter(is_active=True, company__isnull=True).count()
-            kpi_docs_total = Document.objects.filter(company__isnull=True).count()
+            kpi_docs_total = Manual.objects.filter(is_active=True).count()
 
     # KPI: tickets y RFI
     _ticket_q = models.Q()
