@@ -29,6 +29,7 @@
                         <th style="width:110px;">Código</th>
                         <th>Título</th>
                         <th class="text-center" style="width:90px;">Estado</th>
+                        <th class="text-center" style="width:140px;">Asignado a</th>
                         <th class="text-center" style="width:140px;">Creado por</th>
                         <th class="text-center" style="width:130px;">Fecha</th>
                         <th class="text-center" style="width:100px;">Días</th>
@@ -37,7 +38,7 @@
                 </thead>
                 <tbody>
                     {% for rfi in rfis %}
-                    <tr>
+                    <tr class="rfi-row" data-url="{% url 'rfi_detail' rfi.pk %}" style="cursor:pointer;">
                         <td>
                             <a href="{% url 'rfi_detail' rfi.pk %}" class="text-decoration-none">
                                 <span class="badge bg-secondary font-monospace">{{ rfi.code }}</span>
@@ -56,6 +57,13 @@
                             <span class="badge bg-danger"><i class="bi bi-lock"></i> Cerrado</span>
                             {% else %}
                             <span class="badge bg-success"><i class="bi bi-unlock"></i> Abierto</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if rfi.assigned_user %}
+                            <small><i class="bi bi-person-check text-success"></i> {{ rfi.assigned_user.get_full_name|default:rfi.assigned_user.username }}</small>
+                            {% else %}
+                            <small class="text-muted fst-italic">Sin asignar</small>
                             {% endif %}
                         </td>
                         <td class="text-center">
@@ -90,4 +98,13 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+document.querySelectorAll('.rfi-row').forEach(function(row) {
+    row.addEventListener('click', function(e) {
+        if (e.target.closest('a') || e.target.closest('button')) return;
+        window.location.href = row.dataset.url;
+    });
+});
+</script>
 {% endblock %}
