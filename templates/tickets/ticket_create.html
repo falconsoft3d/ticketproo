@@ -7,13 +7,16 @@
 <div class="row">
     <div class="col-md-8 offset-md-2">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h3 class="mb-0">
                     <i class="bi bi-plus-circle"></i> Crear Nuevo Ticket
                 </h3>
+                <button type="submit" form="ticket-create-form" class="btn btn-primary">
+                    <i class="bi bi-send"></i> Crear Ticket
+                </button>
             </div>
             <div class="card-body">
-                <form method="post">
+                <form id="ticket-create-form" method="post">
                     {% csrf_token %}
                     
                     <div class="mb-3">

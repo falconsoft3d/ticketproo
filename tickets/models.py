@@ -892,15 +892,15 @@ class TicketComment(models.Model):
     
     def can_edit(self, user):
         """Verifica si un usuario puede editar este comentario"""
-        # Solo el autor del comentario o un agente puede editarlo
+        # Solo el autor del comentario (si es agente) puede editarlo
         from .utils import is_agent
-        return self.user == user or is_agent(user)
+        return self.user == user and is_agent(user)
     
     def can_delete(self, user):
         """Verifica si un usuario puede eliminar este comentario"""
-        # Solo el autor del comentario o un agente puede eliminarlo
+        # Los agentes pueden eliminar cualquier comentario
         from .utils import is_agent
-        return self.user == user or is_agent(user)
+        return is_agent(user)
 
 
 class TicketHourLine(models.Model):

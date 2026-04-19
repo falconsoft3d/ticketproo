@@ -1273,3 +1273,94 @@ def extract_audio_from_video(video_path):
     except Exception as e:
         logger.error(f"Error extrayendo audio de video: {str(e)}")
         return None
+
+
+def analyze_ticket_with_ai(ticket):
+    """
+    Genera un análisis crítico de un ticket usando la IA configurada en el sistema.
+    Devuelve el texto del análisis, o None si la IA no está disponible.
+    """
+    try:
+        config = SystemConfiguration.objects.first()
+        if not config or not config.ai_chat_enabled or not config.openai_api_key:
+            return None
+
+        import openai
+        client = openai.OpenAI(api_key=config.openai_api_key)
+        model = config.openai_model or "gpt-4o"
+
+        priority_map = {'low': 'Baja', 'medium': 'Media', 'high': 'Alta', 'urgent': 'Urgente'}
+        priority_label = priority_map.get(ticket.priority, ticket.priority)
+        category_name = ticket.category.name if ticket.category else 'Sin categoría'
+        company_name = ticket.company.name if ticket.company else 'Sin empresa'
+        assignee = (ticket.assigned_to.get_full_name() or ticket.assigned_to.username) if ticket.assigned_to else 'Sin asignar'
+
+        prompt = f"""Eres un analista experto en soporte técnico y gestión de incidencias.
+Analiza el siguiente ticket y proporciona una opinión crítica y constructiva.
+NO uses símbolos de markdown como asteriscos ni guiones bajos para negritas. Usa texto plano.
+
+Ticket #{ticket.pk}
+- Título: {ticket.title}
+- Descripción: {ticket.description}
+- Prioridad: {priority_label}
+- Categoría: {category_name}
+- Empresa: {company_name}
+- Asignado a: {assignee}
+
+Responde exactamente con este formato (reemplaza solo el contenido entre corchetes):
+
+🔍 Análisis
+[Una o dos frases describiendo el problema real]
+
+⚠️ Puntos críticos
+[Lista de riesgos o aspectos importantes, uno por línea sin guiones ni asteriscos]
+
+✅ Recomendaciones
+[Pasos concretos sugeridos, uno por línea sin guiones ni asteriscos]
+
+📊 Prioridad sugerida
+[¿Es correcta la prioridad asignada? Justifica en una frase]
+
+Sé directo y conciso. Máximo 250 palabras."""
+
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "Eres un analista experto en soporte técnico. Tus análisis son precisos y orientados a la solución. No uses markdown."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.5,
+            max_tokens=600,
+        )
+
+        return response.choices[0].message.content.strip()
+
+    except Exception as e:
+        logger.error(f"Error al analizar ticket con IA: {str(e)}")
+        return None
+
+
+def analyze_ticket_with_ai_background(ticket_id):
+    """
+    Lanza el análisis de IA en un hilo de background y guarda el resultado como comentario.
+    """
+    import threading
+
+    def _run(tid):
+        try:
+            import django
+            from tickets.models import Ticket, TicketComment
+            ticket = Ticket.objects.get(pk=tid)
+            ai_opinion = analyze_ticket_with_ai(ticket)
+            if ai_opinion:
+                TicketComment.objects.create(
+                    ticket=ticket,
+                    user=None,
+                    content=f"🤖 {ai_opinion}",
+                    is_system=True,
+                )
+        except Exception as e:
+            logger.error(f"Error en análisis AI background (ticket {tid}): {e}")
+
+    thread = threading.Thread(target=_run, args=(ticket_id,), daemon=True)
+    thread.start()

@@ -69,6 +69,16 @@
                     <div class="border rounded p-3 bg-light">
                         {{ ticket.description|linebreaks }}
                     </div>
+                    {% if is_agent and not has_ai_analysis %}
+                    <div class="mt-2 text-end">
+                        <form method="post" action="{% url 'ticket_ai_analyze_now' ticket.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-robot me-1"></i> Analizar con IA
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
                 </div>
                 
                 <div class="row">
@@ -256,11 +266,24 @@
                     <div class="mb-4">
                         {% for comment in comments %}
                         {% if comment.is_system %}
+                        {% if comment.content|slice:":2" == "🤖" %}
+                        <!-- Comentario de análisis IA -->
+                        <div class="rounded mb-3 p-3" style="background:linear-gradient(135deg,#f0f7ff 0%,#e8f4fd 100%);border:1px solid #b3d7f5;border-left:4px solid #0d6efd;">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="fw-semibold text-primary" style="font-size:.9rem;">
+                                    <i class="bi bi-robot me-1"></i> Análisis de IA
+                                </span>
+                                <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                            </div>
+                            <div class="text-dark" style="font-size:.875rem;white-space:pre-line;line-height:1.6;">{{ comment.content|slice:"3:" }}</div>
+                        </div>
+                        {% else %}
                         <div class="d-flex align-items-center gap-2 mb-2 px-2 py-2 rounded" style="background:#f0f4ff;border-left:3px solid #6c8ebf;">
                             <i class="bi bi-arrow-left-right text-primary"></i>
                             <span class="small text-secondary">{{ comment.content }}</span>
                             <small class="text-muted ms-auto text-nowrap">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
                         </div>
+                        {% endif %}
                         {% else %}
                         <div class="border rounded p-3 mb-3 {% if comment.user == user %}bg-light{% endif %}">
                             <div class="d-flex justify-content-between align-items-start mb-2">
@@ -275,18 +298,62 @@
                                         {% endfor %}
                                     {% endif %}
                                 </div>
-                                <small class="text-muted">
-                                    <i class="bi bi-clock"></i>
-                                    {{ comment.created_at|date:"d/m/Y H:i" }}
-                                    {% if comment.updated_at != comment.created_at %}
-                                        (editado)
+                                <div class="d-flex align-items-center gap-2">
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i>
+                                        {{ comment.created_at|date:"d/m/Y H:i" }}
+                                        {% if comment.updated_at != comment.created_at %}
+                                            (editado)
+                                        {% endif %}
+                                    </small>
+                                    {% if is_agent and comment.user == user %}
+                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1"
+                                            data-bs-toggle="modal" data-bs-target="#editCommentModal{{ comment.pk }}"
+                                            title="Editar comentario">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
                                     {% endif %}
-                                </small>
+                                    {% if is_agent %}
+                                    <form method="post" action="{% url 'ticket_comment_delete' comment.pk %}" class="d-inline"
+                                          onsubmit="return confirm('¿Eliminar este comentario?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1" title="Eliminar comentario">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
                             </div>
                             <div class="comment-content">
                                 {{ comment.content|linebreaks }}
                             </div>
                         </div>
+
+                        {% if is_agent and comment.user == user %}
+                        <!-- Modal editar comentario -->
+                        <div class="modal fade" id="editCommentModal{{ comment.pk }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form method="post" action="{% url 'ticket_comment_edit' comment.pk %}">
+                                        {% csrf_token %}
+                                        <div class="modal-header">
+                                            <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar comentario</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <textarea name="content" class="form-control" rows="4"
+                                                      minlength="10" maxlength="1000" required>{{ comment.content }}</textarea>
+                                            <div class="form-text">Mínimo 10 caracteres, máximo 1000 caracteres.</div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                         {% endif %}
                         {% endfor %}
                     </div>
@@ -297,6 +364,14 @@
                     </div>
                 {% endif %}
                 
+                <!-- Spinner de análisis IA pendiente -->
+                <div id="ai-analysis-spinner" class="rounded mb-3 p-3" style="display:none;background:linear-gradient(135deg,#f0f7ff 0%,#e8f4fd 100%);border:1px solid #b3d7f5;border-left:4px solid #0d6efd;">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span class="text-primary fw-semibold" style="font-size:.9rem;"><i class="bi bi-robot me-1"></i> Analizando ticket con IA...</span>
+                    </div>
+                </div>
+
                 <!-- Formulario para nuevo comentario -->
                 <div class="border-top pt-3">
                     <h6 class="mb-3">Agregar comentario</h6>
@@ -1145,4 +1220,55 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 })();
 </script>
+
+{% if request.GET.ai_pending %}
+<script>
+(function() {
+    var spinner = document.getElementById('ai-analysis-spinner');
+    if (spinner) spinner.style.display = 'block';
+
+    var pollUrl = "{% url 'ticket_ai_analysis_status' ticket.pk %}";
+    var maxAttempts = 30;  // ~60s
+    var attempt = 0;
+
+    function poll() {
+        attempt++;
+        fetch(pollUrl, {credentials: 'same-origin'})
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.ready) {
+                    // Ocultar spinner e insertar el comentario sin recargar
+                    if (spinner) spinner.style.display = 'none';
+                    var container = spinner ? spinner.parentNode : null;
+                    if (container) {
+                        var card = document.createElement('div');
+                        card.className = 'rounded mb-3 p-3';
+                        card.style.cssText = 'background:linear-gradient(135deg,#f0f7ff 0%,#e8f4fd 100%);border:1px solid #b3d7f5;border-left:4px solid #0d6efd;';
+                        var content = data.content.replace(/^🤖\s?/, '');
+                        card.innerHTML =
+                            '<div class="d-flex align-items-center justify-content-between mb-2">' +
+                            '<span class="fw-semibold text-primary" style="font-size:.9rem;"><i class="bi bi-robot me-1"></i> Análisis de IA</span>' +
+                            '</div>' +
+                            '<div class="text-dark" style="font-size:.875rem;white-space:pre-line;line-height:1.6;">' +
+                            content.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+                            '</div>';
+                        container.insertBefore(card, spinner);
+                    }
+                } else if (attempt < maxAttempts) {
+                    setTimeout(poll, 2000);
+                } else {
+                    // Tiempo agotado, ocultar spinner silenciosamente
+                    if (spinner) spinner.style.display = 'none';
+                }
+            })
+            .catch(function() {
+                if (attempt < maxAttempts) setTimeout(poll, 3000);
+                else if (spinner) spinner.style.display = 'none';
+            });
+    }
+
+    setTimeout(poll, 2000);
+})();
+</script>
+{% endif %}
 {% endblock %}

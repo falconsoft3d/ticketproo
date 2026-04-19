@@ -1100,8 +1100,20 @@ def ticket_create_view(request):
             if not is_agent(request.user):
                 ticket.status = 'open'
             ticket.save()
+
+            # Lanzar análisis de IA en background (no bloquea la respuesta)
+            try:
+                from .ai_utils import analyze_ticket_with_ai_background
+                analyze_ticket_with_ai_background(ticket.pk)
+                ai_pending = True
+            except Exception:
+                ai_pending = False
+
             messages.success(request, 'Ticket creado exitosamente.')
-            return redirect('ticket_detail', pk=ticket.pk)
+            detail_url = reverse('ticket_detail', kwargs={'pk': ticket.pk})
+            if ai_pending:
+                return redirect(f"{detail_url}?ai_pending=1")
+            return redirect(detail_url)
     else:
         form = FormClass()
     
@@ -1418,6 +1430,9 @@ def ticket_detail_view(request, pk):
     # Obtener items TODO del ticket
     todo_items = ticket.todo_items.all()
 
+    # Verificar si ya existe un análisis de IA
+    has_ai_analysis = ticket.comments.filter(is_system=True, content__startswith='🤖').exists()
+
     context = {
         'ticket': ticket,
         'comments': comments,
@@ -1429,6 +1444,7 @@ def ticket_detail_view(request, pk):
         'is_agent': is_agent(request.user),
         'user_role': get_user_role(request.user),
         'todo_items': todo_items,
+        'has_ai_analysis': has_ai_analysis,
     }
     return render(request, 'tickets/ticket_detail.html', context)
 
@@ -1534,6 +1550,80 @@ def ticket_delete_view(request, pk):
         'user_role': get_user_role(request.user),
     }
     return render(request, 'tickets/ticket_delete.html', context)
+
+
+@login_required
+def ticket_comment_edit(request, comment_id):
+    """Vista para editar un comentario de ticket (solo agentes y solo sus propios comentarios)"""
+    comment = get_object_or_404(TicketComment, pk=comment_id)
+    if not comment.can_edit(request.user):
+        messages.error(request, 'No tienes permisos para editar este comentario.')
+        return redirect('ticket_detail', pk=comment.ticket.pk)
+    if request.method == 'POST':
+        content = request.POST.get('content', '').strip()
+        if len(content) < 10:
+            messages.error(request, 'El comentario debe tener al menos 10 caracteres.')
+        elif len(content) > 1000:
+            messages.error(request, 'El comentario no puede superar 1000 caracteres.')
+        else:
+            comment.content = content
+            comment.save()
+            messages.success(request, 'Comentario editado exitosamente.')
+        return redirect('ticket_detail', pk=comment.ticket.pk)
+    return redirect('ticket_detail', pk=comment.ticket.pk)
+
+
+@login_required
+def ticket_comment_delete(request, comment_id):
+    """Vista para eliminar un comentario de ticket (solo agentes y solo sus propios comentarios)"""
+    comment = get_object_or_404(TicketComment, pk=comment_id)
+    if not comment.can_delete(request.user):
+        messages.error(request, 'No tienes permisos para eliminar este comentario.')
+        return redirect('ticket_detail', pk=comment.ticket.pk)
+    if request.method == 'POST':
+        ticket_pk = comment.ticket.pk
+        comment.delete()
+        messages.success(request, 'Comentario eliminado exitosamente.')
+        return redirect('ticket_detail', pk=ticket_pk)
+    return redirect('ticket_detail', pk=comment.ticket.pk)
+
+
+@login_required
+def ticket_ai_analysis_status(request, pk):
+    """Endpoint AJAX que informa si el análisis de IA ya está disponible para un ticket."""
+    from django.http import JsonResponse
+    ticket = get_object_or_404(Ticket, pk=pk)
+    ai_comment = (
+        ticket.comments
+        .filter(is_system=True, content__startswith='🤖')
+        .order_by('-created_at')
+        .first()
+    )
+    if ai_comment:
+        return JsonResponse({'ready': True, 'content': ai_comment.content})
+    return JsonResponse({'ready': False})
+
+
+@login_required
+def ticket_ai_analyze_now(request, pk):
+    """Dispara el análisis de IA manualmente para un ticket que aún no lo tiene."""
+    ticket = get_object_or_404(Ticket, pk=pk)
+    # Solo agentes pueden solicitar el análisis
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para solicitar análisis de IA.')
+        return redirect('ticket_detail', pk=pk)
+    if request.method == 'POST':
+        # Evitar duplicados
+        already = ticket.comments.filter(is_system=True, content__startswith='🤖').exists()
+        if not already:
+            try:
+                from .ai_utils import analyze_ticket_with_ai_background
+                analyze_ticket_with_ai_background(ticket.pk)
+            except Exception:
+                pass
+        detail_url = reverse('ticket_detail', kwargs={'pk': pk})
+        return redirect(f"{detail_url}?ai_pending=1")
+    return redirect('ticket_detail', pk=pk)
 
 
 @login_required
