@@ -1351,6 +1351,9 @@ def analyze_ticket_with_ai_background(ticket_id):
             import django
             from tickets.models import Ticket, TicketComment
             ticket = Ticket.objects.get(pk=tid)
+            # Guard: no crear si ya existe un análisis
+            if TicketComment.objects.filter(ticket=ticket, is_system=True, content__startswith='🤖').exists():
+                return
             ai_opinion = analyze_ticket_with_ai(ticket)
             if ai_opinion:
                 TicketComment.objects.create(

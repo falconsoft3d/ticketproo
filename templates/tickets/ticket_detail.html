@@ -266,16 +266,16 @@
                     <div class="mb-4">
                         {% for comment in comments %}
                         {% if comment.is_system %}
-                        {% if comment.content|slice:":2" == "🤖" %}
+                        {% if comment.content|slice:":1" == "🤖" %}
                         <!-- Comentario de análisis IA -->
-                        <div class="rounded mb-3 p-3" style="background:linear-gradient(135deg,#f0f7ff 0%,#e8f4fd 100%);border:1px solid #b3d7f5;border-left:4px solid #0d6efd;">
+                        <div class="ai-analysis-card rounded mb-3 p-3" style="background:linear-gradient(135deg,#f0f7ff 0%,#e8f4fd 100%);border:1px solid #b3d7f5;border-left:4px solid #0d6efd;">
                             <div class="d-flex align-items-center justify-content-between mb-2">
                                 <span class="fw-semibold text-primary" style="font-size:.9rem;">
                                     <i class="bi bi-robot me-1"></i> Análisis de IA
                                 </span>
                                 <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
                             </div>
-                            <div class="text-dark" style="font-size:.875rem;white-space:pre-line;line-height:1.6;">{{ comment.content|slice:"3:" }}</div>
+                            <div class="text-dark" style="font-size:.875rem;line-height:1.6;">{{ comment.content|slice:"2:"|linebreaksbr }}</div>
                         </div>
                         {% else %}
                         <div class="d-flex align-items-center gap-2 mb-2 px-2 py-2 rounded" style="background:#f0f4ff;border-left:3px solid #6c8ebf;">
@@ -1224,7 +1224,19 @@ document.addEventListener('DOMContentLoaded', function() {
 {% if request.GET.ai_pending %}
 <script>
 (function() {
+    // Limpiar ?ai_pending=1 de la URL para que un reload no repita el polling
+    if (window.history && window.history.replaceState) {
+        var cleanUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState(null, '', cleanUrl);
+    }
+
     var spinner = document.getElementById('ai-analysis-spinner');
+
+    // Si ya existe una card de IA renderizada por el servidor, no hacer nada
+    if (document.querySelector('.ai-analysis-card')) {
+        return;
+    }
+
     if (spinner) spinner.style.display = 'block';
 
     var pollUrl = "{% url 'ticket_ai_analysis_status' ticket.pk %}";
@@ -1237,12 +1249,13 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.ready) {
-                    // Ocultar spinner e insertar el comentario sin recargar
                     if (spinner) spinner.style.display = 'none';
+                    // Evitar duplicar si ya existe card en el DOM
+                    if (document.querySelector('.ai-analysis-card')) return;
                     var container = spinner ? spinner.parentNode : null;
                     if (container) {
                         var card = document.createElement('div');
-                        card.className = 'rounded mb-3 p-3';
+                        card.className = 'ai-analysis-card rounded mb-3 p-3';
                         card.style.cssText = 'background:linear-gradient(135deg,#f0f7ff 0%,#e8f4fd 100%);border:1px solid #b3d7f5;border-left:4px solid #0d6efd;';
                         var content = data.content.replace(/^🤖\s?/, '');
                         card.innerHTML =
@@ -1257,7 +1270,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (attempt < maxAttempts) {
                     setTimeout(poll, 2000);
                 } else {
-                    // Tiempo agotado, ocultar spinner silenciosamente
                     if (spinner) spinner.style.display = 'none';
                 }
             })
