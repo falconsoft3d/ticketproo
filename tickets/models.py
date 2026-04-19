@@ -23367,6 +23367,149 @@ class ManualAccess(models.Model):
         return f"{self.manual.title} - {user} - {self.accessed_at}"
 
 
+class ProjectBook(models.Model):
+    """Libro de Proyecto: documento colaborativo con trazabilidad por empresa"""
+
+    STATUS_CHOICES = [
+        ('active', 'Activo'),
+        ('on_hold', 'En Pausa'),
+        ('completed', 'Completado'),
+        ('cancelled', 'Cancelado'),
+    ]
+
+    title = models.CharField(
+        max_length=300,
+        verbose_name='Título'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción general del proyecto'
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='project_books',
+        verbose_name='Empresa'
+    )
+    assigned_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_project_books',
+        verbose_name='Usuario asignado'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_project_books',
+        verbose_name='Creado por'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='active',
+        verbose_name='Estado'
+    )
+    start_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de inicio'
+    )
+    end_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de cierre estimada'
+    )
+    share_token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name='Token de compartir'
+    )
+    tags = models.CharField(
+        max_length=300,
+        blank=True,
+        verbose_name='Etiquetas',
+        help_text='Etiquetas separadas por coma'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Creado el')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado el')
+
+    class Meta:
+        verbose_name = 'Libro de Proyecto'
+        verbose_name_plural = 'Libros de Proyecto'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
+    def get_status_color(self):
+        colors = {
+            'active': 'success',
+            'on_hold': 'warning',
+            'completed': 'primary',
+            'cancelled': 'danger',
+        }
+        return colors.get(self.status, 'secondary')
+
+    def get_tag_list(self):
+        if self.tags:
+            return [t.strip() for t in self.tags.split(',') if t.strip()]
+        return []
+
+
+class ProjectBookEntry(models.Model):
+    """Entrada de trazabilidad en un Libro de Proyecto"""
+
+    book = models.ForeignKey(
+        ProjectBook,
+        on_delete=models.CASCADE,
+        related_name='entries',
+        verbose_name='Libro de Proyecto'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='project_book_entries',
+        verbose_name='Autor'
+    )
+    content = models.TextField(verbose_name='Contenido')
+    is_agent_entry = models.BooleanField(
+        default=False,
+        verbose_name='Entrada de agente',
+        help_text='Indica si fue escrita por un agente'
+    )
+    attachment = models.FileField(
+        upload_to='project_book_attachments/%Y/',
+        null=True,
+        blank=True,
+        verbose_name='Archivo adjunto'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Entrada de Libro de Proyecto'
+        verbose_name_plural = 'Entradas de Libros de Proyecto'
+        ordering = ['created_at']
+
+    def __str__(self):
+        author = self.author.get_full_name() or self.author.username if self.author else 'Desconocido'
+        return f"{self.book.title} – {author} – {self.created_at:%d/%m/%Y %H:%M}"
+
+
 class RFI(models.Model):
     """Request for Information - Solicitud de información"""
 

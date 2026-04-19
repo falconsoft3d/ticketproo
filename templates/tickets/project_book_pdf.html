@@ -1,0 +1,136 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ book.title }} – Libro de Proyecto</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #212529; padding: 30px 40px; }
+        .header { border-bottom: 3px solid #0d6efd; padding-bottom: 16px; margin-bottom: 24px; }
+        .header h1 { font-size: 22px; color: #0d6efd; }
+        .header .subtitle { color: #6c757d; font-size: 12px; margin-top: 4px; }
+        .meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+        .meta-item .label { font-size: 11px; color: #6c757d; text-transform: uppercase; letter-spacing: .5px; }
+        .meta-item .value { font-weight: 600; font-size: 13px; }
+        .description { background: #f8f9fa; border-left: 4px solid #dee2e6; padding: 10px 14px; border-radius: 4px; margin-bottom: 24px; color: #495057; }
+        .tags { margin-bottom: 20px; }
+        .tag { display: inline-block; background: #e9ecef; border-radius: 20px; padding: 2px 10px; font-size: 11px; margin-right: 4px; }
+        h2.section-title { font-size: 15px; border-bottom: 1px solid #dee2e6; padding-bottom: 8px; margin-bottom: 16px; color: #343a40; }
+        .entry { border-radius: 6px; padding: 12px 14px; margin-bottom: 12px; page-break-inside: avoid; }
+        .entry-agent { background: #e8f0fe; border-left: 4px solid #0d6efd; }
+        .entry-user  { background: #f5f5f5;  border-left: 4px solid #adb5bd; }
+        .entry-meta { display: flex; justify-content: space-between; font-size: 11px; color: #6c757d; margin-bottom: 6px; }
+        .entry-author { font-weight: 700; }
+        .badge-agent { background: #0d6efd; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-right: 6px; }
+        .badge-user  { background: #6c757d; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-right: 6px; }
+        .entry-content { white-space: pre-wrap; font-size: 13px; line-height: 1.55; }
+        .footer { margin-top: 40px; border-top: 1px solid #dee2e6; padding-top: 10px; font-size: 11px; color: #adb5bd; display: flex; justify-content: space-between; }
+        .status-badge { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .status-active    { background: #d1e7dd; color: #0a3622; }
+        .status-on_hold   { background: #fff3cd; color: #664d03; }
+        .status-completed { background: #cfe2ff; color: #052c65; }
+        .status-cancelled { background: #f8d7da; color: #58151c; }
+        @media print {
+            body { padding: 10px 20px; }
+            .no-print { display: none; }
+            .entry-agent { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .entry-user  { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+
+<div class="header">
+    <h1>📋 {{ book.title }}</h1>
+    <div class="subtitle">
+        Libro de Proyecto &nbsp;|&nbsp;
+        Generado el {{ "now"|date:"d/m/Y H:i" }}
+        &nbsp;|&nbsp;
+        <span class="status-badge status-{{ book.status }}">{{ book.get_status_display }}</span>
+    </div>
+</div>
+
+<div class="meta-grid">
+    {% if book.company %}
+    <div class="meta-item">
+        <div class="label">Empresa</div>
+        <div class="value">{{ book.company.name }}</div>
+    </div>
+    {% endif %}
+    {% if book.assigned_user %}
+    <div class="meta-item">
+        <div class="label">Usuario asignado</div>
+        <div class="value">{{ book.assigned_user.get_full_name|default:book.assigned_user.username }}</div>
+    </div>
+    {% endif %}
+    {% if book.created_by %}
+    <div class="meta-item">
+        <div class="label">Creado por</div>
+        <div class="value">{{ book.created_by.get_full_name|default:book.created_by.username }}</div>
+    </div>
+    {% endif %}
+    <div class="meta-item">
+        <div class="label">Fecha de creación</div>
+        <div class="value">{{ book.created_at|date:"d/m/Y" }}</div>
+    </div>
+    {% if book.start_date %}
+    <div class="meta-item">
+        <div class="label">Inicio</div>
+        <div class="value">{{ book.start_date|date:"d/m/Y" }}</div>
+    </div>
+    {% endif %}
+    {% if book.end_date %}
+    <div class="meta-item">
+        <div class="label">Cierre estimado</div>
+        <div class="value">{{ book.end_date|date:"d/m/Y" }}</div>
+    </div>
+    {% endif %}
+    <div class="meta-item">
+        <div class="label">Total de entradas</div>
+        <div class="value">{{ entries|length }}</div>
+    </div>
+</div>
+
+{% if book.description %}
+<div class="description">{{ book.description }}</div>
+{% endif %}
+
+{% if book.get_tag_list %}
+<div class="tags">
+    {% for tag in book.get_tag_list %}
+    <span class="tag">{{ tag }}</span>
+    {% endfor %}
+</div>
+{% endif %}
+
+<h2 class="section-title">Historial de Trazabilidad</h2>
+
+{% if entries %}
+    {% for entry in entries %}
+    <div class="entry {% if entry.is_agent_entry %}entry-agent{% else %}entry-user{% endif %}">
+        <div class="entry-meta">
+            <span class="entry-author">
+                {% if entry.is_agent_entry %}
+                <span class="badge-agent">AGENTE</span>
+                {% else %}
+                <span class="badge-user">USUARIO</span>
+                {% endif %}
+                {{ entry.author.get_full_name|default:entry.author.username }}
+            </span>
+            <span>{{ entry.created_at|date:"d/m/Y H:i" }}</span>
+        </div>
+        <div class="entry-content">{{ entry.content }}</div>
+    </div>
+    {% endfor %}
+{% else %}
+<p style="color:#6c757d; text-align:center; padding:20px 0;">Sin entradas registradas.</p>
+{% endif %}
+
+<div class="footer">
+    <span>{{ book.title }}</span>
+    <span>Generado por TicketProo</span>
+</div>
+</body>
+</html>

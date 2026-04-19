@@ -24,12 +24,11 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #f7971e, #ffd200);
+            background: #f7971e;
             color: #333;
             text-decoration: none;
             border-radius: 12px;
             padding: 6px 16px 4px;
-            box-shadow: 0 4px 14px rgba(255,180,0,.5);
             animation: evaluar-pulse 2s ease-in-out infinite;
             line-height: 1.2;
             min-width: 90px;
@@ -37,7 +36,6 @@
         .evaluar-btn:hover {
             color: #111;
             transform: scale(1.07);
-            box-shadow: 0 6px 20px rgba(255,180,0,.7);
             animation: none;
         }
         .evaluar-emoji {
@@ -54,8 +52,8 @@
             opacity: .75;
         }
         @keyframes evaluar-pulse {
-            0%, 100% { box-shadow: 0 4px 14px rgba(255,180,0,.5); }
-            50%       { box-shadow: 0 4px 22px rgba(255,140,0,.9); }
+            0%, 100% { opacity: 1; }
+            50%       { opacity: .85; }
         }
         @keyframes evaluar-bounce {
             0%, 100% { transform: translateY(0); }
@@ -491,6 +489,12 @@
                                 <a class="dropdown-item {% if 'manual' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'manual_list' %}">
                                     <i class="bi bi-book"></i> Manuales
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'project_book' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'project_book_list' %}">
+                                    <i class="bi bi-journal-bookmark"></i> Libros de Proyecto
                                 </a>
                             </li>
                             <li>
@@ -1550,6 +1554,7 @@
                 {% endif %}
                 
                 <ul class="navbar-nav">
+                    {% if is_agent %}
                     <!-- Botón de Actividades Pendientes -->
                     <li class="nav-item dropdown me-2">
                         <a class="nav-link dropdown-toggle position-relative" href="#" id="navbarActivities" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -1592,6 +1597,7 @@
                             </li>
                         </ul>
                     </li>
+                    {% endif %}
                     
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
@@ -1602,19 +1608,21 @@
                                 <i class="bi bi-person-gear"></i> Mi Perfil
                             </a></li>
 
+                            {% if is_agent %}
                             <li><hr class="dropdown-divider"></li>    
 
                             <li><a class="dropdown-item" href="{% url 'my_notes' %}">
                                 <i class="bi bi-journal-text"></i> Mis Notas
                             </a></li>
                             
-                            <!-- Menú de Juegos (Para todos los usuarios autenticados) -->
+                            <!-- Menú de Juegos (Solo para agentes) -->
                             <li><hr class="dropdown-divider"></li>
                             
                             <li><a class="dropdown-item {% if 'tetris' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'tetris' %}">
                                 <i class="bi bi-grid-3x3-gap"></i> Tetris
                             </a></li>
+                            {% endif %}
                             
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'logout' %}">
@@ -1679,7 +1687,7 @@
     </main>
 
     <!-- Barra lateral de usuarios activos (disponible en todo el dashboard) -->
-    {% if user.is_authenticated %}
+    {% if user.is_authenticated and is_agent %}
     <!-- Botón flotante para estadísticas de URLs Cortas -->
     <div id="shortUrlStatsToggle" class="dropdown" style="position: fixed; right: 0; top: calc(50% - 320px); transform: translateY(-50%); z-index: 1050; transition: all 0.3s ease;">
         <button class="btn btn-info shadow-lg dropdown-toggle" 
@@ -4425,7 +4433,7 @@
     </script>
     
     <!-- Widget de Chat Flotante -->
-    {% if user.is_authenticated %}
+    {% if user.is_authenticated and is_agent %}
     <div id="chat-widget" class="chat-widget">
         <div class="chat-widget-header" onclick="toggleChatWidget()">
             <i class="fas fa-comments"></i>
@@ -5025,7 +5033,7 @@
     {% endif %}
     
     <!-- Botón Flotante de IA Global -->
-    {% if user.is_authenticated %}
+    {% if user.is_authenticated and is_agent %}
     <div id="ai-floating-button" class="ai-floating-btn">
         <a href="{% url 'voice_command_interface' %}" 
            class="btn btn-primary btn-lg rounded-circle shadow-lg"
@@ -5310,7 +5318,7 @@
     </style>
 
     <!-- Ticker de Acciones Financieras Global -->
-    {% if user.is_authenticated %}
+    {% if user.is_authenticated and is_agent %}
     <div id="financial-ticker-global" class="bg-dark text-white">
         <div class="d-flex align-items-center h-100">
             <div class="me-3 ps-3">

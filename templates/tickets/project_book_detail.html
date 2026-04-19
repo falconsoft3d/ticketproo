@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ book.title }} – Libro de Proyecto{% endblock %}
+
+{% block extra_head %}
+<style>
+    .entry-agent {
+        background: #eef4ff;
+        border-left: 4px solid #0d6efd;
+    }
+    .entry-user {
+        background: #f8f9fa;
+        border-left: 4px solid #6c757d;
+    }
+    .entry-card {
+        border-radius: 6px;
+        padding: 14px 16px;
+        margin-bottom: 14px;
+    }
+    .entry-author-badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    @media print {
+        .no-print { display: none !important; }
+        .entry-agent { background: #e8f0fe !important; -webkit-print-color-adjust: exact; }
+        .entry-user  { background: #f5f5f5  !important; -webkit-print-color-adjust: exact; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <!-- Cabecera -->
+    <div class="d-flex justify-content-between align-items-start mb-3 no-print">
+        <div>
+            <a href="{% url 'project_book_list' %}" class="btn btn-sm btn-outline-secondary mb-2">
+                <i class="bi bi-arrow-left"></i> Volver a la lista
+            </a>
+            <h1 class="mb-0"><i class="bi bi-journal-bookmark"></i> {{ book.title }}</h1>
+            <span class="badge bg-{{ book.get_status_color }} mt-1">{{ book.get_status_display }}</span>
+        </div>
+        <div class="d-flex gap-2 flex-wrap justify-content-end no-print">
+            <a href="{% url 'project_book_pdf' book.pk %}" target="_blank" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-file-earmark-pdf"></i> Imprimir / PDF
+            </a>
+            <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#shareModal">
+                <i class="bi bi-share"></i> Compartir
+            </button>
+            {% if is_agent %}
+            <a href="{% url 'project_book_edit' book.pk %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            <a href="{% url 'project_book_delete' book.pk %}" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-trash"></i> Eliminar
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show no-print" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Info del libro -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                {% if book.company %}
+                <div class="col-sm-6 col-md-3">
+                    <div class="text-muted small">Empresa</div>
+                    <div class="fw-semibold"><i class="bi bi-building"></i> {{ book.company.name }}</div>
+                </div>
+                {% endif %}
+                {% if book.assigned_user %}
+                <div class="col-sm-6 col-md-3">
+                    <div class="text-muted small">Usuario asignado</div>
+                    <div class="fw-semibold"><i class="bi bi-person-check"></i> {{ book.assigned_user.get_full_name|default:book.assigned_user.username }}</div>
+                </div>
+                {% endif %}
+                {% if book.created_by %}
+                <div class="col-sm-6 col-md-3">
+                    <div class="text-muted small">Creado por</div>
+                    <div class="fw-semibold"><i class="bi bi-person"></i> {{ book.created_by.get_full_name|default:book.created_by.username }}</div>
+                </div>
+                {% endif %}
+                <div class="col-sm-6 col-md-3">
+                    <div class="text-muted small">Creado el</div>
+                    <div class="fw-semibold">{{ book.created_at|date:"d/m/Y" }}</div>
+                </div>
+                {% if book.start_date %}
+                <div class="col-sm-6 col-md-3">
+                    <div class="text-muted small">Inicio</div>
+                    <div class="fw-semibold">{{ book.start_date|date:"d/m/Y" }}</div>
+                </div>
+                {% endif %}
+                {% if book.end_date %}
+                <div class="col-sm-6 col-md-3">
+                    <div class="text-muted small">Cierre estimado</div>
+                    <div class="fw-semibold">{{ book.end_date|date:"d/m/Y" }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% if book.description %}
+            <hr class="my-3">
+            <p class="mb-0 text-secondary">{{ book.description }}</p>
+            {% endif %}
+            {% if book.get_tag_list %}
+            <div class="mt-2">
+                {% for tag in book.get_tag_list %}
+                <span class="badge bg-light text-dark border me-1">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Entradas de trazabilidad -->
+    <h5 class="mb-3"><i class="bi bi-chat-left-text"></i> Trazabilidad del Proyecto</h5>
+
+    {% if entries %}
+        {% for entry in entries %}
+        <div class="entry-card {% if entry.is_agent_entry %}entry-agent{% else %}entry-user{% endif %}">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    {% if entry.is_agent_entry %}
+                    <span class="badge bg-primary entry-author-badge"><i class="bi bi-shield-check"></i> Agente</span>
+                    {% else %}
+                    <span class="badge bg-secondary entry-author-badge"><i class="bi bi-person"></i> Usuario</span>
+                    {% endif %}
+                    <span class="ms-2 fw-semibold">{{ entry.author.get_full_name|default:entry.author.username }}</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <small class="text-muted">{{ entry.created_at|date:"d/m/Y H:i" }}</small>
+                    {% if is_agent or entry.author == request.user %}
+                    <form method="post" action="{% url 'project_book_entry_delete' book.pk entry.pk %}" class="no-print" onsubmit="return confirm('¿Eliminar esta entrada?')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Eliminar entrada">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            <p class="mb-0" style="white-space: pre-wrap;">{{ entry.content }}</p>
+            {% if entry.attachment %}
+            <div class="mt-2">
+                <a href="{{ entry.attachment.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-paperclip"></i> Ver adjunto
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="text-center py-4 text-muted">
+        <i class="bi bi-chat-left display-4"></i>
+        <p class="mt-2">No hay entradas aún. Agrega la primera nota de seguimiento.</p>
+    </div>
+    {% endif %}
+
+    <!-- Formulario nueva entrada -->
+    <div class="card border-0 shadow-sm mt-4 no-print">
+        <div class="card-header bg-transparent fw-semibold">
+            <i class="bi bi-plus-circle"></i> Agregar nota de seguimiento
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <textarea name="content" rows="4" class="form-control" placeholder="Escribe aquí tu nota, avance, observación o acuerdo…" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Archivo adjunto (opcional)</label>
+                    <input type="file" name="attachment" class="form-control form-control-sm">
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-send"></i> Agregar Entrada
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Compartir -->
+<div class="modal fade no-print" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-share"></i> Compartir Libro de Proyecto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">Cualquier persona con este enlace podrá ver el libro (sin necesidad de iniciar sesión).</p>
+                <div class="input-group">
+                    <input type="text" id="shareLink" class="form-control" readonly
+                           value="{{ request.scheme }}://{{ request.get_host }}{% url 'project_book_public' book.share_token %}">
+                    <button class="btn btn-outline-secondary" onclick="copyShareLink()">
+                        <i class="bi bi-clipboard"></i> Copiar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+function copyShareLink() {
+    const input = document.getElementById('shareLink');
+    input.select();
+    document.execCommand('copy');
+    input.blur();
+    const btn = input.nextElementSibling;
+    btn.innerHTML = '<i class="bi bi-clipboard-check"></i> Copiado!';
+    setTimeout(() => { btn.innerHTML = '<i class="bi bi-clipboard"></i> Copiar'; }, 2000);
+}
+</script>
+{% endblock %}
+{% endblock %}

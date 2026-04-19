@@ -690,6 +690,21 @@ def dashboard_view(request):
         'kpi_docs_total': kpi_docs_total,
     })
 
+    # Libros de proyecto visibles para el usuario
+    from .models import ProjectBook
+    if is_agent(request.user):
+        user_books = ProjectBook.objects.filter(is_active=True)
+    else:
+        _book_q = models.Q(assigned_user=request.user)
+        if user_company:
+            _book_q |= models.Q(company=user_company)
+        user_books = ProjectBook.objects.filter(_book_q, is_active=True).distinct()
+
+    user_books_count = user_books.count()
+    context['user_books_count'] = user_books_count
+    if user_books_count == 1:
+        context['single_book_pk'] = user_books.first().pk
+
     return render(request, 'tickets/dashboard.html', context)
 
 @login_required
@@ -36883,6 +36898,80 @@ def qa_rating_counts(request):
     return JsonResponse(counts)
 
 
+def qa_ratings_public_api(request):
+    """API pública para consultar calificaciones QA (sin login). 
+    Disponible en: /qa/ratings/public/api/
+    Soporta filtros: ?rating=happy|neutral|sad&limit=50&page=1
+    Responde con CORS abierto para ser consumida desde otras webs.
+    """
+    from .models import QARating
+
+    # Responder CORS
+    response_headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Content-Type',
+    }
+
+    qs = QARating.objects.filter(is_public=True).order_by('-created_at')
+
+    # Filtro opcional por tipo
+    rating_filter = request.GET.get('rating', '').strip()
+    if rating_filter in ('happy', 'neutral', 'sad'):
+        qs = qs.filter(rating=rating_filter)
+
+    # Paginación simple
+    try:
+        limit = min(int(request.GET.get('limit', 50)), 200)
+        page  = max(int(request.GET.get('page', 1)), 1)
+    except (ValueError, TypeError):
+        limit, page = 50, 1
+
+    total = qs.count()
+    start = (page - 1) * limit
+    items = qs[start:start + limit]
+
+    # Resumen general
+    total_all   = QARating.objects.filter(is_public=True).count()
+    happy_count = QARating.objects.filter(is_public=True, rating='happy').count()
+    neutral_count = QARating.objects.filter(is_public=True, rating='neutral').count()
+    sad_count   = QARating.objects.filter(is_public=True, rating='sad').count()
+
+    data = {
+        'summary': {
+            'total': total_all,
+            'happy': happy_count,
+            'neutral': neutral_count,
+            'sad': sad_count,
+            'happy_pct': round(happy_count / total_all * 100, 1) if total_all else 0,
+        },
+        'pagination': {
+            'total_filtered': total,
+            'page': page,
+            'limit': limit,
+            'pages': -(-total // limit) if total else 1,  # ceil
+        },
+        'results': [
+            {
+                'id': r.pk,
+                'rating': r.rating,
+                'emoji': r.get_rating_emoji(),
+                'rating_label': r.get_rating_display(),
+                'opinion': r.opinion,
+                'name': r.name or None,
+                'company': r.company.name if r.company else None,
+                'created_at': r.created_at.isoformat(),
+            }
+            for r in items
+        ],
+    }
+
+    response = JsonResponse(data)
+    for k, v in response_headers.items():
+        response[k] = v
+    return response
+
+
 @login_required
 def qa_rating_detail(request, pk):
     """Detalle de una calificación"""
@@ -55178,3 +55267,259 @@ def rfi_public(request, token):
         'post_data': request.POST if error else {},
     }
     return render(request, 'tickets/rfi_public.html', context)
+
+
+# ─── Libro de Proyecto ────────────────────────────────────────────────────────
+
+@login_required
+def project_book_list(request):
+    """Lista de libros de proyecto con filtros de visibilidad."""
+    from .models import ProjectBook
+    from .utils import is_agent
+
+    user = request.user
+    if user.is_staff or user.is_superuser or is_agent(user):
+        books = ProjectBook.objects.filter(is_active=True).select_related('company', 'assigned_user', 'created_by')
+    else:
+        user_company = getattr(getattr(user, 'profile', None), 'company', None)
+        q = models.Q(assigned_user=user)
+        if user_company:
+            q |= models.Q(company=user_company)
+        books = ProjectBook.objects.filter(is_active=True).filter(q).select_related('company', 'assigned_user', 'created_by').distinct()
+
+    # Filtros
+    status_filter = request.GET.get('status', '')
+    company_filter = request.GET.get('company', '')
+    search = request.GET.get('q', '').strip()
+
+    if status_filter:
+        books = books.filter(status=status_filter)
+    if company_filter:
+        books = books.filter(company_id=company_filter)
+    if search:
+        books = books.filter(
+            models.Q(title__icontains=search) |
+            models.Q(description__icontains=search) |
+            models.Q(tags__icontains=search)
+        )
+
+    from .models import Company
+    companies = Company.objects.filter(is_active=True).order_by('name')
+
+    context = {
+        'books': books,
+        'companies': companies,
+        'status_choices': ProjectBook.STATUS_CHOICES,
+        'status_filter': status_filter,
+        'company_filter': company_filter,
+        'search': search,
+    }
+    return render(request, 'tickets/project_book_list.html', context)
+
+
+@login_required
+def project_book_create(request):
+    """Crear un nuevo libro de proyecto."""
+    from .models import ProjectBook, Company
+    from .utils import is_agent
+
+    if not (request.user.is_staff or request.user.is_superuser or is_agent(request.user)):
+        messages.error(request, 'No tienes permisos para crear libros de proyecto.')
+        return redirect('project_book_list')
+
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    users = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        company_id = request.POST.get('company') or None
+        assigned_user_id = request.POST.get('assigned_user') or None
+        status = request.POST.get('status', 'active')
+        start_date = request.POST.get('start_date') or None
+        end_date = request.POST.get('end_date') or None
+        tags = request.POST.get('tags', '').strip()
+
+        if not title:
+            messages.error(request, 'El título es obligatorio.')
+        else:
+            book = ProjectBook.objects.create(
+                title=title,
+                description=description,
+                company_id=company_id,
+                assigned_user_id=assigned_user_id,
+                status=status,
+                start_date=start_date,
+                end_date=end_date,
+                tags=tags,
+                created_by=request.user,
+            )
+            messages.success(request, f'Libro "{book.title}" creado exitosamente.')
+            return redirect('project_book_detail', pk=book.pk)
+
+    context = {
+        'companies': companies,
+        'users': users,
+        'status_choices': ProjectBook.STATUS_CHOICES,
+    }
+    return render(request, 'tickets/project_book_form.html', context)
+
+
+@login_required
+def project_book_detail(request, pk):
+    """Detalle del libro de proyecto con entradas de trazabilidad."""
+    from .models import ProjectBook, ProjectBookEntry
+    from .utils import is_agent
+
+    book = get_object_or_404(ProjectBook, pk=pk, is_active=True)
+    user = request.user
+    agent = user.is_staff or user.is_superuser or is_agent(user)
+
+    # Control de acceso
+    if not agent:
+        user_company = getattr(getattr(user, 'profile', None), 'company', None)
+        is_assigned = book.assigned_user == user
+        company_match = user_company and book.company == user_company
+        if not (is_assigned or company_match):
+            messages.error(request, 'No tienes acceso a este libro de proyecto.')
+            return redirect('project_book_list')
+
+    entries = book.entries.select_related('author').order_by('created_at')
+
+    if request.method == 'POST':
+        content = request.POST.get('content', '').strip()
+        attachment = request.FILES.get('attachment')
+        if content:
+            ProjectBookEntry.objects.create(
+                book=book,
+                author=user,
+                content=content,
+                is_agent_entry=agent,
+                attachment=attachment,
+            )
+            book.save()  # actualiza updated_at
+            messages.success(request, 'Entrada agregada.')
+            return redirect('project_book_detail', pk=pk)
+        else:
+            messages.error(request, 'El contenido no puede estar vacío.')
+
+    context = {
+        'book': book,
+        'entries': entries,
+        'is_agent': agent,
+    }
+    return render(request, 'tickets/project_book_detail.html', context)
+
+
+@login_required
+def project_book_edit(request, pk):
+    """Editar un libro de proyecto."""
+    from .models import ProjectBook, Company
+    from .utils import is_agent
+
+    book = get_object_or_404(ProjectBook, pk=pk, is_active=True)
+
+    if not (request.user.is_staff or request.user.is_superuser or is_agent(request.user)):
+        messages.error(request, 'No tienes permisos para editar libros de proyecto.')
+        return redirect('project_book_detail', pk=pk)
+
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    users = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+
+    if request.method == 'POST':
+        book.title = request.POST.get('title', book.title).strip()
+        book.description = request.POST.get('description', '').strip()
+        book.company_id = request.POST.get('company') or None
+        book.assigned_user_id = request.POST.get('assigned_user') or None
+        book.status = request.POST.get('status', 'active')
+        book.start_date = request.POST.get('start_date') or None
+        book.end_date = request.POST.get('end_date') or None
+        book.tags = request.POST.get('tags', '').strip()
+
+        if not book.title:
+            messages.error(request, 'El título es obligatorio.')
+        else:
+            book.save()
+            messages.success(request, 'Libro actualizado exitosamente.')
+            return redirect('project_book_detail', pk=pk)
+
+    context = {
+        'book': book,
+        'companies': companies,
+        'users': users,
+        'status_choices': ProjectBook.STATUS_CHOICES,
+        'editing': True,
+    }
+    return render(request, 'tickets/project_book_form.html', context)
+
+
+@login_required
+def project_book_delete(request, pk):
+    """Eliminar (desactivar) un libro de proyecto."""
+    from .models import ProjectBook
+    from .utils import is_agent
+
+    book = get_object_or_404(ProjectBook, pk=pk)
+
+    if not (request.user.is_staff or request.user.is_superuser or is_agent(request.user)):
+        messages.error(request, 'No tienes permisos para eliminar libros de proyecto.')
+        return redirect('project_book_list')
+
+    if request.method == 'POST':
+        book.is_active = False
+        book.save()
+        messages.success(request, f'Libro "{book.title}" eliminado.')
+        return redirect('project_book_list')
+
+    return render(request, 'tickets/project_book_delete.html', {'book': book})
+
+
+@login_required
+def project_book_entry_delete(request, pk, entry_pk):
+    """Eliminar una entrada del libro de proyecto."""
+    from .models import ProjectBook, ProjectBookEntry
+    from .utils import is_agent
+
+    book = get_object_or_404(ProjectBook, pk=pk, is_active=True)
+    entry = get_object_or_404(ProjectBookEntry, pk=entry_pk, book=book)
+    agent = request.user.is_staff or request.user.is_superuser or is_agent(request.user)
+
+    if not (agent or entry.author == request.user):
+        messages.error(request, 'No puedes eliminar esta entrada.')
+        return redirect('project_book_detail', pk=pk)
+
+    if request.method == 'POST':
+        entry.delete()
+        messages.success(request, 'Entrada eliminada.')
+        return redirect('project_book_detail', pk=pk)
+
+    return render(request, 'tickets/project_book_entry_delete.html', {'book': book, 'entry': entry})
+
+
+def project_book_public(request, token):
+    """Vista pública del libro de proyecto (compartir por enlace)."""
+    from .models import ProjectBook
+
+    book = get_object_or_404(ProjectBook, share_token=token, is_active=True)
+    entries = book.entries.select_related('author').order_by('created_at')
+    return render(request, 'tickets/project_book_public.html', {'book': book, 'entries': entries})
+
+
+@login_required
+def project_book_pdf(request, pk):
+    """Render HTML para impresión PDF del libro de proyecto."""
+    from .models import ProjectBook
+    from .utils import is_agent
+
+    book = get_object_or_404(ProjectBook, pk=pk, is_active=True)
+    user = request.user
+    agent = user.is_staff or user.is_superuser or is_agent(user)
+
+    if not agent:
+        user_company = getattr(getattr(user, 'profile', None), 'company', None)
+        if not (book.assigned_user == user or (user_company and book.company == user_company)):
+            messages.error(request, 'No tienes acceso a este libro.')
+            return redirect('project_book_list')
+
+    entries = book.entries.select_related('author').order_by('created_at')
+    return render(request, 'tickets/project_book_pdf.html', {'book': book, 'entries': entries})

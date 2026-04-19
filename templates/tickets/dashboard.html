@@ -3,6 +3,44 @@
 {% block title %}Dashboard - TicketProo{% endblock %}
 
 {% block content %}
+<style>
+.dash-btn {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 8px 22px;
+    line-height: 1.25;
+    white-space: nowrap;
+    animation: dash-btn-breathe 2.6s ease-in-out infinite;
+    transition: transform .15s ease, filter .15s ease;
+}
+.dash-btn:hover {
+    color: #fff;
+    transform: scale(1.06);
+    animation: none;
+    filter: brightness(1.1);
+}
+.dash-btn-blue  { background: #1565c0; }
+.dash-btn-green { background: #2e7d32; }
+.dash-btn-amber { background: #e65100; }
+.dash-btn .btn-sub {
+    font-size: .68rem;
+    font-weight: 400;
+    opacity: .85;
+    display: block;
+}
+@keyframes dash-btn-breathe {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.03); }
+}
+</style>
 <div class="row mb-4">
     <div class="col">
         <div class="d-flex justify-content-between align-items-center">
@@ -20,14 +58,22 @@
             
             <!-- Evaluar + Citas rotativas -->
             <div class="d-flex flex-column align-items-end gap-2">
-            <div class="d-flex gap-2 align-items-center">
-            <a href="{% url 'ticket_create' %}" class="btn btn-lg fw-bold px-4 py-2 shadow" style="background:linear-gradient(135deg,#1565c0,#42a5f5);color:#fff;border-radius:12px;font-size:1rem;white-space:nowrap;">
-                <i class="bi bi-plus-circle-fill me-2"></i>Crear Ticket
+            <div class="d-flex gap-2 align-items-stretch">
+            <a href="{% url 'ticket_create' %}" class="dash-btn dash-btn-blue">
+                <span><i class="bi bi-plus-circle-fill me-1"></i> Crear Ticket</span>
             </a>
-            <a href="{% url 'qa_rating_public' %}" class="evaluar-btn" title="¡Dinos cómo lo estamos haciendo!">
-                <span class="evaluar-emoji">😊</span>
-                <span class="evaluar-texto">¡Evalúanos!</span>
-                <span class="evaluar-sub">Tu opinión nos importa</span>
+            {% if user_books_count == 1 %}
+            <a href="{% url 'project_book_detail' single_book_pk %}" class="dash-btn dash-btn-green">
+                <span><i class="bi bi-journal-bookmark me-1"></i> Ver tu Libro</span>
+            </a>
+            {% else %}
+            <a href="{% url 'project_book_list' %}" class="dash-btn dash-btn-green">
+                <span><i class="bi bi-journal-bookmark me-1"></i> Ver tus Libros</span>
+            </a>
+            {% endif %}
+            <a href="{% url 'qa_rating_public' %}" class="dash-btn dash-btn-amber" title="¡Dinos cómo lo estamos haciendo!">
+                <span>😊 ¡Evalúanos!</span>
+                <span class="btn-sub">Tu opinión nos importa</span>
             </a>
             </div>
             {% if dashboard_quotes %}
@@ -52,6 +98,7 @@
                 {% if rfi_oldest_days > 0 %}
                 La más antigua lleva <strong>{{ rfi_oldest_days }} día(s)</strong> sin cerrar.
                 {% endif %}
+                Es importante que cumpla con la entrega de información solicitada para no tener atrasos en el proyecto.
                 <a href="{% url 'rfi_my_list' %}" class="alert-link ms-2">Ver mis RFI →</a>
             </div>
         </div>
@@ -77,7 +124,7 @@
     <!-- Tickets Pendientes / Totales -->
     <div class="col-6 col-md-3">
         <a href="{% url 'ticket_list' %}" class="text-decoration-none">
-            <div class="card h-100 border-0 shadow" style="background: linear-gradient(135deg,#1e3c72,#2a69ac); color:#fff;">
+            <div class="card h-100 border-0" style="background:#1565c0; color:#fff;">
                 <div class="card-body text-center py-4">
                     <i class="bi bi-ticket-perforated-fill" style="font-size:2.5rem;opacity:.8;"></i>
                     <div class="mt-2" style="font-size:2.2rem;font-weight:700;line-height:1.1;">
@@ -92,7 +139,7 @@
     <!-- RFI Abiertos / Totales -->
     <div class="col-6 col-md-3">
         <a href="{% url 'rfi_list' %}" class="text-decoration-none">
-            <div class="card h-100 border-0 shadow" style="background: linear-gradient(135deg,#c0392b,#e74c3c); color:#fff;">
+            <div class="card h-100 border-0" style="background:#c0392b; color:#fff;">
                 <div class="card-body text-center py-4">
                     <i class="bi bi-file-earmark-text-fill" style="font-size:2.5rem;opacity:.8;"></i>
                     <div class="mt-2" style="font-size:2.2rem;font-weight:700;line-height:1.1;">
@@ -107,7 +154,7 @@
     <!-- Cursos -->
     <div class="col-6 col-md-3">
         <a href="{% url 'course_list' %}" class="text-decoration-none">
-            <div class="card h-100 border-0 shadow" style="background: linear-gradient(135deg,#155724,#28a745); color:#fff;">
+            <div class="card h-100 border-0" style="background:#2e7d32; color:#fff;">
                 <div class="card-body text-center py-4">
                     <i class="bi bi-mortarboard-fill" style="font-size:2.5rem;opacity:.8;"></i>
                     <div class="mt-2" style="font-size:2.2rem;font-weight:700;line-height:1.1;">
@@ -121,7 +168,7 @@
     <!-- Documentos -->
     <div class="col-6 col-md-3">
         <a href="{% url 'manual_list' %}" class="text-decoration-none">
-            <div class="card h-100 border-0 shadow" style="background: linear-gradient(135deg,#6a0080,#ab47bc); color:#fff;">
+            <div class="card h-100 border-0" style="background:#6a0080; color:#fff;">
                 <div class="card-body text-center py-4">
                     <i class="bi bi-book" style="font-size:2.5rem;opacity:.8;"></i>
                     <div class="mt-2" style="font-size:2.2rem;font-weight:700;line-height:1.1;">

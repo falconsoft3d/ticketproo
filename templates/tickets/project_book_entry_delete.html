@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Entrada{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width:520px">
+    <div class="card border-danger shadow-sm">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0"><i class="bi bi-x-circle"></i> Eliminar Entrada</h5>
+        </div>
+        <div class="card-body">
+            <p>¿Deseas eliminar la siguiente entrada del libro <strong>"{{ book.title }}"</strong>?</p>
+            <blockquote class="blockquote bg-light p-3 border-start border-4 rounded">
+                <p class="mb-0 small" style="white-space:pre-wrap;">{{ entry.content|truncatechars:200 }}</p>
+                <footer class="blockquote-footer mt-1">{{ entry.author.get_full_name|default:entry.author.username }} — {{ entry.created_at|date:"d/m/Y H:i" }}</footer>
+            </blockquote>
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a href="{% url 'project_book_detail' book.pk %}" class="btn btn-outline-secondary">Cancelar</a>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -685,6 +685,16 @@ urlpatterns = [
     path('manuals/<int:pk>/edit/', views.manual_edit, name='manual_edit'),
     path('manuals/<int:pk>/delete/', views.manual_delete, name='manual_delete'),
 
+    # URLs de Libros de Proyecto
+    path('project-books/', views.project_book_list, name='project_book_list'),
+    path('project-books/create/', views.project_book_create, name='project_book_create'),
+    path('project-books/<int:pk>/', views.project_book_detail, name='project_book_detail'),
+    path('project-books/<int:pk>/edit/', views.project_book_edit, name='project_book_edit'),
+    path('project-books/<int:pk>/delete/', views.project_book_delete, name='project_book_delete'),
+    path('project-books/<int:pk>/pdf/', views.project_book_pdf, name='project_book_pdf'),
+    path('project-books/<int:pk>/entries/<int:entry_pk>/delete/', views.project_book_entry_delete, name='project_book_entry_delete'),
+    path('public/project-book/<uuid:token>/', views.project_book_public, name='project_book_public'),
+
     # URLs de RFI
     path('rfi/', views.rfi_list, name='rfi_list'),
     path('rfi/create/', views.rfi_create, name='rfi_create'),
@@ -1309,6 +1319,7 @@ urlpatterns += [
     path('qa/ratings/<int:pk>/', views.qa_rating_detail, name='qa_rating_detail'),
     path('qa/ratings/<int:pk>/delete/', views.qa_rating_delete, name='qa_rating_delete'),
     path('qa/ratings/<int:pk>/toggle-public/', views.qa_rating_toggle_public, name='qa_rating_toggle_public'),
+    path('qa/ratings/public/api/', views.qa_ratings_public_api, name='qa_ratings_public_api'),
     
     # URL pública para calificaciones (sin login)
     path('evaluar/', views.qa_rating_public, name='qa_rating_public'),

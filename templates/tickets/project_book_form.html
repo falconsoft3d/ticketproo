@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if editing %}Editar{% else %}Nuevo{% endif %} Libro de Proyecto{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width:780px">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-journal-plus"></i> {% if editing %}Editar{% else %}Nuevo{% endif %} Libro de Proyecto</h1>
+        <a href="{% if editing %}{% url 'project_book_detail' book.pk %}{% else %}{% url 'project_book_list' %}{% endif %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+                    <input type="text" name="title" value="{{ book.title|default:'' }}" class="form-control" required placeholder="Ej. Proyecto de implementación ERP">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Descripción</label>
+                    <textarea name="description" rows="3" class="form-control" placeholder="Descripción general del proyecto…">{{ book.description|default:'' }}</textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Empresa</label>
+                        <select name="company" class="form-select">
+                            <option value="">— Sin empresa —</option>
+                            {% for c in companies %}
+                            <option value="{{ c.pk }}" {% if book.company_id == c.pk %}selected{% endif %}>{{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Usuario asignado</label>
+                        <select name="assigned_user" class="form-select">
+                            <option value="">— Sin asignar —</option>
+                            {% for u in users %}
+                            <option value="{{ u.pk }}" {% if book.assigned_user_id == u.pk %}selected{% endif %}>
+                                {{ u.get_full_name|default:u.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-semibold">Estado</label>
+                        <select name="status" class="form-select">
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if book.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-semibold">Fecha de inicio</label>
+                        <input type="date" name="start_date" value="{{ book.start_date|date:'Y-m-d'|default:'' }}" class="form-control">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-semibold">Fecha estimada de cierre</label>
+                        <input type="date" name="end_date" value="{{ book.end_date|date:'Y-m-d'|default:'' }}" class="form-control">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Etiquetas</label>
+                    <input type="text" name="tags" value="{{ book.tags|default:'' }}" class="form-control" placeholder="Ej. urgente, diseño, backend  (separadas por coma)">
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% if editing %}{% url 'project_book_detail' book.pk %}{% else %}{% url 'project_book_list' %}{% endif %}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> {% if editing %}Guardar Cambios{% else %}Crear Libro{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

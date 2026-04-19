@@ -40,6 +40,38 @@
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
+
+                    <!-- API Pública - Documentación -->
+                    <div class="alert alert-secondary alert-dismissible fade show" role="alert">
+                        <h6 class="alert-heading mb-2">
+                            <i class="bi bi-code-slash"></i> API Pública de Calificaciones
+                        </h6>
+                        <p class="mb-2 small">Consume las calificaciones en formato JSON desde cualquier sitio web, sin autenticación:</p>
+                        <div class="input-group mb-2">
+                            <input 
+                                type="text" 
+                                class="form-control font-monospace small" 
+                                id="apiUrl" 
+                                value="{{ request.scheme }}://{{ request.get_host }}{% url 'qa_ratings_public_api' %}" 
+                                readonly
+                            >
+                            <button class="btn btn-secondary" type="button" onclick="copyApiUrl()">
+                                <i class="bi bi-clipboard"></i> Copiar
+                            </button>
+                            <a href="{% url 'qa_ratings_public_api' %}" target="_blank" class="btn btn-outline-secondary">
+                                <i class="bi bi-box-arrow-up-right"></i> Abrir
+                            </a>
+                        </div>
+                        <div class="small text-muted">
+                            <strong>Parámetros opcionales:</strong>
+                            <code class="ms-1">?rating=happy</code> — solo Felices &nbsp;|&nbsp;
+                            <code>?rating=neutral</code> — solo Neutrales &nbsp;|&nbsp;
+                            <code>?rating=sad</code> — solo Tristes &nbsp;|&nbsp;
+                            <code>?limit=20</code> — límite por página &nbsp;|&nbsp;
+                            <code>?page=2</code> — página
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
                     
                     <!-- Estadísticas -->
                     <div class="row mb-4">
@@ -276,6 +308,24 @@ function copyPublicUrl(evt) {
     }).catch(function(err) {
         alert('Error al copiar: ' + err);
     });
+}
+
+function copyApiUrl() {
+    const urlInput = document.getElementById('apiUrl');
+    urlInput.select();
+    urlInput.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(urlInput.value).then(function() {
+        const btn = document.querySelector('[onclick="copyApiUrl()"]');
+        if (btn) {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2"></i> ¡Copiado!';
+            btn.classList.replace('btn-secondary', 'btn-success');
+            setTimeout(function() {
+                btn.innerHTML = originalHtml;
+                btn.classList.replace('btn-success', 'btn-secondary');
+            }, 2000);
+        }
+    }).catch(function(err) { alert('Error al copiar: ' + err); });
 }
 
 document.addEventListener('DOMContentLoaded', function() {

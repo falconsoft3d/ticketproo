@@ -31,7 +31,7 @@ from .models import (
     Checklist, ChecklistItem, Transaction, KnowledgeBase, Translation, SQLQuery,
     OdooConnection, OdooRPCTable, OdooRPCField, OdooRPCData, OdooRPCImportFile,
     Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage, ChatbotClick, CourseApproval, PrivacyPolicy,
-    Invoice, InvoiceLine, Manual, ManualAccess
+    Invoice, InvoiceLine, Manual, ManualAccess, ProjectBook, ProjectBookEntry
 )
 
 # Configuración del sitio de administración
@@ -7074,3 +7074,27 @@ class ManualAccessAdmin(admin.ModelAdmin):
     list_filter = ('manual',)
     search_fields = ('manual__title', 'accessed_by__username', 'accessed_by__email')
     readonly_fields = ('manual', 'accessed_by', 'ip_address', 'user_agent', 'accessed_at')
+
+
+class ProjectBookEntryInline(admin.TabularInline):
+    model = ProjectBookEntry
+    extra = 0
+    fields = ('author', 'content', 'is_agent_entry', 'attachment', 'created_at')
+    readonly_fields = ('created_at',)
+
+
+@admin.register(ProjectBook)
+class ProjectBookAdmin(admin.ModelAdmin):
+    list_display = ('title', 'company', 'assigned_user', 'created_by', 'status', 'created_at')
+    list_filter = ('status', 'company')
+    search_fields = ('title', 'description', 'tags')
+    readonly_fields = ('created_at', 'updated_at', 'share_token')
+    inlines = [ProjectBookEntryInline]
+
+
+@admin.register(ProjectBookEntry)
+class ProjectBookEntryAdmin(admin.ModelAdmin):
+    list_display = ('book', 'author', 'is_agent_entry', 'created_at')
+    list_filter = ('is_agent_entry', 'book')
+    search_fields = ('content', 'author__username', 'book__title')
+    readonly_fields = ('created_at', 'updated_at')
