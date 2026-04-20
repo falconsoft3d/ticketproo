@@ -209,6 +209,13 @@ def get_cap_submenu(request, active_item=None):
             'count': None,
             'active': active_item == 'qr'
         },
+        {
+            'name': 'Capacitaciones',
+            'url': reverse('capacitacion_list'),
+            'icon': 'bi bi-journal-check',
+            'count': None,
+            'active': active_item == 'capacitaciones'
+        },
     ]
     
     return submenu

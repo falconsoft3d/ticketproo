@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if cap %}Editar Capacitación{% else %}Nueva Capacitación{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width:760px;">
+    <div class="d-flex align-items-center gap-2 mb-4">
+        <a href="{% if cap %}{% url 'capacitacion_detail' cap.pk %}{% else %}{% url 'capacitacion_list' %}{% endif %}"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+        <h2 class="mb-0">
+            <i class="bi bi-journal-check text-primary"></i>
+            {% if cap %}Editar Capacitación{% else %}Nueva Capacitación{% endif %}
+        </h2>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+                    <input type="text" name="titulo" class="form-control"
+                           value="{% if cap %}{{ cap.titulo }}{% endif %}" required
+                           placeholder="Nombre de la capacitación">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Temas</label>
+                    <textarea name="temas" class="form-control" rows="4"
+                              placeholder="Descripción general de los temas que cubre esta capacitación">{% if cap %}{{ cap.temas }}{% endif %}</textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Usuarios asignados</label>
+                    <select name="assigned_users" class="form-select" multiple size="6">
+                        {% for u in users %}
+                        <option value="{{ u.pk }}"
+                            {% if cap and u in cap.assigned_users.all %}selected{% endif %}>
+                            {{ u.get_full_name|default:u.username }} ({{ u.username }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Mantén Ctrl/Cmd para seleccionar varios.</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Empresas asignadas</label>
+                    <select name="assigned_companies" class="form-select" multiple size="5">
+                        {% for company in companies %}
+                        <option value="{{ company.pk }}"
+                            {% if cap and company in cap.assigned_companies.all %}selected{% endif %}>
+                            {{ company.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Mantén Ctrl/Cmd para seleccionar varias.</small>
+                </div>
+
+                {% if cap %}
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="is_active" name="is_active"
+                           {% if cap.is_active %}checked{% endif %}>
+                    <label class="form-check-label" for="is_active">Capacitación activa</label>
+                </div>
+                {% endif %}
+
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i>
+                        {% if cap %}Guardar cambios{% else %}Crear capacitación{% endif %}
+                    </button>
+                    <a href="{% if cap %}{% url 'capacitacion_detail' cap.pk %}{% else %}{% url 'capacitacion_list' %}{% endif %}"
+                       class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

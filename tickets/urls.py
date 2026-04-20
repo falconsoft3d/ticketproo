@@ -708,7 +708,17 @@ urlpatterns = [
     path('rfi/<int:pk>/close/', views.rfi_close, name='rfi_close'),
     path('rfi/<int:pk>/reopen/', views.rfi_reopen, name='rfi_reopen'),
     path('mis-rfi/', views.rfi_my_list, name='rfi_my_list'),
-    
+
+    # URLs de Capacitaciones
+    path('capacitaciones/', views.capacitacion_list, name='capacitacion_list'),
+    path('capacitaciones/crear/', views.capacitacion_create, name='capacitacion_create'),
+    path('capacitaciones/<int:pk>/', views.capacitacion_detail, name='capacitacion_detail'),
+    path('capacitaciones/<int:pk>/editar/', views.capacitacion_edit, name='capacitacion_edit'),
+    path('capacitaciones/<int:pk>/eliminar/', views.capacitacion_delete, name='capacitacion_delete'),
+    path('capacitaciones/<int:pk>/lineas/<int:linea_id>/eliminar/', views.capacitacion_linea_delete, name='capacitacion_linea_delete'),
+    path('capacitaciones/<int:pk>/respuestas/<int:respuesta_id>/eliminar/', views.capacitacion_respuesta_delete, name='capacitacion_respuesta_delete'),
+    path('public/capacitaciones/<uuid:token>/', views.capacitacion_public, name='capacitacion_public'),
+
     # URLs públicas de exámenes (sin autenticación)
     path('exam/<str:token>/', views.exam_take_public, name='exam_take_public'),
     path('exam/<str:token>/start/', views.exam_take_questions, name='exam_take_questions'),
@@ -1782,6 +1792,17 @@ urlpatterns += [
     path('rfi/<int:pk>/pdf/', views.rfi_pdf, name='rfi_pdf'),
     path('mis-rfi/', views.rfi_my_list, name='rfi_my_list'),
     path('public/rfi/<uuid:token>/', views.rfi_public, name='rfi_public'),
+
+    # ==================== CAPACITACIONES ====================
+    path('capacitaciones/', views.capacitacion_list, name='capacitacion_list'),
+    path('capacitaciones/crear/', views.capacitacion_create, name='capacitacion_create'),
+    path('capacitaciones/<int:pk>/', views.capacitacion_detail, name='capacitacion_detail'),
+    path('capacitaciones/<int:pk>/editar/', views.capacitacion_edit, name='capacitacion_edit'),
+    path('capacitaciones/<int:pk>/eliminar/', views.capacitacion_delete, name='capacitacion_delete'),
+    path('capacitaciones/<int:pk>/lineas/<int:linea_id>/eliminar/', views.capacitacion_linea_delete, name='capacitacion_linea_delete'),
+    path('capacitaciones/<int:pk>/respuestas/<int:respuesta_id>/eliminar/', views.capacitacion_respuesta_delete, name='capacitacion_respuesta_delete'),
+    path('public/capacitaciones/<uuid:token>/', views.capacitacion_public, name='capacitacion_public'),
+
     path('tickets/<int:pk>/commit/', views.ticket_update_commit, name='ticket_update_commit'),
     path('tickets/<int:pk>/rating/', views.ticket_update_rating, name='ticket_update_rating'),
 ]

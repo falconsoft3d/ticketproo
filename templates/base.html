@@ -506,6 +506,12 @@
                                     {% endif %}
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item {% if 'capacitacion' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'capacitacion_list' %}">
+                                    <i class="bi bi-journal-check"></i> Capacitaciones
+                                </a>
+                            </li>
                             {% if is_agent %}
                             <li>
                                 <a class="dropdown-item {% if 'crm_question' in request.resolver_match.url_name %}active{% endif %}" 
@@ -1675,7 +1681,7 @@
     <main class="container mt-4">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show auto-dismiss" role="alert">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
@@ -8333,6 +8339,18 @@
 
     </script>
     {% endif %}
+
+    <script>
+        // Auto-cierre de alertas con clase .auto-dismiss después de 4 segundos
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.auto-dismiss').forEach(function (el) {
+                setTimeout(function () {
+                    var bsAlert = bootstrap.Alert.getOrCreateInstance(el);
+                    bsAlert.close();
+                }, 4000);
+            });
+        });
+    </script>
 
 </body>
 </html>

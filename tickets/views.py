@@ -55613,3 +55613,237 @@ def project_book_pdf(request, pk):
 
     entries = book.entries.select_related('author').order_by('created_at')
     return render(request, 'tickets/project_book_pdf.html', {'book': book, 'entries': entries})
+
+# ─────────────────────────────────────────────────────────────
+# CAPACITACIONES
+# ─────────────────────────────────────────────────────────────
+
+@login_required
+def capacitacion_list(request):
+    """Lista de capacitaciones: agentes ven todas, usuarios ven las asignadas"""
+    from .models import Capacitacion
+    user = request.user
+    if is_agent(user) or user.is_staff or user.is_superuser:
+        capacitaciones = Capacitacion.objects.select_related("created_by").order_by("-created_at")
+    else:
+        user_company = getattr(getattr(user, "profile", None), "company", None)
+        qs = Capacitacion.objects.filter(is_active=True)
+        if user_company:
+            qs = qs.filter(
+                Q(assigned_users=user) | Q(assigned_companies=user_company)
+            )
+        else:
+            qs = qs.filter(assigned_users=user)
+        capacitaciones = qs.distinct().select_related("created_by").order_by("-created_at")
+    return render(request, "tickets/capacitacion_list.html", {"capacitaciones": capacitaciones})
+
+
+@login_required
+def capacitacion_create(request):
+    """Crear nueva capacitación (solo agentes)"""
+    from .models import Capacitacion
+    if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
+        messages.error(request, "No tienes permiso para crear capacitaciones.")
+        return redirect("capacitacion_list")
+    from .models import Company
+    companies = Company.objects.filter(is_active=True).order_by("name")
+    users = User.objects.filter(is_active=True).order_by("first_name", "last_name", "username")
+    if request.method == "POST":
+        titulo = request.POST.get("titulo", "").strip()
+        temas = request.POST.get("temas", "").strip()
+        user_ids = request.POST.getlist("assigned_users")
+        company_ids = request.POST.getlist("assigned_companies")
+        if not titulo:
+            messages.error(request, "El título es obligatorio.")
+        else:
+            cap = Capacitacion.objects.create(
+                titulo=titulo,
+                temas=temas,
+                created_by=request.user,
+            )
+            if user_ids:
+                cap.assigned_users.set(User.objects.filter(pk__in=user_ids))
+            if company_ids:
+                cap.assigned_companies.set(companies.filter(pk__in=company_ids))
+            messages.success(request, f"Capacitación \"{titulo}\" creada exitosamente.")
+            return redirect("capacitacion_detail", pk=cap.pk)
+    return render(request, "tickets/capacitacion_form.html", {
+        "companies": companies,
+        "users": users,
+    })
+
+
+@login_required
+def capacitacion_detail(request, pk):
+    """Detalle de capacitación con sus líneas/tareas"""
+    from .models import Capacitacion, CapacitacionLinea, CapacitacionRespuesta
+    cap = get_object_or_404(Capacitacion, pk=pk)
+    if not cap.user_can_view(request.user):
+        messages.error(request, "No tienes acceso a esta capacitación.")
+        return redirect("capacitacion_list")
+    can_manage = is_agent(request.user) or request.user.is_staff or request.user.is_superuser
+    lineas = cap.lineas.prefetch_related("respuestas__submitted_by").order_by("orden", "created_at")
+
+    # Manejar envío de respuesta (POST sin acción especial)
+    if request.method == "POST":
+        action = request.POST.get("action", "")
+        if action == "add_linea" and can_manage:
+            tarea = request.POST.get("tarea", "").strip()
+            descripcion = request.POST.get("descripcion", "").strip()
+            orden = request.POST.get("orden", 0)
+            if tarea:
+                CapacitacionLinea.objects.create(
+                    capacitacion=cap,
+                    tarea=tarea,
+                    descripcion=descripcion,
+                    orden=orden or 0,
+                )
+                messages.success(request, "Línea agregada.")
+        elif action == "add_respuesta":
+            linea_id = request.POST.get("linea_id")
+            nombre = request.POST.get("nombre", "").strip()
+            enlace = request.POST.get("enlace", "").strip()
+            linea = CapacitacionLinea.objects.filter(pk=linea_id, capacitacion=cap).first()
+            if linea and nombre and enlace:
+                CapacitacionRespuesta.objects.create(
+                    linea=linea,
+                    nombre=nombre,
+                    enlace=enlace,
+                    submitted_by=request.user,
+                )
+                messages.success(request, "Respuesta enviada.")
+            else:
+                messages.error(request, "Nombre y enlace son obligatorios.")
+        return redirect("capacitacion_detail", pk=pk)
+
+    return render(request, "tickets/capacitacion_detail.html", {
+        "cap": cap,
+        "lineas": lineas,
+        "can_manage": can_manage,
+    })
+
+
+@login_required
+def capacitacion_edit(request, pk):
+    """Editar capacitación (solo agentes)"""
+    from .models import Capacitacion
+    from .models import Company
+    cap = get_object_or_404(Capacitacion, pk=pk)
+    if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
+        messages.error(request, "No tienes permiso para editar esta capacitación.")
+        return redirect("capacitacion_detail", pk=pk)
+    companies = Company.objects.filter(is_active=True).order_by("name")
+    users = User.objects.filter(is_active=True).order_by("first_name", "last_name", "username")
+    if request.method == "POST":
+        titulo = request.POST.get("titulo", "").strip()
+        temas = request.POST.get("temas", "").strip()
+        user_ids = request.POST.getlist("assigned_users")
+        company_ids = request.POST.getlist("assigned_companies")
+        is_active = request.POST.get("is_active") == "on"
+        if not titulo:
+            messages.error(request, "El título es obligatorio.")
+        else:
+            cap.titulo = titulo
+            cap.temas = temas
+            cap.is_active = is_active
+            cap.save()
+            cap.assigned_users.set(User.objects.filter(pk__in=user_ids))
+            cap.assigned_companies.set(companies.filter(pk__in=company_ids))
+            messages.success(request, "Capacitación actualizada.")
+            return redirect("capacitacion_detail", pk=pk)
+    return render(request, "tickets/capacitacion_form.html", {
+        "cap": cap,
+        "companies": companies,
+        "users": users,
+    })
+
+
+@login_required
+def capacitacion_delete(request, pk):
+    """Eliminar capacitación (solo agentes)"""
+    from .models import Capacitacion
+    cap = get_object_or_404(Capacitacion, pk=pk)
+    if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
+        messages.error(request, "No tienes permiso para eliminar esta capacitación.")
+        return redirect("capacitacion_detail", pk=pk)
+    if request.method == "POST":
+        titulo = cap.titulo
+        cap.delete()
+        messages.success(request, f"Capacitación \"{titulo}\" eliminada.")
+        return redirect("capacitacion_list")
+    return render(request, "tickets/capacitacion_delete.html", {"cap": cap})
+
+
+@login_required
+def capacitacion_linea_delete(request, pk, linea_id):
+    """Eliminar una línea de capacitación (solo agentes)"""
+    from .models import Capacitacion, CapacitacionLinea
+    cap = get_object_or_404(Capacitacion, pk=pk)
+    linea = get_object_or_404(CapacitacionLinea, pk=linea_id, capacitacion=cap)
+    if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
+        messages.error(request, "No tienes permiso.")
+        return redirect("capacitacion_detail", pk=pk)
+    if request.method == "POST":
+        linea.delete()
+        messages.success(request, "Línea eliminada.")
+    return redirect("capacitacion_detail", pk=pk)
+
+
+@login_required
+def capacitacion_respuesta_delete(request, pk, respuesta_id):
+    """Eliminar una respuesta (solo agentes o el propio autor)"""
+    from .models import Capacitacion, CapacitacionRespuesta
+    cap = get_object_or_404(Capacitacion, pk=pk)
+    respuesta = get_object_or_404(CapacitacionRespuesta, pk=respuesta_id, linea__capacitacion=cap)
+    can_delete = (
+        is_agent(request.user)
+        or request.user.is_staff
+        or request.user.is_superuser
+        or respuesta.submitted_by == request.user
+    )
+    if not can_delete:
+        messages.error(request, "No tienes permiso.")
+        return redirect("capacitacion_detail", pk=pk)
+    if request.method == "POST":
+        respuesta.delete()
+        messages.success(request, "Respuesta eliminada.")
+    return redirect("capacitacion_detail", pk=pk)
+
+
+def capacitacion_public(request, token):
+    """Vista pública de una capacitación accesible sin login mediante token UUID"""
+    from .models import Capacitacion, CapacitacionLinea, CapacitacionRespuesta
+
+    cap = get_object_or_404(Capacitacion, public_token=token, is_active=True)
+    lineas = cap.lineas.prefetch_related("respuestas__submitted_by").order_by("orden", "created_at")
+
+    error = None
+    if request.method == "POST":
+        linea_id = request.POST.get("linea_id")
+        nombre = request.POST.get("nombre", "").strip()
+        enlace = request.POST.get("enlace", "").strip()
+        linea = CapacitacionLinea.objects.filter(pk=linea_id, capacitacion=cap).first()
+        if not linea:
+            error = "Línea no válida."
+        elif not nombre:
+            error = "Por favor ingresa tu nombre."
+        elif not enlace:
+            error = "Por favor ingresa un enlace."
+        else:
+            submitted_by = request.user if request.user.is_authenticated else None
+            CapacitacionRespuesta.objects.create(
+                linea=linea,
+                nombre=nombre,
+                enlace=enlace,
+                submitted_by=submitted_by,
+            )
+            from django.http import HttpResponseRedirect
+            return HttpResponseRedirect(request.path + "?ok=1#linea-" + str(linea.pk))
+
+    return render(request, "tickets/capacitacion_public.html", {
+        "cap": cap,
+        "lineas": lineas,
+        "error": error,
+        "ok": request.GET.get("ok"),
+    })
+

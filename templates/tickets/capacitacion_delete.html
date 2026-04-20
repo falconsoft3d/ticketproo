@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Capacitación{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width:520px;">
+    <div class="card border-danger shadow-sm">
+        <div class="card-header bg-danger text-white">
+            <i class="bi bi-exclamation-triangle"></i> Confirmar eliminación
+        </div>
+        <div class="card-body">
+            <p>¿Seguro que deseas eliminar la capacitación
+                <strong>{{ cap.titulo }}</strong>?
+            </p>
+            <p class="text-danger small">
+                <i class="bi bi-info-circle"></i>
+                Se eliminarán también todas sus líneas y respuestas. Esta acción no se puede deshacer.
+            </p>
+            <div class="d-flex gap-2 mt-3">
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </button>
+                </form>
+                <a href="{% url 'capacitacion_detail' cap.pk %}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

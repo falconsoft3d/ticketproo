@@ -31,7 +31,8 @@ from .models import (
     Checklist, ChecklistItem, Transaction, KnowledgeBase, Translation, SQLQuery,
     OdooConnection, OdooRPCTable, OdooRPCField, OdooRPCData, OdooRPCImportFile,
     Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage, ChatbotClick, CourseApproval, PrivacyPolicy,
-    Invoice, InvoiceLine, Manual, ManualAccess, ProjectBook, ProjectBookEntry
+    Invoice, InvoiceLine, Manual, ManualAccess, ProjectBook, ProjectBookEntry,
+    Capacitacion, CapacitacionLinea, CapacitacionRespuesta
 )
 
 # Configuración del sitio de administración
@@ -7098,3 +7099,33 @@ class ProjectBookEntryAdmin(admin.ModelAdmin):
     list_filter = ('is_agent_entry', 'book')
     search_fields = ('content', 'author__username', 'book__title')
     readonly_fields = ('created_at', 'updated_at')
+
+
+# ─── Capacitaciones ───────────────────────────────────────────────────────────
+
+class CapacitacionLineaInline(admin.TabularInline):
+    model = CapacitacionLinea
+    extra = 0
+    fields = ('orden', 'tarea', 'descripcion')
+
+
+@admin.register(Capacitacion)
+class CapacitacionAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'created_by', 'created_at', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('titulo', 'temas')
+    filter_horizontal = ('assigned_users', 'assigned_companies')
+    readonly_fields = ('created_at',)
+
+
+@admin.register(CapacitacionLinea)
+class CapacitacionLineaAdmin(admin.ModelAdmin):
+    list_display = ('capacitacion', 'orden', 'tarea')
+    list_filter = ('capacitacion',)
+    search_fields = ('tarea',)
+
+
+@admin.register(CapacitacionRespuesta)
+class CapacitacionRespuestaAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'linea', 'enlace', 'submitted_by', 'created_at')
+    search_fields = ('nombre', 'enlace')

@@ -23637,3 +23637,119 @@ class RFIComment(models.Model):
 
     def __str__(self):
         return f"Comentario de {self.author} en {self.rfi}"
+
+
+# ─────────────────────────────────────────────────────────────
+# CAPACITACIONES
+# ─────────────────────────────────────────────────────────────
+
+class Capacitacion(models.Model):
+    """Capacitación asignable a usuarios y/o empresas"""
+
+    titulo = models.CharField(max_length=300, verbose_name='Título')
+    temas = models.TextField(
+        blank=True,
+        verbose_name='Temas',
+        help_text='Descripción general de los temas que cubre la capacitación',
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='capacitaciones_creadas',
+        verbose_name='Creado por',
+    )
+    assigned_users = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name='capacitaciones_asignadas',
+        verbose_name='Usuarios asignados',
+    )
+    assigned_companies = models.ManyToManyField(
+        'Company',
+        blank=True,
+        related_name='capacitaciones_asignadas',
+        verbose_name='Empresas asignadas',
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+    is_active = models.BooleanField(default=True, verbose_name='Activa')
+    public_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        verbose_name='Token público',
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Capacitación'
+        verbose_name_plural = 'Capacitaciones'
+
+    def __str__(self):
+        return self.titulo
+
+    def user_can_view(self, user):
+        """Retorna True si el usuario tiene acceso a esta capacitación"""
+        from tickets.utils import is_agent
+        if is_agent(user) or user.is_staff or user.is_superuser:
+            return True
+        if self.assigned_users.filter(pk=user.pk).exists():
+            return True
+        user_company = getattr(getattr(user, 'profile', None), 'company', None)
+        if user_company and self.assigned_companies.filter(pk=user_company.pk).exists():
+            return True
+        return False
+
+
+class CapacitacionLinea(models.Model):
+    """Línea/tarea de una capacitación (la llena el agente)"""
+
+    capacitacion = models.ForeignKey(
+        Capacitacion,
+        on_delete=models.CASCADE,
+        related_name='lineas',
+        verbose_name='Capacitación',
+    )
+    orden = models.PositiveIntegerField(default=0, verbose_name='Orden')
+    tarea = models.CharField(max_length=500, verbose_name='Tarea')
+    descripcion = models.TextField(blank=True, verbose_name='Descripción')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+
+    class Meta:
+        ordering = ['orden', 'created_at']
+        verbose_name = 'Línea de Capacitación'
+        verbose_name_plural = 'Líneas de Capacitación'
+
+    def __str__(self):
+        return f"{self.capacitacion} – {self.tarea}"
+
+
+class CapacitacionRespuesta(models.Model):
+    """Respuesta de un usuario a una línea/tarea de capacitación"""
+
+    linea = models.ForeignKey(
+        CapacitacionLinea,
+        on_delete=models.CASCADE,
+        related_name='respuestas',
+        verbose_name='Línea',
+    )
+    nombre = models.CharField(max_length=200, verbose_name='Nombre')
+    enlace = models.URLField(verbose_name='Enlace / URL')
+    submitted_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='capacitacion_respuestas',
+        verbose_name='Enviado por',
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de envío')
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Respuesta de Capacitación'
+        verbose_name_plural = 'Respuestas de Capacitación'
+
+    def __str__(self):
+        return f"{self.nombre} → {self.enlace}"
