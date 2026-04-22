@@ -681,6 +681,14 @@ def dashboard_view(request):
     kpi_rfi_open = _all_rfis.filter(closed_at__isnull=True).count()
     kpi_rfi_total = _all_rfis.count()
 
+    # KPI: días sin nuevos tickets
+    from django.utils import timezone as tz
+    _last_ticket = Ticket.objects.filter(_ticket_q).order_by('-created_at').first() if not is_agent(request.user) else Ticket.objects.order_by('-created_at').first()
+    if _last_ticket:
+        kpi_days_without_tickets = (tz.now().date() - _last_ticket.created_at.date()).days
+    else:
+        kpi_days_without_tickets = None
+
     context.update({
         'kpi_tickets_pending': kpi_tickets_pending,
         'kpi_tickets_total': kpi_tickets_total,
@@ -688,6 +696,7 @@ def dashboard_view(request):
         'kpi_rfi_total': kpi_rfi_total,
         'kpi_courses_total': kpi_courses_total,
         'kpi_docs_total': kpi_docs_total,
+        'kpi_days_without_tickets': kpi_days_without_tickets,
     })
 
     # Libros de proyecto visibles para el usuario

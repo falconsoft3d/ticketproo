@@ -120,61 +120,75 @@
 </div>
 
 <!-- KPI Cards -->
-<div class="row mb-4 g-3">
+<div class="row mb-4 g-2 flex-nowrap">
     <!-- Tickets Pendientes / Totales -->
-    <div class="col-6 col-md-3">
+    <div class="col">
         <a href="{% url 'ticket_list' %}" class="text-decoration-none">
             <div class="card h-100 border-0" style="background:#1565c0; color:#fff;">
-                <div class="card-body text-center py-4">
-                    <i class="bi bi-ticket-perforated-fill" style="font-size:2.5rem;opacity:.8;"></i>
-                    <div class="mt-2" style="font-size:2.2rem;font-weight:700;line-height:1.1;">
-                        {{ kpi_tickets_pending }}
-                        <span style="font-size:1rem;opacity:.7;">/ {{ kpi_tickets_total }}</span>
+                <div class="card-body text-center py-3">
+                    <i class="bi bi-ticket-perforated-fill" style="font-size:2rem;opacity:.8;"></i>
+                    <div class="mt-1" style="font-size:1.8rem;font-weight:700;line-height:1.1;">
+                        <span class="kpi-counter" data-target="{{ kpi_tickets_pending }}">0</span>
+                        <span style="font-size:.85rem;opacity:.7;">/ <span class="kpi-counter" data-target="{{ kpi_tickets_total }}">0</span></span>
                     </div>
-                    <div class="mt-1" style="font-size:.85rem;opacity:.85;">Tickets Pendientes</div>
+                    <div class="mt-1" style="font-size:.75rem;opacity:.85;">Tickets Pendientes</div>
                 </div>
             </div>
         </a>
     </div>
     <!-- RFI Abiertos / Totales -->
-    <div class="col-6 col-md-3">
+    <div class="col">
         <a href="{% url 'rfi_list' %}" class="text-decoration-none">
             <div class="card h-100 border-0" style="background:#c0392b; color:#fff;">
-                <div class="card-body text-center py-4">
-                    <i class="bi bi-file-earmark-text-fill" style="font-size:2.5rem;opacity:.8;"></i>
-                    <div class="mt-2" style="font-size:2.2rem;font-weight:700;line-height:1.1;">
-                        {{ kpi_rfi_open }}
-                        <span style="font-size:1rem;opacity:.7;">/ {{ kpi_rfi_total }}</span>
+                <div class="card-body text-center py-3">
+                    <i class="bi bi-file-earmark-text-fill" style="font-size:2rem;opacity:.8;"></i>
+                    <div class="mt-1" style="font-size:1.8rem;font-weight:700;line-height:1.1;">
+                        <span class="kpi-counter" data-target="{{ kpi_rfi_open }}">0</span>
+                        <span style="font-size:.85rem;opacity:.7;">/ <span class="kpi-counter" data-target="{{ kpi_rfi_total }}">0</span></span>
                     </div>
-                    <div class="mt-1" style="font-size:.85rem;opacity:.85;">RFI Pendientes</div>
+                    <div class="mt-1" style="font-size:.75rem;opacity:.85;">RFI Pendientes</div>
                 </div>
             </div>
         </a>
     </div>
     <!-- Cursos -->
-    <div class="col-6 col-md-3">
+    <div class="col">
         <a href="{% url 'course_list' %}" class="text-decoration-none">
             <div class="card h-100 border-0" style="background:#2e7d32; color:#fff;">
-                <div class="card-body text-center py-4">
-                    <i class="bi bi-mortarboard-fill" style="font-size:2.5rem;opacity:.8;"></i>
-                    <div class="mt-2" style="font-size:2.2rem;font-weight:700;line-height:1.1;">
-                        {{ kpi_courses_total }}
+                <div class="card-body text-center py-3">
+                    <i class="bi bi-mortarboard-fill" style="font-size:2rem;opacity:.8;"></i>
+                    <div class="mt-1" style="font-size:1.8rem;font-weight:700;line-height:1.1;">
+                        <span class="kpi-counter" data-target="{{ kpi_courses_total }}">0</span>
                     </div>
-                    <div class="mt-1" style="font-size:.85rem;opacity:.85;">Cursos Disponibles</div>
+                    <div class="mt-1" style="font-size:.75rem;opacity:.85;">Cursos Disponibles</div>
                 </div>
             </div>
         </a>
     </div>
     <!-- Documentos -->
-    <div class="col-6 col-md-3">
+    <div class="col">
         <a href="{% url 'manual_list' %}" class="text-decoration-none">
             <div class="card h-100 border-0" style="background:#6a0080; color:#fff;">
-                <div class="card-body text-center py-4">
-                    <i class="bi bi-book" style="font-size:2.5rem;opacity:.8;"></i>
-                    <div class="mt-2" style="font-size:2.2rem;font-weight:700;line-height:1.1;">
-                        {{ kpi_docs_total }}
+                <div class="card-body text-center py-3">
+                    <i class="bi bi-book" style="font-size:2rem;opacity:.8;"></i>
+                    <div class="mt-1" style="font-size:1.8rem;font-weight:700;line-height:1.1;">
+                        <span class="kpi-counter" data-target="{{ kpi_docs_total }}">0</span>
                     </div>
-                    <div class="mt-1" style="font-size:.85rem;opacity:.85;">Manuales</div>
+                    <div class="mt-1" style="font-size:.75rem;opacity:.85;">Manuales</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <!-- Días sin nuevos tickets -->
+    <div class="col">
+        <a href="{% url 'ticket_list' %}" class="text-decoration-none">
+            <div class="card h-100 border-0" style="background:#00695c; color:#fff;">
+                <div class="card-body text-center py-3">
+                    <i class="bi bi-shield-check" style="font-size:2rem;opacity:.8;"></i>
+                    <div class="mt-1" style="font-size:1.8rem;font-weight:700;line-height:1.1;">
+                        {% if kpi_days_without_tickets is not None %}<span class="kpi-counter" data-target="{{ kpi_days_without_tickets }}">0</span>{% else %}—{% endif %}
+                    </div>
+                    <div class="mt-1" style="font-size:.75rem;opacity:.85;">Días sin nuevos Tickets</div>
                 </div>
             </div>
         </a>
@@ -1045,5 +1059,24 @@ function updateActiveTime() {
 // Actualizar cada minuto
 setInterval(updateActiveTime, 60000);
 {% endif %}
+
+// Animación de conteo incremental para KPIs
+document.addEventListener('DOMContentLoaded', function () {
+    const duration = 1200; // ms
+    document.querySelectorAll('.kpi-counter').forEach(function (el) {
+        const target = parseInt(el.dataset.target, 10);
+        if (isNaN(target) || target === 0) { el.textContent = target || 0; return; }
+        const start = performance.now();
+        function step(now) {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease-out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            el.textContent = Math.round(eased * target);
+            if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    });
+});
 </script>
 {% endblock %}
