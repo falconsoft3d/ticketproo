@@ -275,7 +275,8 @@ from .models import (
     AITutor, AITutorProgressReport, AITutorAttachment,
     ExpenseReport, ExpenseItem, ExpenseComment, ExpenseFund, VideoMeeting, MeetingNote, QuoteGenerator, Procedure,
     PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
-    AccessGroup, AccessLink, TaskPlan, TaskPlanDay, TaskPlanItem
+    AccessGroup, AccessLink, TaskPlan, TaskPlanDay, TaskPlanItem,
+    BlockedLoginAttempt,
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -302,6 +303,39 @@ from .forms import (
     ChecklistForm, ChecklistItemForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
+
+
+# ── Login personalizado con bloqueo error 401 ─────────────────────────────────
+from django.contrib.auth.views import LoginView as DjangoLoginView
+from django.contrib.auth import authenticate as auth_authenticate
+
+
+class CustomLoginView(DjangoLoginView):
+    """LoginView que bloquea usuarios con error_401 activo y registra los intentos."""
+
+    def form_valid(self, form):
+        user = form.get_user()
+        try:
+            if user.profile.error_401:
+                ip = self._get_client_ip()
+                ua = self.request.META.get('HTTP_USER_AGENT', '')[:512]
+                BlockedLoginAttempt.objects.create(user=user, ip_address=ip, user_agent=ua)
+                form.add_error(None, (
+                    'Error 401 – Error Interno. '
+                    'Este error ha sido registrado y será reportado al administrador para corregirlo.'
+                ))
+                return self.form_invalid(form)
+        except UserProfile.DoesNotExist:
+            pass
+        return super().form_valid(form)
+
+    def _get_client_ip(self):
+        x_forwarded_for = self.request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return self.request.META.get('REMOTE_ADDR')
+# ─────────────────────────────────────────────────────────────────────────────
+
 
 def home_view(request):
     """Vista para la página de inicio de TicketProo - accesible para todos"""

@@ -690,6 +690,15 @@ class UserEditForm(forms.ModelForm):
         label='IPs permitidas (opcional)',
         help_text='Lista de IPs permitidas separadas por comas. Dejar vacío para permitir cualquier IP.'
     )
+
+    error_401 = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        label='Error 401',
+        help_text='Si está marcado, el usuario no podrá iniciar sesión y verá un mensaje de error 401. Sus intentos quedarán registrados.'
+    )
     
     class Meta:
         model = User
@@ -747,6 +756,8 @@ class UserEditForm(forms.ModelForm):
                 self.fields['quote_terms_conditions'].initial = profile.quote_terms_conditions
                 # Cargar permiso de contactos
                 self.fields['can_see_all_contacts'].initial = profile.can_see_all_contacts
+                # Cargar estado error 401
+                self.fields['error_401'].initial = profile.error_401
             except UserProfile.DoesNotExist:
                 pass
                 
@@ -780,6 +791,7 @@ class UserEditForm(forms.ModelForm):
             profile.birth_date = birth_date
             profile.quote_terms_conditions = self.cleaned_data.get('quote_terms_conditions', '')
             profile.can_see_all_contacts = self.cleaned_data.get('can_see_all_contacts', False)
+            profile.error_401 = self.cleaned_data.get('error_401', False)
             profile.save()
             
             # Manejar configuración de acceso público

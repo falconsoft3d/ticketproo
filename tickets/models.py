@@ -1199,11 +1199,51 @@ class UserProfile(models.Model):
         self.save()
         return self.public_token
 
+    # Bloqueo de acceso con error 401
+    error_401 = models.BooleanField(
+        default=False,
+        verbose_name='Error 401',
+        help_text='Si está activo, el usuario no podrá iniciar sesión y verá un mensaje de error 401'
+    )
+
     def regenerate_api_token(self):
         """Regenera el token de API"""
         self.api_token = uuid.uuid4()
         self.save()
         return self.api_token
+
+
+class BlockedLoginAttempt(models.Model):
+    """Registro de intentos de login bloqueados por error 401"""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='blocked_login_attempts',
+        verbose_name='Usuario'
+    )
+    attempted_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha y hora del intento'
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    user_agent = models.CharField(
+        max_length=512,
+        blank=True,
+        default='',
+        verbose_name='Agente de usuario'
+    )
+
+    class Meta:
+        verbose_name = 'Intento de login bloqueado'
+        verbose_name_plural = 'Intentos de login bloqueados'
+        ordering = ['-attempted_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.attempted_at.strftime('%d/%m/%Y %H:%M:%S')}"
 
 
 @receiver(post_save, sender=User)
