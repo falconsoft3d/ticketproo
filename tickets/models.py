@@ -9398,22 +9398,35 @@ class ProductVideo(models.Model):
     def __str__(self):
         return f"{self.product.name} — {self.title or self.url}"
 
+    def _get_youtube_id(self):
+        import re
+        url = self.url
+        yt = re.match(r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([\w-]+)', url)
+        if yt:
+            return yt.group(1)
+        yt_short = re.match(r'(?:https?://)?youtu\.be/([\w-]+)', url)
+        if yt_short:
+            return yt_short.group(1)
+        return None
+
     def get_embed_url(self):
         """Convierte URLs de YouTube/Vimeo a embed, el resto se deja igual"""
         import re
         url = self.url
-        # YouTube watch
-        yt = re.match(r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([\w-]+)', url)
-        if yt:
-            return f"https://www.youtube.com/embed/{yt.group(1)}"
-        # YouTube short
-        yt_short = re.match(r'(?:https?://)?youtu\.be/([\w-]+)', url)
-        if yt_short:
-            return f"https://www.youtube.com/embed/{yt_short.group(1)}"
+        yt_id = self._get_youtube_id()
+        if yt_id:
+            return f"https://www.youtube.com/embed/{yt_id}"
         # Vimeo
         vimeo = re.match(r'(?:https?://)?(?:www\.)?vimeo\.com/(\d+)', url)
         if vimeo:
             return f"https://player.vimeo.com/video/{vimeo.group(1)}"
+        return None
+
+    def get_thumbnail_url(self):
+        """Devuelve la URL de la miniatura del vídeo (YouTube: hqdefault)"""
+        yt_id = self._get_youtube_id()
+        if yt_id:
+            return f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg"
         return None
 
 

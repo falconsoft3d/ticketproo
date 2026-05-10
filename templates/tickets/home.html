@@ -515,16 +515,19 @@
                             </p>
                             {% endif %}
 
-                            <!-- Videos del producto (preview del primero) -->
+                            <!-- Videos del producto (miniatura del primero) -->
                             {% with videos=line.product.videos.all %}
                             {% if videos %}
                             <div class="mt-2">
                                 {% with video=videos.0 %}
-                                {% with embed=video.get_embed_url %}
-                                {% if embed %}
-                                <div class="ratio ratio-16x9 rounded overflow-hidden mb-2">
-                                    <iframe src="{{ embed }}" allowfullscreen loading="lazy" title="{{ video.title|default:'Video' }}"></iframe>
-                                </div>
+                                {% with thumb=video.get_thumbnail_url %}
+                                {% if thumb %}
+                                <a href="{{ video.url }}" target="_blank" rel="noopener noreferrer" class="d-block position-relative mb-2 rounded overflow-hidden" style="aspect-ratio:16/9;">
+                                    <img src="{{ thumb }}" alt="{{ video.title|default:'Video' }}" class="w-100 h-100 object-fit-cover">
+                                    <span class="position-absolute top-50 start-50 translate-middle bg-dark bg-opacity-50 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                                        <i class="bi bi-play-fill text-white fs-4"></i>
+                                    </span>
+                                </a>
                                 {% endif %}
                                 {% endwith %}
                                 {% endwith %}
