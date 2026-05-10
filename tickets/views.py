@@ -4356,7 +4356,7 @@ def public_app_catalogs(request):
 
 def public_product_detail(request, product_id):
     """Vista pública del detalle de un producto con sus videos"""
-    from .models import Product, SystemConfiguration
+    from .models import Product, SystemConfiguration, AppCatalogLine
     from django.db.models import F
     product = get_object_or_404(Product, pk=product_id, is_active=True)
     # Incrementar vistas del producto (una vez por sesión por producto)
@@ -4366,10 +4366,23 @@ def public_product_detail(request, product_id):
         request.session[session_key] = True
     config = SystemConfiguration.objects.first()
     currency_symbol = config.get_currency_symbol() if config else '€'
+
+    # Otros productos del mismo catálogo (excluye el actual, máx 3)
+    catalog_line = AppCatalogLine.objects.filter(
+        product=product, catalog__is_public=True, catalog__is_active=True
+    ).select_related('catalog').first()
+    related_products = []
+    if catalog_line:
+        related_products = AppCatalogLine.objects.filter(
+            catalog=catalog_line.catalog
+        ).exclude(product=product).select_related('product').order_by('-id')[:3]
+
     context = {
         'product': product,
         'videos': product.videos.all(),
         'currency_symbol': currency_symbol,
+        'related_products': related_products,
+        'catalog': catalog_line.catalog if catalog_line else None,
     }
     return render(request, 'tickets/public_product_detail.html', context)
 
