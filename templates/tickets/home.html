@@ -484,7 +484,7 @@
             <p class="text-white-50 mb-4">{{ catalog.description }}</p>
             {% endif %}
 
-            {% with lines=catalog.lines.all %}
+            {% with lines=catalog.lines.all|slice:":3" %}
             {% if lines %}
             <div class="row g-4">
                 {% for line in lines %}
