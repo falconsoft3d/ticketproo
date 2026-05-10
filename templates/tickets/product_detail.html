@@ -134,7 +134,15 @@
                             {% with embed=video.get_embed_url %}
                             {% if embed %}
                             <div class="ratio ratio-16x9 rounded overflow-hidden">
-                                <iframe src="{{ embed }}" allowfullscreen loading="lazy" title="{{ video.title|default:'Video' }}"></iframe>
+                                <iframe 
+                                    src="{{ embed }}"
+                                    title="{{ video.title|default:'Video' }}"
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    referrerpolicy="strict-origin-when-cross-origin"
+                                    allowfullscreen
+                                    loading="lazy">
+                                </iframe>
                             </div>
                             {% else %}
                             <a href="{{ video.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm w-100">
@@ -199,6 +207,12 @@
                             <td><strong><i class="bi bi-tag"></i> Nombre:</strong></td>
                             <td>{{ product.name }}</td>
                         </tr>
+                        {% if product.technical_name %}
+                        <tr>
+                            <td><strong><i class="bi bi-code-slash"></i> Nombre Técnico:</strong></td>
+                            <td><code>{{ product.technical_name }}</code></td>
+                        </tr>
+                        {% endif %}
                         <tr>
                             <td><strong><i class="bi bi-currency-dollar"></i> Precio:</strong></td>
                             <td class="text-success fw-bold">{{ product.price_with_currency }}</td>

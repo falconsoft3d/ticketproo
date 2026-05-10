@@ -4343,6 +4343,7 @@ def public_app_catalogs(request):
         catalogs = catalogs.filter(
             Q(name__icontains=query) |
             Q(lines__product__name__icontains=query) |
+            Q(lines__product__technical_name__icontains=query) |
             Q(lines__product__description__icontains=query)
         ).distinct()
     # Incrementar vistas de todos los catálogos visibles (una vez por sesión)

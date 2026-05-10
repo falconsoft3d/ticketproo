@@ -66,6 +66,9 @@
                                 <i class="bi bi-box-seam"></i> {{ line.product.name }}
                             </a>
                         </h5>
+                        {% if line.product.technical_name %}
+                        <small class="text-muted"><code>{{ line.product.technical_name }}</code></small>
+                        {% endif %}
                     </div>
                     <div class="card-body d-flex flex-column">
                         {% if line.product.description %}
@@ -93,13 +96,24 @@
                             {% with embed=video.get_embed_url %}
                             {% if embed %}
                             <div class="ratio ratio-16x9 rounded overflow-hidden mb-2">
-                                <iframe src="{{ embed }}" allowfullscreen loading="lazy" title="{{ video.title|default:'Video' }}"></iframe>
+                                <iframe 
+                                    src="{{ embed }}"
+                                    title="{{ video.title|default:'Video' }}"
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    referrerpolicy="strict-origin-when-cross-origin"
+                                    allowfullscreen
+                                    loading="lazy">
+                                </iframe>
                             </div>
                             {% endif %}
                             {% endwith %}
                             {% endwith %}
                             <a href="{% url 'public_product_detail' line.product.pk %}" class="btn btn-outline-danger btn-sm w-100 mb-2">
                                 <i class="bi bi-play-circle"></i> Ver todos los videos ({{ videos|length }})
+                            </a>
+                            <a href="{% url 'public_product_detail' line.product.pk %}" class="btn btn-outline-secondary btn-sm w-100 mb-2">
+                                <i class="bi bi-eye"></i> Ver detalle
                             </a>
                             <form method="post" action="{% url 'cart_add' line.product.pk %}">
                                 {% csrf_token %}

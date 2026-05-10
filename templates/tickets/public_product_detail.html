@@ -37,6 +37,9 @@
                     {% if product.sku %}
                     <p class="small text-muted"><strong>SKU:</strong> {{ product.sku }}</p>
                     {% endif %}
+                    {% if product.technical_name %}
+                    <p class="small text-muted"><strong><i class="bi bi-code-slash"></i> Nombre Técnico:</strong> <code>{{ product.technical_name }}</code></p>
+                    {% endif %}
 
                     <!-- Agregar al carrito -->
                     <form method="post" action="{% url 'cart_add' product.pk %}" class="mt-3">
@@ -76,10 +79,12 @@
                             {% if embed %}
                             <div class="ratio ratio-16x9 rounded overflow-hidden">
                                 <iframe src="{{ embed }}"
-                                        allowfullscreen
-                                        loading="lazy"
                                         title="{{ video.title|default:'Video' }}"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+                                        frameborder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        referrerpolicy="strict-origin-when-cross-origin"
+                                        allowfullscreen
+                                        loading="lazy">
                                 </iframe>
                             </div>
                             {% else %}

@@ -9273,6 +9273,13 @@ class Product(models.Model):
         max_length=200,
         verbose_name='Nombre del Producto'
     )
+
+    technical_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre Técnico',
+        help_text='Nombre técnico o código interno del producto'
+    )
     
     price = models.DecimalField(
         max_digits=10,

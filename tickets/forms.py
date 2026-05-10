@@ -5864,11 +5864,15 @@ class ProductForm(forms.ModelForm):
     class Meta:
         from .models import Product
         model = Product
-        fields = ['name', 'price', 'description', 'category', 'is_active', 'is_public']
+        fields = ['name', 'technical_name', 'price', 'description', 'category', 'is_active', 'is_public']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Nombre del producto'
+            }),
+            'technical_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre técnico o código interno'
             }),
             'price': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -5893,6 +5897,7 @@ class ProductForm(forms.ModelForm):
         }
         labels = {
             'name': 'Nombre del Producto',
+            'technical_name': 'Nombre Técnico',
             'price': 'Precio',
             'description': 'Descripción',
             'category': 'Categoría',
@@ -5901,6 +5906,7 @@ class ProductForm(forms.ModelForm):
         }
         help_texts = {
             'name': 'Nombre identificativo del producto',
+            'technical_name': 'Nombre técnico o código interno del producto (opcional)',
             'price': 'Precio del producto en la moneda base',
             'description': 'Descripción completa del producto, características, beneficios, etc.',
             'category': 'Categoría a la que pertenece el producto',
