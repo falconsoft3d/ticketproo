@@ -76,12 +76,44 @@ urlpatterns = [
     path('projects/<int:project_id>/duplicate/', views.project_duplicate, name='project_duplicate'),
     path('projects/<int:project_id>/generate-public-token/', views.project_generate_public_token, name='project_generate_public_token'),
     
+    # URLs de categorías de producto
+    path('products/categories/', views.product_category_list, name='product_category_list'),
+    path('products/categories/create/', views.product_category_create, name='product_category_create'),
+    path('products/categories/<int:pk>/edit/', views.product_category_edit, name='product_category_edit'),
+    path('products/categories/<int:pk>/delete/', views.product_category_delete, name='product_category_delete'),
+
+    # URLs de cotizaciones internas
+    path('cotizaciones/', views.cart_quotation_list, name='cart_quotation_list'),
+
     # URLs de productos (solo para agentes)
     path('products/', views.product_list, name='product_list'),
     path('products/create/', views.product_create, name='product_create'),
     path('products/<int:product_id>/', views.product_detail, name='product_detail'),
     path('products/<int:product_id>/edit/', views.product_edit, name='product_edit'),
     path('products/<int:product_id>/delete/', views.product_delete, name='product_delete'),
+    path('products/<int:product_id>/videos/add/', views.product_video_add, name='product_video_add'),
+    path('products/videos/<int:pk>/delete/', views.product_video_delete, name='product_video_delete'),
+
+    # URLs de Catálogo de Apps
+    path('catalogos/', views.public_app_catalogs, name='public_app_catalogs'),
+    path('catalogos/producto/<int:product_id>/', views.public_product_detail, name='public_product_detail'),
+
+    # URLs del carrito de compras
+    path('carrito/', views.cart_view, name='cart_view'),
+    path('carrito/agregar/<int:product_id>/', views.cart_add, name='cart_add'),
+    path('carrito/eliminar/<int:product_id>/', views.cart_remove, name='cart_remove'),
+    path('carrito/actualizar/', views.cart_update, name='cart_update'),
+    path('carrito/checkout/', views.cart_checkout, name='cart_checkout'),
+    path('carrito/cotizacion/<int:pk>/', views.cart_quotation_success, name='cart_quotation_success'),
+    path('carrito/cotizacion/<int:pk>/pdf/', views.cart_quotation_pdf, name='cart_quotation_pdf'),
+
+    path('app-catalogs/', views.app_catalog_list, name='app_catalog_list'),
+    path('app-catalogs/create/', views.app_catalog_create, name='app_catalog_create'),
+    path('app-catalogs/<int:pk>/', views.app_catalog_detail, name='app_catalog_detail'),
+    path('app-catalogs/<int:pk>/edit/', views.app_catalog_edit, name='app_catalog_edit'),
+    path('app-catalogs/<int:pk>/delete/', views.app_catalog_delete, name='app_catalog_delete'),
+    path('app-catalogs/<int:catalog_pk>/lines/add/', views.app_catalog_line_add, name='app_catalog_line_add'),
+    path('app-catalogs/lines/<int:pk>/delete/', views.app_catalog_line_delete, name='app_catalog_line_delete'),
     
     # URLs de adjuntos
     path('attachments/<int:attachment_id>/download/', views.download_attachment_view, name='download_attachment'),
@@ -735,6 +767,7 @@ urlpatterns = [
     path('contacto/', views.contacto_web, name='contacto_web'),
     path('contactos-web/', views.contactos_web_list, name='contactos_web_list'),
     path('contactos-web/<int:pk>/', views.contacto_web_detail, name='contacto_web_detail'),
+    path('quien-eres/', views.quien_eres_wizard, name='quien_eres_wizard'),
     
     # URLs públicas de subida de documentos
     path('public-uploads/', views.public_upload_url_list, name='public_upload_url_list'),

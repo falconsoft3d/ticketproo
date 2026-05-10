@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 500px;">
+    <div class="card border-0 shadow-sm border-danger">
+        <div class="card-header bg-danger text-white border-0">
+            <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Eliminar Categoría</h5>
+        </div>
+        <div class="card-body p-4">
+            <p>¿Estás seguro de que quieres eliminar la categoría <strong>{{ category.name }}</strong>?</p>
+            {% with count=category.products.count %}
+            {% if count > 0 %}
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-circle"></i>
+                Esta categoría tiene <strong>{{ count }} producto{{ count|pluralize }}</strong> asignado{{ count|pluralize }}.
+                Al eliminarla, esos productos quedarán sin categoría.
+            </div>
+            {% endif %}
+            {% endwith %}
+            <form method="post" class="d-flex gap-2 mt-3">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Sí, eliminar
+                </button>
+                <a href="{% url 'product_category_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

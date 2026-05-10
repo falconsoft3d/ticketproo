@@ -221,7 +221,17 @@
                                 </div>
                                 
                                 {% if item.description %}
-                                <p class="small text-muted mb-0">{{ item.description }}</p>
+                                <p class="small text-muted mb-1">{{ item.description }}</p>
+                                {% endif %}
+                                
+                                {% if item.notes %}
+                                <p class="small text-secondary mb-1"><i class="bi bi-sticky"></i> {{ item.notes }}</p>
+                                {% endif %}
+                                
+                                {% if item.url %}
+                                <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="small text-primary">
+                                    <i class="bi bi-link-45deg"></i> {{ item.url|truncatechars:60 }}
+                                </a>
                                 {% endif %}
                                 
                                 {% if item.is_completed and item.completed_at %}

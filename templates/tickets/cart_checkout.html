@@ -1,0 +1,87 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}Finalizar cotización{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width:860px;">
+    <h2 class="fw-bold mb-1"><i class="bi bi-receipt text-primary"></i> Datos para tu cotización</h2>
+    <p class="text-muted mb-4">Completa tu información y recibirás una cotización lista para descargar.</p>
+
+    {% if messages %}
+    {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- Formulario -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre completo <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" placeholder="Tu nombre" required value="{{ request.POST.name }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Correo electrónico <span class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" placeholder="correo@ejemplo.com" required value="{{ request.POST.email }}">
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-sm-6">
+                                <label class="form-label fw-bold">Teléfono</label>
+                                <input type="tel" name="phone" class="form-control" placeholder="+1 234 567 8900" value="{{ request.POST.phone }}">
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-bold">Empresa</label>
+                                <input type="text" name="company" class="form-control" placeholder="Nombre de tu empresa" value="{{ request.POST.company }}">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Notas adicionales</label>
+                            <textarea name="notes" class="form-control" rows="3" placeholder="¿Alguna pregunta o requerimiento especial?">{{ request.POST.notes }}</textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary fw-bold flex-grow-1">
+                                <i class="bi bi-check-circle"></i> Generar cotización
+                            </button>
+                            <a href="{% url 'cart_view' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen del pedido -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-header border-0 bg-primary text-white fw-bold">
+                    <i class="bi bi-bag-check"></i> Resumen del pedido
+                </div>
+                <div class="card-body p-3">
+                    {% for item in items %}
+                    <div class="d-flex justify-content-between align-items-center mb-2 small">
+                        <span class="fw-bold">{{ item.name }} <span class="text-muted fw-normal">x{{ item.quantity }}</span></span>
+                        <span class="text-success fw-bold">{{ currency_symbol }}{{ item.subtotal|floatformat:2 }}</span>
+                    </div>
+                    {% endfor %}
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold fs-5">
+                        <span>Total</span>
+                        <span class="text-success">{{ currency_symbol }}{{ total|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

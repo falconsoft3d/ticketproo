@@ -382,6 +382,12 @@ def home_view(request):
     latest_blog_posts = BlogPost.objects.filter(
         status='published'
     ).order_by('-created_at')[:4]
+
+    # Catálogos de Apps públicos
+    from .models import AppCatalog
+    public_catalogs = AppCatalog.objects.filter(
+        is_public=True, is_active=True
+    ).prefetch_related('lines__product__videos').order_by('-created_at')
     
     context = {
         'total_tickets': total_tickets,
@@ -393,6 +399,7 @@ def home_view(request):
         'concepts': concepts,
         'alcances': alcances,
         'latest_blog_posts': latest_blog_posts,
+        'public_catalogs': public_catalogs,
     }
     return render(request, 'tickets/home.html', context)
 
@@ -723,6 +730,18 @@ def dashboard_view(request):
     else:
         kpi_days_without_tickets = None
 
+    # KPI: checklist items completados/pendientes
+    from .models import ChecklistItem
+    if is_agent(request.user):
+        _checklist_items = ChecklistItem.objects.all()
+    else:
+        _cl_q = models.Q(checklist__created_by=request.user) | models.Q(checklist__assigned_user=request.user)
+        _checklist_items = ChecklistItem.objects.filter(_cl_q).distinct()
+    kpi_checklist_done = _checklist_items.filter(is_completed=True).count()
+    kpi_checklist_pending = _checklist_items.filter(is_completed=False).count()
+    kpi_checklist_total = kpi_checklist_done + kpi_checklist_pending
+    kpi_checklist_pct = round((kpi_checklist_done / kpi_checklist_total) * 100) if kpi_checklist_total > 0 else 0
+
     context.update({
         'kpi_tickets_pending': kpi_tickets_pending,
         'kpi_tickets_total': kpi_tickets_total,
@@ -731,6 +750,10 @@ def dashboard_view(request):
         'kpi_courses_total': kpi_courses_total,
         'kpi_docs_total': kpi_docs_total,
         'kpi_days_without_tickets': kpi_days_without_tickets,
+        'kpi_checklist_done': kpi_checklist_done,
+        'kpi_checklist_pending': kpi_checklist_pending,
+        'kpi_checklist_total': kpi_checklist_total,
+        'kpi_checklist_pct': kpi_checklist_pct,
     })
 
     # Libros de proyecto visibles para el usuario
@@ -4305,6 +4328,536 @@ def project_duplicate(request, project_id):
 
 
 # ========================
+# CATÁLOGO DE APPS
+# ========================
+
+def public_app_catalogs(request):
+    """Vista pública de todos los catálogos de apps marcados como públicos"""
+    from .models import AppCatalog
+    from django.db.models import F, Q
+    query = request.GET.get('q', '').strip()
+    catalogs = AppCatalog.objects.filter(
+        is_public=True, is_active=True
+    ).prefetch_related('lines__product__videos').order_by('-created_at')
+    if query:
+        catalogs = catalogs.filter(
+            Q(name__icontains=query) |
+            Q(lines__product__name__icontains=query) |
+            Q(lines__product__description__icontains=query)
+        ).distinct()
+    # Incrementar vistas de todos los catálogos visibles (una vez por sesión)
+    session_key = 'catalog_page_viewed'
+    if not request.session.get(session_key):
+        AppCatalog.objects.filter(is_public=True, is_active=True).update(view_count=F('view_count') + 1)
+        request.session[session_key] = True
+    return render(request, 'tickets/public_app_catalogs.html', {'catalogs': catalogs, 'query': query})
+
+
+def public_product_detail(request, product_id):
+    """Vista pública del detalle de un producto con sus videos"""
+    from .models import Product, SystemConfiguration
+    from django.db.models import F
+    product = get_object_or_404(Product, pk=product_id, is_active=True)
+    # Incrementar vistas del producto (una vez por sesión por producto)
+    session_key = f'product_viewed_{product_id}'
+    if not request.session.get(session_key):
+        Product.objects.filter(pk=product_id).update(view_count=F('view_count') + 1)
+        request.session[session_key] = True
+    config = SystemConfiguration.objects.first()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+    context = {
+        'product': product,
+        'videos': product.videos.all(),
+        'currency_symbol': currency_symbol,
+    }
+    return render(request, 'tickets/public_product_detail.html', context)
+
+
+# ========================
+# CARRITO DE COMPRAS PÚBLICO
+# ========================
+
+def cart_add(request, product_id):
+    """Agrega un producto al carrito de compras (sesión)"""
+    from .models import Product, SystemConfiguration
+    if request.method != 'POST':
+        return redirect('public_product_detail', product_id=product_id)
+
+    product = get_object_or_404(Product, pk=product_id, is_active=True)
+    cart = request.session.get('cart', {})
+    key = str(product_id)
+    config = SystemConfiguration.objects.first()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+
+    if key in cart:
+        cart[key]['quantity'] += 1
+    else:
+        cart[key] = {
+            'name': product.name,
+            'price': str(product.price),
+            'quantity': 1,
+            'currency': currency_symbol,
+        }
+    request.session['cart'] = cart
+    request.session.modified = True
+    messages.success(request, f'"{product.name}" agregado al carrito.')
+    next_url = request.POST.get('next') or request.META.get('HTTP_REFERER') or '/'
+    return redirect(next_url)
+
+
+def cart_view(request):
+    """Vista del carrito de compras"""
+    from .models import Product, SystemConfiguration
+    config = SystemConfiguration.objects.first()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+    cart = request.session.get('cart', {})
+    items = []
+    total = 0
+    for product_id, data in cart.items():
+        subtotal = float(data['price']) * data['quantity']
+        total += subtotal
+        items.append({
+            'product_id': product_id,
+            'name': data['name'],
+            'price': float(data['price']),
+            'quantity': data['quantity'],
+            'subtotal': subtotal,
+            'currency': data.get('currency', currency_symbol),
+        })
+    return render(request, 'tickets/public_cart.html', {
+        'items': items,
+        'total': total,
+        'currency_symbol': currency_symbol,
+    })
+
+
+def cart_remove(request, product_id):
+    """Elimina un producto del carrito"""
+    if request.method == 'POST':
+        cart = request.session.get('cart', {})
+        cart.pop(str(product_id), None)
+        request.session['cart'] = cart
+        request.session.modified = True
+        messages.success(request, 'Producto eliminado del carrito.')
+    return redirect('cart_view')
+
+
+def cart_update(request):
+    """Actualiza cantidades del carrito"""
+    if request.method == 'POST':
+        cart = request.session.get('cart', {})
+        for key, data in cart.items():
+            qty_str = request.POST.get(f'qty_{key}', '')
+            if qty_str.isdigit():
+                qty = int(qty_str)
+                if qty > 0:
+                    cart[key]['quantity'] = qty
+                else:
+                    cart.pop(key, None)
+        request.session['cart'] = cart
+        request.session.modified = True
+        messages.success(request, 'Carrito actualizado.')
+    return redirect('cart_view')
+
+
+def cart_checkout(request):
+    """Procesa el carrito y genera una cotización descargable"""
+    from .models import CartQuotation, CartQuotationItem, Product, SystemConfiguration
+    from decimal import Decimal
+    cart = request.session.get('cart', {})
+    if not cart:
+        messages.warning(request, 'Tu carrito está vacío.')
+        return redirect('cart_view')
+
+    config = SystemConfiguration.objects.first()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        company = request.POST.get('company', '').strip()
+        notes = request.POST.get('notes', '').strip()
+
+        if not name or not email:
+            messages.error(request, 'Nombre y correo son obligatorios.')
+        else:
+            # Calcular total
+            total = Decimal('0')
+            for data in cart.values():
+                total += Decimal(data['price']) * data['quantity']
+
+            # Crear cotización
+            quotation = CartQuotation.objects.create(
+                customer_name=name,
+                customer_email=email,
+                customer_phone=phone,
+                customer_company=company,
+                notes=notes,
+                total=total,
+            )
+            for product_id, data in cart.items():
+                try:
+                    product = Product.objects.get(pk=int(product_id))
+                except Product.DoesNotExist:
+                    product = None
+                CartQuotationItem.objects.create(
+                    quotation=quotation,
+                    product=product,
+                    product_name=data['name'],
+                    unit_price=Decimal(data['price']),
+                    quantity=data['quantity'],
+                )
+
+            # Vaciar carrito
+            request.session['cart'] = {}
+            request.session.modified = True
+            return redirect('cart_quotation_success', pk=quotation.pk)
+
+    # Preparar resumen del carrito para el template
+    items = []
+    total = 0
+    for product_id, data in cart.items():
+        subtotal = float(data['price']) * data['quantity']
+        total += subtotal
+        items.append({
+            'name': data['name'],
+            'price': float(data['price']),
+            'quantity': data['quantity'],
+            'subtotal': subtotal,
+        })
+    return render(request, 'tickets/cart_checkout.html', {
+        'items': items,
+        'total': total,
+        'currency_symbol': currency_symbol,
+    })
+
+
+def cart_quotation_success(request, pk):
+    """Página de éxito con la cotización generada"""
+    from .models import CartQuotation, SystemConfiguration
+    quotation = get_object_or_404(CartQuotation, pk=pk)
+    config = SystemConfiguration.objects.first()
+    return render(request, 'tickets/cart_quotation_success.html', {
+        'quotation': quotation,
+        'config': config,
+    })
+
+
+def cart_quotation_pdf(request, pk):
+    """Genera y descarga el PDF de la cotización"""
+    from .models import CartQuotation, SystemConfiguration
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from io import BytesIO
+    from django.http import HttpResponse
+
+    quotation = get_object_or_404(CartQuotation, pk=pk)
+    config = SystemConfiguration.objects.first()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+    company_name = config.company_name if config and hasattr(config, 'company_name') else 'TicketProo'
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=A4,
+        rightMargin=2*cm, leftMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm
+    )
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=20, textColor=colors.HexColor('#6f42c1'), spaceAfter=6)
+    sub_style = ParagraphStyle('Sub', parent=styles['Normal'], fontSize=10, textColor=colors.grey)
+    normal = styles['Normal']
+    bold = ParagraphStyle('Bold', parent=styles['Normal'], fontName='Helvetica-Bold')
+
+    story = []
+
+    # Encabezado
+    story.append(Paragraph(company_name, title_style))
+    story.append(Paragraph(f'Cotización: <b>{quotation.reference}</b>', bold))
+    story.append(Paragraph(f'Fecha: {quotation.created_at.strftime("%d/%m/%Y")}', sub_style))
+    story.append(Spacer(1, 0.5*cm))
+
+    # Datos del cliente
+    story.append(Paragraph('Datos del solicitante', ParagraphStyle('H2', parent=styles['Heading2'], fontSize=13, textColor=colors.HexColor('#343a40'))))
+    client_data = [
+        ['Nombre:', quotation.customer_name],
+        ['Correo:', quotation.customer_email],
+    ]
+    if quotation.customer_phone:
+        client_data.append(['Teléfono:', quotation.customer_phone])
+    if quotation.customer_company:
+        client_data.append(['Empresa:', quotation.customer_company])
+    ct = Table(client_data, colWidths=[4*cm, 12*cm])
+    ct.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    story.append(ct)
+    story.append(Spacer(1, 0.5*cm))
+
+    # Tabla de productos
+    story.append(Paragraph('Productos solicitados', ParagraphStyle('H2', parent=styles['Heading2'], fontSize=13, textColor=colors.HexColor('#343a40'))))
+    table_data = [['Producto', 'Precio unitario', 'Cantidad', 'Subtotal']]
+    for item in quotation.items.all():
+        table_data.append([
+            item.product_name,
+            f'{currency_symbol}{item.unit_price:,.2f}',
+            str(item.quantity),
+            f'{currency_symbol}{item.subtotal:,.2f}',
+        ])
+    # Fila total
+    table_data.append(['', '', 'TOTAL', f'{currency_symbol}{quotation.total:,.2f}'])
+
+    pt = Table(table_data, colWidths=[8*cm, 3.5*cm, 2.5*cm, 3*cm])
+    pt.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6f42c1')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor('#f3f0ff')]),
+        ('FONTNAME', (2, -1), (-1, -1), 'Helvetica-Bold'),
+        ('LINEABOVE', (0, -1), (-1, -1), 1, colors.HexColor('#6f42c1')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#dee2e6')),
+        ('INNERGRID', (0, 0), (-1, -2), 0.25, colors.HexColor('#dee2e6')),
+    ]))
+    story.append(pt)
+    story.append(Spacer(1, 0.8*cm))
+
+    if quotation.notes:
+        story.append(Paragraph('Notas:', bold))
+        story.append(Paragraph(quotation.notes, normal))
+        story.append(Spacer(1, 0.5*cm))
+
+    # Instrucciones de pago
+    story.append(Paragraph('¿Cómo proceder?', ParagraphStyle('H2', parent=styles['Heading2'], fontSize=13, textColor=colors.HexColor('#343a40'))))
+    instructions = (
+        'Para confirmar tu pedido, descarga esta cotización y envíanosla junto con el comprobante de pago. '
+        'Una vez verificado el pago, procederemos con la entrega de los productos/servicios solicitados. '
+        'Si tienes alguna duda, no dudes en contactarnos.'
+    )
+    story.append(Paragraph(instructions, normal))
+
+    doc.build(story)
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="cotizacion-{quotation.reference}.pdf"'
+    return response
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def app_catalog_list(request):
+    from .models import AppCatalog
+    catalogs = AppCatalog.objects.all().order_by('-created_at')
+    search = request.GET.get('search', '')
+    if search:
+        catalogs = catalogs.filter(name__icontains=search)
+    return render(request, 'tickets/app_catalog_list.html', {'catalogs': catalogs, 'search': search})
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def app_catalog_create(request):
+    from .forms import AppCatalogForm
+    if request.method == 'POST':
+        form = AppCatalogForm(request.POST)
+        if form.is_valid():
+            catalog = form.save(commit=False)
+            catalog.created_by = request.user
+            catalog.save()
+            messages.success(request, 'Catálogo creado correctamente.')
+            return redirect('app_catalog_detail', pk=catalog.pk)
+    else:
+        form = AppCatalogForm()
+    return render(request, 'tickets/app_catalog_form.html', {'form': form, 'page_title': 'Nuevo Catálogo'})
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def app_catalog_detail(request, pk):
+    from .models import AppCatalog, CartQuotationItem
+    from django.db.models import Sum, Count
+    catalog = get_object_or_404(AppCatalog, pk=pk)
+    lines = catalog.lines.select_related('product').all()
+    total = sum(line.get_subtotal() for line in lines)
+    total_product_views = sum(line.product.view_count for line in lines)
+
+    # IDs de productos del catálogo
+    product_ids = [line.product_id for line in lines if line.product_id]
+
+    # Veces agregado al carro (nº de líneas de cotización con estos productos)
+    cart_adds = CartQuotationItem.objects.filter(product_id__in=product_ids).aggregate(
+        total_adds=Count('id')
+    )['total_adds'] or 0
+
+    # Total vendido (suma de subtotales de cotizaciones)
+    total_sales = CartQuotationItem.objects.filter(product_id__in=product_ids).aggregate(
+        total=Sum('subtotal')
+    )['total'] or 0
+
+    return render(request, 'tickets/app_catalog_detail.html', {
+        'catalog': catalog,
+        'lines': lines,
+        'total': total,
+        'total_product_views': total_product_views,
+        'cart_adds': cart_adds,
+        'total_sales': total_sales,
+    })
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def app_catalog_edit(request, pk):
+    from .models import AppCatalog
+    from .forms import AppCatalogForm
+    catalog = get_object_or_404(AppCatalog, pk=pk)
+    if request.method == 'POST':
+        form = AppCatalogForm(request.POST, instance=catalog)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Catálogo actualizado.')
+            return redirect('app_catalog_detail', pk=catalog.pk)
+    else:
+        form = AppCatalogForm(instance=catalog)
+    return render(request, 'tickets/app_catalog_form.html', {'form': form, 'catalog': catalog, 'page_title': 'Editar Catálogo'})
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def app_catalog_delete(request, pk):
+    from .models import AppCatalog
+    catalog = get_object_or_404(AppCatalog, pk=pk)
+    if request.method == 'POST':
+        catalog.delete()
+        messages.success(request, 'Catálogo eliminado.')
+        return redirect('app_catalog_list')
+    return render(request, 'tickets/app_catalog_confirm_delete.html', {'catalog': catalog})
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def app_catalog_line_add(request, catalog_pk):
+    from .models import AppCatalog
+    from .forms import AppCatalogLineForm
+    catalog = get_object_or_404(AppCatalog, pk=catalog_pk)
+    if request.method == 'POST':
+        form = AppCatalogLineForm(request.POST)
+        if form.is_valid():
+            line = form.save(commit=False)
+            line.catalog = catalog
+            line.order = catalog.lines.count()
+            line.save()
+            messages.success(request, 'Producto agregado al catálogo.')
+            return redirect('app_catalog_detail', pk=catalog.pk)
+    else:
+        form = AppCatalogLineForm()
+    return render(request, 'tickets/app_catalog_line_form.html', {
+        'form': form,
+        'catalog': catalog,
+        'page_title': 'Agregar Producto',
+    })
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def app_catalog_line_delete(request, pk):
+    from .models import AppCatalogLine
+    line = get_object_or_404(AppCatalogLine, pk=pk)
+    catalog_pk = line.catalog.pk
+    line.delete()
+    messages.success(request, 'Línea eliminada.')
+    return redirect('app_catalog_detail', pk=catalog_pk)
+
+
+# ========================
+# CATEGORÍAS DE PRODUCTO
+# ========================
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def cart_quotation_list(request):
+    """Lista interna de cotizaciones del carrito"""
+    from .models import CartQuotation
+    quotations = CartQuotation.objects.all().order_by('-created_at')
+    return render(request, 'tickets/cart_quotation_list.html', {
+        'page_title': 'Cotizaciones',
+        'quotations': quotations,
+    })
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def product_category_list(request):
+    from .models import ProductCategory
+    categories = ProductCategory.objects.all().order_by('name')
+    return render(request, 'tickets/product_category_list.html', {
+        'page_title': 'Categorías de Producto',
+        'categories': categories,
+    })
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def product_category_create(request):
+    from .forms import ProductCategoryForm
+    if request.method == 'POST':
+        form = ProductCategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Categoría creada correctamente.')
+            return redirect('product_category_list')
+    else:
+        form = ProductCategoryForm()
+    return render(request, 'tickets/product_category_form.html', {
+        'page_title': 'Nueva Categoría',
+        'form': form,
+    })
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def product_category_edit(request, pk):
+    from .models import ProductCategory
+    from .forms import ProductCategoryForm
+    category = get_object_or_404(ProductCategory, pk=pk)
+    if request.method == 'POST':
+        form = ProductCategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Categoría actualizada correctamente.')
+            return redirect('product_category_list')
+    else:
+        form = ProductCategoryForm(instance=category)
+    return render(request, 'tickets/product_category_form.html', {
+        'page_title': f'Editar: {category.name}',
+        'form': form,
+        'category': category,
+    })
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def product_category_delete(request, pk):
+    from .models import ProductCategory
+    category = get_object_or_404(ProductCategory, pk=pk)
+    if request.method == 'POST':
+        name = category.name
+        category.delete()
+        messages.success(request, f'Categoría "{name}" eliminada.')
+        return redirect('product_category_list')
+    return render(request, 'tickets/product_category_confirm_delete.html', {
+        'page_title': 'Eliminar Categoría',
+        'category': category,
+    })
+
+
+# ========================
 # GESTIÓN DE PRODUCTOS
 # ========================
 
@@ -4435,8 +4988,39 @@ def product_detail(request, product_id):
         'page_title': f'Producto: {product.name}',
         'product': product,
         'currency_symbol': currency_symbol,
+        'videos': product.videos.all(),
     }
     return render(request, 'tickets/product_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def product_video_add(request, product_id):
+    """Agregar URL de video a un producto"""
+    from .models import Product, ProductVideo
+    product = get_object_or_404(Product, pk=product_id)
+    if request.method == 'POST':
+        url = request.POST.get('url', '').strip()
+        title = request.POST.get('title', '').strip()
+        if url:
+            ProductVideo.objects.create(product=product, url=url, title=title)
+            messages.success(request, 'Video agregado correctamente.')
+        else:
+            messages.error(request, 'La URL es obligatoria.')
+    return redirect('product_detail', product_id=product.pk)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def product_video_delete(request, pk):
+    """Eliminar una URL de video de un producto"""
+    from .models import ProductVideo
+    video = get_object_or_404(ProductVideo, pk=pk)
+    product_id = video.product.pk
+    if request.method == 'POST':
+        video.delete()
+        messages.success(request, 'Video eliminado.')
+    return redirect('product_detail', product_id=product_id)
 
 
 @login_required
@@ -4781,6 +5365,16 @@ def system_configuration_view(request):
             
             return redirect('system_configuration')
         
+        # Guardar solo campos de cotizaciones
+        if 'save_cotizaciones' in request.POST:
+            config.contact_name = request.POST.get('contact_name', '').strip()
+            config.contact_email = request.POST.get('contact_email', '').strip()
+            config.paypal_payment_email = request.POST.get('paypal_payment_email', '').strip()
+            config.forma_trabajo_url = request.POST.get('forma_trabajo_url', '').strip()
+            config.save(update_fields=['contact_name', 'contact_email', 'paypal_payment_email', 'forma_trabajo_url'])
+            messages.success(request, 'Datos de contacto de cotizaciones actualizados.')
+            return redirect(reverse('system_configuration') + '?tab=cotizaciones')
+
         # Verificar si es una prueba de email
         if 'test_email' in request.POST:
             try:
@@ -16433,6 +17027,173 @@ def exam_attempts_list(request):
 
 
 # ==================== CONTACTO WEB ====================
+
+def quien_eres_wizard(request):
+    """Formulario de contacto wizard público (3 pasos)"""
+    from .models import Contact, ContactoWeb, SystemConfiguration
+
+    step = request.session.get('quien_eres_step', 1)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'step1':
+            nombre = request.POST.get('nombre', '').strip()
+            email = request.POST.get('email', '').strip()
+            if not nombre or not email:
+                return render(request, 'tickets/quien_eres_wizard.html', {
+                    'step': 1,
+                    'error': 'El nombre y el email son obligatorios.',
+                    'data': request.POST,
+                })
+            request.session['quien_eres_data'] = {
+                'nombre': nombre,
+                'email': email,
+                'telefono': request.POST.get('telefono', '').strip(),
+                'empresa': request.POST.get('empresa', '').strip(),
+                'pais': request.POST.get('pais', '').strip(),
+                'ciudad': request.POST.get('ciudad', '').strip(),
+            }
+            request.session['quien_eres_step'] = 2
+            return redirect('quien_eres_wizard')
+
+        elif action == 'step2':
+            data = request.session.get('quien_eres_data', {})
+            mensaje = request.POST.get('mensaje', '').strip()
+            acepto_forma_trabajo = request.POST.get('acepto_forma_trabajo')
+            config = SystemConfiguration.objects.first()
+            ft_url = config.forma_trabajo_url if config else ''
+            if not mensaje:
+                return render(request, 'tickets/quien_eres_wizard.html', {
+                    'step': 2,
+                    'error': 'Por favor, cuéntame qué deseas hablar.',
+                    'data': request.POST,
+                    'config': config,
+                    'forma_trabajo_url': ft_url,
+                })
+            if ft_url and not acepto_forma_trabajo:
+                return render(request, 'tickets/quien_eres_wizard.html', {
+                    'step': 2,
+                    'error': 'Debes revisar y aceptar la forma de trabajo antes de continuar.',
+                    'data': request.POST,
+                    'config': config,
+                    'forma_trabajo_url': ft_url,
+                })
+            # Obtener IP
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            ip = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
+
+            # Verificar si el email ya existe en el CRM
+            email_contacto = data.get('email', '')
+            if email_contacto and Contact.objects.filter(email__iexact=email_contacto).exists():
+                # Guardar igualmente el mensaje en ContactoWeb como histórico
+                ContactoWeb.objects.create(
+                    nombre=data.get('nombre', ''),
+                    email=email_contacto,
+                    telefono=data.get('telefono') or None,
+                    empresa=data.get('empresa') or None,
+                    asunto='Contacto vía formulario ¿Quién eres? (email ya registrado)',
+                    mensaje=mensaje,
+                    ip_address=ip,
+                    user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+                )
+                request.session.pop('quien_eres_data', None)
+                request.session.pop('quien_eres_step', None)
+                request.session['quien_eres_step'] = 3
+                request.session['quien_eres_ya_registrado'] = True
+                return redirect('quien_eres_wizard')
+
+            # Crear contacto en el CRM (/contacts/)
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            system_user = User.objects.filter(is_superuser=True).order_by('id').first()
+            pais = data.get('pais', '')
+            ciudad = data.get('ciudad', '')
+            ubicacion = ', '.join(filter(None, [ciudad, pais]))
+            notas_contacto = mensaje
+            if ubicacion:
+                notas_contacto = f"Ubicación: {ubicacion}\n\n{mensaje}"
+            Contact.objects.create(
+                name=data.get('nombre', ''),
+                email=data.get('email', '') or None,
+                phone=data.get('telefono', '') or None,
+                company=data.get('empresa', '') or None,
+                country=pais or None,
+                source='Formulario ¿Quién eres?',
+                status='neutral',
+                notes=notas_contacto,
+                created_by=system_user,
+            )
+
+            # Crear ContactoWeb (registro histórico)
+            ContactoWeb.objects.create(
+                nombre=data.get('nombre', ''),
+                email=data.get('email', ''),
+                telefono=data.get('telefono') or None,
+                empresa=data.get('empresa') or None,
+                asunto='Contacto vía formulario ¿Quién eres?',
+                mensaje=mensaje,
+                ip_address=ip,
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+            )
+
+            # Notificación Telegram
+            config = SystemConfiguration.objects.first()
+            if config and config.telegram_bot_token and config.telegram_chat_id:
+                try:
+                    from .telegram_utils import send_telegram_message
+                    from django.utils import timezone
+                    nombre_c = data.get('nombre', '')
+                    email_c = data.get('email', '')
+                    telefono_c = data.get('telefono', '') or '—'
+                    empresa_c = data.get('empresa', '') or '—'
+                    pais_tg = data.get('pais', '') or '—'
+                    ciudad_tg = data.get('ciudad', '') or '—'
+                    tg_msg = (
+                        f"👋 <b>Nuevo contacto — ¿Quién eres?</b>\n\n"
+                        f"👤 <b>Nombre:</b> {nombre_c}\n"
+                        f"📧 <b>Email:</b> {email_c}\n"
+                        f"📞 <b>Teléfono:</b> {telefono_c}\n"
+                        f"🏢 <b>Empresa:</b> {empresa_c}\n"
+                        f"🌍 <b>País:</b> {pais_tg}\n"
+                        f"🏙️ <b>Ciudad:</b> {ciudad_tg}\n\n"
+                        f"💬 <b>Mensaje:</b>\n{mensaje}\n\n"
+                        f"🕐 {timezone.now().strftime('%d/%m/%Y %H:%M')}"
+                    )
+                    send_telegram_message(
+                        bot_token=config.telegram_bot_token,
+                        chat_id=config.telegram_chat_id,
+                        message=tg_msg,
+                        parse_mode='HTML',
+                    )
+                except Exception:
+                    pass
+
+            # Limpiar sesión
+            request.session.pop('quien_eres_data', None)
+            request.session.pop('quien_eres_step', None)
+            request.session['quien_eres_step'] = 3
+            return redirect('quien_eres_wizard')
+
+        elif action == 'restart':
+            request.session.pop('quien_eres_data', None)
+            request.session.pop('quien_eres_ya_registrado', None)
+            request.session['quien_eres_step'] = 1
+            return redirect('quien_eres_wizard')
+
+    else:
+        step = request.session.get('quien_eres_step', 1)
+
+    config = SystemConfiguration.objects.first()
+    ya_registrado = request.session.pop('quien_eres_ya_registrado', False)
+    return render(request, 'tickets/quien_eres_wizard.html', {
+        'step': step,
+        'config': config,
+        'data': request.session.get('quien_eres_data', {}),
+        'forma_trabajo_url': config.forma_trabajo_url if config else '',
+        'ya_registrado': ya_registrado,
+    })
+
 
 def contacto_web(request):
     """Vista pública para formulario de contacto"""
@@ -48192,7 +48953,12 @@ def task_plan_public(request, token):
 @login_required
 def checklist_list(request):
     """Listar todos los checklists del usuario"""
-    checklists = Checklist.objects.filter(created_by=request.user).prefetch_related('items')
+    if is_agent(request.user) or request.user.is_staff or request.user.is_superuser:
+        checklists = Checklist.objects.prefetch_related('items').select_related('assigned_user', 'created_by')
+    else:
+        checklists = Checklist.objects.filter(
+            Q(created_by=request.user) | Q(assigned_user=request.user)
+        ).prefetch_related('items').select_related('assigned_user', 'created_by')
     
     # Agregar estadísticas a cada checklist
     checklists_data = []
@@ -48236,7 +49002,13 @@ def checklist_create(request):
 @login_required
 def checklist_detail(request, pk):
     """Ver detalle de checklist con sus items"""
-    checklist = get_object_or_404(Checklist, id=pk, created_by=request.user)
+    if is_agent(request.user) or request.user.is_staff or request.user.is_superuser:
+        checklist = get_object_or_404(Checklist, id=pk)
+    else:
+        checklist = get_object_or_404(
+            Checklist,
+            Q(id=pk) & (Q(created_by=request.user) | Q(assigned_user=request.user))
+        )
     items = checklist.items.all()
     
     # Calcular estadísticas
@@ -48261,7 +49033,10 @@ def checklist_detail(request, pk):
 @login_required
 def checklist_edit(request, pk):
     """Editar checklist"""
-    checklist = get_object_or_404(Checklist, id=pk, created_by=request.user)
+    if is_agent(request.user) or request.user.is_staff or request.user.is_superuser:
+        checklist = get_object_or_404(Checklist, id=pk)
+    else:
+        checklist = get_object_or_404(Checklist, id=pk, created_by=request.user)
     
     if request.method == 'POST':
         form = ChecklistForm(request.POST, instance=checklist)
@@ -48283,7 +49058,10 @@ def checklist_edit(request, pk):
 @login_required
 def checklist_delete(request, pk):
     """Eliminar checklist"""
-    checklist = get_object_or_404(Checklist, id=pk, created_by=request.user)
+    if is_agent(request.user) or request.user.is_staff or request.user.is_superuser:
+        checklist = get_object_or_404(Checklist, id=pk)
+    else:
+        checklist = get_object_or_404(Checklist, id=pk, created_by=request.user)
     
     if request.method == 'POST':
         title = checklist.title
@@ -48301,7 +49079,13 @@ def checklist_delete(request, pk):
 @login_required
 def checklist_duplicate(request, pk):
     """Duplicar checklist con todos sus items"""
-    original = get_object_or_404(Checklist, id=pk, created_by=request.user)
+    if is_agent(request.user) or request.user.is_staff or request.user.is_superuser:
+        original = get_object_or_404(Checklist, id=pk)
+    else:
+        original = get_object_or_404(
+            Checklist,
+            Q(id=pk) & (Q(created_by=request.user) | Q(assigned_user=request.user))
+        )
     
     # Crear copia del checklist
     new_checklist = Checklist.objects.create(
@@ -48457,6 +49241,10 @@ def checklist_public(request, token):
 def checklist_item_toggle_public(request, token, item_pk):
     """Toggle estado de item desde vista pública (sin autenticación)"""
     checklist = get_object_or_404(Checklist, share_token=token, is_public=True)
+    
+    if not checklist.public_can_toggle:
+        return redirect('checklist_public', token=token)
+    
     item = get_object_or_404(ChecklistItem, id=item_pk, checklist=checklist)
     
     if request.method == 'POST':

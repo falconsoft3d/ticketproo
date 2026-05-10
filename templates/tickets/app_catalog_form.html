@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'app_catalog_list' %}">Catálogos de Apps</a></li>
+                    {% if catalog %}
+                    <li class="breadcrumb-item"><a href="{% url 'app_catalog_detail' catalog.pk %}">{{ catalog.name }}</a></li>
+                    {% endif %}
+                    <li class="breadcrumb-item active">{{ page_title }}</li>
+                </ol>
+            </nav>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-grid-3x3-gap"></i> {{ page_title }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label fw-bold">
+                                Nombre <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">
+                                Descripción
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="mb-3 form-check form-switch">
+                            {{ form.is_active }}
+                            <label class="form-check-label fw-bold" for="{{ form.is_active.id_for_label }}">
+                                Activo
+                            </label>
+                        </div>
+
+                        <div class="mb-3 form-check form-switch">
+                            {{ form.is_public }}
+                            <label class="form-check-label fw-bold" for="{{ form.is_public.id_for_label }}">
+                                Público
+                            </label>
+                            <div class="form-text">Si está activado, aparecerá en la página pública de catálogos y en el home.</div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Guardar
+                            </button>
+                            <a href="{% if catalog %}{% url 'app_catalog_detail' catalog.pk %}{% else %}{% url 'app_catalog_list' %}{% endif %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

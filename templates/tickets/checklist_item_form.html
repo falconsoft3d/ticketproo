@@ -47,6 +47,27 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-sticky"></i> {{ form.notes.label }}
+                            </label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="text-danger small mt-1">{{ form.notes.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.url.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-link-45deg"></i> {{ form.url.label }}
+                            </label>
+                            {{ form.url }}
+                            {% if form.url.errors %}
+                                <div class="text-danger small mt-1">{{ form.url.errors }}</div>
+                            {% endif %}
+                            <small class="text-muted">Deja en blanco si no aplica</small>
+                        </div>
+
+                        <div class="mb-3">
                             <label for="{{ form.cost.id_for_label }}" class="form-label fw-bold">
                                 {{ form.cost.label }}
                             </label>

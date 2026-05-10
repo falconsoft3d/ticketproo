@@ -193,6 +193,23 @@
             </div>
         </a>
     </div>
+    <!-- Checklist Tareas -->
+    <div class="col">
+        <a href="{% url 'checklist_list' %}" class="text-decoration-none">
+            <div class="card h-100 border-0" style="background:#e65100; color:#fff;">
+                <div class="card-body text-center py-3">
+                    <i class="bi bi-check2-all" style="font-size:2rem;opacity:.8;"></i>
+                    <div class="mt-1" style="font-size:1.8rem;font-weight:700;line-height:1.1;">
+                        <span class="kpi-counter" data-target="{{ kpi_checklist_done }}">0</span>
+                        <span style="font-size:.85rem;opacity:.7;">/ <span class="kpi-counter" data-target="{{ kpi_checklist_total }}">0</span></span>
+                    </div>
+                    <div class="mt-1" style="font-size:.75rem;opacity:.85;">
+                        Checklist ({{ kpi_checklist_pct }}%)
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
 </div>
 
 <!-- URLs Principales -->
@@ -523,7 +540,7 @@
                         </thead>
                         <tbody>
                             {% for ticket in recent_tickets %}
-                            <tr>
+                            <tr style="cursor:pointer;" onclick="window.location='{% url 'ticket_detail' ticket.pk %}'" onmouseover="this.style.backgroundColor='rgba(13,110,253,0.06)'" onmouseout="this.style.backgroundColor=''">
                                 <td>
                                     <a href="{% url 'ticket_detail' ticket.pk %}" class="text-decoration-none">
                                         #{{ ticket.ticket_number }}

@@ -36,6 +36,20 @@
 
 {% block extra_js %}
 <script>
+    function copiarQuienEres() {
+        const url = document.getElementById('quien-eres-url-contacts').value;
+        navigator.clipboard.writeText(url).then(() => {
+            const btn = document.getElementById('btn-copiar-quien-eres');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check-lg"></i> ¡Copiado!';
+            btn.classList.replace('btn-outline-success', 'btn-success');
+            setTimeout(() => {
+                btn.innerHTML = original;
+                btn.classList.replace('btn-success', 'btn-outline-success');
+            }, 2000);
+        });
+    }
+
     $(document).ready(function() {
         // Animación suave para las KPI cards
         $('.contact-kpi-card').hover(
@@ -642,6 +656,20 @@
             <a href="{% url 'contact_chart' %}" class="btn btn-outline-info">
                 <i class="bi bi-bar-chart-line"></i> Gráfico
             </a>
+
+            <!-- Botón compartir formulario ¿Quién eres? -->
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-success" id="btn-copiar-quien-eres"
+                    onclick="copiarQuienEres()"
+                    title="Copiar URL del formulario público ¿Quién eres?">
+                    <i class="bi bi-link-45deg"></i> ¿Quién eres?
+                </button>
+                <a href="{% url 'quien_eres_wizard' %}" target="_blank" class="btn btn-outline-success" title="Abrir formulario">
+                    <i class="bi bi-box-arrow-up-right"></i>
+                </a>
+            </div>
+            <input type="hidden" id="quien-eres-url-contacts" value="{{ request.scheme }}://{{ request.get_host }}{% url 'quien_eres_wizard' %}">
+
             <a href="{% url 'contact_create' %}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> Crear
             </a>

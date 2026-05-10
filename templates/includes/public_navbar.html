@@ -1,5 +1,5 @@
 <!-- Navbar público reutilizable -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
     <div class="container">
         <a class="navbar-brand" href="{% url 'home' %}">
             <i class="bi bi-ticket-perforated me-2"></i>
@@ -11,75 +11,58 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">
-                        <i class="bi bi-house me-1"></i>
-                        Inicio
-                    </a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Inicio</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'blog_list' %}active{% endif %}" href="{% url 'blog_list' %}">
-                        <i class="bi bi-journal-richtext me-1"></i>
-                        Blog
-                    </a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'blog_list' %}active{% endif %}" href="{% url 'blog_list' %}">Blog</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'public_image_prompts' %}active{% endif %}" href="{% url 'public_image_prompts' %}">
-                        <i class="bi bi-image me-1"></i>
-                        Prompts IA
-                    </a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'public_image_prompts' %}active{% endif %}" href="{% url 'public_image_prompts' %}">Prompts IA</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'public_concepts' %}active{% endif %}" href="{% url 'public_concepts' %}">
-                        <i class="bi bi-lightbulb me-1"></i>
-                        Conceptos
-                    </a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'public_concepts' %}active{% endif %}" href="{% url 'public_concepts' %}">Conceptos</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'alcance_publico_list' %}active{% endif %}" href="{% url 'alcance_publico_list' %}">
-                        <i class="bi bi-bullseye me-1"></i>
-                        Alcance
-                    </a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'alcance_publico_list' %}active{% endif %}" href="{% url 'alcance_publico_list' %}">Alcance</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'contacto_web' %}active{% endif %}" href="{% url 'contacto_web' %}">
-                        <i class="bi bi-envelope me-1"></i>
-                        Contacto
+                    <a class="nav-link {% if request.resolver_match.url_name == 'contacto_web' %}active{% endif %}" href="{% url 'contacto_web' %}">Contacto</a>
+                </li>
+                <!-- Catálogos -->
+                <li class="nav-item ms-2">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'public_app_catalogs' or request.resolver_match.url_name == 'public_product_detail' %}active{% endif %}" href="{% url 'public_app_catalogs' %}">Catálogos</a>
+                </li>
+                <!-- Carrito de compras -->
+                <li class="nav-item ms-1">
+                    <a href="{% url 'cart_view' %}" class="nav-link position-relative {% if request.resolver_match.url_name == 'cart_view' or request.resolver_match.url_name == 'cart_checkout' %}active{% endif %}" title="Carrito">
+                        <i class="bi bi-cart3 fs-5"></i>
+                        {% if cart_count > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.65rem;">
+                            {{ cart_count }}
+                        </span>
+                        {% endif %}
                     </a>
                 </li>
                 {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'dashboard' %}">
-                            <i class="bi bi-speedometer2 me-1"></i>
-                            Dashboard
-                        </a>
+                        <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle me-1"></i>
                             {{ user.username }}
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'dashboard' %}">
-                                <i class="bi bi-speedometer2 me-2"></i>Dashboard
-                            </a></li>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'dashboard' %}">Dashboard</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'logout' %}">
-                                <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
-                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Cerrar Sesión</a></li>
                         </ul>
                     </li>
                 {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">
-                            <i class="bi bi-box-arrow-in-right me-1"></i>
-                            Iniciar Sesión
-                        </a>
+                        <a class="nav-link" href="{% url 'login' %}">Iniciar Sesión</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link btn btn-outline-light ms-2 px-3" href="{% url 'register' %}">
-                            <i class="bi bi-person-plus me-1"></i>
-                            Registrarse
-                        </a>
+                        <a class="nav-link btn btn-outline-light ms-2 px-3" href="{% url 'register' %}">Registrarse</a>
                     </li>
                 {% endif %}
             </ul>

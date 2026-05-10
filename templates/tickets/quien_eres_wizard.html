@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¿Quién eres? — {{ config.site_name|default:"Cuéntame sobre ti" }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+<div class="d-flex align-items-center justify-content-center min-vh-100 py-5 px-3">
+<div style="width: 100%; max-width: 620px;">
+
+    <!-- Encabezado -->
+    <div class="text-center mb-5">
+        {% if config and config.site_name %}
+            <h4 class="text-white-50 mb-1">{{ config.site_name }}</h4>
+        {% endif %}
+        <h2 class="fw-bold text-white">
+            {% if step == 1 %}¿Quién eres?
+            {% elif step == 2 %}¿De qué quieres hablar?
+            {% else %}¡Muchas gracias!
+            {% endif %}
+        </h2>
+        <!-- Barra de progreso -->
+        {% if step != 3 %}
+        <div class="d-flex justify-content-center gap-2 mt-3">
+            <div class="rounded-pill {% if step >= 1 %}bg-white{% else %}bg-white opacity-25{% endif %}" style="width:32px;height:6px;"></div>
+            <div class="rounded-pill {% if step >= 2 %}bg-white{% else %}bg-white opacity-25{% endif %}" style="width:32px;height:6px;"></div>
+        </div>
+        <p class="text-white-50 small mt-2">Paso {{ step }} de 2</p>
+        {% endif %}
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ error }}</div>
+    {% endif %}
+
+    <!-- ===================== PASO 1 ===================== -->
+    {% if step == 1 %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4 p-md-5">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="action" value="step1">
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">¿Cuál es tu nombre? <span class="text-danger">*</span></label>
+                    <input type="text" name="nombre" class="form-control form-control-lg"
+                        placeholder="Tu nombre completo"
+                        value="{{ data.nombre|default:'' }}" required autofocus>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">¿Cuál es tu email? <span class="text-danger">*</span></label>
+                    <input type="email" name="email" class="form-control form-control-lg"
+                        placeholder="tu@correo.com"
+                        value="{{ data.email|default:'' }}" required>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Teléfono <span class="text-muted small fw-normal">(opcional)</span></label>
+                        <input type="tel" name="telefono" class="form-control form-control-lg"
+                            placeholder="+34 600 000 000"
+                            value="{{ data.telefono|default:'' }}">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Empresa <span class="text-muted small fw-normal">(opcional)</span></label>
+                        <input type="text" name="empresa" class="form-control form-control-lg"
+                            placeholder="Tu empresa"
+                            value="{{ data.empresa|default:'' }}">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">País <span class="text-muted small fw-normal">(opcional)</span></label>
+                        <input type="text" name="pais" class="form-control form-control-lg"
+                            placeholder="España, México..."
+                            value="{{ data.pais|default:'' }}">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Ciudad <span class="text-muted small fw-normal">(opcional)</span></label>
+                        <input type="text" name="ciudad" class="form-control form-control-lg"
+                            placeholder="Madrid, CDMX..."
+                            value="{{ data.ciudad|default:'' }}">
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg fw-bold">
+                        Continuar <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================== PASO 2 ===================== -->
+    {% elif step == 2 %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4 p-md-5">
+
+            {% if data.nombre %}
+            <p class="text-muted mb-4">Hola <strong>{{ data.nombre }}</strong>, cuéntame...</p>
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="action" value="step2">
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">¿De qué deseas hablar conmigo? <span class="text-danger">*</span></label>
+                    <textarea name="mensaje" class="form-control" rows="7"
+                        placeholder="Cuéntame tu proyecto, consulta o idea... estoy aquí para escucharte."
+                        required autofocus>{{ data.mensaje|default:'' }}</textarea>
+                </div>
+
+                {% if forma_trabajo_url %}
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="acepto_forma_trabajo"
+                            id="acepto_forma_trabajo" value="1"
+                            {% if data.acepto_forma_trabajo %}checked{% endif %}
+                            required>
+                        <label class="form-check-label" for="acepto_forma_trabajo">
+                            He revisado la
+                            <a href="{{ forma_trabajo_url }}" target="_blank" rel="noopener noreferrer"
+                                class="text-primary fw-semibold">forma de trabajo</a>
+                            y estoy de acuerdo <span class="text-danger">*</span>
+                        </label>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="d-flex gap-2">
+                    <button type="submit" name="action" value="restart" class="btn btn-outline-secondary btn-lg">
+                        <i class="bi bi-arrow-left me-1"></i> Atrás
+                    </button>
+                    <button type="submit" class="btn btn-primary btn-lg fw-bold flex-grow-1">
+                        Enviar <i class="bi bi-send ms-1"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================== PASO 3 — GRACIAS ===================== -->
+    {% elif step == 3 %}
+    <div class="text-center">
+        {% if ya_registrado %}
+        <div class="display-1 mb-4" style="color: #ffd700;"><i class="bi bi-person-check-fill"></i></div>
+        <h2 class="fw-bold text-white mb-3">¡Ya te tenemos en nuestros registros!</h2>
+        <p class="lead text-white-50 mb-4">
+            Tu email ya está registrado en nuestra base de datos.<br>
+            Nos pondremos en contacto contigo muy pronto, ¡gracias por escribirnos de nuevo!
+        </p>
+        {% else %}
+        <div class="display-1 mb-4" style="color: #a8f0c6;"><i class="bi bi-check-circle-fill"></i></div>
+        <h2 class="fw-bold text-white mb-3">¡Muchas gracias!</h2>
+        <p class="lead text-white-50 mb-4">
+            Me pondré en contacto contigo de inmediato.<br>
+            Cuida ese entusiasmo, ¡grandes cosas están por venir!
+        </p>
+        {% endif %}
+
+        <div class="d-flex flex-wrap gap-3 justify-content-center">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="restart">
+                <button type="submit" class="btn btn-outline-light btn-lg">
+                    <i class="bi bi-person-plus me-1"></i> Enviar otro mensaje
+                </button>
+            </form>
+            <a href="{% url 'home' %}" class="btn btn-light btn-lg fw-bold">
+                <i class="bi bi-house me-1"></i> Ir al inicio
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

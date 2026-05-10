@@ -51,6 +51,27 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="{{ form.assigned_user.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-person-check"></i> {{ form.assigned_user.label }}
+                            </label>
+                            {{ form.assigned_user }}
+                            {% if form.assigned_user.errors %}
+                                <div class="text-danger small mt-1">{{ form.assigned_user.errors }}</div>
+                            {% endif %}
+                            <div class="form-text text-muted">Si asignas un usuario, solo ese usuario y los agentes podrán ver este checklist.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.public_can_toggle }}
+                                <label class="form-check-label fw-bold" for="{{ form.public_can_toggle.id_for_label }}">
+                                    <i class="bi bi-toggles"></i> {{ form.public_can_toggle.label }}
+                                </label>
+                            </div>
+                            <div class="form-text text-muted">Si está desactivado, los visitantes de la URL pública solo podrán ver el checklist pero no modificarlo.</div>
+                        </div>
+
+                        <div class="mb-3">
                             <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">
                                 {{ form.description.label }}
                             </label>

@@ -36,23 +36,29 @@
 }
 
 /* Alineación específica para columnas */
-.ticket-table .col-checkbox { text-align: center; width: 3%; }
-.ticket-table .col-number { text-align: center; width: 6%; }
+.ticket-table .col-checkbox { text-align: center; width: 3% !important; }
+.ticket-table .col-number { text-align: center; width: 8% !important; }
 .ticket-table .col-title { 
     text-align: left; 
-    width: 25%; 
+    width: 40% !important;
     white-space: normal !important; 
     word-wrap: break-word !important;
-    overflow: visible !important;
+    overflow: hidden !important;
 }
-.ticket-table .col-category { text-align: center; width: 9%; }
-.ticket-table .col-type { text-align: center; width: 7%; }
-.ticket-table .col-company { text-align: center; width: 12%; }
-.ticket-table .col-creator { text-align: center; width: 8%; }
-.ticket-table .col-status { text-align: center; width: 8%; }
-.ticket-table .col-approval { text-align: center; width: 8%; }
-.ticket-table .col-age { text-align: center; width: 8%; }
-.ticket-table .col-date { text-align: center; width: 10%; }
+.ticket-table .col-category { text-align: center; width: 9%; display: none !important; }
+.ticket-table .col-type { text-align: center; width: 7%; display: none !important; }
+.ticket-table .col-company { text-align: center; width: 12% !important; }
+.ticket-table .col-creator { text-align: center; width: 8%; display: none !important; }
+.ticket-table .col-assigned { display: none !important; }
+.ticket-table .col-actions { display: none; }
+.ticket-table .col-status { text-align: center; width: 8% !important; }
+.ticket-table tbody tr { cursor: pointer !important; }
+.ticket-table tbody tr td { cursor: pointer !important; }
+.ticket-table tbody tr:hover { background-color: rgba(13, 110, 253, 0.06); }
+.ticket-table .col-approval { text-align: center; width: 9% !important; }
+.ticket-table .col-age { text-align: center; width: 8% !important; }
+.ticket-table .col-date { text-align: center; width: 9% !important; }
+.ticket-table .col-hours { text-align: center; width: 6% !important; }
 .ticket-table .col-actions { text-align: center; width: 7%; }
 
 @media (max-width: 768px) {
@@ -229,27 +235,22 @@
             <table class="table table-hover ticket-table mb-0" style="table-layout: fixed; width: 100%;">
                 <thead class="table-light">
                     <tr>
-                        <th class="col-checkbox">
+                        <th class="col-checkbox" style="width:3%">
                             <input type="checkbox" id="selectAll" class="form-check-input" onchange="toggleAllTickets()">
                         </th>
-                        <th class="col-number">Número</th>
-                        <th class="col-title">Título</th>
-                        <th class="col-category" data-column="category">Categoría</th>
-                        <th class="col-type" data-column="type">Tipo</th>
-                        <th class="col-company" data-column="company">Empresa</th>
-                        {% if is_agent %}<th class="col-creator" data-column="creator">Creador</th>{% endif %}
-                        <th class="col-assigned" data-column="assigned">Asignado a</th>
-                        <th class="col-status" data-column="status">Estado</th>
-                        <th class="col-approval" data-column="approval">Aprobación</th>
-                        <th class="col-age" data-column="age">Antigüedad</th>
-                        <th class="col-date" data-column="date">Fecha Creación</th>
-                        <th class="col-hours text-center" data-column="hours">Horas</th>
-                        <th class="col-actions">Acciones</th>
+                        <th class="col-number" style="width:7%">Número</th>
+                        <th class="col-title" style="width:40%">Título</th>
+                        <th class="col-company" data-column="company" style="width:12%">Empresa</th>
+                        <th class="col-status" data-column="status" style="width:8%">Estado</th>
+                        <th class="col-approval" data-column="approval" style="width:9%">Aprobación</th>
+                        <th class="col-age" data-column="age" style="width:8%">Antigüedad</th>
+                        <th class="col-date" data-column="date" style="width:9%">Fecha Creación</th>
+                        <th class="col-hours text-center" data-column="hours" style="width:4%">Horas</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for ticket in page_obj %}
-                    <tr>
+                    <tr data-href="{% url 'ticket_detail' ticket.pk %}" onclick="if(!event.target.closest('.col-checkbox')) window.location=this.dataset.href;">
                         <td class="col-checkbox">
                             <input type="checkbox" class="form-check-input ticket-checkbox" 
                                    value="{{ ticket.pk }}" onchange="updateExportButton()">
@@ -275,24 +276,6 @@
                                 {{ ticket.title }}
                             </a>
                         </td>
-                        <td class="col-category" data-column="category">
-                            {% if ticket.category %}
-                                <span class="badge" style="background-color: {{ ticket.category.color }}; color: white;">
-                                    <i class="fas fa-tag me-1"></i>{{ ticket.category.name }}
-                                </span>
-                            {% else %}
-                                <span class="text-muted">Sin categoría</span>
-                            {% endif %}
-                        </td>
-                        <td class="col-type" data-column="type">
-                            <span class="badge {{ ticket.get_type_badge_class }}">
-                                {% if ticket.ticket_type == 'desarrollo' %}
-                                    <i class="bi bi-code-slash me-1"></i>{{ ticket.get_ticket_type_display }}
-                                {% else %}
-                                    <i class="bi bi-bug me-1"></i>{{ ticket.get_ticket_type_display }}
-                                {% endif %}
-                            </span>
-                        </td>
                         <td class="col-company" data-column="company">
                             {% if ticket.company %}
                                 <span class="badge" style="background-color: {{ ticket.company.color }}; color: white;">
@@ -300,24 +283,6 @@
                                 </span>
                             {% else %}
                                 <span class="text-muted">Sin empresa</span>
-                            {% endif %}
-                        </td>
-                        {% if is_agent %}
-                        <td class="col-creator" data-column="creator">
-                            <small class="text-muted">
-                                <i class="bi bi-person"></i> 
-                                {{ ticket.created_by.get_full_name|default:ticket.created_by.username }}
-                            </small>
-                        </td>
-                        {% endif %}
-                        <td class="col-assigned" data-column="assigned">
-                            {% if ticket.assigned_to %}
-                                <small class="text-muted">
-                                    <i class="bi bi-person-check text-success"></i>
-                                    {{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}
-                                </small>
-                            {% else %}
-                                <small class="text-muted fst-italic">Sin asignar</small>
                             {% endif %}
                         </td>
                         <td class="col-status" data-column="status">
@@ -351,26 +316,17 @@
                                 <span class="text-muted">-</span>
                             {% endif %}
                         </td>
-                        <td class="col-actions">
-                            <div class="btn-group btn-group-sm">
-                                <a href="{% url 'ticket_detail' ticket.pk %}" 
-                                   class="btn btn-outline-primary" title="Ver detalles">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                            </div>
-                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
                 <tfoot class="table-light fw-bold">
                     <tr>
-                        <td colspan="{% if is_agent %}10{% else %}9{% endif %}" class="text-end pe-3">
+                        <td colspan="8" class="text-end pe-3">
                             <i class="bi bi-clock-history me-1"></i> Total de horas (todos los resultados):
                         </td>
                         <td class="text-center">
                             <span class="badge bg-primary">{{ total_hours_all }} h</span>
                         </td>
-                        <td></td>
                     </tr>
                 </tfoot>
             </table>

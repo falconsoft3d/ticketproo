@@ -507,6 +507,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if 'checklist' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'checklist_list' %}">
+                                    <i class="bi bi-check2-all"></i> Checklist de Proyecto
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if 'capacitacion' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'capacitacion_list' %}">
                                     <i class="bi bi-journal-check"></i> Capacitaciones
@@ -773,6 +779,18 @@
                                 <a class="dropdown-item {% if 'project' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'project_list' %}">
                                     <i class="bi bi-folder"></i> Proyectos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'app_catalog' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'app_catalog_list' %}">
+                                    <i class="bi bi-grid-3x3-gap-fill"></i> Catálogo de Apps
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'cart_quotation_list' %}active{% endif %}" 
+                                   href="{% url 'cart_quotation_list' %}">
+                                    <i class="bi bi-receipt-cutoff"></i> Cotizaciones
                                 </a>
                             </li>
                             <li>

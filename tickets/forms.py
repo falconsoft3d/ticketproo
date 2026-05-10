@@ -1853,7 +1853,9 @@ class SystemConfigurationForm(forms.ModelForm):
             'email_host_password',
             'email_use_tls',
             'email_use_ssl',
-            'email_from'
+            'email_from',
+            'contact_name',
+            'contact_email',
         ]
         widgets = {
             'site_name': forms.TextInput(attrs={
@@ -1953,6 +1955,14 @@ class SystemConfigurationForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'noreply@tu-dominio.com'
             }),
+            'contact_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Departamento de Ventas'
+            }),
+            'contact_email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'pagos@tu-dominio.com'
+            }),
         }
         labels = {
             'site_name': 'Nombre del sitio',
@@ -1980,6 +1990,8 @@ class SystemConfigurationForm(forms.ModelForm):
             'email_use_tls': 'Usar TLS',
             'email_use_ssl': 'Usar SSL',
             'email_from': 'Email remitente',
+            'contact_name': 'Nombre de contacto',
+            'contact_email': 'Email de contacto para pagos',
         }
         help_texts = {
             'site_name': 'Nombre que aparece en el encabezado del sistema',
@@ -2007,6 +2019,8 @@ class SystemConfigurationForm(forms.ModelForm):
             'email_use_tls': 'Activar cifrado TLS (recomendado para puerto 587)',
             'email_use_ssl': 'Activar cifrado SSL (para puerto 465)',
             'email_from': 'Dirección de email que aparecerá como remitente',
+            'contact_name': 'Nombre visible en la página de confirmación de cotización donde se indica al cliente a quién enviar el comprobante',
+            'contact_email': 'Correo al que los clientes deben enviar el comprobante de pago tras generar una cotización',
         }
     
     def clean_site_name(self):
@@ -5850,7 +5864,7 @@ class ProductForm(forms.ModelForm):
     class Meta:
         from .models import Product
         model = Product
-        fields = ['name', 'price', 'description', 'is_active']
+        fields = ['name', 'price', 'description', 'category', 'is_active', 'is_public']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -5867,7 +5881,13 @@ class ProductForm(forms.ModelForm):
                 'rows': 4,
                 'placeholder': 'Descripción detallada del producto'
             }),
+            'category': forms.Select(attrs={
+                'class': 'form-select'
+            }),
             'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'is_public': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
         }
@@ -5875,21 +5895,29 @@ class ProductForm(forms.ModelForm):
             'name': 'Nombre del Producto',
             'price': 'Precio',
             'description': 'Descripción',
+            'category': 'Categoría',
             'is_active': 'Producto Activo',
+            'is_public': 'Visible en catálogo público',
         }
         help_texts = {
             'name': 'Nombre identificativo del producto',
             'price': 'Precio del producto en la moneda base',
             'description': 'Descripción completa del producto, características, beneficios, etc.',
+            'category': 'Categoría a la que pertenece el producto',
             'is_active': 'Si está marcado, el producto estará disponible para su uso',
+            'is_public': 'Si está marcado, este producto podrá verse en los catálogos públicos',
         }
     
     def __init__(self, *args, **kwargs):
         # Importar el modelo aquí para evitar importaciones circulares
-        from .models import Product, SystemConfiguration
+        from .models import Product, ProductCategory, SystemConfiguration
         self._meta.model = Product
         
         super().__init__(*args, **kwargs)
+        
+        # Poblar queryset de categoría
+        self.fields['category'].queryset = ProductCategory.objects.all().order_by('name')
+        self.fields['category'].empty_label = '— Sin categoría —'
         
         # Obtener la moneda configurada en el sistema
         config = SystemConfiguration.objects.first()
@@ -5927,6 +5955,18 @@ class ProductForm(forms.ModelForm):
         if price is not None and price < 0:
             raise forms.ValidationError('El precio no puede ser negativo')
         return price
+
+
+class ProductCategoryForm(forms.ModelForm):
+    class Meta:
+        from .models import ProductCategory
+        model = ProductCategory
+        fields = ['name', 'description', 'color']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre de la categoría'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'color': forms.TextInput(attrs={'class': 'form-control form-control-color', 'type': 'color'}),
+        }
 
 
 # ===== FORMULARIOS PARA ASISTENCIA DE CLIENTE =====
@@ -9818,7 +9858,7 @@ class ChecklistForm(forms.ModelForm):
     
     class Meta:
         model = Checklist
-        fields = ['title', 'company', 'description']
+        fields = ['title', 'company', 'description', 'assigned_user', 'public_can_toggle']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -9833,13 +9873,28 @@ class ChecklistForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Descripción del checklist (opcional)',
                 'rows': 3
+            }),
+            'assigned_user': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'public_can_toggle': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
             })
         }
         labels = {
             'title': 'Título del Checklist',
             'company': 'Empresa',
-            'description': 'Descripción'
+            'description': 'Descripción',
+            'assigned_user': 'Usuario Asignado',
+            'public_can_toggle': 'Permitir que visitantes marquen tareas como completadas'
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from django.contrib.auth.models import User as AuthUser
+        self.fields['assigned_user'].queryset = AuthUser.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
+        self.fields['assigned_user'].empty_label = '— Sin asignar —'
+        self.fields['assigned_user'].required = False
 
 
 class ChecklistItemForm(forms.ModelForm):
@@ -9847,7 +9902,7 @@ class ChecklistItemForm(forms.ModelForm):
     
     class Meta:
         model = ChecklistItem
-        fields = ['title', 'description', 'cost']
+        fields = ['title', 'description', 'notes', 'url', 'cost']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -9859,6 +9914,15 @@ class ChecklistItemForm(forms.ModelForm):
                 'placeholder': 'Descripción de la tarea (opcional)',
                 'rows': 3
             }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Notas adicionales (opcional)',
+                'rows': 3
+            }),
+            'url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://ejemplo.com'
+            }),
             'cost': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'placeholder': '0.00',
@@ -9869,7 +9933,41 @@ class ChecklistItemForm(forms.ModelForm):
         labels = {
             'title': 'Título de la Tarea',
             'description': 'Descripción',
+            'notes': 'Notas adicionales',
+            'url': 'Enlace URL',
             'cost': 'Costo en Euros (opcional)'
+        }
+
+
+# ==================== APPCATALOG FORMS ====================
+
+class AppCatalogForm(forms.ModelForm):
+    class Meta:
+        from .models import AppCatalog
+        model = AppCatalog
+        fields = ['name', 'description', 'is_active', 'is_public']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del catálogo'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_public': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+class AppCatalogLineForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .models import Product
+        self.fields['product'].queryset = Product.objects.filter(is_active=True).order_by('name')
+        self.fields['product'].widget.attrs.update({'class': 'form-select'})
+
+    class Meta:
+        from .models import AppCatalogLine
+        model = AppCatalogLine
+        fields = ['product', 'quantity', 'notes']
+        widgets = {
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Nota opcional'}),
         }
 
 

@@ -1967,7 +1967,35 @@ class SystemConfiguration(models.Model):
         verbose_name='Token del Catálogo Público',
         help_text='Token único para acceso público al catálogo de productos'
     )
-    
+
+    # Datos de contacto para cotizaciones
+    contact_name = models.CharField(
+        max_length=150,
+        blank=True,
+        default='',
+        verbose_name='Nombre de contacto',
+        help_text='Nombre que aparece en la página de cotización para enviar comprobante de pago'
+    )
+    contact_email = models.EmailField(
+        blank=True,
+        default='',
+        verbose_name='Email de contacto',
+        help_text='Correo al que los clientes deben enviar el comprobante de pago'
+    )
+    paypal_payment_email = models.EmailField(
+        blank=True,
+        default='',
+        verbose_name='Email de PayPal para pagos',
+        help_text='Cuenta de PayPal a la que los clientes pueden enviar el pago de su cotización'
+    )
+
+    forma_trabajo_url = models.URLField(
+        blank=True,
+        default='',
+        verbose_name='URL Forma de trabajo',
+        help_text='Enlace al documento o página que describe tu forma de trabajo (se mostrará en el formulario ¿Quién eres?)'
+    )
+
     # Metadatos
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
@@ -9218,6 +9246,25 @@ class FinancialPriceHistory(models.Model):
         return f"{self.financial_action.symbol} - {self.price} - {self.recorded_at}"
 
 
+class ProductCategory(models.Model):
+    """Categoría de producto"""
+    name = models.CharField(max_length=100, verbose_name='Nombre', unique=True)
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    color = models.CharField(
+        max_length=7, default='#0d6efd', verbose_name='Color',
+        help_text='Color en formato hexadecimal, ej: #ff5733'
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Categoría de Producto'
+        verbose_name_plural = 'Categorías de Producto'
+
+    def __str__(self):
+        return self.name
+
+
 class Product(models.Model):
     """
     Modelo para gestionar productos
@@ -9253,6 +9300,22 @@ class Product(models.Model):
         default=True,
         verbose_name='Activo',
         help_text='Si está marcado, el producto estará disponible'
+    )
+
+    is_public = models.BooleanField(
+        default=False,
+        verbose_name='Visible en catálogo público',
+        help_text='Si está marcado, este producto podrá verse en los catálogos públicos'
+    )
+
+    view_count = models.PositiveIntegerField(default=0, verbose_name='Vistas del producto')
+
+    category = models.ForeignKey(
+        'ProductCategory',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='products',
+        verbose_name='Categoría'
     )
     
     created_by = models.ForeignKey(
@@ -9306,6 +9369,104 @@ class Product(models.Model):
     def price_with_currency(self):
         """Propiedad para obtener el precio con moneda fácilmente"""
         return self.get_formatted_price()
+
+
+class ProductVideo(models.Model):
+    """URLs de video asociadas a un producto"""
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='videos',
+        verbose_name='Producto'
+    )
+    title = models.CharField(max_length=200, blank=True, verbose_name='Título')
+    url = models.URLField(max_length=500, verbose_name='URL del Video')
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Video de Producto'
+        verbose_name_plural = 'Videos de Producto'
+
+    def __str__(self):
+        return f"{self.product.name} — {self.title or self.url}"
+
+    def get_embed_url(self):
+        """Convierte URLs de YouTube/Vimeo a embed, el resto se deja igual"""
+        import re
+        url = self.url
+        # YouTube watch
+        yt = re.match(r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([\w-]+)', url)
+        if yt:
+            return f"https://www.youtube.com/embed/{yt.group(1)}"
+        # YouTube short
+        yt_short = re.match(r'(?:https?://)?youtu\.be/([\w-]+)', url)
+        if yt_short:
+            return f"https://www.youtube.com/embed/{yt_short.group(1)}"
+        # Vimeo
+        vimeo = re.match(r'(?:https?://)?(?:www\.)?vimeo\.com/(\d+)', url)
+        if vimeo:
+            return f"https://player.vimeo.com/video/{vimeo.group(1)}"
+        return None
+
+
+class AppCatalog(models.Model):
+    """Catálogo de Apps: agrupa productos en una colección presentable"""
+    name = models.CharField(max_length=200, verbose_name='Nombre del Catálogo')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    is_public = models.BooleanField(default=False, verbose_name='Público', help_text='Si está marcado, aparecerá en la página pública de catálogos')
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='app_catalogs',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    view_count = models.PositiveIntegerField(default=0, verbose_name='Vistas del catálogo')
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Catálogo de Apps'
+        verbose_name_plural = 'Catálogos de Apps'
+
+    def __str__(self):
+        return self.name
+
+    def get_total_products(self):
+        return self.lines.count()
+
+
+class AppCatalogLine(models.Model):
+    """Línea de un catálogo: referencia a un producto existente con cantidad y nota opcional"""
+    catalog = models.ForeignKey(
+        AppCatalog,
+        on_delete=models.CASCADE,
+        related_name='lines',
+        verbose_name='Catálogo'
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='catalog_lines',
+        verbose_name='Producto'
+    )
+    quantity = models.PositiveIntegerField(default=1, verbose_name='Cantidad')
+    notes = models.TextField(blank=True, verbose_name='Notas')
+    order = models.IntegerField(default=0, verbose_name='Orden')
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+        verbose_name = 'Línea de Catálogo'
+        verbose_name_plural = 'Líneas de Catálogo'
+
+    def __str__(self):
+        return f"{self.catalog.name} — {self.product.name}"
+
+    def get_subtotal(self):
+        return self.product.price * self.quantity
 
 
 class ClientProjectAccess(models.Model):
@@ -21519,7 +21680,16 @@ class Checklist(models.Model):
     title = models.CharField(max_length=300, verbose_name='Título del Checklist')
     company = models.CharField(max_length=200, blank=True, verbose_name='Empresa')
     description = models.TextField(blank=True, verbose_name='Descripción')
+    assigned_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='checklists_assigned',
+        verbose_name='Usuario Asignado'
+    )
     is_public = models.BooleanField(default=False, verbose_name='Público')
+    public_can_toggle = models.BooleanField(default=True, verbose_name='Permitir marcar tareas públicamente')
     share_token = models.CharField(max_length=100, unique=True, blank=True, verbose_name='Token de Compartir')
     views_count = models.IntegerField(default=0, verbose_name='Visualizaciones')
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Creado por')
@@ -21556,6 +21726,8 @@ class ChecklistItem(models.Model):
     checklist = models.ForeignKey(Checklist, on_delete=models.CASCADE, related_name='items', verbose_name='Checklist')
     title = models.CharField(max_length=500, verbose_name='Título de la Tarea')
     description = models.TextField(blank=True, verbose_name='Descripción')
+    notes = models.TextField(blank=True, verbose_name='Notas adicionales')
+    url = models.URLField(blank=True, verbose_name='Enlace URL')
     cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='Costo')
     order = models.IntegerField(default=0, verbose_name='Orden')
     is_completed = models.BooleanField(default=False, verbose_name='Completada')
@@ -23793,3 +23965,65 @@ class CapacitacionRespuesta(models.Model):
 
     def __str__(self):
         return f"{self.nombre} → {self.enlace}"
+
+
+# ========================
+# CARRITO DE COMPRAS PÚBLICO
+# ========================
+
+class CartQuotation(models.Model):
+    """Cotización generada desde el carrito de compras público"""
+
+    reference = models.CharField(
+        max_length=20, unique=True, verbose_name='Referencia',
+        help_text='Número de cotización, ej: COT-2026-001'
+    )
+    customer_name = models.CharField(max_length=200, verbose_name='Nombre')
+    customer_email = models.EmailField(verbose_name='Correo electrónico')
+    customer_phone = models.CharField(max_length=50, blank=True, verbose_name='Teléfono')
+    customer_company = models.CharField(max_length=200, blank=True, verbose_name='Empresa')
+    notes = models.TextField(blank=True, verbose_name='Notas adicionales')
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='Total')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha')
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Cotización de Carrito'
+        verbose_name_plural = 'Cotizaciones de Carrito'
+
+    def __str__(self):
+        return f'{self.reference} – {self.customer_name}'
+
+    def save(self, *args, **kwargs):
+        if not self.reference:
+            from django.utils import timezone as tz
+            year = tz.now().year
+            last = CartQuotation.objects.filter(reference__startswith=f'COT-{year}-').count()
+            self.reference = f'COT-{year}-{last + 1:04d}'
+        super().save(*args, **kwargs)
+
+
+class CartQuotationItem(models.Model):
+    """Línea de producto dentro de una cotización de carrito"""
+
+    quotation = models.ForeignKey(
+        CartQuotation, on_delete=models.CASCADE, related_name='items', verbose_name='Cotización'
+    )
+    product = models.ForeignKey(
+        'Product', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Producto'
+    )
+    product_name = models.CharField(max_length=200, verbose_name='Nombre del producto')
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Precio unitario')
+    quantity = models.PositiveIntegerField(default=1, verbose_name='Cantidad')
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, verbose_name='Subtotal')
+
+    class Meta:
+        verbose_name = 'Línea de Cotización'
+        verbose_name_plural = 'Líneas de Cotización'
+
+    def __str__(self):
+        return f'{self.product_name} x{self.quantity}'
+
+    def save(self, *args, **kwargs):
+        self.subtotal = self.unit_price * self.quantity
+        super().save(*args, **kwargs)

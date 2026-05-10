@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Catálogos de Apps - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-grid-3x3-gap-fill"></i> Catálogos de Apps</h2>
+        <a href="{% url 'app_catalog_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nuevo Catálogo
+        </a>
+    </div>
+
+    <!-- Búsqueda -->
+    <form method="get" class="mb-4">
+        <div class="input-group" style="max-width:400px;">
+            <input type="text" name="search" class="form-control" placeholder="Buscar catálogo..." value="{{ search }}">
+            <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+            {% if search %}
+            <a href="{% url 'app_catalog_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x"></i>
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if catalogs %}
+    <div class="row g-3">
+        {% for catalog in catalogs %}
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">
+                        <i class="bi bi-grid-3x3-gap"></i> {{ catalog.name }}
+                    </span>
+                    <span class="badge {% if catalog.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                        {% if catalog.is_active %}Activo{% else %}Inactivo{% endif %}
+                    </span>
+                </div>
+                <div class="card-body">
+                    {% if catalog.description %}
+                    <p class="text-muted small">{{ catalog.description|truncatechars:120 }}</p>
+                    {% endif %}
+                    <p class="mb-1"><i class="bi bi-box-seam"></i> <strong>{{ catalog.get_total_products }}</strong> producto(s)</p>
+                    <p class="text-muted small mb-0">
+                        <i class="bi bi-calendar3"></i> {{ catalog.created_at|date:"d/m/Y" }}
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="{% url 'app_catalog_detail' catalog.pk %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-eye"></i> Ver
+                    </a>
+                    <a href="{% url 'app_catalog_edit' catalog.pk %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a href="{% url 'app_catalog_delete' catalog.pk %}" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center py-5">
+        <i class="bi bi-grid-3x3-gap fs-1 d-block mb-3"></i>
+        <h5>No hay catálogos</h5>
+        <p class="mb-3">Crea tu primer catálogo de apps para comenzar</p>
+        <a href="{% url 'app_catalog_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nuevo Catálogo
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

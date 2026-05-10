@@ -1,0 +1,150 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}Catálogos de Apps{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-4">
+        <h1 class="display-5 fw-bold">
+            <i class="bi bi-grid-3x3-gap-fill text-primary"></i> Catálogos de Apps
+        </h1>
+        <p class="lead text-muted">Explora todos nuestros productos y recursos disponibles</p>
+    </div>
+
+    <!-- Buscador -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-6">
+            <form action="{% url 'public_app_catalogs' %}" method="get">
+                <div class="input-group shadow-sm">
+                    <input type="text" name="q" class="form-control border-end-0"
+                           placeholder="Buscar producto o servicio..."
+                           value="{{ query }}" autocomplete="off">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    {% if query %}
+                    <a href="{% url 'public_app_catalogs' %}" class="btn btn-outline-secondary" title="Limpiar búsqueda">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    {% endif %}
+                </div>
+                {% if query %}
+                <p class="text-muted small mt-2 mb-0">
+                    Resultados para: <strong>{{ query }}</strong>
+                    &mdash; {{ catalogs|length }} catálogo(s) encontrado(s)
+                </p>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    {% if catalogs %}
+    {% for catalog in catalogs %}
+    <div class="mb-5">
+        <!-- Cabecera del catálogo -->
+        <div class="card border-0 shadow-sm mb-4" style="border-left: 6px solid #0d6efd !important;">
+            <div class="card-body py-3 px-4">
+                <h2 class="fw-bold mb-1">
+                    <i class="bi bi-grid-3x3-gap text-primary"></i> {{ catalog.name }}
+                </h2>
+                {% if catalog.description %}
+                <p class="text-muted mb-0">{{ catalog.description }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% with lines=catalog.lines.all %}
+        {% if lines %}
+        <div class="row g-4">
+            {% for line in lines %}
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-primary bg-opacity-10 border-0">
+                        <h5 class="mb-0 text-primary fw-bold">
+                            <a href="{% url 'public_product_detail' line.product.pk %}" class="text-primary text-decoration-none">
+                                <i class="bi bi-box-seam"></i> {{ line.product.name }}
+                            </a>
+                        </h5>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        {% if line.product.description %}
+                        <p class="text-muted small flex-grow-1 mb-3">{{ line.product.description }}</p>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-bold text-success fs-5">{{ line.product.price_with_currency }}</span>
+                            {% if line.quantity > 1 %}
+                            <span class="badge bg-secondary">Cantidad: {{ line.quantity }}</span>
+                            {% endif %}
+                        </div>
+
+                        {% if line.notes %}
+                        <p class="text-muted small fst-italic mb-3">
+                            <i class="bi bi-sticky"></i> {{ line.notes }}
+                        </p>
+                        {% endif %}
+
+                        <!-- Videos del producto (preview del primero) -->
+                        {% with videos=line.product.videos.all %}
+                        {% if videos %}
+                        <div class="mt-auto">
+                            {% with video=videos.0 %}
+                            {% with embed=video.get_embed_url %}
+                            {% if embed %}
+                            <div class="ratio ratio-16x9 rounded overflow-hidden mb-2">
+                                <iframe src="{{ embed }}" allowfullscreen loading="lazy" title="{{ video.title|default:'Video' }}"></iframe>
+                            </div>
+                            {% endif %}
+                            {% endwith %}
+                            {% endwith %}
+                            <a href="{% url 'public_product_detail' line.product.pk %}" class="btn btn-outline-danger btn-sm w-100 mb-2">
+                                <i class="bi bi-play-circle"></i> Ver todos los videos ({{ videos|length }})
+                            </a>
+                            <form method="post" action="{% url 'cart_add' line.product.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.path }}">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                    <i class="bi bi-cart-plus"></i> Agregar al carrito
+                                </button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="mt-auto">
+                            <a href="{% url 'public_product_detail' line.product.pk %}" class="btn btn-outline-secondary btn-sm w-100 mb-2">
+                                <i class="bi bi-arrow-right"></i> Ver detalle
+                            </a>
+                            <form method="post" action="{% url 'cart_add' line.product.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.path }}">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                    <i class="bi bi-cart-plus"></i> Agregar al carrito
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">Este catálogo no tiene productos aún.</p>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    {% if not forloop.last %}
+    <hr class="my-5">
+    {% endif %}
+    {% endfor %}
+
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-grid-3x3-gap display-1 text-muted mb-3 d-block"></i>
+        <h4 class="text-muted">No hay catálogos disponibles en este momento</h4>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -180,3 +180,13 @@ def active_chatbot(request):
         return {
             'active_internal_chatbot': None
         }
+
+
+def cart_context(request):
+    """
+    Context processor que expone el contador del carrito de compras (sesión)
+    en todas las plantillas.
+    """
+    cart = request.session.get('cart', {})
+    cart_count = sum(item.get('quantity', 1) for item in cart.values())
+    return {'cart_count': cart_count}

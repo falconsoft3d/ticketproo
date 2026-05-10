@@ -1,0 +1,103 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}Cotización {{ quotation.reference }}{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width:700px;">
+
+    <!-- Éxito -->
+    <div class="text-center mb-5">
+        <div class="display-1 text-success mb-3"><i class="bi bi-check-circle-fill"></i></div>
+        <h2 class="fw-bold">¡Cotización generada!</h2>
+        <p class="text-muted">Tu cotización <strong>{{ quotation.reference }}</strong> está lista para descargar.</p>
+    </div>
+
+    <!-- Tarjeta de resumen -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-primary text-white border-0 fw-bold">
+            <i class="bi bi-receipt"></i> {{ quotation.reference }}
+            <span class="float-end small fw-normal">{{ quotation.created_at|date:"d/m/Y" }}</span>
+        </div>
+        <div class="card-body p-4">
+            <p class="mb-1"><strong>Solicitante:</strong> {{ quotation.customer_name }}</p>
+            <p class="mb-1"><strong>Correo:</strong> {{ quotation.customer_email }}</p>
+            {% if quotation.customer_phone %}<p class="mb-1"><strong>Teléfono:</strong> {{ quotation.customer_phone }}</p>{% endif %}
+            {% if quotation.customer_company %}<p class="mb-3"><strong>Empresa:</strong> {{ quotation.customer_company }}</p>{% endif %}
+
+            <hr>
+
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Producto</th>
+                            <th class="text-end">Precio</th>
+                            <th class="text-center">Cant.</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in quotation.items.all %}
+                        <tr>
+                            <td>{{ item.product_name }}</td>
+                            <td class="text-end text-muted">{{ item.unit_price }}</td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-end fw-bold">{{ item.subtotal }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-light">
+                            <td colspan="3" class="text-end fw-bold">Total:</td>
+                            <td class="text-end fw-bold text-success fs-5">{{ quotation.total }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instrucciones de pago -->
+    <div class="card border-0 shadow-sm border-start border-4 border-warning mb-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-2"><i class="bi bi-info-circle-fill text-warning"></i> ¿Cómo proceder?</h5>
+            <ol class="mb-0">
+                <li class="mb-1">Descarga tu cotización en PDF usando el botón de abajo.</li>
+                <li class="mb-1">Realiza el pago por el monto total indicado.</li>
+                <li class="mb-1"><strong>Envíanos esta cotización junto con el comprobante de pago</strong> y nos pondremos en contacto contigo para coordinar la entrega.</li>
+            </ol>
+            {% if config and config.contact_email or config and config.paypal_payment_email %}
+            <hr class="my-3">
+            {% if config.paypal_payment_email %}
+            <p class="mb-2">
+                <i class="bi bi-paypal text-primary me-2"></i>
+                Paga directamente por PayPal a:
+                <a href="https://www.paypal.com/paypalme/{{ config.paypal_payment_email }}" target="_blank" class="fw-bold">{{ config.paypal_payment_email }}</a>
+            </p>
+            {% endif %}
+            {% if config.contact_email %}
+            <p class="mb-0">
+                <i class="bi bi-envelope-fill text-secondary me-2"></i>
+                Luego envía el comprobante a:
+                {% if config.contact_name %}<strong>{{ config.contact_name }}</strong> — {% endif %}
+                <a href="mailto:{{ config.contact_email }}" class="fw-bold">{{ config.contact_email }}</a>
+            </p>
+            {% endif %}
+            {% endif %}
+            <hr class="my-3">
+            <p class="mb-0 text-muted small">¿Tienes alguna duda? <a href="{% url 'contacto_web' %}">Contáctanos aquí</a>.</p>
+        </div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="d-flex flex-wrap gap-3 justify-content-center">
+        <a href="{% url 'cart_quotation_pdf' quotation.pk %}" class="btn btn-success btn-lg fw-bold px-5">
+            <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+        </a>
+        <a href="{% url 'public_app_catalogs' %}" class="btn btn-outline-primary btn-lg">
+            <i class="bi bi-grid-3x3-gap-fill"></i> Seguir explorando
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -76,6 +76,7 @@ TEMPLATES = [
                 'tickets.context_processors.blog_categories',
                 'tickets.context_processors.crm_counters',
                 'tickets.context_processors.active_chatbot',
+                'tickets.context_processors.cart_context',
             ],
         },
     },
