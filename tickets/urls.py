@@ -455,7 +455,15 @@ urlpatterns = [
     path('crm/questions/<int:pk>/', views.crm_question_detail, name='crm_question_detail'),
     path('crm/questions/<int:pk>/edit/', views.crm_question_edit, name='crm_question_edit'),
     path('crm/questions/<int:pk>/delete/', views.crm_question_delete, name='crm_question_delete'),
-    
+
+    # URLs de Levantamiento de Procesos
+    path('crm/process-surveys/', views.process_survey_list, name='process_survey_list'),
+    path('crm/process-surveys/create/', views.process_survey_create, name='process_survey_create'),
+    path('crm/process-surveys/<int:pk>/', views.process_survey_detail, name='process_survey_detail'),
+    path('crm/process-surveys/<int:pk>/edit/', views.process_survey_edit, name='process_survey_edit'),
+    path('crm/process-surveys/<int:pk>/delete/', views.process_survey_delete, name='process_survey_delete'),
+    path('crm/process-surveys/public/<uuid:token>/', views.public_process_survey_view, name='public_process_survey'),
+
     # URLs de Reuniones
     path('meetings/', views.meeting_list_view, name='meeting_list'),
     path('meetings/create/', views.meeting_create_view, name='meeting_create'),

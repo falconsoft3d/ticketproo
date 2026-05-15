@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Levantamiento de Procesos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+      <i class="bi bi-clipboard-check me-2"></i>
+      Levantamiento de Procesos
+    </h1>
+    <a href="{% url 'process_survey_create' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1"></i> Nuevo Levantamiento
+    </a>
+  </div>
+
+  <!-- Búsqueda -->
+  <form method="get" class="mb-3">
+    <div class="input-group" style="max-width:400px;">
+      <input type="text" name="search" class="form-control" placeholder="Buscar..." value="{{ search }}">
+      <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+      {% if search %}
+        <a href="{% url 'process_survey_list' %}" class="btn btn-outline-danger"><i class="bi bi-x-lg"></i></a>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if page_obj.object_list %}
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Nombre</th>
+              <th>Fecha</th>
+              <th>Empresa</th>
+              <th>Líneas</th>
+              <th>Creado por</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for survey in page_obj %}
+            <tr>
+              <td>
+                <span class="badge bg-primary font-monospace">{{ survey.folio|default:survey.pk }}</span>
+              </td>
+              <td>
+                <a href="{% url 'process_survey_detail' survey.pk %}" class="fw-semibold text-decoration-none">
+                  {{ survey.name }}
+                </a>
+              </td>
+              <td>{{ survey.date|date:"d/m/Y" }}</td>
+              <td>{{ survey.company.name|default:"—" }}</td>
+              <td><span class="badge bg-secondary">{{ survey.lines.count }}</span></td>
+              <td>{{ survey.created_by.get_full_name|default:survey.created_by.username|default:"—" }}</td>
+              <td class="text-end">
+                <div class="btn-group btn-group-sm">
+                  <a href="{% url 'process_survey_detail' survey.pk %}" class="btn btn-outline-primary" title="Ver">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <a href="{% url 'process_survey_edit' survey.pk %}" class="btn btn-outline-secondary" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <a href="{% url 'process_survey_delete' survey.pk %}" class="btn btn-outline-danger" title="Eliminar">
+                    <i class="bi bi-trash"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paginación -->
+  {% if page_obj.has_other_pages %}
+  <nav class="mt-3">
+    <ul class="pagination pagination-sm justify-content-center">
+      {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">&laquo;</a></li>
+      {% endif %}
+      {% for num in page_obj.paginator.page_range %}
+        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+          <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}">{{ num }}</a>
+        </li>
+      {% endfor %}
+      {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}">&raquo;</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-clipboard-x fs-1"></i>
+    <p class="mt-2">No hay levantamientos registrados aún.</p>
+    <a href="{% url 'process_survey_create' %}" class="btn btn-primary mt-2">Crear el primero</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

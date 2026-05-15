@@ -59,6 +59,7 @@ from .models import (
     SupportMeeting, SupportMeetingPoint, ScheduledTask, ScheduledTaskExecution,
     FunctionalRequirementDocument, FunctionalRequirement, FunctionalRequirementDocumentView,
     Checklist, ChecklistItem, Invoice, InvoiceLine, Product,
+    ProcessSurvey, ProcessSurveyLine, ProcessSurveyLineComment, ProcessSurveySignature,
     # ...existing code...
 )
 
@@ -56691,4 +56692,276 @@ def capacitacion_public(request, token):
         "error": error,
         "ok": request.GET.get("ok"),
     })
+
+
+# =============================================================================
+# LEVANTAMIENTO DE PROCESOS
+# =============================================================================
+
+@login_required
+def process_survey_list(request):
+    """Lista de levantamientos de procesos"""
+    from .submenu_utils import get_crm_submenu
+    surveys = ProcessSurvey.objects.select_related('company', 'created_by')
+    if not is_agent(request.user):
+        surveys = surveys.filter(created_by=request.user)
+
+    search = request.GET.get('search', '').strip()
+    if search:
+        surveys = surveys.filter(name__icontains=search)
+
+    from django.core.paginator import Paginator
+    paginator = Paginator(surveys, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    context = {
+        'page_title': 'Levantamiento de Procesos',
+        'page_obj': page_obj,
+        'search': search,
+        'submenu': get_crm_submenu(request, active_item='process_surveys'),
+    }
+    return render(request, 'tickets/process_survey_list.html', context)
+
+
+@login_required
+def process_survey_create(request):
+    """Crear nuevo levantamiento de procesos"""
+    from .submenu_utils import get_crm_submenu
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        date = request.POST.get('date', '').strip()
+        company_id = request.POST.get('company', '').strip()
+
+        if not name or not date:
+            messages.error(request, 'El nombre y la fecha son obligatorios.')
+        else:
+            company = None
+            if company_id:
+                company = get_object_or_404(Company, pk=company_id)
+            description = request.POST.get('description', '').strip()
+            survey = ProcessSurvey.objects.create(
+                name=name,
+                date=date,
+                description=description,
+                company=company,
+                created_by=request.user,
+            )
+            # Procesar líneas
+            titles = request.POST.getlist('line_title')
+            descriptions = request.POST.getlist('line_description')
+            for idx, title in enumerate(titles):
+                title = title.strip()
+                if title:
+                    ProcessSurveyLine.objects.create(
+                        survey=survey,
+                        order=idx + 1,
+                        title=title,
+                        description=descriptions[idx].strip() if idx < len(descriptions) else '',
+                    )
+            messages.success(request, f'Levantamiento "{survey.name}" creado exitosamente.')
+            return redirect('process_survey_detail', pk=survey.pk)
+
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    context = {
+        'page_title': 'Nuevo Levantamiento de Procesos',
+        'action': 'create',
+        'companies': companies,
+        'submenu': get_crm_submenu(request, active_item='process_surveys'),
+    }
+    return render(request, 'tickets/process_survey_form.html', context)
+
+
+@login_required
+def process_survey_detail(request, pk):
+    """Detalle de un levantamiento de procesos"""
+    from .submenu_utils import get_crm_submenu
+    survey = get_object_or_404(ProcessSurvey, pk=pk)
+    if not is_agent(request.user) and survey.created_by != request.user:
+        raise Http404
+
+    lines = survey.lines.prefetch_related('comments').all()
+    total = lines.count()
+    accepted = lines.filter(status=ProcessSurveyLine.STATUS_ACCEPTED).count()
+    rejected = lines.filter(status=ProcessSurveyLine.STATUS_REJECTED).count()
+    pending  = lines.filter(status=ProcessSurveyLine.STATUS_PENDING).count()
+    signatures = survey.signatures.all()
+
+    context = {
+        'page_title': survey.name,
+        'survey': survey,
+        'lines': lines,
+        'total': total,
+        'accepted': accepted,
+        'rejected': rejected,
+        'pending': pending,
+        'signatures': signatures,
+        'submenu': get_crm_submenu(request, active_item='process_surveys'),
+    }
+    return render(request, 'tickets/process_survey_detail.html', context)
+
+
+@login_required
+def process_survey_edit(request, pk):
+    """Editar levantamiento de procesos"""
+    from .submenu_utils import get_crm_submenu
+    survey = get_object_or_404(ProcessSurvey, pk=pk)
+    if not is_agent(request.user) and survey.created_by != request.user:
+        raise Http404
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        date = request.POST.get('date', '').strip()
+        company_id = request.POST.get('company', '').strip()
+
+        if not name or not date:
+            messages.error(request, 'El nombre y la fecha son obligatorios.')
+        else:
+            survey.name = name
+            survey.date = date
+            survey.description = request.POST.get('description', '').strip()
+            survey.company = get_object_or_404(Company, pk=company_id) if company_id else None
+            survey.save()
+
+            # Reemplazar líneas
+            survey.lines.all().delete()
+            titles = request.POST.getlist('line_title')
+            descriptions = request.POST.getlist('line_description')
+            for idx, title in enumerate(titles):
+                title = title.strip()
+                if title:
+                    ProcessSurveyLine.objects.create(
+                        survey=survey,
+                        order=idx + 1,
+                        title=title,
+                        description=descriptions[idx].strip() if idx < len(descriptions) else '',
+                    )
+            messages.success(request, f'Levantamiento "{survey.name}" actualizado.')
+            return redirect('process_survey_detail', pk=survey.pk)
+
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    context = {
+        'page_title': f'Editar: {survey.name}',
+        'action': 'edit',
+        'survey': survey,
+        'lines': survey.lines.all(),
+        'companies': companies,
+        'submenu': get_crm_submenu(request, active_item='process_surveys'),
+    }
+    return render(request, 'tickets/process_survey_form.html', context)
+
+
+@login_required
+def process_survey_delete(request, pk):
+    """Eliminar levantamiento de procesos"""
+    from .submenu_utils import get_crm_submenu
+    survey = get_object_or_404(ProcessSurvey, pk=pk)
+    if not is_agent(request.user) and survey.created_by != request.user:
+        raise Http404
+
+    if request.method == 'POST':
+        name = survey.name
+        survey.delete()
+        messages.success(request, f'Levantamiento "{name}" eliminado.')
+        return redirect('process_survey_list')
+
+    context = {
+        'page_title': f'Eliminar: {survey.name}',
+        'survey': survey,
+        'submenu': get_crm_submenu(request, active_item='process_surveys'),
+    }
+    return render(request, 'tickets/process_survey_delete.html', context)
+
+
+def public_process_survey_view(request, token):
+    """Vista pública del levantamiento de procesos (sin autenticación)"""
+    survey = get_object_or_404(ProcessSurvey, public_share_token=token)
+    lines = survey.lines.prefetch_related('comments').all()
+
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+
+        # ── Firma de acuerdo ──────────────────────────────────────────────
+        if action == 'sign':
+            signer_name = request.POST.get('signer_name', '').strip()
+            signer_email = request.POST.get('signer_email', '').strip()
+            signer_phone = request.POST.get('signer_phone', '').strip()
+            signature_data = request.POST.get('signature_data', '').strip()
+
+            if not signer_name:
+                messages.error(request, 'El nombre del firmante es obligatorio.')
+                return redirect('public_process_survey', token=token)
+            if not signature_data or not signature_data.startswith('data:image/'):
+                messages.error(request, 'Debes dibujar tu firma antes de enviar.')
+                return redirect('public_process_survey', token=token)
+
+            # Obtener IP del cliente
+            ip = (
+                request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+                or request.META.get('REMOTE_ADDR')
+            )
+            ProcessSurveySignature.objects.create(
+                survey=survey,
+                signer_name=signer_name,
+                signer_email=signer_email,
+                signer_phone=signer_phone,
+                signature_data=signature_data,
+                ip_address=ip or None,
+            )
+            messages.success(request, f'Firma de "{signer_name}" registrada correctamente.')
+            return redirect('public_process_survey', token=token)
+
+        # ── Aceptar / Rechazar línea ──────────────────────────────────────
+        line_id = request.POST.get('line_id', '').strip()
+        if not line_id:
+            messages.error(request, 'Petición inválida.')
+            return redirect('public_process_survey', token=token)
+
+        line = get_object_or_404(ProcessSurveyLine, pk=line_id, survey=survey)
+
+        if action in ('accept', 'reject'):
+            new_status = ProcessSurveyLine.STATUS_ACCEPTED if action == 'accept' else ProcessSurveyLine.STATUS_REJECTED
+            line.status = new_status
+            line.save(update_fields=['status'])
+            label = 'Aceptado' if action == 'accept' else 'Rechazado'
+            messages.success(request, f'Punto "{line.title}" marcado como {label}.')
+            return redirect('public_process_survey', token=token)
+
+        # ── Comentario / adjunto ──────────────────────────────────────────
+        author_name = request.POST.get('author_name', '').strip()
+        author_email = request.POST.get('author_email', '').strip()
+        body = request.POST.get('body', '').strip()
+        attachment = request.FILES.get('attachment')
+
+        if not author_name:
+            messages.error(request, 'El nombre es obligatorio.')
+            return redirect('public_process_survey', token=token)
+
+        if attachment:
+            max_size = 10 * 1024 * 1024
+            allowed = ['.pdf', '.doc', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.gif', '.zip', '.xlsx', '.xls']
+            ext = os.path.splitext(attachment.name.lower())[1]
+            if attachment.size > max_size:
+                messages.error(request, 'El archivo supera el tamaño máximo de 10 MB.')
+                return redirect('public_process_survey', token=token)
+            if ext not in allowed:
+                messages.error(request, f'Tipo de archivo no permitido ({ext}).')
+                return redirect('public_process_survey', token=token)
+
+        ProcessSurveyLineComment.objects.create(
+            line=line,
+            author_name=author_name,
+            author_email=author_email,
+            body=body,
+            attachment=attachment or None,
+        )
+        messages.success(request, 'Comentario enviado correctamente.')
+        return redirect('public_process_survey', token=token)
+
+    signatures = survey.signatures.all()
+    context = {
+        'survey': survey,
+        'lines': lines,
+        'signatures': signatures,
+    }
+    return render(request, 'tickets/process_survey_public.html', context)
 

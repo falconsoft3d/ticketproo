@@ -24047,3 +24047,184 @@ class CartQuotationItem(models.Model):
     def save(self, *args, **kwargs):
         self.subtotal = self.unit_price * self.quantity
         super().save(*args, **kwargs)
+
+
+# ============= LEVANTAMIENTO DE PROCESOS =============
+
+class ProcessSurvey(models.Model):
+    """Levantamiento de procesos de negocio"""
+
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre',
+    )
+    folio = models.CharField(
+        max_length=20,
+        unique=True,
+        blank=True,
+        verbose_name='Folio',
+        help_text='Generado automáticamente. Formato: LP-0001',
+    )
+    date = models.DateField(
+        verbose_name='Fecha',
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción del proyecto',
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='process_surveys',
+        verbose_name='Empresa',
+    )
+    public_share_token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name='Token público',
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='process_surveys_created',
+        verbose_name='Creado por',
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+
+    class Meta:
+        ordering = ['-date', '-created_at']
+        verbose_name = 'Levantamiento de Procesos'
+        verbose_name_plural = 'Levantamientos de Procesos'
+
+    def __str__(self):
+        return f'{self.name} ({self.date})'
+
+    def save(self, *args, **kwargs):
+        if not self.folio:
+            last = ProcessSurvey.objects.filter(
+                folio__startswith='LP-'
+            ).order_by('-folio').first()
+            if last and last.folio:
+                try:
+                    seq = int(last.folio.split('-')[1]) + 1
+                except (IndexError, ValueError):
+                    seq = 1
+            else:
+                seq = 1
+            self.folio = f'LP-{seq:04d}'
+        super().save(*args, **kwargs)
+
+
+class ProcessSurveyLine(models.Model):
+    """Línea de detalle de un levantamiento de procesos"""
+
+    survey = models.ForeignKey(
+        ProcessSurvey,
+        on_delete=models.CASCADE,
+        related_name='lines',
+        verbose_name='Levantamiento',
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Orden',
+    )
+    title = models.CharField(
+        max_length=300,
+        verbose_name='Título',
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+    )
+
+    STATUS_PENDING = 'pending'
+    STATUS_ACCEPTED = 'accepted'
+    STATUS_REJECTED = 'rejected'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pendiente'),
+        (STATUS_ACCEPTED, 'Aceptado'),
+        (STATUS_REJECTED, 'Rechazado'),
+    ]
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        verbose_name='Estado',
+    )
+
+    class Meta:
+        ordering = ['order', 'pk']
+        verbose_name = 'Línea de Levantamiento'
+        verbose_name_plural = 'Líneas de Levantamiento'
+
+    def __str__(self):
+        return f'{self.survey} – {self.title}'
+
+
+class ProcessSurveyLineComment(models.Model):
+    """Comentario o adjunto público sobre una línea de levantamiento de procesos"""
+
+    line = models.ForeignKey(
+        ProcessSurveyLine,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Línea',
+    )
+    author_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre',
+    )
+    author_email = models.EmailField(
+        blank=True,
+        verbose_name='Email',
+    )
+    body = models.TextField(
+        blank=True,
+        verbose_name='Comentario',
+    )
+    attachment = models.FileField(
+        upload_to='process_survey_attachments/%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name='Adjunto',
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha')
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Comentario de Línea'
+        verbose_name_plural = 'Comentarios de Línea'
+
+    def __str__(self):
+        return f'{self.author_name} – {self.line.title}'
+
+
+class ProcessSurveySignature(models.Model):
+    """Firma digital de un acuerdo sobre el levantamiento de procesos"""
+
+    survey = models.ForeignKey(
+        ProcessSurvey,
+        on_delete=models.CASCADE,
+        related_name='signatures',
+        verbose_name='Levantamiento',
+    )
+    signer_name = models.CharField(max_length=200, verbose_name='Nombre')
+    signer_email = models.EmailField(blank=True, verbose_name='Email')
+    signer_phone = models.CharField(max_length=50, blank=True, verbose_name='Teléfono')
+    # Firma dibujada almacenada como data URL (PNG base64)
+    signature_data = models.TextField(verbose_name='Firma (base64)')
+    signed_at = models.DateTimeField(default=timezone.now, verbose_name='Firmado el')
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
+
+    class Meta:
+        ordering = ['signed_at']
+        verbose_name = 'Firma'
+        verbose_name_plural = 'Firmas'
+
+    def __str__(self):
+        return f'{self.signer_name} – {self.survey.name}'

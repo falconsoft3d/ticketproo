@@ -80,6 +80,13 @@ def get_crm_submenu(request, active_item=None):
             'count': None,
             'active': active_item == 'frd'
         },
+        {
+            'name': 'Levantamiento de Procesos',
+            'url': reverse('process_survey_list'),
+            'icon': 'bi bi-clipboard-check',
+            'count': None,
+            'active': active_item == 'process_surveys'
+        },
     ]
     
     return submenu

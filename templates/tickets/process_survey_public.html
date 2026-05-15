@@ -1,0 +1,434 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}{{ survey.name }} — Levantamiento de Procesos{% endblock %}
+
+{% block extra_head %}
+<style>
+  body { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+  .survey-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.25);
+    overflow: hidden;
+  }
+  .survey-header {
+    background: linear-gradient(135deg, #0f3460 0%, #533483 100%);
+    color: #fff;
+    padding: 2rem;
+  }
+  .line-number {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #0f3460;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-size: .85rem;
+  }
+  .line-item { border-left: 3px solid #0f3460; }
+  .comment-item { background: #f8f9fa; border-radius: 8px; }
+  .comment-form-wrapper { display:none; }
+  .powered-by { font-size:.75rem; opacity:.6; }
+  .attachment-link { font-size:.82rem; }
+  .badge-accepted { background:#198754; color:#fff; }
+  .badge-rejected { background:#dc3545; color:#fff; }
+  .badge-pending  { background:#6c757d; color:#fff; }
+
+  /* ── Estilos de impresión / PDF ── */
+  @media print {
+    @page { margin: 18mm 15mm; size: A4; }
+    body { background: #fff !important; }
+    .no-print { display: none !important; }
+    .survey-card { box-shadow: none !important; border-radius: 0 !important; border: 1px solid #dee2e6; }
+    .survey-header { background: #0f3460 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .comment-form-wrapper { display: none !important; }
+    .line-item { break-inside: avoid; }
+    .comment-item { break-inside: avoid; }
+    a[href]::after { content: none !important; }
+    .container { max-width: 100% !important; padding: 0 !important; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width:1200px;">
+
+  {% if messages %}
+    {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show mb-3" role="alert">
+      {{ msg }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="survey-card">
+    <!-- Cabecera -->
+    <div class="survey-header">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+          <h1 class="h3 mb-1 fw-bold">{{ survey.name }}</h1>
+          <div class="opacity-60 small font-monospace mb-1">{{ survey.folio }}</div>
+          <div class="opacity-75 small">
+            <i class="bi bi-calendar3 me-1"></i>{{ survey.date|date:"d \d\e F \d\e Y" }}
+            {% if survey.company %}
+              &nbsp;·&nbsp;<i class="bi bi-building me-1"></i>{{ survey.company.name }}
+            {% endif %}
+          </div>
+          {% if survey.description %}
+          <p class="mt-3 mb-0" style="opacity:.9; white-space:pre-line; font-size:.97rem;">{{ survey.description }}</p>
+          {% endif %}
+        </div>
+        <div class="d-flex gap-2 flex-wrap no-print">
+          <button class="btn btn-light btn-sm" onclick="copyUrl()" id="copy-btn">
+            <i class="bi bi-clipboard me-1"></i> Copiar enlace
+          </button>
+          <button class="btn btn-light btn-sm" onclick="window.print()">
+            <i class="bi bi-file-earmark-pdf me-1"></i> Imprimir / PDF
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Líneas -->
+    <div class="p-4">
+      {% if lines %}
+        <h6 class="text-muted text-uppercase fw-semibold mb-3" style="letter-spacing:.05em;">
+          <i class="bi bi-list-ul me-1"></i> Procesos levantados
+          <span class="badge bg-secondary ms-2">{{ lines|length }}</span>
+        </h6>
+        <div class="d-flex flex-column gap-4">
+          {% for line in lines %}
+          <div class="line-item ps-3 py-2" id="line-{{ line.pk }}">
+            <div class="d-flex align-items-start gap-3">
+              <div class="line-number mt-1">{{ forloop.counter }}</div>
+              <div class="flex-grow-1">
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                  <span class="fw-semibold fs-6">{{ line.title }}</span>
+                  {% if line.status == 'accepted' %}
+                    <span class="badge badge-accepted"><i class="bi bi-check-circle me-1"></i>Aceptado</span>
+                  {% elif line.status == 'rejected' %}
+                    <span class="badge badge-rejected"><i class="bi bi-x-circle me-1"></i>Rechazado</span>
+                  {% else %}
+                    <span class="badge badge-pending">Pendiente</span>
+                  {% endif %}
+                </div>
+                {% if line.description %}
+                  <div class="text-muted mt-1" style="white-space:pre-line;">{{ line.description }}</div>
+                {% endif %}
+
+                <!-- Botones Aceptar / Rechazar -->
+                <div class="d-flex gap-2 mt-3 flex-wrap">
+                  <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="line_id" value="{{ line.pk }}">
+                    <input type="hidden" name="action" value="accept">
+                    <button type="submit"
+                            class="btn btn-sm {% if line.status == 'accepted' %}btn-success{% else %}btn-outline-success{% endif %}">
+                      <i class="bi bi-check-lg me-1"></i> Aceptar
+                    </button>
+                  </form>
+                  <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="line_id" value="{{ line.pk }}">
+                    <input type="hidden" name="action" value="reject">
+                    <button type="submit"
+                            class="btn btn-sm {% if line.status == 'rejected' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                      <i class="bi bi-x-lg me-1"></i> Rechazar
+                    </button>
+                  </form>
+                </div>
+
+                <!-- Comentarios existentes -->
+                {% if line.comments.all %}
+                <div class="mt-3">
+                  <div class="small text-muted fw-semibold mb-2">
+                    <i class="bi bi-chat-left-text me-1"></i>
+                    {{ line.comments.count }} comentario{% if line.comments.count != 1 %}s{% endif %}
+                  </div>
+                  <div class="d-flex flex-column gap-2">
+                    {% for comment in line.comments.all %}
+                    <div class="comment-item p-3">
+                      <div class="d-flex justify-content-between align-items-start flex-wrap gap-1">
+                        <div class="fw-semibold small">
+                          <i class="bi bi-person-circle me-1 text-muted"></i>{{ comment.author_name }}
+                          {% if comment.author_email %}
+                            <span class="text-muted fw-normal ms-1">· {{ comment.author_email }}</span>
+                          {% endif %}
+                        </div>
+                        <span class="text-muted" style="font-size:.75rem;">
+                          {{ comment.created_at|date:"d/m/Y H:i" }}
+                        </span>
+                      </div>
+                      {% if comment.body %}
+                        <p class="mb-1 mt-2 small" style="white-space:pre-line;">{{ comment.body }}</p>
+                      {% endif %}
+                      {% if comment.attachment %}
+                        <a href="{{ comment.attachment.url }}" target="_blank"
+                           class="attachment-link text-decoration-none text-primary">
+                          <i class="bi bi-paperclip me-1"></i>Ver adjunto
+                        </a>
+                      {% endif %}
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- Botón para abrir formulario -->
+                <button type="button"
+                        class="btn btn-sm btn-outline-primary mt-3"
+                        onclick="toggleForm({{ line.pk }})">
+                  <i class="bi bi-plus-lg me-1"></i> Agregar comentario / adjunto
+                </button>
+
+                <!-- Formulario de comentario -->
+                <div class="comment-form-wrapper mt-3 p-3 border rounded bg-light" id="form-{{ line.pk }}">
+                  <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="line_id" value="{{ line.pk }}">
+                    <div class="row g-2 mb-2">
+                      <div class="col-md-6">
+                        <input type="text" name="author_name" class="form-control form-control-sm"
+                               placeholder="Tu nombre *" required>
+                      </div>
+                      <div class="col-md-6">
+                        <input type="email" name="author_email" class="form-control form-control-sm"
+                               placeholder="Tu email (opcional)">
+                      </div>
+                    </div>
+                    <textarea name="body" class="form-control form-control-sm mb-2" rows="3"
+                              placeholder="Escribe tu comentario (opcional)..."></textarea>
+                    <div class="mb-3">
+                      <label class="form-label small text-muted mb-1">
+                        <i class="bi bi-paperclip me-1"></i>Adjunto (PDF, Word, imagen, ZIP — máx. 10 MB)
+                      </label>
+                      <input type="file" name="attachment" class="form-control form-control-sm"
+                             accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.zip,.xlsx,.xls">
+                    </div>
+                    <div class="d-flex gap-2">
+                      <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-send me-1"></i> Enviar
+                      </button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm"
+                              onclick="toggleForm({{ line.pk }})">
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted text-center py-4">
+          <i class="bi bi-clipboard-x fs-3 d-block mb-2"></i>
+          Este levantamiento no tiene líneas registradas.
+        </p>
+      {% endif %}
+    </div>
+
+    <!-- Pie -->
+    <div class="border-top px-4 py-3 d-flex justify-content-between align-items-center bg-light no-print">
+      <span class="powered-by text-muted">
+        <i class="bi bi-ticket-perforated me-1"></i> TicketProo
+      </span>
+      <span class="text-muted small">
+        Generado el {{ survey.updated_at|date:"d/m/Y" }}
+      </span>
+    </div>
+  </div>
+
+  <!-- ══ Sección de Firmas ══════════════════════════════════════════ -->
+  <div class="survey-card mt-4">
+    <div class="survey-header">
+      <h2 class="h5 mb-0 fw-bold">
+        <i class="bi bi-pen me-2"></i> Firma de acuerdo
+      </h2>
+      <p class="mb-0 mt-1 opacity-75 small">
+        Al firmar, el participante confirma haber revisado y aceptado el contenido del levantamiento.
+        Puede haber múltiples firmantes.
+      </p>
+    </div>
+
+    <div class="p-4">
+
+      <!-- Firmas existentes -->
+      {% if signatures %}
+      <h6 class="text-muted text-uppercase fw-semibold mb-3" style="letter-spacing:.05em;">
+        <i class="bi bi-people me-1"></i> Firmantes
+        <span class="badge bg-secondary ms-1">{{ signatures|length }}</span>
+      </h6>
+      <div class="row g-3 mb-4">
+        {% for sig in signatures %}
+        <div class="col-md-6 col-lg-4">
+          <div class="border rounded p-3 h-100">
+            <div class="fw-semibold">{{ sig.signer_name }}</div>
+            {% if sig.signer_email %}
+              <div class="text-muted small"><i class="bi bi-envelope me-1"></i>{{ sig.signer_email }}</div>
+            {% endif %}
+            {% if sig.signer_phone %}
+              <div class="text-muted small"><i class="bi bi-telephone me-1"></i>{{ sig.signer_phone }}</div>
+            {% endif %}
+            <div class="mt-2 border rounded bg-light" style="line-height:0;">
+              <img src="{{ sig.signature_data }}" alt="Firma de {{ sig.signer_name }}"
+                   style="max-width:100%;height:80px;object-fit:contain;">
+            </div>
+            <div class="text-muted mt-2" style="font-size:.72rem;">
+              {{ sig.signed_at|date:"d/m/Y H:i" }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Formulario nueva firma -->
+      <h6 class="fw-semibold mb-3 no-print">
+        <i class="bi bi-plus-circle me-1"></i> Agregar firma
+      </h6>
+      <form method="post" id="sign-form" class="no-print" onsubmit="return prepareSignature()">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="sign">
+        <input type="hidden" name="signature_data" id="signature_data">
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+            <input type="text" name="signer_name" class="form-control" required placeholder="Nombre completo">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Email</label>
+            <input type="email" name="signer_email" class="form-control" placeholder="correo@ejemplo.com">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Teléfono</label>
+            <input type="tel" name="signer_phone" class="form-control" placeholder="+52 555 000 0000">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Firma <span class="text-danger">*</span></label>
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <small class="text-muted">Dibuja tu firma en el recuadro</small>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearCanvas()">
+              <i class="bi bi-eraser me-1"></i> Limpiar
+            </button>
+          </div>
+          <canvas id="signature-canvas"
+                  style="border:2px solid #0f3460;border-radius:8px;background:#fff;cursor:crosshair;touch-action:none;width:100%;max-width:600px;height:160px;display:block;">
+          </canvas>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check2-circle me-1"></i> Firmar acuerdo
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyUrl() {
+  navigator.clipboard.writeText(window.location.href).then(() => {
+    const btn = document.getElementById('copy-btn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> ¡Copiado!';
+    btn.classList.add('btn-success');
+    btn.classList.remove('btn-light');
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.classList.remove('btn-success');
+      btn.classList.add('btn-light');
+    }, 2000);
+  });
+}
+
+function toggleForm(lineId) {
+  const wrapper = document.getElementById('form-' + lineId);
+  const isVisible = wrapper.style.display === 'block';
+  wrapper.style.display = isVisible ? 'none' : 'block';
+  if (!isVisible) {
+    wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+// ── Canvas de firma ───────────────────────────────────────────────────
+(function () {
+  const canvas = document.getElementById('signature-canvas');
+  if (!canvas) return;
+
+  // Ajustar resolución al DPR para nitidez
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width  = rect.width  * dpr;
+    canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.strokeStyle = '#0f3460';
+    ctx.lineWidth   = 2;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+  }
+  resizeCanvas();
+
+  let drawing = false;
+  let lastX = 0, lastY = 0;
+
+  function pos(e) {
+    const r = canvas.getBoundingClientRect();
+    if (e.touches) {
+      return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
+    }
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  function startDraw(e) { e.preventDefault(); drawing = true; const p = pos(e); lastX = p.x; lastY = p.y; }
+  function endDraw()   { drawing = false; }
+  function draw(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    const ctx = canvas.getContext('2d');
+    const p = pos(e);
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    lastX = p.x; lastY = p.y;
+  }
+
+  canvas.addEventListener('mousedown',  startDraw);
+  canvas.addEventListener('mouseup',    endDraw);
+  canvas.addEventListener('mouseleave', endDraw);
+  canvas.addEventListener('mousemove',  draw);
+  canvas.addEventListener('touchstart', startDraw, { passive: false });
+  canvas.addEventListener('touchend',   endDraw);
+  canvas.addEventListener('touchmove',  draw,       { passive: false });
+
+  window.clearCanvas = function () {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  window.prepareSignature = function () {
+    // Comprobar que no esté vacío
+    const ctx = canvas.getContext('2d');
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    const empty = !data.some(v => v !== 0);
+    if (empty) { alert('Por favor dibuja tu firma antes de enviar.'); return false; }
+    document.getElementById('signature_data').value = canvas.toDataURL('image/png');
+    return true;
+  };
+})();
+</script>
+{% endblock %}

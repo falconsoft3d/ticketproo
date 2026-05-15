@@ -280,6 +280,13 @@
                                     <i class="bi bi-calculator"></i> Presupuesto Personal
                                 </a>
                             </li>
+
+                            <li>
+                                <a class="dropdown-item {% if 'process_survey' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'process_survey_list' %}">
+                                    <i class="bi bi-clipboard-check"></i> Levantamiento de Procesos
+                                </a>
+                            </li>
                             
                         </ul>
                     </li>
