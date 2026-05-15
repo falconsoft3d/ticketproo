@@ -24156,6 +24156,10 @@ class ProcessSurveyLine(models.Model):
         default=STATUS_PENDING,
         verbose_name='Estado',
     )
+    is_hidden = models.BooleanField(
+        default=False,
+        verbose_name='Oculto en vista pública',
+    )
 
     class Meta:
         ordering = ['order', 'pk']
@@ -24228,3 +24232,27 @@ class ProcessSurveySignature(models.Model):
 
     def __str__(self):
         return f'{self.signer_name} – {self.survey.name}'
+
+
+class ProcessSurveyPageView(models.Model):
+    """Registro de apertura de la página pública de un levantamiento"""
+
+    survey = models.ForeignKey(
+        ProcessSurvey,
+        on_delete=models.CASCADE,
+        related_name='page_views',
+        verbose_name='Levantamiento',
+    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
+    country = models.CharField(max_length=100, blank=True, verbose_name='País')
+    city = models.CharField(max_length=100, blank=True, verbose_name='Ciudad')
+    user_agent = models.CharField(max_length=500, blank=True, verbose_name='Navegador')
+    viewed_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha y hora')
+
+    class Meta:
+        ordering = ['-viewed_at']
+        verbose_name = 'Apertura'
+        verbose_name_plural = 'Aperturas'
+
+    def __str__(self):
+        return f'{self.survey.folio} – {self.ip_address} – {self.viewed_at:%d/%m/%Y %H:%M}'

@@ -78,16 +78,26 @@
   <!-- Resumen de aprobaciones -->
   {% if total %}
   <div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-      <div class="card border-0 shadow-sm text-center">
+    <div class="col-6 col-md-2">
+      <a href="{% url 'process_survey_page_views' survey.pk %}" class="text-decoration-none">
+        <div class="card border-0 shadow-sm text-center h-100" style="cursor:pointer;" title="Ver detalle de aperturas">
+          <div class="card-body py-3">
+            <div class="fs-3 fw-bold text-info">{{ page_views_count }}</div>
+            <div class="text-muted small"><i class="bi bi-eye me-1 text-info"></i>Aperturas</div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="card border-0 shadow-sm text-center h-100">
         <div class="card-body py-3">
           <div class="fs-3 fw-bold">{{ total }}</div>
-          <div class="text-muted small">Total</div>
+          <div class="text-muted small">Total puntos</div>
         </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="card border-0 shadow-sm text-center bg-success bg-opacity-10">
+      <div class="card border-0 shadow-sm text-center h-100 bg-success bg-opacity-10">
         <div class="card-body py-3">
           <div class="fs-3 fw-bold text-success">{{ accepted }}</div>
           <div class="text-muted small"><i class="bi bi-check-circle me-1 text-success"></i>Aceptados</div>
@@ -95,15 +105,15 @@
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="card border-0 shadow-sm text-center bg-danger bg-opacity-10">
+      <div class="card border-0 shadow-sm text-center h-100 bg-danger bg-opacity-10">
         <div class="card-body py-3">
           <div class="fs-3 fw-bold text-danger">{{ rejected }}</div>
           <div class="text-muted small"><i class="bi bi-x-circle me-1 text-danger"></i>Rechazados</div>
         </div>
       </div>
     </div>
-    <div class="col-6 col-md-3">
-      <div class="card border-0 shadow-sm text-center">
+    <div class="col-6 col-md-2">
+      <div class="card border-0 shadow-sm text-center h-100">
         <div class="card-body py-3">
           <div class="fs-3 fw-bold text-secondary">{{ pending }}</div>
           <div class="text-muted small">Pendientes</div>

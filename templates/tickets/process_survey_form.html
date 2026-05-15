@@ -5,8 +5,9 @@
 
 {% block extra_css %}
 <style>
-  #lines-container .line-row { background: #f8f9fa; border-radius: 6px; }
+  #lines-container .line-row { background: #f8f9fa; border-radius: 6px; transition: opacity .2s; }
   #lines-container .line-row:hover { background: #e9ecef; }
+  #lines-container .line-row.is-hidden-row { opacity: .45; }
 </style>
 {% endblock %}
 
@@ -66,7 +67,7 @@
         <div id="lines-container">
           {% if action == 'edit' %}
             {% for line in lines %}
-            <div class="line-row p-3 mb-2 border">
+            <div class="line-row p-3 mb-2 border{% if line.is_hidden %} is-hidden-row{% endif %}">
               <div class="row g-2 align-items-start">
                 <div class="col-md-4">
                   <label class="form-label small text-muted mb-1">Título</label>
@@ -78,7 +79,15 @@
                   <textarea name="line_description" class="form-control form-control-sm" rows="2"
                             placeholder="Descripción detallada...">{{ line.description }}</textarea>
                 </div>
-                <div class="col-md-1 d-flex align-items-center justify-content-end pt-3">
+                <div class="col-md-1 d-flex align-items-center justify-content-end gap-1 pt-3">
+                  <input type="hidden" name="line_hidden" value="{% if line.is_hidden %}1{% else %}0{% endif %}">
+                  <button type="button"
+                          class="btn btn-sm {% if line.is_hidden %}btn-secondary{% else %}btn-outline-secondary{% endif %} hide-line-btn"
+                          title="Ocultar / Mostrar en vista pública"
+                          data-line-pk="{{ line.pk }}"
+                          data-toggle-url="{% url 'process_survey_line_toggle_hidden' line.pk %}">
+                    <i class="bi {% if line.is_hidden %}bi-eye-slash{% else %}bi-eye{% endif %}"></i>
+                  </button>
                   <button type="button" class="btn btn-sm btn-outline-danger remove-line-btn" title="Eliminar línea">
                     <i class="bi bi-x-lg"></i>
                   </button>
@@ -120,7 +129,13 @@
         <textarea name="line_description" class="form-control form-control-sm" rows="2"
                   placeholder="Descripción detallada..."></textarea>
       </div>
-      <div class="col-md-1 d-flex align-items-center justify-content-end pt-3">
+      <div class="col-md-1 d-flex align-items-center justify-content-end gap-1 pt-3">
+        <input type="hidden" name="line_hidden" value="0">
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary hide-line-btn"
+                title="Ocultar / Mostrar en vista pública">
+          <i class="bi bi-eye"></i>
+        </button>
         <button type="button" class="btn btn-sm btn-outline-danger remove-line-btn" title="Eliminar línea">
           <i class="bi bi-x-lg"></i>
         </button>
@@ -152,6 +167,42 @@
     if (e.target.closest('.remove-line-btn')) {
       e.target.closest('.line-row').remove();
       updateEmpty();
+      return;
+    }
+    const hideBtn = e.target.closest('.hide-line-btn');
+    if (hideBtn) {
+      const row = hideBtn.closest('.line-row');
+      const hiddenInput = row.querySelector('input[name="line_hidden"]');
+      const icon = hideBtn.querySelector('i');
+      const isNowHidden = icon.classList.contains('bi-eye');
+
+      // Actualizar UI inmediatamente
+      icon.classList.toggle('bi-eye', !isNowHidden);
+      icon.classList.toggle('bi-eye-slash', isNowHidden);
+      hideBtn.classList.toggle('btn-outline-secondary', !isNowHidden);
+      hideBtn.classList.toggle('btn-secondary', isNowHidden);
+      row.classList.toggle('is-hidden-row', isNowHidden);
+      if (hiddenInput) hiddenInput.value = isNowHidden ? '1' : '0';
+
+      // Si tiene pk, persistir en BD al instante
+      const toggleUrl = hideBtn.dataset.toggleUrl;
+      if (toggleUrl) {
+        fetch(toggleUrl, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
+            'Content-Type': 'application/json',
+          },
+        }).catch(() => {
+          // Revertir si falla
+          icon.classList.toggle('bi-eye', isNowHidden);
+          icon.classList.toggle('bi-eye-slash', !isNowHidden);
+          hideBtn.classList.toggle('btn-outline-secondary', isNowHidden);
+          hideBtn.classList.toggle('btn-secondary', !isNowHidden);
+          row.classList.toggle('is-hidden-row', !isNowHidden);
+          if (hiddenInput) hiddenInput.value = isNowHidden ? '0' : '1';
+        });
+      }
     }
   });
 

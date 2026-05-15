@@ -60,6 +60,7 @@ from .models import (
     FunctionalRequirementDocument, FunctionalRequirement, FunctionalRequirementDocumentView,
     Checklist, ChecklistItem, Invoice, InvoiceLine, Product,
     ProcessSurvey, ProcessSurveyLine, ProcessSurveyLineComment, ProcessSurveySignature,
+    ProcessSurveyPageView,
     # ...existing code...
 )
 
@@ -56785,6 +56786,7 @@ def process_survey_detail(request, pk):
     rejected = lines.filter(status=ProcessSurveyLine.STATUS_REJECTED).count()
     pending  = lines.filter(status=ProcessSurveyLine.STATUS_PENDING).count()
     signatures = survey.signatures.all()
+    page_views_count = survey.page_views.count()
 
     context = {
         'page_title': survey.name,
@@ -56795,9 +56797,42 @@ def process_survey_detail(request, pk):
         'rejected': rejected,
         'pending': pending,
         'signatures': signatures,
+        'page_views_count': page_views_count,
         'submenu': get_crm_submenu(request, active_item='process_surveys'),
     }
     return render(request, 'tickets/process_survey_detail.html', context)
+
+
+@login_required
+def process_survey_line_toggle_hidden(request, line_pk):
+    """Toggle is_hidden en una línea de levantamiento (llamada AJAX)"""
+    from django.http import JsonResponse
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    line = get_object_or_404(ProcessSurveyLine, pk=line_pk)
+    survey = line.survey
+    if not is_agent(request.user) and survey.created_by != request.user:
+        return JsonResponse({'error': 'Sin permiso'}, status=403)
+    line.is_hidden = not line.is_hidden
+    line.save(update_fields=['is_hidden'])
+    return JsonResponse({'is_hidden': line.is_hidden})
+
+
+@login_required
+def process_survey_page_views(request, pk):
+    """Listado de aperturas de la página pública de un levantamiento"""
+    from .submenu_utils import get_crm_submenu
+    survey = get_object_or_404(ProcessSurvey, pk=pk)
+    if not is_agent(request.user) and survey.created_by != request.user:
+        raise Http404
+    views = survey.page_views.all()
+    context = {
+        'page_title': f'Aperturas – {survey.name}',
+        'survey': survey,
+        'views': views,
+        'submenu': get_crm_submenu(request, active_item='process_surveys'),
+    }
+    return render(request, 'tickets/process_survey_page_views.html', context)
 
 
 @login_required
@@ -56826,14 +56861,17 @@ def process_survey_edit(request, pk):
             survey.lines.all().delete()
             titles = request.POST.getlist('line_title')
             descriptions = request.POST.getlist('line_description')
+            hidden_flags = request.POST.getlist('line_hidden')
             for idx, title in enumerate(titles):
                 title = title.strip()
                 if title:
+                    is_hidden = hidden_flags[idx] == '1' if idx < len(hidden_flags) else False
                     ProcessSurveyLine.objects.create(
                         survey=survey,
                         order=idx + 1,
                         title=title,
                         description=descriptions[idx].strip() if idx < len(descriptions) else '',
+                        is_hidden=is_hidden,
                     )
             messages.success(request, f'Levantamiento "{survey.name}" actualizado.')
             return redirect('process_survey_detail', pk=survey.pk)
@@ -56875,7 +56913,7 @@ def process_survey_delete(request, pk):
 def public_process_survey_view(request, token):
     """Vista pública del levantamiento de procesos (sin autenticación)"""
     survey = get_object_or_404(ProcessSurvey, public_share_token=token)
-    lines = survey.lines.prefetch_related('comments').all()
+    lines = survey.lines.filter(is_hidden=False).prefetch_related('comments').all()
 
     if request.method == 'POST':
         action = request.POST.get('action', '')
@@ -56908,6 +56946,35 @@ def public_process_survey_view(request, token):
                 ip_address=ip or None,
             )
             messages.success(request, f'Firma de "{signer_name}" registrada correctamente.')
+            return redirect('public_process_survey', token=token)
+
+        # ── Agregar nueva línea desde vista pública ────────────────────────
+        if action == 'add_line':
+            new_title = request.POST.get('new_title', '').strip()
+            new_description = request.POST.get('new_description', '').strip()
+            proposer_name = request.POST.get('proposer_name', '').strip()
+            proposer_email = request.POST.get('proposer_email', '').strip()
+
+            if not new_title:
+                messages.error(request, 'El título del proceso es obligatorio.')
+                return redirect('public_process_survey', token=token)
+
+            max_order = survey.lines.aggregate(m=models.Max('order'))['m'] or 0
+            new_line = ProcessSurveyLine.objects.create(
+                survey=survey,
+                order=max_order + 1,
+                title=new_title,
+                description=new_description,
+                status=ProcessSurveyLine.STATUS_PENDING,
+            )
+            if proposer_name:
+                ProcessSurveyLineComment.objects.create(
+                    line=new_line,
+                    author_name=proposer_name,
+                    author_email=proposer_email,
+                    body='Proceso propuesto desde la vista pública.',
+                )
+            messages.success(request, f'Proceso "{new_title}" agregado. Quedará pendiente de revisión.')
             return redirect('public_process_survey', token=token)
 
         # ── Aceptar / Rechazar línea ──────────────────────────────────────
@@ -56963,5 +57030,53 @@ def public_process_survey_view(request, token):
         'lines': lines,
         'signatures': signatures,
     }
+
+    # ── Registrar apertura (sólo GET) ────────────────────────────────
+    if request.method == 'GET':
+        ip = (
+            request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+            or request.META.get('HTTP_X_REAL_IP', '').strip()
+            or request.META.get('REMOTE_ADDR', '')
+        )
+        country = ''
+        city = ''
+        is_public_ip = ip and not ip.startswith(
+            ('127.', '192.168.', '10.', '172.16.', '172.17.', '172.18.',
+             '172.19.', '172.20.', '172.21.', '172.22.', '172.23.', '172.24.',
+             '172.25.', '172.26.', '172.27.', '172.28.', '172.29.', '172.30.',
+             '172.31.', 'localhost', '::1')
+        )
+        if is_public_ip:
+            try:
+                import geoip2.database
+                from django.conf import settings as _s
+                geoip_path = getattr(_s, 'GEOIP_PATH', None)
+                if geoip_path and os.path.exists(os.path.join(geoip_path, 'GeoLite2-City.mmdb')):
+                    reader = geoip2.database.Reader(os.path.join(geoip_path, 'GeoLite2-City.mmdb'))
+                    geo = reader.city(ip)
+                    country = geo.country.name or ''
+                    city = geo.city.name or ''
+                    reader.close()
+            except Exception:
+                pass
+            if not country:
+                try:
+                    import requests as _r
+                    resp = _r.get(f'http://ip-api.com/json/{ip}', timeout=4)
+                    if resp.status_code == 200:
+                        d = resp.json()
+                        if d.get('status') == 'success':
+                            country = d.get('country', '')
+                            city = d.get('city', '')
+                except Exception:
+                    pass
+        ProcessSurveyPageView.objects.create(
+            survey=survey,
+            ip_address=ip or None,
+            country=country,
+            city=city,
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+        )
+
     return render(request, 'tickets/process_survey_public.html', context)
 

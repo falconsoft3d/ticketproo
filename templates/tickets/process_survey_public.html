@@ -234,6 +234,52 @@
           Este levantamiento no tiene líneas registradas.
         </p>
       {% endif %}
+
+      <!-- ── Botón proponer nuevo proceso ────────────────────── -->
+      <div class="mt-4 no-print">
+        <button type="button" class="btn btn-outline-primary btn-sm"
+                onclick="document.getElementById('add-line-panel').classList.toggle('d-none')">
+          <i class="bi bi-plus-circle me-1"></i> Proponer nuevo proceso
+        </button>
+        <div id="add-line-panel" class="d-none mt-3 p-4 border rounded bg-light">
+          <h6 class="fw-semibold mb-3"><i class="bi bi-plus-lg me-1 text-primary"></i>Nuevo proceso</h6>
+          <form method="post" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_line">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Título del proceso <span class="text-danger">*</span></label>
+              <input type="text" name="new_title" class="form-control form-control-sm"
+                     placeholder="Ej. Validación de facturas, Alta de proveedor..." required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Descripción <span class="text-muted fw-normal">(opcional)</span></label>
+              <textarea name="new_description" class="form-control form-control-sm" rows="3"
+                        placeholder="Describe el proceso con detalle..."></textarea>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Tu nombre <span class="text-muted fw-normal">(opcional)</span></label>
+                <input type="text" name="proposer_name" class="form-control form-control-sm"
+                       placeholder="Nombre del proponente">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Tu email <span class="text-muted fw-normal">(opcional)</span></label>
+                <input type="email" name="proposer_email" class="form-control form-control-sm"
+                       placeholder="correo@ejemplo.com">
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-send me-1"></i> Enviar propuesta
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm"
+                      onclick="document.getElementById('add-line-panel').classList.add('d-none')">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
 
     <!-- Pie -->
