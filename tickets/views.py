@@ -56858,6 +56858,19 @@ def process_survey_line_toggle_hidden(request, line_pk):
     return JsonResponse({'is_hidden': line.is_hidden})
 
 
+@login_required
+def process_survey_line_comment_delete(request, comment_pk):
+    """Elimina un comentario de una línea de levantamiento. Solo usuarios autenticados."""
+    from .models import ProcessSurveyLineComment
+    comment = get_object_or_404(ProcessSurveyLineComment, pk=comment_pk)
+    survey = comment.line.survey
+    if request.method == 'POST':
+        comment.delete()
+        from django.contrib import messages
+        messages.success(request, 'Comentario eliminado.')
+    return redirect('public_process_survey', token=survey.public_share_token)
+
+
 def process_survey_line_ai_ask(request, line_pk):
     """Endpoint público: recibe una pregunta sobre una línea y responde con IA."""
     from django.http import JsonResponse
