@@ -56746,27 +56746,43 @@ def process_survey_create(request):
                 description=description,
                 company=company,
                 created_by=request.user,
+                responsible=request.user,
             )
             # Procesar líneas
             titles = request.POST.getlist('line_title')
             descriptions = request.POST.getlist('line_description')
+            complexities = request.POST.getlist('line_complexity')
             for idx, title in enumerate(titles):
                 title = title.strip()
                 if title:
+                    raw_c = complexities[idx].strip() if idx < len(complexities) else ''
+                    complexity = int(raw_c) if raw_c.isdigit() and 1 <= int(raw_c) <= 10 else None
                     ProcessSurveyLine.objects.create(
                         survey=survey,
                         order=idx + 1,
                         title=title,
                         description=descriptions[idx].strip() if idx < len(descriptions) else '',
+                        complexity=complexity,
                     )
             messages.success(request, f'Levantamiento "{survey.name}" creado exitosamente.')
+            # Procesar URLs
+            url_labels = request.POST.getlist('url_label')
+            url_values = request.POST.getlist('url_value')
+            for idx, label in enumerate(url_labels):
+                label = label.strip()
+                val = url_values[idx].strip() if idx < len(url_values) else ''
+                if label and val:
+                    from .models import ProcessSurveyURL
+                    ProcessSurveyURL.objects.create(survey=survey, label=label, url=val, order=idx + 1)
             return redirect('process_survey_detail', pk=survey.pk)
 
     companies = Company.objects.filter(is_active=True).order_by('name')
+    users = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
     context = {
         'page_title': 'Nuevo Levantamiento de Procesos',
         'action': 'create',
         'companies': companies,
+        'users': users,
         'submenu': get_crm_submenu(request, active_item='process_surveys'),
     }
     return render(request, 'tickets/process_survey_form.html', context)
@@ -56776,28 +56792,49 @@ def process_survey_create(request):
 def process_survey_detail(request, pk):
     """Detalle de un levantamiento de procesos"""
     from .submenu_utils import get_crm_submenu
+    from django.db.models import Max
     survey = get_object_or_404(ProcessSurvey, pk=pk)
     if not is_agent(request.user) and survey.created_by != request.user:
         raise Http404
 
-    lines = survey.lines.prefetch_related('comments').all()
-    total = lines.count()
-    accepted = lines.filter(status=ProcessSurveyLine.STATUS_ACCEPTED).count()
-    rejected = lines.filter(status=ProcessSurveyLine.STATUS_REJECTED).count()
-    pending  = lines.filter(status=ProcessSurveyLine.STATUS_PENDING).count()
+    all_lines = survey.lines.prefetch_related('comments').all()
+
+    # Agrupar líneas por versión
+    versions_data = {}
+    for line in all_lines:
+        v = line.version
+        if v not in versions_data:
+            versions_data[v] = []
+        versions_data[v].append(line)
+
+    # Ordenar versiones descendente (la más reciente primero)
+    versions_list = sorted(versions_data.items(), key=lambda x: x[0], reverse=True)
+
+    max_version = max(versions_data.keys()) if versions_data else 1
+
+    # Stats de la versión más reciente
+    latest_lines = versions_data.get(max_version, [])
+    total = len(latest_lines)
+    accepted = sum(1 for l in latest_lines if l.status == ProcessSurveyLine.STATUS_ACCEPTED)
+    rejected = sum(1 for l in latest_lines if l.status == ProcessSurveyLine.STATUS_REJECTED)
+    pending  = sum(1 for l in latest_lines if l.status == ProcessSurveyLine.STATUS_PENDING)
+
     signatures = survey.signatures.all()
     page_views_count = survey.page_views.count()
 
     context = {
         'page_title': survey.name,
         'survey': survey,
-        'lines': lines,
+        'lines': all_lines,
+        'versions_list': versions_list,
+        'max_version': max_version,
         'total': total,
         'accepted': accepted,
         'rejected': rejected,
         'pending': pending,
         'signatures': signatures,
         'page_views_count': page_views_count,
+        'survey_urls': survey.urls.all(),
         'submenu': get_crm_submenu(request, active_item='process_surveys'),
     }
     return render(request, 'tickets/process_survey_detail.html', context)
@@ -56816,6 +56853,105 @@ def process_survey_line_toggle_hidden(request, line_pk):
     line.is_hidden = not line.is_hidden
     line.save(update_fields=['is_hidden'])
     return JsonResponse({'is_hidden': line.is_hidden})
+
+
+def process_survey_line_ai_ask(request, line_pk):
+    """Endpoint público: recibe una pregunta sobre una línea y responde con IA."""
+    from django.http import JsonResponse
+    import json as _json
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    line = get_object_or_404(ProcessSurveyLine, pk=line_pk)
+    survey = line.survey
+
+    try:
+        body = _json.loads(request.body)
+        question = body.get('question', '').strip()
+    except Exception:
+        question = request.POST.get('question', '').strip()
+
+    if not question:
+        return JsonResponse({'error': 'La pregunta no puede estar vacía.'}, status=400)
+    if len(question) > 2000:
+        return JsonResponse({'error': 'La pregunta es demasiado larga.'}, status=400)
+
+    try:
+        from .models import SystemConfiguration
+        config = SystemConfiguration.get_config()
+        if not getattr(config, 'openai_api_key', None):
+            return JsonResponse({'error': 'Asistente IA no disponible en este momento.'}, status=503)
+
+        from openai import OpenAI
+        client = OpenAI(api_key=config.openai_api_key)
+
+        system_prompt = (
+            "Eres un asistente experto en análisis y levantamiento de procesos empresariales. "
+            "Responde de forma clara, concisa y profesional en español. "
+            "Tu respuesta será usada como comentario en un documento de levantamiento de procesos."
+        )
+        user_content = (
+            f"Contexto del levantamiento: \"{survey.name}\"\n"
+            f"Proceso consultado: \"{line.title}\"\n"
+        )
+        if line.description:
+            user_content += f"Descripción: {line.description}\n"
+        user_content += f"\nPregunta del usuario: {question}"
+
+        response = client.chat.completions.create(
+            model=getattr(config, 'openai_model', None) or 'gpt-4o-mini',
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user",   "content": user_content},
+            ],
+            max_tokens=800,
+            temperature=0.6,
+        )
+        answer = response.choices[0].message.content.strip()
+        return JsonResponse({'answer': answer})
+
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"process_survey_line_ai_ask error: {e}")
+        return JsonResponse({'error': 'Error al contactar el asistente IA. Intenta más tarde.'}, status=500)
+
+
+@login_required
+def process_survey_new_version(request, pk):
+    """Crea una nueva versión del levantamiento copiando todas las líneas de la versión actual."""
+    if request.method != 'POST':
+        return redirect('process_survey_detail', pk=pk)
+
+    survey = get_object_or_404(ProcessSurvey, pk=pk)
+    if not is_agent(request.user) and survey.created_by != request.user:
+        raise Http404
+
+    # Versión máxima actual
+    from django.db.models import Max
+    max_version = survey.lines.aggregate(v=Max('version'))['v'] or 1
+
+    if max_version >= 10:
+        messages.error(request, 'Se ha alcanzado el límite máximo de 10 versiones.')
+        return redirect('process_survey_detail', pk=pk)
+
+    new_version = max_version + 1
+
+    # Copiar todas las líneas de la versión más reciente a la nueva versión
+    source_lines = survey.lines.filter(version=max_version)
+    for line in source_lines:
+        ProcessSurveyLine.objects.create(
+            survey=survey,
+            order=line.order,
+            title=line.title,
+            description=line.description,
+            status=ProcessSurveyLine.STATUS_PENDING,
+            is_hidden=line.is_hidden,
+            complexity=line.complexity,
+            version=new_version,
+        )
+
+    messages.success(request, f'Versión {new_version} creada con {source_lines.count()} líneas copiadas.')
+    return redirect('process_survey_detail', pk=pk)
 
 
 @login_required
@@ -56839,9 +56975,13 @@ def process_survey_page_views(request, pk):
 def process_survey_edit(request, pk):
     """Editar levantamiento de procesos"""
     from .submenu_utils import get_crm_submenu
+    from django.db.models import Max
     survey = get_object_or_404(ProcessSurvey, pk=pk)
     if not is_agent(request.user) and survey.created_by != request.user:
         raise Http404
+
+    # Solo editar la versión más reciente
+    max_version = survey.lines.aggregate(v=Max('version'))['v'] or 1
 
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
@@ -56855,34 +56995,56 @@ def process_survey_edit(request, pk):
             survey.date = date
             survey.description = request.POST.get('description', '').strip()
             survey.company = get_object_or_404(Company, pk=company_id) if company_id else None
+            responsible_id = request.POST.get('responsible', '').strip()
+            if responsible_id:
+                survey.responsible = get_object_or_404(User, pk=responsible_id)
             survey.save()
 
-            # Reemplazar líneas
-            survey.lines.all().delete()
+            # Reemplazar solo las líneas de la versión más reciente
+            survey.lines.filter(version=max_version).delete()
             titles = request.POST.getlist('line_title')
             descriptions = request.POST.getlist('line_description')
             hidden_flags = request.POST.getlist('line_hidden')
+            complexities = request.POST.getlist('line_complexity')
             for idx, title in enumerate(titles):
                 title = title.strip()
                 if title:
                     is_hidden = hidden_flags[idx] == '1' if idx < len(hidden_flags) else False
+                    raw_c = complexities[idx].strip() if idx < len(complexities) else ''
+                    complexity = int(raw_c) if raw_c.isdigit() and 1 <= int(raw_c) <= 10 else None
                     ProcessSurveyLine.objects.create(
                         survey=survey,
                         order=idx + 1,
                         title=title,
                         description=descriptions[idx].strip() if idx < len(descriptions) else '',
                         is_hidden=is_hidden,
+                        complexity=complexity,
+                        version=max_version,
                     )
-            messages.success(request, f'Levantamiento "{survey.name}" actualizado.')
+            messages.success(request, f'Levantamiento "{survey.name}" actualizado (versión {max_version}).')
+            # Procesar URLs
+            survey.urls.all().delete()
+            url_labels = request.POST.getlist('url_label')
+            url_values = request.POST.getlist('url_value')
+            for idx, label in enumerate(url_labels):
+                label = label.strip()
+                val = url_values[idx].strip() if idx < len(url_values) else ''
+                if label and val:
+                    from .models import ProcessSurveyURL
+                    ProcessSurveyURL.objects.create(survey=survey, label=label, url=val, order=idx + 1)
             return redirect('process_survey_detail', pk=survey.pk)
 
     companies = Company.objects.filter(is_active=True).order_by('name')
+    users = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
     context = {
         'page_title': f'Editar: {survey.name}',
         'action': 'edit',
         'survey': survey,
-        'lines': survey.lines.all(),
+        'lines': survey.lines.filter(version=max_version),
+        'current_version': max_version,
         'companies': companies,
+        'users': users,
+        'survey_urls': survey.urls.all(),
         'submenu': get_crm_submenu(request, active_item='process_surveys'),
     }
     return render(request, 'tickets/process_survey_form.html', context)
@@ -57025,10 +57187,25 @@ def public_process_survey_view(request, token):
         return redirect('public_process_survey', token=token)
 
     signatures = survey.signatures.all()
+
+    # Agrupar líneas visibles por versión (descendente)
+    all_visible_lines = survey.lines.filter(is_hidden=False).prefetch_related('comments').all()
+    versions_data = {}
+    for line in all_visible_lines:
+        v = line.version
+        if v not in versions_data:
+            versions_data[v] = []
+        versions_data[v].append(line)
+    versions_list = sorted(versions_data.items(), key=lambda x: x[0], reverse=True)
+    max_version = max(versions_data.keys()) if versions_data else 1
+
     context = {
         'survey': survey,
-        'lines': lines,
+        'lines': all_visible_lines,
+        'versions_list': versions_list,
+        'max_version': max_version,
         'signatures': signatures,
+        'survey_urls': survey.urls.all(),
     }
 
     # ── Registrar apertura (sólo GET) ────────────────────────────────

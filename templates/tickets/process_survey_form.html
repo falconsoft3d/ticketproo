@@ -31,12 +31,25 @@
         <input type="text" name="name" class="form-control"
                value="{{ survey.name|default:'' }}" required placeholder="Nombre del levantamiento">
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
         <label class="form-label fw-semibold">Fecha <span class="text-danger">*</span></label>
         <input type="date" name="date" class="form-control"
                value="{% if survey %}{{ survey.date|date:'Y-m-d' }}{% endif %}" required>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">Responsable</label>
+        <select name="responsible" class="form-select">
+          <option value="">— Sin asignar —</option>
+          {% for u in users %}
+            <option value="{{ u.pk }}"
+              {% if survey and survey.responsible_id == u.pk %}selected
+              {% elif not survey and request.user.pk == u.pk %}selected{% endif %}>
+              {% if u.get_full_name %}{{ u.get_full_name }}{% else %}{{ u.username }}{% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
         <label class="form-label fw-semibold">Empresa</label>
         <select name="company" class="form-select">
           <option value="">— Sin empresa —</option>
@@ -58,7 +71,12 @@
     <!-- Líneas -->
     <div class="card shadow-sm mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="bi bi-list-ul me-2"></i>Líneas del levantamiento</h6>
+        <h6 class="mb-0">
+          <i class="bi bi-list-ul me-2"></i>Líneas del levantamiento
+          {% if current_version %}
+            <span class="badge bg-warning text-dark ms-2">Versión {{ current_version }}</span>
+          {% endif %}
+        </h6>
         <button type="button" class="btn btn-sm btn-outline-primary" id="add-line-btn">
           <i class="bi bi-plus-lg me-1"></i> Agregar línea
         </button>
@@ -74,7 +92,25 @@
                   <input type="text" name="line_title" class="form-control form-control-sm"
                          value="{{ line.title }}" required placeholder="Título del proceso">
                 </div>
-                <div class="col-md-7">
+                <div class="col-md-2">
+                  <label class="form-label small text-muted mb-1">Complejidad</label>
+                  <select name="line_complexity" class="form-select form-select-sm complexity-select">
+                    <option value="">—</option>
+                    {% for n in "1234567890" %}
+                    {% endfor %}
+                    <option value="1"  {% if line.complexity == 1  %}selected{% endif %}>1 — Muy simple</option>
+                    <option value="2"  {% if line.complexity == 2  %}selected{% endif %}>2</option>
+                    <option value="3"  {% if line.complexity == 3  %}selected{% endif %}>3</option>
+                    <option value="4"  {% if line.complexity == 4  %}selected{% endif %}>4 — Medio</option>
+                    <option value="5"  {% if line.complexity == 5  %}selected{% endif %}>5</option>
+                    <option value="6"  {% if line.complexity == 6  %}selected{% endif %}>6</option>
+                    <option value="7"  {% if line.complexity == 7  %}selected{% endif %}>7 — Complejo</option>
+                    <option value="8"  {% if line.complexity == 8  %}selected{% endif %}>8</option>
+                    <option value="9"  {% if line.complexity == 9  %}selected{% endif %}>9</option>
+                    <option value="10" {% if line.complexity == 10 %}selected{% endif %}>10 — Muy complejo</option>
+                  </select>
+                </div>
+                <div class="col-md-5">
                   <label class="form-label small text-muted mb-1">Descripción</label>
                   <textarea name="line_description" class="form-control form-control-sm" rows="2"
                             placeholder="Descripción detallada...">{{ line.description }}</textarea>
@@ -105,6 +141,43 @@
       </div>
     </div>
 
+    <!-- URLs de referencia -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-link-45deg me-2"></i>URLs de referencia</h6>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="add-url-btn">
+          <i class="bi bi-plus-lg me-1"></i> Agregar URL
+        </button>
+      </div>
+      <div class="card-body">
+        <div id="urls-container">
+          {% if survey_urls %}
+            {% for u in survey_urls %}
+            <div class="url-row row g-2 align-items-center mb-2">
+              <div class="col-md-4">
+                <input type="text" name="url_label" class="form-control form-control-sm"
+                       value="{{ u.label }}" placeholder="Etiqueta (ej. Drive, Figma…)">
+              </div>
+              <div class="col-md-7">
+                <input type="url" name="url_value" class="form-control form-control-sm"
+                       value="{{ u.url }}" placeholder="https://...">
+              </div>
+              <div class="col-md-1 text-end">
+                <button type="button" class="btn btn-sm btn-outline-danger remove-url-btn" title="Eliminar">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <p class="text-muted small mb-0" id="urls-empty-msg">
+              <i class="bi bi-info-circle me-1"></i>Agrega enlaces de referencia (documentos, diseños, Drive, etc.)
+            </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
     <div class="d-flex gap-2">
       <button type="submit" class="btn btn-primary">
         <i class="bi bi-check-lg me-1"></i>
@@ -115,6 +188,25 @@
   </form>
 </div>
 
+<!-- Template para nueva URL -->
+<template id="url-template">
+  <div class="url-row row g-2 align-items-center mb-2">
+    <div class="col-md-4">
+      <input type="text" name="url_label" class="form-control form-control-sm"
+             placeholder="Etiqueta (ej. Drive, Figma…)">
+    </div>
+    <div class="col-md-7">
+      <input type="url" name="url_value" class="form-control form-control-sm"
+             placeholder="https://...">
+    </div>
+    <div class="col-md-1 text-end">
+      <button type="button" class="btn btn-sm btn-outline-danger remove-url-btn" title="Eliminar">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+  </div>
+</template>
+
 <!-- Template para nueva línea -->
 <template id="line-template">
   <div class="line-row p-3 mb-2 border">
@@ -124,7 +216,23 @@
         <input type="text" name="line_title" class="form-control form-control-sm"
                required placeholder="Título del proceso">
       </div>
-      <div class="col-md-7">
+      <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Complejidad</label>
+        <select name="line_complexity" class="form-select form-select-sm complexity-select">
+          <option value="">—</option>
+          <option value="1">1 — Muy simple</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4 — Medio</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7 — Complejo</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10 — Muy complejo</option>
+        </select>
+      </div>
+      <div class="col-md-5">
         <label class="form-label small text-muted mb-1">Descripción</label>
         <textarea name="line_description" class="form-control form-control-sm" rows="2"
                   placeholder="Descripción detallada..."></textarea>
@@ -207,5 +315,23 @@
   });
 
   updateEmpty();
+
+  // ── URLs ──────────────────────────────────────────────────────────
+  const urlContainer = document.getElementById('urls-container');
+  const urlEmptyMsg  = document.getElementById('urls-empty-msg');
+  const urlTemplate  = document.getElementById('url-template');
+
+  document.getElementById('add-url-btn').addEventListener('click', () => {
+    if (urlEmptyMsg) urlEmptyMsg.remove();
+    const clone = urlTemplate.content.cloneNode(true);
+    urlContainer.appendChild(clone);
+    urlContainer.lastElementChild.querySelector('input').focus();
+  });
+
+  urlContainer.addEventListener('click', e => {
+    if (e.target.closest('.remove-url-btn')) {
+      e.target.closest('.url-row').remove();
+    }
+  });
 </script>
 {% endblock %}

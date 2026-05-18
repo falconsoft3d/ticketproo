@@ -24093,6 +24093,14 @@ class ProcessSurvey(models.Model):
         related_name='process_surveys_created',
         verbose_name='Creado por',
     )
+    responsible = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='process_surveys_responsible',
+        verbose_name='Responsable',
+    )
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
 
@@ -24160,9 +24168,20 @@ class ProcessSurveyLine(models.Model):
         default=False,
         verbose_name='Oculto en vista pública',
     )
+    complexity = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Complejidad',
+        help_text='Nivel de complejidad del proceso: 1 (muy simple) a 10 (muy complejo)',
+    )
+    version = models.PositiveSmallIntegerField(
+        default=1,
+        verbose_name='Versión',
+        help_text='Número de versión del levantamiento (máx. 10)',
+    )
 
     class Meta:
-        ordering = ['order', 'pk']
+        ordering = ['version', 'order', 'pk']
         verbose_name = 'Línea de Levantamiento'
         verbose_name_plural = 'Líneas de Levantamiento'
 
@@ -24206,6 +24225,38 @@ class ProcessSurveyLineComment(models.Model):
 
     def __str__(self):
         return f'{self.author_name} – {self.line.title}'
+
+
+class ProcessSurveyURL(models.Model):
+    """URL de referencia asociada a un levantamiento de procesos"""
+
+    survey = models.ForeignKey(
+        ProcessSurvey,
+        on_delete=models.CASCADE,
+        related_name='urls',
+        verbose_name='Levantamiento',
+    )
+    label = models.CharField(
+        max_length=300,
+        verbose_name='Etiqueta',
+        help_text='Nombre descriptivo del enlace',
+    )
+    url = models.URLField(
+        max_length=2000,
+        verbose_name='URL',
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Orden',
+    )
+
+    class Meta:
+        ordering = ['order', 'pk']
+        verbose_name = 'URL de Levantamiento'
+        verbose_name_plural = 'URLs de Levantamiento'
+
+    def __str__(self):
+        return f'{self.label} ({self.survey})'
 
 
 class ProcessSurveySignature(models.Model):

@@ -39,6 +39,11 @@
   .badge-rejected { background:#dc3545; color:#fff; }
   .badge-pending  { background:#6c757d; color:#fff; }
 
+  /* ── Pestañas de versión ── */
+  #pubVersionTabs .nav-link { color: #495057; border-radius: 8px 8px 0 0; }
+  #pubVersionTabs .nav-link.active { color: #0f3460; border-color: #dee2e6 #dee2e6 #fff; font-weight:600; }
+  #pubVersionTabs { border-bottom: 2px solid #dee2e6; }
+
   /* ── Estilos de impresión / PDF ── */
   @media print {
     @page { margin: 18mm 15mm; size: A4; }
@@ -79,6 +84,11 @@
             {% if survey.company %}
               &nbsp;·&nbsp;<i class="bi bi-building me-1"></i>{{ survey.company.name }}
             {% endif %}
+            {% if survey.responsible %}
+              &nbsp;·&nbsp;<i class="bi bi-person-badge me-1"></i>
+              <strong>Responsable:</strong>
+              {% if survey.responsible.get_full_name %}{{ survey.responsible.get_full_name }}{% else %}{{ survey.responsible.username }}{% endif %}
+            {% endif %}
           </div>
           {% if survey.description %}
           <p class="mt-3 mb-0" style="opacity:.9; white-space:pre-line; font-size:.97rem;">{{ survey.description }}</p>
@@ -95,139 +105,227 @@
       </div>
     </div>
 
-    <!-- Líneas -->
+    <!-- Líneas por versión (pestañas) -->
     <div class="p-4">
-      {% if lines %}
-        <h6 class="text-muted text-uppercase fw-semibold mb-3" style="letter-spacing:.05em;">
-          <i class="bi bi-list-ul me-1"></i> Procesos levantados
-          <span class="badge bg-secondary ms-2">{{ lines|length }}</span>
-        </h6>
-        <div class="d-flex flex-column gap-4">
-          {% for line in lines %}
-          <div class="line-item ps-3 py-2" id="line-{{ line.pk }}">
-            <div class="d-flex align-items-start gap-3">
-              <div class="line-number mt-1">{{ forloop.counter }}</div>
-              <div class="flex-grow-1">
-                <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
-                  <span class="fw-semibold fs-6">{{ line.title }}</span>
-                  {% if line.status == 'accepted' %}
-                    <span class="badge badge-accepted"><i class="bi bi-check-circle me-1"></i>Aceptado</span>
-                  {% elif line.status == 'rejected' %}
-                    <span class="badge badge-rejected"><i class="bi bi-x-circle me-1"></i>Rechazado</span>
-                  {% else %}
-                    <span class="badge badge-pending">Pendiente</span>
-                  {% endif %}
-                </div>
-                {% if line.description %}
-                  <div class="text-muted mt-1" style="white-space:pre-line;">{{ line.description }}</div>
-                {% endif %}
+      {% if versions_list %}
 
-                <!-- Botones Aceptar / Rechazar -->
-                <div class="d-flex gap-2 mt-3 flex-wrap">
-                  <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="line_id" value="{{ line.pk }}">
-                    <input type="hidden" name="action" value="accept">
-                    <button type="submit"
-                            class="btn btn-sm {% if line.status == 'accepted' %}btn-success{% else %}btn-outline-success{% endif %}">
-                      <i class="bi bi-check-lg me-1"></i> Aceptar
-                    </button>
-                  </form>
-                  <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="line_id" value="{{ line.pk }}">
-                    <input type="hidden" name="action" value="reject">
-                    <button type="submit"
-                            class="btn btn-sm {% if line.status == 'rejected' %}btn-danger{% else %}btn-outline-danger{% endif %}">
-                      <i class="bi bi-x-lg me-1"></i> Rechazar
-                    </button>
-                  </form>
-                </div>
+        <!-- Nav Tabs -->
+        <ul class="nav nav-tabs mb-4" id="pubVersionTabs" role="tablist">
+          {% for version_num, version_lines in versions_list %}
+          <li class="nav-item" role="presentation">
+            <button class="nav-link {% if forloop.first %}active{% endif %}"
+                    id="pub-tab-v{{ version_num }}"
+                    data-bs-toggle="tab"
+                    data-bs-target="#pub-pane-v{{ version_num }}"
+                    type="button" role="tab">
+              {% if forloop.first %}
+                <i class="bi bi-layers-fill me-1 text-warning"></i>
+              {% else %}
+                <i class="bi bi-layers me-1 text-muted"></i>
+              {% endif %}
+              Versión {{ version_num }}
+              <span class="badge {% if forloop.first %}bg-warning text-dark{% else %}bg-secondary{% endif %} ms-1">{{ version_lines|length }}</span>
+            </button>
+          </li>
+          {% endfor %}
+        </ul>
 
-                <!-- Comentarios existentes -->
-                {% if line.comments.all %}
-                <div class="mt-3">
-                  <div class="small text-muted fw-semibold mb-2">
-                    <i class="bi bi-chat-left-text me-1"></i>
-                    {{ line.comments.count }} comentario{% if line.comments.count != 1 %}s{% endif %}
-                  </div>
-                  <div class="d-flex flex-column gap-2">
-                    {% for comment in line.comments.all %}
-                    <div class="comment-item p-3">
-                      <div class="d-flex justify-content-between align-items-start flex-wrap gap-1">
-                        <div class="fw-semibold small">
-                          <i class="bi bi-person-circle me-1 text-muted"></i>{{ comment.author_name }}
-                          {% if comment.author_email %}
-                            <span class="text-muted fw-normal ms-1">· {{ comment.author_email }}</span>
+        <div class="tab-content" id="pubVersionTabContent">
+          {% for version_num, version_lines in versions_list %}
+          <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
+               id="pub-pane-v{{ version_num }}" role="tabpanel">
+
+            {% if not forloop.first %}
+            <div class="alert alert-secondary py-2 px-3 mb-3" role="alert">
+              <i class="bi bi-archive me-1"></i>
+              <strong>Versión {{ version_num }}</strong> — Versión archivada (solo lectura).
+            </div>
+            {% endif %}
+
+            <div class="d-flex flex-column gap-4">
+              {% for line in version_lines %}
+              <div class="line-item ps-3 py-2" id="line-{{ line.pk }}">
+                <div class="d-flex align-items-start gap-3">
+                  <div class="line-number mt-1">{{ forloop.counter }}</div>
+                  <div class="flex-grow-1">
+                    <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                      <span class="fw-semibold fs-6">{{ line.title }}</span>
+                      {% if line.status == 'accepted' %}
+                        <span class="badge badge-accepted"><i class="bi bi-check-circle me-1"></i>Aceptado</span>
+                      {% elif line.status == 'rejected' %}
+                        <span class="badge badge-rejected"><i class="bi bi-x-circle me-1"></i>Rechazado</span>
+                      {% else %}
+                        <span class="badge badge-pending">Pendiente</span>
+                      {% endif %}
+                      <span class="badge bg-light text-muted border" style="font-size:.7rem;">v{{ line.version }}</span>
+                    </div>
+                    {% if line.description %}
+                      <div class="text-muted mt-1" style="white-space:pre-line;">{{ line.description }}</div>
+                    {% endif %}
+
+                    <!-- Botones Aceptar / Rechazar / Comentario (solo versión más reciente) -->
+                    {% if version_num == max_version %}
+                    <div class="d-flex gap-2 mt-3 flex-wrap align-items-center">
+                      <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="line_id" value="{{ line.pk }}">
+                        <input type="hidden" name="action" value="accept">
+                        <button type="submit"
+                                class="btn btn-sm {% if line.status == 'accepted' %}btn-success{% else %}btn-outline-success{% endif %}">
+                          <i class="bi bi-check-lg me-1"></i> Aceptar
+                        </button>
+                      </form>
+                      <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="line_id" value="{{ line.pk }}">
+                        <input type="hidden" name="action" value="reject">
+                        <button type="submit"
+                                class="btn btn-sm {% if line.status == 'rejected' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                          <i class="bi bi-x-lg me-1"></i> Rechazar
+                        </button>
+                      </form>
+                      <button type="button"
+                              class="btn btn-sm btn-outline-primary"
+                              onclick="toggleForm({{ line.pk }})">
+                        <i class="bi bi-plus-lg me-1"></i> Agregar comentario / adjunto
+                      </button>
+                    </div>
+                    {% endif %}
+
+                    <!-- Comentarios existentes -->
+                    {% if line.comments.all %}
+                    <div class="mt-3">
+                      <div class="small text-muted fw-semibold mb-2">
+                        <i class="bi bi-chat-left-text me-1"></i>
+                        {{ line.comments.count }} comentario{% if line.comments.count != 1 %}s{% endif %}
+                      </div>
+                      <div class="d-flex flex-column gap-2">
+                        {% for comment in line.comments.all %}
+                        <div class="comment-item p-3">
+                          <div class="d-flex justify-content-between align-items-start flex-wrap gap-1">
+                            <div class="fw-semibold small">
+                              <i class="bi bi-person-circle me-1 text-muted"></i>{{ comment.author_name }}
+                              {% if comment.author_email %}
+                                <span class="text-muted fw-normal ms-1">· {{ comment.author_email }}</span>
+                              {% endif %}
+                            </div>
+                            <span class="text-muted" style="font-size:.75rem;">
+                              {{ comment.created_at|date:"d/m/Y H:i" }}
+                            </span>
+                          </div>
+                          {% if comment.body %}
+                            <p class="mb-1 mt-2 small" style="white-space:pre-line;">{{ comment.body }}</p>
+                          {% endif %}
+                          {% if comment.attachment %}
+                            <a href="{{ comment.attachment.url }}" target="_blank"
+                               class="attachment-link text-decoration-none text-primary">
+                              <i class="bi bi-paperclip me-1"></i>Ver adjunto
+                            </a>
                           {% endif %}
                         </div>
-                        <span class="text-muted" style="font-size:.75rem;">
-                          {{ comment.created_at|date:"d/m/Y H:i" }}
-                        </span>
+                        {% endfor %}
                       </div>
-                      {% if comment.body %}
-                        <p class="mb-1 mt-2 small" style="white-space:pre-line;">{{ comment.body }}</p>
-                      {% endif %}
-                      {% if comment.attachment %}
-                        <a href="{{ comment.attachment.url }}" target="_blank"
-                           class="attachment-link text-decoration-none text-primary">
-                          <i class="bi bi-paperclip me-1"></i>Ver adjunto
-                        </a>
-                      {% endif %}
                     </div>
-                    {% endfor %}
+                    {% endif %}
+
+                    <!-- Formulario de comentario (solo versión más reciente) -->
+                    {% if version_num == max_version %}
+                    <div class="comment-form-wrapper mt-3 p-3 border rounded bg-light" id="form-{{ line.pk }}">
+                      <!-- Asistente IA -->
+                      <div class="mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                          <span class="badge" style="background:#6d28d9;font-size:.78rem;">
+                            <i class="bi bi-stars me-1"></i>Asistente IA
+                          </span>
+                          <span class="text-muted small">Pregúntale a la IA sobre este proceso</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                          <input type="text" id="ai-q-{{ line.pk }}"
+                                 class="form-control form-control-sm"
+                                 placeholder="Ej. ¿Cómo optimizar este proceso? ¿Qué riesgos tiene?">
+                          <button type="button"
+                                  class="btn btn-sm flex-shrink-0"
+                                  style="background:#6d28d9;color:#fff;white-space:nowrap;"
+                                  onclick="askAI({{ line.pk }})">
+                            <i class="bi bi-stars me-1"></i>Preguntar
+                          </button>
+                        </div>
+                        <div id="ai-resp-{{ line.pk }}" class="mt-2" style="display:none;">
+                          <div class="p-2 rounded border" style="background:#f3e8ff;border-color:#c4b5fd!important;font-size:.88rem;white-space:pre-wrap;"></div>
+                          <button type="button" class="btn btn-link btn-sm p-0 mt-1 text-decoration-none"
+                                  style="font-size:.8rem;color:#6d28d9;"
+                                  onclick="useAIResponse({{ line.pk }})">
+                            <i class="bi bi-clipboard-plus me-1"></i>Usar como comentario
+                          </button>
+                        </div>
+                        <div id="ai-err-{{ line.pk }}" class="text-danger small mt-1" style="display:none;"></div>
+                      </div>
+                      <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        <input type="hidden" name="line_id" value="{{ line.pk }}">
+                        <div class="row g-2 mb-2">
+                          <div class="col-md-6">
+                            <input type="text" name="author_name" class="form-control form-control-sm"
+                                   placeholder="Tu nombre *" required>
+                          </div>
+                          <div class="col-md-6">
+                            <input type="email" name="author_email" class="form-control form-control-sm"
+                                   placeholder="Tu email (opcional)">
+                          </div>
+                        </div>
+                        <textarea name="body" id="body-{{ line.pk }}" class="form-control form-control-sm mb-2" rows="3"
+                                  placeholder="Escribe tu comentario (opcional)..."></textarea>
+                        <div class="mb-3">
+                          <label class="form-label small text-muted mb-1">
+                            <i class="bi bi-paperclip me-1"></i>Adjunto (PDF, Word, imagen, ZIP — máx. 10 MB)
+                          </label>
+                          <input type="file" name="attachment" class="form-control form-control-sm"
+                                 accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.zip,.xlsx,.xls">
+                        </div>
+                        <div class="d-flex gap-2">
+                          <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-send me-1"></i> Enviar
+                          </button>
+                          <button type="button" class="btn btn-outline-secondary btn-sm"
+                                  onclick="toggleForm({{ line.pk }})">
+                            Cancelar
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                    {% endif %}
+
+                  </div>
+                  <!-- Esquina superior derecha: complejidad + fecha -->
+                  <div class="text-end flex-shrink-0 d-flex flex-column align-items-end gap-1" style="min-width:110px;">
+                    {% if line.complexity %}
+                      {% if line.complexity <= 3 %}
+                        <span class="badge" style="background:#198754;font-size:.75rem;white-space:nowrap;">
+                          <i class="bi bi-speedometer me-1"></i>Complejidad {{ line.complexity }}/10
+                        </span>
+                      {% elif line.complexity <= 6 %}
+                        <span class="badge" style="background:#fd7e14;font-size:.75rem;white-space:nowrap;">
+                          <i class="bi bi-speedometer me-1"></i>Complejidad {{ line.complexity }}/10
+                        </span>
+                      {% else %}
+                        <span class="badge" style="background:#dc3545;font-size:.75rem;white-space:nowrap;">
+                          <i class="bi bi-speedometer me-1"></i>Complejidad {{ line.complexity }}/10
+                        </span>
+                      {% endif %}
+                    {% endif %}
+                    <span class="text-muted" style="font-size:.72rem;">
+                      <i class="bi bi-calendar3 me-1"></i>{{ line.survey.date|date:"d/m/Y" }}
+                    </span>
                   </div>
                 </div>
-                {% endif %}
-
-                <!-- Botón para abrir formulario -->
-                <button type="button"
-                        class="btn btn-sm btn-outline-primary mt-3"
-                        onclick="toggleForm({{ line.pk }})">
-                  <i class="bi bi-plus-lg me-1"></i> Agregar comentario / adjunto
-                </button>
-
-                <!-- Formulario de comentario -->
-                <div class="comment-form-wrapper mt-3 p-3 border rounded bg-light" id="form-{{ line.pk }}">
-                  <form method="post" enctype="multipart/form-data" novalidate>
-                    {% csrf_token %}
-                    <input type="hidden" name="line_id" value="{{ line.pk }}">
-                    <div class="row g-2 mb-2">
-                      <div class="col-md-6">
-                        <input type="text" name="author_name" class="form-control form-control-sm"
-                               placeholder="Tu nombre *" required>
-                      </div>
-                      <div class="col-md-6">
-                        <input type="email" name="author_email" class="form-control form-control-sm"
-                               placeholder="Tu email (opcional)">
-                      </div>
-                    </div>
-                    <textarea name="body" class="form-control form-control-sm mb-2" rows="3"
-                              placeholder="Escribe tu comentario (opcional)..."></textarea>
-                    <div class="mb-3">
-                      <label class="form-label small text-muted mb-1">
-                        <i class="bi bi-paperclip me-1"></i>Adjunto (PDF, Word, imagen, ZIP — máx. 10 MB)
-                      </label>
-                      <input type="file" name="attachment" class="form-control form-control-sm"
-                             accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.zip,.xlsx,.xls">
-                    </div>
-                    <div class="d-flex gap-2">
-                      <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-send me-1"></i> Enviar
-                      </button>
-                      <button type="button" class="btn btn-outline-secondary btn-sm"
-                              onclick="toggleForm({{ line.pk }})">
-                        Cancelar
-                      </button>
-                    </div>
-                  </form>
-                </div>
-
               </div>
+              {% endfor %}
             </div>
+
           </div>
           {% endfor %}
         </div>
+
       {% else %}
         <p class="text-muted text-center py-4">
           <i class="bi bi-clipboard-x fs-3 d-block mb-2"></i>
@@ -281,6 +379,25 @@
         </div>
       </div>
     </div>
+
+    <!-- URLs de referencia -->
+    {% if survey_urls %}
+    <div class="px-4 py-4 border-top">
+      <h6 class="fw-semibold mb-3 text-muted">
+        <i class="bi bi-link-45deg me-1"></i> Recursos y enlaces
+      </h6>
+      <div class="d-flex flex-column gap-2">
+        {% for u in survey_urls %}
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-box-arrow-up-right text-primary flex-shrink-0"></i>
+          <a href="{{ u.url }}" target="_blank" rel="noopener noreferrer"
+             class="fw-semibold text-decoration-none">{{ u.label }}</a>
+          <span class="text-muted small text-truncate d-none d-md-inline" style="max-width:400px;">{{ u.url }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
 
     <!-- Pie -->
     <div class="border-top px-4 py-3 d-flex justify-content-between align-items-center bg-light no-print">
@@ -405,6 +522,61 @@ function toggleForm(lineId) {
   wrapper.style.display = isVisible ? 'none' : 'block';
   if (!isVisible) {
     wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+// ── Asistente IA por línea ────────────────────────────────────────────
+function askAI(lineId) {
+  const input   = document.getElementById('ai-q-' + lineId);
+  const respBox = document.getElementById('ai-resp-' + lineId);
+  const errBox  = document.getElementById('ai-err-' + lineId);
+  const respText = respBox.querySelector('div');
+  const question = input.value.trim();
+
+  if (!question) { input.focus(); return; }
+
+  // Estado cargando
+  errBox.style.display = 'none';
+  respBox.style.display = 'none';
+  const btn = input.closest('.d-flex').querySelector('button');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Pensando…';
+
+  fetch(`/crm/process-surveys/line/${lineId}/ai-ask/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
+    },
+    body: JSON.stringify({ question }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+    if (data.error) {
+      errBox.textContent = data.error;
+      errBox.style.display = 'block';
+    } else {
+      respText.textContent = data.answer;
+      respBox.style.display = 'block';
+    }
+  })
+  .catch(() => {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+    errBox.textContent = 'Error de conexión. Intenta de nuevo.';
+    errBox.style.display = 'block';
+  });
+}
+
+function useAIResponse(lineId) {
+  const respText = document.getElementById('ai-resp-' + lineId).querySelector('div');
+  const textarea = document.getElementById('body-' + lineId);
+  if (textarea) {
+    textarea.value = respText.textContent;
+    textarea.focus();
   }
 }
 
