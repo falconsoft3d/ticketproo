@@ -10,9 +10,15 @@
       <i class="bi bi-clipboard-check me-2"></i>
       Levantamiento de Procesos
     </h1>
-    <a href="{% url 'process_survey_create' %}" class="btn btn-primary">
-      <i class="bi bi-plus-lg me-1"></i> Nuevo Levantamiento
-    </a>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary" onclick="copyIntakeUrl()" id="copy-intake-btn"
+              title="Copiar enlace público de captación">
+        <i class="bi bi-share me-1"></i> Compartir enlace
+      </button>
+      <a href="{% url 'process_survey_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Nuevo Levantamiento
+      </a>
+    </div>
   </div>
 
   <!-- Búsqueda -->
@@ -56,7 +62,7 @@
               <td>{{ survey.date|date:"d/m/Y" }}</td>
               <td>{{ survey.company.name|default:"—" }}</td>
               <td><span class="badge bg-secondary">{{ survey.lines.count }}</span></td>
-              <td>{{ survey.created_by.get_full_name|default:survey.created_by.username|default:"—" }}</td>
+              <td>{% if survey.created_by %}{{ survey.created_by.get_full_name|default:survey.created_by.username }}{% else %}—{% endif %}</td>
               <td class="text-end">
                 <div class="btn-group btn-group-sm">
                   <a href="{% url 'process_survey_detail' survey.pk %}" class="btn btn-outline-primary" title="Ver">
@@ -105,4 +111,23 @@
   </div>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyIntakeUrl() {
+  const url = '{{ request.scheme }}://{{ request.get_host }}{% url "process_survey_intake" %}';
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('copy-intake-btn');
+    btn.innerHTML = '<i class="bi bi-check2 me-1"></i> ¡Enlace copiado!';
+    btn.classList.replace('btn-outline-secondary', 'btn-success');
+    setTimeout(() => {
+      btn.innerHTML = '<i class="bi bi-share me-1"></i> Compartir enlace';
+      btn.classList.replace('btn-success', 'btn-outline-secondary');
+    }, 3000);
+  }).catch(() => {
+    prompt('Copia este enlace:', url);
+  });
+}
+</script>
 {% endblock %}

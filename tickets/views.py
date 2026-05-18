@@ -56797,7 +56797,7 @@ def process_survey_detail(request, pk):
     if not is_agent(request.user) and survey.created_by != request.user:
         raise Http404
 
-    all_lines = survey.lines.prefetch_related('comments').all()
+    all_lines = survey.lines.prefetch_related('comments', 'tickets').all()
 
     # Agrupar líneas por versión
     versions_data = {}
@@ -56835,6 +56835,9 @@ def process_survey_detail(request, pk):
         'signatures': signatures,
         'page_views_count': page_views_count,
         'survey_urls': survey.urls.all(),
+        'projects': Project.objects.filter(is_active=True).order_by('name'),
+        'users': User.objects.filter(is_active=True).order_by('first_name', 'last_name'),
+        'latest_lines': latest_lines,
         'submenu': get_crm_submenu(request, active_item='process_surveys'),
     }
     return render(request, 'tickets/process_survey_detail.html', context)
@@ -56951,6 +56954,74 @@ def process_survey_new_version(request, pk):
         )
 
     messages.success(request, f'Versión {new_version} creada con {source_lines.count()} líneas copiadas.')
+    return redirect('process_survey_detail', pk=pk)
+
+
+@login_required
+def process_survey_lines_to_tickets(request, pk):
+    """Convierte líneas seleccionadas de un levantamiento en tickets."""
+    from django.db.models import Max
+    if request.method != 'POST':
+        return redirect('process_survey_detail', pk=pk)
+
+    survey = get_object_or_404(ProcessSurvey, pk=pk)
+    if not is_agent(request.user) and survey.created_by != request.user:
+        raise Http404
+
+    line_ids   = request.POST.getlist('line_ids')
+    priority   = request.POST.get('priority', 'medium')
+    project_id = request.POST.get('project_id') or None
+    assigned_id = request.POST.get('assigned_to_id') or None
+
+    if priority not in ('low', 'medium', 'high', 'urgent'):
+        priority = 'medium'
+
+    project     = None
+    assigned_to = None
+    if project_id:
+        try:
+            project = Project.objects.get(pk=project_id)
+        except Project.DoesNotExist:
+            pass
+    if assigned_id:
+        try:
+            assigned_to = User.objects.get(pk=assigned_id)
+        except User.DoesNotExist:
+            pass
+
+    if not line_ids:
+        messages.warning(request, 'No seleccionaste ninguna línea.')
+        return redirect('process_survey_detail', pk=pk)
+
+    created_count = 0
+    for line_id in line_ids:
+        try:
+            line = ProcessSurveyLine.objects.get(pk=line_id, survey=survey)
+        except ProcessSurveyLine.DoesNotExist:
+            continue
+
+        description = line.description.strip() if line.description else line.title
+        description = (
+            f"Proceso: {line.title}\n\n"
+            f"{description}\n\n"
+            f"— Generado desde levantamiento: {survey.name} (v{line.version})"
+        )
+
+        Ticket.objects.create(
+            title=line.title,
+            description=description,
+            company=survey.company,
+            priority=priority,
+            status='open',
+            ticket_type='desarrollo',
+            project=project,
+            assigned_to=assigned_to,
+            created_by=request.user,
+            source_survey_line=line,
+        )
+        created_count += 1
+
+    messages.success(request, f'Se crearon {created_count} ticket{"s" if created_count != 1 else ""} correctamente.')
     return redirect('process_survey_detail', pk=pk)
 
 
@@ -57072,6 +57143,145 @@ def process_survey_delete(request, pk):
     return render(request, 'tickets/process_survey_delete.html', context)
 
 
+def process_survey_intake(request):
+    """Vista pública de captación: el visitante llena sus datos y crea un nuevo levantamiento."""
+    import uuid as _uuid
+    from django.utils import timezone as _tz
+
+    if request.method == 'POST':
+        name = request.POST.get('requester_name', '').strip()
+        email = request.POST.get('requester_email', '').strip()
+        phone = request.POST.get('requester_phone', '').strip()
+        country = request.POST.get('requester_country', '').strip()
+        company_name = request.POST.get('requester_company_name', '').strip()
+
+        if not name or not email:
+            return render(request, 'tickets/process_survey_intake.html', {
+                'error': 'Por favor ingresa al menos tu nombre y correo electrónico.',
+                'form_data': request.POST,
+            })
+
+        # Generar folio único LP-XXXX
+        from .models import ProcessSurvey as _PS
+        last = _PS.objects.order_by('-pk').first()
+        next_num = (last.pk + 1) if last else 1
+        folio = f'LP-{next_num:04d}'
+        while _PS.objects.filter(folio=folio).exists():
+            next_num += 1
+            folio = f'LP-{next_num:04d}'
+
+        survey_title = company_name or name
+        survey = ProcessSurvey.objects.create(
+            name=f'Levantamiento — {survey_title}',
+            folio=folio,
+            date=_tz.now().date(),
+            requester_name=name,
+            requester_email=email,
+            requester_phone=phone,
+            requester_country=country,
+            requester_company_name=company_name,
+        )
+        from django.contrib import messages
+        messages.success(request, f'¡Bienvenido/a {name}! Ya puedes comenzar a agregar tus procesos.')
+        from django.shortcuts import redirect
+        return redirect('public_process_survey', token=survey.public_share_token)
+
+    return render(request, 'tickets/process_survey_intake.html', {})
+
+
+def public_process_survey_ai_analysis(request, token):
+    """Analiza con IA todos los procesos del levantamiento y devuelve un informe detallado."""
+    from django.http import JsonResponse
+    import json as _json
+    from django.db.models import Max
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    survey = get_object_or_404(ProcessSurvey, public_share_token=token)
+
+    try:
+        from .models import SystemConfiguration
+        config = SystemConfiguration.get_config()
+        if not getattr(config, 'openai_api_key', None):
+            return JsonResponse({'error': 'Asistente IA no disponible en este momento.'}, status=503)
+
+        # Obtener líneas de la versión más reciente
+        max_version = survey.lines.aggregate(v=Max('version'))['v'] or 1
+        lines = list(survey.lines.filter(version=max_version).order_by('order', 'pk'))
+
+        if not lines:
+            return JsonResponse({'error': 'Este levantamiento no tiene líneas para analizar.'}, status=400)
+
+        # Construir contexto detallado
+        lines_text = ""
+        status_labels = {'pending': 'Pendiente', 'accepted': 'Aceptado', 'rejected': 'Rechazado'}
+        for i, line in enumerate(lines, 1):
+            complexity_str = f"{line.complexity}/10" if line.complexity else "no definida"
+            lines_text += (
+                f"{i}. **{line.title}**\n"
+                f"   - Descripción: {line.description or '(sin descripción)'}\n"
+                f"   - Estado: {status_labels.get(line.status, line.status)}\n"
+                f"   - Complejidad: {complexity_str}\n\n"
+            )
+
+        system_prompt = (
+            "Eres un consultor senior en análisis y optimización de procesos empresariales. "
+            "Recibirás los procesos de un levantamiento y deberás entregar un análisis profesional y detallado. "
+            "Responde en español con formato Markdown. "
+            "Usa secciones claras con encabezados ##, listas con -, y negritas para puntos clave."
+        )
+
+        user_prompt = (
+            f"Analiza el siguiente levantamiento de procesos titulado **\"{survey.name}\"** "
+            f"(versión {max_version}) y entrega un informe completo.\n\n"
+            f"## Procesos levantados ({len(lines)} procesos)\n\n"
+            f"{lines_text}"
+            "---\n\n"
+            "Por favor entrega el análisis con las siguientes secciones:\n"
+            "1. **Resumen ejecutivo** — Diagnóstico general del estado de los procesos.\n"
+            "2. **Puntos de mejora por proceso** — Para cada proceso con oportunidades de optimización, explica qué y cómo mejorar.\n"
+            "3. **Riesgos identificados** — Procesos con alta complejidad o en estado pendiente que representan riesgos.\n"
+            "4. **Recomendaciones prioritarias** — Lista ordenada de las 5 acciones más urgentes/impactantes.\n"
+            "5. **Procesos bien definidos** — Reconoce los procesos que están correctamente levantados.\n"
+        )
+
+        from openai import OpenAI
+        client = OpenAI(api_key=config.openai_api_key)
+        response = client.chat.completions.create(
+            model=getattr(config, 'openai_model', None) or 'gpt-4o-mini',
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user",   "content": user_prompt},
+            ],
+            max_tokens=2000,
+            temperature=0.5,
+        )
+        analysis = response.choices[0].message.content.strip()
+
+        # Persistir en historial
+        from .models import ProcessSurveyAIAnalysis
+        record = ProcessSurveyAIAnalysis.objects.create(
+            survey=survey,
+            version=max_version,
+            total_lines=len(lines),
+            analysis_text=analysis,
+        )
+        from django.utils import timezone as _tz_now
+        return JsonResponse({
+            'analysis': analysis,
+            'version': max_version,
+            'total': len(lines),
+            'id': record.pk,
+            'created_at': record.created_at.strftime('%d/%m/%Y %H:%M'),
+        })
+
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"public_process_survey_ai_analysis error: {e}")
+        return JsonResponse({'error': 'Error al generar el análisis. Intenta más tarde.'}, status=500)
+
+
 def public_process_survey_view(request, token):
     """Vista pública del levantamiento de procesos (sin autenticación)"""
     survey = get_object_or_404(ProcessSurvey, public_share_token=token)
@@ -57155,6 +57365,42 @@ def public_process_survey_view(request, token):
             messages.success(request, f'Punto "{line.title}" marcado como {label}.')
             return redirect('public_process_survey', token=token)
 
+        # ── Editar línea desde vista pública ──────────────────────────────
+        if action == 'edit_line':
+            author_name = request.POST.get('author_name', '').strip()
+            new_title = request.POST.get('new_title', '').strip()
+            new_description = request.POST.get('new_description', '').strip()
+
+            if not author_name:
+                messages.error(request, 'El nombre es obligatorio para editar.')
+                return redirect('public_process_survey', token=token)
+            if not new_title:
+                messages.error(request, 'El título no puede estar vacío.')
+                return redirect('public_process_survey', token=token)
+
+            old_title = line.title
+            old_description = line.description
+
+            # Solo guardar trazabilidad si hubo cambios
+            if new_title != old_title or new_description != old_description:
+                trace_body = (
+                    f"✏️ Edición realizada por {author_name}\n"
+                    f"Título anterior: {old_title}\n"
+                    f"Descripción anterior: {old_description or '(sin descripción)'}"
+                )
+                ProcessSurveyLineComment.objects.create(
+                    line=line,
+                    author_name=author_name,
+                    body=trace_body,
+                )
+                line.title = new_title
+                line.description = new_description
+                line.save(update_fields=['title', 'description'])
+                messages.success(request, f'Línea actualizada. Los valores anteriores quedaron guardados como comentario.')
+            else:
+                messages.info(request, 'No se detectaron cambios.')
+            return redirect('public_process_survey', token=token)
+
         # ── Comentario / adjunto ──────────────────────────────────────────
         author_name = request.POST.get('author_name', '').strip()
         author_email = request.POST.get('author_email', '').strip()
@@ -57206,6 +57452,7 @@ def public_process_survey_view(request, token):
         'max_version': max_version,
         'signatures': signatures,
         'survey_urls': survey.urls.all(),
+        'ai_analyses': survey.ai_analyses.all()[:20],
     }
 
     # ── Registrar apertura (sólo GET) ────────────────────────────────

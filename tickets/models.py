@@ -617,6 +617,15 @@ class Ticket(models.Model):
         verbose_name='Calificación',
         help_text='Calificación del ticket de 1 a 5 estrellas'
     )
+    source_survey_line = models.ForeignKey(
+        'ProcessSurveyLine',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tickets',
+        verbose_name='Línea de levantamiento origen',
+        help_text='Línea de levantamiento de procesos a partir de la cual se generó este ticket',
+    )
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
     
@@ -24101,6 +24110,13 @@ class ProcessSurvey(models.Model):
         related_name='process_surveys_responsible',
         verbose_name='Responsable',
     )
+    # Datos del solicitante (intake público)
+    requester_name = models.CharField(max_length=200, blank=True, verbose_name='Nombre del solicitante')
+    requester_email = models.EmailField(blank=True, verbose_name='Email del solicitante')
+    requester_phone = models.CharField(max_length=50, blank=True, verbose_name='Teléfono del solicitante')
+    requester_country = models.CharField(max_length=100, blank=True, verbose_name='País del solicitante')
+    requester_company_name = models.CharField(max_length=200, blank=True, verbose_name='Empresa del solicitante')
+
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
 
@@ -24257,6 +24273,29 @@ class ProcessSurveyURL(models.Model):
 
     def __str__(self):
         return f'{self.label} ({self.survey})'
+
+
+class ProcessSurveyAIAnalysis(models.Model):
+    """Registro histórico de análisis IA realizados sobre un levantamiento"""
+
+    survey = models.ForeignKey(
+        ProcessSurvey,
+        on_delete=models.CASCADE,
+        related_name='ai_analyses',
+        verbose_name='Levantamiento',
+    )
+    version = models.PositiveSmallIntegerField(verbose_name='Versión analizada')
+    total_lines = models.PositiveSmallIntegerField(default=0, verbose_name='Total de procesos')
+    analysis_text = models.TextField(verbose_name='Análisis')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha')
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Análisis IA de Levantamiento'
+        verbose_name_plural = 'Análisis IA de Levantamientos'
+
+    def __str__(self):
+        return f'Análisis v{self.version} — {self.survey} ({self.created_at:%d/%m/%Y %H:%M})'
 
 
 class ProcessSurveySignature(models.Model):

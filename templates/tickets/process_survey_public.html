@@ -95,6 +95,12 @@
           {% endif %}
         </div>
         <div class="d-flex gap-2 flex-wrap no-print">
+          <button class="btn btn-sm no-print" id="ai-analysis-btn"
+                  style="background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff;border:none;"
+                  data-bs-toggle="modal" data-bs-target="#aiAnalysisModal"
+                  onclick="startAIAnalysis()">
+            <i class="bi bi-stars me-1"></i> Analizar con IA
+          </button>
           <button class="btn btn-light btn-sm" onclick="copyUrl()" id="copy-btn">
             <i class="bi bi-clipboard me-1"></i> Copiar enlace
           </button>
@@ -230,68 +236,144 @@
 
                     <!-- Formulario de comentario (solo versión más reciente) -->
                     {% if version_num == max_version %}
-                    <div class="comment-form-wrapper mt-3 p-3 border rounded bg-light" id="form-{{ line.pk }}">
-                      <!-- Asistente IA -->
-                      <div class="mb-3 pb-3 border-bottom">
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                          <span class="badge" style="background:#6d28d9;font-size:.78rem;">
-                            <i class="bi bi-stars me-1"></i>Asistente IA
-                          </span>
-                          <span class="text-muted small">Pregúntale a la IA sobre este proceso</span>
-                        </div>
-                        <div class="d-flex gap-2">
-                          <input type="text" id="ai-q-{{ line.pk }}"
-                                 class="form-control form-control-sm"
-                                 placeholder="Ej. ¿Cómo optimizar este proceso? ¿Qué riesgos tiene?">
-                          <button type="button"
-                                  class="btn btn-sm flex-shrink-0"
-                                  style="background:#6d28d9;color:#fff;white-space:nowrap;"
-                                  onclick="askAI({{ line.pk }})">
-                            <i class="bi bi-stars me-1"></i>Preguntar
+                    <div class="comment-form-wrapper mt-3 border rounded bg-light" id="form-{{ line.pk }}">
+                      <!-- Pestañas -->
+                      <ul class="nav nav-tabs px-3 pt-2" id="tabs-{{ line.pk }}" role="tablist">
+                        <li class="nav-item" role="presentation">
+                          <button class="nav-link active py-1 px-3" id="tab-comment-{{ line.pk }}"
+                                  data-bs-toggle="tab" data-bs-target="#pane-comment-{{ line.pk }}"
+                                  type="button" role="tab" style="font-size:.85rem;">
+                            <i class="bi bi-chat-left-text me-1"></i>Comentar
                           </button>
-                        </div>
-                        <div id="ai-resp-{{ line.pk }}" class="mt-2" style="display:none;">
-                          <div class="p-2 rounded border" style="background:#f3e8ff;border-color:#c4b5fd!important;font-size:.88rem;white-space:pre-wrap;"></div>
-                          <button type="button" class="btn btn-link btn-sm p-0 mt-1 text-decoration-none"
-                                  style="font-size:.8rem;color:#6d28d9;"
-                                  onclick="useAIResponse({{ line.pk }})">
-                            <i class="bi bi-clipboard-plus me-1"></i>Usar como comentario
+                        </li>
+                        <li class="nav-item" role="presentation">
+                          <button class="nav-link py-1 px-3" id="tab-ai-{{ line.pk }}"
+                                  data-bs-toggle="tab" data-bs-target="#pane-ai-{{ line.pk }}"
+                                  type="button" role="tab" style="font-size:.85rem;">
+                            <i class="bi bi-stars me-1"></i>Preguntar a la IA
                           </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                          <button class="nav-link py-1 px-3" id="tab-edit-{{ line.pk }}"
+                                  data-bs-toggle="tab" data-bs-target="#pane-edit-{{ line.pk }}"
+                                  type="button" role="tab" style="font-size:.85rem;">
+                            <i class="bi bi-pencil-square me-1"></i>Editar línea
+                          </button>
+                        </li>
+                      </ul>
+                      <div class="tab-content p-3">
+                        <!-- Pestaña: Comentar -->
+                        <div class="tab-pane fade show active" id="pane-comment-{{ line.pk }}" role="tabpanel">
+                          <form method="post" enctype="multipart/form-data" novalidate>
+                            {% csrf_token %}
+                            <input type="hidden" name="line_id" value="{{ line.pk }}">
+                            <div class="row g-2 mb-2">
+                              <div class="col-md-6">
+                                <input type="text" name="author_name" class="form-control form-control-sm"
+                                       placeholder="Tu nombre *" required>
+                              </div>
+                              <div class="col-md-6">
+                                <input type="email" name="author_email" class="form-control form-control-sm"
+                                       placeholder="Tu email (opcional)">
+                              </div>
+                            </div>
+                            <div class="position-relative mb-2">
+                              <textarea name="body" id="body-{{ line.pk }}" class="form-control form-control-sm" rows="3"
+                                        placeholder="Escribe tu comentario (opcional)..."
+                                        style="padding-bottom:2rem;"></textarea>
+                              <button type="button"
+                                      class="btn btn-xs position-absolute d-flex align-items-center gap-1"
+                                      style="bottom:6px;right:6px;font-size:.72rem;padding:2px 8px;background:#6d28d9;color:#fff;border:none;border-radius:4px;line-height:1.4;"
+                                      onclick="reviewWithAI({{ line.pk }})"
+                                      id="review-btn-{{ line.pk }}"
+                                      title="La IA revisa y mejora tu comentario">
+                                <i class="bi bi-stars"></i> Revisar con IA
+                              </button>
+                            </div>
+                            <div class="mb-3">
+                              <label class="form-label small text-muted mb-1">
+                                <i class="bi bi-paperclip me-1"></i>Adjunto (PDF, Word, imagen, ZIP — máx. 10 MB)
+                              </label>
+                              <input type="file" name="attachment" class="form-control form-control-sm"
+                                     accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.zip,.xlsx,.xls">
+                            </div>
+                            <div class="d-flex gap-2">
+                              <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-send me-1"></i> Enviar
+                              </button>
+                              <button type="button" class="btn btn-outline-secondary btn-sm"
+                                      onclick="toggleForm({{ line.pk }})">
+                                Cancelar
+                              </button>
+                            </div>
+                          </form>
                         </div>
-                        <div id="ai-err-{{ line.pk }}" class="text-danger small mt-1" style="display:none;"></div>
+                        <!-- Pestaña: Preguntar a la IA -->
+                        <div class="tab-pane fade" id="pane-ai-{{ line.pk }}" role="tabpanel">
+                          <p class="text-muted small mb-2">Pregúntale a la IA sobre este proceso y usa la respuesta como comentario.</p>
+                          <div class="d-flex gap-2 mb-2">
+                            <input type="text" id="ai-q-{{ line.pk }}"
+                                   class="form-control form-control-sm"
+                                   placeholder="Ej. ¿Cómo optimizar este proceso? ¿Qué riesgos tiene?"
+                                   onkeydown="if(event.key==='Enter'){event.preventDefault();askAI({{ line.pk }})}">
+                            <button type="button"
+                                    class="btn btn-sm flex-shrink-0"
+                                    style="background:#6d28d9;color:#fff;white-space:nowrap;"
+                                    onclick="askAI({{ line.pk }})">
+                              <i class="bi bi-stars me-1"></i>Preguntar
+                            </button>
+                          </div>
+                          <div id="ai-resp-{{ line.pk }}" class="mt-2" style="display:none;">
+                            <div class="p-2 rounded border" style="background:#f3e8ff;border-color:#c4b5fd!important;font-size:.88rem;white-space:pre-wrap;"></div>
+                            <button type="button" class="btn btn-link btn-sm p-0 mt-1 text-decoration-none"
+                                    style="font-size:.8rem;color:#6d28d9;"
+                                    onclick="useAIResponse({{ line.pk }})">
+                              <i class="bi bi-clipboard-plus me-1"></i>Usar como comentario
+                            </button>
+                          </div>
+                          <div id="ai-err-{{ line.pk }}" class="text-danger small mt-1" style="display:none;"></div>
+                        </div>
+                        <!-- Pestaña: Editar línea -->
+                        <div class="tab-pane fade" id="pane-edit-{{ line.pk }}" role="tabpanel">
+                          <div class="alert alert-warning py-2 px-3 mb-3" style="font-size:.82rem;">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Al guardar, los valores anteriores quedan registrados como comentario de trazabilidad.
+                          </div>
+                          <form method="post" novalidate>
+                            {% csrf_token %}
+                            <input type="hidden" name="line_id" value="{{ line.pk }}">
+                            <input type="hidden" name="action" value="edit_line">
+                            <div class="mb-2">
+                              <label class="form-label small fw-semibold mb-1">
+                                Tu nombre <span class="text-danger">*</span>
+                              </label>
+                              <input type="text" name="author_name" class="form-control form-control-sm"
+                                     placeholder="Nombre de quien edita" required>
+                            </div>
+                            <div class="mb-2">
+                              <label class="form-label small fw-semibold mb-1">
+                                Título del proceso <span class="text-danger">*</span>
+                              </label>
+                              <input type="text" name="new_title" class="form-control form-control-sm"
+                                     value="{{ line.title }}" required>
+                            </div>
+                            <div class="mb-3">
+                              <label class="form-label small fw-semibold mb-1">Descripción</label>
+                              <textarea name="new_description" class="form-control form-control-sm" rows="4"
+                                        placeholder="Descripción del proceso...">{{ line.description }}</textarea>
+                            </div>
+                            <div class="d-flex gap-2">
+                              <button type="submit" class="btn btn-warning btn-sm">
+                                <i class="bi bi-floppy me-1"></i> Guardar cambios
+                              </button>
+                              <button type="button" class="btn btn-outline-secondary btn-sm"
+                                      onclick="toggleForm({{ line.pk }})">
+                                Cancelar
+                              </button>
+                            </div>
+                          </form>
+                        </div>
                       </div>
-                      <form method="post" enctype="multipart/form-data" novalidate>
-                        {% csrf_token %}
-                        <input type="hidden" name="line_id" value="{{ line.pk }}">
-                        <div class="row g-2 mb-2">
-                          <div class="col-md-6">
-                            <input type="text" name="author_name" class="form-control form-control-sm"
-                                   placeholder="Tu nombre *" required>
-                          </div>
-                          <div class="col-md-6">
-                            <input type="email" name="author_email" class="form-control form-control-sm"
-                                   placeholder="Tu email (opcional)">
-                          </div>
-                        </div>
-                        <textarea name="body" id="body-{{ line.pk }}" class="form-control form-control-sm mb-2" rows="3"
-                                  placeholder="Escribe tu comentario (opcional)..."></textarea>
-                        <div class="mb-3">
-                          <label class="form-label small text-muted mb-1">
-                            <i class="bi bi-paperclip me-1"></i>Adjunto (PDF, Word, imagen, ZIP — máx. 10 MB)
-                          </label>
-                          <input type="file" name="attachment" class="form-control form-control-sm"
-                                 accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.zip,.xlsx,.xls">
-                        </div>
-                        <div class="d-flex gap-2">
-                          <button type="submit" class="btn btn-primary btn-sm">
-                            <i class="bi bi-send me-1"></i> Enviar
-                          </button>
-                          <button type="button" class="btn btn-outline-secondary btn-sm"
-                                  onclick="toggleForm({{ line.pk }})">
-                            Cancelar
-                          </button>
-                        </div>
-                      </form>
                     </div>
                     {% endif %}
 
@@ -496,7 +578,105 @@
     </div>
   </div>
 
+  <!-- ══ Historial de Análisis IA ══════════════════════════════════ -->
+  <div class="mt-4 no-print" id="ai-history-section">
+    <div class="card shadow-sm border-0" style="border-radius:16px;overflow:hidden;">
+      <div class="card-header d-flex align-items-center justify-content-between py-3 px-4"
+           style="background:linear-gradient(135deg,#0f3460,#533483);">
+        <span class="text-white fw-bold">
+          <i class="bi bi-stars me-2"></i>Historial de Análisis IA
+        </span>
+        <span class="badge bg-white text-dark" id="ai-history-count">
+          {{ ai_analyses|length }}
+        </span>
+      </div>
+      <div class="card-body p-0" id="ai-history-list">
+        {% if ai_analyses %}
+          {% for rec in ai_analyses %}
+          <div class="ai-history-entry border-bottom px-4 py-3" id="ai-hist-{{ rec.pk }}">
+            <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge rounded-pill" style="background:#533483;">
+                  <i class="bi bi-layers me-1"></i>v{{ rec.version }}
+                </span>
+                <span class="badge rounded-pill bg-secondary">
+                  <i class="bi bi-list-ul me-1"></i>{{ rec.total_lines }} procesos
+                </span>
+              </div>
+              <small class="text-muted">
+                <i class="bi bi-clock me-1"></i>{{ rec.created_at|date:"d/m/Y H:i" }}
+              </small>
+            </div>
+            <div class="ai-history-body collapse" id="collapse-hist-{{ rec.pk }}">
+              <div class="py-2" style="font-size:.88rem;line-height:1.7;white-space:pre-wrap;">{{ rec.analysis_text }}</div>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary mt-1"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#collapse-hist-{{ rec.pk }}"
+                    onclick="this.querySelector('i').classList.toggle('bi-chevron-down');this.querySelector('i').classList.toggle('bi-chevron-up');">
+              <i class="bi bi-chevron-down me-1"></i>Ver análisis
+            </button>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-center py-4 text-muted" id="ai-history-empty">
+            <i class="bi bi-stars fs-2 opacity-25"></i>
+            <p class="mt-2 mb-0 small">Aún no se han generado análisis.<br>
+            Usa el botón <strong>"Analizar con IA"</strong> en la cabecera.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
 </div>
+
+<!-- Modal: Análisis IA del levantamiento -->
+<div class="modal fade" id="aiAnalysisModal" tabindex="-1" aria-labelledby="aiAnalysisModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header" style="background:linear-gradient(135deg,#0f3460,#533483);">
+        <h5 class="modal-title text-white" id="aiAnalysisModalLabel">
+          <i class="bi bi-stars me-2"></i>Análisis IA — {{ survey.name }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <!-- Estado: cargando -->
+        <div id="ai-analysis-loading" class="text-center py-5">
+          <div class="spinner-border mb-3" style="color:#6d28d9;width:3rem;height:3rem;"></div>
+          <p class="text-muted fw-semibold">Analizando todos los procesos del levantamiento…</p>
+          <p class="text-muted small">Esto puede tardar unos segundos</p>
+        </div>
+        <!-- Estado: resultado -->
+        <div id="ai-analysis-result" style="display:none;">
+          <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2"
+               style="background:#f8f5ff;">
+            <div id="ai-analysis-meta" class="text-muted small"></div>
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                    onclick="copyAnalysis()" id="copy-analysis-btn">
+              <i class="bi bi-clipboard me-1"></i>Copiar análisis
+            </button>
+          </div>
+          <div id="ai-analysis-content" class="p-4" style="font-size:.93rem;line-height:1.7;"></div>
+        </div>
+        <!-- Estado: error -->
+        <div id="ai-analysis-error" class="text-center py-5" style="display:none;">
+          <i class="bi bi-exclamation-triangle fs-1 text-danger"></i>
+          <p class="text-danger fw-semibold mt-2" id="ai-analysis-error-msg"></p>
+          <button type="button" class="btn btn-outline-primary btn-sm mt-2"
+                  onclick="startAIAnalysis()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Reintentar
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -576,8 +756,55 @@ function useAIResponse(lineId) {
   const textarea = document.getElementById('body-' + lineId);
   if (textarea) {
     textarea.value = respText.textContent;
+    // Cambiar a la pestaña Comentar
+    const commentTab = document.getElementById('tab-comment-' + lineId);
+    if (commentTab) bootstrap.Tab.getOrCreateInstance(commentTab).show();
     textarea.focus();
   }
+}
+
+function reviewWithAI(lineId) {
+  const textarea = document.getElementById('body-' + lineId);
+  const btn      = document.getElementById('review-btn-' + lineId);
+  const text     = textarea ? textarea.value.trim() : '';
+
+  if (!text) {
+    textarea.placeholder = 'Escribe algo primero para que la IA lo revise...';
+    textarea.focus();
+    return;
+  }
+
+  const origHTML = btn.innerHTML;
+  btn.disabled   = true;
+  btn.innerHTML  = '<span class="spinner-border spinner-border-sm"></span>';
+
+  const question = `Revisa y mejora el siguiente comentario. Hazlo más claro, profesional y útil. Responde ÚNICAMENTE con el comentario mejorado, sin explicaciones ni texto adicional:\n\n${text}`;
+
+  fetch(`/crm/process-surveys/line/${lineId}/ai-ask/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
+    },
+    body: JSON.stringify({ question }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.disabled  = false;
+    btn.innerHTML = origHTML;
+    if (data.answer) {
+      textarea.value = data.answer;
+      textarea.focus();
+      // Flash verde para indicar que fue reemplazado
+      textarea.style.transition = 'box-shadow .3s';
+      textarea.style.boxShadow  = '0 0 0 3px rgba(109,40,217,.35)';
+      setTimeout(() => { textarea.style.boxShadow = ''; }, 1200);
+    }
+  })
+  .catch(() => {
+    btn.disabled  = false;
+    btn.innerHTML = origHTML;
+  });
 }
 
 // ── Canvas de firma ───────────────────────────────────────────────────
@@ -648,5 +875,141 @@ function useAIResponse(lineId) {
     return true;
   };
 })();
+
+/* ============================================================
+   ANÁLISIS IA DEL LEVANTAMIENTO
+   ============================================================ */
+let _analysisCache = null;
+
+function startAIAnalysis() {
+  // Siempre genera un nuevo análisis (se guarda en historial)
+  _analysisCache = null;
+  _showAnalysisLoading();
+
+  fetch("{% url 'public_process_survey_ai_analysis' survey.public_share_token %}", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': '{{ csrf_token }}'
+    },
+    body: JSON.stringify({})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) {
+      _showAnalysisError(data.error);
+    } else {
+      _analysisCache = data;
+      _showAnalysisResult(data);
+    }
+  })
+  .catch(() => _showAnalysisError('Error de conexión. Verifica tu red e intenta nuevamente.'));
+}
+
+function _showAnalysisLoading() {
+  document.getElementById('ai-analysis-loading').style.display = '';
+  document.getElementById('ai-analysis-result').style.display  = 'none';
+  document.getElementById('ai-analysis-error').style.display   = 'none';
+}
+
+function _showAnalysisResult(data) {
+  document.getElementById('ai-analysis-loading').style.display = 'none';
+  document.getElementById('ai-analysis-error').style.display   = 'none';
+  document.getElementById('ai-analysis-meta').innerHTML =
+    '<i class="bi bi-layers me-1"></i>Versión ' + data.version +
+    ' &nbsp;·&nbsp; <i class="bi bi-list-ul me-1"></i>' + data.total + ' procesos analizados';
+  document.getElementById('ai-analysis-content').innerHTML = _markdownToHtml(data.analysis);
+  document.getElementById('ai-analysis-result').style.display = '';
+
+  // Si viene con ID nuevo (recién guardado), insertar en el historial
+  if (data.id && data.created_at) {
+    _prependHistoryEntry(data);
+  }
+}
+
+function _showAnalysisError(msg) {
+  document.getElementById('ai-analysis-loading').style.display = 'none';
+  document.getElementById('ai-analysis-result').style.display  = 'none';
+  document.getElementById('ai-analysis-error-msg').textContent = msg;
+  document.getElementById('ai-analysis-error').style.display   = '';
+}
+
+function _markdownToHtml(md) {
+  // Conversión básica de Markdown a HTML (sin dependencias externas)
+  return md
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/^#### (.+)$/gm,  '<h6 class="fw-bold mt-3 mb-1">$1</h6>')
+    .replace(/^### (.+)$/gm,   '<h5 class="fw-bold mt-4 mb-2" style="color:#4f46e5;">$1</h5>')
+    .replace(/^## (.+)$/gm,    '<h4 class="fw-bold mt-4 mb-2" style="color:#0f3460;">$1</h4>')
+    .replace(/^# (.+)$/gm,     '<h3 class="fw-bold mt-4 mb-2">$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,     '<em>$1</em>')
+    .replace(/^---+$/gm,       '<hr class="my-3">')
+    .replace(/^- (.+)$/gm,     '<li class="mb-1">$1</li>')
+    .replace(/(<li[\s\S]*?<\/li>)+/g, m => '<ul class="mb-3 ps-4">' + m + '</ul>')
+    .replace(/^\d+\. (.+)$/gm, '<li class="mb-1">$1</li>')
+    .replace(/\n{2,}/g,        '</p><p class="mb-2">')
+    .replace(/\n/g,            '<br>')
+    .replace(/^(.)/,           '<p class="mb-2">$&')
+    .concat('</p>');
+}
+
+function copyAnalysis() {
+  if (!_analysisCache) return;
+  navigator.clipboard.writeText(_analysisCache.analysis).then(() => {
+    const btn = document.getElementById('copy-analysis-btn');
+    btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Copiado';
+    btn.classList.replace('btn-outline-secondary', 'btn-success');
+    setTimeout(() => {
+      btn.innerHTML = '<i class="bi bi-clipboard me-1"></i>Copiar análisis';
+      btn.classList.replace('btn-success', 'btn-outline-secondary');
+    }, 2500);
+  });
+}
+
+function _prependHistoryEntry(data) {
+  const list  = document.getElementById('ai-history-list');
+  const empty = document.getElementById('ai-history-empty');
+  const count = document.getElementById('ai-history-count');
+
+  if (empty) empty.remove();
+
+  const entry = document.createElement('div');
+  entry.className = 'ai-history-entry border-bottom px-4 py-3';
+  entry.id = 'ai-hist-' + data.id;
+  entry.innerHTML =
+    '<div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">' +
+      '<div class="d-flex align-items-center gap-2">' +
+        '<span class="badge rounded-pill" style="background:#533483;">' +
+          '<i class="bi bi-layers me-1"></i>v' + data.version +
+        '</span>' +
+        '<span class="badge rounded-pill bg-secondary">' +
+          '<i class="bi bi-list-ul me-1"></i>' + data.total + ' procesos' +
+        '</span>' +
+        '<span class="badge rounded-pill bg-warning text-dark">Nuevo</span>' +
+      '</div>' +
+      '<small class="text-muted"><i class="bi bi-clock me-1"></i>' + data.created_at + '</small>' +
+    '</div>' +
+    '<div class="ai-history-body collapse" id="collapse-hist-' + data.id + '">' +
+      '<div class="py-2" style="font-size:.88rem;line-height:1.7;white-space:pre-wrap;">' +
+        _escapeHtml(data.analysis) +
+      '</div>' +
+    '</div>' +
+    '<button class="btn btn-sm btn-outline-secondary mt-1"' +
+            ' data-bs-toggle="collapse"' +
+            ' data-bs-target="#collapse-hist-' + data.id + '"' +
+            ' onclick="this.querySelector(\'i\').classList.toggle(\'bi-chevron-down\');this.querySelector(\'i\').classList.toggle(\'bi-chevron-up\');">' +
+      '<i class="bi bi-chevron-down me-1"></i>Ver análisis' +
+    '</button>';
+
+  list.insertBefore(entry, list.firstChild);
+
+  // Actualizar contador
+  if (count) count.textContent = parseInt(count.textContent || '0') + 1;
+}
+
+function _escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 </script>
 {% endblock %}
