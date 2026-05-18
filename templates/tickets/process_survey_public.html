@@ -33,6 +33,13 @@
   .line-item { border-left: 3px solid #0f3460; }
   .comment-item { background: #f8f9fa; border-radius: 8px; }
   .comment-form-wrapper { display:none; }
+  /* Markdown renderizado en historial IA */
+  .md-rendered h3, .md-rendered h4 { color: #0f3460; margin-top: 1.1rem; margin-bottom: .4rem; }
+  .md-rendered h5, .md-rendered h6 { color: #533483; margin-top: .9rem; margin-bottom: .3rem; }
+  .md-rendered ul { padding-left: 1.4rem; margin-bottom: .6rem; }
+  .md-rendered li { margin-bottom: .2rem; }
+  .md-rendered hr { border-color: #e0d4f5; margin: .8rem 0; }
+  .md-rendered p { margin-bottom: .5rem; }
   .powered-by { font-size:.75rem; opacity:.6; }
   .attachment-link { font-size:.82rem; }
   .badge-accepted { background:#198754; color:#fff; }
@@ -622,7 +629,7 @@
               </small>
             </div>
             <div class="ai-history-body collapse" id="collapse-hist-{{ rec.pk }}">
-              <div class="py-2" style="font-size:.88rem;line-height:1.7;white-space:pre-wrap;">{{ rec.analysis_text }}</div>
+              <div class="py-2 md-rendered" style="font-size:.88rem;line-height:1.75;">{{ rec.analysis_text }}</div>
             </div>
             <button class="btn btn-sm btn-outline-secondary mt-1"
                     data-bs-toggle="collapse"
@@ -895,6 +902,11 @@ function reviewWithAI(lineId) {
    ============================================================ */
 let _analysisCache = null;
 
+// Renderizar markdown en entradas del historial cargadas desde BD
+document.querySelectorAll('.md-rendered').forEach(function(el) {
+  el.innerHTML = _markdownToHtml(el.textContent);
+});
+
 function startAIAnalysis() {
   // Siempre genera un nuevo análisis (se guarda en historial)
   _analysisCache = null;
@@ -1005,8 +1017,8 @@ function _prependHistoryEntry(data) {
       '<small class="text-muted"><i class="bi bi-clock me-1"></i>' + data.created_at + '</small>' +
     '</div>' +
     '<div class="ai-history-body collapse" id="collapse-hist-' + data.id + '">' +
-      '<div class="py-2" style="font-size:.88rem;line-height:1.7;white-space:pre-wrap;">' +
-        _escapeHtml(data.analysis) +
+      '<div class="py-2 md-rendered" style="font-size:.88rem;line-height:1.75;">' +
+        _markdownToHtml(data.analysis) +
       '</div>' +
     '</div>' +
     '<button class="btn btn-sm btn-outline-secondary mt-1"' +
