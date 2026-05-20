@@ -44,6 +44,7 @@
               <th>Fecha</th>
               <th>Empresa</th>
               <th>Estado</th>
+              <th class="text-end">Importe</th>
               <th class="text-center" title="Vistas cuando no está rechazado">Vistas</th>
               <th class="text-center" title="Vistas cuando está rechazado">Vistas Rechazado</th>
               <th>Líneas</th>
@@ -73,6 +74,13 @@
                   <span class="badge bg-danger">Rechazado</span>
                 {% else %}
                   <span class="badge bg-secondary">{{ survey.status }}</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if survey.importe %}
+                  <span class="fw-semibold">{{ survey.importe_currency }} {{ survey.importe|floatformat:2 }}</span>
+                {% else %}
+                  <span class="text-muted">—</span>
                 {% endif %}
               </td>
               <td class="text-center">

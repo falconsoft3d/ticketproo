@@ -61,7 +61,12 @@
       <div class="row g-3">
         <div class="col-md-4">
           <span class="text-muted small">Nombre</span>
-          <p class="fw-semibold mb-0">{{ survey.name }}</p>
+          <p class="fw-semibold mb-0">
+            {{ survey.name }}
+            {% if survey.importe %}
+              <span class="ms-2 fw-bold text-success">{{ survey.importe_currency }} {{ survey.importe|floatformat:2 }}</span>
+            {% endif %}
+          </p>
         </div>
         <div class="col-md-2">
           <span class="text-muted small">Folio</span>

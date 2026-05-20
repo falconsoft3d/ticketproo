@@ -470,6 +470,7 @@ urlpatterns = [
     path('crm/process-surveys/comment/<int:comment_pk>/delete/', views.process_survey_line_comment_delete, name='process_survey_line_comment_delete'),
     path('crm/process-surveys/intake/', views.process_survey_intake, name='process_survey_intake'),
     path('crm/process-surveys/public/<uuid:token>/', views.public_process_survey_view, name='public_process_survey'),
+    path('crm/process-surveys/public/<uuid:token>/pdf/', views.public_process_survey_pdf, name='public_process_survey_pdf'),
     path('crm/process-surveys/public/<uuid:token>/ai-analysis/', views.public_process_survey_ai_analysis, name='public_process_survey_ai_analysis'),
 
     # URLs de Reuniones

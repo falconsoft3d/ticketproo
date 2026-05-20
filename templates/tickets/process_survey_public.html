@@ -141,9 +141,9 @@
           <button class="btn btn-light btn-sm" onclick="copyUrl()" id="copy-btn">
             <i class="bi bi-clipboard me-1"></i> Copiar enlace
           </button>
-          <button class="btn btn-light btn-sm" onclick="window.print()">
-            <i class="bi bi-file-earmark-pdf me-1"></i> Imprimir / PDF
-          </button>
+          <a href="{% url 'public_process_survey_pdf' survey.public_share_token %}" target="_blank" class="btn btn-light btn-sm">
+            <i class="bi bi-file-earmark-pdf me-1"></i> Descargar PDF
+          </a>
         </div>
       </div>
       {% if survey.importe %}

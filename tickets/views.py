@@ -57551,3 +57551,199 @@ def public_process_survey_view(request, token):
 
     return render(request, 'tickets/process_survey_public.html', context)
 
+
+def public_process_survey_pdf(request, token):
+    """Genera un PDF del levantamiento de procesos (sin autenticación)"""
+    from io import BytesIO
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
+        HRFlowable, KeepTogether,
+    )
+    from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
+
+    survey = get_object_or_404(ProcessSurvey, public_share_token=token)
+    lines = (
+        survey.lines
+        .filter(is_hidden=False)
+        .prefetch_related('comments')
+        .order_by('version', 'order')
+    )
+
+    # Agrupar por versión, solo la última
+    from django.db.models import Max
+    max_version = survey.lines.aggregate(v=Max('version'))['v'] or 1
+    latest_lines = [l for l in lines if l.version == max_version]
+
+    buf = BytesIO()
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=letter,
+        leftMargin=2*cm, rightMargin=2*cm,
+        topMargin=2.5*cm, bottomMargin=2*cm,
+        title=f'{survey.folio} – {survey.name}',
+    )
+
+    # ── Estilos ──────────────────────────────────────────────────────────
+    styles = getSampleStyleSheet()
+    COLOR_DARK   = colors.HexColor('#0f3460')
+    COLOR_ACCENT = colors.HexColor('#533483')
+    COLOR_GREEN  = colors.HexColor('#22c55e')
+    COLOR_RED    = colors.HexColor('#ef4444')
+    COLOR_AMBER  = colors.HexColor('#f59e0b')
+    COLOR_GRAY   = colors.HexColor('#6b7280')
+    COLOR_LIGHT  = colors.HexColor('#f3f4f6')
+
+    style_title = ParagraphStyle('title', fontName='Helvetica-Bold', fontSize=18,
+                                 textColor=COLOR_DARK, spaceAfter=2)
+    style_folio = ParagraphStyle('folio', fontName='Helvetica', fontSize=9,
+                                 textColor=COLOR_GRAY, spaceAfter=4)
+    style_meta  = ParagraphStyle('meta', fontName='Helvetica', fontSize=9,
+                                 textColor=COLOR_GRAY, spaceAfter=2)
+    style_desc  = ParagraphStyle('desc', fontName='Helvetica', fontSize=9,
+                                 textColor=colors.HexColor('#374151'), spaceAfter=6,
+                                 leading=13)
+    style_section = ParagraphStyle('section', fontName='Helvetica-Bold', fontSize=11,
+                                   textColor=COLOR_DARK, spaceBefore=10, spaceAfter=4)
+    style_line_title = ParagraphStyle('ltitle', fontName='Helvetica-Bold', fontSize=10,
+                                      textColor=colors.black, spaceAfter=2)
+    style_line_body  = ParagraphStyle('lbody', fontName='Helvetica', fontSize=9,
+                                      textColor=colors.HexColor('#374151'), leading=13,
+                                      spaceAfter=3)
+    style_comment    = ParagraphStyle('comment', fontName='Helvetica-Oblique', fontSize=8,
+                                      textColor=COLOR_GRAY, leading=12, leftIndent=8)
+    style_importe    = ParagraphStyle('importe', fontName='Helvetica-Bold', fontSize=14,
+                                      textColor=COLOR_GREEN, spaceAfter=2)
+    style_footer     = ParagraphStyle('footer', fontName='Helvetica', fontSize=7,
+                                      textColor=COLOR_GRAY, alignment=TA_CENTER)
+
+    story = []
+
+    # ── Cabecera ─────────────────────────────────────────────────────────
+    folio_str = f' &nbsp;<font name="Helvetica" size="9" color="#6b7280">{survey.folio}</font>' if survey.folio else ''
+    style_name_combined = ParagraphStyle('name_combined', fontName='Helvetica-Bold', fontSize=18,
+                                         textColor=COLOR_DARK, leading=22, spaceAfter=4)
+    header_data = [[
+        Paragraph(f'<font name="Helvetica-Bold" size="18" color="#1e293b">{survey.name}</font>'
+                  f'<br/><font name="Helvetica" size="9" color="#6b7280">{survey.folio or ""}</font>',
+                  style_name_combined),
+        Paragraph(
+            f'{survey.importe_currency} {"{:,.2f}".format(float(survey.importe))}'
+            if survey.importe else '',
+            style_importe
+        ),
+    ]]
+    header_table = Table(header_data, colWidths=['70%', '30%'])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    story.append(header_table)
+    story.append(HRFlowable(width='100%', thickness=2, color=COLOR_DARK, spaceAfter=8))
+
+    # Meta info
+    meta_rows = []
+    meta_rows.append(('Fecha:', survey.date.strftime('%d/%m/%Y')))
+    if survey.company:
+        meta_rows.append(('Empresa:', survey.company.name))
+    if survey.responsible:
+        name = survey.responsible.get_full_name() or survey.responsible.username
+        meta_rows.append(('Responsable:', name))
+    status_label = {'proceso': 'En proceso', 'aceptado': 'Aceptado', 'rechazado': 'Rechazado'}.get(survey.status, survey.status)
+    meta_rows.append(('Estado:', status_label))
+    if survey.importe:
+        meta_rows.append(('Importe:', f'{survey.importe_currency} {float(survey.importe):,.2f}'))
+
+    meta_table_data = []
+    for i in range(0, len(meta_rows), 2):
+        row = []
+        for label, value in meta_rows[i:i+2]:
+            row.append(Paragraph(f'<b>{label}</b> {value}', style_meta))
+        while len(row) < 2:
+            row.append(Paragraph('', style_meta))
+        meta_table_data.append(row)
+
+    if meta_table_data:
+        mt = Table(meta_table_data, colWidths=['50%', '50%'])
+        mt.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ]))
+        story.append(mt)
+
+    if survey.description:
+        story.append(Spacer(1, 6))
+        story.append(Paragraph(survey.description.replace('\n', '<br/>'), style_desc))
+
+    if survey.rejection_reason:
+        story.append(Spacer(1, 4))
+        story.append(Paragraph(
+            f'<b>Motivo de rechazo:</b> {survey.rejection_reason}',
+            ParagraphStyle('rej', parent=style_desc, textColor=COLOR_RED)
+        ))
+
+    story.append(Spacer(1, 8))
+    story.append(Paragraph(f'Líneas del levantamiento — Versión {max_version}', style_section))
+    story.append(HRFlowable(width='100%', thickness=1, color=COLOR_LIGHT, spaceAfter=6))
+
+    # ── Líneas ───────────────────────────────────────────────────────────
+    STATUS_LABELS = {
+        'pending': ('Pendiente', COLOR_AMBER),
+        'accepted': ('Aceptado', COLOR_GREEN),
+        'rejected': ('Rechazado', COLOR_RED),
+    }
+
+    for idx, line in enumerate(latest_lines, 1):
+        status_txt, status_color = STATUS_LABELS.get(line.status, ('Pendiente', COLOR_AMBER))
+        complexity_txt = f'Complejidad {line.complexity}/10' if line.complexity else ''
+
+        title_para = Paragraph(
+            f'<font color="#{COLOR_DARK.hexval()[2:]}"><b>{idx}.</b></font> {line.title}',
+            style_line_title
+        )
+        badge_data = [[
+            title_para,
+            Paragraph(f'<font color="#{status_color.hexval()[2:]}"><b>{status_txt}</b></font>', style_meta),
+            Paragraph(f'<font color="#ef4444">{complexity_txt}</font>', style_meta) if complexity_txt else Paragraph('', style_meta),
+        ]]
+        badge_table = Table(badge_data, colWidths=['60%', '20%', '20%'])
+        badge_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (1, 0), (2, 0), 'RIGHT'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ]))
+
+        block = [badge_table]
+
+        if line.description:
+            block.append(Paragraph(line.description.replace('\n', '<br/>'), style_line_body))
+
+        # Comentarios
+        comments = list(line.comments.all())
+        if comments:
+            for c in comments[:5]:
+                author = c.author_name or 'Anónimo'
+                text = c.body.replace('\n', ' ')[:200]
+                block.append(Paragraph(f'💬 <b>{author}:</b> {text}', style_comment))
+
+        block.append(HRFlowable(width='100%', thickness=0.5, color=COLOR_LIGHT, spaceAfter=4, spaceBefore=4))
+        story.append(KeepTogether(block))
+
+    # ── Footer ───────────────────────────────────────────────────────────
+    story.append(Spacer(1, 16))
+    story.append(HRFlowable(width='100%', thickness=1, color=COLOR_LIGHT))
+    story.append(Spacer(1, 4))
+    story.append(Paragraph('Generado por TicketProo · Este documento es confidencial', style_footer))
+
+    doc.build(story)
+    buf.seek(0)
+    filename = f'{survey.folio}-{survey.name[:40]}.pdf'.replace(' ', '_')
+    response = HttpResponse(buf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    return response
+
