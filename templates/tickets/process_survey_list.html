@@ -43,6 +43,9 @@
               <th>Nombre</th>
               <th>Fecha</th>
               <th>Empresa</th>
+              <th>Estado</th>
+              <th class="text-center" title="Vistas cuando no está rechazado">Vistas</th>
+              <th class="text-center" title="Vistas cuando está rechazado">Vistas Rechazado</th>
               <th>Líneas</th>
               <th>Creado por</th>
               <th class="text-end">Acciones</th>
@@ -61,6 +64,35 @@
               </td>
               <td>{{ survey.date|date:"d/m/Y" }}</td>
               <td>{{ survey.company.name|default:"—" }}</td>
+              <td>
+                {% if survey.status == 'proceso' %}
+                  <span class="badge bg-warning text-dark">En proceso</span>
+                {% elif survey.status == 'aceptado' %}
+                  <span class="badge bg-success">Aceptado</span>
+                {% elif survey.status == 'rechazado' %}
+                  <span class="badge bg-danger">Rechazado</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ survey.status }}</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                {% if survey.page_views_count > 0 %}
+                  <a href="{% url 'process_survey_page_views' survey.pk %}" class="badge bg-info text-dark text-decoration-none">
+                    <i class="bi bi-eye me-1"></i>{{ survey.page_views_count }}
+                  </a>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                {% if survey.page_views_rechazado_count > 0 %}
+                  <a href="{% url 'process_survey_page_views' survey.pk %}" class="badge bg-danger text-white text-decoration-none">
+                    <i class="bi bi-eye me-1"></i>{{ survey.page_views_rechazado_count }}
+                  </a>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
               <td><span class="badge bg-secondary">{{ survey.lines.count }}</span></td>
               <td>{% if survey.created_by %}{{ survey.created_by.get_full_name|default:survey.created_by.username }}{% else %}—{% endif %}</td>
               <td class="text-end">

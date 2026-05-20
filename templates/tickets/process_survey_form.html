@@ -26,7 +26,7 @@
   <form method="post">
     {% csrf_token %}
     <div class="row g-3 mb-4">
-      <div class="col-md-6">
+      <div class="col-md-4">
         <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
         <input type="text" name="name" class="form-control"
                value="{{ survey.name|default:'' }}" required placeholder="Nombre del levantamiento">
@@ -35,6 +35,14 @@
         <label class="form-label fw-semibold">Fecha <span class="text-danger">*</span></label>
         <input type="date" name="date" class="form-control"
                value="{% if survey %}{{ survey.date|date:'Y-m-d' }}{% endif %}" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">Estado</label>
+        <select name="status" class="form-select">
+          <option value="proceso" {% if survey.status == 'proceso' or not survey %}selected{% endif %}>En proceso</option>
+          <option value="aceptado" {% if survey.status == 'aceptado' %}selected{% endif %}>Aceptado</option>
+          <option value="rechazado" {% if survey.status == 'rechazado' %}selected{% endif %}>Rechazado</option>
+        </select>
       </div>
       <div class="col-md-2">
         <label class="form-label fw-semibold">Responsable</label>
@@ -60,6 +68,26 @@
             </option>
           {% endfor %}
         </select>
+      </div>
+      <div class="col-md-1">
+        <label class="form-label fw-semibold">Moneda</label>
+        <select name="importe_currency" class="form-select">
+          {% for cur in 'USD,MXN,EUR,GTQ,HNL,CRC,NIO,DOP,COP,PEN,ARS,CLP,BRL' %}
+          {% endfor %}
+          <option value="USD" {% if not survey or survey.importe_currency == 'USD' %}selected{% endif %}>USD</option>
+          <option value="MXN" {% if survey.importe_currency == 'MXN' %}selected{% endif %}>MXN</option>
+          <option value="EUR" {% if survey.importe_currency == 'EUR' %}selected{% endif %}>EUR</option>
+          <option value="GTQ" {% if survey.importe_currency == 'GTQ' %}selected{% endif %}>GTQ</option>
+          <option value="HNL" {% if survey.importe_currency == 'HNL' %}selected{% endif %}>HNL</option>
+          <option value="CRC" {% if survey.importe_currency == 'CRC' %}selected{% endif %}>CRC</option>
+          <option value="DOP" {% if survey.importe_currency == 'DOP' %}selected{% endif %}>DOP</option>
+          <option value="COP" {% if survey.importe_currency == 'COP' %}selected{% endif %}>COP</option>
+        </select>
+      </div>
+      <div class="col-md-1">
+        <label class="form-label fw-semibold">Importe</label>
+        <input type="number" name="importe" class="form-control" step="0.01" min="0"
+               value="{{ survey.importe|default:'' }}" placeholder="0.00">
       </div>
       <div class="col-12">
         <label class="form-label fw-semibold">Descripción del proyecto</label>

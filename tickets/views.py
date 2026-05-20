@@ -56703,7 +56703,11 @@ def capacitacion_public(request, token):
 def process_survey_list(request):
     """Lista de levantamientos de procesos"""
     from .submenu_utils import get_crm_submenu
-    surveys = ProcessSurvey.objects.select_related('company', 'created_by')
+    from django.db.models import Count, Q
+    surveys = ProcessSurvey.objects.select_related('company', 'created_by').annotate(
+        page_views_count=Count('page_views', filter=Q(page_views__status_at_view__in=['proceso', 'aceptado', ''])),
+        page_views_rechazado_count=Count('page_views', filter=Q(page_views__status_at_view='rechazado')),
+    )
     if not is_agent(request.user):
         surveys = surveys.filter(created_by=request.user)
 
@@ -57079,6 +57083,15 @@ def process_survey_edit(request, pk):
             survey.date = date
             survey.description = request.POST.get('description', '').strip()
             survey.company = get_object_or_404(Company, pk=company_id) if company_id else None
+            status = request.POST.get('status', '').strip()
+            if status in ('proceso', 'aceptado', 'rechazado'):
+                survey.status = status
+            importe_raw = request.POST.get('importe', '').strip()
+            try:
+                survey.importe = float(importe_raw) if importe_raw else None
+            except ValueError:
+                survey.importe = None
+            survey.importe_currency = request.POST.get('importe_currency', 'USD').strip() or 'USD'
             responsible_id = request.POST.get('responsible', '').strip()
             if responsible_id:
                 survey.responsible = get_object_or_404(User, pk=responsible_id)
@@ -57303,6 +57316,26 @@ def public_process_survey_view(request, token):
     if request.method == 'POST':
         action = request.POST.get('action', '')
 
+        # ── Cambiar estado del levantamiento (aceptar/rechazar) ──────────
+        if action == 'change_status':
+            new_status = request.POST.get('new_status', '').strip()
+            if new_status in ('aceptado', 'proceso'):
+                survey.status = new_status
+                survey.rejection_reason = ''
+                survey.save(update_fields=['status', 'rejection_reason'])
+                label = 'Aceptado' if new_status == 'aceptado' else 'En proceso'
+                messages.success(request, f'El levantamiento fue marcado como {label}.')
+            elif new_status == 'rechazado':
+                reason = request.POST.get('rejection_reason', '').strip()
+                if not reason:
+                    messages.error(request, 'Debes indicar el motivo del rechazo.')
+                else:
+                    survey.status = 'rechazado'
+                    survey.rejection_reason = reason
+                    survey.save(update_fields=['status', 'rejection_reason'])
+                    messages.success(request, 'El levantamiento fue marcado como Rechazado.')
+            return redirect('public_process_survey', token=token)
+
         # ── Firma de acuerdo ──────────────────────────────────────────────
         if action == 'sign':
             signer_name = request.POST.get('signer_name', '').strip()
@@ -57509,6 +57542,7 @@ def public_process_survey_view(request, token):
                     pass
         ProcessSurveyPageView.objects.create(
             survey=survey,
+            status_at_view=survey.status,
             ip_address=ip or None,
             country=country,
             city=city,

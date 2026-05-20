@@ -24117,6 +24117,38 @@ class ProcessSurvey(models.Model):
     requester_country = models.CharField(max_length=100, blank=True, verbose_name='País del solicitante')
     requester_company_name = models.CharField(max_length=200, blank=True, verbose_name='Empresa del solicitante')
 
+    STATUS_PROCESO = 'proceso'
+    STATUS_ACEPTADO = 'aceptado'
+    STATUS_RECHAZADO = 'rechazado'
+    STATUS_CHOICES = [
+        (STATUS_PROCESO, 'En proceso'),
+        (STATUS_ACEPTADO, 'Aceptado'),
+        (STATUS_RECHAZADO, 'Rechazado'),
+    ]
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PROCESO,
+        verbose_name='Estado',
+    )
+    rejection_reason = models.TextField(
+        blank=True,
+        verbose_name='Motivo de rechazo',
+    )
+    importe = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Importe',
+    )
+    importe_currency = models.CharField(
+        max_length=10,
+        default='USD',
+        blank=True,
+        verbose_name='Moneda',
+    )
+
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
 
@@ -24332,6 +24364,12 @@ class ProcessSurveyPageView(models.Model):
         on_delete=models.CASCADE,
         related_name='page_views',
         verbose_name='Levantamiento',
+    )
+    status_at_view = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        verbose_name='Estado al momento de la visita',
     )
     ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
     country = models.CharField(max_length=100, blank=True, verbose_name='País')
