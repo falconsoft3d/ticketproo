@@ -58167,3 +58167,338 @@ def public_process_survey_pdf(request, token):
     response['Content-Disposition'] = f'inline; filename="{filename}"'
     return response
 
+
+def public_process_survey_contract_pdf(request, token):
+    """Genera el PDF del contrato completo (COMPARECEN + cláusulas + Anexo A + firmas)"""
+    import os
+    from io import BytesIO
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm, mm
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
+        HRFlowable, KeepTogether, Image as RLImage,
+    )
+    from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY, TA_RIGHT
+    from reportlab.lib.colors import HexColor
+    from django.db.models import Max
+    from .models import ProcessSurveyClause, UserProfile
+
+    survey = get_object_or_404(ProcessSurvey, public_share_token=token)
+    clauses = survey.clauses.order_by('order', 'created_at')
+    max_version = survey.lines.aggregate(v=Max('version'))['v'] or 1
+    lines = survey.lines.filter(version=max_version, is_hidden=False).order_by('order')
+
+    # ── Colores ──────────────────────────────────────────────────────────
+    C_BRAND   = HexColor('#0f3460')
+    C_ACCENT  = HexColor('#533483')
+    C_TEXT    = HexColor('#1a1a2e')
+    C_MUTED   = HexColor('#6c757d')
+    C_LIGHT   = HexColor('#f3f4f6')
+    C_HR      = HexColor('#dee2e6')
+    C_WHITE   = colors.white
+
+    # ── Estilos ──────────────────────────────────────────────────────────
+    styles = getSampleStyleSheet()
+
+    sty_folio = ParagraphStyle('sty_folio',
+        fontName='Helvetica', fontSize=8, textColor=HexColor('#b0c4de'),
+        leading=12, spaceBefore=0, spaceAfter=2)
+    sty_h1 = ParagraphStyle('sty_h1',
+        fontName='Helvetica-Bold', fontSize=16, textColor=C_WHITE,
+        leading=22, spaceAfter=4)
+    sty_meta_white = ParagraphStyle('sty_meta_white',
+        fontName='Helvetica', fontSize=9, textColor=HexColor('#c8d6ea'),
+        leading=13, spaceAfter=2)
+    sty_body = ParagraphStyle('sty_body',
+        fontName='Helvetica', fontSize=10, textColor=C_TEXT,
+        leading=18, alignment=TA_JUSTIFY, spaceAfter=6)
+    sty_clause_num = ParagraphStyle('sty_clause_num',
+        fontName='Helvetica-Bold', fontSize=10, textColor=C_BRAND,
+        leading=16, spaceAfter=2, spaceBefore=4)
+    sty_clause_body = ParagraphStyle('sty_clause_body',
+        fontName='Helvetica', fontSize=10, textColor=C_TEXT,
+        leading=18, alignment=TA_JUSTIFY, leftIndent=14, spaceAfter=4)
+    sty_section = ParagraphStyle('sty_section',
+        fontName='Helvetica-Bold', fontSize=10, textColor=C_BRAND,
+        leading=16, alignment=TA_CENTER, spaceBefore=8, spaceAfter=4,
+        letterSpacing=1.5)
+    sty_anexo_title = ParagraphStyle('sty_anexo_title',
+        fontName='Helvetica-Bold', fontSize=10, textColor=C_TEXT,
+        leading=15, spaceAfter=1)
+    sty_anexo_desc = ParagraphStyle('sty_anexo_desc',
+        fontName='Helvetica', fontSize=9, textColor=C_MUTED,
+        leading=13, leftIndent=12, spaceAfter=2)
+    sty_sig_label = ParagraphStyle('sty_sig_label',
+        fontName='Helvetica-Bold', fontSize=8, textColor=C_MUTED,
+        leading=11, spaceAfter=4, letterSpacing=0.8)
+    sty_sig_name = ParagraphStyle('sty_sig_name',
+        fontName='Helvetica', fontSize=9, textColor=C_TEXT, leading=13)
+    sty_sig_date = ParagraphStyle('sty_sig_date',
+        fontName='Helvetica', fontSize=8, textColor=C_MUTED, leading=11)
+    sty_footer = ParagraphStyle('sty_footer',
+        fontName='Helvetica', fontSize=7, textColor=C_MUTED,
+        alignment=TA_CENTER, leading=10)
+    sty_muted_center = ParagraphStyle('sty_muted_center',
+        fontName='Helvetica', fontSize=9, textColor=C_MUTED,
+        alignment=TA_CENTER, leading=13, spaceAfter=8)
+
+    # ── Documento ────────────────────────────────────────────────────────
+    buf = BytesIO()
+    page_w, page_h = A4
+    left_m = right_m = 2 * cm
+    top_m = 2.5 * cm
+    bot_m = 2 * cm
+
+    # Callback para número de página y línea de pie
+    def _page_header(canvas_obj, doc_obj):
+        canvas_obj.saveState()
+        canvas_obj.setFont('Helvetica', 7)
+        canvas_obj.setFillColor(C_MUTED)
+        folio_txt = survey.folio or ''
+        canvas_obj.drawString(left_m, bot_m - 8, folio_txt)
+        page_txt = f'Página {canvas_obj.getPageNumber()}'
+        canvas_obj.drawRightString(page_w - right_m, bot_m - 8, page_txt)
+        canvas_obj.setStrokeColor(C_HR)
+        canvas_obj.setLineWidth(0.4)
+        canvas_obj.line(left_m, bot_m - 2, page_w - right_m, bot_m - 2)
+        canvas_obj.restoreState()
+
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=left_m, rightMargin=right_m,
+        topMargin=top_m, bottomMargin=bot_m + 12,
+        title=survey.contract_title or f'Contrato — {survey.name}',
+        author=survey.created_by.get_full_name() if survey.created_by else '',
+        onFirstPage=_page_header, onLaterPages=_page_header,
+    )
+    doc_width = page_w - left_m - right_m
+
+    story = []
+
+    # ── HEADER OSCURO ────────────────────────────────────────────────────
+    contract_title = survey.contract_title or f'Contrato — {survey.name}'
+    hdr_inner = []
+    hdr_inner.append(Paragraph(survey.folio or '', sty_folio))
+    hdr_inner.append(Paragraph(contract_title.upper(), sty_h1))
+    if survey.contract_date:
+        date_str = survey.contract_date.strftime('%-d de %B de %Y')
+        hdr_inner.append(Paragraph(f'Fecha: {date_str}', sty_meta_white))
+    if survey.company:
+        hdr_inner.append(Paragraph(f'Empresa: {survey.company.name}', sty_meta_white))
+
+    hdr_table = Table([[hdr_inner]], colWidths=[doc_width])
+    hdr_table.setStyle(TableStyle([
+        ('BACKGROUND',    (0, 0), (-1, -1), C_BRAND),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 18),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 18),
+        ('TOPPADDING',    (0, 0), (-1, -1), 18),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 18),
+        ('ROUNDEDCORNERS', [6, 6, 6, 6]),
+    ]))
+    story.append(hdr_table)
+    story.append(Spacer(1, 16))
+
+    # ── COMPARECEN ───────────────────────────────────────────────────────
+    p = survey
+    has_comparecen = (
+        p.provider_nif or p.provider_nationality or
+        p.client_rep_name or p.company or p.created_by
+    )
+    if has_comparecen:
+        if p.contract_date:
+            date_intro = p.contract_date.strftime('%-d de %B de %Y') + ', '
+        else:
+            date_intro = ''
+        story.append(Paragraph(f'{date_intro}Comparecen:', sty_body))
+        story.append(Spacer(1, 6))
+
+        # Proveedor
+        prov_name = (
+            p.created_by.get_full_name() if p.created_by and p.created_by.get_full_name()
+            else (p.created_by.username if p.created_by else '')
+        )
+        parts = [f'<b>Don/Doña {prov_name}</b>']
+        if p.provider_nationality:
+            parts.append(f'mayor de edad, nacionalidad {p.provider_nationality}')
+        if p.provider_civil_status:
+            parts.append(f'de estado civil {p.provider_civil_status}')
+        if p.provider_nif:
+            parts.append(f'con NIF: <b>{p.provider_nif}</b>')
+        if p.provider_occupation:
+            parts.append(p.provider_occupation)
+        if p.provider_address:
+            parts.append(f'con domicilio en {p.provider_address}')
+        elif p.created_by:
+            try:
+                pr = p.created_by.profile
+                addr = ', '.join(filter(None, [pr.city or '', pr.country or '']))
+                if addr:
+                    parts.append(f'con domicilio en {addr}')
+            except Exception:
+                pass
+        if p.created_by and p.created_by.email:
+            parts.append(f'email: <b>{p.created_by.email}</b>')
+        parts.append('en lo sucesivo denominado como <b>"EL EJECUTOR"</b>')
+        story.append(Paragraph(', '.join(parts) + '.', sty_body))
+        story.append(Spacer(1, 6))
+
+        # Cliente
+        client_name = p.client_rep_name or p.client_signed_name or '___________________________'
+        cparts = [f'Y <b>{client_name}</b>']
+        if p.client_rep_id:
+            cparts.append(f'con ID: <b>{p.client_rep_id}</b>')
+        if p.client_rep_role:
+            cparts.append(p.client_rep_role)
+        if p.client_signed_email:
+            cparts.append(f'email: <b>{p.client_signed_email}</b>')
+        if p.company:
+            cparts.append(f'en representación de la empresa <b>{p.company.name}</b>')
+            if p.company.tax_id:
+                cparts.append(f'CIF: <b>{p.company.tax_id}</b>')
+            if p.company.email:
+                cparts.append(f'email: <b>{p.company.email}</b>')
+            addr2 = ', '.join(filter(None, [
+                getattr(p.company, 'address', '') or '',
+                getattr(p.company, 'city', '') or '',
+                getattr(p.company, 'country', '') or '',
+            ]))
+            if addr2:
+                cparts.append(f'con domicilio en {addr2}')
+        cparts.append('en lo sucesivo denominado como <b>"EL CLIENTE"</b>')
+        story.append(Paragraph(', '.join(cparts) + '.', sty_body))
+        story.append(Spacer(1, 6))
+
+        title_ref = p.contract_title or 'contrato'
+        story.append(Paragraph(
+            f'Se ha convenido celebrar el presente <i>{title_ref}</i> que se regirá por las siguientes:',
+            sty_body
+        ))
+        story.append(Spacer(1, 10))
+        story.append(Paragraph('CLÁUSULAS:', sty_section))
+        story.append(HRFlowable(width='100%', thickness=0.8, color=C_HR, spaceAfter=12))
+
+    # ── CLÁUSULAS ────────────────────────────────────────────────────────
+    total_clauses = clauses.count()
+    for i, clause in enumerate(clauses, 1):
+        title_txt = clause.title.upper() if clause.title else f'CLÁUSULA {i}'
+        block = [Paragraph(f'{i}. {title_txt}', sty_clause_num)]
+        if clause.body:
+            for line_txt in clause.body.split('\n'):
+                if line_txt.strip():
+                    block.append(Paragraph(line_txt, sty_clause_body))
+                else:
+                    block.append(Spacer(1, 4))
+        story.append(KeepTogether(block))
+        if i < total_clauses:
+            story.append(HRFlowable(
+                width='100%', thickness=0.5, color=C_HR,
+                spaceBefore=8, spaceAfter=8
+            ))
+
+    # ── ANEXO A ──────────────────────────────────────────────────────────
+    if lines.exists():
+        story.append(HRFlowable(width='100%', thickness=1, color=C_HR, spaceBefore=16, spaceAfter=14))
+        story.append(Paragraph('ANEXO A — ALCANCE DEL PROYECTO', sty_section))
+        story.append(Paragraph(
+            f'El siguiente listado forma parte integral del presente contrato como Anexo A (Versión {max_version}).',
+            sty_muted_center
+        ))
+        for j, srv_line in enumerate(lines, 1):
+            blk = [Paragraph(f'<b>{j}.</b>  {srv_line.title}', sty_anexo_title)]
+            if srv_line.description:
+                blk.append(Paragraph(srv_line.description, sty_anexo_desc))
+            story.append(KeepTogether(blk + [Spacer(1, 2)]))
+            story.append(HRFlowable(
+                width='100%', thickness=0.4, color=HexColor('#f0f0f0'),
+                spaceBefore=2, spaceAfter=2
+            ))
+
+    # ── FIRMAS ───────────────────────────────────────────────────────────
+    if total_clauses:
+        story.append(HRFlowable(width='100%', thickness=1, color=C_HR, spaceBefore=20, spaceAfter=16))
+        col_w = (doc_width - 1 * cm) / 2
+
+        def _sig_cell(label, img_path, name_str, date_str_s):
+            cell = [Paragraph(label.upper(), sty_sig_label)]
+            if img_path and os.path.exists(img_path):
+                try:
+                    cell.append(RLImage(img_path, width=col_w * 0.75, height=55))
+                except Exception:
+                    cell.append(Spacer(1, 55))
+            else:
+                # Línea punteada simulada
+                cell.append(Spacer(1, 55))
+            cell.append(HRFlowable(width=col_w * 0.85, thickness=0.5, color=C_HR, spaceAfter=4))
+            if name_str:
+                cell.append(Paragraph(name_str, sty_sig_name))
+            if date_str_s:
+                cell.append(Paragraph(f'Fecha: {date_str_s}', sty_sig_date))
+            return cell
+
+        # Proveedor
+        prov_sig_path = None
+        if survey.created_by:
+            try:
+                if survey.created_by.profile.signature_image:
+                    prov_sig_path = survey.created_by.profile.signature_image.path
+            except Exception:
+                pass
+        prov_name_str = survey.created_by.get_full_name() if survey.created_by else ''
+        prov_date_str = survey.contract_date.strftime('%d/%m/%Y') if survey.contract_date else ''
+
+        # Cliente (solo si ya firmó)
+        client_sig_path = survey.client_signature_image.path if survey.client_signature_image else None
+        client_name_str = survey.client_signed_name or ''
+        client_date_str = survey.client_signed_at.strftime('%d/%m/%Y') if survey.client_signed_at else ''
+
+        if survey.client_signature_image:
+            # Ambas firmas lado a lado
+            sig_table = Table(
+                [[_sig_cell('Firma del Ejecutor', prov_sig_path, prov_name_str, prov_date_str),
+                  _sig_cell('Firma del Cliente', client_sig_path, client_name_str, client_date_str)]],
+                colWidths=[col_w, col_w], hAlign='LEFT',
+            )
+            sig_table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ]))
+        else:
+            # Solo firma del ejecutor
+            sig_table = Table(
+                [[_sig_cell('Firma del Ejecutor', prov_sig_path, prov_name_str, prov_date_str),
+                  _sig_cell('Firma del Cliente', None, '', '')]],
+                colWidths=[col_w, col_w], hAlign='LEFT',
+            )
+            sig_table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ]))
+        story.append(sig_table)
+
+    # ── PIE ──────────────────────────────────────────────────────────────
+    story.append(Spacer(1, 24))
+    story.append(HRFlowable(width='100%', thickness=0.4, color=C_HR))
+    story.append(Spacer(1, 4))
+    story.append(Paragraph(
+        f'Documento generado por TicketProo · {survey.folio} · Confidencial',
+        sty_footer
+    ))
+
+    doc.build(story)
+    buf.seek(0)
+
+    safe = (survey.contract_title or survey.folio or 'contrato')[:60].replace(' ', '_').replace('/', '-')
+    filename = f'contrato_{safe}.pdf'
+    response = HttpResponse(buf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
