@@ -42,6 +42,16 @@
       <a href="{% url 'public_process_survey' survey.public_share_token %}" target="_blank" class="btn btn-success btn-sm">
         <i class="bi bi-share me-1"></i> Vista pública
       </a>
+      <a href="{% url 'public_process_survey_contract' survey.public_share_token %}" target="_blank" class="btn btn-outline-success btn-sm">
+        <i class="bi bi-file-earmark-text me-1"></i> Ver contrato
+      </a>
+      <form method="post" action="{% url 'process_survey_duplicate' survey.pk %}" class="d-inline"
+            onsubmit="return confirm('¿Duplicar este levantamiento? Se copiarán las líneas (última versión) y el contrato con sus cláusulas.')">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-copy me-1"></i> Duplicar
+        </button>
+      </form>
       <button type="button" class="btn btn-outline-secondary btn-sm" id="copy-url-btn"
               onclick="copyPublicUrl()">
         <i class="bi bi-clipboard me-1"></i> Copiar enlace
@@ -155,7 +165,7 @@
     </div>
 
     {% if versions_list %}
-    <!-- Tabs de versiones -->
+    <!-- Tabs de versiones + Contrato -->
     <div class="card-header bg-white border-top-0 pt-0 pb-0">
       <ul class="nav nav-tabs card-header-tabs" id="versionTabs" role="tablist">
         {% for version_num, version_lines in versions_list %}
@@ -175,6 +185,16 @@
           </button>
         </li>
         {% endfor %}
+        <li class="nav-item ms-auto" role="presentation">
+          <button class="nav-link {% if clauses %}text-success fw-semibold{% endif %}"
+                  id="tab-contrato"
+                  data-bs-toggle="tab"
+                  data-bs-target="#pane-contrato"
+                  type="button" role="tab">
+            <i class="bi bi-file-text me-1"></i> Contrato
+            {% if clauses %}<span class="badge bg-success ms-1" style="font-size:.65rem;">{{ clauses|length }}</span>{% endif %}
+          </button>
+        </li>
       </ul>
     </div>
 
@@ -305,17 +325,42 @@
 
       </div>
       {% endfor %}
+
+      <!-- Panel Contrato — Cláusulas -->
+      <div class="tab-pane fade" id="pane-contrato" role="tabpanel">
+        {% include 'tickets/_process_survey_clauses.html' %}
+      </div>
+
     </div>
 
     {% else %}
-    <div class="card-body text-muted text-center py-4">
-      <i class="bi bi-clipboard-x fs-3"></i>
-      <p class="mt-2 mb-0">Este levantamiento no tiene líneas registradas.</p>
-      <a href="{% url 'process_survey_edit' survey.pk %}" class="btn btn-primary btn-sm mt-3">
-        <i class="bi bi-plus-lg me-1"></i> Agregar líneas
-      </a>
+    <!-- Sin versiones: pestañas con Contrato -->
+    <div class="card-header bg-white border-top-0 pt-0 pb-0">
+      <ul class="nav nav-tabs card-header-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active {% if clauses %}text-success fw-semibold{% endif %}"
+                  data-bs-toggle="tab" data-bs-target="#pane-contrato-nolines"
+                  type="button" role="tab">
+            <i class="bi bi-file-text me-1"></i> Contrato
+            {% if clauses %}<span class="badge bg-success ms-1" style="font-size:.65rem;">{{ clauses|length }}</span>{% endif %}
+          </button>
+        </li>
+      </ul>
+    </div>
+    <div class="tab-content">
+      <div class="tab-pane fade show active" id="pane-contrato-nolines" role="tabpanel">
+        {% include 'tickets/_process_survey_clauses.html' %}
+      </div>
+      <div class="card-body text-muted text-center py-4">
+        <i class="bi bi-clipboard-x fs-3"></i>
+        <p class="mt-2 mb-0">Este levantamiento no tiene líneas registradas.</p>
+        <a href="{% url 'process_survey_edit' survey.pk %}" class="btn btn-primary btn-sm mt-3">
+          <i class="bi bi-plus-lg me-1"></i> Agregar líneas
+        </a>
+      </div>
     </div>
     {% endif %}
+
   </div>
 
   <!-- URLs de referencia -->

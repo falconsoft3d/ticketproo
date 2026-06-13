@@ -2595,7 +2595,8 @@ def user_profile_view(request):
         if 'update_profile' in request.POST:
             # Actualizar perfil
             profile_form = UserProfileForm(
-                request.POST, 
+                request.POST,
+                request.FILES,
                 instance=profile, 
                 user=request.user
             )
@@ -2621,6 +2622,19 @@ def user_profile_view(request):
                 messages.success(request, 'Tu contraseña ha sido cambiada exitosamente.')
                 return redirect('user_profile')
         
+        elif 'save_signature' in request.POST:
+            # Guardar firma desde canvas (base64 PNG)
+            import base64
+            from django.core.files.base import ContentFile
+            sig_b64 = request.POST.get('signature_data_b64', '').strip()
+            prefix = 'data:image/png;base64,'
+            if sig_b64.startswith(prefix):
+                img_bytes = base64.b64decode(sig_b64[len(prefix):])
+                filename = f'firma_{request.user.pk}.png'
+                profile.signature_image.save(filename, ContentFile(img_bytes), save=True)
+                messages.success(request, 'Firma guardada correctamente.')
+            return redirect('user_profile')
+
         elif 'regenerate_token' in request.POST:
             # Regenerar token público
             new_token = profile.regenerate_token()
@@ -56793,6 +56807,69 @@ def process_survey_create(request):
 
 
 @login_required
+@user_passes_test(is_agent, login_url='/')
+def process_survey_duplicate(request, pk):
+    """Duplica un levantamiento: copia líneas de la versión más reciente y el contrato con sus cláusulas."""
+    from .models import ProcessSurveyClause
+    from django.db.models import Max
+
+    if request.method != 'POST':
+        return redirect('process_survey_detail', pk=pk)
+
+    original = get_object_or_404(ProcessSurvey, pk=pk)
+
+    # ── Campos del contrato que se copian ──
+    CONTRACT_FIELDS = [
+        'contract_title', 'contract_date',
+        'provider_nif', 'provider_nationality', 'provider_civil_status',
+        'provider_occupation', 'provider_address',
+        'client_rep_name', 'client_rep_id', 'client_rep_role',
+    ]
+
+    # Crear nuevo levantamiento (folio se genera automáticamente)
+    new_survey = ProcessSurvey(
+        name=f'{original.name} (copia)',
+        date=original.date,
+        description=original.description,
+        company=original.company,
+        created_by=request.user,
+        responsible=original.responsible,
+        status=ProcessSurvey.STATUS_PROCESO,
+        importe=original.importe,
+        importe_currency=original.importe_currency,
+    )
+    for f in CONTRACT_FIELDS:
+        setattr(new_survey, f, getattr(original, f, ''))
+    new_survey.save()  # genera folio + uuid
+
+    # ── Copiar líneas de la versión más reciente (versión → 1) ──
+    max_version = original.lines.aggregate(v=Max('version'))['v'] or 1
+    for line in original.lines.filter(version=max_version).order_by('order'):
+        ProcessSurveyLine.objects.create(
+            survey=new_survey,
+            order=line.order,
+            title=line.title,
+            description=line.description,
+            status=ProcessSurveyLine.STATUS_PENDING,
+            is_hidden=line.is_hidden,
+            complexity=line.complexity,
+            version=1,
+        )
+
+    # ── Copiar cláusulas del contrato ──
+    for clause in original.clauses.all():
+        ProcessSurveyClause.objects.create(
+            survey=new_survey,
+            order=clause.order,
+            title=clause.title,
+            body=clause.body,
+        )
+
+    messages.success(request, f'Levantamiento duplicado correctamente: {new_survey.folio}')
+    return redirect('process_survey_detail', pk=new_survey.pk)
+
+
+@login_required
 def process_survey_detail(request, pk):
     """Detalle de un levantamiento de procesos"""
     from .submenu_utils import get_crm_submenu
@@ -56825,6 +56902,7 @@ def process_survey_detail(request, pk):
 
     signatures = survey.signatures.all()
     page_views_count = survey.page_views.count()
+    clauses = survey.clauses.all()
 
     context = {
         'page_title': survey.name,
@@ -56842,6 +56920,7 @@ def process_survey_detail(request, pk):
         'projects': Project.objects.filter(is_active=True).order_by('name'),
         'users': User.objects.filter(is_active=True).order_by('first_name', 'last_name'),
         'latest_lines': latest_lines,
+        'clauses': clauses,
         'submenu': get_crm_submenu(request, active_item='process_surveys'),
     }
     return render(request, 'tickets/process_survey_detail.html', context)
@@ -57167,6 +57246,244 @@ def process_survey_delete(request, pk):
         'submenu': get_crm_submenu(request, active_item='process_surveys'),
     }
     return render(request, 'tickets/process_survey_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def process_survey_contract_save(request, pk):
+    """Guarda título y fecha del encabezado del contrato"""
+    from django.http import JsonResponse
+    survey = get_object_or_404(ProcessSurvey, pk=pk)
+    if request.method == 'POST':
+        survey.contract_title = request.POST.get('contract_title', '').strip()
+        raw_date = request.POST.get('contract_date', '').strip()
+        survey.contract_date = raw_date if raw_date else None
+        survey.save(update_fields=['contract_title', 'contract_date'])
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'ok': True})
+        messages.success(request, 'Encabezado del contrato guardado.')
+        return redirect('process_survey_detail', pk=pk)
+    return redirect('process_survey_detail', pk=pk)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def process_survey_client_signature_delete(request, pk):
+    """Elimina la firma del cliente del levantamiento"""
+    survey = get_object_or_404(ProcessSurvey, pk=pk)
+    if request.method == 'POST':
+        if survey.client_signature_image:
+            survey.client_signature_image.delete(save=False)
+            survey.client_signature_image = None
+        survey.client_signed_at = None
+        survey.client_signed_name = ''
+        survey.client_signed_email = ''
+        survey.save(update_fields=['client_signature_image', 'client_signed_at', 'client_signed_name', 'client_signed_email'])
+        messages.success(request, 'Firma del cliente eliminada.')
+    return redirect('process_survey_detail', pk=pk)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def process_survey_parties_save(request, pk):
+    """Guarda los datos de identificación de partes del contrato"""
+    survey = get_object_or_404(ProcessSurvey, pk=pk)
+    if request.method == 'POST':
+        fields = [
+            'provider_nif', 'provider_nationality', 'provider_civil_status',
+            'provider_occupation', 'provider_address',
+            'client_rep_name', 'client_rep_id', 'client_rep_role',
+        ]
+        for f in fields:
+            setattr(survey, f, request.POST.get(f, '').strip())
+        survey.save(update_fields=fields)
+        messages.success(request, 'Datos de las partes guardados.')
+    return redirect('process_survey_detail', pk=pk)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def process_survey_clause_add(request, pk):
+    """Agrega una nueva cláusula al contrato del levantamiento"""
+    from django.http import JsonResponse
+    from .models import ProcessSurveyClause
+    survey = get_object_or_404(ProcessSurvey, pk=pk)
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        body = request.POST.get('body', '').strip()
+        if not body:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'ok': False, 'error': 'El texto de la cláusula es obligatorio.'}, status=400)
+            messages.error(request, 'El texto de la cláusula es obligatorio.')
+            return redirect('process_survey_detail', pk=pk)
+        last_order = survey.clauses.aggregate(m=models.Max('order'))['m'] or 0
+        clause = ProcessSurveyClause.objects.create(
+            survey=survey, title=title, body=body, order=last_order + 1
+        )
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'ok': True, 'id': clause.pk, 'order': clause.order, 'title': clause.title, 'body': clause.body})
+        return redirect('process_survey_detail', pk=pk)
+    return redirect('process_survey_detail', pk=pk)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def process_survey_clause_edit(request, clause_pk):
+    """Edita título y cuerpo de una cláusula existente"""
+    from django.http import JsonResponse
+    from .models import ProcessSurveyClause
+    clause = get_object_or_404(ProcessSurveyClause, pk=clause_pk)
+    survey = clause.survey
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        body = request.POST.get('body', '').strip()
+        if not body:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'ok': False, 'error': 'El texto es obligatorio.'}, status=400)
+            messages.error(request, 'El texto de la cláusula es obligatorio.')
+            return redirect('process_survey_detail', pk=survey.pk)
+        clause.title = title
+        clause.body = body
+        clause.save(update_fields=['title', 'body'])
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'ok': True, 'title': clause.title, 'body': clause.body})
+        return redirect('process_survey_detail', pk=survey.pk)
+    return redirect('process_survey_detail', pk=survey.pk)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def process_survey_clause_delete(request, clause_pk):
+    """Elimina una cláusula del contrato"""
+    from django.http import JsonResponse
+    from .models import ProcessSurveyClause
+    clause = get_object_or_404(ProcessSurveyClause, pk=clause_pk)
+    survey_pk = clause.survey_id
+    if request.method == 'POST':
+        clause.delete()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'ok': True})
+        return redirect('process_survey_detail', pk=survey_pk)
+    return redirect('process_survey_detail', pk=survey_pk)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def process_survey_clause_ai_new(request, pk):
+    """Genera el texto de una nueva cláusula desde cero usando IA"""
+    from django.http import JsonResponse
+    from .ai_utils import AIContentOptimizer
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    survey = get_object_or_404(ProcessSurvey, pk=pk)
+    instruction = request.POST.get('instruction', '').strip()
+    title_hint  = request.POST.get('title', '').strip()
+
+    if not instruction:
+        return JsonResponse({'error': 'Escribe una instrucción para la IA.'}, status=400)
+
+    optimizer = AIContentOptimizer()
+    if not optimizer.api_key:
+        return JsonResponse({'error': 'La API de OpenAI no está configurada.'}, status=503)
+
+    contract_context = f"Contrato: {survey.contract_title or survey.name}"
+    if survey.created_by:
+        contract_context += f"\nEjecutor: {survey.created_by.get_full_name() or survey.created_by.username}"
+    if survey.company:
+        contract_context += f"\nCliente: {survey.company.name}"
+
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "Eres un abogado experto en contratos de servicios tecnológicos. "
+                "Redacta cláusulas contractuales en español, con lenguaje formal y jurídico preciso. "
+                "Responde ÚNICAMENTE con el texto de la cláusula, sin títulos, sin explicaciones, sin comillas envolventes."
+            )
+        },
+        {
+            "role": "user",
+            "content": (
+                f"Contexto del contrato:\n{contract_context}\n\n"
+                + (f"Título sugerido para la cláusula: {title_hint}\n\n" if title_hint else "")
+                + f"Instrucción: {instruction}"
+            )
+        }
+    ]
+
+    result = optimizer._make_ai_request(messages, max_tokens=1200, temperature=0.5)
+
+    if 'error' in result:
+        return JsonResponse({'error': result['error']}, status=500)
+
+    try:
+        body = result['choices'][0]['message']['content'].strip()
+        return JsonResponse({'ok': True, 'body': body})
+    except (KeyError, IndexError):
+        return JsonResponse({'error': 'Respuesta inesperada de la IA.'}, status=500)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def process_survey_clause_ai(request, clause_pk):
+    """Mejora o reescribe una cláusula usando IA"""
+    from django.http import JsonResponse
+    from .models import ProcessSurveyClause
+    from .ai_utils import AIContentOptimizer
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    clause = get_object_or_404(ProcessSurveyClause, pk=clause_pk)
+    survey = clause.survey
+
+    instruction = request.POST.get('instruction', '').strip()
+    if not instruction:
+        return JsonResponse({'error': 'Escribe una instrucción para la IA.'}, status=400)
+
+    optimizer = AIContentOptimizer()
+    if not optimizer.api_key:
+        return JsonResponse({'error': 'La API de OpenAI no está configurada.'}, status=503)
+
+    contract_context = f"Contrato: {survey.contract_title or survey.name}"
+    if survey.created_by:
+        contract_context += f"\nEjecutor: {survey.created_by.get_full_name() or survey.created_by.username}"
+    if survey.company:
+        contract_context += f"\nCliente: {survey.company.name}"
+
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "Eres un abogado experto en contratos de servicios tecnológicos. "
+                "Tu tarea es redactar o mejorar cláusulas contractuales en español, "
+                "con lenguaje formal y jurídico preciso. "
+                "Responde ÚNICAMENTE con el texto de la cláusula, sin títulos, sin explicaciones, sin comillas envolventes."
+            )
+        },
+        {
+            "role": "user",
+            "content": (
+                f"Contexto del contrato:\n{contract_context}\n\n"
+                f"Título de la cláusula: {clause.title or '(sin título)'}\n\n"
+                f"Texto actual de la cláusula:\n{clause.body}\n\n"
+                f"Instrucción: {instruction}"
+            )
+        }
+    ]
+
+    result = optimizer._make_ai_request(messages, max_tokens=1200, temperature=0.5)
+
+    if 'error' in result:
+        return JsonResponse({'error': result['error']}, status=500)
+
+    try:
+        new_body = result['choices'][0]['message']['content'].strip()
+        return JsonResponse({'ok': True, 'body': new_body})
+    except (KeyError, IndexError):
+        return JsonResponse({'error': 'Respuesta inesperada de la IA.'}, status=500)
 
 
 def process_survey_intake(request):
@@ -57550,6 +57867,109 @@ def public_process_survey_view(request, token):
         )
 
     return render(request, 'tickets/process_survey_public.html', context)
+
+
+def public_process_survey_contract(request, token):
+    """Vista pública del contrato de un levantamiento (sin autenticación)"""
+    from .models import ProcessSurveyClause, UserProfile, ProcessSurveyContractView
+    from django.db.models import Max
+    from datetime import timedelta
+    from django.utils import timezone as tz
+
+    survey = get_object_or_404(ProcessSurvey, public_share_token=token)
+
+    # ── Registrar apertura ──
+    ua = request.META.get('HTTP_USER_AGENT', '')
+    ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', ''))
+    if ',' in ip:
+        ip = ip.split(',')[0].strip()
+    device = 'Móvil' if any(k in ua.lower() for k in ('mobile', 'android', 'iphone', 'ipad')) else 'Escritorio'
+    ProcessSurveyContractView.objects.create(
+        survey=survey,
+        ip_address=ip or None,
+        user_agent=ua[:500],
+        device_type=device,
+    )
+    clauses = survey.clauses.all()
+    max_version = survey.lines.aggregate(v=Max('version'))['v'] or 1
+    lines = survey.lines.filter(version=max_version, is_hidden=False).order_by('order')
+
+    # Firma del proveedor (usuario que creó el levantamiento)
+    provider_signature = None
+    provider_name = None
+    if survey.created_by:
+        try:
+            profile = survey.created_by.profile
+            if profile.signature_image:
+                provider_signature = profile.signature_image.url
+        except UserProfile.DoesNotExist:
+            pass
+        provider_name = survey.created_by.get_full_name() or survey.created_by.username
+
+    # Bloqueo de firma del cliente tras 24h
+    signature_locked = (
+        survey.client_signed_at is not None and
+        (tz.now() - survey.client_signed_at) > timedelta(hours=24)
+    )
+
+    context = {
+        'survey': survey,
+        'clauses': clauses,
+        'lines': lines,
+        'max_version': max_version,
+        'provider_signature': provider_signature,
+        'provider_name': provider_name,
+        'signature_locked': signature_locked,
+    }
+    return render(request, 'tickets/process_survey_contract_public.html', context)
+
+
+def public_process_survey_contract_sign(request, token):
+    """Guarda la firma del cliente en el contrato público (sin autenticación)"""
+    import base64
+    from django.core.files.base import ContentFile
+    from django.utils import timezone as tz
+    from datetime import timedelta
+
+    if request.method != 'POST':
+        return redirect('public_process_survey_contract', token=token)
+
+    survey = get_object_or_404(ProcessSurvey, public_share_token=token)
+
+    # Bloquear si han pasado más de 24 horas desde la primera firma
+    if survey.client_signed_at and (tz.now() - survey.client_signed_at) > timedelta(hours=24):
+        return redirect('public_process_survey_contract', token=token)
+
+    sig_b64 = request.POST.get('signature_data_b64', '').strip()
+    client_name = request.POST.get('client_name', '').strip()
+    prefix = 'data:image/png;base64,'
+
+    if sig_b64.startswith(prefix):
+        img_bytes = base64.b64decode(sig_b64[len(prefix):])
+        filename = f'client_sig_{survey.pk}.png'
+        survey.client_signature_image.save(filename, ContentFile(img_bytes), save=False)
+        survey.client_signed_name = client_name
+        survey.client_signed_email = request.POST.get('client_email', '').strip()
+        if not survey.client_signed_at:
+            survey.client_signed_at = tz.now()
+        survey.save(update_fields=['client_signature_image', 'client_signed_at', 'client_signed_name', 'client_signed_email'])
+
+    return redirect('public_process_survey_contract', token=token)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def process_survey_contract_stats(request, pk):
+    """Estadísticas de apertura del contrato público"""
+    from .models import ProcessSurveyContractView
+    survey = get_object_or_404(ProcessSurvey, pk=pk)
+    views = survey.contract_views.all()
+    context = {
+        'survey': survey,
+        'views': views,
+        'total': views.count(),
+    }
+    return render(request, 'tickets/process_survey_contract_stats.html', context)
 
 
 def public_process_survey_pdf(request, token):

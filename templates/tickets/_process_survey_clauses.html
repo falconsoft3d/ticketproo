@@ -1,0 +1,473 @@
+{% load static %}
+{# Partial: encabezado del contrato (título + fecha) y lista de cláusulas #}
+<div class="p-3 p-md-4" id="clauses-container">
+
+  {# ── Encabezado del contrato ───────────────────────────────────── #}
+  <div class="card border mb-4 shadow-sm">
+    <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between" style="background:#f8f9fa;">
+      <span class="fw-semibold small"><i class="bi bi-card-heading me-1 text-primary"></i>Encabezado del contrato</span>
+      <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-2"
+              style="font-size:.75rem;" onclick="toggleContractHeader()"
+              id="contract-header-toggle">
+        <i class="bi bi-pencil me-1"></i>Editar
+      </button>
+    </div>
+
+    {# Vista de lectura #}
+    <div class="card-body py-3 px-3" id="contract-header-view">
+      {% if survey.contract_title or survey.contract_date %}
+        {% if survey.contract_title %}
+          <p class="fw-bold fs-5 mb-1">{{ survey.contract_title }}</p>
+        {% else %}
+          <p class="text-muted fst-italic mb-1">Sin título</p>
+        {% endif %}
+        {% if survey.contract_date %}
+          <p class="text-muted small mb-0"><i class="bi bi-calendar3 me-1"></i>{{ survey.contract_date|date:"d/m/Y" }}</p>
+        {% endif %}
+      {% else %}
+        <p class="text-muted small mb-0 fst-italic">Sin título ni fecha asignados.</p>
+      {% endif %}
+    </div>
+
+    {# Formulario de edición (oculto por defecto) #}
+    <div class="card-body py-3 px-3 d-none" id="contract-header-form">
+      <form method="post" action="{% url 'process_survey_contract_save' survey.pk %}" id="contract-header-save-form">
+        {% csrf_token %}
+        <div class="row g-3 mb-3">
+          <div class="col-md-8">
+            <label class="form-label small fw-semibold mb-1">Título del contrato</label>
+            <input type="text" name="contract_title" class="form-control form-control-sm"
+                   value="{{ survey.contract_title }}"
+                   placeholder="Ej: Contrato de Servicios de Desarrollo de Software">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold mb-1">Fecha</label>
+            <input type="date" name="contract_date" class="form-control form-control-sm"
+                   value="{{ survey.contract_date|date:'Y-m-d' }}">
+          </div>
+        </div>
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-outline-secondary btn-sm"
+                  onclick="toggleContractHeader()">Cancelar</button>
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="bi bi-floppy me-1"></i> Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ── Firma del cliente ────────────────────────────────────────── #}
+  {% if survey.client_signature_image %}
+  <div class="card border mb-4 shadow-sm">
+    <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between" style="background:#f8f9fa;">
+      <span class="fw-semibold small text-success"><i class="bi bi-pen me-1"></i>Firma del cliente</span>
+      <form method="post" action="{% url 'process_survey_client_signature_delete' survey.pk %}"
+            onsubmit="return confirm('¿Eliminar la firma del cliente? Esta acción no se puede deshacer.')">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger btn-xs py-0 px-2" style="font-size:.75rem;">
+          <i class="bi bi-trash me-1"></i>Eliminar firma
+        </button>
+      </form>
+    </div>
+    <div class="card-body py-3 px-3">
+      <div class="d-flex align-items-start gap-3">
+        <div class="border rounded bg-light p-1" style="height:80px;flex-shrink:0;overflow:hidden;">
+          <img src="{{ survey.client_signature_image.url }}" alt="Firma del cliente"
+               style="max-width:200px;max-height:76px;object-fit:contain;display:block;">
+        </div>
+        <div>
+          {% if survey.client_signed_name %}<p class="mb-1 fw-semibold small">{{ survey.client_signed_name }}</p>{% endif %}
+          {% if survey.client_signed_email %}<p class="mb-1 small text-muted"><i class="bi bi-envelope me-1"></i>{{ survey.client_signed_email }}</p>{% endif %}
+          {% if survey.client_signed_at %}<p class="mb-0 small text-muted"><i class="bi bi-calendar3 me-1"></i>{{ survey.client_signed_at|date:"d/m/Y H:i" }}</p>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Identificación de partes ──────────────────────────────────── #}
+  <div class="card border mb-4 shadow-sm">
+    <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between" style="background:#f8f9fa;">
+      <span class="fw-semibold small"><i class="bi bi-people me-1 text-primary"></i>Identificación de las partes</span>
+      <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-2"
+              style="font-size:.75rem;" onclick="togglePartiesForm()" id="parties-toggle-btn">
+        <i class="bi bi-pencil me-1"></i>Editar
+      </button>
+    </div>
+
+    {# Vista de lectura #}
+    <div class="card-body py-3 px-3" id="parties-view">
+      {% if survey.provider_nif or survey.provider_nationality or survey.client_rep_name %}
+        <div class="row g-2 small">
+          <div class="col-md-6">
+            <p class="fw-semibold text-uppercase text-muted mb-1" style="font-size:.7rem;">EL EJECUTOR</p>
+            {% if survey.created_by %}<p class="mb-0"><strong>{{ survey.created_by.get_full_name|default:survey.created_by.username }}</strong></p>{% endif %}
+            {% if survey.provider_nif %}<p class="mb-0 text-muted">NIF: {{ survey.provider_nif }}</p>{% endif %}
+            {% if survey.provider_nationality %}<p class="mb-0 text-muted">Nacionalidad: {{ survey.provider_nationality }}</p>{% endif %}
+            {% if survey.provider_civil_status %}<p class="mb-0 text-muted">Estado civil: {{ survey.provider_civil_status }}</p>{% endif %}
+            {% if survey.provider_occupation %}<p class="mb-0 text-muted">{{ survey.provider_occupation }}</p>{% endif %}
+            {% if survey.provider_address %}<p class="mb-0 text-muted">{{ survey.provider_address }}</p>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <p class="fw-semibold text-uppercase text-muted mb-1" style="font-size:.7rem;">EL CLIENTE</p>
+            {% if survey.company %}<p class="mb-0"><strong>{{ survey.company.name }}</strong>{% if survey.company.tax_id %} · {{ survey.company.tax_id }}{% endif %}</p>{% endif %}
+            {% if survey.client_rep_name %}<p class="mb-0 text-muted">Rep.: {{ survey.client_rep_name }}{% if survey.client_rep_id %} ({{ survey.client_rep_id }}){% endif %}</p>{% endif %}
+            {% if survey.client_rep_role %}<p class="mb-0 text-muted">{{ survey.client_rep_role }}</p>{% endif %}
+          </div>
+        </div>
+      {% else %}
+        <p class="text-muted small mb-0 fst-italic">Sin datos de las partes. Haz clic en <strong>Editar</strong> para completarlos.</p>
+      {% endif %}
+    </div>
+
+    {# Formulario de edición #}
+    <div class="card-body py-3 px-3 d-none" id="parties-form">
+      <form method="post" action="{% url 'process_survey_parties_save' survey.pk %}">
+        {% csrf_token %}
+        <p class="fw-semibold small text-uppercase text-muted mb-2">EL EJECUTOR (proveedor)</p>
+        <div class="row g-2 mb-3">
+          <div class="col-md-4">
+            <label class="form-label small mb-1">NIF / DNI / Pasaporte</label>
+            <input type="text" name="provider_nif" class="form-control form-control-sm" value="{{ survey.provider_nif }}" placeholder="13310091Z">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small mb-1">Nacionalidad</label>
+            <input type="text" name="provider_nationality" class="form-control form-control-sm" value="{{ survey.provider_nationality }}" placeholder="española">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small mb-1">Estado civil</label>
+            <input type="text" name="provider_civil_status" class="form-control form-control-sm" value="{{ survey.provider_civil_status }}" placeholder="casado / soltero…">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small mb-1">Ocupación</label>
+            <input type="text" name="provider_occupation" class="form-control form-control-sm" value="{{ survey.provider_occupation }}" placeholder="Autónomo">
+          </div>
+          <div class="col-md-8">
+            <label class="form-label small mb-1">Domicilio</label>
+            <input type="text" name="provider_address" class="form-control form-control-sm" value="{{ survey.provider_address }}" placeholder="Benifairó de les Valls, Valencia, España">
+          </div>
+        </div>
+        <p class="fw-semibold small text-uppercase text-muted mb-2">EL CLIENTE (empresa)</p>
+        <div class="row g-2 mb-3">
+          <div class="col-md-5">
+            <label class="form-label small mb-1">Nombre del representante</label>
+            <input type="text" name="client_rep_name" class="form-control form-control-sm" value="{{ survey.client_rep_name }}" placeholder="Nombre y apellidos">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small mb-1">ID / NUE / Pasaporte</label>
+            <input type="text" name="client_rep_id" class="form-control form-control-sm" value="{{ survey.client_rep_id }}" placeholder="759000">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small mb-1">Cargo en la empresa</label>
+            <input type="text" name="client_rep_role" class="form-control form-control-sm" value="{{ survey.client_rep_role }}" placeholder="Director General">
+          </div>
+        </div>
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="togglePartiesForm()">Cancelar</button>
+          <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-floppy me-1"></i>Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ── Lista de cláusulas ────────────────────────────────────────── #}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="mb-0 text-muted small fw-semibold text-uppercase">
+      <i class="bi bi-file-earmark-text me-1"></i> Cláusulas
+    </h6>
+    <button class="btn btn-primary btn-sm" type="button"
+            data-bs-toggle="collapse" data-bs-target="#add-clause-form" aria-expanded="false">
+      <i class="bi bi-plus-lg me-1"></i> Agregar cláusula
+    </button>
+  </div>
+
+  {# Formulario para agregar nueva cláusula #}
+  <div class="collapse mb-4" id="add-clause-form">
+    <div class="card border-primary border-opacity-50">
+      <div class="card-header bg-primary bg-opacity-10 py-2">
+        <span class="fw-semibold small"><i class="bi bi-plus-circle me-1 text-primary"></i>Nueva cláusula</span>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{% url 'process_survey_clause_add' survey.pk %}" class="clause-add-form">
+          {% csrf_token %}
+          <div class="mb-2">
+            <label class="form-label small fw-semibold mb-1">Título <span class="text-muted fw-normal">(opcional, ej: Objeto del contrato)</span></label>
+            <input type="text" name="title" id="new-clause-title" class="form-control form-control-sm"
+                   placeholder="Ej: Confidencialidad, Vigencia, Pago…" maxlength="300">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-semibold mb-1">Texto de la cláusula <span class="text-danger">*</span></label>
+            <textarea name="body" id="new-clause-body" class="form-control form-control-sm font-monospace"
+                      rows="5" required
+                      placeholder="Escribe el texto completo de la cláusula…"></textarea>
+          </div>
+
+          {# ── Asistente IA para nueva cláusula ── #}
+          <div class="border rounded p-3 mb-3" style="background:#f0f4ff;">
+            <p class="fw-semibold small text-primary mb-2"><i class="bi bi-stars me-1"></i>Asistir con IA</p>
+            <textarea id="new-clause-ai-instruction" class="form-control form-control-sm mb-2" rows="2"
+                      placeholder="Ej: Redacta una cláusula de confidencialidad estándar, Crea una cláusula de pago con 50% anticipo y 50% al finalizar…"></textarea>
+            <div class="d-flex gap-2 mb-2">
+              <button type="button" class="btn btn-primary btn-sm" onclick="runNewClauseAI()">
+                <span id="new-ai-spinner" class="spinner-border spinner-border-sm d-none me-1"></span>
+                <i class="bi bi-stars me-1" id="new-ai-icon"></i>Generar con IA
+              </button>
+            </div>
+            <div id="new-ai-preview" class="d-none">
+              <label class="form-label small fw-semibold mb-1 text-success"><i class="bi bi-check2-circle me-1"></i>Propuesta</label>
+              <textarea id="new-ai-result" class="form-control form-control-sm font-monospace mb-2" rows="5" readonly></textarea>
+              <button type="button" class="btn btn-success btn-sm" onclick="applyNewClauseAI()">
+                <i class="bi bi-check-lg me-1"></i>Usar este texto
+              </button>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    data-bs-toggle="collapse" data-bs-target="#add-clause-form">Cancelar</button>
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i class="bi bi-check-lg me-1"></i> Guardar cláusula
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {# Lista de cláusulas existentes #}
+  {% if clauses %}
+  <div class="d-flex flex-column gap-3" id="clauses-list">
+    {% for clause in clauses %}
+    <div class="card border shadow-sm clause-item" id="clause-{{ clause.pk }}" data-id="{{ clause.pk }}">
+      <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between gap-2" style="background:#f8f9fa;">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+          <span class="badge bg-secondary" style="font-size:.7rem;min-width:28px;">{{ forloop.counter }}</span>
+          <span class="fw-semibold clause-title-display">
+            {% if clause.title %}{{ clause.title }}{% else %}<span class="text-muted fst-italic">Sin título</span>{% endif %}
+          </span>
+        </div>
+        <div class="d-flex gap-1 flex-shrink-0">
+          <button class="btn btn-outline-secondary btn-xs py-0 px-2" style="font-size:.75rem;"
+                  type="button" onclick="editClause({{ clause.pk }})"
+                  title="Editar">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn btn-outline-primary btn-xs py-0 px-2" style="font-size:.75rem;"
+                  type="button" onclick="openClauseAI({{ clause.pk }})"
+                  title="Mejorar con IA">
+            <i class="bi bi-stars"></i>
+          </button>
+          <form method="post" action="{% url 'process_survey_clause_delete' clause.pk %}"
+                class="d-inline clause-delete-form"
+                onsubmit="return confirm('¿Eliminar esta cláusula?')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger btn-xs py-0 px-2"
+                    style="font-size:.75rem;" title="Eliminar">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {# Vista de lectura #}
+      <div class="card-body py-3 px-3 clause-view-mode">
+        <p class="mb-0 small" style="white-space:pre-wrap;">{{ clause.body }}</p>
+      </div>
+
+      {# Formulario de edición inline (oculto por defecto) #}
+      <div class="card-body py-3 px-3 clause-edit-mode d-none">
+        <form method="post" action="{% url 'process_survey_clause_edit' clause.pk %}"
+              class="clause-edit-form">
+          {% csrf_token %}
+          <div class="mb-2">
+            <label class="form-label small fw-semibold mb-1">Título</label>
+            <input type="text" name="title" class="form-control form-control-sm"
+                   value="{{ clause.title }}" maxlength="300">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-semibold mb-1">Texto <span class="text-danger">*</span></label>
+            <textarea name="body" class="form-control form-control-sm font-monospace"
+                      rows="6" required>{{ clause.body }}</textarea>
+          </div>
+          <div class="d-flex justify-content-end gap-2 mt-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    onclick="cancelEdit({{ clause.pk }})">Cancelar</button>
+            <button type="submit" class="btn btn-success btn-sm">
+              <i class="bi bi-floppy me-1"></i> Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {# Panel IA (oculto por defecto) #}
+      <div class="card-body py-3 px-3 clause-ai-mode d-none border-top border-primary border-opacity-25"
+           id="clause-ai-{{ clause.pk }}" style="background:#f0f4ff;">
+        <p class="fw-semibold small text-primary mb-2"><i class="bi bi-stars me-1"></i>Asistente IA — Cláusula {{ forloop.counter }}</p>
+        <div class="mb-2">
+          <label class="form-label small mb-1">¿Qué quieres hacer con esta cláusula?</label>
+          <textarea id="ai-instruction-{{ clause.pk }}" class="form-control form-control-sm" rows="2"
+                    placeholder="Ej: Hazla más formal, amplía el plazo a 6 meses, añade una penalización del 10%, tradúcela al inglés…"></textarea>
+        </div>
+        <div class="mb-2 d-none" id="ai-preview-{{ clause.pk }}">
+          <label class="form-label small fw-semibold mb-1 text-success"><i class="bi bi-check2-circle me-1"></i>Propuesta de la IA</label>
+          <textarea id="ai-result-{{ clause.pk }}" class="form-control form-control-sm font-monospace" rows="6" readonly></textarea>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <button type="button" class="btn btn-primary btn-sm" onclick="runClauseAI({{ clause.pk }})">
+            <span id="ai-spinner-{{ clause.pk }}" class="spinner-border spinner-border-sm d-none me-1"></span>
+            <i class="bi bi-stars me-1" id="ai-icon-{{ clause.pk }}"></i>Generar
+          </button>
+          <button type="button" class="btn btn-success btn-sm d-none" id="ai-apply-{{ clause.pk }}"
+                  onclick="applyClauseAI({{ clause.pk }})">
+            <i class="bi bi-check-lg me-1"></i>Aplicar y editar
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="closeClauseAI({{ clause.pk }})">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center text-muted py-5" id="clauses-empty">
+    <i class="bi bi-file-earmark-x fs-2 opacity-50"></i>
+    <p class="mt-2 mb-0 small">No hay cláusulas todavía.<br>Usa el botón <strong>Agregar cláusula</strong> para comenzar.</p>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+function toggleContractHeader() {
+  var view = document.getElementById('contract-header-view');
+  var form = document.getElementById('contract-header-form');
+  var btn  = document.getElementById('contract-header-toggle');
+  var hidden = form.classList.contains('d-none');
+  form.classList.toggle('d-none', !hidden);
+  view.classList.toggle('d-none', hidden);
+  btn.innerHTML = hidden
+    ? '<i class="bi bi-x-lg me-1"></i>Cancelar'
+    : '<i class="bi bi-pencil me-1"></i>Editar';
+}
+function togglePartiesForm() {
+  var view   = document.getElementById('parties-view');
+  var form   = document.getElementById('parties-form');
+  var btn    = document.getElementById('parties-toggle-btn');
+  var hidden = form.classList.contains('d-none');
+  form.classList.toggle('d-none', !hidden);
+  view.classList.toggle('d-none', hidden);
+  btn.innerHTML = hidden
+    ? '<i class="bi bi-x-lg me-1"></i>Cancelar'
+    : '<i class="bi bi-pencil me-1"></i>Editar';
+}
+function editClause(id) {
+  var item = document.getElementById('clause-' + id);
+  item.querySelector('.clause-view-mode').classList.add('d-none');
+  item.querySelector('.clause-edit-mode').classList.remove('d-none');
+}
+function cancelEdit(id) {
+  var item = document.getElementById('clause-' + id);
+  item.querySelector('.clause-edit-mode').classList.add('d-none');
+  item.querySelector('.clause-view-mode').classList.remove('d-none');
+}
+
+// ── IA nueva cláusula ──
+const _surveyPk = '{{ survey.pk }}';
+function runNewClauseAI() {
+  var instruction = document.getElementById('new-clause-ai-instruction').value.trim();
+  if (!instruction) { alert('Escribe una instrucción para la IA.'); return; }
+  var titleHint = document.getElementById('new-clause-title').value.trim();
+  var spinner = document.getElementById('new-ai-spinner');
+  var icon    = document.getElementById('new-ai-icon');
+  spinner.classList.remove('d-none');
+  icon.classList.add('d-none');
+
+  var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  var url = '/crm/process-surveys/' + _surveyPk + '/clause/ai/new/';
+
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+    body: 'csrfmiddlewaretoken=' + encodeURIComponent(csrfToken)
+        + '&instruction=' + encodeURIComponent(instruction)
+        + '&title=' + encodeURIComponent(titleHint)
+  })
+  .then(r => r.json())
+  .then(data => {
+    spinner.classList.add('d-none');
+    icon.classList.remove('d-none');
+    if (data.error) { alert('Error IA: ' + data.error); return; }
+    document.getElementById('new-ai-result').value = data.body;
+    document.getElementById('new-ai-preview').classList.remove('d-none');
+  })
+  .catch(() => {
+    spinner.classList.add('d-none');
+    icon.classList.remove('d-none');
+    alert('Error de conexión con la IA.');
+  });
+}
+function applyNewClauseAI() {
+  var body = document.getElementById('new-ai-result').value;
+  document.getElementById('new-clause-body').value = body;
+  document.getElementById('new-ai-preview').classList.add('d-none');
+  document.getElementById('new-clause-ai-instruction').value = '';
+}
+
+// ── IA helpers (cláusulas existentes) ──
+function openClauseAI(id) {
+  var item = document.getElementById('clause-' + id);
+  item.querySelector('.clause-ai-mode').classList.remove('d-none');
+  item.querySelector('.clause-view-mode').classList.add('d-none');
+  item.querySelector('.clause-edit-mode').classList.add('d-none');
+}
+function closeClauseAI(id) {
+  var item = document.getElementById('clause-' + id);
+  item.querySelector('.clause-ai-mode').classList.add('d-none');
+  item.querySelector('.clause-view-mode').classList.remove('d-none');
+  document.getElementById('ai-preview-' + id).classList.add('d-none');
+  document.getElementById('ai-apply-' + id).classList.add('d-none');
+}
+function runClauseAI(id) {
+  var instruction = document.getElementById('ai-instruction-' + id).value.trim();
+  if (!instruction) { alert('Escribe una instrucción para la IA.'); return; }
+  var spinner = document.getElementById('ai-spinner-' + id);
+  var icon    = document.getElementById('ai-icon-' + id);
+  spinner.classList.remove('d-none');
+  icon.classList.add('d-none');
+
+  var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  var url = '/crm/process-surveys/clause/' + id + '/ai/';
+
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+    body: 'csrfmiddlewaretoken=' + encodeURIComponent(csrfToken) + '&instruction=' + encodeURIComponent(instruction)
+  })
+  .then(r => r.json())
+  .then(data => {
+    spinner.classList.add('d-none');
+    icon.classList.remove('d-none');
+    if (data.error) { alert('Error IA: ' + data.error); return; }
+    document.getElementById('ai-result-' + id).value = data.body;
+    document.getElementById('ai-preview-' + id).classList.remove('d-none');
+    document.getElementById('ai-apply-' + id).classList.remove('d-none');
+  })
+  .catch(() => {
+    spinner.classList.add('d-none');
+    icon.classList.remove('d-none');
+    alert('Error de conexión con la IA.');
+  });
+}
+function applyClauseAI(id) {
+  var newBody = document.getElementById('ai-result-' + id).value;
+  // Abrir modo edición con el texto propuesto pre-cargado
+  var item = document.getElementById('clause-' + id);
+  item.querySelector('.clause-ai-mode').classList.add('d-none');
+  item.querySelector('.clause-edit-mode').classList.remove('d-none');
+  item.querySelector('.clause-view-mode').classList.add('d-none');
+  var textarea = item.querySelector('.clause-edit-form textarea[name="body"]');
+  if (textarea) textarea.value = newBody;
+}
+</script>

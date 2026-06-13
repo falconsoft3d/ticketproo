@@ -1208,6 +1208,15 @@ class UserProfile(models.Model):
         self.save()
         return self.public_token
 
+    # Firma digital del usuario (para contratos y documentos)
+    signature_image = models.ImageField(
+        upload_to='user_signatures/',
+        null=True,
+        blank=True,
+        verbose_name='Firma digital',
+        help_text='Imagen de la firma que se usará en contratos y documentos',
+    )
+
     # Bloqueo de acceso con error 401
     error_401 = models.BooleanField(
         default=False,
@@ -24149,6 +24158,47 @@ class ProcessSurvey(models.Model):
         verbose_name='Moneda',
     )
 
+    contract_title = models.CharField(
+        max_length=300,
+        blank=True,
+        verbose_name='Título del contrato',
+    )
+    contract_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha del contrato',
+    )
+    client_signature_image = models.ImageField(
+        upload_to='contract_client_signatures/',
+        null=True,
+        blank=True,
+        verbose_name='Firma del cliente',
+    )
+    client_signed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de firma del cliente',
+    )
+    client_signed_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre del firmante (cliente)',
+    )
+    client_signed_email = models.EmailField(
+        blank=True,
+        verbose_name='Email del firmante (cliente)',
+    )
+
+    # ── Identificación de partes (contrato) ──
+    provider_nif = models.CharField(max_length=50, blank=True, verbose_name='NIF/DNI/Pasaporte del proveedor')
+    provider_nationality = models.CharField(max_length=100, blank=True, verbose_name='Nacionalidad del proveedor')
+    provider_civil_status = models.CharField(max_length=80, blank=True, verbose_name='Estado civil del proveedor')
+    provider_occupation = models.CharField(max_length=100, blank=True, default='Autónomo', verbose_name='Ocupación del proveedor')
+    provider_address = models.CharField(max_length=300, blank=True, verbose_name='Domicilio del proveedor')
+    client_rep_name = models.CharField(max_length=200, blank=True, verbose_name='Nombre del representante cliente')
+    client_rep_id = models.CharField(max_length=80, blank=True, verbose_name='ID/NUE del representante cliente')
+    client_rep_role = models.CharField(max_length=150, blank=True, verbose_name='Cargo del representante cliente')
+
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
 
@@ -24384,3 +24434,62 @@ class ProcessSurveyPageView(models.Model):
 
     def __str__(self):
         return f'{self.survey.folio} – {self.ip_address} – {self.viewed_at:%d/%m/%Y %H:%M}'
+
+
+class ProcessSurveyContractView(models.Model):
+    """Registro de cada apertura del contrato público de un levantamiento"""
+
+    survey = models.ForeignKey(
+        ProcessSurvey,
+        on_delete=models.CASCADE,
+        related_name='contract_views',
+        verbose_name='Levantamiento',
+    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
+    country = models.CharField(max_length=100, blank=True, verbose_name='País')
+    city = models.CharField(max_length=100, blank=True, verbose_name='Ciudad')
+    user_agent = models.CharField(max_length=500, blank=True, verbose_name='User-Agent')
+    device_type = models.CharField(max_length=50, blank=True, verbose_name='Dispositivo')
+    viewed_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha y hora')
+
+    class Meta:
+        ordering = ['-viewed_at']
+        verbose_name = 'Apertura de contrato'
+        verbose_name_plural = 'Aperturas de contrato'
+
+    def __str__(self):
+        return f'{self.survey.folio} – {self.ip_address} – {self.viewed_at:%d/%m/%Y %H:%M}'
+
+
+class ProcessSurveyClause(models.Model):
+    """Cláusula de contrato de un levantamiento de procesos"""
+
+    survey = models.ForeignKey(
+        ProcessSurvey,
+        on_delete=models.CASCADE,
+        related_name='clauses',
+        verbose_name='Levantamiento',
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Orden',
+    )
+    title = models.CharField(
+        max_length=300,
+        blank=True,
+        verbose_name='Título de la cláusula',
+        help_text='Ej: Objeto del contrato, Vigencia, Confidencialidad…',
+    )
+    body = models.TextField(
+        verbose_name='Texto de la cláusula',
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+        verbose_name = 'Cláusula'
+        verbose_name_plural = 'Cláusulas'
+
+    def __str__(self):
+        label = self.title or f'Cláusula {self.order}'
+        return f'{label} — {self.survey.folio}'
