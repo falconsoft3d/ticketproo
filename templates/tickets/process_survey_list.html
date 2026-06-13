@@ -56,7 +56,7 @@
           </thead>
           <tbody>
             {% for survey in page_obj %}
-            <tr>
+            <tr style="cursor:pointer;" onclick="window.location='{% url 'process_survey_detail' survey.pk %}'">
               <td>
                 <span class="badge bg-primary font-monospace">{{ survey.folio|default:survey.pk }}</span>
               </td>
@@ -136,14 +136,8 @@
               </td>
               <td><span class="badge bg-secondary">{{ survey.lines.count }}</span></td>
               <td>{% if survey.created_by %}{{ survey.created_by.get_full_name|default:survey.created_by.username }}{% else %}—{% endif %}</td>
-              <td class="text-end">
+              <td class="text-end" onclick="event.stopPropagation()">
                 <div class="btn-group btn-group-sm">
-                  <a href="{% url 'process_survey_detail' survey.pk %}" class="btn btn-outline-primary" title="Ver">
-                    <i class="bi bi-eye"></i>
-                  </a>
-                  <a href="{% url 'process_survey_edit' survey.pk %}" class="btn btn-outline-secondary" title="Editar">
-                    <i class="bi bi-pencil"></i>
-                  </a>
                   <a href="{% url 'process_survey_delete' survey.pk %}" class="btn btn-outline-danger" title="Eliminar">
                     <i class="bi bi-trash"></i>
                   </a>

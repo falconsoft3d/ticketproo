@@ -19,6 +19,13 @@
          class="btn btn-outline-primary btn-sm">
         <i class="bi bi-file-earmark-text me-1"></i>Ver contrato
       </a>
+      {% if not survey.is_public_contract %}
+      <a href="{% url 'process_survey_contract_visitors' survey.pk %}"
+         class="btn btn-outline-info btn-sm">
+        <i class="bi bi-people me-1"></i>Visitantes
+        {% if survey.contract_visitors.count %}<span class="badge bg-info text-dark ms-1">{{ survey.contract_visitors.count }}</span>{% endif %}
+      </a>
+      {% endif %}
       {% if total %}
       <form method="post" action="{% url 'process_survey_contract_views_reset' survey.pk %}"
             onsubmit="return confirm('¿Reiniciar el contador? Se eliminarán los {{ total }} registros de apertura.')">

@@ -27,6 +27,13 @@
       {% else %}
         <p class="text-muted small mb-0 fst-italic">Sin título ni fecha asignados.</p>
       {% endif %}
+      <div class="mt-2">
+        {% if survey.is_public_contract %}
+          <span class="badge bg-success"><i class="bi bi-globe2 me-1"></i>Contrato público</span>
+        {% else %}
+          <span class="badge bg-secondary"><i class="bi bi-lock me-1"></i>Contrato privado</span>
+        {% endif %}
+      </div>
     </div>
 
     {# Formulario de edición (oculto por defecto) #}
@@ -44,6 +51,16 @@
             <label class="form-label small fw-semibold mb-1">Fecha</label>
             <input type="date" name="contract_date" class="form-control form-control-sm"
                    value="{{ survey.contract_date|date:'Y-m-d' }}">
+          </div>
+          <div class="col-12">
+            <div class="form-check form-switch mt-1">
+              <input class="form-check-input" type="checkbox" name="is_public_contract" value="1"
+                     id="id_is_public_contract" {% if survey.is_public_contract %}checked{% endif %}>
+              <label class="form-check-label small" for="id_is_public_contract">
+                <i class="bi bi-globe2 me-1"></i><strong>Contrato público</strong>
+                <span class="text-muted">(el enlace compartido permite ver y firmar el contrato)</span>
+              </label>
+            </div>
           </div>
         </div>
         <div class="d-flex justify-content-end gap-2">
@@ -84,6 +101,55 @@
       </div>
     </div>
   </div>
+  {% endif %}
+
+  {# ── Visitantes (contrato privado) ────────────────────────────── #}
+  {% if not survey.is_public_contract %}
+  {% with visitor_count=survey.contract_visitors.count %}
+  <div class="card border mb-4 shadow-sm">
+    <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between" style="background:#f8f9fa;">
+      <span class="fw-semibold small text-warning">
+        <i class="bi bi-people me-1"></i>Visitantes registrados
+        {% if visitor_count %}<span class="badge bg-warning text-dark ms-1">{{ visitor_count }}</span>{% endif %}
+      </span>
+      <a href="{% url 'process_survey_contract_visitors' survey.pk %}" class="btn btn-outline-secondary btn-xs py-0 px-2" style="font-size:.75rem;">
+        <i class="bi bi-box-arrow-up-right me-1"></i>Ver todos
+      </a>
+    </div>
+    {% if visitor_count %}
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0" style="font-size:.82rem;">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Nombre</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>Empresa</th>
+              <th class="pe-3">Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for v in survey.contract_visitors.all %}
+            <tr>
+              <td class="ps-3 fw-semibold">{{ v.name }}</td>
+              <td><a href="mailto:{{ v.email }}" class="text-decoration-none">{{ v.email }}</a></td>
+              <td class="text-muted">{{ v.phone|default:"—" }}</td>
+              <td class="text-muted">{{ v.company_name|default:"—" }}</td>
+              <td class="text-muted pe-3">{{ v.created_at|date:"d/m/Y H:i" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="card-body py-3 px-3">
+      <p class="text-muted small mb-0 fst-italic"><i class="bi bi-hourglass me-1"></i>Nadie ha accedido todavía al formulario de entrada.</p>
+    </div>
+    {% endif %}
+  </div>
+  {% endwith %}
   {% endif %}
 
   {# ── Identificación de partes ──────────────────────────────────── #}
@@ -203,6 +269,16 @@
                       placeholder="Escribe el texto completo de la cláusula…"></textarea>
           </div>
 
+          <div class="d-flex justify-content-between align-items-center gap-2 mt-1 mb-2">
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" name="is_hidden_public" value="1"
+                     id="id_new_hidden_public">
+              <label class="form-check-label small text-muted" for="id_new_hidden_public">
+                <i class="bi bi-eye-slash me-1"></i>No visible en público (saldrá borrosa)
+              </label>
+            </div>
+          </div>
+
           {# ── Asistente IA para nueva cláusula ── #}
           <div class="border rounded p-3 mb-3" style="background:#f0f4ff;">
             <p class="fw-semibold small text-primary mb-2"><i class="bi bi-stars me-1"></i>Asistir con IA</p>
@@ -246,6 +322,11 @@
           <span class="fw-semibold clause-title-display">
             {% if clause.title %}{{ clause.title }}{% else %}<span class="text-muted fst-italic">Sin título</span>{% endif %}
           </span>
+          {% if clause.is_hidden_public %}
+            <span class="badge bg-warning text-dark" style="font-size:.65rem;" title="No visible en público">
+              <i class="bi bi-eye-slash"></i>
+            </span>
+          {% endif %}
         </div>
         <div class="d-flex gap-1 flex-shrink-0">
           <button class="btn btn-outline-secondary btn-xs py-0 px-2" style="font-size:.75rem;"
@@ -289,6 +370,13 @@
             <label class="form-label small fw-semibold mb-1">Texto <span class="text-danger">*</span></label>
             <textarea name="body" class="form-control form-control-sm font-monospace"
                       rows="6" required>{{ clause.body }}</textarea>
+          </div>
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" name="is_hidden_public" value="1"
+                   id="id_hidden_public_{{ clause.pk }}" {% if clause.is_hidden_public %}checked{% endif %}>
+            <label class="form-check-label small text-muted" for="id_hidden_public_{{ clause.pk }}">
+              <i class="bi bi-eye-slash me-1"></i>No visible en público (saldrá borrosa)
+            </label>
           </div>
           <div class="d-flex justify-content-end gap-2 mt-2">
             <button type="button" class="btn btn-outline-secondary btn-sm"

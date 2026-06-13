@@ -24199,6 +24199,12 @@ class ProcessSurvey(models.Model):
     client_rep_id = models.CharField(max_length=80, blank=True, verbose_name='ID/NUE del representante cliente')
     client_rep_role = models.CharField(max_length=150, blank=True, verbose_name='Cargo del representante cliente')
 
+    is_public_contract = models.BooleanField(
+        default=True,
+        verbose_name='Contrato público',
+        help_text='Si está desactivado, el enlace público no permite ver ni firmar el contrato.',
+    )
+
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
 
@@ -24461,6 +24467,31 @@ class ProcessSurveyContractView(models.Model):
         return f'{self.survey.folio} – {self.ip_address} – {self.viewed_at:%d/%m/%Y %H:%M}'
 
 
+class ProcessSurveyContractVisitor(models.Model):
+    """Visitante que completó el formulario de acceso a un contrato privado"""
+
+    survey = models.ForeignKey(
+        ProcessSurvey,
+        on_delete=models.CASCADE,
+        related_name='contract_visitors',
+        verbose_name='Levantamiento',
+    )
+    name = models.CharField(max_length=200, verbose_name='Nombre')
+    email = models.EmailField(verbose_name='Email')
+    phone = models.CharField(max_length=50, blank=True, verbose_name='Teléfono')
+    company_name = models.CharField(max_length=200, blank=True, verbose_name='Empresa')
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de acceso')
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Visitante de contrato'
+        verbose_name_plural = 'Visitantes de contrato'
+
+    def __str__(self):
+        return f'{self.name} – {self.survey.folio} – {self.created_at:%d/%m/%Y %H:%M}'
+
+
 class ProcessSurveyClause(models.Model):
     """Cláusula de contrato de un levantamiento de procesos"""
 
@@ -24482,6 +24513,11 @@ class ProcessSurveyClause(models.Model):
     )
     body = models.TextField(
         verbose_name='Texto de la cláusula',
+    )
+    is_hidden_public = models.BooleanField(
+        default=False,
+        verbose_name='No visible en público',
+        help_text='Si está activado, esta cláusula aparece borrosa en el contrato público.',
     )
     created_at = models.DateTimeField(default=timezone.now)
 

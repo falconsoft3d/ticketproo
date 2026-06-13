@@ -117,7 +117,69 @@
       border: 1px solid #c8d6ea;
     }
     .page-break-before { page-break-before: auto; }
+    /* ── Sección privada borrosa ── */
+    .section-private {
+      position: relative;
+      overflow: hidden;
+    }
+    .section-private > * {
+      filter: blur(5px);
+      user-select: none;
+      pointer-events: none;
+    }
+    .section-private::after {
+      content: '🔒 Contenido restringido';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255,255,255,.88);
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 6px 20px;
+      font-size: .85rem;
+      font-weight: 600;
+      color: #495057;
+      white-space: nowrap;
+      z-index: 2;
+    }
+    /* ── Cláusulas ocultas en público ── */
+    .clause-hidden-public {
+      position: relative;
+      overflow: hidden;
+    }
+    .clause-hidden-public .clause-body {
+      filter: blur(5px);
+      user-select: none;
+      pointer-events: none;
+    }
+    .clause-hidden-public::after {
+      content: '🔒 Contenido restringido';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255,255,255,.85);
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 4px 16px;
+      font-size: .82rem;
+      font-weight: 600;
+      color: #495057;
+      white-space: nowrap;
+    }
     /* ── Impresión ── */
+    @media print {
+      @page { margin: 18mm 15mm; size: A4; }
+      body { background: #fff !important; padding: 0; }
+      .no-print { display: none !important; }
+      .contract-card { box-shadow: none !important; border-radius: 0 !important; }
+      .contract-header {
+        background: var(--brand) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
     @media print {
       @page { margin: 18mm 15mm; size: A4; }
       body { background: #fff !important; padding: 0; }
@@ -136,11 +198,18 @@
 
   {# ── Barra de acciones (no imprimible) ── #}
   <div class="d-flex justify-content-between align-items-center mb-3 no-print">
-    <span class="text-white-50 small"><i class="bi bi-file-earmark-text me-1"></i>Vista pública del contrato</span>
+    <span class="text-white-50 small">
+      <i class="bi bi-file-earmark-text me-1"></i>Vista pública del contrato
+      {% if contract_private %}
+      <span class="badge bg-warning text-dark ms-2"><i class="bi bi-lock me-1"></i>Privado</span>
+      {% endif %}
+    </span>
+    {% if not contract_private %}
     <a href="{% url 'public_process_survey_contract_pdf' survey.public_share_token %}"
        class="btn btn-success btn-sm">
       <i class="bi bi-file-earmark-pdf me-1"></i> Descargar PDF
     </a>
+    {% endif %}
   </div>
 
   <div class="contract-card">
@@ -171,7 +240,7 @@
       {# ── Identificación de partes ── #}
       {% with p=survey %}
       {% if p.provider_nif or p.provider_nationality or p.client_rep_name or p.company or p.created_by %}
-      <div class="comparecen-block mb-4" style="font-size:.95rem;line-height:1.85;color:#2c2c2c;">
+      <div class="comparecen-block mb-4{% if contract_private %} section-private{% endif %}" style="font-size:.95rem;line-height:1.85;color:#2c2c2c;">
 
         {# Fecha de apertura #}
         <p class="mb-3">
@@ -203,7 +272,7 @@
 
       {% if clauses %}
         {% for clause in clauses %}
-        <div class="clause-block">
+        <div class="clause-block{% if clause.is_hidden_public %} clause-hidden-public{% endif %}">
           <div class="d-flex align-items-center gap-2 mb-1">
             <span class="clause-number">{{ forloop.counter }}</span>
             {% if clause.title %}
@@ -262,7 +331,7 @@
       <hr class="clause-divider">
       {% endif %}
 
-      <div class="row g-4 mt-1">
+      <div class="row g-4 mt-1{% if contract_private %} section-private{% endif %}">
         {% if survey.client_signature_image %}
         <div class="col-6">
           <p class="small text-muted fw-semibold mb-1 text-uppercase" style="letter-spacing:.04em;">Firma del proveedor</p>

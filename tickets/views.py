@@ -57258,7 +57258,8 @@ def process_survey_contract_save(request, pk):
         survey.contract_title = request.POST.get('contract_title', '').strip()
         raw_date = request.POST.get('contract_date', '').strip()
         survey.contract_date = raw_date if raw_date else None
-        survey.save(update_fields=['contract_title', 'contract_date'])
+        survey.is_public_contract = request.POST.get('is_public_contract') == '1'
+        survey.save(update_fields=['contract_title', 'contract_date', 'is_public_contract'])
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'ok': True})
         messages.success(request, 'Encabezado del contrato guardado.')
@@ -57318,7 +57319,8 @@ def process_survey_clause_add(request, pk):
             return redirect('process_survey_detail', pk=pk)
         last_order = survey.clauses.aggregate(m=models.Max('order'))['m'] or 0
         clause = ProcessSurveyClause.objects.create(
-            survey=survey, title=title, body=body, order=last_order + 1
+            survey=survey, title=title, body=body, order=last_order + 1,
+            is_hidden_public=request.POST.get('is_hidden_public') == '1',
         )
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'ok': True, 'id': clause.pk, 'order': clause.order, 'title': clause.title, 'body': clause.body})
@@ -57344,7 +57346,8 @@ def process_survey_clause_edit(request, clause_pk):
             return redirect('process_survey_detail', pk=survey.pk)
         clause.title = title
         clause.body = body
-        clause.save(update_fields=['title', 'body'])
+        clause.is_hidden_public = request.POST.get('is_hidden_public') == '1'
+        clause.save(update_fields=['title', 'body', 'is_hidden_public'])
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'ok': True, 'title': clause.title, 'body': clause.body})
         return redirect('process_survey_detail', pk=survey.pk)
@@ -57871,25 +57874,56 @@ def public_process_survey_view(request, token):
 
 def public_process_survey_contract(request, token):
     """Vista pública del contrato de un levantamiento (sin autenticación)"""
-    from .models import ProcessSurveyClause, UserProfile, ProcessSurveyContractView
+    from .models import ProcessSurveyClause, UserProfile, ProcessSurveyContractView, ProcessSurveyContractVisitor
     from django.db.models import Max
     from datetime import timedelta
     from django.utils import timezone as tz
 
     survey = get_object_or_404(ProcessSurvey, public_share_token=token)
 
-    # ── Registrar apertura ──
-    ua = request.META.get('HTTP_USER_AGENT', '')
-    ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', ''))
-    if ',' in ip:
-        ip = ip.split(',')[0].strip()
-    device = 'Móvil' if any(k in ua.lower() for k in ('mobile', 'android', 'iphone', 'ipad')) else 'Escritorio'
-    ProcessSurveyContractView.objects.create(
-        survey=survey,
-        ip_address=ip or None,
-        user_agent=ua[:500],
-        device_type=device,
-    )
+    contract_private = not survey.is_public_contract
+
+    # ── Puerta de acceso para contratos privados ──
+    if contract_private:
+        session_key = f'psc_access_{survey.pk}'
+        if request.method == 'POST' and request.POST.get('_gate') == '1':
+            name = request.POST.get('visitor_name', '').strip()
+            email = request.POST.get('visitor_email', '').strip()
+            if name and email:
+                ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', ''))
+                if ',' in ip:
+                    ip = ip.split(',')[0].strip()
+                ProcessSurveyContractVisitor.objects.create(
+                    survey=survey,
+                    name=name,
+                    email=email,
+                    phone=request.POST.get('visitor_phone', '').strip(),
+                    company_name=request.POST.get('visitor_company', '').strip(),
+                    ip_address=ip or None,
+                )
+                request.session[session_key] = True
+            # Redirigir para limpiar POST
+            return redirect('public_process_survey_contract', token=token)
+
+        if not request.session.get(session_key):
+            return render(request, 'tickets/process_survey_contract_gate.html', {
+                'survey': survey,
+                'token': token,
+            })
+
+    # ── Registrar apertura (solo si es público) ──
+    if not contract_private:
+        ua = request.META.get('HTTP_USER_AGENT', '')
+        ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', ''))
+        if ',' in ip:
+            ip = ip.split(',')[0].strip()
+        device = 'Móvil' if any(k in ua.lower() for k in ('mobile', 'android', 'iphone', 'ipad')) else 'Escritorio'
+        ProcessSurveyContractView.objects.create(
+            survey=survey,
+            ip_address=ip or None,
+            user_agent=ua[:500],
+            device_type=device,
+        )
     clauses = survey.clauses.all()
     max_version = survey.lines.aggregate(v=Max('version'))['v'] or 1
     lines = survey.lines.filter(version=max_version, is_hidden=False).order_by('order')
@@ -57920,6 +57954,7 @@ def public_process_survey_contract(request, token):
         'provider_signature': provider_signature,
         'provider_name': provider_name,
         'signature_locked': signature_locked,
+        'contract_private': contract_private,
     }
     return render(request, 'tickets/process_survey_contract_public.html', context)
 
@@ -57935,6 +57970,9 @@ def public_process_survey_contract_sign(request, token):
         return redirect('public_process_survey_contract', token=token)
 
     survey = get_object_or_404(ProcessSurvey, public_share_token=token)
+
+    if not survey.is_public_contract:
+        return redirect('public_process_survey_contract', token=token)
 
     # Bloquear si han pasado más de 24 horas desde la primera firma
     if survey.client_signed_at and (tz.now() - survey.client_signed_at) > timedelta(hours=24):
@@ -57982,6 +58020,21 @@ def process_survey_contract_views_reset(request, pk):
         survey.contract_views.all().delete()
         messages.success(request, 'Contador de visitas reiniciado.')
     return redirect('process_survey_contract_stats', pk=pk)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def process_survey_contract_visitors(request, pk):
+    """Lista de visitantes que completaron el formulario de acceso al contrato privado"""
+    from .models import ProcessSurveyContractVisitor
+    survey = get_object_or_404(ProcessSurvey, pk=pk)
+    visitors = survey.contract_visitors.all()
+    context = {
+        'survey': survey,
+        'visitors': visitors,
+        'total': visitors.count(),
+    }
+    return render(request, 'tickets/process_survey_contract_visitors.html', context)
 
 
 def public_process_survey_pdf(request, token):
