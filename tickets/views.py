@@ -57972,6 +57972,18 @@ def process_survey_contract_stats(request, pk):
     return render(request, 'tickets/process_survey_contract_stats.html', context)
 
 
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def process_survey_contract_views_reset(request, pk):
+    """Elimina todos los registros de apertura del contrato"""
+    from .models import ProcessSurveyContractView
+    survey = get_object_or_404(ProcessSurvey, pk=pk)
+    if request.method == 'POST':
+        survey.contract_views.all().delete()
+        messages.success(request, 'Contador de visitas reiniciado.')
+    return redirect('process_survey_contract_stats', pk=pk)
+
+
 def public_process_survey_pdf(request, token):
     """Genera un PDF del levantamiento de procesos (sin autenticación)"""
     from io import BytesIO

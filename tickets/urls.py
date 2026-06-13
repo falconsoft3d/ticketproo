@@ -483,6 +483,7 @@ urlpatterns = [
     path('crm/process-surveys/public/<uuid:token>/contrato/firmar/', views.public_process_survey_contract_sign, name='public_process_survey_contract_sign'),
     path('crm/process-surveys/public/<uuid:token>/contrato/pdf/', views.public_process_survey_contract_pdf, name='public_process_survey_contract_pdf'),
     path('crm/process-surveys/<int:pk>/contract/stats/', views.process_survey_contract_stats, name='process_survey_contract_stats'),
+    path('crm/process-surveys/<int:pk>/contract/stats/reset/', views.process_survey_contract_views_reset, name='process_survey_contract_views_reset'),
     path('crm/process-surveys/<int:pk>/contract/client-signature/delete/', views.process_survey_client_signature_delete, name='process_survey_client_signature_delete'),
     path('crm/process-surveys/public/<uuid:token>/ai-analysis/', views.public_process_survey_ai_analysis, name='public_process_survey_ai_analysis'),
 
