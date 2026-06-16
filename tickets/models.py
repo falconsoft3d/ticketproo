@@ -24520,6 +24520,7 @@ class ProcessSurveyClause(models.Model):
         help_text='Si está activado, esta cláusula aparece borrosa en el contrato público.',
     )
     created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['order', 'created_at']
@@ -24529,3 +24530,30 @@ class ProcessSurveyClause(models.Model):
     def __str__(self):
         label = self.title or f'Cláusula {self.order}'
         return f'{label} — {self.survey.folio}'
+
+
+class ProcessSurveyClauseHistory(models.Model):
+    """Registro de cambios realizados por el usuario público en una cláusula de contrato"""
+
+    clause = models.ForeignKey(
+        ProcessSurveyClause,
+        on_delete=models.CASCADE,
+        related_name='history',
+        verbose_name='Cláusula',
+    )
+    body_before = models.TextField(verbose_name='Texto anterior')
+    body_after = models.TextField(verbose_name='Texto nuevo')
+    edited_by_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Editado por',
+    )
+    edited_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de edición')
+
+    class Meta:
+        ordering = ['-edited_at']
+        verbose_name = 'Historial de cláusula'
+        verbose_name_plural = 'Historial de cláusulas'
+
+    def __str__(self):
+        return f'Cambio en {self.clause} — {self.edited_at:%d/%m/%Y %H:%M}'

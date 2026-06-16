@@ -57959,8 +57959,75 @@ def public_process_survey_contract(request, token):
     return render(request, 'tickets/process_survey_contract_public.html', context)
 
 
+def public_process_survey_clause_edit(request, token, clause_pk):
+    """Permite al usuario público editar el texto de una cláusula y guarda el historial."""
+    from .models import ProcessSurveyClause, ProcessSurveyClauseHistory
+    from django.http import JsonResponse
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    survey = get_object_or_404(ProcessSurvey, public_share_token=token)
+
+    if survey.client_signature_image:
+        return JsonResponse({'error': 'El contrato ya está firmado y no puede ser modificado.'}, status=403)
+
+    clause = get_object_or_404(ProcessSurveyClause, pk=clause_pk, survey=survey)
+
+    import json as _json
+    try:
+        data = _json.loads(request.body)
+    except Exception:
+        data = request.POST
+
+    new_body = (data.get('body') or '').strip()
+    editor_name = (data.get('editor_name') or '').strip()[:200]
+
+    if not new_body:
+        return JsonResponse({'error': 'El texto no puede estar vacío.'}, status=400)
+
+    if new_body != clause.body:
+        ProcessSurveyClauseHistory.objects.create(
+            clause=clause,
+            body_before=clause.body,
+            body_after=new_body,
+            edited_by_name=editor_name,
+        )
+        clause.body = new_body
+        clause.save(update_fields=['body', 'updated_at'])
+
+    return JsonResponse({
+        'ok': True,
+        'body': clause.body,
+        'updated_at': clause.updated_at.strftime('%d/%m/%Y %H:%M'),
+    })
+
+
+def public_process_survey_clause_history(request, token, clause_pk):
+    """Devuelve el historial de cambios de una cláusula como JSON."""
+    from .models import ProcessSurveyClause, ProcessSurveyClauseHistory
+    from django.http import JsonResponse
+
+    survey = get_object_or_404(ProcessSurvey, public_share_token=token)
+    clause = get_object_or_404(ProcessSurveyClause, pk=clause_pk, survey=survey)
+
+    entries = clause.history.values(
+        'id', 'body_before', 'body_after', 'edited_by_name', 'edited_at'
+    )
+    result = []
+    for e in entries:
+        result.append({
+            'id': e['id'],
+            'body_before': e['body_before'],
+            'body_after': e['body_after'],
+            'edited_by_name': e['edited_by_name'] or 'Anónimo',
+            'edited_at': e['edited_at'].strftime('%d/%m/%Y %H:%M'),
+        })
+
+    return JsonResponse({'history': result})
+
+
 def public_process_survey_contract_sign(request, token):
-    """Guarda la firma del cliente en el contrato público (sin autenticación)"""
     import base64
     from django.core.files.base import ContentFile
     from django.utils import timezone as tz

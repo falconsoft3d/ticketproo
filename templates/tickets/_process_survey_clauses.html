@@ -354,6 +354,12 @@
       {# Vista de lectura #}
       <div class="card-body py-3 px-3 clause-view-mode">
         <p class="mb-0 small" style="white-space:pre-wrap;">{{ clause.body }}</p>
+        <div class="d-flex gap-3 mt-2" style="font-size:.72rem;color:#adb5bd;">
+          <span><i class="bi bi-calendar-plus me-1"></i>Creado: {{ clause.created_at|date:"d/m/Y H:i" }}</span>
+          {% if clause.updated_at != clause.created_at %}
+          <span><i class="bi bi-pencil me-1"></i>Editado: {{ clause.updated_at|date:"d/m/Y H:i" }}</span>
+          {% endif %}
+        </div>
       </div>
 
       {# Formulario de edición inline (oculto por defecto) #}

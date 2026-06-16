@@ -272,16 +272,61 @@
 
       {% if clauses %}
         {% for clause in clauses %}
-        <div class="clause-block{% if clause.is_hidden_public %} clause-hidden-public{% endif %}">
-          <div class="d-flex align-items-center gap-2 mb-1">
-            <span class="clause-number">{{ forloop.counter }}</span>
-            {% if clause.title %}
-            <span class="clause-title">{{ clause.title }}</span>
-            {% else %}
-            <span class="clause-title text-muted fw-normal text-uppercase" style="font-size:.8rem;">Cláusula {{ forloop.counter }}</span>
-            {% endif %}
+        <div class="clause-block{% if clause.is_hidden_public %} clause-hidden-public{% endif %}" id="pub-clause-{{ clause.pk }}">
+          <div class="d-flex align-items-center gap-2 mb-1 justify-content-between flex-wrap">
+            <div class="d-flex align-items-center gap-2">
+              <span class="clause-number">{{ forloop.counter }}</span>
+              {% if clause.title %}
+              <span class="clause-title">{{ clause.title }}</span>
+              {% else %}
+              <span class="clause-title text-muted fw-normal text-uppercase" style="font-size:.8rem;">Cláusula {{ forloop.counter }}</span>
+              {% endif %}
+            </div>
+            <div class="d-flex gap-1 no-print">
+              {% if not survey.client_signature_image %}
+              <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:.75rem;"
+                      onclick="pubEditClause({{ clause.pk }})" title="Editar cláusula">
+                <i class="bi bi-pencil me-1"></i>Editar
+              </button>
+              {% endif %}
+              <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2" style="font-size:.75rem;"
+                      onclick="pubHistoryClause({{ clause.pk }}, {{ forloop.counter }})" title="Ver historial de cambios">
+                <i class="bi bi-clock-history me-1"></i>Historial
+              </button>
+            </div>
           </div>
-          <div class="clause-body">{{ clause.body }}</div>
+
+          {# Vista lectura #}
+          <div class="pub-clause-view" id="pub-clause-view-{{ clause.pk }}">
+            <div class="clause-body">{{ clause.body }}</div>
+            <div class="d-flex gap-3 mt-2 no-print" style="font-size:.72rem;color:#adb5bd;">
+              <span><i class="bi bi-calendar-plus me-1"></i>Creado: {{ clause.created_at|date:"d/m/Y H:i" }}</span>
+              {% if clause.updated_at != clause.created_at %}
+              <span id="pub-clause-updated-{{ clause.pk }}"><i class="bi bi-pencil me-1"></i>Editado: {{ clause.updated_at|date:"d/m/Y H:i" }}</span>
+              {% else %}
+              <span id="pub-clause-updated-{{ clause.pk }}" class="d-none"></span>
+              {% endif %}
+            </div>
+          </div>
+
+          {# Formulario edición inline (oculto por defecto) #}
+          <div class="pub-clause-edit d-none mt-2" id="pub-clause-edit-{{ clause.pk }}">
+            <div class="mb-2">
+              <label class="form-label small fw-semibold mb-1">Tu nombre (opcional)</label>
+              <input type="text" id="pub-editor-name-{{ clause.pk }}" class="form-control form-control-sm"
+                     placeholder="Ej: Juan García" maxlength="200">
+            </div>
+            <textarea id="pub-clause-body-{{ clause.pk }}" class="form-control form-control-sm font-monospace mb-2"
+                      rows="6" style="white-space:pre-wrap;">{{ clause.body }}</textarea>
+            <div class="d-flex gap-2 justify-content-end">
+              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="pubCancelEdit({{ clause.pk }})">Cancelar</button>
+              <button type="button" class="btn btn-success btn-sm" onclick="pubSaveClause({{ clause.pk }})">
+                <span id="pub-save-spinner-{{ clause.pk }}" class="spinner-border spinner-border-sm d-none me-1"></span>
+                <i class="bi bi-floppy me-1" id="pub-save-icon-{{ clause.pk }}"></i>Guardar
+              </button>
+            </div>
+            <div id="pub-clause-error-{{ clause.pk }}" class="text-danger small mt-1 d-none"></div>
+          </div>
         </div>
         {% if not forloop.last %}<hr class="clause-divider">{% endif %}
         {% endfor %}
@@ -413,6 +458,143 @@
   <input type="hidden" name="client_name" id="sigClientNameHidden">
   <input type="hidden" name="client_email" id="sigClientEmailHidden">
 </form>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+{# ── Modal historial de cláusula ── #}
+<div class="modal fade" id="pubHistoryModal" tabindex="-1" aria-labelledby="pubHistoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header py-2 px-3">
+        <h6 class="modal-title mb-0" id="pubHistoryModalLabel"><i class="bi bi-clock-history me-2 text-primary"></i>Historial de cambios</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-3" id="pubHistoryModalBody">
+        <div class="text-center text-muted py-4" id="pubHistoryLoading">
+          <div class="spinner-border spinner-border-sm me-2"></div>Cargando historial…
+        </div>
+        <div id="pubHistoryContent" class="d-none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const _token = '{{ survey.public_share_token }}';
+  const _baseEdit = '/crm/process-surveys/public/' + _token + '/contrato/clausula/';
+
+  function getCsrf() {
+    const el = document.querySelector('[name=csrfmiddlewaretoken]');
+    return el ? el.value : '';
+  }
+
+  window.pubEditClause = function (pk) {
+    document.getElementById('pub-clause-view-' + pk).classList.add('d-none');
+    document.getElementById('pub-clause-edit-' + pk).classList.remove('d-none');
+  };
+
+  window.pubCancelEdit = function (pk) {
+    document.getElementById('pub-clause-edit-' + pk).classList.add('d-none');
+    document.getElementById('pub-clause-view-' + pk).classList.remove('d-none');
+    var err = document.getElementById('pub-clause-error-' + pk);
+    err.classList.add('d-none'); err.textContent = '';
+  };
+
+  window.pubSaveClause = function (pk) {
+    var body = document.getElementById('pub-clause-body-' + pk).value.trim();
+    var editorName = document.getElementById('pub-editor-name-' + pk).value.trim();
+    var errEl = document.getElementById('pub-clause-error-' + pk);
+    if (!body) { errEl.textContent = 'El texto no puede estar vacío.'; errEl.classList.remove('d-none'); return; }
+
+    var spinner = document.getElementById('pub-save-spinner-' + pk);
+    var icon    = document.getElementById('pub-save-icon-' + pk);
+    spinner.classList.remove('d-none'); icon.classList.add('d-none');
+    errEl.classList.add('d-none');
+
+    fetch(_baseEdit + pk + '/editar/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCsrf(),
+      },
+      body: JSON.stringify({ body: body, editor_name: editorName }),
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      spinner.classList.add('d-none'); icon.classList.remove('d-none');
+      if (data.error) { errEl.textContent = data.error; errEl.classList.remove('d-none'); return; }
+      // Actualizar vista con el texto guardado
+      var viewEl = document.getElementById('pub-clause-view-' + pk);
+      viewEl.querySelector('.clause-body').textContent = data.body;
+      var updEl = document.getElementById('pub-clause-updated-' + pk);
+      if (updEl) {
+        updEl.innerHTML = '<i class="bi bi-pencil me-1"></i>Editado: ' + data.updated_at;
+        updEl.classList.remove('d-none');
+      }
+      pubCancelEdit(pk);
+    })
+    .catch(function () {
+      spinner.classList.add('d-none'); icon.classList.remove('d-none');
+      errEl.textContent = 'Error de conexión. Inténtalo de nuevo.';
+      errEl.classList.remove('d-none');
+    });
+  };
+
+  window.pubHistoryClause = function (pk, num) {
+    var modalEl = document.getElementById('pubHistoryModal');
+    document.getElementById('pubHistoryModalLabel').innerHTML =
+      '<i class="bi bi-clock-history me-2 text-primary"></i>Historial — Cláusula ' + num;
+    var loadingEl = document.getElementById('pubHistoryLoading');
+    var contentEl = document.getElementById('pubHistoryContent');
+    loadingEl.classList.remove('d-none');
+    contentEl.classList.add('d-none');
+    contentEl.innerHTML = '';
+
+    var modal = new bootstrap.Modal(modalEl);
+    modal.show();
+
+    fetch(_baseEdit + pk + '/historial/', { method: 'GET' })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      loadingEl.classList.add('d-none');
+      if (!data.history || data.history.length === 0) {
+        contentEl.innerHTML = '<p class="text-muted small fst-italic mb-0"><i class="bi bi-info-circle me-1"></i>Esta cláusula no tiene cambios registrados aún.</p>';
+      } else {
+        var html = '<div class="d-flex flex-column gap-3">';
+        data.history.forEach(function (entry, i) {
+          html += '<div class="border rounded p-3" style="font-size:.85rem;">';
+          html += '<div class="d-flex justify-content-between align-items-center mb-2">';
+          html += '<span class="fw-semibold"><i class="bi bi-person-circle me-1 text-secondary"></i>' + _esc(entry.edited_by_name) + '</span>';
+          html += '<span class="text-muted small"><i class="bi bi-calendar3 me-1"></i>' + entry.edited_at + '</span>';
+          html += '</div>';
+          html += '<div class="mb-1"><span class="badge bg-danger-subtle text-danger-emphasis mb-1">Antes</span>';
+          html += '<pre class="mb-0 small bg-light rounded p-2" style="white-space:pre-wrap;max-height:120px;overflow-y:auto;">' + _esc(entry.body_before) + '</pre></div>';
+          html += '<div><span class="badge bg-success-subtle text-success-emphasis mb-1">Después</span>';
+          html += '<pre class="mb-0 small bg-light rounded p-2" style="white-space:pre-wrap;max-height:120px;overflow-y:auto;">' + _esc(entry.body_after) + '</pre></div>';
+          html += '</div>';
+        });
+        html += '</div>';
+        contentEl.innerHTML = html;
+      }
+      contentEl.classList.remove('d-none');
+    })
+    .catch(function () {
+      loadingEl.classList.add('d-none');
+      contentEl.innerHTML = '<p class="text-danger small mb-0"><i class="bi bi-exclamation-triangle me-1"></i>Error al cargar el historial.</p>';
+      contentEl.classList.remove('d-none');
+    });
+  };
+
+  function _esc(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+})();
+</script>
 
 <script>
 (function(){
