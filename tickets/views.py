@@ -56752,6 +56752,7 @@ def process_survey_create(request):
         hidden_flags = post_data.getlist('line_hidden')
         complexities = post_data.getlist('line_complexity')
         orders = post_data.getlist('line_order')
+        categories = post_data.getlist('line_category')
 
         collected = []
         for idx, raw_title in enumerate(titles):
@@ -56770,6 +56771,8 @@ def process_survey_create(request):
             raw_c = complexities[idx].strip() if idx < len(complexities) else ''
             complexity = int(raw_c) if raw_c.isdigit() and 1 <= int(raw_c) <= 10 else None
             is_hidden = hidden_flags[idx] == '1' if idx < len(hidden_flags) else False
+            raw_cat = categories[idx].strip() if idx < len(categories) else ''
+            category_id = int(raw_cat) if raw_cat.isdigit() else None
 
             collected.append((
                 order_value,
@@ -56778,6 +56781,7 @@ def process_survey_create(request):
                 descriptions[idx].strip() if idx < len(descriptions) else '',
                 is_hidden,
                 complexity,
+                category_id,
             ))
 
         collected.sort(key=lambda item: (item[0], item[1]))
@@ -56804,7 +56808,7 @@ def process_survey_create(request):
                 responsible=request.user,
             )
             # Procesar líneas
-            for order_value, _, title, description, is_hidden, complexity in _collect_lines_from_post(request.POST):
+            for order_value, _, title, description, is_hidden, complexity, category_id in _collect_lines_from_post(request.POST):
                 ProcessSurveyLine.objects.create(
                     survey=survey,
                     order=order_value,
@@ -56812,6 +56816,7 @@ def process_survey_create(request):
                     description=description,
                     complexity=complexity,
                     is_hidden=is_hidden,
+                    category_id=category_id,
                 )
             messages.success(request, f'Levantamiento "{survey.name}" creado exitosamente.')
             # Procesar URLs
@@ -56827,11 +56832,13 @@ def process_survey_create(request):
 
     companies = Company.objects.filter(is_active=True).order_by('name')
     users = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
+    from .models import ProcessSurveyLineCategory
     context = {
         'page_title': 'Nuevo Levantamiento de Procesos',
         'action': 'create',
         'companies': companies,
         'users': users,
+        'line_categories': ProcessSurveyLineCategory.objects.all(),
         'submenu': get_crm_submenu(request, active_item='process_surveys'),
     }
     return render(request, 'tickets/process_survey_form.html', context)
@@ -57180,6 +57187,7 @@ def process_survey_edit(request, pk):
         hidden_flags = post_data.getlist('line_hidden')
         complexities = post_data.getlist('line_complexity')
         orders = post_data.getlist('line_order')
+        categories = post_data.getlist('line_category')
 
         collected = []
         for idx, raw_title in enumerate(titles):
@@ -57198,6 +57206,8 @@ def process_survey_edit(request, pk):
             raw_c = complexities[idx].strip() if idx < len(complexities) else ''
             complexity = int(raw_c) if raw_c.isdigit() and 1 <= int(raw_c) <= 10 else None
             is_hidden = hidden_flags[idx] == '1' if idx < len(hidden_flags) else False
+            raw_cat = categories[idx].strip() if idx < len(categories) else ''
+            category_id = int(raw_cat) if raw_cat.isdigit() else None
 
             collected.append((
                 order_value,
@@ -57206,6 +57216,7 @@ def process_survey_edit(request, pk):
                 descriptions[idx].strip() if idx < len(descriptions) else '',
                 is_hidden,
                 complexity,
+                category_id,
             ))
 
         collected.sort(key=lambda item: (item[0], item[1]))
@@ -57246,7 +57257,7 @@ def process_survey_edit(request, pk):
 
             # Reemplazar solo las líneas de la versión más reciente
             survey.lines.filter(version=max_version).delete()
-            for order_value, _, title, description, is_hidden, complexity in _collect_lines_from_post(request.POST):
+            for order_value, _, title, description, is_hidden, complexity, category_id in _collect_lines_from_post(request.POST):
                 ProcessSurveyLine.objects.create(
                     survey=survey,
                     order=order_value,
@@ -57254,6 +57265,7 @@ def process_survey_edit(request, pk):
                     description=description,
                     is_hidden=is_hidden,
                     complexity=complexity,
+                    category_id=category_id,
                     version=max_version,
                 )
             messages.success(request, f'Levantamiento "{survey.name}" actualizado (versión {max_version}).')
@@ -57271,15 +57283,17 @@ def process_survey_edit(request, pk):
 
     companies = Company.objects.filter(is_active=True).order_by('name')
     users = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
+    from .models import ProcessSurveyLineCategory
     context = {
         'page_title': f'Editar: {survey.name}',
         'action': 'edit',
         'survey': survey,
-        'lines': survey.lines.filter(version=max_version),
+        'lines': survey.lines.filter(version=max_version).select_related('category'),
         'current_version': max_version,
         'companies': companies,
         'users': users,
         'survey_urls': survey.urls.all(),
+        'line_categories': ProcessSurveyLineCategory.objects.all(),
         'submenu': get_crm_submenu(request, active_item='process_surveys'),
     }
     return render(request, 'tickets/process_survey_form.html', context)
@@ -57552,6 +57566,47 @@ def process_survey_clause_ai(request, clause_pk):
         return JsonResponse({'ok': True, 'body': new_body})
     except (KeyError, IndexError):
         return JsonResponse({'error': 'Respuesta inesperada de la IA.'}, status=500)
+
+
+@login_required
+def process_survey_line_category_list(request):
+    """Lista/gestión de categorías de líneas (devuelve JSON para uso AJAX)"""
+    from django.http import JsonResponse
+    from .models import ProcessSurveyLineCategory
+
+    if request.method == 'GET':
+        cats = list(ProcessSurveyLineCategory.objects.all().values('id', 'name', 'color'))
+        return JsonResponse({'categories': cats})
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        color = request.POST.get('color', '#6c757d').strip() or '#6c757d'
+        if not name:
+            return JsonResponse({'error': 'El nombre es obligatorio.'}, status=400)
+        if ProcessSurveyLineCategory.objects.filter(name__iexact=name).exists():
+            return JsonResponse({'error': 'Ya existe una categoría con ese nombre.'}, status=400)
+        cat = ProcessSurveyLineCategory.objects.create(
+            name=name,
+            color=color,
+            created_by=request.user,
+        )
+        return JsonResponse({'id': cat.pk, 'name': cat.name, 'color': cat.color})
+
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def process_survey_line_category_delete(request, pk):
+    """Elimina una categoría"""
+    from django.http import JsonResponse
+    from .models import ProcessSurveyLineCategory
+
+    cat = get_object_or_404(ProcessSurveyLineCategory, pk=pk)
+    if request.method == 'POST':
+        cat.delete()
+        return JsonResponse({'ok': True})
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
 
 
 def process_survey_intake(request):
@@ -57991,7 +58046,20 @@ def public_process_survey_contract(request, token):
         )
     clauses = survey.clauses.all()
     max_version = survey.lines.aggregate(v=Max('version'))['v'] or 1
-    lines = survey.lines.filter(version=max_version, is_hidden=False).order_by('order')
+    lines = survey.lines.filter(version=max_version, is_hidden=False).select_related('category').order_by('order')
+
+    # Agrupar líneas por categoría para el Anexo A
+    lines_by_category = {}  # {cat_obj_or_None: [line, ...]}
+    for line in lines:
+        key = line.category  # None si no tiene categoría
+        if key not in lines_by_category:
+            lines_by_category[key] = []
+        lines_by_category[key].append(line)
+    # Ordenar: primero las categorías nombradas (alfabéticamente), luego las sin categoría
+    lines_grouped = sorted(
+        lines_by_category.items(),
+        key=lambda x: (x[0] is None, x[0].name.lower() if x[0] else '')
+    )
 
     # Firma del proveedor (usuario que creó el levantamiento)
     provider_signature = None
@@ -58018,6 +58086,7 @@ def public_process_survey_contract(request, token):
         'survey': survey,
         'clauses': clauses,
         'lines': lines,
+        'lines_grouped': lines_grouped,
         'max_version': max_version,
         'provider_signature': provider_signature,
         'provider_name': provider_name,
@@ -58391,7 +58460,7 @@ def public_process_survey_contract_pdf(request, token):
     survey = get_object_or_404(ProcessSurvey, public_share_token=token)
     clauses = survey.clauses.order_by('order', 'created_at')
     max_version = survey.lines.aggregate(v=Max('version'))['v'] or 1
-    lines = survey.lines.filter(version=max_version, is_hidden=False).order_by('order')
+    lines = survey.lines.filter(version=max_version, is_hidden=False).select_related('category').order_by('order')
 
     # ── Colores ──────────────────────────────────────────────────────────
     C_BRAND   = HexColor('#0f3460')
@@ -58608,15 +58677,49 @@ def public_process_survey_contract_pdf(request, token):
             f'El siguiente listado forma parte integral del presente contrato como Anexo A (Versión {max_version}).',
             sty_muted_center
         ))
-        for j, srv_line in enumerate(lines, 1):
-            blk = [Paragraph(f'<b>{j}.</b>  {srv_line.title}', sty_anexo_title)]
-            if srv_line.description:
-                blk.append(Paragraph(srv_line.description, sty_anexo_desc))
-            story.append(KeepTogether(blk + [Spacer(1, 2)]))
-            story.append(HRFlowable(
-                width='100%', thickness=0.4, color=HexColor('#f0f0f0'),
-                spaceBefore=2, spaceAfter=2
-            ))
+
+        # Agrupar por categoría
+        lines_by_cat = {}
+        for srv_line in lines:
+            key = srv_line.category
+            if key not in lines_by_cat:
+                lines_by_cat[key] = []
+            lines_by_cat[key].append(srv_line)
+        lines_grouped_pdf = sorted(
+            lines_by_cat.items(),
+            key=lambda x: (x[0] is None, x[0].name.lower() if x[0] else '')
+        )
+
+        sty_cat_header = ParagraphStyle('sty_cat_header',
+            fontName='Helvetica-Bold', fontSize=9, textColor=C_BRAND,
+            leading=14, spaceBefore=10, spaceAfter=4,
+            textTransform='uppercase', letterSpacing=0.8,
+        )
+        sty_cat_none = ParagraphStyle('sty_cat_none',
+            fontName='Helvetica-Bold', fontSize=9, textColor=C_MUTED,
+            leading=14, spaceBefore=10, spaceAfter=4,
+            textTransform='uppercase', letterSpacing=0.8,
+        )
+
+        global_num = 1
+        has_multiple_cats = len(lines_grouped_pdf) > 1
+        for cat, cat_lines in lines_grouped_pdf:
+            if has_multiple_cats:
+                if cat:
+                    story.append(Paragraph(f'▸  {cat.name}', sty_cat_header))
+                else:
+                    story.append(Paragraph('▸  Sin categoría', sty_cat_none))
+                story.append(HRFlowable(width='100%', thickness=0.8, color=C_HR, spaceBefore=0, spaceAfter=4))
+            for srv_line in cat_lines:
+                blk = [Paragraph(f'<b>{global_num}.</b>  {srv_line.title}', sty_anexo_title)]
+                if srv_line.description:
+                    blk.append(Paragraph(srv_line.description, sty_anexo_desc))
+                story.append(KeepTogether(blk + [Spacer(1, 2)]))
+                story.append(HRFlowable(
+                    width='100%', thickness=0.4, color=HexColor('#f0f0f0'),
+                    spaceBefore=2, spaceAfter=2
+                ))
+                global_num += 1
 
     # ── FIRMAS ───────────────────────────────────────────────────────────
     if total_clauses:

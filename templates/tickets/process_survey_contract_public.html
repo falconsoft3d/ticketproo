@@ -137,6 +137,30 @@
       font-size: .78rem;
       border: 1px solid #c8d6ea;
     }
+    .anexo-category-header {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin: 1.4rem 0 .6rem;
+    }
+    .anexo-category-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .anexo-category-label {
+      font-weight: 700;
+      font-size: .82rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--brand);
+    }
+    .anexo-category-line {
+      flex: 1;
+      height: 1px;
+      background: #dee2e6;
+    }
     .page-break-before { page-break-before: auto; }
     /* ── Sección privada borrosa ── */
     .section-private {
@@ -394,6 +418,42 @@
           como Anexo A (Versión {{ max_version }}).
         </p>
 
+        {% if lines_grouped %}
+          {% for category, cat_lines in lines_grouped %}
+          {% if category %}
+          <div class="anexo-category-header">
+            <span class="anexo-category-dot" style="background:{{ category.color }};"></span>
+            <span class="anexo-category-label">{{ category.name }}</span>
+            <span class="anexo-category-line"></span>
+            <span class="text-muted" style="font-size:.75rem;white-space:nowrap;">{{ cat_lines|length }} proceso{% if cat_lines|length != 1 %}s{% endif %}</span>
+          </div>
+          {% else %}
+          {% if lines_grouped|length > 1 %}
+          <div class="anexo-category-header">
+            <span class="anexo-category-dot" style="background:#adb5bd;"></span>
+            <span class="anexo-category-label" style="color:#6c757d;">Sin categoría</span>
+            <span class="anexo-category-line"></span>
+            <span class="text-muted" style="font-size:.75rem;white-space:nowrap;">{{ cat_lines|length }} proceso{% if cat_lines|length != 1 %}s{% endif %}</span>
+          </div>
+          {% endif %}
+          {% endif %}
+          <div class="d-flex flex-column gap-0 mb-2">
+            {% for line in cat_lines %}
+            <div class="py-3 {% if not forloop.last %}border-bottom{% endif %}">
+              <div class="d-flex align-items-start gap-3">
+                <span class="anexo-num flex-shrink-0">{{ forloop.counter }}</span>
+                <div class="flex-grow-1">
+                  <p class="fw-semibold mb-0" style="color:#1a1a2e;">{{ line.title }}</p>
+                  {% if line.description %}
+                  <p class="text-muted small mb-0 mt-1" style="white-space:pre-wrap;line-height:1.6;">{{ line.description }}</p>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endfor %}
+        {% else %}
         <div class="d-flex flex-column gap-0">
           {% for line in lines %}
           <div class="py-3 {% if not forloop.last %}border-bottom{% endif %}">
@@ -409,6 +469,7 @@
           </div>
           {% endfor %}
         </div>
+        {% endif %}
       </div>
       <hr class="clause-divider">
       {% endif %}

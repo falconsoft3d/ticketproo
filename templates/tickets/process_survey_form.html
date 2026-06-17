@@ -172,7 +172,22 @@
                     <option value="10" {% if line.complexity == 10 %}selected{% endif %}>10 — Muy complejo</option>
                   </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-2">
+                  <label class="form-label small text-muted mb-1">Categoría</label>
+                  <div class="input-group input-group-sm">
+                    <select name="line_category" class="form-select form-select-sm line-category-select">
+                      <option value="">— Sin categoría —</option>
+                      {% for cat in line_categories %}
+                      <option value="{{ cat.id }}" data-color="{{ cat.color }}"
+                        {% if line.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                      {% endfor %}
+                    </select>
+                    <button type="button" class="btn btn-outline-secondary btn-new-category" title="Nueva categoría">
+                      <i class="bi bi-plus"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="col-md-2">
                   <label class="form-label small text-muted mb-1">Descripción</label>
                   <textarea name="line_description" class="form-control form-control-sm" rows="2"
                             placeholder="Descripción detallada...">{{ line.description }}</textarea>
@@ -310,7 +325,18 @@
           <option value="10">10 — Muy complejo</option>
         </select>
       </div>
-      <div class="col-md-4">
+      <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Categoría</label>
+        <div class="input-group input-group-sm">
+          <select name="line_category" class="form-select form-select-sm line-category-select">
+            <option value="">— Sin categoría —</option>
+          </select>
+          <button type="button" class="btn btn-outline-secondary btn-new-category" title="Nueva categoría">
+            <i class="bi bi-plus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="col-md-2">
         <label class="form-label small text-muted mb-1">Descripción</label>
         <textarea name="line_description" class="form-control form-control-sm" rows="2"
                   placeholder="Descripción detallada..."></textarea>
@@ -506,6 +532,88 @@
   urlContainer.addEventListener('click', e => {
     if (e.target.closest('.remove-url-btn')) {
       e.target.closest('.url-row').remove();
+    }
+  });
+
+  // ── Categorías ─────────────────────────────────────────────────────
+  const CATEGORIES_URL = "{% url 'process_survey_line_category_list' %}";
+  const CSRF = () => document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+
+  // Cargar las categorías actuales del servidor y poblar todos los selects
+  async function loadCategories() {
+    const resp = await fetch(CATEGORIES_URL);
+    const data = await resp.json();
+    return data.categories || [];
+  }
+
+  function populateCategorySelects(categories, targetSelect, selectedId) {
+    const selects = targetSelect
+      ? [targetSelect]
+      : [...document.querySelectorAll('select[name="line_category"]')];
+    selects.forEach(sel => {
+      const currentVal = selectedId !== undefined ? selectedId : sel.value;
+      sel.innerHTML = '<option value="">— Sin categoría —</option>';
+      categories.forEach(cat => {
+        const opt = new Option(cat.name, cat.id, false, String(cat.id) === String(currentVal));
+        opt.dataset.color = cat.color;
+        sel.appendChild(opt);
+      });
+    });
+  }
+
+  // Inicializar selects de categoría con los datos del template (ya en el DOM)
+  (function initCategorySelects() {
+    const initial = [
+      {% for cat in line_categories %}
+      { id: {{ cat.id }}, name: "{{ cat.name|escapejs }}", color: "{{ cat.color|escapejs }}" },
+      {% endfor %}
+    ];
+    // El template de nuevas líneas no tiene opciones aún — las llenamos aquí
+    const newLineTemplate = document.getElementById('line-template');
+    if (newLineTemplate) {
+      const sel = newLineTemplate.content.querySelector('select[name="line_category"]');
+      if (sel) populateCategorySelects(initial, sel, null);
+    }
+  })();
+
+  // Manejar clic en "nueva categoría" (delegado en document para filas dinámicas)
+  document.addEventListener('click', async function(e) {
+    const btn = e.target.closest('.btn-new-category');
+    if (!btn) return;
+    e.preventDefault();
+
+    const name = prompt('Nombre de la nueva categoría:');
+    if (!name || !name.trim()) return;
+    const color = prompt('Color (hex, ej: #0d6efd). Dejar vacío para gris:', '#0d6efd') || '#6c757d';
+
+    const fd = new FormData();
+    fd.append('name', name.trim());
+    fd.append('color', color.trim());
+    const resp = await fetch(CATEGORIES_URL, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF() },
+      body: fd,
+    });
+    const data = await resp.json();
+    if (!resp.ok) { alert(data.error || 'Error al crear la categoría.'); return; }
+
+    // Agregar la nueva opción a TODOS los selects y seleccionarla en el select cercano al botón
+    const closestSelect = btn.closest('.input-group').querySelector('select[name="line_category"]');
+    const allSelects = [...document.querySelectorAll('select[name="line_category"]')];
+    allSelects.forEach(sel => {
+      const opt = new Option(data.name, data.id, false, sel === closestSelect);
+      opt.dataset.color = data.color;
+      sel.appendChild(opt);
+    });
+    // También actualizar el template de nuevas líneas
+    const newLineTemplate = document.getElementById('line-template');
+    if (newLineTemplate) {
+      const sel = newLineTemplate.content.querySelector('select[name="line_category"]');
+      if (sel) {
+        const opt = new Option(data.name, data.id);
+        opt.dataset.color = data.color;
+        sel.appendChild(opt);
+      }
     }
   });
 </script>

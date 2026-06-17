@@ -233,6 +233,9 @@
                     <span class="badge bg-secondary">Pendiente</span>
                   {% endif %}
                   <span class="badge bg-light text-muted border" style="font-size:.7rem;">v{{ line.version }}</span>
+                  {% if line.category %}
+                    <span class="badge" style="background:{{ line.category.color }};font-size:.7rem;"><i class="bi bi-tag me-1"></i>{{ line.category.name }}</span>
+                  {% endif %}
                   {% if line.complexity %}
                     {% if line.complexity <= 3 %}
                       <span class="badge" style="background:#198754;font-size:.7rem;"><i class="bi bi-speedometer me-1"></i>{{ line.complexity }}/10</span>
@@ -497,6 +500,9 @@
                     <span class="badge bg-danger" style="font-size:.65rem;">Rechazado</span>
                   {% else %}
                     <span class="badge bg-secondary" style="font-size:.65rem;">Pendiente</span>
+                  {% endif %}
+                  {% if line.category %}
+                    <span class="badge" style="background:{{ line.category.color }};font-size:.65rem;"><i class="bi bi-tag me-1"></i>{{ line.category.name }}</span>
                   {% endif %}
                   {% if line.complexity %}
                     {% if line.complexity <= 3 %}<span class="badge" style="background:#198754;font-size:.65rem;">{{ line.complexity }}/10</span>

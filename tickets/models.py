@@ -24248,6 +24248,38 @@ class ProcessSurvey(models.Model):
         return delta.days
 
 
+class ProcessSurveyLineCategory(models.Model):
+    """Categoría reutilizable para las líneas de un levantamiento de procesos"""
+
+    name = models.CharField(
+        max_length=100,
+        verbose_name='Nombre',
+    )
+    color = models.CharField(
+        max_length=20,
+        default='#6c757d',
+        verbose_name='Color',
+        help_text='Color en formato hexadecimal, ej: #0d6efd',
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='survey_line_categories',
+        verbose_name='Creado por',
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Categoría de Línea'
+        verbose_name_plural = 'Categorías de Línea'
+
+    def __str__(self):
+        return self.name
+
+
 class ProcessSurveyLine(models.Model):
     """Línea de detalle de un levantamiento de procesos"""
 
@@ -24298,6 +24330,14 @@ class ProcessSurveyLine(models.Model):
         default=1,
         verbose_name='Versión',
         help_text='Número de versión del levantamiento (máx. 10)',
+    )
+    category = models.ForeignKey(
+        'ProcessSurveyLineCategory',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='lines',
+        verbose_name='Categoría',
     )
 
     class Meta:
