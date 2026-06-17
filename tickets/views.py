@@ -56746,6 +56746,43 @@ def process_survey_list(request):
 def process_survey_create(request):
     """Crear nuevo levantamiento de procesos"""
     from .submenu_utils import get_crm_submenu
+    def _collect_lines_from_post(post_data):
+        titles = post_data.getlist('line_title')
+        descriptions = post_data.getlist('line_description')
+        hidden_flags = post_data.getlist('line_hidden')
+        complexities = post_data.getlist('line_complexity')
+        orders = post_data.getlist('line_order')
+
+        collected = []
+        for idx, raw_title in enumerate(titles):
+            title = raw_title.strip()
+            if not title:
+                continue
+
+            raw_order = orders[idx].strip() if idx < len(orders) else ''
+            try:
+                order_value = int(raw_order)
+            except (TypeError, ValueError):
+                order_value = idx + 1
+            if order_value < 1:
+                order_value = idx + 1
+
+            raw_c = complexities[idx].strip() if idx < len(complexities) else ''
+            complexity = int(raw_c) if raw_c.isdigit() and 1 <= int(raw_c) <= 10 else None
+            is_hidden = hidden_flags[idx] == '1' if idx < len(hidden_flags) else False
+
+            collected.append((
+                order_value,
+                idx,
+                title,
+                descriptions[idx].strip() if idx < len(descriptions) else '',
+                is_hidden,
+                complexity,
+            ))
+
+        collected.sort(key=lambda item: (item[0], item[1]))
+        return collected
+
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         date = request.POST.get('date', '').strip()
@@ -56767,21 +56804,15 @@ def process_survey_create(request):
                 responsible=request.user,
             )
             # Procesar líneas
-            titles = request.POST.getlist('line_title')
-            descriptions = request.POST.getlist('line_description')
-            complexities = request.POST.getlist('line_complexity')
-            for idx, title in enumerate(titles):
-                title = title.strip()
-                if title:
-                    raw_c = complexities[idx].strip() if idx < len(complexities) else ''
-                    complexity = int(raw_c) if raw_c.isdigit() and 1 <= int(raw_c) <= 10 else None
-                    ProcessSurveyLine.objects.create(
-                        survey=survey,
-                        order=idx + 1,
-                        title=title,
-                        description=descriptions[idx].strip() if idx < len(descriptions) else '',
-                        complexity=complexity,
-                    )
+            for order_value, _, title, description, is_hidden, complexity in _collect_lines_from_post(request.POST):
+                ProcessSurveyLine.objects.create(
+                    survey=survey,
+                    order=order_value,
+                    title=title,
+                    description=description,
+                    complexity=complexity,
+                    is_hidden=is_hidden,
+                )
             messages.success(request, f'Levantamiento "{survey.name}" creado exitosamente.')
             # Procesar URLs
             url_labels = request.POST.getlist('url_label')
@@ -57143,6 +57174,43 @@ def process_survey_edit(request, pk):
     """Editar levantamiento de procesos"""
     from .submenu_utils import get_crm_submenu
     from django.db.models import Max
+    def _collect_lines_from_post(post_data):
+        titles = post_data.getlist('line_title')
+        descriptions = post_data.getlist('line_description')
+        hidden_flags = post_data.getlist('line_hidden')
+        complexities = post_data.getlist('line_complexity')
+        orders = post_data.getlist('line_order')
+
+        collected = []
+        for idx, raw_title in enumerate(titles):
+            title = raw_title.strip()
+            if not title:
+                continue
+
+            raw_order = orders[idx].strip() if idx < len(orders) else ''
+            try:
+                order_value = int(raw_order)
+            except (TypeError, ValueError):
+                order_value = idx + 1
+            if order_value < 1:
+                order_value = idx + 1
+
+            raw_c = complexities[idx].strip() if idx < len(complexities) else ''
+            complexity = int(raw_c) if raw_c.isdigit() and 1 <= int(raw_c) <= 10 else None
+            is_hidden = hidden_flags[idx] == '1' if idx < len(hidden_flags) else False
+
+            collected.append((
+                order_value,
+                idx,
+                title,
+                descriptions[idx].strip() if idx < len(descriptions) else '',
+                is_hidden,
+                complexity,
+            ))
+
+        collected.sort(key=lambda item: (item[0], item[1]))
+        return collected
+
     survey = get_object_or_404(ProcessSurvey, pk=pk)
     if not is_agent(request.user) and survey.created_by != request.user:
         raise Http404
@@ -57178,25 +57246,16 @@ def process_survey_edit(request, pk):
 
             # Reemplazar solo las líneas de la versión más reciente
             survey.lines.filter(version=max_version).delete()
-            titles = request.POST.getlist('line_title')
-            descriptions = request.POST.getlist('line_description')
-            hidden_flags = request.POST.getlist('line_hidden')
-            complexities = request.POST.getlist('line_complexity')
-            for idx, title in enumerate(titles):
-                title = title.strip()
-                if title:
-                    is_hidden = hidden_flags[idx] == '1' if idx < len(hidden_flags) else False
-                    raw_c = complexities[idx].strip() if idx < len(complexities) else ''
-                    complexity = int(raw_c) if raw_c.isdigit() and 1 <= int(raw_c) <= 10 else None
-                    ProcessSurveyLine.objects.create(
-                        survey=survey,
-                        order=idx + 1,
-                        title=title,
-                        description=descriptions[idx].strip() if idx < len(descriptions) else '',
-                        is_hidden=is_hidden,
-                        complexity=complexity,
-                        version=max_version,
-                    )
+            for order_value, _, title, description, is_hidden, complexity in _collect_lines_from_post(request.POST):
+                ProcessSurveyLine.objects.create(
+                    survey=survey,
+                    order=order_value,
+                    title=title,
+                    description=description,
+                    is_hidden=is_hidden,
+                    complexity=complexity,
+                    version=max_version,
+                )
             messages.success(request, f'Levantamiento "{survey.name}" actualizado (versión {max_version}).')
             # Procesar URLs
             survey.urls.all().delete()
@@ -57253,13 +57312,19 @@ def process_survey_delete(request, pk):
 def process_survey_contract_save(request, pk):
     """Guarda título y fecha del encabezado del contrato"""
     from django.http import JsonResponse
+    from datetime import datetime
     survey = get_object_or_404(ProcessSurvey, pk=pk)
     if request.method == 'POST':
         survey.contract_title = request.POST.get('contract_title', '').strip()
         raw_date = request.POST.get('contract_date', '').strip()
         survey.contract_date = raw_date if raw_date else None
+        raw_expiration = request.POST.get('contract_expiration_date', '').strip()
+        survey.contract_expiration_date = (
+            datetime.strptime(raw_expiration, '%Y-%m-%d').date()
+            if raw_expiration else None
+        )
         survey.is_public_contract = request.POST.get('is_public_contract') == '1'
-        survey.save(update_fields=['contract_title', 'contract_date', 'is_public_contract'])
+        survey.save(update_fields=['contract_title', 'contract_date', 'contract_expiration_date', 'is_public_contract'])
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'ok': True})
         messages.success(request, 'Encabezado del contrato guardado.')
@@ -57946,6 +58011,9 @@ def public_process_survey_contract(request, token):
         (tz.now() - survey.client_signed_at) > timedelta(hours=24)
     )
 
+    contract_expired = survey.contract_is_expired()
+    contract_days_remaining = survey.contract_days_remaining()
+
     context = {
         'survey': survey,
         'clauses': clauses,
@@ -57955,6 +58023,8 @@ def public_process_survey_contract(request, token):
         'provider_name': provider_name,
         'signature_locked': signature_locked,
         'contract_private': contract_private,
+        'contract_expired': contract_expired,
+        'contract_days_remaining': contract_days_remaining,
     }
     return render(request, 'tickets/process_survey_contract_public.html', context)
 

@@ -24168,6 +24168,11 @@ class ProcessSurvey(models.Model):
         blank=True,
         verbose_name='Fecha del contrato',
     )
+    contract_expiration_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de vencimiento del contrato',
+    )
     client_signature_image = models.ImageField(
         upload_to='contract_client_signatures/',
         null=True,
@@ -24230,6 +24235,17 @@ class ProcessSurvey(models.Model):
                 seq = 1
             self.folio = f'LP-{seq:04d}'
         super().save(*args, **kwargs)
+
+    def contract_is_expired(self):
+        if not self.contract_expiration_date:
+            return False
+        return timezone.now().date() > self.contract_expiration_date
+
+    def contract_days_remaining(self):
+        if not self.contract_expiration_date:
+            return None
+        delta = self.contract_expiration_date - timezone.now().date()
+        return delta.days
 
 
 class ProcessSurveyLine(models.Model):

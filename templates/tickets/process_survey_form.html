@@ -5,9 +5,27 @@
 
 {% block extra_css %}
 <style>
-  #lines-container .line-row { background: #f8f9fa; border-radius: 6px; transition: opacity .2s; }
+  #lines-container .line-row {
+    background: #f8f9fa;
+    border-radius: 10px;
+    transition: opacity .2s, transform .15s, box-shadow .15s, background-color .2s;
+  }
   #lines-container .line-row:hover { background: #e9ecef; }
   #lines-container .line-row.is-hidden-row { opacity: .45; }
+  #lines-container .line-row.is-dragging {
+    opacity: .55;
+    transform: scale(.995);
+    box-shadow: 0 8px 24px rgba(0,0,0,.08);
+  }
+  .line-order-input {
+    max-width: 5.2rem;
+    text-align: center;
+  }
+  .drag-line-btn {
+    cursor: grab;
+    touch-action: none;
+  }
+  .drag-line-btn:active { cursor: grabbing; }
 </style>
 {% endblock %}
 
@@ -115,7 +133,23 @@
             {% for line in lines %}
             <div class="line-row p-3 mb-2 border{% if line.is_hidden %} is-hidden-row{% endif %}">
               <div class="row g-2 align-items-start">
-                <div class="col-md-4">
+                <div class="col-md-2">
+                  <label class="form-label small text-muted mb-1">Orden</label>
+                  <div class="input-group input-group-sm">
+                    <button type="button" class="btn btn-outline-secondary move-line-up-btn" title="Subir fila">
+                      <i class="bi bi-arrow-up"></i>
+                    </button>
+                    <input type="number" name="line_order" class="form-control form-control-sm line-order-input"
+                           min="1" step="1" value="{{ forloop.counter }}" aria-label="Orden de la fila">
+                    <button type="button" class="btn btn-outline-secondary move-line-down-btn" title="Bajar fila">
+                      <i class="bi bi-arrow-down"></i>
+                    </button>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-light border mt-2 drag-line-btn" draggable="true" title="Arrastrar para reordenar">
+                    <i class="bi bi-grip-vertical me-1"></i> Arrastrar
+                  </button>
+                </div>
+                <div class="col-md-3">
                   <label class="form-label small text-muted mb-1">Título</label>
                   <input type="text" name="line_title" class="form-control form-control-sm"
                          value="{{ line.title }}" required placeholder="Título del proceso">
@@ -138,7 +172,7 @@
                     <option value="10" {% if line.complexity == 10 %}selected{% endif %}>10 — Muy complejo</option>
                   </select>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md-4">
                   <label class="form-label small text-muted mb-1">Descripción</label>
                   <textarea name="line_description" class="form-control form-control-sm" rows="2"
                             placeholder="Descripción detallada...">{{ line.description }}</textarea>
@@ -239,7 +273,23 @@
 <template id="line-template">
   <div class="line-row p-3 mb-2 border">
     <div class="row g-2 align-items-start">
-      <div class="col-md-4">
+      <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Orden</label>
+        <div class="input-group input-group-sm">
+          <button type="button" class="btn btn-outline-secondary move-line-up-btn" title="Subir fila">
+            <i class="bi bi-arrow-up"></i>
+          </button>
+          <input type="number" name="line_order" class="form-control form-control-sm line-order-input"
+                 min="1" step="1" value="1" aria-label="Orden de la fila">
+          <button type="button" class="btn btn-outline-secondary move-line-down-btn" title="Bajar fila">
+            <i class="bi bi-arrow-down"></i>
+          </button>
+        </div>
+        <button type="button" class="btn btn-sm btn-light border mt-2 drag-line-btn" draggable="true" title="Arrastrar para reordenar">
+          <i class="bi bi-grip-vertical me-1"></i> Arrastrar
+        </button>
+      </div>
+      <div class="col-md-3">
         <label class="form-label small text-muted mb-1">Título</label>
         <input type="text" name="line_title" class="form-control form-control-sm"
                required placeholder="Título del proceso">
@@ -260,7 +310,7 @@
           <option value="10">10 — Muy complejo</option>
         </select>
       </div>
-      <div class="col-md-5">
+      <div class="col-md-4">
         <label class="form-label small text-muted mb-1">Descripción</label>
         <textarea name="line_description" class="form-control form-control-sm" rows="2"
                   placeholder="Descripción detallada..."></textarea>
@@ -286,23 +336,79 @@
   const container = document.getElementById('lines-container');
   const emptyMsg  = document.getElementById('empty-lines-msg');
   const template  = document.getElementById('line-template');
+  let draggedRow = null;
 
   function updateEmpty() {
     const hasLines = container.querySelectorAll('.line-row').length > 0;
     emptyMsg.classList.toggle('d-none', hasLines);
   }
 
+  function getRows() {
+    return [...container.querySelectorAll('.line-row')];
+  }
+
+  function renumberRows() {
+    getRows().forEach((row, index) => {
+      const orderValue = index + 1;
+      const orderInput = row.querySelector('input[name="line_order"]');
+      const upBtn = row.querySelector('.move-line-up-btn');
+      const downBtn = row.querySelector('.move-line-down-btn');
+      if (orderInput) orderInput.value = orderValue;
+      if (upBtn) upBtn.disabled = index === 0;
+      if (downBtn) downBtn.disabled = index === getRows().length - 1;
+    });
+  }
+
+  function moveRow(row, direction) {
+    if (!row) return;
+    if (direction === 'up' && row.previousElementSibling) {
+      container.insertBefore(row, row.previousElementSibling);
+    } else if (direction === 'down' && row.nextElementSibling) {
+      container.insertBefore(row.nextElementSibling, row);
+    }
+    renumberRows();
+  }
+
+  function reorderByOrderInput() {
+    const rows = getRows().map((row, index) => ({
+      row,
+      order: Number.parseInt(row.querySelector('input[name="line_order"]')?.value || '', 10),
+      index,
+    }));
+
+    rows.sort((a, b) => {
+      const orderA = Number.isFinite(a.order) && a.order > 0 ? a.order : a.index + 1;
+      const orderB = Number.isFinite(b.order) && b.order > 0 ? b.order : b.index + 1;
+      return orderA - orderB || a.index - b.index;
+    });
+
+    rows.forEach(item => container.appendChild(item.row));
+    renumberRows();
+  }
+
   document.getElementById('add-line-btn').addEventListener('click', () => {
     const clone = template.content.cloneNode(true);
     container.appendChild(clone);
     updateEmpty();
-    container.lastElementChild.querySelector('input').focus();
+    renumberRows();
+    container.lastElementChild.querySelector('input[name="line_title"]').focus();
   });
 
   container.addEventListener('click', e => {
+    const upBtn = e.target.closest('.move-line-up-btn');
+    if (upBtn) {
+      moveRow(upBtn.closest('.line-row'), 'up');
+      return;
+    }
+    const downBtn = e.target.closest('.move-line-down-btn');
+    if (downBtn) {
+      moveRow(downBtn.closest('.line-row'), 'down');
+      return;
+    }
     if (e.target.closest('.remove-line-btn')) {
       e.target.closest('.line-row').remove();
       updateEmpty();
+      renumberRows();
       return;
     }
     const hideBtn = e.target.closest('.hide-line-btn');
@@ -342,7 +448,48 @@
     }
   });
 
+  container.addEventListener('change', e => {
+    if (e.target.matches('input[name="line_order"]')) {
+      reorderByOrderInput();
+    }
+  });
+
+  container.addEventListener('dragstart', e => {
+    const handle = e.target.closest('.drag-line-btn');
+    if (!handle) return;
+    draggedRow = handle.closest('.line-row');
+    if (!draggedRow) return;
+    draggedRow.classList.add('is-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', 'reorder-line');
+  });
+
+  container.addEventListener('dragend', () => {
+    if (draggedRow) {
+      draggedRow.classList.remove('is-dragging');
+      draggedRow = null;
+      renumberRows();
+    }
+  });
+
+  container.addEventListener('dragover', e => {
+    if (!draggedRow) return;
+    e.preventDefault();
+    const targetRow = e.target.closest('.line-row');
+    if (!targetRow || targetRow === draggedRow) return;
+
+    const targetRect = targetRow.getBoundingClientRect();
+    const shouldInsertAfter = e.clientY > targetRect.top + targetRect.height / 2;
+    if (shouldInsertAfter) {
+      container.insertBefore(draggedRow, targetRow.nextElementSibling);
+    } else {
+      container.insertBefore(draggedRow, targetRow);
+    }
+    renumberRows();
+  });
+
   updateEmpty();
+  renumberRows();
 
   // ── URLs ──────────────────────────────────────────────────────────
   const urlContainer = document.getElementById('urls-container');

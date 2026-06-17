@@ -54,6 +54,27 @@
       opacity: .8;
       font-size: .88rem;
     }
+    .contract-expiry-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      border-radius: 999px;
+      padding: .5rem .9rem;
+      font-size: .86rem;
+      font-weight: 700;
+      letter-spacing: .01em;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.12);
+      color: #fff;
+    }
+    .contract-expiry-pill.warning {
+      background: rgba(253,126,20,.92);
+      border-color: rgba(253,126,20,.75);
+    }
+    .contract-expiry-pill.expired {
+      background: rgba(220,53,69,.92);
+      border-color: rgba(220,53,69,.75);
+    }
     /* ── Cláusulas ── */
     .contract-body {
       padding: 2rem;
@@ -232,6 +253,22 @@
         <span><i class="bi bi-building me-1"></i>{{ survey.company.name }}</span>
         {% endif %}
       </div>
+      {% if survey.contract_expiration_date %}
+      <div class="mt-3">
+        <span id="contract-expiry-pill"
+            class="contract-expiry-pill{% if contract_expired or contract_days_remaining is not None and contract_days_remaining <= 3 %} expired{% elif contract_days_remaining is not None and contract_days_remaining <= 7 %} warning{% endif %}"
+              data-expiration-date="{{ survey.contract_expiration_date|date:'Y-m-d' }}"
+              data-days-remaining="{{ contract_days_remaining|default:'' }}">
+          {% if contract_expired %}
+            <i class="bi bi-lock-fill"></i>
+            <span>Vencido</span>
+          {% else %}
+            <i class="bi bi-hourglass-split"></i>
+            <span id="contract-expiry-text">Vence pronto</span>
+          {% endif %}
+        </span>
+      </div>
+      {% endif %}
     </div>
 
     {# ── Cuerpo del contrato ── #}
@@ -483,6 +520,8 @@
 (function () {
   const _token = '{{ survey.public_share_token }}';
   const _baseEdit = '/crm/process-surveys/public/' + _token + '/contrato/clausula/';
+  const expiryPill = document.getElementById('contract-expiry-pill');
+  const expiryText = document.getElementById('contract-expiry-text');
 
   function getCsrf() {
     const el = document.querySelector('[name=csrfmiddlewaretoken]');
@@ -593,6 +632,49 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
   }
+
+  function updateExpiryCountdown() {
+    if (!expiryPill || !expiryText) return;
+    const dateStr = expiryPill.dataset.expirationDate;
+    if (!dateStr) return;
+
+    const parts = dateStr.split('-').map(Number);
+    if (parts.length !== 3 || parts.some(Number.isNaN)) return;
+
+    const target = new Date(parts[0], parts[1] - 1, parts[2], 23, 59, 59, 999);
+    const now = new Date();
+    const diff = target.getTime() - now.getTime();
+
+    if (diff <= 0) {
+      expiryPill.classList.add('expired');
+      expiryPill.innerHTML = '<i class="bi bi-lock-fill"></i><span>Vencido</span>';
+      return;
+    }
+
+    const totalSeconds = Math.floor(diff / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    expiryPill.classList.remove('expired', 'warning');
+    if (days <= 3) {
+      expiryPill.classList.add('expired');
+    } else if (days <= 7) {
+      expiryPill.classList.add('warning');
+    }
+
+    const pieces = [];
+    if (days > 0) pieces.push(days + 'd');
+    pieces.push(String(hours).padStart(2, '0') + 'h');
+    pieces.push(String(minutes).padStart(2, '0') + 'm');
+    pieces.push(String(seconds).padStart(2, '0') + 's');
+
+    expiryText.textContent = 'Vence en ' + pieces.join(' ');
+  }
+
+  updateExpiryCountdown();
+  setInterval(updateExpiryCountdown, 1000);
 })();
 </script>
 

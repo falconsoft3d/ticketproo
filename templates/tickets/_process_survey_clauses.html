@@ -15,7 +15,7 @@
 
     {# Vista de lectura #}
     <div class="card-body py-3 px-3" id="contract-header-view">
-      {% if survey.contract_title or survey.contract_date %}
+      {% if survey.contract_title or survey.contract_date or survey.contract_expiration_date %}
         {% if survey.contract_title %}
           <p class="fw-bold fs-5 mb-1">{{ survey.contract_title }}</p>
         {% else %}
@@ -23,6 +23,9 @@
         {% endif %}
         {% if survey.contract_date %}
           <p class="text-muted small mb-0"><i class="bi bi-calendar3 me-1"></i>{{ survey.contract_date|date:"d/m/Y" }}</p>
+        {% endif %}
+        {% if survey.contract_expiration_date %}
+          <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i>Vence el {{ survey.contract_expiration_date|date:"d/m/Y" }}</p>
         {% endif %}
       {% else %}
         <p class="text-muted small mb-0 fst-italic">Sin título ni fecha asignados.</p>
@@ -51,6 +54,11 @@
             <label class="form-label small fw-semibold mb-1">Fecha</label>
             <input type="date" name="contract_date" class="form-control form-control-sm"
                    value="{{ survey.contract_date|date:'Y-m-d' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold mb-1">Vencimiento</label>
+            <input type="date" name="contract_expiration_date" class="form-control form-control-sm"
+                   value="{{ survey.contract_expiration_date|date:'Y-m-d' }}">
           </div>
           <div class="col-12">
             <div class="form-check form-switch mt-1">
