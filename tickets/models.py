@@ -24701,6 +24701,12 @@ class ProjectInfoLine(models.Model):
         related_name='project_info_lines',
         verbose_name='Categoría',
     )
+    public_share_token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name='Token público de línea',
+    )
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Creado')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado')
 

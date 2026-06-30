@@ -504,6 +504,7 @@ urlpatterns = [
     path('crm/project-info/<int:pk>/responsible/add/', views.project_info_responsible_add, name='project_info_responsible_add'),
     path('crm/project-info/responsible/<int:r_pk>/remove/', views.project_info_responsible_remove, name='project_info_responsible_remove'),
     path('crm/project-info/public/<uuid:token>/', views.project_info_public, name='project_info_public'),
+    path('crm/project-info/line/public/<uuid:token>/', views.project_info_line_public, name='project_info_line_public'),
 
     # URLs de Reuniones
     path('meetings/', views.meeting_list_view, name='meeting_list'),

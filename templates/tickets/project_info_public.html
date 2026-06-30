@@ -142,16 +142,22 @@
   <!-- Responsables -->
   <div class="row g-3 mb-4">
     {% for r in responsibles %}
-    <div class="col-6 col-md-3">
-      <div style="background:#fff;border-radius:14px;padding:1rem;box-shadow:0 2px 14px rgba(0,0,0,.1);display:flex;align-items:flex-start;gap:.75rem;">
-        <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#714B67,#9b6b8f);color:#fff;font-weight:700;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+    <div class="col-12 col-md-6">
+      <div style="background:#fff;border-radius:14px;padding:1.1rem 1.25rem;box-shadow:0 2px 14px rgba(0,0,0,.1);display:flex;align-items:center;gap:1rem;">
+        <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#714B67,#9b6b8f);color:#fff;font-weight:700;font-size:1.2rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           {{ r.user.get_full_name|slice:":1"|upper|default:r.user.username|slice:":1"|upper }}
         </div>
-        <div style="overflow:hidden;">
-          <div style="font-weight:700;font-size:.9rem;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.user.get_full_name|default:r.user.username }}</div>
-          {% if r.display_role %}<div style="color:#714B67;font-size:.78rem;">{{ r.display_role }}</div>{% endif %}
-          {% if r.user.email %}<div style="font-size:.78rem;color:#475569;"><i class="bi bi-envelope me-1"></i>{{ r.user.email }}</div>{% endif %}
-          {% if r.display_phone %}<div style="font-size:.78rem;color:#475569;"><i class="bi bi-phone me-1"></i>{{ r.display_phone }}</div>{% endif %}
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:1rem;color:#1e293b;">{{ r.user.get_full_name|default:r.user.username }}</div>
+          {% if r.display_role %}<div style="color:#714B67;font-size:.82rem;margin-top:.1rem;">{{ r.display_role }}</div>{% endif %}
+          <div style="display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;margin-top:.35rem;">
+            {% if r.user.email %}
+            <span style="font-size:.82rem;color:#475569;"><i class="bi bi-envelope me-1" style="color:#714B67;"></i>{{ r.user.email }}</span>
+            {% endif %}
+            {% if r.display_phone %}
+            <span style="font-size:.82rem;color:#475569;"><i class="bi bi-phone me-1" style="color:#714B67;"></i>{{ r.display_phone }}</span>
+            {% endif %}
+          </div>
         </div>
       </div>
     </div>
@@ -177,7 +183,14 @@
           <div class="line-item">
             <button class="line-btn" type="button" onclick="toggleLine(this)">
               <span class="line-title">{{ line.title }}</span>
-              <span class="text-muted" style="font-size:.7rem;white-space:nowrap;">{{ line.updated_at|date:"d/m/Y" }}</span>
+              <span style="display:flex;align-items:center;gap:.4rem;flex-shrink:0;">
+                <span class="text-muted" style="font-size:.7rem;white-space:nowrap;">{{ line.updated_at|date:"d/m/Y" }}</span>
+                <a href="{% url 'project_info_line_public' line.public_share_token %}"
+                   target="_blank"
+                   onclick="event.stopPropagation();"
+                   style="color:#714B67;font-size:.85rem;"
+                   title="Ver página de esta línea"><i class="bi bi-box-arrow-up-right"></i></a>
+              </span>
               <i class="bi bi-chevron-down line-chevron"></i>
             </button>
             {% if line.body %}
@@ -208,7 +221,14 @@
           <div class="line-item">
             <button class="line-btn" type="button" onclick="toggleLine(this)">
               <span class="line-title">{{ line.title }}</span>
-              <span class="text-muted" style="font-size:.7rem;white-space:nowrap;">{{ line.updated_at|date:"d/m/Y" }}</span>
+              <span style="display:flex;align-items:center;gap:.4rem;flex-shrink:0;">
+                <span class="text-muted" style="font-size:.7rem;white-space:nowrap;">{{ line.updated_at|date:"d/m/Y" }}</span>
+                <a href="{% url 'project_info_line_public' line.public_share_token %}"
+                   target="_blank"
+                   onclick="event.stopPropagation();"
+                   style="color:#714B67;font-size:.85rem;"
+                   title="Ver página de esta línea"><i class="bi bi-box-arrow-up-right"></i></a>
+              </span>
               <i class="bi bi-chevron-down line-chevron"></i>
             </button>
             {% if line.body %}

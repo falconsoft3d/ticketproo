@@ -215,6 +215,11 @@
             {% endif %}
           </div>
           <div class="d-flex gap-1 flex-shrink-0">
+            <button class="btn btn-sm btn-outline-success share-line-btn"
+                    data-url="{{ request.scheme }}://{{ request.get_host }}{% url 'project_info_line_public' line.public_share_token %}"
+                    title="Compartir línea">
+              <i class="bi bi-share"></i>
+            </button>
             <button class="btn btn-sm btn-outline-secondary edit-line-btn"
                     data-line-id="{{ line.pk }}"
                     data-title="{{ line.title|escapejs }}"
@@ -664,5 +669,16 @@
     });
   }
   bindRespRemove();
+
+  // ── Compartir línea ───────────────────────────────────────────────────────
+  document.querySelectorAll('.share-line-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      navigator.clipboard.writeText(this.dataset.url).then(() => {
+        const orig = this.innerHTML;
+        this.innerHTML = '<i class="bi bi-check-lg"></i>';
+        setTimeout(() => { this.innerHTML = orig; }, 2000);
+      });
+    });
+  });
 </script>
 {% endblock %}

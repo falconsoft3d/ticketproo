@@ -59102,6 +59102,36 @@ def project_info_public(request, token):
     return render(request, 'tickets/project_info_public.html', context)
 
 
+def project_info_line_public(request, token):
+    """Vista pública de una línea individual (sin autenticación)."""
+    from .models import ProjectInfoLine
+    line = get_object_or_404(
+        ProjectInfoLine.objects.select_related('project', 'project__company', 'category'),
+        public_share_token=token,
+    )
+    project = line.project
+    # Respetar PIN del proyecto padre
+    session_key = f'pi_auth_{project.pk}'
+    pin_error = None
+    if project.pin:
+        if not request.session.get(session_key):
+            if request.method == 'POST':
+                entered = request.POST.get('pin', '').strip()
+                if entered == project.pin:
+                    request.session[session_key] = True
+                else:
+                    pin_error = 'PIN incorrecto. Inténtalo de nuevo.'
+            if not request.session.get(session_key):
+                return render(request, 'tickets/project_info_pin.html', {
+                    'project': project,
+                    'pin_error': pin_error,
+                })
+    return render(request, 'tickets/project_info_line_public.html', {
+        'line': line,
+        'project': project,
+    })
+
+
 # ── Responsables de proyecto ──────────────────────────────────────────────────
 
 @login_required
