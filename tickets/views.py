@@ -12,7 +12,7 @@ from django.http import HttpResponse, Http404, JsonResponse
 from django.utils import timezone
 from django.conf import settings
 from django.views.decorators.http import require_http_methods, require_POST
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.urls import reverse
 from datetime import datetime, date, timedelta
 import os
@@ -59143,6 +59143,7 @@ def project_info_public(request, token):
     return render(request, 'tickets/project_info_public.html', context)
 
 
+@ensure_csrf_cookie
 def project_info_line_public(request, token):
     """Vista pública de una línea individual (sin autenticación)."""
     from .models import ProjectInfoLine, ProjectInfoLineComment, ProjectInfoLineAttachment
