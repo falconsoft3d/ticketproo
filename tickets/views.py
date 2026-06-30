@@ -59117,7 +59117,7 @@ def project_info_public(request, token):
     ua = request.META.get('HTTP_USER_AGENT', '')[:500]
     ProjectInfoVisit.objects.create(project=project, ip_address=ip, user_agent=ua)
 
-    lines = project.lines.select_related('category').order_by('order', 'pk')
+    lines = project.lines.select_related('category').prefetch_related('comments', 'attachments').order_by('order', 'pk')
 
     # Agrupar líneas por categoría: nombradas primero, sin categoría al final
     cats_map = {}

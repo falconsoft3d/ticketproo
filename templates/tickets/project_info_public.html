@@ -110,6 +110,15 @@
     }
     .line-body.show { display: block; }
 
+    /* Comentarios en la vista pública */
+    .pub-comment { background:#f8fafc; border-radius:10px; padding:.7rem .9rem; margin-top:.6rem; }
+    .pub-comment .c-author { font-weight:700; font-size:.82rem; color:#714B67; }
+    .pub-comment .c-date   { font-size:.72rem; color:#94a3b8; margin-left:.4rem; }
+    .pub-comment .c-body   { font-size:.88rem; color:#334155; margin-top:.2rem; line-height:1.6; white-space:pre-wrap; }
+    .line-comments-header  { font-size:.78rem; font-weight:700; color:#714B67; text-transform:uppercase; letter-spacing:.05em; margin-top:.75rem; margin-bottom:.35rem; }
+    .btn-ver-linea { display:inline-flex; align-items:center; gap:.35rem; font-size:.8rem; color:#714B67; text-decoration:none; font-weight:600; margin-top:.65rem; padding:.3rem .75rem; border:1px solid #e9d5e4; border-radius:20px; background:#fdf7fc; }
+    .btn-ver-linea:hover { background:#f3e5ef; color:#5a3a53; }
+
     footer {
       text-align: center;
       color: #94a3b8;
@@ -193,11 +202,24 @@
               </span>
               <i class="bi bi-chevron-down line-chevron"></i>
             </button>
-            {% if line.body %}
-            <div class="line-body">{{ line.body }}</div>
-            {% else %}
-            <div class="line-body text-muted fst-italic">Sin descripción.</div>
-            {% endif %}
+            <div class="line-body">
+              {% if line.body %}<div>{{ line.body }}</div>{% else %}<div class="text-muted fst-italic">Sin descripción.</div>{% endif %}
+              {% with line_comments=line.comments.all %}
+              {% if line_comments %}
+              <div class="line-comments-header"><i class="bi bi-chat-left-text me-1"></i>Comentarios ({{ line_comments|length }})</div>
+              {% for c in line_comments %}
+              <div class="pub-comment">
+                <span class="c-author">{{ c.display_name }}</span>
+                <span class="c-date">{{ c.created_at|date:"d/m/Y" }}</span>
+                <div class="c-body">{{ c.body }}</div>
+              </div>
+              {% endfor %}
+              {% endif %}
+              {% endwith %}
+              <a href="{% url 'project_info_line_public' line.public_share_token %}" target="_blank" class="btn-ver-linea">
+                <i class="bi bi-chat-square-text"></i> Comentar en esta línea
+              </a>
+            </div>
           </div>
           {% endfor %}
         </div>
@@ -231,11 +253,24 @@
               </span>
               <i class="bi bi-chevron-down line-chevron"></i>
             </button>
-            {% if line.body %}
-            <div class="line-body">{{ line.body }}</div>
-            {% else %}
-            <div class="line-body text-muted fst-italic">Sin descripción.</div>
-            {% endif %}
+            <div class="line-body">
+              {% if line.body %}<div>{{ line.body }}</div>{% else %}<div class="text-muted fst-italic">Sin descripción.</div>{% endif %}
+              {% with line_comments=line.comments.all %}
+              {% if line_comments %}
+              <div class="line-comments-header"><i class="bi bi-chat-left-text me-1"></i>Comentarios ({{ line_comments|length }})</div>
+              {% for c in line_comments %}
+              <div class="pub-comment">
+                <span class="c-author">{{ c.display_name }}</span>
+                <span class="c-date">{{ c.created_at|date:"d/m/Y" }}</span>
+                <div class="c-body">{{ c.body }}</div>
+              </div>
+              {% endfor %}
+              {% endif %}
+              {% endwith %}
+              <a href="{% url 'project_info_line_public' line.public_share_token %}" target="_blank" class="btn-ver-linea">
+                <i class="bi bi-chat-square-text"></i> Comentar en esta línea
+              </a>
+            </div>
           </div>
           {% endfor %}
         </div>
