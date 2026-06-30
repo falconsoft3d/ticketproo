@@ -9,6 +9,241 @@
   <style>
     body { background:#f8fafc; min-height:100vh; padding:2rem 0 5rem; font-family:'Segoe UI',system-ui,sans-serif; }
     .page-wrap { max-width:760px; margin:0 auto; padding:0 1.25rem; }
+    .breadcrumb-bar { display:flex; align-items:center; gap:.5rem; font-size:.82rem; color:#64748b; margin-bottom:1.5rem; }
+    .breadcrumb-bar a { color:#714B67; text-decoration:none; font-weight:600; }
+    .breadcrumb-bar a:hover { text-decoration:underline; }
+    .line-card { background:#fff; border-radius:18px; box-shadow:0 4px 28px rgba(113,75,103,.13); overflow:hidden; }
+    .line-header { background:linear-gradient(135deg,#714B67,#9b6b8f); color:#fff; padding:2rem 2rem 1.75rem; }
+    .line-folio { display:inline-flex; align-items:center; gap:.4rem; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); border-radius:6px; padding:2px 10px; font-size:.75rem; font-family:monospace; margin-bottom:.75rem; }
+    .line-header h1 { font-size:1.65rem; font-weight:700; margin:0 0 .5rem; }
+    .cat-badge { display:inline-flex; align-items:center; gap:.4rem; background:rgba(255,255,255,.2); border-radius:20px; padding:3px 12px; font-size:.8rem; font-weight:600; margin-top:.4rem; }
+    .line-meta { opacity:.72; font-size:.8rem; margin-top:.75rem; }
+    .line-body-section { padding:2rem; font-size:1rem; color:#334155; line-height:1.85; white-space:pre-wrap; min-height:80px; }
+    .empty-body { color:#94a3b8; font-style:italic; }
+    /* Comentarios */
+    .comment-bubble { background:#f8fafc; border-radius:12px; padding:.85rem 1rem; margin-bottom:.75rem; }
+    .comment-bubble .c-author { font-weight:700; font-size:.85rem; color:#714B67; }
+    .comment-bubble .c-date { font-size:.75rem; color:#94a3b8; margin-left:.5rem; }
+    .comment-bubble .c-body { font-size:.92rem; color:#334155; margin-top:.25rem; line-height:1.65; }
+    /* Adjuntos */
+    .attach-item { display:flex; align-items:center; gap:.75rem; padding:.6rem .9rem; background:#fff; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:.5rem; }
+    .attach-icon { font-size:1.4rem; color:#714B67; }
+    .attach-name { font-size:.85rem; font-weight:600; color:#334155; }
+    .attach-meta { font-size:.75rem; color:#94a3b8; }
+    /* Form */
+    .interact-card { background:#fff; border-radius:16px; box-shadow:0 2px 16px rgba(0,0,0,.08); padding:1.5rem; margin-top:1.5rem; }
+    .btn-primary-pi { background:#714B67; color:#fff; border:none; border-radius:8px; font-weight:600; padding:.55rem 1.2rem; }
+    .btn-primary-pi:hover { background:#5a3a53; color:#fff; }
+    .project-ref { margin-top:2rem; padding:1rem 1.25rem; background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,.07); display:flex; align-items:center; gap:.75rem; }
+    .project-ref-icon { width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg,#714B67,#9b6b8f); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
+    footer { text-align:center; color:#94a3b8; font-size:.78rem; margin-top:3rem; }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb-bar">
+    <a href="{% url 'project_info_public' project.public_share_token %}">
+      <i class="bi bi-folder me-1"></i>{{ project.name }}
+    </a>
+    <i class="bi bi-chevron-right"></i>
+    <span>{{ line.title }}</span>
+  </div>
+
+  <!-- Tarjeta principal -->
+  <div class="line-card mb-4">
+    <div class="line-header">
+      <div class="line-folio"><i class="bi bi-folder"></i>{{ project.folio }}</div>
+      <h1>{{ line.title }}</h1>
+      {% if line.category %}<span class="cat-badge"><i class="bi bi-tag"></i>{{ line.category.name }}</span>{% endif %}
+      <div class="line-meta">
+        <i class="bi bi-calendar-plus me-1"></i>{{ line.created_at|date:"d/m/Y" }}
+        &nbsp;·&nbsp;
+        <i class="bi bi-arrow-repeat me-1"></i>{{ line.updated_at|date:"d/m/Y H:i" }}
+      </div>
+    </div>
+    <div class="line-body-section">
+      {% if line.body %}{{ line.body }}{% else %}<span class="empty-body">Sin descripción.</span>{% endif %}
+    </div>
+  </div>
+
+  <!-- Adjuntos existentes -->
+  {% if attachments %}
+  <div class="mb-3">
+    <h6 class="fw-bold mb-2" style="color:#714B67;"><i class="bi bi-paperclip me-2"></i>Archivos adjuntos</h6>
+    {% for a in attachments %}
+    <div class="attach-item">
+      {% if a.is_image %}
+        <i class="bi bi-image attach-icon"></i>
+      {% elif a.file_extension == 'pdf' %}
+        <i class="bi bi-file-earmark-pdf attach-icon" style="color:#ef4444;"></i>
+      {% else %}
+        <i class="bi bi-file-earmark attach-icon"></i>
+      {% endif %}
+      <div class="flex-grow-1">
+        <div class="attach-name">{{ a.original_name }}</div>
+        <div class="attach-meta">{{ a.uploaded_by_name|default:"—" }} · {{ a.created_at|date:"d/m/Y H:i" }}</div>
+      </div>
+      <a href="{{ a.file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-download"></i>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Comentarios existentes -->
+  <div id="interaction">
+    {% if comments %}
+    <h6 class="fw-bold mb-3" style="color:#714B67;"><i class="bi bi-chat-left-text me-2"></i>Comentarios ({{ comments|length }})</h6>
+    {% for c in comments %}
+    <div class="comment-bubble">
+      <span class="c-author">{{ c.display_name }}</span>
+      <span class="c-date">{{ c.created_at|date:"d/m/Y H:i" }}</span>
+      <div class="c-body">{{ c.body }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+  </div>
+
+  <!-- Formulario público: comentario + adjunto -->
+  <div class="interact-card" id="interact-form">
+    <h6 class="fw-bold mb-3" style="color:#714B67;"><i class="bi bi-pencil-square me-2"></i>Dejar un comentario o adjunto</h6>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <input type="text" id="pub-name" class="form-control" placeholder="Tu nombre *" maxlength="100">
+      </div>
+      <div class="col-md-6">
+        <input type="email" id="pub-email" class="form-control" placeholder="Tu email (opcional)">
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mt-3" id="pubTabs">
+      <li class="nav-item">
+        <button class="nav-link active" data-tab="comment"><i class="bi bi-chat me-1"></i>Comentario</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-tab="attach"><i class="bi bi-paperclip me-1"></i>Adjunto</button>
+      </li>
+    </ul>
+
+    <div id="tab-comment" class="mt-3">
+      <textarea id="pub-body" class="form-control" rows="3" placeholder="Escribe tu comentario…"></textarea>
+      <button class="btn btn-primary-pi mt-2" onclick="submitComment()">
+        <i class="bi bi-send me-1"></i>Enviar comentario
+      </button>
+    </div>
+
+    <div id="tab-attach" class="mt-3" style="display:none;">
+      <input type="file" id="pub-file" class="form-control"
+             accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.webp,.zip,.csv">
+      <div class="form-text">Máx. 10 MB. Tipos: PDF, Word, Excel, imágenes, ZIP…</div>
+      <button class="btn btn-primary-pi mt-2" onclick="submitAttach()">
+        <i class="bi bi-upload me-1"></i>Subir archivo
+      </button>
+    </div>
+
+    <div id="pub-feedback" class="mt-2" style="display:none;"></div>
+  </div>
+
+  <!-- Referencia al proyecto -->
+  <div class="project-ref mt-4">
+    <div class="project-ref-icon"><i class="bi bi-folder-fill"></i></div>
+    <div>
+      <div style="font-weight:700;font-size:.9rem;color:#1e293b;">{{ project.name }}</div>
+      {% if project.company %}<div style="font-size:.8rem;color:#64748b;"><i class="bi bi-building me-1"></i>{{ project.company.name }}</div>{% endif %}
+    </div>
+    <a href="{% url 'project_info_public' project.public_share_token %}" class="btn btn-sm ms-auto btn-primary-pi">
+      <i class="bi bi-arrow-left me-1"></i>Ver proyecto
+    </a>
+  </div>
+
+  <footer>{{ project.folio }} · {{ line.title }}</footer>
+</div>
+
+<script>
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+  document.querySelectorAll('#pubTabs .nav-link').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('#pubTabs .nav-link').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById('tab-comment').style.display = this.dataset.tab === 'comment' ? 'block' : 'none';
+      document.getElementById('tab-attach').style.display  = this.dataset.tab === 'attach'  ? 'block' : 'none';
+    });
+  });
+
+  function showFeedback(msg, ok) {
+    const el = document.getElementById('pub-feedback');
+    el.innerHTML = `<div class="alert alert-${ok ? 'success' : 'danger'} py-2 small">${msg}</div>`;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+  }
+
+  async function submitComment() {
+    const name  = document.getElementById('pub-name').value.trim();
+    const email = document.getElementById('pub-email').value.trim();
+    const body  = document.getElementById('pub-body').value.trim();
+    if (!name) return showFeedback('Por favor ingresa tu nombre.', false);
+    if (!body) return showFeedback('El comentario no puede estar vacío.', false);
+
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', getCookie('csrftoken') || '');
+    fd.append('_action', 'comment');
+    fd.append('author_name', name);
+    fd.append('author_email', email);
+    fd.append('body', body);
+
+    const r = await fetch(window.location.pathname, { method: 'POST', body: fd });
+    if (r.ok || r.redirected) {
+      // Agregar burbuja al DOM
+      const container = document.getElementById('interaction');
+      const now = new Date().toLocaleString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      container.insertAdjacentHTML('beforeend', `
+        <div class="comment-bubble">
+          <span class="c-author">${escHtml(name)}</span>
+          <span class="c-date">${now}</span>
+          <div class="c-body">${escHtml(body)}</div>
+        </div>`);
+      document.getElementById('pub-body').value = '';
+      showFeedback('¡Comentario enviado!', true);
+    } else { showFeedback('Error al enviar.', false); }
+  }
+
+  async function submitAttach() {
+    const name = document.getElementById('pub-name').value.trim();
+    const file = document.getElementById('pub-file').files[0];
+    if (!name) return showFeedback('Por favor ingresa tu nombre.', false);
+    if (!file) return showFeedback('Selecciona un archivo.', false);
+    if (file.size > 10 * 1024 * 1024) return showFeedback('El archivo supera 10 MB.', false);
+
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', getCookie('csrftoken') || '');
+    fd.append('_action', 'attach');
+    fd.append('author_name', name);
+    fd.append('file', file);
+
+    const r = await fetch(window.location.pathname, { method: 'POST', body: fd });
+    if (r.ok || r.redirected) {
+      showFeedback(`Archivo "${escHtml(file.name)}" subido correctamente.`, true);
+      document.getElementById('pub-file').value = '';
+    } else { showFeedback('Error al subir archivo.', false); }
+  }
+
+  function getCookie(name) {
+    const m = document.cookie.match(new RegExp(`${name}=([^;]+)`));
+    return m ? m[1] : '';
+  }
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
+
+    body { background:#f8fafc; min-height:100vh; padding:2rem 0 5rem; font-family:'Segoe UI',system-ui,sans-serif; }
+    .page-wrap { max-width:760px; margin:0 auto; padding:0 1.25rem; }
 
     .breadcrumb-bar {
       display:flex; align-items:center; gap:.5rem;

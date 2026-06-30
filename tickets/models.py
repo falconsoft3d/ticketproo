@@ -24787,3 +24787,63 @@ class ProjectInfoVisit(models.Model):
 
     def __str__(self):
         return f'{self.project.folio} – {self.ip_address} – {self.visited_at:%d/%m/%Y %H:%M}'
+
+
+# ── Comentarios y adjuntos en líneas de proyecto ──────────────────────────────
+
+class ProjectInfoLineComment(models.Model):
+    """Comentario sobre una línea de proyecto (interno o público)."""
+
+    line = models.ForeignKey(
+        ProjectInfoLine, on_delete=models.CASCADE, related_name='comments',
+    )
+    author_user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='pi_line_comments',
+    )
+    author_name  = models.CharField(max_length=100, blank=True, verbose_name='Nombre público')
+    author_email = models.EmailField(blank=True, verbose_name='Email público')
+    body = models.TextField(verbose_name='Comentario')
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['created_at']
+
+    @property
+    def display_name(self):
+        if self.author_user:
+            return self.author_user.get_full_name() or self.author_user.username
+        return self.author_name or 'Anónimo'
+
+    def __str__(self):
+        return f'{self.line} – {self.display_name}'
+
+
+class ProjectInfoLineAttachment(models.Model):
+    """Archivo adjunto a una línea de proyecto."""
+
+    line = models.ForeignKey(
+        ProjectInfoLine, on_delete=models.CASCADE, related_name='attachments',
+    )
+    uploaded_by_user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='pi_line_attachments',
+    )
+    uploaded_by_name = models.CharField(max_length=100, blank=True)
+    file = models.FileField(upload_to='project_info_line_attachments/%Y/')
+    original_name = models.CharField(max_length=255)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['created_at']
+
+    @property
+    def file_extension(self):
+        return self.original_name.rsplit('.', 1)[-1].lower() if '.' in self.original_name else ''
+
+    @property
+    def is_image(self):
+        return self.file_extension in ('jpg', 'jpeg', 'png', 'gif', 'webp')
+
+    def __str__(self):
+        return f'{self.line} – {self.original_name}'

@@ -47,6 +47,13 @@
       <a href="{% url 'project_info_edit' project.pk %}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-pencil me-1"></i> Editar
       </a>
+      <form method="post" action="{% url 'project_info_duplicate' project.pk %}" class="d-inline"
+            onsubmit="return confirm('¿Duplicar el proyecto «{{ project.name }}»?\nSe creará una copia independiente con todas sus líneas.')">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-copy me-1"></i> Duplicar
+        </button>
+      </form>
       <a href="{% url 'project_info_delete' project.pk %}" class="btn btn-outline-danger btn-sm">
         <i class="bi bi-trash me-1"></i> Eliminar
       </a>
@@ -234,6 +241,82 @@
                     title="Eliminar">
               <i class="bi bi-trash"></i>
             </button>
+          </div>
+        </div>
+
+        <!-- Toggle comentarios/adjuntos -->
+        <div class="d-flex align-items-center gap-2 mt-2 pt-2 border-top">
+          <button class="btn btn-sm btn-link text-muted p-0 text-decoration-none"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#line-ia-{{ line.pk }}"
+                  aria-expanded="false">
+            <i class="bi bi-chat me-1"></i>{{ line.comments.count }} comentario{% if line.comments.count != 1 %}s{% endif %}
+            &nbsp;·&nbsp;
+            <i class="bi bi-paperclip me-1"></i>{{ line.attachments.count }} adjunto{% if line.attachments.count != 1 %}s{% endif %}
+          </button>
+        </div>
+
+        <!-- Panel colapsable -->
+        <div class="collapse mt-2" id="line-ia-{{ line.pk }}">
+          <div class="border rounded-3 p-3 bg-light">
+
+            <!-- Adjuntos -->
+            <div id="attach-list-{{ line.pk }}" class="mb-3">
+              {% for a in line.attachments.all %}
+              <div class="d-flex align-items-center gap-2 mb-1 small" id="att-{{ a.pk }}">
+                {% if a.is_image %}<i class="bi bi-image text-primary"></i>
+                {% elif a.file_extension == 'pdf' %}<i class="bi bi-file-earmark-pdf text-danger"></i>
+                {% else %}<i class="bi bi-file-earmark text-muted"></i>{% endif %}
+                <a href="{{ a.file.url }}" target="_blank" class="flex-grow-1 text-truncate">{{ a.original_name }}</a>
+                <span class="text-muted">{{ a.created_at|date:"d/m/Y" }}</span>
+                <button class="btn btn-sm btn-outline-danger border-0 del-attach-btn" data-id="{{ a.pk }}">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+              {% endfor %}
+            </div>
+
+            <!-- Upload adjunto -->
+            <div class="d-flex gap-2 mb-3">
+              <input type="file" class="form-control form-control-sm line-file-input"
+                     data-line="{{ line.pk }}"
+                     accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.webp,.zip,.csv">
+              <button class="btn btn-sm btn-outline-primary flex-shrink-0 upload-attach-btn"
+                      data-line="{{ line.pk }}">
+                <i class="bi bi-upload"></i>
+              </button>
+            </div>
+
+            <!-- Comentarios -->
+            <div id="comment-list-{{ line.pk }}" class="mb-2">
+              {% for c in line.comments.all %}
+              <div class="d-flex gap-2 mb-2 align-items-start" id="cm-{{ c.pk }}">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:28px;height:28px;font-size:.75rem;font-weight:700;">
+                  {{ c.display_name|slice:":1"|upper }}
+                </div>
+                <div class="flex-grow-1 bg-white rounded-3 p-2 border small">
+                  <span class="fw-semibold" style="color:#714B67;">{{ c.display_name }}</span>
+                  <span class="text-muted ms-1" style="font-size:.72rem;">{{ c.created_at|date:"d/m/Y H:i" }}</span>
+                  <div class="mt-1">{{ c.body }}</div>
+                </div>
+                <button class="btn btn-sm btn-outline-danger border-0 del-comment-btn" data-id="{{ c.pk }}">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+              {% endfor %}
+            </div>
+
+            <!-- Nuevo comentario -->
+            <div class="d-flex gap-2">
+              <input type="text" class="form-control form-control-sm new-comment-input"
+                     data-line="{{ line.pk }}" placeholder="Escribe un comentario…">
+              <button class="btn btn-sm flex-shrink-0 send-comment-btn"
+                      data-line="{{ line.pk }}"
+                      style="background:#714B67;color:#fff;">
+                <i class="bi bi-send"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -680,5 +763,101 @@
       });
     });
   });
+
+  // ── Comentarios internos ─────────────────────────────────────────────────
+  document.querySelectorAll('.send-comment-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const lineId = this.dataset.line;
+      const input  = document.querySelector(`.new-comment-input[data-line="${lineId}"]`);
+      const body   = input.value.trim();
+      if (!body) return;
+      const fd = new FormData();
+      fd.append('body', body);
+      const r = await fetch(`/crm/project-info/line/${lineId}/comment/add/`, {
+        method: 'POST', headers: {'X-CSRFToken': CSRF()}, body: fd,
+      });
+      if (r.ok) {
+        const d = await r.json();
+        const list = document.getElementById(`comment-list-${lineId}`);
+        const initials = d.name.trim().charAt(0).toUpperCase();
+        list.insertAdjacentHTML('beforeend', `
+          <div class="d-flex gap-2 mb-2 align-items-start" id="cm-${d.id}">
+            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0"
+                 style="width:28px;height:28px;font-size:.75rem;font-weight:700;">${initials}</div>
+            <div class="flex-grow-1 bg-white rounded-3 p-2 border small">
+              <span class="fw-semibold" style="color:#714B67;">${d.name}</span>
+              <span class="text-muted ms-1" style="font-size:.72rem;">${d.date}</span>
+              <div class="mt-1">${d.body}</div>
+            </div>
+            <button class="btn btn-sm btn-outline-danger border-0 del-comment-btn" data-id="${d.id}">
+              <i class="bi bi-x"></i>
+            </button>
+          </div>`);
+        input.value = '';
+        bindDelComment();
+      }
+    });
+  });
+
+  function bindDelComment() {
+    document.querySelectorAll('.del-comment-btn').forEach(btn => {
+      btn.onclick = async function() {
+        const id = this.dataset.id;
+        const r = await fetch(`/crm/project-info/line/comment/${id}/delete/`, {
+          method: 'POST', headers: {'X-CSRFToken': CSRF()},
+        });
+        if (r.ok) document.getElementById(`cm-${id}`)?.remove();
+      };
+    });
+  }
+  bindDelComment();
+
+  // ── Adjuntos internos ────────────────────────────────────────────────────
+  document.querySelectorAll('.upload-attach-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const lineId = this.dataset.line;
+      const fileInput = document.querySelector(`.line-file-input[data-line="${lineId}"]`);
+      const file = fileInput.files[0];
+      if (!file) return;
+      const fd = new FormData();
+      fd.append('file', file);
+      const r = await fetch(`/crm/project-info/line/${lineId}/attach/add/`, {
+        method: 'POST', headers: {'X-CSRFToken': CSRF()}, body: fd,
+      });
+      if (r.ok) {
+        const d = await r.json();
+        const list = document.getElementById(`attach-list-${lineId}`);
+        const icon = d.is_image
+          ? '<i class="bi bi-image text-primary"></i>'
+          : d.name.endsWith('.pdf')
+            ? '<i class="bi bi-file-earmark-pdf text-danger"></i>'
+            : '<i class="bi bi-file-earmark text-muted"></i>';
+        list.insertAdjacentHTML('beforeend', `
+          <div class="d-flex align-items-center gap-2 mb-1 small" id="att-${d.id}">
+            ${icon}
+            <a href="${d.url}" target="_blank" class="flex-grow-1 text-truncate">${d.name}</a>
+            <span class="text-muted">${d.date}</span>
+            <button class="btn btn-sm btn-outline-danger border-0 del-attach-btn" data-id="${d.id}">
+              <i class="bi bi-x"></i>
+            </button>
+          </div>`);
+        fileInput.value = '';
+        bindDelAttach();
+      }
+    });
+  });
+
+  function bindDelAttach() {
+    document.querySelectorAll('.del-attach-btn').forEach(btn => {
+      btn.onclick = async function() {
+        const id = this.dataset.id;
+        const r = await fetch(`/crm/project-info/line/attach/${id}/delete/`, {
+          method: 'POST', headers: {'X-CSRFToken': CSRF()},
+        });
+        if (r.ok) document.getElementById(`att-${id}`)?.remove();
+      };
+    });
+  }
+  bindDelAttach();
 </script>
 {% endblock %}

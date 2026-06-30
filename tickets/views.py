@@ -58879,7 +58879,9 @@ def project_info_detail(request, pk):
     project = get_object_or_404(ProjectInfo, pk=pk)
     if not is_agent(request.user) and project.created_by != request.user:
         raise Http404
-    lines_qs = project.lines.select_related('category').all()
+    lines_qs = project.lines.select_related('category').prefetch_related(
+        'comments__author_user', 'attachments__uploaded_by_user'
+    ).all()
     categories_count = lines_qs.exclude(category=None).values('category').distinct().count()
     visits_qs = project.visits.all()
     visits_total = visits_qs.count()
@@ -58965,6 +58967,45 @@ def project_info_delete(request, pk):
         'submenu': get_crm_submenu(request, active_item='project_info'),
     }
     return render(request, 'tickets/project_info_delete.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def project_info_duplicate(request, pk):
+    """Duplica un proyecto creando copias independientes de todas sus líneas."""
+    from .models import ProjectInfo, ProjectInfoLine, ProjectInfoResponsible
+    project = get_object_or_404(ProjectInfo, pk=pk)
+    if not is_agent(request.user) and project.created_by != request.user:
+        raise Http404
+
+    # Crear proyecto nuevo (folio y token se generan automáticamente en save())
+    new_project = ProjectInfo.objects.create(
+        name=f'{project.name} (copia)',
+        description=project.description,
+        pin=project.pin,
+        company=project.company,
+        created_by=request.user,
+    )
+
+    # Copiar líneas — objetos nuevos e independientes
+    for line in project.lines.select_related('category').all():
+        ProjectInfoLine.objects.create(
+            project=new_project,
+            order=line.order,
+            title=line.title,
+            body=line.body,
+            category=line.category,
+        )
+
+    # Copiar responsables
+    for r in project.responsibles.all():
+        ProjectInfoResponsible.objects.get_or_create(
+            project=new_project, user=r.user,
+            defaults={'role_override': r.role_override},
+        )
+
+    messages.success(request, f'Proyecto duplicado como "{new_project.name}" ({new_project.folio}).')
+    return redirect('project_info_detail', pk=new_project.pk)
 
 
 @login_required
@@ -59104,7 +59145,7 @@ def project_info_public(request, token):
 
 def project_info_line_public(request, token):
     """Vista pública de una línea individual (sin autenticación)."""
-    from .models import ProjectInfoLine
+    from .models import ProjectInfoLine, ProjectInfoLineComment, ProjectInfoLineAttachment
     line = get_object_or_404(
         ProjectInfoLine.objects.select_related('project', 'project__company', 'category'),
         public_share_token=token,
@@ -59115,7 +59156,7 @@ def project_info_line_public(request, token):
     pin_error = None
     if project.pin:
         if not request.session.get(session_key):
-            if request.method == 'POST':
+            if request.method == 'POST' and request.POST.get('_action') == 'pin':
                 entered = request.POST.get('pin', '').strip()
                 if entered == project.pin:
                     request.session[session_key] = True
@@ -59123,13 +59164,114 @@ def project_info_line_public(request, token):
                     pin_error = 'PIN incorrecto. Inténtalo de nuevo.'
             if not request.session.get(session_key):
                 return render(request, 'tickets/project_info_pin.html', {
-                    'project': project,
-                    'pin_error': pin_error,
+                    'project': project, 'pin_error': pin_error,
                 })
+
+    # ── Manejo de POST (comentario / adjunto) ─────────────────────────────
+    if request.method == 'POST':
+        action = request.POST.get('_action', '')
+        if action == 'comment':
+            name  = request.POST.get('author_name', '').strip()
+            email = request.POST.get('author_email', '').strip()
+            body  = request.POST.get('body', '').strip()
+            if name and body:
+                ProjectInfoLineComment.objects.create(
+                    line=line, author_name=name, author_email=email, body=body,
+                )
+        elif action == 'attach':
+            name = request.POST.get('author_name', '').strip()
+            f    = request.FILES.get('file')
+            if f:
+                _ALLOWED = {'pdf','doc','docx','xls','xlsx','ppt','pptx','txt',
+                            'jpg','jpeg','png','gif','webp','zip','csv'}
+                ext = f.name.rsplit('.', 1)[-1].lower() if '.' in f.name else ''
+                if ext in _ALLOWED and f.size <= 10 * 1024 * 1024:
+                    ProjectInfoLineAttachment.objects.create(
+                        line=line, uploaded_by_name=name or 'Anónimo',
+                        file=f, original_name=f.name,
+                    )
+        from django.shortcuts import redirect as _redir
+        return _redir(request.path + '#interaction')
+
+    comments    = line.comments.all()
+    attachments = line.attachments.all()
     return render(request, 'tickets/project_info_line_public.html', {
-        'line': line,
-        'project': project,
+        'line': line, 'project': project,
+        'comments': comments, 'attachments': attachments,
     })
+
+
+# ── Comentarios y adjuntos internos (autenticados) ───────────────────────────
+
+_PI_ALLOWED_EXT = {'pdf','doc','docx','xls','xlsx','ppt','pptx','txt',
+                   'jpg','jpeg','png','gif','webp','zip','csv'}
+
+@login_required
+@require_http_methods(["POST"])
+def pi_line_comment_add(request, line_pk):
+    from .models import ProjectInfoLine, ProjectInfoLineComment
+    line = get_object_or_404(ProjectInfoLine, pk=line_pk)
+    body = request.POST.get('body', '').strip()
+    if not body:
+        return JsonResponse({'error': 'Cuerpo vacío'}, status=400)
+    c = ProjectInfoLineComment.objects.create(
+        line=line, author_user=request.user, body=body,
+    )
+    return JsonResponse({
+        'ok': True, 'id': c.pk,
+        'name': c.display_name,
+        'body': c.body,
+        'date': c.created_at.strftime('%d/%m/%Y %H:%M'),
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def pi_line_attachment_add(request, line_pk):
+    from .models import ProjectInfoLine, ProjectInfoLineAttachment
+    line = get_object_or_404(ProjectInfoLine, pk=line_pk)
+    f = request.FILES.get('file')
+    if not f:
+        return JsonResponse({'error': 'Sin archivo'}, status=400)
+    ext = f.name.rsplit('.', 1)[-1].lower() if '.' in f.name else ''
+    if ext not in _PI_ALLOWED_EXT:
+        return JsonResponse({'error': 'Tipo de archivo no permitido'}, status=400)
+    if f.size > 10 * 1024 * 1024:
+        return JsonResponse({'error': 'Archivo demasiado grande (máx 10 MB)'}, status=400)
+    att = ProjectInfoLineAttachment.objects.create(
+        line=line, uploaded_by_user=request.user,
+        file=f, original_name=f.name,
+    )
+    return JsonResponse({
+        'ok': True, 'id': att.pk,
+        'name': att.original_name,
+        'url': att.file.url,
+        'is_image': att.is_image,
+        'date': att.created_at.strftime('%d/%m/%Y %H:%M'),
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def pi_line_comment_delete(request, pk):
+    from .models import ProjectInfoLineComment
+    obj = get_object_or_404(ProjectInfoLineComment, pk=pk)
+    if not is_agent(request.user) and obj.author_user != request.user:
+        return JsonResponse({'error': 'Sin permiso'}, status=403)
+    obj.delete()
+    return JsonResponse({'ok': True})
+
+
+@login_required
+@require_http_methods(["POST"])
+def pi_line_attachment_delete(request, pk):
+    from .models import ProjectInfoLineAttachment
+    obj = get_object_or_404(ProjectInfoLineAttachment, pk=pk)
+    if not is_agent(request.user) and obj.uploaded_by_user != request.user:
+        return JsonResponse({'error': 'Sin permiso'}, status=403)
+    obj.file.delete(save=False)
+    obj.delete()
+    return JsonResponse({'ok': True})
 
 
 # ── Responsables de proyecto ──────────────────────────────────────────────────

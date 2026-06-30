@@ -498,6 +498,7 @@ urlpatterns = [
     path('crm/project-info/<int:pk>/', views.project_info_detail, name='project_info_detail'),
     path('crm/project-info/<int:pk>/edit/', views.project_info_edit, name='project_info_edit'),
     path('crm/project-info/<int:pk>/delete/', views.project_info_delete, name='project_info_delete'),
+    path('crm/project-info/<int:pk>/duplicate/', views.project_info_duplicate, name='project_info_duplicate'),
     path('crm/project-info/<int:pk>/line/add/', views.project_info_line_add, name='project_info_line_add'),
     path('crm/project-info/line/<int:line_pk>/edit/', views.project_info_line_edit, name='project_info_line_edit'),
     path('crm/project-info/line/<int:line_pk>/delete/', views.project_info_line_delete, name='project_info_line_delete'),
@@ -505,6 +506,10 @@ urlpatterns = [
     path('crm/project-info/responsible/<int:r_pk>/remove/', views.project_info_responsible_remove, name='project_info_responsible_remove'),
     path('crm/project-info/public/<uuid:token>/', views.project_info_public, name='project_info_public'),
     path('crm/project-info/line/public/<uuid:token>/', views.project_info_line_public, name='project_info_line_public'),
+    path('crm/project-info/line/<int:line_pk>/comment/add/', views.pi_line_comment_add, name='pi_line_comment_add'),
+    path('crm/project-info/line/<int:line_pk>/attach/add/', views.pi_line_attachment_add, name='pi_line_attachment_add'),
+    path('crm/project-info/line/comment/<int:pk>/delete/', views.pi_line_comment_delete, name='pi_line_comment_delete'),
+    path('crm/project-info/line/attach/<int:pk>/delete/', views.pi_line_attachment_delete, name='pi_line_attachment_delete'),
 
     # URLs de Reuniones
     path('meetings/', views.meeting_list_view, name='meeting_list'),
