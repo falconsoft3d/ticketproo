@@ -492,6 +492,19 @@ urlpatterns = [
     path('crm/process-surveys/<int:pk>/contract/client-signature/delete/', views.process_survey_client_signature_delete, name='process_survey_client_signature_delete'),
     path('crm/process-surveys/public/<uuid:token>/ai-analysis/', views.public_process_survey_ai_analysis, name='public_process_survey_ai_analysis'),
 
+    # Información de Proyecto
+    path('crm/project-info/', views.project_info_list, name='project_info_list'),
+    path('crm/project-info/create/', views.project_info_create, name='project_info_create'),
+    path('crm/project-info/<int:pk>/', views.project_info_detail, name='project_info_detail'),
+    path('crm/project-info/<int:pk>/edit/', views.project_info_edit, name='project_info_edit'),
+    path('crm/project-info/<int:pk>/delete/', views.project_info_delete, name='project_info_delete'),
+    path('crm/project-info/<int:pk>/line/add/', views.project_info_line_add, name='project_info_line_add'),
+    path('crm/project-info/line/<int:line_pk>/edit/', views.project_info_line_edit, name='project_info_line_edit'),
+    path('crm/project-info/line/<int:line_pk>/delete/', views.project_info_line_delete, name='project_info_line_delete'),
+    path('crm/project-info/<int:pk>/responsible/add/', views.project_info_responsible_add, name='project_info_responsible_add'),
+    path('crm/project-info/responsible/<int:r_pk>/remove/', views.project_info_responsible_remove, name='project_info_responsible_remove'),
+    path('crm/project-info/public/<uuid:token>/', views.project_info_public, name='project_info_public'),
+
     # URLs de Reuniones
     path('meetings/', views.meeting_list_view, name='meeting_list'),
     path('meetings/create/', views.meeting_create_view, name='meeting_create'),

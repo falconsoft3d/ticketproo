@@ -58807,3 +58807,376 @@ def public_process_survey_contract_pdf(request, token):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
 
+
+
+# ── Información de Proyecto ──────────────────────────────────────────────────
+
+@login_required
+def project_info_list(request):
+    """Lista de proyectos de información"""
+    from .submenu_utils import get_crm_submenu
+    from .models import ProjectInfo
+    qs = ProjectInfo.objects.select_related('company', 'created_by')
+    if not is_agent(request.user):
+        qs = qs.filter(created_by=request.user)
+    search = request.GET.get('search', '').strip()
+    if search:
+        qs = qs.filter(name__icontains=search)
+    from django.core.paginator import Paginator
+    paginator = Paginator(qs, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    context = {
+        'page_title': 'Información de Proyectos',
+        'page_obj': page_obj,
+        'search': search,
+        'submenu': get_crm_submenu(request, active_item='project_info'),
+    }
+    return render(request, 'tickets/project_info_list.html', context)
+
+
+@login_required
+def project_info_create(request):
+    """Crear nueva información de proyecto"""
+    from .submenu_utils import get_crm_submenu
+    from .models import ProjectInfo, ProjectInfoLine, ProcessSurveyLineCategory
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        company_id = request.POST.get('company', '').strip()
+        description = request.POST.get('description', '').strip()
+        pin = request.POST.get('pin', '').strip()
+        if not name:
+            messages.error(request, 'El nombre es obligatorio.')
+        else:
+            company = get_object_or_404(Company, pk=company_id) if company_id else None
+            project = ProjectInfo.objects.create(
+                name=name,
+                company=company,
+                description=description,
+                pin=pin,
+                created_by=request.user,
+            )
+            _save_project_info_lines(request.POST, project)
+            messages.success(request, f'Proyecto "{project.name}" creado.')
+            return redirect('project_info_detail', pk=project.pk)
+
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    context = {
+        'page_title': 'Nuevo Proyecto',
+        'action': 'create',
+        'companies': companies,
+        'line_categories': _get_line_categories(),
+        'submenu': get_crm_submenu(request, active_item='project_info'),
+    }
+    return render(request, 'tickets/project_info_form.html', context)
+
+
+@login_required
+def project_info_detail(request, pk):
+    """Detalle de un proyecto"""
+    from .submenu_utils import get_crm_submenu
+    from .models import ProjectInfo
+    project = get_object_or_404(ProjectInfo, pk=pk)
+    if not is_agent(request.user) and project.created_by != request.user:
+        raise Http404
+    lines_qs = project.lines.select_related('category').all()
+    categories_count = lines_qs.exclude(category=None).values('category').distinct().count()
+    visits_qs = project.visits.all()
+    visits_total = visits_qs.count()
+    visits_unique = visits_qs.values('ip_address').distinct().count()
+    recent_visits = list(visits_qs[:8])
+    responsibles = project.responsibles.select_related('user', 'user__profile').all()
+    all_users = User.objects.filter(is_active=True).exclude(
+        pk__in=responsibles.values_list('user_id', flat=True)
+    ).order_by('first_name', 'last_name')
+    context = {
+        'page_title': project.name,
+        'project': project,
+        'lines': lines_qs,
+        'categories_count': categories_count,
+        'visits_total': visits_total,
+        'visits_unique': visits_unique,
+        'recent_visits': recent_visits,
+        'responsibles': responsibles,
+        'all_users': all_users,
+        'line_categories': _get_line_categories(),
+        'submenu': get_crm_submenu(request, active_item='project_info'),
+    }
+    return render(request, 'tickets/project_info_detail.html', context)
+
+
+@login_required
+def project_info_edit(request, pk):
+    """Editar información de proyecto"""
+    from .submenu_utils import get_crm_submenu
+    from .models import ProjectInfo
+
+    project = get_object_or_404(ProjectInfo, pk=pk)
+    if not is_agent(request.user) and project.created_by != request.user:
+        raise Http404
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        company_id = request.POST.get('company', '').strip()
+        description = request.POST.get('description', '').strip()
+        pin = request.POST.get('pin', '').strip()
+        if not name:
+            messages.error(request, 'El nombre es obligatorio.')
+        else:
+            project.name = name
+            project.company = get_object_or_404(Company, pk=company_id) if company_id else None
+            project.description = description
+            project.pin = pin
+            project.save()
+            project.lines.all().delete()
+            _save_project_info_lines(request.POST, project)
+            messages.success(request, f'Proyecto "{project.name}" actualizado.')
+            return redirect('project_info_detail', pk=project.pk)
+
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    context = {
+        'page_title': f'Editar: {project.name}',
+        'action': 'edit',
+        'project': project,
+        'lines': project.lines.select_related('category').all(),
+        'companies': companies,
+        'line_categories': _get_line_categories(),
+        'submenu': get_crm_submenu(request, active_item='project_info'),
+    }
+    return render(request, 'tickets/project_info_form.html', context)
+
+
+@login_required
+def project_info_delete(request, pk):
+    """Eliminar proyecto"""
+    from .submenu_utils import get_crm_submenu
+    from .models import ProjectInfo
+    project = get_object_or_404(ProjectInfo, pk=pk)
+    if not is_agent(request.user) and project.created_by != request.user:
+        raise Http404
+    if request.method == 'POST':
+        name = project.name
+        project.delete()
+        messages.success(request, f'Proyecto "{name}" eliminado.')
+        return redirect('project_info_list')
+    context = {
+        'page_title': f'Eliminar: {project.name}',
+        'project': project,
+        'submenu': get_crm_submenu(request, active_item='project_info'),
+    }
+    return render(request, 'tickets/project_info_delete.html', context)
+
+
+@login_required
+def project_info_line_add(request, pk):
+    """Agrega una línea al proyecto (AJAX)"""
+    from django.http import JsonResponse
+    from .models import ProjectInfo, ProjectInfoLine, ProcessSurveyLineCategory
+    project = get_object_or_404(ProjectInfo, pk=pk)
+    if not is_agent(request.user) and project.created_by != request.user:
+        return JsonResponse({'error': 'Sin permiso'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    title = request.POST.get('title', '').strip()
+    if not title:
+        return JsonResponse({'error': 'El título es obligatorio.'}, status=400)
+    body = request.POST.get('body', '').strip()
+    cat_id = request.POST.get('category', '').strip()
+    category = None
+    if cat_id:
+        try:
+            category = ProcessSurveyLineCategory.objects.get(pk=cat_id)
+        except ProcessSurveyLineCategory.DoesNotExist:
+            pass
+    last_order = project.lines.aggregate(m=models.Max('order'))['m'] or 0
+    line = ProjectInfoLine.objects.create(
+        project=project, title=title, body=body,
+        category=category, order=last_order + 1,
+    )
+    return JsonResponse({
+        'ok': True, 'id': line.pk, 'title': line.title, 'body': line.body,
+        'order': line.order,
+        'category_name': line.category.name if line.category else '',
+        'category_color': line.category.color if line.category else '',
+    })
+
+
+@login_required
+def project_info_line_edit(request, line_pk):
+    """Edita una línea del proyecto (AJAX)"""
+    from django.http import JsonResponse
+    from .models import ProjectInfoLine, ProcessSurveyLineCategory
+    line = get_object_or_404(ProjectInfoLine, pk=line_pk)
+    project = line.project
+    if not is_agent(request.user) and project.created_by != request.user:
+        return JsonResponse({'error': 'Sin permiso'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    title = request.POST.get('title', '').strip()
+    if not title:
+        return JsonResponse({'error': 'El título es obligatorio.'}, status=400)
+    line.title = title
+    line.body = request.POST.get('body', '').strip()
+    cat_id = request.POST.get('category', '').strip()
+    if cat_id:
+        try:
+            line.category = ProcessSurveyLineCategory.objects.get(pk=cat_id)
+        except ProcessSurveyLineCategory.DoesNotExist:
+            line.category = None
+    else:
+        line.category = None
+    line.save()
+    return JsonResponse({
+        'ok': True, 'id': line.pk, 'title': line.title, 'body': line.body,
+        'category_name': line.category.name if line.category else '',
+        'category_color': line.category.color if line.category else '',
+    })
+
+
+@login_required
+def project_info_line_delete(request, line_pk):
+    """Elimina una línea del proyecto (AJAX)"""
+    from django.http import JsonResponse
+    from .models import ProjectInfoLine
+    line = get_object_or_404(ProjectInfoLine, pk=line_pk)
+    project = line.project
+    if not is_agent(request.user) and project.created_by != request.user:
+        return JsonResponse({'error': 'Sin permiso'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    line.delete()
+    return JsonResponse({'ok': True})
+
+
+def project_info_public(request, token):
+    """Vista pública de la información de un proyecto (sin autenticación)"""
+    from .models import ProjectInfo, ProjectInfoVisit
+    project = get_object_or_404(ProjectInfo, public_share_token=token)
+
+    # ── PIN gate ─────────────────────────────────────────────────────────────
+    session_key = f'pi_auth_{project.pk}'
+    pin_error = None
+    if project.pin:
+        if not request.session.get(session_key):
+            if request.method == 'POST':
+                entered = request.POST.get('pin', '').strip()
+                if entered == project.pin:
+                    request.session[session_key] = True
+                else:
+                    pin_error = 'PIN incorrecto. Inténtalo de nuevo.'
+            if not request.session.get(session_key):
+                return render(request, 'tickets/project_info_pin.html', {
+                    'project': project,
+                    'pin_error': pin_error,
+                })
+
+    # Registrar apertura
+    ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', ''))
+    ip = ip.split(',')[0].strip()
+    ua = request.META.get('HTTP_USER_AGENT', '')[:500]
+    ProjectInfoVisit.objects.create(project=project, ip_address=ip, user_agent=ua)
+
+    lines = project.lines.select_related('category').order_by('order', 'pk')
+
+    # Agrupar líneas por categoría: nombradas primero, sin categoría al final
+    cats_map = {}
+    for line in lines:
+        key = line.category
+        if key not in cats_map:
+            cats_map[key] = []
+        cats_map[key].append(line)
+    lines_grouped = sorted(
+        cats_map.items(),
+        key=lambda x: (x[0] is None, x[0].name.lower() if x[0] else '')
+    )
+
+    responsibles = project.responsibles.select_related('user', 'user__profile').all()
+    visits = project.visits.order_by('-visited_at')[:20]
+
+    context = {
+        'project': project,
+        'lines_grouped': lines_grouped,
+        'responsibles': responsibles,
+        'visits': visits,
+    }
+    return render(request, 'tickets/project_info_public.html', context)
+
+
+# ── Responsables de proyecto ──────────────────────────────────────────────────
+
+@login_required
+@require_http_methods(["POST"])
+def project_info_responsible_add(request, pk):
+    from .models import ProjectInfo, ProjectInfoResponsible
+    project = get_object_or_404(ProjectInfo, pk=pk)
+    if not is_agent(request.user) and project.created_by != request.user:
+        return JsonResponse({'error': 'Sin permiso'}, status=403)
+    user_id = request.POST.get('user_id', '').strip()
+    role_override = request.POST.get('role_override', '').strip()
+    if not user_id:
+        return JsonResponse({'error': 'Usuario requerido'}, status=400)
+    target_user = get_object_or_404(User, pk=user_id)
+    obj, created = ProjectInfoResponsible.objects.get_or_create(
+        project=project, user=target_user,
+        defaults={'role_override': role_override},
+    )
+    if not created:
+        obj.role_override = role_override
+        obj.save(update_fields=['role_override'])
+    profile = getattr(target_user, 'profile', None)
+    return JsonResponse({
+        'ok': True,
+        'id': obj.pk,
+        'name': target_user.get_full_name() or target_user.username,
+        'email': target_user.email,
+        'role': obj.display_role,
+        'phone': obj.display_phone,
+        'avatar': target_user.get_full_name()[:1].upper() if target_user.get_full_name() else target_user.username[:1].upper(),
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def project_info_responsible_remove(request, r_pk):
+    from .models import ProjectInfoResponsible
+    obj = get_object_or_404(ProjectInfoResponsible, pk=r_pk)
+    if not is_agent(request.user) and obj.project.created_by != request.user:
+        return JsonResponse({'error': 'Sin permiso'}, status=403)
+    obj.delete()
+    return JsonResponse({'ok': True})
+
+
+# ── Helpers privados ──────────────────────────────────────────────────────────
+
+def _save_project_info_lines(post_data, project):
+    from .models import ProjectInfoLine, ProcessSurveyLineCategory
+    titles = post_data.getlist('line_title')
+    bodies = post_data.getlist('line_body')
+    cats = post_data.getlist('line_category')
+    orders = post_data.getlist('line_order')
+    for idx, raw_title in enumerate(titles):
+        title = raw_title.strip()
+        if not title:
+            continue
+        raw_order = orders[idx].strip() if idx < len(orders) else ''
+        try:
+            order_val = int(raw_order) if raw_order else idx + 1
+        except ValueError:
+            order_val = idx + 1
+        body = bodies[idx].strip() if idx < len(bodies) else ''
+        raw_cat = cats[idx].strip() if idx < len(cats) else ''
+        category = None
+        if raw_cat.isdigit():
+            try:
+                category = ProcessSurveyLineCategory.objects.get(pk=int(raw_cat))
+            except ProcessSurveyLineCategory.DoesNotExist:
+                pass
+        ProjectInfoLine.objects.create(
+            project=project, title=title, body=body,
+            category=category, order=order_val,
+        )
+
+
+def _get_line_categories():
+    from .models import ProcessSurveyLineCategory
+    return ProcessSurveyLineCategory.objects.all()

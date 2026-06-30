@@ -1,0 +1,668 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .line-card { border-radius: 10px; transition: box-shadow .15s; }
+  .line-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+  .cat-dot { width:10px; height:10px; border-radius:50%; display:inline-block; flex-shrink:0; }
+  .resp-avatar {
+    width:40px; height:40px; border-radius:50%;
+    background: linear-gradient(135deg,#714B67,#9b6b8f);
+    color:#fff; font-weight:700; font-size:1rem;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Encabezado -->
+  <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+    <div>
+      <span class="badge bg-primary font-monospace fs-6 me-2">{{ project.folio }}</span>
+      <h1 class="h3 d-inline-block mb-0">{{ project.name }}</h1>
+      {% if project.pin %}
+      <span class="badge bg-warning text-dark ms-2"><i class="bi bi-lock-fill me-1"></i>PIN activado</span>
+      {% endif %}
+      {% if project.company %}
+      <div class="text-muted small mt-1"><i class="bi bi-building me-1"></i>{{ project.company.name }}</div>
+      {% endif %}
+      {% if project.description %}
+      <p class="text-muted mt-2 mb-0" style="max-width:700px;">{{ project.description }}</p>
+      {% endif %}
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'project_info_public' project.public_share_token %}"
+         target="_blank" class="btn btn-success btn-sm">
+        <i class="bi bi-share me-1"></i> Vista pública
+      </a>
+      <button class="btn btn-outline-secondary btn-sm" id="copy-link-btn"
+              data-url="{{ request.scheme }}://{{ request.get_host }}{% url 'project_info_public' project.public_share_token %}"
+              title="Copiar enlace">
+        <i class="bi bi-link-45deg me-1"></i> Copiar enlace
+      </button>
+      <a href="{% url 'project_info_edit' project.pk %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-pencil me-1"></i> Editar
+      </a>
+      <a href="{% url 'project_info_delete' project.pk %}" class="btn btn-outline-danger btn-sm">
+        <i class="bi bi-trash me-1"></i> Eliminar
+      </a>
+      <a href="{% url 'project_info_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Volver
+      </a>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #714B67 !important;">
+        <div class="card-body d-flex align-items-center gap-3 py-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+               style="width:44px;height:44px;background:rgba(113,75,103,.12);">
+            <i class="bi bi-list-ol" style="color:#714B67;font-size:1.25rem;"></i>
+          </div>
+          <div>
+            <div class="fw-bold fs-4 lh-1" style="color:#714B67;">{{ lines|length }}</div>
+            <div class="text-muted small">Total líneas</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #9b6b8f !important;">
+        <div class="card-body d-flex align-items-center gap-3 py-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+               style="width:44px;height:44px;background:rgba(155,107,143,.12);">
+            <i class="bi bi-tags" style="color:#9b6b8f;font-size:1.25rem;"></i>
+          </div>
+          <div>
+            <div class="fw-bold fs-4 lh-1" style="color:#9b6b8f;">{{ categories_count }}</div>
+            <div class="text-muted small">Categorías</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #0ea5e9 !important;">
+        <div class="card-body d-flex align-items-center gap-3 py-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+               style="width:44px;height:44px;background:rgba(14,165,233,.12);">
+            <i class="bi bi-calendar-plus" style="color:#0ea5e9;font-size:1.25rem;"></i>
+          </div>
+          <div>
+            <div class="fw-bold" style="color:#0ea5e9;font-size:1rem;line-height:1.2;">{{ project.created_at|date:"d/m/Y" }}</div>
+            <div class="text-muted small">Creado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #10b981 !important;">
+        <div class="card-body d-flex align-items-center gap-3 py-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+               style="width:44px;height:44px;background:rgba(16,185,129,.12);">
+            <i class="bi bi-clock-history" style="color:#10b981;font-size:1.25rem;"></i>
+          </div>
+          <div>
+            <div class="fw-bold" style="color:#10b981;font-size:1rem;line-height:1.2;">{{ project.updated_at|date:"d/m/Y" }}</div>
+            <div class="text-muted small">Actualizado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #f59e0b !important;">
+        <div class="card-body d-flex align-items-center gap-3 py-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+               style="width:44px;height:44px;background:rgba(245,158,11,.12);">
+            <i class="bi bi-eye" style="color:#f59e0b;font-size:1.25rem;"></i>
+          </div>
+          <div>
+            <div class="fw-bold fs-4 lh-1" style="color:#f59e0b;">{{ visits_total }}</div>
+            <div class="text-muted small">Aperturas</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #ef4444 !important;">
+        <div class="card-body d-flex align-items-center gap-3 py-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+               style="width:44px;height:44px;background:rgba(239,68,68,.12);">
+            <i class="bi bi-pc-display" style="color:#ef4444;font-size:1.25rem;"></i>
+          </div>
+          <div>
+            <div class="fw-bold fs-4 lh-1" style="color:#ef4444;">{{ visits_unique }}</div>
+            <div class="text-muted small">IPs únicas</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if recent_visits %}
+  <!-- Últimas aperturas — colapsadas, al final de la página -->
+  {% endif %}
+
+  <!-- Responsables -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center py-2">
+      <h6 class="mb-0"><i class="bi bi-people me-2"></i>Responsables</h6>
+      <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addRespModal">
+        <i class="bi bi-person-plus me-1"></i> Agregar
+      </button>
+    </div>
+    <div class="card-body p-3">
+      <div class="row g-3" id="resp-list">
+        {% for r in responsibles %}
+        <div class="col-md-4 col-lg-3" id="resp-{{ r.pk }}">
+          <div class="border rounded-3 p-3 d-flex align-items-start gap-3">
+            <div class="resp-avatar">{{ r.user.get_full_name|slice:":1"|upper|default:r.user.username|slice:":1"|upper }}</div>
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="fw-semibold text-truncate">{{ r.user.get_full_name|default:r.user.username }}</div>
+              {% if r.display_role %}<div class="text-muted small text-truncate">{{ r.display_role }}</div>{% endif %}
+              {% if r.user.email %}<div class="small text-truncate"><i class="bi bi-envelope me-1 text-muted"></i>{{ r.user.email }}</div>{% endif %}
+              {% if r.display_phone %}<div class="small"><i class="bi bi-phone me-1 text-muted"></i>{{ r.display_phone }}</div>{% endif %}
+            </div>
+            <button class="btn btn-sm btn-outline-danger border-0 remove-resp-btn"
+                    data-resp-id="{{ r.pk }}" title="Quitar"><i class="bi bi-x"></i></button>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-muted small" id="resp-empty">Sin responsables asignados.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Líneas -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h6 class="mb-0"><i class="bi bi-list-ul me-2"></i>Líneas
+        <span class="badge bg-light text-muted border ms-2">{{ lines|length }}</span>
+      </h6>
+      <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addLineModal">
+        <i class="bi bi-plus-lg me-1"></i> Agregar línea
+      </button>
+    </div>
+
+    {% if lines %}
+    <div class="list-group list-group-flush" id="lines-list">
+      {% for line in lines %}
+      <div class="list-group-item px-4 py-3 line-card" id="line-row-{{ line.pk }}">
+        <div class="d-flex align-items-start gap-3">
+          <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0"
+               style="width:32px;height:32px;font-size:.8rem;font-weight:700;">{{ forloop.counter }}</div>
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center flex-wrap gap-2">
+              <span class="fw-semibold">{{ line.title }}</span>
+              {% if line.category %}
+              <span class="badge d-flex align-items-center gap-1" style="background:{{ line.category.color }};font-size:.72rem;">
+                <span class="cat-dot" style="background:rgba(255,255,255,.5);"></span>
+                {{ line.category.name }}
+              </span>
+              {% endif %}
+              <span class="text-muted ms-auto" style="font-size:.72rem;">
+                <i class="bi bi-clock me-1"></i>{{ line.updated_at|date:"d/m/Y H:i" }}
+              </span>
+            </div>
+            {% if line.body %}
+            <div class="text-muted small mt-1" style="white-space:pre-wrap;line-height:1.6;">{{ line.body }}</div>
+            {% endif %}
+          </div>
+          <div class="d-flex gap-1 flex-shrink-0">
+            <button class="btn btn-sm btn-outline-secondary edit-line-btn"
+                    data-line-id="{{ line.pk }}"
+                    data-title="{{ line.title|escapejs }}"
+                    data-body="{{ line.body|escapejs }}"
+                    data-category="{{ line.category_id|default:'' }}"
+                    title="Editar">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger delete-line-btn"
+                    data-line-id="{{ line.pk }}"
+                    data-title="{{ line.title }}"
+                    title="Eliminar">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card-body text-center text-muted py-5" id="empty-msg">
+      <i class="bi bi-file-earmark-text display-4 d-block mb-2 opacity-25"></i>
+      Sin líneas aún. Haz clic en "Agregar línea".
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Aperturas — colapsadas al final -->
+  {% if recent_visits %}
+  <div class="mb-4">
+    <button class="btn btn-outline-warning btn-sm w-100 d-flex align-items-center justify-content-between"
+            type="button" data-bs-toggle="collapse" data-bs-target="#visitsCollapse">
+      <span><i class="bi bi-activity me-2"></i>Últimas aperturas del enlace público
+        <span class="badge bg-warning text-dark ms-2">{{ visits_total }} total · {{ visits_unique }} IPs</span>
+      </span>
+      <i class="bi bi-chevron-down"></i>
+    </button>
+    <div class="collapse" id="visitsCollapse">
+      <div class="card shadow-sm mt-2">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">#</th>
+                <th><i class="bi bi-globe2 me-1"></i>IP</th>
+                <th><i class="bi bi-clock me-1"></i>Fecha y hora</th>
+                <th>Dispositivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for v in recent_visits %}
+              <tr>
+                <td class="ps-3 text-muted small">{{ forloop.counter }}</td>
+                <td><code class="text-danger">{{ v.ip_address }}</code></td>
+                <td class="text-muted small">{{ v.visited_at|date:"d/m/Y H:i" }}</td>
+                <td class="text-muted small text-truncate" style="max-width:220px;" title="{{ v.user_agent }}">
+                  {% if "Mobile" in v.user_agent or "Android" in v.user_agent or "iPhone" in v.user_agent %}
+                    <i class="bi bi-phone me-1"></i>{% else %}<i class="bi bi-laptop me-1"></i>{% endif %}
+                  {{ v.user_agent|truncatechars:60 }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div><!-- /container-fluid -->
+
+<!-- Modal: Agregar responsable -->
+<div class="modal fade" id="addRespModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Agregar responsable</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Usuario</label>
+          <select id="resp-user-select" class="form-select">
+            <option value="">— Selecciona un usuario —</option>
+            {% for u in all_users %}
+            <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }} ({{ u.email }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Cargo (opcional)</label>
+          <input type="text" id="resp-role-input" class="form-control"
+                 placeholder="Ej: Director de Proyecto">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-sm" style="background:#714B67;color:#fff;" id="confirm-add-resp-btn">
+          <i class="bi bi-person-check me-1"></i> Agregar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Agregar línea -->
+<div class="modal fade" id="addLineModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-lg me-2"></i>Agregar línea</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+          <input type="text" id="add-title" class="form-control" placeholder="Título de la línea">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Categoría</label>
+          <div class="input-group">
+            <select id="add-category" class="form-select">
+              <option value="">— Sin categoría —</option>
+              {% for cat in line_categories %}
+              <option value="{{ cat.id }}" data-color="{{ cat.color }}">{{ cat.name }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" class="btn btn-outline-secondary btn-new-category-modal" title="Nueva categoría">
+              <i class="bi bi-plus"></i>
+            </button>
+          </div>
+        </div>
+        <div class="mb-1">
+          <label class="form-label fw-semibold">Texto</label>
+          <textarea id="add-body" class="form-control" rows="3" placeholder="Contenido…"></textarea>
+        </div>
+        <div id="add-error" class="text-danger small mt-2 d-none"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="save-add-line-btn">
+          <i class="bi bi-check-lg me-1"></i>Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Editar línea -->
+<div class="modal fade" id="editLineModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar línea</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-line-id">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+          <input type="text" id="edit-title" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Categoría</label>
+          <div class="input-group">
+            <select id="edit-category" class="form-select">
+              <option value="">— Sin categoría —</option>
+              {% for cat in line_categories %}
+              <option value="{{ cat.id }}" data-color="{{ cat.color }}">{{ cat.name }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" class="btn btn-outline-secondary btn-new-category-modal" title="Nueva categoría">
+              <i class="bi bi-plus"></i>
+            </button>
+          </div>
+        </div>
+        <div class="mb-1">
+          <label class="form-label fw-semibold">Texto</label>
+          <textarea id="edit-body" class="form-control" rows="3"></textarea>
+        </div>
+        <div id="edit-error" class="text-danger small mt-2 d-none"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="save-edit-line-btn">
+          <i class="bi bi-check-lg me-1"></i>Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Confirmar eliminar -->
+<div class="modal fade" id="deleteLineModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger"><i class="bi bi-trash me-2"></i>Eliminar línea</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        ¿Eliminar "<strong id="delete-line-title"></strong>"?
+        <input type="hidden" id="delete-line-id">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger btn-sm" id="confirm-delete-btn">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const CSRF       = () => document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+  const ADD_URL    = "{% url 'project_info_line_add' project.pk %}";
+  const EDIT_URL   = (id) => `/crm/project-info/line/${id}/edit/`;
+  const DEL_URL    = (id) => `/crm/project-info/line/${id}/delete/`;
+  const CATS_URL   = "{% url 'process_survey_line_category_list' %}";
+  const addModal   = new bootstrap.Modal(document.getElementById('addLineModal'));
+  const editModal  = new bootstrap.Modal(document.getElementById('editLineModal'));
+  const delModal   = new bootstrap.Modal(document.getElementById('deleteLineModal'));
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  function catBadgeHtml(name, color) {
+    if (!name) return '';
+    return `<span class="badge d-flex align-items-center gap-1" style="background:${color};font-size:.72rem;">
+              <span class="cat-dot" style="background:rgba(255,255,255,.5);"></span>${name}</span>`;
+  }
+
+  function buildLineHtml(line, counter) {
+    return `
+      <div class="list-group-item px-4 py-3 line-card" id="line-row-${line.id}">
+        <div class="d-flex align-items-start gap-3">
+          <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0"
+               style="width:32px;height:32px;font-size:.8rem;font-weight:700;">${counter}</div>
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center flex-wrap gap-2">
+              <span class="fw-semibold">${line.title}</span>
+              ${catBadgeHtml(line.category_name, line.category_color)}
+            </div>
+            ${line.body ? `<div class="text-muted small mt-1" style="white-space:pre-wrap;line-height:1.6;">${line.body}</div>` : ''}
+          </div>
+          <div class="d-flex gap-1 flex-shrink-0">
+            <button class="btn btn-sm btn-outline-secondary edit-line-btn"
+                    data-line-id="${line.id}"
+                    data-title="${line.title.replace(/"/g,'&quot;')}"
+                    data-body="${(line.body||'').replace(/"/g,'&quot;')}"
+                    data-category="${line.category_id||''}">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger delete-line-btn"
+                    data-line-id="${line.id}"
+                    data-title="${line.title.replace(/"/g,'&quot;')}">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function reorderCounters() {
+    document.querySelectorAll('#lines-list .list-group-item').forEach((el, i) => {
+      const circle = el.querySelector('.rounded-circle');
+      if (circle) circle.textContent = i + 1;
+    });
+  }
+
+  // ── Agregar nueva categoría desde los modales ────────────────────────────
+  document.addEventListener('click', async function(e) {
+    const btn = e.target.closest('.btn-new-category-modal');
+    if (!btn) return;
+    e.preventDefault();
+    const name = prompt('Nombre de la nueva categoría:');
+    if (!name || !name.trim()) return;
+    const color = prompt('Color (hex, ej: #0d6efd):', '#0d6efd') || '#6c757d';
+    const fd = new FormData();
+    fd.append('name', name.trim());
+    fd.append('color', color.trim());
+    const resp = await fetch(CATS_URL, { method: 'POST', headers: { 'X-CSRFToken': CSRF() }, body: fd });
+    const data = await resp.json();
+    if (!resp.ok) { alert(data.error || 'Error al crear categoría'); return; }
+    // Agregar opción a ambos selects
+    ['add-category', 'edit-category'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (sel) {
+        const o = new Option(data.name, data.id);
+        o.dataset.color = data.color;
+        sel.appendChild(o);
+        // seleccionar en el select donde se hizo clic
+        if (btn.closest('.input-group').contains(sel)) sel.value = data.id;
+      }
+    });
+  });
+
+  // ── Agregar línea ────────────────────────────────────────────────────────
+  document.getElementById('save-add-line-btn').addEventListener('click', async () => {
+    const title = document.getElementById('add-title').value.trim();
+    const errDiv = document.getElementById('add-error');
+    errDiv.classList.add('d-none');
+    if (!title) { errDiv.textContent = 'El título es obligatorio.'; errDiv.classList.remove('d-none'); return; }
+
+    const fd = new FormData();
+    fd.append('title', title);
+    fd.append('body', document.getElementById('add-body').value);
+    fd.append('category', document.getElementById('add-category').value);
+
+    const resp = await fetch(ADD_URL, { method: 'POST', headers: { 'X-CSRFToken': CSRF() }, body: fd });
+    const data = await resp.json();
+    if (!resp.ok) { errDiv.textContent = data.error || 'Error'; errDiv.classList.remove('d-none'); return; }
+
+    // Insertar en el DOM
+    const list = document.getElementById('lines-list') || (() => {
+      const l = document.createElement('div');
+      l.className = 'list-group list-group-flush';
+      l.id = 'lines-list';
+      document.querySelector('.card').appendChild(l);
+      document.getElementById('empty-msg')?.remove();
+      return l;
+    })();
+    const counter = list.children.length + 1;
+    list.insertAdjacentHTML('beforeend', buildLineHtml(data, counter));
+
+    // Limpiar modal
+    document.getElementById('add-title').value = '';
+    document.getElementById('add-body').value = '';
+    document.getElementById('add-category').value = '';
+    addModal.hide();
+  });
+
+  // ── Editar línea ─────────────────────────────────────────────────────────
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.edit-line-btn');
+    if (!btn) return;
+    document.getElementById('edit-line-id').value = btn.dataset.lineId;
+    document.getElementById('edit-title').value   = btn.dataset.title;
+    document.getElementById('edit-body').value    = btn.dataset.body;
+    document.getElementById('edit-category').value = btn.dataset.category || '';
+    document.getElementById('edit-error').classList.add('d-none');
+    editModal.show();
+  });
+
+  document.getElementById('save-edit-line-btn').addEventListener('click', async () => {
+    const id    = document.getElementById('edit-line-id').value;
+    const title = document.getElementById('edit-title').value.trim();
+    const errDiv = document.getElementById('edit-error');
+    errDiv.classList.add('d-none');
+    if (!title) { errDiv.textContent = 'El título es obligatorio.'; errDiv.classList.remove('d-none'); return; }
+
+    const fd = new FormData();
+    fd.append('title', title);
+    fd.append('body', document.getElementById('edit-body').value);
+    fd.append('category', document.getElementById('edit-category').value);
+
+    const resp = await fetch(EDIT_URL(id), { method: 'POST', headers: { 'X-CSRFToken': CSRF() }, body: fd });
+    const data = await resp.json();
+    if (!resp.ok) { errDiv.textContent = data.error || 'Error'; errDiv.classList.remove('d-none'); return; }
+
+    // Actualizar fila en DOM
+    const row = document.getElementById(`line-row-${id}`);
+    if (row) {
+      const counter = row.querySelector('.rounded-circle').textContent;
+      row.outerHTML = buildLineHtml({ ...data, id }, parseInt(counter));
+    }
+    editModal.hide();
+  });
+
+  // ── Eliminar línea ───────────────────────────────────────────────────────
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.delete-line-btn');
+    if (!btn) return;
+    document.getElementById('delete-line-id').value  = btn.dataset.lineId;
+    document.getElementById('delete-line-title').textContent = btn.dataset.title;
+    delModal.show();
+  });
+
+  document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
+    const id = document.getElementById('delete-line-id').value;
+    const resp = await fetch(DEL_URL(id), { method: 'POST', headers: { 'X-CSRFToken': CSRF() } });
+    if (resp.ok) {
+      document.getElementById(`line-row-${id}`)?.remove();
+      reorderCounters();
+      delModal.hide();
+    }
+  });
+
+  // ── Copiar enlace público ────────────────────────────────────────────────
+  document.getElementById('copy-link-btn')?.addEventListener('click', function() {
+    navigator.clipboard.writeText(this.dataset.url).then(() => {
+      const orig = this.innerHTML;
+      this.innerHTML = '<i class="bi bi-check-lg me-1"></i> ¡Copiado!';
+      this.classList.replace('btn-outline-secondary', 'btn-success');
+      setTimeout(() => {
+        this.innerHTML = orig;
+        this.classList.replace('btn-success', 'btn-outline-secondary');
+      }, 2000);
+    });
+  });
+
+  // ── Responsables ─────────────────────────────────────────────────────────
+  const ADD_RESP_URL = "{% url 'project_info_responsible_add' project.pk %}";
+  const REMOVE_RESP_URL = (id) => `/crm/project-info/responsible/${id}/remove/`;
+  const respModal = new bootstrap.Modal(document.getElementById('addRespModal'));
+
+  document.getElementById('confirm-add-resp-btn')?.addEventListener('click', async () => {
+    const userId = document.getElementById('resp-user-select').value;
+    const role   = document.getElementById('resp-role-input').value.trim();
+    if (!userId) return;
+    const fd = new FormData();
+    fd.append('user_id', userId);
+    fd.append('role_override', role);
+    const resp = await fetch(ADD_RESP_URL, { method:'POST', headers:{'X-CSRFToken':CSRF()}, body:fd });
+    if (resp.ok) {
+      const d = await resp.json();
+      const card = `<div class="col-md-4 col-lg-3" id="resp-${d.id}">
+        <div class="border rounded-3 p-3 d-flex align-items-start gap-3">
+          <div class="resp-avatar">${d.avatar}</div>
+          <div class="flex-grow-1 overflow-hidden">
+            <div class="fw-semibold text-truncate">${d.name}</div>
+            ${d.role ? `<div class="text-muted small text-truncate">${d.role}</div>` : ''}
+            ${d.email ? `<div class="small text-truncate"><i class="bi bi-envelope me-1 text-muted"></i>${d.email}</div>` : ''}
+            ${d.phone ? `<div class="small"><i class="bi bi-phone me-1 text-muted"></i>${d.phone}</div>` : ''}
+          </div>
+          <button class="btn btn-sm btn-outline-danger border-0 remove-resp-btn"
+                  data-resp-id="${d.id}" title="Quitar"><i class="bi bi-x"></i></button>
+        </div>
+      </div>`;
+      document.getElementById('resp-empty')?.remove();
+      document.getElementById('resp-list').insertAdjacentHTML('beforeend', card);
+      // quitar usuario del select
+      document.getElementById('resp-user-select').querySelector(`option[value="${userId}"]`)?.remove();
+      document.getElementById('resp-role-input').value = '';
+      document.getElementById('resp-user-select').value = '';
+      respModal.hide();
+      bindRespRemove();
+    }
+  });
+
+  function bindRespRemove() {
+    document.querySelectorAll('.remove-resp-btn').forEach(btn => {
+      btn.onclick = async function() {
+        const id = this.dataset.respId;
+        const r = await fetch(REMOVE_RESP_URL(id), { method:'POST', headers:{'X-CSRFToken':CSRF()} });
+        if (r.ok) document.getElementById(`resp-${id}`)?.remove();
+      };
+    });
+  }
+  bindRespRemove();
+</script>
+{% endblock %}

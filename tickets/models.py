@@ -24613,3 +24613,171 @@ class ProcessSurveyClauseHistory(models.Model):
 
     def __str__(self):
         return f'Cambio en {self.clause} — {self.edited_at:%d/%m/%Y %H:%M}'
+
+
+# ── Información de Proyecto ─────────────────────────────────────────────────
+
+class ProjectInfo(models.Model):
+    """Información general de un proyecto: nombre, empresa, folio y líneas de contenido."""
+
+    name = models.CharField(max_length=200, verbose_name='Nombre del proyecto')
+    description = models.TextField(blank=True, verbose_name='Descripción del proyecto')
+    pin = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='PIN de acceso',
+        help_text='Si se establece, la vista pública solicitará este PIN.',
+    )
+    folio = models.CharField(
+        max_length=20,
+        unique=True,
+        blank=True,
+        verbose_name='Folio',
+        help_text='Generado automáticamente. Formato: PI-0001',
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='project_infos',
+        verbose_name='Empresa',
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='project_infos_created',
+        verbose_name='Creado por',
+    )
+    public_share_token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name='Token público',
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Información de Proyecto'
+        verbose_name_plural = 'Información de Proyectos'
+
+    def __str__(self):
+        return f'{self.folio} – {self.name}'
+
+    def save(self, *args, **kwargs):
+        if not self.folio:
+            last = ProjectInfo.objects.filter(folio__startswith='PI-').order_by('-folio').first()
+            if last and last.folio:
+                try:
+                    seq = int(last.folio.split('-')[1]) + 1
+                except (IndexError, ValueError):
+                    seq = 1
+            else:
+                seq = 1
+            self.folio = f'PI-{seq:04d}'
+        super().save(*args, **kwargs)
+
+
+class ProjectInfoLine(models.Model):
+    """Línea de contenido de un proyecto (título, texto y categoría opcional)."""
+
+    project = models.ForeignKey(
+        ProjectInfo,
+        on_delete=models.CASCADE,
+        related_name='lines',
+        verbose_name='Proyecto',
+    )
+    order = models.PositiveIntegerField(default=0, verbose_name='Orden')
+    title = models.CharField(max_length=300, verbose_name='Título')
+    body = models.TextField(blank=True, verbose_name='Texto')
+    category = models.ForeignKey(
+        'ProcessSurveyLineCategory',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='project_info_lines',
+        verbose_name='Categoría',
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Creado')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado')
+
+    class Meta:
+        ordering = ['order', 'pk']
+        verbose_name = 'Línea de Proyecto'
+        verbose_name_plural = 'Líneas de Proyecto'
+
+    def __str__(self):
+        return f'{self.project.folio} – {self.title}'
+
+
+class ProjectInfoResponsible(models.Model):
+    """Usuario responsable asociado a un proyecto de información."""
+
+    project = models.ForeignKey(
+        ProjectInfo,
+        on_delete=models.CASCADE,
+        related_name='responsibles',
+        verbose_name='Proyecto',
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='project_info_responsibilities',
+        verbose_name='Usuario',
+    )
+    role_override = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name='Cargo (sobreescribe perfil)',
+    )
+    added_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = [('project', 'user')]
+        ordering = ['added_at']
+        verbose_name = 'Responsable de Proyecto'
+        verbose_name_plural = 'Responsables de Proyecto'
+
+    def __str__(self):
+        return f'{self.project.folio} – {self.user.get_full_name() or self.user.username}'
+
+    @property
+    def display_role(self):
+        if self.role_override:
+            return self.role_override
+        try:
+            return self.user.profile.cargo or ''
+        except Exception:
+            return ''
+
+    @property
+    def display_phone(self):
+        try:
+            return self.user.profile.phone or ''
+        except Exception:
+            return ''
+
+
+class ProjectInfoVisit(models.Model):
+    """Registro de apertura del enlace público de un proyecto."""
+
+    project = models.ForeignKey(
+        ProjectInfo,
+        on_delete=models.CASCADE,
+        related_name='visits',
+        verbose_name='Proyecto',
+    )
+    ip_address = models.GenericIPAddressField(verbose_name='IP')
+    user_agent = models.CharField(max_length=500, blank=True, verbose_name='User-Agent')
+    visited_at = models.DateTimeField(default=timezone.now, verbose_name='Apertura')
+
+    class Meta:
+        ordering = ['-visited_at']
+        verbose_name = 'Visita Pública'
+        verbose_name_plural = 'Visitas Públicas'
+
+    def __str__(self):
+        return f'{self.project.folio} – {self.ip_address} – {self.visited_at:%d/%m/%Y %H:%M}'

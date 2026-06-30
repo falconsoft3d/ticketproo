@@ -87,6 +87,13 @@ def get_crm_submenu(request, active_item=None):
             'count': None,
             'active': active_item == 'process_surveys'
         },
+        {
+            'name': 'Información de Proyecto',
+            'url': reverse('project_info_list'),
+            'icon': 'bi bi-folder-fill',
+            'count': None,
+            'active': active_item == 'project_info'
+        },
     ]
     
     return submenu
