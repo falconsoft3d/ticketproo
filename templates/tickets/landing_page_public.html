@@ -864,6 +864,11 @@
                                         
                                         <form method="post" id="landingForm" novalidate {% if already_submitted_today %}class="form-disabled"{% endif %}>
                                             {% csrf_token %}
+                                            {# Honeypot anti-spam: campo invisible para humanos; los bots lo rellenan #}
+                                            <div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+                                                <label for="id_url">No rellenar</label>
+                                                <input type="text" name="url" id="id_url" tabindex="-1" autocomplete="off" value="">
+                                            </div>
                                             
                                             <div class="row">
                                                 <div class="col-sm-6">

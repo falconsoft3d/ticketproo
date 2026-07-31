@@ -19224,6 +19224,68 @@ def landing_page_delete(request, pk):
     return render(request, 'tickets/landing_page_delete.html', context)
 
 
+def detect_spam_landing_submission(submission):
+    """
+    Detecta envíos de spam en landing pages usando múltiples heurísticas.
+    Retorna (is_spam: bool, reason: str | None).
+    """
+    def looks_random(text):
+        """Detecta strings aleatorios generados por bots: muchas mayúsculas
+        intercaladas en palabras largas, sin patrón de lenguaje natural."""
+        if not text:
+            return False
+        for word in text.split():
+            if len(word) < 8:
+                continue
+            # Contar mayúsculas que NO son la primera letra del word
+            non_start_upper = sum(1 for i, c in enumerate(word) if i > 0 and c.isupper())
+            # >=4 mayúsculas internas es señal clara de string aleatorio
+            if non_start_upper >= 4:
+                return True
+        return False
+
+    def has_suspicious_email(email):
+        """Detecta emails con patrones de evasión de filtros (exceso de puntos/dígitos)."""
+        if not email or '@' not in email:
+            return False
+        local = email.split('@')[0]
+        # Más de 4 puntos en la parte local indica relleno de puntos para evadir filtros
+        if local.count('.') >= 5:
+            return True
+        # Muchos dígitos intercalados en emails de proveedores de consumo
+        digits = sum(1 for c in local if c.isdigit())
+        consumer_domains = ('gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com', 'live.com')
+        domain = email.split('@')[1].lower()
+        if digits >= 4 and domain in consumer_domains:
+            return True
+        return False
+
+    # 1. Teléfono con menos de 5 dígitos
+    if submission.telefono:
+        phone_digits = ''.join(filter(str.isdigit, submission.telefono))
+        if len(phone_digits) < 5:
+            return True, f"Teléfono inválido: '{submission.telefono}' ({len(phone_digits)} dígitos)"
+
+    # 2. Nombre o apellido con strings aleatorios
+    full_name = f"{submission.nombre} {submission.apellido}"
+    if looks_random(full_name):
+        return True, f"Nombre aleatorio detectado: '{full_name[:60]}'"
+
+    # 3. Empresa con string aleatorio
+    if looks_random(submission.empresa):
+        return True, f"Empresa aleatoria detectada: '{submission.empresa[:60]}'"
+
+    # 4. Mensaje con string aleatorio
+    if looks_random(submission.mensaje):
+        return True, f"Mensaje aleatorio detectado: '{submission.mensaje[:60]}'"
+
+    # 5. Email sospechoso
+    if has_suspicious_email(submission.email):
+        return True, f"Email sospechoso: '{submission.email}'"
+
+    return False, None
+
+
 def landing_page_public(request, slug):
     """Vista pública de la landing page"""
     landing_page = get_object_or_404(LandingPage, slug=slug, is_active=True)
@@ -19263,7 +19325,13 @@ def landing_page_public(request, slug):
                 'landing_page': landing_page,
                 'submission': None,
             })
-        
+
+        # Verificar honeypot anti-spam (campo oculto que los bots rellenan)
+        if request.POST.get('url', '').strip():
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': '¡Formulario enviado con éxito! Nos pondremos en contacto contigo pronto.'})
+            return render(request, 'tickets/landing_page_thanks.html', {'landing_page': landing_page, 'submission': None})
+
         form = LandingPageSubmissionForm(request.POST)
         if form.is_valid():
             submission = form.save(commit=False)
@@ -19278,19 +19346,15 @@ def landing_page_public(request, slug):
             
             submission.save()
             
-            # Detectar spam por teléfono (menos de 5 dígitos)
-            is_spam = False
-            if submission.telefono:
-                phone_digits = ''.join(filter(str.isdigit, submission.telefono))
-                if len(phone_digits) < 5:
-                    is_spam = True
-                    import logging
-                    logger = logging.getLogger(__name__)
-                    logger.warning(
-                        f"SPAM detectado en formulario público submission {submission.pk}: "
-                        f"teléfono '{submission.telefono}' ({len(phone_digits)} dígitos). "
-                        f"Email: {submission.email}. No se creará contacto."
-                    )
+            # Detectar spam usando heurísticas avanzadas
+            is_spam, spam_reason = detect_spam_landing_submission(submission)
+            if is_spam:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(
+                    f"SPAM detectado en formulario público submission {submission.pk}: "
+                    f"{spam_reason}. Email: {submission.email}. No se creará contacto."
+                )
             
             # Crear contacto y enviar notificaciones SOLO si NO es spam
             if not is_spam:
@@ -19442,18 +19506,14 @@ def landing_page_api_submit(request, pk):
     )
     submission.save()
 
-    # Detectar spam por teléfono (menos de 5 dígitos)
-    is_spam = False
-    if telefono:
-        phone_digits = ''.join(filter(str.isdigit, telefono))
-        if len(phone_digits) < 5:
-            is_spam = True
-            import logging
-            logging.getLogger(__name__).warning(
-                f"SPAM detectado en API submission {submission.pk}: "
-                f"teléfono '{telefono}' ({len(phone_digits)} dígitos). "
-                f"Email: {email}. No se creará contacto."
-            )
+    # Detectar spam usando heurísticas avanzadas
+    is_spam, spam_reason = detect_spam_landing_submission(submission)
+    if is_spam:
+        import logging
+        logging.getLogger(__name__).warning(
+            f"SPAM detectado en API submission {submission.pk}: "
+            f"{spam_reason}. Email: {email}. No se creará contacto."
+        )
 
     # Crear contacto y notificaciones SOLO si NO es spam
     if not is_spam:
