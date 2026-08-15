@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load project_extras %}
+
+{% block title %}Registro de Entrada - TicketProo{% endblock %}
+
+{% block extra_css %}
+<style>
+.table td, .table th { vertical-align: middle; }
+.public-url-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+
+    <!-- Cabecera -->
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="bi bi-door-open me-2 text-primary"></i>Registro de Entrada</h4>
+            <small class="text-muted">{{ total }} registro{{ total|pluralize }} total · <strong>{{ hoy }}</strong> hoy</small>
+        </div>
+    </div>
+
+    <!-- URL Pública -->
+    <div class="card shadow-sm mb-4 public-url-box">
+        <div class="card-body py-2 px-3">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <div>
+                    <i class="bi bi-link-45deg text-primary fs-5"></i>
+                    <strong class="ms-1 small">URL pública para visitantes:</strong>
+                </div>
+                <input type="text" id="public-url-input" class="form-control form-control-sm flex-grow-1"
+                       value="{{ public_url }}" readonly style="min-width:260px; max-width:500px;">
+                <button class="btn btn-sm btn-outline-primary" onclick="copiarUrl()">
+                    <i class="bi bi-clipboard"></i> Copiar
+                </button>
+                <a href="{{ public_url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-box-arrow-up-right"></i> Abrir
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body py-2">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label mb-1 small">Buscar</label>
+                    <input type="text" name="search" class="form-control form-control-sm"
+                           placeholder="Nombre, apellido, documento, teléfono…" value="{{ search }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label mb-1 small">Fecha</label>
+                    <input type="date" name="fecha" class="form-control form-control-sm" value="{{ fecha_filter }}">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary w-100">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                    <a href="{% url 'registro_entrada_list' %}" class="btn btn-sm btn-outline-secondary w-100">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            {% if registros %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Documento</th>
+                            <th>Número</th>
+                            <th>¿Qué hará?</th>
+                            <th>Teléfono</th>
+                            <th>Dirección</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in registros %}
+                        <tr>
+                            <td class="text-nowrap">{{ r.fecha|date:"d/m/Y" }}</td>
+                            <td class="text-nowrap text-muted">{{ r.hora|time:"H:i" }}</td>
+                            <td>{{ r.nombre }}</td>
+                            <td>{{ r.apellido }}</td>
+                            <td><span class="badge bg-secondary">{{ r.get_tipo_documento_display }}</span></td>
+                            <td class="font-monospace">{{ r.numero_documento }}</td>
+                            <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+                                title="{{ r.que_hara }}">{{ r.que_hara }}</td>
+                            <td>{{ r.telefono }}</td>
+                            <td class="text-muted">{{ r.direccion|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-door-open fs-1"></i>
+                <p class="mt-2 mb-0">No hay registros{% if search or fecha_filter %} con los filtros seleccionados{% endif %}.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copiarUrl() {
+    const input = document.getElementById('public-url-input');
+    navigator.clipboard.writeText(input.value).then(() => {
+        const btn = event.currentTarget;
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> ¡Copiado!';
+        btn.classList.replace('btn-outline-primary', 'btn-primary');
+        setTimeout(() => {
+            btn.innerHTML = orig;
+            btn.classList.replace('btn-primary', 'btn-outline-primary');
+        }, 2000);
+    });
+}
+</script>
+{% endblock %}

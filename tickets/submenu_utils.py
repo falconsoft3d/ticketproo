@@ -41,6 +41,13 @@ def get_crm_submenu(request, active_item=None):
             'active': active_item == 'spam'
         },
         {
+            'name': 'Registro de Entrada',
+            'url': reverse('registro_entrada_list'),
+            'icon': 'bi bi-door-open',
+            'count': None,
+            'active': active_item == 'registro_entrada'
+        },
+        {
             'name': 'Empresas',
             'url': reverse('company_list'),
             'icon': 'bi bi-building',

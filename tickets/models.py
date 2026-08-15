@@ -7434,6 +7434,50 @@ class LandingPageSubmission(models.Model):
             return False
 
 
+class RegistroEntrada(models.Model):
+    """Registro de visitas/entradas al local o empresa"""
+
+    DOCUMENTO_CHOICES = [
+        ('dni', 'DNI'),
+        ('nie', 'NIE'),
+        ('pasaporte', 'Pasaporte'),
+        ('otro', 'Otro'),
+    ]
+
+    nombre = models.CharField(max_length=100, verbose_name='Nombre')
+    apellido = models.CharField(max_length=100, verbose_name='Apellido')
+    tipo_documento = models.CharField(
+        max_length=20,
+        choices=DOCUMENTO_CHOICES,
+        default='dni',
+        verbose_name='Tipo de Documento'
+    )
+    numero_documento = models.CharField(
+        max_length=50,
+        verbose_name='Número de Documento'
+    )
+    que_hara = models.TextField(verbose_name='¿Qué hará?')
+    telefono = models.CharField(max_length=20, verbose_name='Teléfono')
+    direccion = models.CharField(
+        max_length=300,
+        blank=True,
+        verbose_name='Dirección'
+    )
+    fecha = models.DateField(auto_now_add=True, verbose_name='Fecha')
+    hora = models.TimeField(auto_now_add=True, verbose_name='Hora')
+    ip_address = models.GenericIPAddressField(
+        blank=True, null=True, verbose_name='IP'
+    )
+
+    class Meta:
+        verbose_name = 'Registro de Entrada'
+        verbose_name_plural = 'Registros de Entrada'
+        ordering = ['-fecha', '-hora']
+
+    def __str__(self):
+        return f"{self.nombre} {self.apellido} — {self.fecha}"
+
+
 class SharedFile(models.Model):
     """Modelo para gestionar archivos compartidos"""
     

@@ -47,6 +47,9 @@ urlpatterns = [
     path('public/courses/<uuid:token>/', views.course_public, name='course_public'),
     path('public/courses/<uuid:token>/approval/', views.course_approval, name='course_approval'),
     path('public/courses/<uuid:token>/classes/<int:class_id>/', views.course_class_public, name='course_class_public'),
+
+    # URL pública de Registro de Entrada (sin autenticación)
+    path('registro-entrada/public/', views.registro_entrada_public, name='registro_entrada_public'),
     
     # Vista pública de conceptos (sin autenticación requerida)
     path('public/concepts/', views.public_concepts_view, name='public_concepts'),
@@ -899,7 +902,10 @@ urlpatterns = [
     path('landing-pages/contacts/', views.landing_page_contacts, name='landing_page_contacts'),
     path('landing-pages/spam/', views.spam_submissions_list, name='spam_submissions_list'),
     path('landing-pages/submissions/<int:submission_id>/create-contact/', views.create_contact_from_submission_view, name='create_contact_from_submission'),
-    
+
+    # Registro de Entrada
+    path('registro-entrada/', views.registro_entrada_list, name='registro_entrada_list'),
+
     # URLs AJAX para landing pages
     path('ajax/landing-pages/submissions/<int:submission_id>/create-contact/', views.ajax_create_contact_from_submission, name='ajax_create_contact_from_submission'),
     path('ajax/landing-pages/submissions/create-contacts-batch/', views.ajax_create_contacts_batch, name='ajax_create_contacts_batch'),

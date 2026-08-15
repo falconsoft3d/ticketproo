@@ -19876,6 +19876,86 @@ def spam_submissions_list(request):
     return render(request, 'tickets/spam_submissions_list.html', context)
 
 
+# ============================================================
+#  REGISTRO DE ENTRADA
+# ============================================================
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def registro_entrada_list(request):
+    """Lista todos los registros de entrada"""
+    from .models import RegistroEntrada
+    from .submenu_utils import get_crm_submenu
+    from django.utils import timezone
+
+    search = request.GET.get('search', '').strip()
+    fecha_filter = request.GET.get('fecha', '')
+
+    registros = RegistroEntrada.objects.all()
+
+    if search:
+        registros = registros.filter(
+            models.Q(nombre__icontains=search) |
+            models.Q(apellido__icontains=search) |
+            models.Q(numero_documento__icontains=search) |
+            models.Q(telefono__icontains=search)
+        )
+
+    if fecha_filter:
+        registros = registros.filter(fecha=fecha_filter)
+
+    total = registros.count()
+    hoy = registros.filter(fecha=timezone.now().date()).count()
+
+    # URL pública fija
+    public_url = request.build_absolute_uri('/registro-entrada/')
+
+    context = {
+        'page_title': 'Registro de Entrada',
+        'registros': registros,
+        'total': total,
+        'hoy': hoy,
+        'search': search,
+        'fecha_filter': fecha_filter,
+        'public_url': public_url,
+        'submenu': get_crm_submenu(request, 'registro_entrada'),
+    }
+    return render(request, 'tickets/registro_entrada_list.html', context)
+
+
+def registro_entrada_public(request):
+    """Vista pública para auto-registro de visitantes"""
+    from .models import RegistroEntrada
+
+    success = False
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        apellido = request.POST.get('apellido', '').strip()
+        tipo_documento = request.POST.get('tipo_documento', 'dni')
+        numero_documento = request.POST.get('numero_documento', '').strip()
+        que_hara = request.POST.get('que_hara', '').strip()
+        telefono = request.POST.get('telefono', '').strip()
+        direccion = request.POST.get('direccion', '').strip()
+
+        if nombre and apellido and numero_documento and que_hara and telefono:
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            ip = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
+
+            RegistroEntrada.objects.create(
+                nombre=nombre,
+                apellido=apellido,
+                tipo_documento=tipo_documento,
+                numero_documento=numero_documento,
+                que_hara=que_hara,
+                telefono=telefono,
+                direccion=direccion,
+                ip_address=ip,
+            )
+            success = True
+
+    return render(request, 'tickets/registro_entrada_public.html', {'success': success})
+
+
 @login_required
 @user_passes_test(is_agent_or_superuser, login_url='/')
 def ajax_create_contact_from_submission(request, submission_id):

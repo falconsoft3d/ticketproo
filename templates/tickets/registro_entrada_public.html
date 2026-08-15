@@ -1,0 +1,94 @@
+{% extends 'public_base.html' %}
+
+{% block title %}Registro de Entrada{% endblock %}
+
+{% block extra_css %}
+<style>
+body { background: #f4f6fb; }
+.reg-card {
+    max-width: 520px;
+    margin: 48px auto;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    padding: 40px 36px 32px;
+}
+.reg-card h2 { font-size: 1.5rem; font-weight: 700; }
+.reg-card .subtitle { color: #6c757d; font-size: 0.95rem; }
+.btn-register { background: #0d6efd; color: #fff; font-weight: 600; width: 100%; padding: 12px; border-radius: 8px; border: none; font-size: 1rem; }
+.btn-register:hover { background: #0b5ed7; }
+.success-icon { font-size: 3.5rem; color: #198754; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reg-card">
+    {% if success %}
+        <div class="text-center py-3">
+            <div class="success-icon mb-3"><i class="bi bi-check-circle-fill"></i></div>
+            <h2 class="text-success">¡Registro completado!</h2>
+            <p class="subtitle mt-2">Tu entrada ha sido registrada correctamente. Gracias.</p>
+            <a href="" class="btn btn-outline-primary mt-3">
+                <i class="bi bi-arrow-repeat"></i> Registrar otro
+            </a>
+        </div>
+    {% else %}
+        <div class="text-center mb-4">
+            <i class="bi bi-door-open fs-1 text-primary"></i>
+            <h2 class="mt-2">Registro de Entrada</h2>
+            <p class="subtitle">Por favor completa el formulario para registrar tu visita.</p>
+        </div>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="row g-3">
+                <div class="col-6">
+                    <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+                    <input type="text" name="nombre" class="form-control" required placeholder="Ej: Juan">
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-semibold">Apellido <span class="text-danger">*</span></label>
+                    <input type="text" name="apellido" class="form-control" required placeholder="Ej: García">
+                </div>
+
+                <div class="col-5">
+                    <label class="form-label fw-semibold">Tipo de documento <span class="text-danger">*</span></label>
+                    <select name="tipo_documento" class="form-select" required>
+                        <option value="dni">DNI</option>
+                        <option value="nie">NIE</option>
+                        <option value="pasaporte">Pasaporte</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+                <div class="col-7">
+                    <label class="form-label fw-semibold">Número <span class="text-danger">*</span></label>
+                    <input type="text" name="numero_documento" class="form-control" required placeholder="Ej: 12345678A">
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold">¿Qué hará en la visita? <span class="text-danger">*</span></label>
+                    <textarea name="que_hara" class="form-control" rows="2" required
+                              placeholder="Ej: Reunión comercial, entrega de documentos…"></textarea>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Teléfono <span class="text-danger">*</span></label>
+                    <input type="tel" name="telefono" class="form-control" required placeholder="Ej: +34 600 000 000">
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Dirección</label>
+                    <input type="text" name="direccion" class="form-control" placeholder="Calle, ciudad… (opcional)">
+                </div>
+
+                <div class="col-12 mt-2">
+                    <button type="submit" class="btn-register">
+                        <i class="bi bi-check2-circle me-1"></i> Registrar entrada
+                    </button>
+                </div>
+            </div>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

@@ -156,6 +156,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if 'registro_entrada' in request.resolver_match.url_name %}active{% endif %}"
+                                   href="{% url 'registro_entrada_list' %}">
+                                    <i class="bi bi-door-open"></i> Registro de Entrada
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if 'stage_tracking' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'contact_stage_tracking' %}">
                                     <i class="bi bi-diagram-3"></i> Seguimiento Contactos
