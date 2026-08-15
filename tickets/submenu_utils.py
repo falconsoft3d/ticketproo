@@ -7,10 +7,10 @@ from tickets.utils import is_agent
 
 def get_crm_submenu(request, active_item=None):
     """Genera el submenú para el módulo CRM"""
-    from tickets.models import Contact, Company, Opportunity
-    
+    from tickets.models import Contact, Company, Opportunity, LandingPageSubmission
+
     user = request.user
-    
+
     # Contar registros según permisos
     if is_agent(user):
         contacts_count = Contact.objects.count()
@@ -22,7 +22,9 @@ def get_crm_submenu(request, active_item=None):
         opportunities_count = Opportunity.objects.filter(
             created_by=user
         ).count() + Opportunity.objects.filter(assigned_to=user).count()
-    
+
+    spam_count = LandingPageSubmission.objects.filter(is_spam=True).count()
+
     submenu = [
         {
             'name': 'Contactos',
@@ -30,6 +32,13 @@ def get_crm_submenu(request, active_item=None):
             'icon': 'bi bi-person-lines-fill',
             'count': contacts_count,
             'active': active_item == 'contacts'
+        },
+        {
+            'name': 'Spam',
+            'url': reverse('spam_submissions_list'),
+            'icon': 'bi bi-shield-exclamation',
+            'count': spam_count,
+            'active': active_item == 'spam'
         },
         {
             'name': 'Empresas',

@@ -19355,6 +19355,9 @@ def landing_page_public(request, slug):
                     f"SPAM detectado en formulario público submission {submission.pk}: "
                     f"{spam_reason}. Email: {submission.email}. No se creará contacto."
                 )
+                submission.is_spam = True
+                submission.spam_reason = spam_reason or ''
+                submission.save(update_fields=['is_spam', 'spam_reason'])
             
             # Crear contacto y enviar notificaciones SOLO si NO es spam
             if not is_spam:
@@ -19514,6 +19517,9 @@ def landing_page_api_submit(request, pk):
             f"SPAM detectado en API submission {submission.pk}: "
             f"{spam_reason}. Email: {email}. No se creará contacto."
         )
+        submission.is_spam = True
+        submission.spam_reason = spam_reason or ''
+        submission.save(update_fields=['is_spam', 'spam_reason'])
 
     # Crear contacto y notificaciones SOLO si NO es spam
     if not is_spam:
@@ -19828,6 +19834,46 @@ def landing_page_contacts(request):
     }
     
     return render(request, 'tickets/landing_page_contacts.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def spam_submissions_list(request):
+    """Vista para revisar los envíos de landing pages marcados como spam"""
+    from .models import LandingPageSubmission, LandingPage
+    from .submenu_utils import get_crm_submenu
+
+    # Filtros
+    landing_filter = request.GET.get('landing', '')
+    search = request.GET.get('search', '').strip()
+
+    submissions = LandingPageSubmission.objects.filter(is_spam=True).select_related('landing_page').order_by('-created_at')
+
+    if landing_filter:
+        submissions = submissions.filter(landing_page_id=landing_filter)
+
+    if search:
+        submissions = submissions.filter(
+            models.Q(nombre__icontains=search) |
+            models.Q(apellido__icontains=search) |
+            models.Q(email__icontains=search) |
+            models.Q(empresa__icontains=search) |
+            models.Q(ip_address__icontains=search)
+        )
+
+    total = submissions.count()
+    landing_pages = LandingPage.objects.filter(submissions__is_spam=True).distinct()
+
+    context = {
+        'page_title': 'Spam - Envíos de Landing Pages',
+        'submissions': submissions,
+        'total': total,
+        'landing_pages': landing_pages,
+        'landing_filter': landing_filter,
+        'search': search,
+        'submenu': get_crm_submenu(request, 'spam'),
+    }
+    return render(request, 'tickets/spam_submissions_list.html', context)
 
 
 @login_required

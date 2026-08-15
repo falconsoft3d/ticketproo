@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load project_extras %}
+
+{% block title %}Spam - TicketProo{% endblock %}
+
+{% block extra_css %}
+<style>
+.spam-badge {
+    font-size: 0.7rem;
+    background: #dc3545;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 8px;
+}
+.table td, .table th {
+    vertical-align: middle;
+}
+.reason-text {
+    max-width: 280px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+
+    <!-- Cabecera -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h4 class="mb-0"><i class="bi bi-shield-exclamation text-danger me-2"></i>Spam — Envíos de Landing Pages</h4>
+            <small class="text-muted">{{ total }} envío{{ total|pluralize }} marcado{{ total|pluralize }} como spam</small>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body py-2">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label mb-1 small">Buscar</label>
+                    <input type="text" name="search" class="form-control form-control-sm"
+                           placeholder="Nombre, email, empresa, IP…" value="{{ search }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-1 small">Landing Page</label>
+                    <select name="landing" class="form-select form-select-sm">
+                        <option value="">Todas</option>
+                        {% for lp in landing_pages %}
+                        <option value="{{ lp.pk }}" {% if landing_filter == lp.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ lp.nombre_producto }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary w-100">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                    <a href="{% url 'spam_submissions_list' %}" class="btn btn-sm btn-outline-secondary w-100">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            {% if submissions %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Fecha</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Empresa</th>
+                            <th>Teléfono</th>
+                            <th>Landing</th>
+                            <th>Motivo Spam</th>
+                            <th>IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sub in submissions %}
+                        <tr>
+                            <td class="text-muted">{{ sub.pk }}</td>
+                            <td class="text-nowrap">{{ sub.created_at|date:"d/m/Y H:i" }}</td>
+                            <td>{{ sub.nombre }} {{ sub.apellido }}</td>
+                            <td>{{ sub.email }}</td>
+                            <td>{{ sub.empresa|default:"—" }}</td>
+                            <td>{{ sub.telefono|default:"—" }}</td>
+                            <td>
+                                <a href="{% url 'landing_page_detail' sub.landing_page.pk %}" class="text-decoration-none">
+                                    {{ sub.landing_page.nombre_producto }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="reason-text d-inline-block text-danger" title="{{ sub.spam_reason }}">
+                                    {{ sub.spam_reason|default:"—" }}
+                                </span>
+                            </td>
+                            <td class="text-muted font-monospace">{{ sub.ip_address|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-shield-check fs-1"></i>
+                <p class="mt-2 mb-0">No hay envíos de spam{% if search or landing_filter %} con los filtros seleccionados{% endif %}.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

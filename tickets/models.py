@@ -7388,7 +7388,18 @@ class LandingPageSubmission(models.Model):
         blank=True,
         verbose_name='Nivel de Prioridad IA'
     )
-    
+
+    # Detección de spam
+    is_spam = models.BooleanField(
+        default=False,
+        verbose_name='Es Spam'
+    )
+    spam_reason = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='Motivo de Spam'
+    )
+
     class Meta:
         verbose_name = 'Envío de Landing Page'
         verbose_name_plural = 'Envíos de Landing Pages'
