@@ -19884,9 +19884,16 @@ def spam_submissions_list(request):
 @user_passes_test(is_agent_or_superuser, login_url='/')
 def registro_entrada_list(request):
     """Lista todos los registros de entrada"""
-    from .models import RegistroEntrada
+    from .models import RegistroEntrada, RegistroEntradaConfig
     from .submenu_utils import get_crm_submenu
     from django.utils import timezone
+
+    config = RegistroEntradaConfig.get_or_create_config()
+
+    # Regenerar token si se solicita
+    if request.method == 'POST' and request.POST.get('action') == 'regenerar_token':
+        config.regenerate_token()
+        return redirect('registro_entrada_list')
 
     search = request.GET.get('search', '').strip()
     fecha_filter = request.GET.get('fecha', '')
@@ -19907,8 +19914,7 @@ def registro_entrada_list(request):
     total = registros.count()
     hoy = registros.filter(fecha=timezone.now().date()).count()
 
-    # URL pública fija
-    public_url = request.build_absolute_uri('/registro-entrada/')
+    public_url = request.build_absolute_uri(f'/registro-entrada/{config.public_token}/')
 
     context = {
         'page_title': 'Registro de Entrada',
@@ -19918,17 +19924,27 @@ def registro_entrada_list(request):
         'search': search,
         'fecha_filter': fecha_filter,
         'public_url': public_url,
+        'config': config,
         'submenu': get_crm_submenu(request, 'registro_entrada'),
     }
     return render(request, 'tickets/registro_entrada_list.html', context)
 
 
-def registro_entrada_public(request):
-    """Vista pública para auto-registro de visitantes"""
-    from .models import RegistroEntrada
+def registro_entrada_public(request, token):
+    """Vista pública para auto-registro de visitantes (acceso por token)"""
+    from .models import RegistroEntrada, RegistroEntradaConfig
+
+    try:
+        config = RegistroEntradaConfig.objects.get(public_token=token, is_active=True)
+    except RegistroEntradaConfig.DoesNotExist:
+        return render(request, 'tickets/registro_entrada_public.html', {'token_invalido': True}, status=404)
 
     success = False
+    errors = {}
+    post_data = {}
+
     if request.method == 'POST':
+        post_data = request.POST
         nombre = request.POST.get('nombre', '').strip()
         apellido = request.POST.get('apellido', '').strip()
         tipo_documento = request.POST.get('tipo_documento', 'dni')
@@ -19937,7 +19953,18 @@ def registro_entrada_public(request):
         telefono = request.POST.get('telefono', '').strip()
         direccion = request.POST.get('direccion', '').strip()
 
-        if nombre and apellido and numero_documento and que_hara and telefono:
+        if not nombre:
+            errors['nombre'] = 'El nombre es obligatorio.'
+        if not apellido:
+            errors['apellido'] = 'El apellido es obligatorio.'
+        if not numero_documento:
+            errors['numero_documento'] = 'El número de documento es obligatorio.'
+        if not que_hara:
+            errors['que_hara'] = 'Este campo es obligatorio.'
+        if not telefono:
+            errors['telefono'] = 'El teléfono es obligatorio.'
+
+        if not errors:
             x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
             ip = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
 
@@ -19953,7 +19980,132 @@ def registro_entrada_public(request):
             )
             success = True
 
-    return render(request, 'tickets/registro_entrada_public.html', {'success': success})
+    return render(request, 'tickets/registro_entrada_public.html', {
+        'success': success,
+        'errors': errors,
+        'post_data': post_data,
+        'token': token,
+    })
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def registro_entrada_create(request):
+    """Crear un registro de entrada manualmente"""
+    from .models import RegistroEntrada
+
+    DOCUMENTO_CHOICES = RegistroEntrada.DOCUMENTO_CHOICES
+    errors = {}
+    post_data = {}
+
+    if request.method == 'POST':
+        post_data = request.POST
+        nombre = request.POST.get('nombre', '').strip()
+        apellido = request.POST.get('apellido', '').strip()
+        tipo_documento = request.POST.get('tipo_documento', 'dni')
+        numero_documento = request.POST.get('numero_documento', '').strip()
+        que_hara = request.POST.get('que_hara', '').strip()
+        telefono = request.POST.get('telefono', '').strip()
+        direccion = request.POST.get('direccion', '').strip()
+
+        if not nombre:
+            errors['nombre'] = 'El nombre es obligatorio.'
+        if not apellido:
+            errors['apellido'] = 'El apellido es obligatorio.'
+        if not numero_documento:
+            errors['numero_documento'] = 'El número de documento es obligatorio.'
+        if not que_hara:
+            errors['que_hara'] = 'Este campo es obligatorio.'
+        if not telefono:
+            errors['telefono'] = 'El teléfono es obligatorio.'
+
+        if not errors:
+            RegistroEntrada.objects.create(
+                nombre=nombre,
+                apellido=apellido,
+                tipo_documento=tipo_documento,
+                numero_documento=numero_documento,
+                que_hara=que_hara,
+                telefono=telefono,
+                direccion=direccion,
+            )
+            return redirect('registro_entrada_list')
+
+    return render(request, 'tickets/registro_entrada_form.html', {
+        'page_title': 'Nuevo Registro de Entrada',
+        'action': 'create',
+        'errors': errors,
+        'post_data': post_data,
+        'documento_choices': DOCUMENTO_CHOICES,
+    })
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def registro_entrada_edit(request, pk):
+    """Editar un registro de entrada"""
+    from .models import RegistroEntrada
+
+    registro = get_object_or_404(RegistroEntrada, pk=pk)
+    DOCUMENTO_CHOICES = RegistroEntrada.DOCUMENTO_CHOICES
+    errors = {}
+
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        apellido = request.POST.get('apellido', '').strip()
+        tipo_documento = request.POST.get('tipo_documento', 'dni')
+        numero_documento = request.POST.get('numero_documento', '').strip()
+        que_hara = request.POST.get('que_hara', '').strip()
+        telefono = request.POST.get('telefono', '').strip()
+        direccion = request.POST.get('direccion', '').strip()
+
+        if not nombre:
+            errors['nombre'] = 'El nombre es obligatorio.'
+        if not apellido:
+            errors['apellido'] = 'El apellido es obligatorio.'
+        if not numero_documento:
+            errors['numero_documento'] = 'El número de documento es obligatorio.'
+        if not que_hara:
+            errors['que_hara'] = 'Este campo es obligatorio.'
+        if not telefono:
+            errors['telefono'] = 'El teléfono es obligatorio.'
+
+        if not errors:
+            registro.nombre = nombre
+            registro.apellido = apellido
+            registro.tipo_documento = tipo_documento
+            registro.numero_documento = numero_documento
+            registro.que_hara = que_hara
+            registro.telefono = telefono
+            registro.direccion = direccion
+            registro.save()
+            return redirect('registro_entrada_list')
+
+    return render(request, 'tickets/registro_entrada_form.html', {
+        'page_title': f'Editar Registro — {registro.nombre} {registro.apellido}',
+        'action': 'edit',
+        'registro': registro,
+        'errors': errors,
+        'documento_choices': DOCUMENTO_CHOICES,
+    })
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def registro_entrada_delete(request, pk):
+    """Eliminar un registro de entrada"""
+    from .models import RegistroEntrada
+
+    registro = get_object_or_404(RegistroEntrada, pk=pk)
+
+    if request.method == 'POST':
+        registro.delete()
+        return redirect('registro_entrada_list')
+
+    return render(request, 'tickets/registro_entrada_delete.html', {
+        'page_title': 'Eliminar Registro de Entrada',
+        'registro': registro,
+    })
 
 
 @login_required

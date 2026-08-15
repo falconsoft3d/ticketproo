@@ -19,6 +19,9 @@
             <h4 class="mb-0"><i class="bi bi-door-open me-2 text-primary"></i>Registro de Entrada</h4>
             <small class="text-muted">{{ total }} registro{{ total|pluralize }} total · <strong>{{ hoy }}</strong> hoy</small>
         </div>
+        <a href="{% url 'registro_entrada_create' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg"></i> Nuevo registro
+        </a>
     </div>
 
     <!-- URL Pública -->
@@ -83,6 +86,7 @@
                             <th>¿Qué hará?</th>
                             <th>Teléfono</th>
                             <th>Dirección</th>
+                            <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -98,6 +102,16 @@
                                 title="{{ r.que_hara }}">{{ r.que_hara }}</td>
                             <td>{{ r.telefono }}</td>
                             <td class="text-muted">{{ r.direccion|default:"—" }}</td>
+                            <td class="text-center text-nowrap">
+                                <a href="{% url 'registro_entrada_edit' r.pk %}"
+                                   class="btn btn-xs btn-outline-secondary py-0 px-2" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'registro_entrada_delete' r.pk %}"
+                                   class="btn btn-xs btn-outline-danger py-0 px-2 ms-1" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

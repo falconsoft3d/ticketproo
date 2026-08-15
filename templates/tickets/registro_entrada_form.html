@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load project_extras %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb mb-0 small">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'registro_entrada_list' %}">Registro de Entrada</a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        {% if action == 'edit' %}Editar{% else %}Nuevo{% endif %}
+                    </li>
+                </ol>
+            </nav>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-door-open text-primary me-2"></i>{{ page_title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row g-3">
+                            <!-- Nombre -->
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label fw-semibold">
+                                    Nombre <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="nombre" class="form-control {% if errors.nombre %}is-invalid{% endif %}"
+                                       value="{{ registro.nombre|default:post_data.nombre }}">
+                                {% if errors.nombre %}<div class="invalid-feedback">{{ errors.nombre }}</div>{% endif %}
+                            </div>
+
+                            <!-- Apellido -->
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label fw-semibold">
+                                    Apellido <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="apellido" class="form-control {% if errors.apellido %}is-invalid{% endif %}"
+                                       value="{{ registro.apellido|default:post_data.apellido }}">
+                                {% if errors.apellido %}<div class="invalid-feedback">{{ errors.apellido }}</div>{% endif %}
+                            </div>
+
+                            <!-- Tipo documento -->
+                            <div class="col-12 col-sm-5">
+                                <label class="form-label fw-semibold">
+                                    Tipo de documento <span class="text-danger">*</span>
+                                </label>
+                                <select name="tipo_documento" class="form-select">
+                                    {% for value, label in documento_choices %}
+                                    <option value="{{ value }}"
+                                        {% if registro.tipo_documento == value or post_data.tipo_documento == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Número documento -->
+                            <div class="col-12 col-sm-7">
+                                <label class="form-label fw-semibold">
+                                    Número <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="numero_documento"
+                                       class="form-control {% if errors.numero_documento %}is-invalid{% endif %}"
+                                       value="{{ registro.numero_documento|default:post_data.numero_documento }}">
+                                {% if errors.numero_documento %}<div class="invalid-feedback">{{ errors.numero_documento }}</div>{% endif %}
+                            </div>
+
+                            <!-- Qué hará -->
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">
+                                    ¿Qué hará en la visita? <span class="text-danger">*</span>
+                                </label>
+                                <textarea name="que_hara" rows="2"
+                                          class="form-control {% if errors.que_hara %}is-invalid{% endif %}"
+                                          placeholder="Ej: Reunión comercial, entrega de documentos…">{{ registro.que_hara|default:post_data.que_hara }}</textarea>
+                                {% if errors.que_hara %}<div class="invalid-feedback">{{ errors.que_hara }}</div>{% endif %}
+                            </div>
+
+                            <!-- Teléfono -->
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label fw-semibold">
+                                    Teléfono <span class="text-danger">*</span>
+                                </label>
+                                <input type="tel" name="telefono"
+                                       class="form-control {% if errors.telefono %}is-invalid{% endif %}"
+                                       value="{{ registro.telefono|default:post_data.telefono }}">
+                                {% if errors.telefono %}<div class="invalid-feedback">{{ errors.telefono }}</div>{% endif %}
+                            </div>
+
+                            <!-- Dirección -->
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label fw-semibold">Dirección</label>
+                                <input type="text" name="direccion" class="form-control"
+                                       value="{{ registro.direccion|default:post_data.direccion }}"
+                                       placeholder="Opcional">
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>
+                                {% if action == 'edit' %}Guardar cambios{% else %}Crear registro{% endif %}
+                            </button>
+                            <a href="{% url 'registro_entrada_list' %}" class="btn btn-outline-secondary">
+                                Cancelar
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

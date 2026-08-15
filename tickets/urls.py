@@ -49,7 +49,7 @@ urlpatterns = [
     path('public/courses/<uuid:token>/classes/<int:class_id>/', views.course_class_public, name='course_class_public'),
 
     # URL pública de Registro de Entrada (sin autenticación)
-    path('registro-entrada/public/', views.registro_entrada_public, name='registro_entrada_public'),
+    path('registro-entrada/<uuid:token>/', views.registro_entrada_public, name='registro_entrada_public'),
     
     # Vista pública de conceptos (sin autenticación requerida)
     path('public/concepts/', views.public_concepts_view, name='public_concepts'),
@@ -905,6 +905,9 @@ urlpatterns = [
 
     # Registro de Entrada
     path('registro-entrada/', views.registro_entrada_list, name='registro_entrada_list'),
+    path('registro-entrada/crear/', views.registro_entrada_create, name='registro_entrada_create'),
+    path('registro-entrada/<int:pk>/editar/', views.registro_entrada_edit, name='registro_entrada_edit'),
+    path('registro-entrada/<int:pk>/eliminar/', views.registro_entrada_delete, name='registro_entrada_delete'),
 
     # URLs AJAX para landing pages
     path('ajax/landing-pages/submissions/<int:submission_id>/create-contact/', views.ajax_create_contact_from_submission, name='ajax_create_contact_from_submission'),

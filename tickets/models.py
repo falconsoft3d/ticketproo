@@ -7478,15 +7478,46 @@ class RegistroEntrada(models.Model):
         return f"{self.nombre} {self.apellido} — {self.fecha}"
 
 
+class RegistroEntradaConfig(models.Model):
+    """Configuración global del Registro de Entrada (token público, singleton)"""
+
+    public_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        verbose_name='Token Público'
+    )
+    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Configuración Registro de Entrada'
+        verbose_name_plural = 'Configuración Registro de Entrada'
+
+    def __str__(self):
+        return f"Token: {self.public_token}"
+
+    @classmethod
+    def get_or_create_config(cls):
+        """Devuelve la configuración única, creándola si no existe."""
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def regenerate_token(self):
+        self.public_token = uuid.uuid4()
+        self.save(update_fields=['public_token', 'updated_at'])
+        return self.public_token
+
+
 class SharedFile(models.Model):
     """Modelo para gestionar archivos compartidos"""
-    
+
     title = models.CharField(
-        max_length=200, 
+        max_length=200,
         verbose_name='Título del Archivo'
     )
     description = models.TextField(
-        blank=True, 
+        blank=True,
         verbose_name='Descripción',
         help_text='Descripción opcional del archivo'
     )
