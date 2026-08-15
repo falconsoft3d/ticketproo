@@ -147,6 +147,15 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if 'spam_submissions' in request.resolver_match.url_name %}active{% endif %}"
+                                   href="{% url 'spam_submissions_list' %}">
+                                    <i class="bi bi-shield-exclamation text-danger"></i> Spam
+                                    {% if crm_counters.spam > 0 %}
+                                        <span class="badge bg-danger ms-2">{{ crm_counters.spam }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if 'stage_tracking' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'contact_stage_tracking' %}">
                                     <i class="bi bi-diagram-3"></i> Seguimiento Contactos

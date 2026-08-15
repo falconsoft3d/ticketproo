@@ -105,58 +105,63 @@ def crm_counters(request):
             return {}
 
     try:
-        from tickets.models import Contact, Company, Opportunity, Meeting, Quotation, QuotationTemplate, OpportunityActivity, CrmQuestion
+        try:
+            from tickets.models import Contact, Company, Opportunity, Meeting, Quotation, QuotationTemplate, OpportunityActivity, CrmQuestion, LandingPageSubmission
         
-        # Contadores básicos
-        contacts_count = Contact.objects.count()
-        companies_count = Company.objects.filter(is_active=True).count()
-        
-        # Oportunidades activas (no ganadas ni perdidas)
-        opportunities_count = Opportunity.objects.exclude(
-            status__name__in=['Ganada', 'Perdida', 'Cancelada']
-        ).count()
-        
-        # Reuniones futuras o de hoy
-        from django.utils import timezone
-        today = timezone.now().date()
-        meetings_count = Meeting.objects.filter(date__gte=today).count()
-        
-        # Preguntas pendientes de respuesta
-        questions_count = CrmQuestion.objects.filter(answer__isnull=True).count()
-        
-        # Cotizaciones activas (draft, sent, approved)
-        quotations_count = Quotation.objects.filter(
-            status__in=['draft', 'sent', 'approved']
-        ).count()
-        
-        # Plantillas públicas activas
-        templates_count = QuotationTemplate.objects.filter(is_active=True).count()
-        
-        # Actividades pendientes del usuario
-        pending_activities_count = OpportunityActivity.objects.filter(
-            assigned_to=request.user,
-            status__in=['pending', 'in_progress']
-        ).count()
+            # Contadores básicos
+            contacts_count = Contact.objects.count()
+            companies_count = Company.objects.filter(is_active=True).count()
+            
+            # Oportunidades activas (no ganadas ni perdidas)
+            opportunities_count = Opportunity.objects.exclude(
+                status__name__in=['Ganada', 'Perdida', 'Cancelada']
+            ).count()
+            
+            # Reuniones futuras o de hoy
+            from django.utils import timezone
+            today = timezone.now().date()
+            meetings_count = Meeting.objects.filter(date__gte=today).count()
+            
+            # Preguntas pendientes de respuesta
+            questions_count = CrmQuestion.objects.filter(answer__isnull=True).count()
+            
+            # Cotizaciones activas (draft, sent, approved)
+            quotations_count = Quotation.objects.filter(
+                status__in=['draft', 'sent', 'approved']
+            ).count()
+            
+            # Plantillas públicas activas
+            templates_count = QuotationTemplate.objects.filter(is_active=True).count()
+            
+            # Actividades pendientes del usuario
+            pending_activities_count = OpportunityActivity.objects.filter(
+                assigned_to=request.user,
+                status__in=['pending', 'in_progress']
+            ).count()
 
-        # RFIs registradas
-        from tickets.models import RFI
-        rfi_count = RFI.objects.count()
-        
-        return {
-            'crm_counters': {
-                'contacts': contacts_count,
-                'companies': companies_count,
-                'opportunities': opportunities_count,
-                'meetings': meetings_count,
-                'questions': questions_count,
-                'quotations': quotations_count,
-                'templates': templates_count,
-                'pending_activities': pending_activities_count,
-                'rfi': rfi_count,
+            # RFIs registradas
+            from tickets.models import RFI
+            rfi_count = RFI.objects.count()
+
+            # Spam de landing pages
+            spam_count = LandingPageSubmission.objects.filter(is_spam=True).count()
+            
+            return {
+                'crm_counters': {
+                    'contacts': contacts_count,
+                    'companies': companies_count,
+                    'opportunities': opportunities_count,
+                    'meetings': meetings_count,
+                    'questions': questions_count,
+                    'quotations': quotations_count,
+                    'templates': templates_count,
+                    'pending_activities': pending_activities_count,
+                    'rfi': rfi_count,
+                    'spam': spam_count,
+                }
             }
-        }
-    except Exception:
-        return {}
+        except Exception:
+            return {}
 
 
 def active_chatbot(request):
