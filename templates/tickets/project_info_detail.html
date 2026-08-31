@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static project_extras %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -218,7 +218,7 @@
               </span>
             </div>
             {% if line.body %}
-            <div class="text-muted small mt-1" style="white-space:pre-wrap;line-height:1.6;">{{ line.body }}</div>
+            <div class="text-muted small mt-1" style="white-space:pre-wrap;line-height:1.6;">{{ line.body|trim }}</div>
             {% endif %}
           </div>
           <div class="d-flex gap-1 flex-shrink-0">
@@ -372,6 +372,60 @@
     </div>
   </div>
   {% endif %}
+
+  <!-- Enlaces — colapsados solo si hay pocos (< 10) -->
+  <div class="mb-4">
+    <button class="btn btn-outline-info btn-sm w-100 d-flex align-items-center justify-content-between"
+            type="button" data-bs-toggle="collapse" data-bs-target="#linksCollapse"
+            aria-expanded="{% if links|length >= 10 %}true{% else %}false{% endif %}">
+      <span><i class="bi bi-link-45deg me-2"></i>Enlaces
+        <span class="badge bg-info text-dark ms-2">{{ links|length }}</span>
+      </span>
+      <i class="bi bi-chevron-down"></i>
+    </button>
+    <div class="collapse{% if links|length >= 10 %} show{% endif %}" id="linksCollapse">
+      <div class="card shadow-sm mt-2">
+        <div class="card-header d-flex justify-content-between align-items-center py-2">
+          <h6 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Enlaces</h6>
+          <div class="d-flex gap-2">
+            <a href="{% url 'project_info_link_list' %}" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-list me-1"></i> Ver todos
+            </a>
+            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addLinkModal">
+              <i class="bi bi-plus-lg me-1"></i> Agregar enlace
+            </button>
+          </div>
+        </div>
+        <div class="card-body p-3">
+          <div class="row g-3" id="link-list">
+            {% for l in links %}
+            <div class="col-md-6 col-lg-4" id="link-{{ l.pk }}">
+              <div class="border rounded-3 p-3 d-flex align-items-start gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:40px;height:40px;background:rgba(113,75,103,.12);">
+                  <i class="bi bi-link-45deg" style="color:#714B67;font-size:1.1rem;"></i>
+                </div>
+                <div class="flex-grow-1 overflow-hidden">
+                  <a href="{{ l.url }}" target="_blank" rel="noopener noreferrer" class="fw-semibold text-truncate d-block">{{ l.name }}</a>
+                  <div class="small text-truncate"><a href="{{ l.url }}" target="_blank" rel="noopener noreferrer" class="text-muted">{{ l.url }}</a></div>
+                  {% if l.description %}<div class="text-muted small mt-1">{{ l.description }}</div>{% endif %}
+                  <div class="small text-muted mt-1"><i class="bi bi-eye me-1"></i>{{ l.visits_count }} apertura{% if l.visits_count != 1 %}s{% endif %}</div>
+                </div>
+                <button class="btn btn-sm btn-outline-success border-0 share-link-btn"
+                        data-url="{{ request.scheme }}://{{ request.get_host }}{% url 'project_info_link_public' l.public_share_token %}"
+                        title="Compartir con el cliente"><i class="bi bi-share"></i></button>
+                <button class="btn btn-sm btn-outline-danger border-0 remove-link-btn"
+                        data-link-id="{{ l.pk }}" title="Eliminar"><i class="bi bi-x"></i></button>
+              </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-muted small" id="link-empty">Sin enlaces agregados.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div><!-- /container-fluid -->
 
 <!-- Modal: Agregar responsable -->
@@ -407,6 +461,40 @@
     </div>
   </div>
 </div>
+
+<!-- Modal: Agregar enlace -->
+<div class="modal fade" id="addLinkModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-link-45deg me-2"></i>Agregar enlace</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+          <input type="text" id="link-name-input" class="form-control" placeholder="Ej: Repositorio del proyecto">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">URL <span class="text-danger">*</span></label>
+          <input type="text" id="link-url-input" class="form-control" placeholder="https://ejemplo.com">
+        </div>
+        <div class="mb-1">
+          <label class="form-label fw-semibold">Descripción</label>
+          <textarea id="link-description-input" class="form-control" rows="2" placeholder="Descripción opcional…"></textarea>
+        </div>
+        <div id="link-error" class="text-danger small mt-2 d-none"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary btn-sm" id="confirm-add-link-btn">
+          <i class="bi bi-check-lg me-1"></i> Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <!-- Modal: Agregar línea -->
 <div class="modal fade" id="addLineModal" tabindex="-1">
@@ -545,7 +633,7 @@
               <span class="fw-semibold">${line.title}</span>
               ${catBadgeHtml(line.category_name, line.category_color)}
             </div>
-            ${line.body ? `<div class="text-muted small mt-1" style="white-space:pre-wrap;line-height:1.6;">${line.body}</div>` : ''}
+            ${line.body ? `<div class="text-muted small mt-1" style="white-space:pre-wrap;line-height:1.6;">${line.body.trim()}</div>` : ''}
           </div>
           <div class="d-flex gap-1 flex-shrink-0">
             <button class="btn btn-sm btn-outline-secondary edit-line-btn"
@@ -752,6 +840,84 @@
     });
   }
   bindRespRemove();
+
+  // ── Enlaces ──────────────────────────────────────────────────────────────
+  const ADD_LINK_URL = "{% url 'project_info_link_add' project.pk %}";
+  const DELETE_LINK_URL = (id) => `/crm/project-info/link/${id}/delete/`;
+  const linkModal = new bootstrap.Modal(document.getElementById('addLinkModal'));
+
+  function escapeHtml(str) {
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  document.getElementById('confirm-add-link-btn')?.addEventListener('click', async () => {
+    const name = document.getElementById('link-name-input').value.trim();
+    const url  = document.getElementById('link-url-input').value.trim();
+    const description = document.getElementById('link-description-input').value.trim();
+    const errDiv = document.getElementById('link-error');
+    errDiv.classList.add('d-none');
+    if (!name || !url) {
+      errDiv.textContent = 'Nombre y URL son obligatorios.';
+      errDiv.classList.remove('d-none');
+      return;
+    }
+    const fd = new FormData();
+    fd.append('name', name);
+    fd.append('url', url);
+    fd.append('description', description);
+    const resp = await fetch(ADD_LINK_URL, { method: 'POST', headers: { 'X-CSRFToken': CSRF() }, body: fd });
+    const data = await resp.json();
+    if (!resp.ok) { errDiv.textContent = data.error || 'Error'; errDiv.classList.remove('d-none'); return; }
+
+    const card = `<div class="col-md-6 col-lg-4" id="link-${data.id}">
+        <div class="border rounded-3 p-3 d-flex align-items-start gap-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+               style="width:40px;height:40px;background:rgba(113,75,103,.12);">
+            <i class="bi bi-link-45deg" style="color:#714B67;font-size:1.1rem;"></i>
+          </div>
+          <div class="flex-grow-1 overflow-hidden">
+            <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener noreferrer" class="fw-semibold text-truncate d-block">${escapeHtml(data.name)}</a>
+            <div class="small text-truncate"><a href="${escapeHtml(data.url)}" target="_blank" rel="noopener noreferrer" class="text-muted">${escapeHtml(data.url)}</a></div>
+            ${data.description ? `<div class="text-muted small mt-1">${escapeHtml(data.description)}</div>` : ''}
+            <div class="small text-muted mt-1"><i class="bi bi-eye me-1"></i>0 aperturas</div>
+          </div>
+          <button class="btn btn-sm btn-outline-success border-0 share-link-btn"
+                  data-url="${window.location.origin}/crm/project-info/link/public/${data.public_share_token}/"
+                  title="Compartir con el cliente"><i class="bi bi-share"></i></button>
+          <button class="btn btn-sm btn-outline-danger border-0 remove-link-btn"
+                  data-link-id="${data.id}" title="Eliminar"><i class="bi bi-x"></i></button>
+        </div>
+      </div>`;
+    document.getElementById('link-empty')?.remove();
+    document.getElementById('link-list').insertAdjacentHTML('beforeend', card);
+    document.getElementById('link-name-input').value = '';
+    document.getElementById('link-url-input').value = '';
+    document.getElementById('link-description-input').value = '';
+    linkModal.hide();
+    bindLinkRemove();
+  });
+
+  function bindLinkRemove() {
+    document.querySelectorAll('.remove-link-btn').forEach(btn => {
+      btn.onclick = async function() {
+        const id = this.dataset.linkId;
+        if (!confirm('¿Eliminar este enlace?')) return;
+        const r = await fetch(DELETE_LINK_URL(id), { method: 'POST', headers: { 'X-CSRFToken': CSRF() } });
+        if (r.ok) document.getElementById(`link-${id}`)?.remove();
+      };
+    });
+  }
+  bindLinkRemove();
+
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.share-link-btn');
+    if (!btn) return;
+    navigator.clipboard.writeText(btn.dataset.url).then(() => {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-check-lg"></i>';
+      setTimeout(() => { btn.innerHTML = orig; }, 2000);
+    });
+  });
 
   // ── Compartir línea ───────────────────────────────────────────────────────
   document.querySelectorAll('.share-line-btn').forEach(btn => {

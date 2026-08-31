@@ -24853,6 +24853,65 @@ class ProjectInfoResponsible(models.Model):
             return ''
 
 
+class ProjectInfoLink(models.Model):
+    """Enlace (URL) asociado a un proyecto de información."""
+
+    project = models.ForeignKey(
+        ProjectInfo,
+        on_delete=models.CASCADE,
+        related_name='links',
+        verbose_name='Proyecto',
+    )
+    name = models.CharField(max_length=200, verbose_name='Nombre')
+    url = models.URLField(max_length=500, verbose_name='URL')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    public_share_token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name='Token público de enlace',
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='project_info_links_created',
+        verbose_name='Creado por',
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Creado')
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Enlace de Proyecto'
+        verbose_name_plural = 'Enlaces de Proyecto'
+
+    def __str__(self):
+        return f'{self.project.folio} – {self.name}'
+
+
+class ProjectInfoLinkVisit(models.Model):
+    """Registro de apertura de la página pública de un enlace de proyecto."""
+
+    link = models.ForeignKey(
+        ProjectInfoLink,
+        on_delete=models.CASCADE,
+        related_name='visits',
+        verbose_name='Enlace',
+    )
+    ip_address = models.GenericIPAddressField(verbose_name='IP')
+    user_agent = models.CharField(max_length=500, blank=True, verbose_name='User-Agent')
+    visited_at = models.DateTimeField(default=timezone.now, verbose_name='Apertura')
+
+    class Meta:
+        ordering = ['-visited_at']
+        verbose_name = 'Visita de Enlace'
+        verbose_name_plural = 'Visitas de Enlace'
+
+    def __str__(self):
+        return f'{self.link.name} – {self.ip_address} – {self.visited_at:%d/%m/%Y %H:%M}'
+
+
 class ProjectInfoVisit(models.Model):
     """Registro de apertura del enlace público de un proyecto."""
 

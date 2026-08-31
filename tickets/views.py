@@ -59229,6 +59229,7 @@ def project_info_detail(request, pk):
     all_users = User.objects.filter(is_active=True).exclude(
         pk__in=responsibles.values_list('user_id', flat=True)
     ).order_by('first_name', 'last_name')
+    links = project.links.annotate(visits_count=Count('visits', distinct=True))
     context = {
         'page_title': project.name,
         'project': project,
@@ -59239,6 +59240,7 @@ def project_info_detail(request, pk):
         'recent_visits': recent_visits,
         'responsibles': responsibles,
         'all_users': all_users,
+        'links': links,
         'line_categories': _get_line_categories(),
         'submenu': get_crm_submenu(request, active_item='project_info'),
     }
@@ -59477,6 +59479,7 @@ def project_info_public(request, token):
         'lines_grouped': lines_grouped,
         'responsibles': responsibles,
         'visits': visits,
+        'links': project.links.all(),
     }
     return render(request, 'tickets/project_info_public.html', context)
 
@@ -59655,6 +59658,123 @@ def project_info_responsible_remove(request, r_pk):
         return JsonResponse({'error': 'Sin permiso'}, status=403)
     obj.delete()
     return JsonResponse({'ok': True})
+
+
+# ── Enlaces de proyecto ────────────────────────────────────────────────────────
+
+@login_required
+def project_info_link_list(request):
+    """Listado global de enlaces de todos los proyectos, con búsqueda"""
+    from .submenu_utils import get_crm_submenu
+    from django.db.models import Q
+    from django.core.paginator import Paginator
+    from .models import ProjectInfoLink
+    qs = ProjectInfoLink.objects.select_related('project', 'project__company', 'created_by').annotate(
+        visits_count=Count('visits', distinct=True)
+    )
+    if not is_agent(request.user):
+        qs = qs.filter(project__created_by=request.user)
+    search = request.GET.get('search', '').strip()
+    if search:
+        qs = qs.filter(
+            Q(name__icontains=search) |
+            Q(url__icontains=search) |
+            Q(description__icontains=search) |
+            Q(project__name__icontains=search) |
+            Q(project__folio__icontains=search)
+        )
+    paginator = Paginator(qs, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    context = {
+        'page_title': 'Enlaces de Proyectos',
+        'page_obj': page_obj,
+        'search': search,
+        'submenu': get_crm_submenu(request, active_item='project_info_links'),
+    }
+    return render(request, 'tickets/project_info_link_list.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def project_info_link_add(request, pk):
+    from django.core.validators import URLValidator
+    from django.core.exceptions import ValidationError
+    from .models import ProjectInfo, ProjectInfoLink
+    project = get_object_or_404(ProjectInfo, pk=pk)
+    if not is_agent(request.user) and project.created_by != request.user:
+        return JsonResponse({'error': 'Sin permiso'}, status=403)
+    name = request.POST.get('name', '').strip()
+    url = request.POST.get('url', '').strip()
+    description = request.POST.get('description', '').strip()
+    if not name:
+        return JsonResponse({'error': 'El nombre es obligatorio.'}, status=400)
+    if not url:
+        return JsonResponse({'error': 'La URL es obligatoria.'}, status=400)
+    if not url.startswith(('http://', 'https://')):
+        url = f'https://{url}'
+    try:
+        URLValidator()(url)
+    except ValidationError:
+        return JsonResponse({'error': 'La URL no es válida.'}, status=400)
+    link = ProjectInfoLink.objects.create(
+        project=project, name=name, url=url, description=description,
+        created_by=request.user,
+    )
+    return JsonResponse({
+        'ok': True,
+        'id': link.pk,
+        'name': link.name,
+        'url': link.url,
+        'description': link.description,
+        'date': link.created_at.strftime('%d/%m/%Y %H:%M'),
+        'public_share_token': str(link.public_share_token),
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def project_info_link_delete(request, pk):
+    from .models import ProjectInfoLink
+    obj = get_object_or_404(ProjectInfoLink, pk=pk)
+    if not is_agent(request.user) and obj.project.created_by != request.user:
+        return JsonResponse({'error': 'Sin permiso'}, status=403)
+    obj.delete()
+    return JsonResponse({'ok': True})
+
+
+def project_info_link_public(request, token):
+    """Vista pública de detalle de un enlace, para compartir con el cliente."""
+    from .models import ProjectInfoLink, ProjectInfoLinkVisit
+    link = get_object_or_404(
+        ProjectInfoLink.objects.select_related('project', 'project__company'),
+        public_share_token=token,
+    )
+    project = link.project
+
+    # Respetar PIN del proyecto padre
+    session_key = f'pi_auth_{project.pk}'
+    pin_error = None
+    if project.pin:
+        if not request.session.get(session_key):
+            if request.method == 'POST':
+                entered = request.POST.get('pin', '').strip()
+                if entered == project.pin:
+                    request.session[session_key] = True
+                else:
+                    pin_error = 'PIN incorrecto. Inténtalo de nuevo.'
+            if not request.session.get(session_key):
+                return render(request, 'tickets/project_info_pin.html', {
+                    'project': project, 'pin_error': pin_error,
+                })
+
+    # Registrar apertura
+    ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', ''))
+    ip = ip.split(',')[0].strip()
+    ua = request.META.get('HTTP_USER_AGENT', '')[:500]
+    ProjectInfoLinkVisit.objects.create(link=link, ip_address=ip, user_agent=ua)
+
+    context = {'link': link, 'project': project}
+    return render(request, 'tickets/project_info_link_public.html', context)
 
 
 # ── Helpers privados ──────────────────────────────────────────────────────────

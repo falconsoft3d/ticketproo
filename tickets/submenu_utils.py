@@ -110,6 +110,13 @@ def get_crm_submenu(request, active_item=None):
             'count': None,
             'active': active_item == 'project_info'
         },
+        {
+            'name': 'Enlaces de Proyecto',
+            'url': reverse('project_info_link_list'),
+            'icon': 'bi bi-link-45deg',
+            'count': None,
+            'active': active_item == 'project_info_links'
+        },
     ]
     
     return submenu

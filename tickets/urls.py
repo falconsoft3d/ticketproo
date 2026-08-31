@@ -513,6 +513,10 @@ urlpatterns = [
     path('crm/project-info/line/<int:line_pk>/attach/add/', views.pi_line_attachment_add, name='pi_line_attachment_add'),
     path('crm/project-info/line/comment/<int:pk>/delete/', views.pi_line_comment_delete, name='pi_line_comment_delete'),
     path('crm/project-info/line/attach/<int:pk>/delete/', views.pi_line_attachment_delete, name='pi_line_attachment_delete'),
+    path('crm/project-info/<int:pk>/link/add/', views.project_info_link_add, name='project_info_link_add'),
+    path('crm/project-info/link/<int:pk>/delete/', views.project_info_link_delete, name='project_info_link_delete'),
+    path('crm/project-info/links/', views.project_info_link_list, name='project_info_link_list'),
+    path('crm/project-info/link/public/<uuid:token>/', views.project_info_link_public, name='project_info_link_public'),
 
     # URLs de Reuniones
     path('meetings/', views.meeting_list_view, name='meeting_list'),
