@@ -184,7 +184,7 @@
         </div>
         {% if clase.descripcion or clase.enlace %}
         <div class="mb-2 ps-4">
-            {% if clase.descripcion %}<p class="text-muted small mb-1">{{ clase.descripcion }}</p>{% endif %}
+            {% if clase.descripcion %}<p class="text-muted small mb-1" style="white-space:pre-wrap;">{{ clase.descripcion }}</p>{% endif %}
             {% if clase.enlace %}
             <a href="{{ clase.enlace }}" target="_blank" rel="noopener noreferrer" class="small text-primary text-decoration-none">
                 <i class="bi bi-link-45deg"></i> {{ clase.enlace|truncatechars:70 }}

@@ -67,7 +67,7 @@
                                         <span class="text-muted small ms-1"><i class="bi bi-calendar3"></i> {{ clase.fecha|date:"d/m/Y" }}</span>
                                     {% endif %}
                                     {% if clase.descripcion %}
-                                    <p class="text-muted small mb-0 mt-1">{{ clase.descripcion }}</p>
+                                    <p class="text-muted small mb-0 mt-1" style="white-space:pre-wrap;">{{ clase.descripcion }}</p>
                                     {% endif %}
                                     {% if clase.enlace %}
                                     <a href="{{ clase.enlace }}" target="_blank" rel="noopener noreferrer" class="small text-primary text-decoration-none">
@@ -354,7 +354,7 @@
                     <span class="badge bg-light text-dark border ms-1"><i class="bi bi-easel"></i> {{ linea.clase.titulo }}</span>
                     {% endif %}
                     {% if linea.descripcion %}
-                    <p class="text-muted small mb-0 mt-1">{{ linea.descripcion }}</p>
+                    <p class="text-muted small mb-0 mt-1" style="white-space:pre-wrap;">{{ linea.descripcion }}</p>
                     {% endif %}
                 </div>
                 {% if can_manage %}
