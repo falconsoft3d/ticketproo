@@ -179,6 +179,15 @@
       &nbsp;·&nbsp;
       <i class="bi bi-arrow-repeat me-1"></i>{{ project.updated_at|date:"d/m/Y" }}
     </div>
+    {% if capacitaciones_empresa %}
+    <div style="margin-top:1rem;">
+      {% for cap in capacitaciones_empresa %}
+      <a href="{% url 'capacitacion_public' cap.public_token %}" class="btn btn-light btn-sm me-2 mb-2">
+        <i class="bi bi-journal-check me-1"></i>Ver capacitación: {{ cap.titulo }}
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
 
   {% if responsibles %}

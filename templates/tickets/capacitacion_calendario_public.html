@@ -1,0 +1,136 @@
+{% load form_filters %}<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario – {{ cap.titulo }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .public-banner {
+            background: linear-gradient(135deg, #1d6fa4 0%, #145a8a 100%);
+        }
+        .cal-card { max-width: 860px; margin: 0 auto; }
+        .cal-table { table-layout: fixed; }
+        .cal-table th { text-align: center; font-size: .8rem; }
+        .cal-day {
+            height: 90px;
+            vertical-align: top;
+            padding: 4px !important;
+        }
+        .cal-day.empty { background-color: #fbfbfb; }
+        .cal-day.today { background-color: #eaf4fb; }
+        .cal-day-number { font-size: .8rem; color: #6c757d; }
+        .cal-clase-badge {
+            display: block;
+            font-size: .7rem;
+            background-color: #1d6fa4;
+            color: #fff;
+            border-radius: 4px;
+            padding: 1px 4px;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Banner -->
+    <div class="public-banner text-white py-3 px-4 d-flex align-items-center gap-3">
+        <i class="bi bi-calendar3 fs-4"></i>
+        <div>
+            <div class="fw-bold">Calendario de Clases</div>
+            <div class="small opacity-75">{{ cap.titulo }}</div>
+        </div>
+    </div>
+
+    <div class="cal-card px-3 py-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a href="{% url 'capacitacion_public' cap.public_token %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Volver a la capacitación
+            </a>
+            <div class="btn-group btn-group-sm">
+                <a href="?year={{ prev_year }}&month={{ prev_month }}" class="btn btn-outline-primary">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+                <span class="btn btn-outline-primary disabled fw-semibold">{{ month_name }} {{ year }}</span>
+                <a href="?year={{ next_year }}&month={{ next_month }}" class="btn btn-outline-primary">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-2">
+                <div class="table-responsive">
+                    <table class="table table-bordered cal-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Lun</th><th>Mar</th><th>Mié</th><th>Jue</th><th>Vie</th><th>Sáb</th><th>Dom</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for week in weeks %}
+                            <tr>
+                                {% for day in week %}
+                                {% if day == 0 %}
+                                <td class="cal-day empty"></td>
+                                {% else %}
+                                <td class="cal-day {% if day == today.day and month == today.month and year == today.year %}today{% endif %}">
+                                    <div class="cal-day-number">{{ day }}</div>
+                                    {% with dia_clases=clases_by_day|get_item:day %}
+                                        {% for clase in dia_clases %}
+                                        <a href="{% url 'capacitacion_clase_public' clase.public_token %}" class="cal-clase-badge" title="{{ clase.titulo }}">
+                                            <i class="bi bi-easel"></i> {{ clase.titulo }}
+                                        </a>
+                                        {% endfor %}
+                                    {% endwith %}
+                                </td>
+                                {% endif %}
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {% if clases_by_day %}
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h6 class="fw-semibold mb-3"><i class="bi bi-list-ul text-primary"></i> Clases de {{ month_name }}</h6>
+                <ul class="list-group list-group-flush">
+                    {% for day, dia_clases in clases_by_day.items %}
+                        {% for clase in dia_clases %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <strong>{{ clase.fecha|date:"d/m/Y" }}</strong> — {{ clase.titulo }}
+                            </span>
+                            <a href="{% url 'capacitacion_clase_public' clase.public_token %}" class="btn btn-sm btn-outline-primary">
+                                Ver clase <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+            <i class="bi bi-calendar-x" style="font-size:2rem;"></i>
+            <p class="mt-2">No hay clases programadas en {{ month_name }} {{ year }}.</p>
+        </div>
+        {% endif %}
+
+        <div class="text-center text-muted small mt-4 pb-4">
+            Powered by <strong>TicketProo</strong>
+        </div>
+    </div>
+
+</body>
+</html>

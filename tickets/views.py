@@ -315,6 +315,16 @@ from django.contrib.auth import authenticate as auth_authenticate
 class CustomLoginView(DjangoLoginView):
     """LoginView que bloquea usuarios con error_401 activo y registra los intentos."""
 
+    REMEMBER_COOKIE_NAME = 'remembered_username'
+    REMEMBER_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 días
+
+    def get_initial(self):
+        initial = super().get_initial()
+        remembered_username = self.request.COOKIES.get(self.REMEMBER_COOKIE_NAME)
+        if remembered_username:
+            initial['username'] = remembered_username
+        return initial
+
     def form_valid(self, form):
         user = form.get_user()
         try:
@@ -329,7 +339,19 @@ class CustomLoginView(DjangoLoginView):
                 return self.form_invalid(form)
         except UserProfile.DoesNotExist:
             pass
-        return super().form_valid(form)
+
+        response = super().form_valid(form)
+
+        if self.request.POST.get('remember_me'):
+            response.set_cookie(
+                self.REMEMBER_COOKIE_NAME,
+                form.cleaned_data.get('username', ''),
+                max_age=self.REMEMBER_COOKIE_AGE,
+            )
+        else:
+            response.delete_cookie(self.REMEMBER_COOKIE_NAME)
+
+        return response
 
     def _get_client_ip(self):
         x_forwarded_for = self.request.META.get('HTTP_X_FORWARDED_FOR')
@@ -56875,13 +56897,19 @@ def capacitacion_create(request):
 @login_required
 def capacitacion_detail(request, pk):
     """Detalle de capacitación con sus líneas/tareas"""
-    from .models import Capacitacion, CapacitacionLinea, CapacitacionRespuesta
+    from django.db.models import Count, Q
+    from .models import Capacitacion, CapacitacionLinea, CapacitacionRespuesta, CapacitacionClase, CapacitacionAsistencia, CapacitacionEnlace
     cap = get_object_or_404(Capacitacion, pk=pk)
     if not cap.user_can_view(request.user):
         messages.error(request, "No tienes acceso a esta capacitación.")
         return redirect("capacitacion_list")
     can_manage = is_agent(request.user) or request.user.is_staff or request.user.is_superuser
-    lineas = cap.lineas.prefetch_related("respuestas__submitted_by").order_by("orden", "created_at")
+    lineas = cap.lineas.select_related("clase").prefetch_related("respuestas__submitted_by").order_by("orden", "created_at")
+    clases = cap.clases.prefetch_related("asistencias", "solicitudes", "comentarios").annotate(
+        likes_count=Count("reacciones", filter=Q(reacciones__tipo="like")),
+        dislikes_count=Count("reacciones", filter=Q(reacciones__tipo="dislike")),
+    ).order_by("orden", "fecha", "created_at")
+    enlaces = cap.enlaces.order_by("orden", "created_at")
 
     # Manejar envío de respuesta (POST sin acción especial)
     if request.method == "POST":
@@ -56889,15 +56917,137 @@ def capacitacion_detail(request, pk):
         if action == "add_linea" and can_manage:
             tarea = request.POST.get("tarea", "").strip()
             descripcion = request.POST.get("descripcion", "").strip()
+            fecha = request.POST.get("fecha", "").strip()
             orden = request.POST.get("orden", 0)
+            clase_id = request.POST.get("clase", "").strip()
+            clase = clases.filter(pk=clase_id).first() if clase_id else None
             if tarea:
                 CapacitacionLinea.objects.create(
                     capacitacion=cap,
                     tarea=tarea,
                     descripcion=descripcion,
+                    fecha=fecha or None,
+                    orden=orden or 0,
+                    clase=clase,
+                )
+                messages.success(request, "Tarea agregada.")
+        elif action == "edit_linea" and can_manage:
+            linea_id = request.POST.get("linea_id")
+            linea = lineas.filter(pk=linea_id).first()
+            tarea = request.POST.get("tarea", "").strip()
+            descripcion = request.POST.get("descripcion", "").strip()
+            fecha = request.POST.get("fecha", "").strip()
+            orden = request.POST.get("orden", 0)
+            clase_id = request.POST.get("clase", "").strip()
+            clase = clases.filter(pk=clase_id).first() if clase_id else None
+            if linea and tarea:
+                linea.tarea = tarea
+                linea.descripcion = descripcion
+                linea.fecha = fecha or None
+                linea.orden = orden or 0
+                linea.clase = clase
+                linea.save(update_fields=["tarea", "descripcion", "fecha", "orden", "clase"])
+                messages.success(request, "Tarea actualizada.")
+            else:
+                messages.error(request, "El título de la tarea es obligatorio.")
+        elif action == "add_clase" and can_manage:
+            titulo = request.POST.get("titulo", "").strip()
+            fecha = request.POST.get("fecha", "").strip()
+            enlace = request.POST.get("enlace", "").strip()
+            descripcion = request.POST.get("descripcion", "").strip()
+            orden = request.POST.get("orden", 0)
+            if titulo:
+                CapacitacionClase.objects.create(
+                    capacitacion=cap,
+                    titulo=titulo,
+                    fecha=fecha or None,
+                    enlace=enlace,
+                    descripcion=descripcion,
                     orden=orden or 0,
                 )
-                messages.success(request, "Línea agregada.")
+                messages.success(request, "Clase agregada.")
+            else:
+                messages.error(request, "El título de la clase es obligatorio.")
+        elif action == "edit_clase" and can_manage:
+            clase_id = request.POST.get("clase_id")
+            clase = clases.filter(pk=clase_id).first()
+            titulo = request.POST.get("titulo", "").strip()
+            fecha = request.POST.get("fecha", "").strip()
+            enlace = request.POST.get("enlace", "").strip()
+            descripcion = request.POST.get("descripcion", "").strip()
+            orden = request.POST.get("orden", 0)
+            if clase and titulo:
+                clase.titulo = titulo
+                clase.fecha = fecha or None
+                clase.enlace = enlace
+                clase.descripcion = descripcion
+                clase.orden = orden or 0
+                clase.save(update_fields=["titulo", "fecha", "enlace", "descripcion", "orden"])
+                messages.success(request, "Clase actualizada.")
+            else:
+                messages.error(request, "El título de la clase es obligatorio.")
+        elif action == "edit_resumen" and can_manage:
+            clase_id = request.POST.get("clase_id")
+            resumen = request.POST.get("resumen", "").strip()
+            clase = clases.filter(pk=clase_id).first()
+            if clase:
+                clase.resumen = resumen
+                clase.save(update_fields=["resumen"])
+                messages.success(request, "Resumen guardado.")
+        elif action == "add_enlace" and can_manage:
+            titulo = request.POST.get("titulo", "").strip()
+            url = request.POST.get("url", "").strip()
+            usuario_enlace = request.POST.get("usuario", "").strip()
+            contrasena = request.POST.get("contrasena", "").strip()
+            orden = request.POST.get("orden", 0)
+            if titulo and url:
+                CapacitacionEnlace.objects.create(
+                    capacitacion=cap,
+                    titulo=titulo,
+                    url=url,
+                    usuario=usuario_enlace,
+                    contrasena=contrasena,
+                    orden=orden or 0,
+                )
+                messages.success(request, "Enlace agregado.")
+            else:
+                messages.error(request, "Título y URL son obligatorios.")
+        elif action == "edit_enlace" and can_manage:
+            enlace_id = request.POST.get("enlace_id")
+            enlace_obj = enlaces.filter(pk=enlace_id).first()
+            titulo = request.POST.get("titulo", "").strip()
+            url = request.POST.get("url", "").strip()
+            usuario_enlace = request.POST.get("usuario", "").strip()
+            contrasena = request.POST.get("contrasena", "").strip()
+            orden = request.POST.get("orden", 0)
+            if enlace_obj and titulo and url:
+                enlace_obj.titulo = titulo
+                enlace_obj.url = url
+                enlace_obj.usuario = usuario_enlace
+                enlace_obj.contrasena = contrasena
+                enlace_obj.orden = orden or 0
+                enlace_obj.save(update_fields=["titulo", "url", "usuario", "contrasena", "orden"])
+                messages.success(request, "Enlace actualizado.")
+            else:
+                messages.error(request, "Título y URL son obligatorios.")
+        elif action == "add_asistencia" and can_manage:
+            clase_id = request.POST.get("clase_id")
+            nombre = request.POST.get("nombre", "").strip()
+            email = request.POST.get("email", "").strip()
+            telefono = request.POST.get("telefono", "").strip()
+            cargo = request.POST.get("cargo", "").strip()
+            clase = clases.filter(pk=clase_id).first()
+            if clase and nombre:
+                CapacitacionAsistencia.objects.create(
+                    clase=clase,
+                    nombre=nombre,
+                    email=email,
+                    telefono=telefono,
+                    cargo=cargo,
+                )
+                messages.success(request, "Asistencia registrada.")
+            else:
+                messages.error(request, "El nombre es obligatorio.")
         elif action == "add_respuesta":
             linea_id = request.POST.get("linea_id")
             nombre = request.POST.get("nombre", "").strip()
@@ -56918,6 +57068,8 @@ def capacitacion_detail(request, pk):
     return render(request, "tickets/capacitacion_detail.html", {
         "cap": cap,
         "lineas": lineas,
+        "clases": clases,
+        "enlaces": enlaces,
         "can_manage": can_manage,
     })
 
@@ -56958,6 +57110,60 @@ def capacitacion_edit(request, pk):
 
 
 @login_required
+def capacitacion_duplicate(request, pk):
+    """Duplicar una capacitación con sus clases y tareas (sin respuestas, asistencia ni solicitudes)"""
+    from .models import Capacitacion, CapacitacionClase, CapacitacionLinea, CapacitacionEnlace
+    cap = get_object_or_404(Capacitacion, pk=pk)
+    if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
+        messages.error(request, "No tienes permiso para duplicar esta capacitación.")
+        return redirect("capacitacion_detail", pk=pk)
+    if request.method == "POST":
+        new_cap = Capacitacion.objects.create(
+            titulo=f"{cap.titulo} (copia)",
+            temas=cap.temas,
+            created_by=request.user,
+            is_active=cap.is_active,
+        )
+        new_cap.assigned_users.set(cap.assigned_users.all())
+        new_cap.assigned_companies.set(cap.assigned_companies.all())
+
+        for enlace in cap.enlaces.all():
+            CapacitacionEnlace.objects.create(
+                capacitacion=new_cap,
+                orden=enlace.orden,
+                titulo=enlace.titulo,
+                url=enlace.url,
+                usuario=enlace.usuario,
+                contrasena=enlace.contrasena,
+            )
+
+        clase_map = {}
+        for clase in cap.clases.all():
+            clase_map[clase.pk] = CapacitacionClase.objects.create(
+                capacitacion=new_cap,
+                orden=clase.orden,
+                titulo=clase.titulo,
+                fecha=clase.fecha,
+                enlace=clase.enlace,
+                descripcion=clase.descripcion,
+            )
+
+        for linea in cap.lineas.all():
+            CapacitacionLinea.objects.create(
+                capacitacion=new_cap,
+                orden=linea.orden,
+                tarea=linea.tarea,
+                descripcion=linea.descripcion,
+                fecha=linea.fecha,
+                clase=clase_map.get(linea.clase_id),
+            )
+
+        messages.success(request, f'Capacitación duplicada como "{new_cap.titulo}".')
+        return redirect("capacitacion_detail", pk=new_cap.pk)
+    return redirect("capacitacion_detail", pk=pk)
+
+
+@login_required
 def capacitacion_delete(request, pk):
     """Eliminar capacitación (solo agentes)"""
     from .models import Capacitacion
@@ -56989,6 +57195,96 @@ def capacitacion_linea_delete(request, pk, linea_id):
 
 
 @login_required
+def capacitacion_clase_delete(request, pk, clase_id):
+    """Eliminar una clase de capacitación (solo agentes)"""
+    from .models import Capacitacion, CapacitacionClase
+    cap = get_object_or_404(Capacitacion, pk=pk)
+    clase = get_object_or_404(CapacitacionClase, pk=clase_id, capacitacion=cap)
+    if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
+        messages.error(request, "No tienes permiso.")
+        return redirect("capacitacion_detail", pk=pk)
+    if request.method == "POST":
+        clase.delete()
+        messages.success(request, "Clase eliminada.")
+    return redirect("capacitacion_detail", pk=pk)
+
+
+@login_required
+def capacitacion_enlace_delete(request, pk, enlace_id):
+    """Eliminar un enlace de acceso de la capacitación (solo agentes)"""
+    from .models import Capacitacion, CapacitacionEnlace
+    cap = get_object_or_404(Capacitacion, pk=pk)
+    enlace = get_object_or_404(CapacitacionEnlace, pk=enlace_id, capacitacion=cap)
+    if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
+        messages.error(request, "No tienes permiso.")
+        return redirect("capacitacion_detail", pk=pk)
+    if request.method == "POST":
+        enlace.delete()
+        messages.success(request, "Enlace eliminado.")
+    return redirect("capacitacion_detail", pk=pk)
+
+
+@login_required
+def capacitacion_comentario_delete(request, pk, comentario_id):
+    """Eliminar un comentario de clase (moderación, solo agentes)"""
+    from .models import Capacitacion, CapacitacionClaseComentario
+    cap = get_object_or_404(Capacitacion, pk=pk)
+    comentario = get_object_or_404(CapacitacionClaseComentario, pk=comentario_id, clase__capacitacion=cap)
+    if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
+        messages.error(request, "No tienes permiso.")
+        return redirect("capacitacion_detail", pk=pk)
+    if request.method == "POST":
+        comentario.delete()
+        messages.success(request, "Comentario eliminado.")
+    return redirect("capacitacion_detail", pk=pk)
+
+
+@login_required
+def capacitacion_asistencia_delete(request, pk, asistencia_id):
+    """Eliminar un registro de asistencia (solo agentes)"""
+    from .models import Capacitacion, CapacitacionAsistencia
+    cap = get_object_or_404(Capacitacion, pk=pk)
+    asistencia = get_object_or_404(CapacitacionAsistencia, pk=asistencia_id, clase__capacitacion=cap)
+    if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
+        messages.error(request, "No tienes permiso.")
+        return redirect("capacitacion_detail", pk=pk)
+    if request.method == "POST":
+        asistencia.delete()
+        messages.success(request, "Asistencia eliminada.")
+    return redirect("capacitacion_detail", pk=pk)
+
+
+@login_required
+def capacitacion_solicitud_toggle(request, pk, solicitud_id):
+    """Marcar/desmarcar una solicitud de cambio como atendida (solo agentes)"""
+    from .models import Capacitacion, CapacitacionSolicitudCambio
+    cap = get_object_or_404(Capacitacion, pk=pk)
+    solicitud = get_object_or_404(CapacitacionSolicitudCambio, pk=solicitud_id, clase__capacitacion=cap)
+    if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
+        messages.error(request, "No tienes permiso.")
+        return redirect("capacitacion_detail", pk=pk)
+    if request.method == "POST":
+        solicitud.atendida = not solicitud.atendida
+        solicitud.save(update_fields=["atendida"])
+    return redirect("capacitacion_detail", pk=pk)
+
+
+@login_required
+def capacitacion_solicitud_delete(request, pk, solicitud_id):
+    """Eliminar una solicitud de cambio (solo agentes)"""
+    from .models import Capacitacion, CapacitacionSolicitudCambio
+    cap = get_object_or_404(Capacitacion, pk=pk)
+    solicitud = get_object_or_404(CapacitacionSolicitudCambio, pk=solicitud_id, clase__capacitacion=cap)
+    if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
+        messages.error(request, "No tienes permiso.")
+        return redirect("capacitacion_detail", pk=pk)
+    if request.method == "POST":
+        solicitud.delete()
+        messages.success(request, "Solicitud eliminada.")
+    return redirect("capacitacion_detail", pk=pk)
+
+
+@login_required
 def capacitacion_respuesta_delete(request, pk, respuesta_id):
     """Eliminar una respuesta (solo agentes o el propio autor)"""
     from .models import Capacitacion, CapacitacionRespuesta
@@ -57009,41 +57305,264 @@ def capacitacion_respuesta_delete(request, pk, respuesta_id):
     return redirect("capacitacion_detail", pk=pk)
 
 
+def _capacitacion_calendario_context(clases_con_fecha, request):
+    """Construye el contexto de un mini-calendario mensual marcando los días con clases.
+    Por defecto siempre muestra el mes actual; navega vía los parámetros GET year/month."""
+    import calendar as cal_module
+    from datetime import date
+
+    try:
+        year = int(request.GET.get("year", 0))
+        month = int(request.GET.get("month", 0))
+    except ValueError:
+        year, month = 0, 0
+    if not (year and 1 <= month <= 12):
+        today = date.today()
+        year, month = today.year, today.month
+
+    clases_del_mes = clases_con_fecha.filter(fecha__year=year, fecha__month=month)
+    clases_by_day = {}
+    for clase in clases_del_mes:
+        clases_by_day.setdefault(clase.fecha.day, []).append(clase)
+
+    weeks = cal_module.Calendar(firstweekday=0).monthdayscalendar(year, month)
+
+    if month == 1:
+        prev_year, prev_month = year - 1, 12
+    else:
+        prev_year, prev_month = year, month - 1
+    if month == 12:
+        next_year, next_month = year + 1, 1
+    else:
+        next_year, next_month = year, month + 1
+
+    month_names = [
+        '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    ]
+
+    return {
+        "cal_year": year,
+        "cal_month": month,
+        "cal_month_name": month_names[month],
+        "cal_weeks": weeks,
+        "cal_clases_by_day": clases_by_day,
+        "cal_prev_year": prev_year,
+        "cal_prev_month": prev_month,
+        "cal_next_year": next_year,
+        "cal_next_month": next_month,
+        "cal_today": date.today(),
+    }
+
+
 def capacitacion_public(request, token):
     """Vista pública de una capacitación accesible sin login mediante token UUID"""
-    from .models import Capacitacion, CapacitacionLinea, CapacitacionRespuesta
+    from django.db.models import Prefetch, Count, Q
+    from .models import (
+        Capacitacion, CapacitacionLinea, CapacitacionRespuesta, CapacitacionClase,
+        CapacitacionClaseReaccion, CapacitacionClaseComentario,
+    )
 
     cap = get_object_or_404(Capacitacion, public_token=token, is_active=True)
-    lineas = cap.lineas.prefetch_related("respuestas__submitted_by").order_by("orden", "created_at")
+    lineas = cap.lineas.select_related("clase").prefetch_related("respuestas__submitted_by").order_by("orden", "created_at")
+    tareas_prefetch = Prefetch(
+        "tareas",
+        queryset=CapacitacionLinea.objects.prefetch_related("respuestas__submitted_by").order_by("orden", "created_at"),
+    )
+    comentarios_prefetch = Prefetch(
+        "comentarios",
+        queryset=CapacitacionClaseComentario.objects.order_by("-created_at"),
+    )
+    clases = cap.clases.prefetch_related(tareas_prefetch, "asistencias", comentarios_prefetch).annotate(
+        likes_count=Count("reacciones", filter=Q(reacciones__tipo="like")),
+        dislikes_count=Count("reacciones", filter=Q(reacciones__tipo="dislike")),
+    ).order_by("orden", "fecha", "created_at")
+    lineas_sin_clase = lineas.filter(clase__isnull=True)
+    enlaces = cap.enlaces.order_by("orden", "created_at")
+    clases_con_fecha = cap.clases.filter(fecha__isnull=False).order_by("fecha")
+    hay_clase_con_fecha = clases_con_fecha.exists()
+    calendario_ctx = _capacitacion_calendario_context(clases_con_fecha, request) if hay_clase_con_fecha else {}
 
     error = None
     if request.method == "POST":
-        linea_id = request.POST.get("linea_id")
-        nombre = request.POST.get("nombre", "").strip()
-        enlace = request.POST.get("enlace", "").strip()
-        linea = CapacitacionLinea.objects.filter(pk=linea_id, capacitacion=cap).first()
-        if not linea:
-            error = "Línea no válida."
-        elif not nombre:
-            error = "Por favor ingresa tu nombre."
-        elif not enlace:
-            error = "Por favor ingresa un enlace."
-        else:
-            submitted_by = request.user if request.user.is_authenticated else None
-            CapacitacionRespuesta.objects.create(
-                linea=linea,
-                nombre=nombre,
-                enlace=enlace,
-                submitted_by=submitted_by,
-            )
+        action = request.POST.get("action", "add_respuesta")
+        if action == "reaccionar_clase":
+            clase_id = request.POST.get("clase_id")
+            tipo = request.POST.get("tipo")
+            clase = cap.clases.filter(pk=clase_id).first()
+            if clase and tipo in ("like", "dislike"):
+                CapacitacionClaseReaccion.objects.create(clase=clase, tipo=tipo)
             from django.http import HttpResponseRedirect
-            return HttpResponseRedirect(request.path + "?ok=1#linea-" + str(linea.pk))
+            return HttpResponseRedirect(request.path + "?ok=reaccion#clase-" + str(clase_id))
+        elif action == "comentar_clase":
+            clase_id = request.POST.get("clase_id")
+            nombre_com = request.POST.get("nombre", "").strip()
+            email_com = request.POST.get("email", "").strip()
+            comentario_texto = request.POST.get("comentario", "").strip()
+            clase = cap.clases.filter(pk=clase_id).first()
+            if not clase:
+                error = "Clase no válida."
+            elif not nombre_com or not email_com or not comentario_texto:
+                error = "Nombre, email y comentario son obligatorios."
+            else:
+                CapacitacionClaseComentario.objects.create(
+                    clase=clase,
+                    nombre=nombre_com,
+                    email=email_com,
+                    comentario=comentario_texto,
+                )
+                from django.http import HttpResponseRedirect
+                return HttpResponseRedirect(request.path + "?ok=comentario#clase-" + str(clase_id))
+        else:
+            linea_id = request.POST.get("linea_id")
+            nombre = request.POST.get("nombre", "").strip()
+            enlace = request.POST.get("enlace", "").strip()
+            linea = CapacitacionLinea.objects.filter(pk=linea_id, capacitacion=cap).first()
+            if not linea:
+                error = "Línea no válida."
+            elif not nombre:
+                error = "Por favor ingresa tu nombre."
+            elif not enlace:
+                error = "Por favor ingresa un enlace."
+            else:
+                submitted_by = request.user if request.user.is_authenticated else None
+                CapacitacionRespuesta.objects.create(
+                    linea=linea,
+                    nombre=nombre,
+                    enlace=enlace,
+                    submitted_by=submitted_by,
+                )
+                from django.http import HttpResponseRedirect
+                return HttpResponseRedirect(request.path + "?ok=1#linea-" + str(linea.pk))
 
-    return render(request, "tickets/capacitacion_public.html", {
+    context = {
         "cap": cap,
         "lineas": lineas,
+        "clases": clases,
+        "lineas_sin_clase": lineas_sin_clase,
+        "hay_clase_con_fecha": hay_clase_con_fecha,
+        "enlaces": enlaces,
         "error": error,
         "ok": request.GET.get("ok"),
+    }
+    context.update(calendario_ctx)
+    return render(request, "tickets/capacitacion_public.html", context)
+
+
+def capacitacion_public_calendario(request, token):
+    """Vista pública: calendario del mes marcando las clases con fecha, sin login"""
+    import calendar as cal_module
+    from datetime import date
+    from .models import Capacitacion
+
+    cap = get_object_or_404(Capacitacion, public_token=token, is_active=True)
+    clases_con_fecha = cap.clases.filter(fecha__isnull=False).order_by("fecha")
+
+    try:
+        year = int(request.GET.get("year", 0))
+        month = int(request.GET.get("month", 0))
+    except ValueError:
+        year, month = 0, 0
+    if not (year and 1 <= month <= 12):
+        today = date.today()
+        if clases_con_fecha.filter(fecha__year=today.year, fecha__month=today.month).exists():
+            year, month = today.year, today.month
+        elif clases_con_fecha.exists():
+            year, month = clases_con_fecha.first().fecha.year, clases_con_fecha.first().fecha.month
+        else:
+            year, month = today.year, today.month
+
+    clases_del_mes = clases_con_fecha.filter(fecha__year=year, fecha__month=month)
+    clases_by_day = {}
+    for clase in clases_del_mes:
+        clases_by_day.setdefault(clase.fecha.day, []).append(clase)
+
+    weeks = cal_module.Calendar(firstweekday=0).monthdayscalendar(year, month)
+
+    if month == 1:
+        prev_year, prev_month = year - 1, 12
+    else:
+        prev_year, prev_month = year, month - 1
+    if month == 12:
+        next_year, next_month = year + 1, 1
+    else:
+        next_year, next_month = year, month + 1
+
+    month_names = [
+        '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    ]
+
+    return render(request, "tickets/capacitacion_calendario_public.html", {
+        "cap": cap,
+        "year": year,
+        "month": month,
+        "month_name": month_names[month],
+        "weeks": weeks,
+        "clases_by_day": clases_by_day,
+        "prev_year": prev_year,
+        "prev_month": prev_month,
+        "next_year": next_year,
+        "next_month": next_month,
+        "today": date.today(),
+    })
+
+
+def capacitacion_clase_public(request, token):
+    """Vista pública de una clase: registro de asistencia y solicitud de cambios, sin login"""
+    from .models import CapacitacionClase, CapacitacionAsistencia, CapacitacionSolicitudCambio
+
+    clase = get_object_or_404(
+        CapacitacionClase.objects.select_related("capacitacion"),
+        public_token=token,
+        capacitacion__is_active=True,
+    )
+
+    error = None
+    ok = request.GET.get("ok")
+    if request.method == "POST":
+        action = request.POST.get("action", "")
+        if action == "registrar_asistencia":
+            nombre = request.POST.get("nombre", "").strip()
+            email = request.POST.get("email", "").strip()
+            telefono = request.POST.get("telefono", "").strip()
+            cargo = request.POST.get("cargo", "").strip()
+            if not nombre:
+                error = "Por favor ingresa tu nombre."
+            else:
+                CapacitacionAsistencia.objects.create(
+                    clase=clase,
+                    nombre=nombre,
+                    email=email,
+                    telefono=telefono,
+                    cargo=cargo,
+                )
+                return redirect(request.path + "?ok=asistencia")
+        elif action == "solicitar_cambio":
+            nombre = request.POST.get("nombre", "").strip()
+            email = request.POST.get("email", "").strip()
+            mensaje = request.POST.get("mensaje", "").strip()
+            if not nombre or not mensaje:
+                error = "Nombre y descripción del cambio son obligatorios."
+            else:
+                CapacitacionSolicitudCambio.objects.create(
+                    clase=clase,
+                    nombre=nombre,
+                    email=email,
+                    mensaje=mensaje,
+                )
+                return redirect(request.path + "?ok=solicitud")
+
+    asistencias = clase.asistencias.order_by("nombre")
+    solicitudes = clase.solicitudes.order_by("-created_at")
+
+    return render(request, "tickets/capacitacion_clase_public.html", {
+        "clase": clase,
+        "cap": clase.capacitacion,
+        "asistencias": asistencias,
+        "solicitudes": solicitudes,
+        "error": error,
+        "ok": ok,
     })
 
 
@@ -59474,12 +59993,18 @@ def project_info_public(request, token):
     responsibles = project.responsibles.select_related('user', 'user__profile').all()
     visits = project.visits.order_by('-visited_at')[:20]
 
+    capacitaciones_empresa = (
+        project.company.capacitaciones_asignadas.filter(is_active=True)
+        if project.company else None
+    )
+
     context = {
         'project': project,
         'lines_grouped': lines_grouped,
         'responsibles': responsibles,
         'visits': visits,
         'links': project.links.all(),
+        'capacitaciones_empresa': capacitaciones_empresa,
     }
     return render(request, 'tickets/project_info_public.html', context)
 

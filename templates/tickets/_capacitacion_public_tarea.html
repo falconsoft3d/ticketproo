@@ -1,0 +1,68 @@
+<div class="card shadow-sm border-0 mb-4" id="linea-{{ linea.pk }}">
+    <div class="card-header bg-light">
+        <span class="badge bg-primary me-1">{{ numero }}</span>
+        <strong>{{ linea.tarea }}</strong>
+        {% if linea.fecha %}
+        <span class="text-muted small ms-1"><i class="bi bi-calendar3"></i> {{ linea.fecha|date:"d/m/Y" }}</span>
+        {% endif %}
+        {% if linea.descripcion %}
+        <p class="text-muted small mb-0 mt-1">{{ linea.descripcion }}</p>
+        {% endif %}
+    </div>
+    <div class="card-body">
+
+        <!-- Respuestas existentes -->
+        {% if linea.respuestas.all %}
+        <div class="table-responsive mb-3">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Enlace</th>
+                        <th class="text-center" style="width:120px;">Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for resp in linea.respuestas.all %}
+                    <tr>
+                        <td>{{ resp.nombre }}</td>
+                        <td>
+                            <a href="{{ resp.enlace }}" target="_blank" rel="noopener noreferrer"
+                               class="text-primary text-decoration-none">
+                                <i class="bi bi-link-45deg"></i> {{ resp.enlace|truncatechars:70 }}
+                            </a>
+                        </td>
+                        <td class="text-center small text-muted">{{ resp.created_at|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted small fst-italic mb-3">Sin respuestas aún. ¡Sé el primero!</p>
+        {% endif %}
+
+        <!-- Formulario de respuesta -->
+        <form method="post" class="row g-2 align-items-end border-top pt-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_respuesta">
+            <input type="hidden" name="linea_id" value="{{ linea.pk }}">
+            <div class="col-sm-4">
+                <label class="form-label small mb-1">Tu nombre</label>
+                <input type="text" name="nombre" class="form-control form-control-sm" required
+                       placeholder="Nombre completo">
+            </div>
+            <div class="col-sm-6">
+                <label class="form-label small mb-1">Enlace / URL</label>
+                <input type="url" name="enlace" class="form-control form-control-sm" required
+                       placeholder="https://...">
+            </div>
+            <div class="col-sm-2">
+                <button type="submit" class="btn btn-sm btn-success w-100">
+                    <i class="bi bi-send"></i> Enviar
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>

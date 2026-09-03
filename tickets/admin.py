@@ -32,7 +32,9 @@ from .models import (
     OdooConnection, OdooRPCTable, OdooRPCField, OdooRPCData, OdooRPCImportFile,
     Chatbot, ChatbotQuestion, ChatbotConversation, ChatbotMessage, ChatbotClick, CourseApproval, PrivacyPolicy,
     Invoice, InvoiceLine, Manual, ManualAccess, ProjectBook, ProjectBookEntry,
-    Capacitacion, CapacitacionLinea, CapacitacionRespuesta
+    Capacitacion, CapacitacionLinea, CapacitacionClase, CapacitacionAsistencia,
+    CapacitacionSolicitudCambio, CapacitacionRespuesta, CapacitacionEnlace,
+    CapacitacionClaseReaccion, CapacitacionClaseComentario
 )
 
 # Configuración del sitio de administración
@@ -7118,11 +7120,52 @@ class CapacitacionAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at',)
 
 
+@admin.register(CapacitacionEnlace)
+class CapacitacionEnlaceAdmin(admin.ModelAdmin):
+    list_display = ('capacitacion', 'orden', 'titulo', 'url', 'usuario')
+    list_filter = ('capacitacion',)
+    search_fields = ('titulo', 'url', 'usuario')
+
+
 @admin.register(CapacitacionLinea)
 class CapacitacionLineaAdmin(admin.ModelAdmin):
     list_display = ('capacitacion', 'orden', 'tarea')
     list_filter = ('capacitacion',)
     search_fields = ('tarea',)
+
+
+@admin.register(CapacitacionClase)
+class CapacitacionClaseAdmin(admin.ModelAdmin):
+    list_display = ('capacitacion', 'orden', 'titulo', 'fecha')
+    list_filter = ('capacitacion',)
+    search_fields = ('titulo',)
+
+
+@admin.register(CapacitacionAsistencia)
+class CapacitacionAsistenciaAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'clase', 'email', 'telefono', 'cargo', 'created_at')
+    list_filter = ('clase__capacitacion',)
+    search_fields = ('nombre', 'email')
+
+
+@admin.register(CapacitacionSolicitudCambio)
+class CapacitacionSolicitudCambioAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'clase', 'atendida', 'created_at')
+    list_filter = ('atendida', 'clase__capacitacion')
+    search_fields = ('nombre', 'email', 'mensaje')
+
+
+@admin.register(CapacitacionClaseReaccion)
+class CapacitacionClaseReaccionAdmin(admin.ModelAdmin):
+    list_display = ('clase', 'tipo', 'created_at')
+    list_filter = ('tipo', 'clase__capacitacion')
+
+
+@admin.register(CapacitacionClaseComentario)
+class CapacitacionClaseComentarioAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'email', 'clase', 'created_at')
+    list_filter = ('clase__capacitacion',)
+    search_fields = ('nombre', 'email', 'comentario')
 
 
 @admin.register(CapacitacionRespuesta)

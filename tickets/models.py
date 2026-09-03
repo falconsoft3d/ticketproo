@@ -24038,6 +24038,31 @@ class Capacitacion(models.Model):
         return False
 
 
+class CapacitacionEnlace(models.Model):
+    """Enlace de acceso (URL + credenciales) asociado a una capacitación"""
+
+    capacitacion = models.ForeignKey(
+        Capacitacion,
+        on_delete=models.CASCADE,
+        related_name='enlaces',
+        verbose_name='Capacitación',
+    )
+    orden = models.PositiveIntegerField(default=0, verbose_name='Orden')
+    titulo = models.CharField(max_length=200, verbose_name='Título')
+    url = models.URLField(verbose_name='URL')
+    usuario = models.CharField(max_length=150, blank=True, verbose_name='Usuario')
+    contrasena = models.CharField(max_length=150, blank=True, verbose_name='Contraseña')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+
+    class Meta:
+        ordering = ['orden', 'created_at']
+        verbose_name = 'Enlace de Capacitación'
+        verbose_name_plural = 'Enlaces de Capacitación'
+
+    def __str__(self):
+        return f"{self.capacitacion} – {self.titulo}"
+
+
 class CapacitacionLinea(models.Model):
     """Línea/tarea de una capacitación (la llena el agente)"""
 
@@ -24050,6 +24075,15 @@ class CapacitacionLinea(models.Model):
     orden = models.PositiveIntegerField(default=0, verbose_name='Orden')
     tarea = models.CharField(max_length=500, verbose_name='Tarea')
     descripcion = models.TextField(blank=True, verbose_name='Descripción')
+    fecha = models.DateField(null=True, blank=True, verbose_name='Fecha')
+    clase = models.ForeignKey(
+        'CapacitacionClase',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tareas',
+        verbose_name='Clase',
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
 
     class Meta:
@@ -24059,6 +24093,135 @@ class CapacitacionLinea(models.Model):
 
     def __str__(self):
         return f"{self.capacitacion} – {self.tarea}"
+
+
+class CapacitacionClase(models.Model):
+    """Clase/sesión programada dentro de una capacitación"""
+
+    capacitacion = models.ForeignKey(
+        Capacitacion,
+        on_delete=models.CASCADE,
+        related_name='clases',
+        verbose_name='Capacitación',
+    )
+    orden = models.PositiveIntegerField(default=0, verbose_name='Orden')
+    titulo = models.CharField(max_length=300, verbose_name='Título')
+    fecha = models.DateField(null=True, blank=True, verbose_name='Fecha')
+    enlace = models.URLField(blank=True, verbose_name='Enlace / URL')
+    descripcion = models.TextField(blank=True, verbose_name='Descripción')
+    resumen = models.TextField(blank=True, verbose_name='Resumen de la clase')
+    public_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        verbose_name='Token público',
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+
+    class Meta:
+        ordering = ['orden', 'fecha', 'created_at']
+        verbose_name = 'Clase de Capacitación'
+        verbose_name_plural = 'Clases de Capacitación'
+
+    def __str__(self):
+        return f"{self.capacitacion} – {self.titulo}"
+
+
+class CapacitacionAsistencia(models.Model):
+    """Registro de asistencia de una persona a una clase de capacitación"""
+
+    clase = models.ForeignKey(
+        CapacitacionClase,
+        on_delete=models.CASCADE,
+        related_name='asistencias',
+        verbose_name='Clase',
+    )
+    nombre = models.CharField(max_length=200, verbose_name='Nombre')
+    email = models.EmailField(blank=True, verbose_name='Email')
+    telefono = models.CharField(max_length=50, blank=True, verbose_name='Teléfono')
+    cargo = models.CharField(max_length=150, blank=True, verbose_name='Cargo')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de registro')
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = 'Asistencia a Clase'
+        verbose_name_plural = 'Asistencias a Clases'
+
+    def __str__(self):
+        return f"{self.nombre} – {self.clase}"
+
+
+class CapacitacionSolicitudCambio(models.Model):
+    """Solicitud de cambio enviada por un usuario público sobre una clase"""
+
+    clase = models.ForeignKey(
+        CapacitacionClase,
+        on_delete=models.CASCADE,
+        related_name='solicitudes',
+        verbose_name='Clase',
+    )
+    nombre = models.CharField(max_length=200, verbose_name='Nombre')
+    email = models.EmailField(blank=True, verbose_name='Email')
+    mensaje = models.TextField(verbose_name='Cambio solicitado')
+    atendida = models.BooleanField(default=False, verbose_name='Atendida')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de solicitud')
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Solicitud de Cambio de Clase'
+        verbose_name_plural = 'Solicitudes de Cambio de Clase'
+
+    def __str__(self):
+        return f"{self.nombre} – {self.clase}"
+
+
+class CapacitacionClaseReaccion(models.Model):
+    """Reacción (me gusta / no me gusta) de un usuario público a una clase"""
+
+    TIPO_CHOICES = [
+        ('like', 'Me gusta'),
+        ('dislike', 'No me gusta'),
+    ]
+
+    clase = models.ForeignKey(
+        CapacitacionClase,
+        on_delete=models.CASCADE,
+        related_name='reacciones',
+        verbose_name='Clase',
+    )
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, verbose_name='Tipo')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha')
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Reacción a Clase'
+        verbose_name_plural = 'Reacciones a Clases'
+
+    def __str__(self):
+        return f"{self.clase} – {self.get_tipo_display()}"
+
+
+class CapacitacionClaseComentario(models.Model):
+    """Comentario de un usuario público sobre una clase"""
+
+    clase = models.ForeignKey(
+        CapacitacionClase,
+        on_delete=models.CASCADE,
+        related_name='comentarios',
+        verbose_name='Clase',
+    )
+    nombre = models.CharField(max_length=200, verbose_name='Nombre')
+    email = models.EmailField(verbose_name='Email')
+    comentario = models.TextField(verbose_name='Comentario')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha')
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Comentario de Clase'
+        verbose_name_plural = 'Comentarios de Clase'
+
+    def __str__(self):
+        return f"{self.nombre} – {self.clase}"
 
 
 class CapacitacionRespuesta(models.Model):

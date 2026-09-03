@@ -17,6 +17,13 @@
         <a href="{% url 'capacitacion_edit' cap.pk %}" class="btn btn-sm btn-outline-primary">
             <i class="bi bi-pencil"></i> Editar
         </a>
+        <form method="post" action="{% url 'capacitacion_duplicate' cap.pk %}"
+              onsubmit="return confirm('¿Duplicar esta capacitación? Se copiarán las clases y tareas, sin respuestas, asistencia ni solicitudes.')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-files"></i> Duplicar
+            </button>
+        </form>
         <a href="{% url 'capacitacion_delete' cap.pk %}" class="btn btn-sm btn-outline-danger">
             <i class="bi bi-trash"></i> Eliminar
         </a>
@@ -37,6 +44,256 @@
                 </div>
             </div>
             {% endif %}
+
+            <!-- Clases -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-muted fw-semibold mb-0"><i class="bi bi-easel"></i> Clases</h6>
+                        {% if can_manage %}
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalAddClase">
+                            <i class="bi bi-plus-circle"></i> Agregar Clase
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% if clases %}
+                    <ul class="list-group list-group-flush">
+                        {% for clase in clases %}
+                        <li class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ clase.titulo }}</strong>
+                                    {% if clase.fecha %}
+                                        <span class="text-muted small ms-1"><i class="bi bi-calendar3"></i> {{ clase.fecha|date:"d/m/Y" }}</span>
+                                    {% endif %}
+                                    {% if clase.descripcion %}
+                                    <p class="text-muted small mb-0 mt-1">{{ clase.descripcion }}</p>
+                                    {% endif %}
+                                    {% if clase.enlace %}
+                                    <a href="{{ clase.enlace }}" target="_blank" rel="noopener noreferrer" class="small text-primary text-decoration-none">
+                                        <i class="bi bi-link-45deg"></i> {{ clase.enlace|truncatechars:60 }}
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                {% if can_manage %}
+                                <div class="d-flex gap-1">
+                                    <button type="button" class="btn btn-sm btn-outline-success p-0 px-1"
+                                            data-clase-url="{{ request.scheme }}://{{ request.get_host }}{% url 'capacitacion_clase_public' clase.public_token %}"
+                                            onclick="copyClasePublicUrl(this)" title="Copiar enlace público de la clase">
+                                        <i class="bi bi-share"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary p-0 px-1"
+                                            data-bs-toggle="modal" data-bs-target="#modalEditClase{{ clase.pk }}" title="Editar clase">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary p-0 px-1"
+                                            data-bs-toggle="modal" data-bs-target="#modalEditResumen{{ clase.pk }}" title="Editar resumen de la clase">
+                                        <i class="bi bi-journal-text"></i>
+                                    </button>
+                                    <form method="post" action="{% url 'capacitacion_clase_delete' cap.pk clase.pk %}"
+                                          onsubmit="return confirm('¿Eliminar esta clase?')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger p-0 px-1">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Resumen de la clase -->
+                            {% if clase.resumen %}
+                            <div class="mt-2 ps-2 border-start">
+                                <span class="text-muted small fw-semibold"><i class="bi bi-journal-text"></i> Resumen de la clase</span>
+                                <p class="small mb-0 mt-1" style="white-space:pre-wrap;">{{ clase.resumen }}</p>
+                            </div>
+                            {% endif %}
+
+                            <!-- Asistencia -->
+                            <div class="mt-2 ps-2 border-start">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold"><i class="bi bi-people"></i> Asistencia ({{ clase.asistencias.all|length }})</span>
+                                    {% if can_manage %}
+                                    <button class="btn btn-sm btn-link p-0 small" data-bs-toggle="modal" data-bs-target="#modalAddAsistencia{{ clase.pk }}">
+                                        <i class="bi bi-person-plus"></i> Registrar asistencia
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                {% if clase.asistencias.all %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-1">
+                                        <thead>
+                                            <tr class="small text-muted">
+                                                <th>Nombre</th>
+                                                <th>Email</th>
+                                                <th>Teléfono</th>
+                                                <th>Cargo</th>
+                                                {% if can_manage %}<th></th>{% endif %}
+                                            </tr>
+                                        </thead>
+                                        <tbody class="small">
+                                            {% for asistencia in clase.asistencias.all %}
+                                            <tr>
+                                                <td>{{ asistencia.nombre }}</td>
+                                                <td>{{ asistencia.email|default:"—" }}</td>
+                                                <td>{{ asistencia.telefono|default:"—" }}</td>
+                                                <td>{{ asistencia.cargo|default:"—" }}</td>
+                                                {% if can_manage %}
+                                                <td>
+                                                    <form method="post" action="{% url 'capacitacion_asistencia_delete' cap.pk asistencia.pk %}"
+                                                          onsubmit="return confirm('¿Eliminar esta asistencia?')">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger p-0 px-1">
+                                                            <i class="bi bi-x"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                                {% endif %}
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <p class="text-muted small fst-italic mb-1">Sin asistentes registrados.</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Solicitudes de cambio -->
+                            {% if clase.solicitudes.all %}
+                            <div class="mt-2 ps-2 border-start">
+                                <span class="text-muted small fw-semibold"><i class="bi bi-pencil-square"></i> Solicitudes de cambio ({{ clase.solicitudes.all|length }})</span>
+                                <ul class="list-unstyled small mb-0 mt-1">
+                                    {% for solicitud in clase.solicitudes.all %}
+                                    <li class="mb-2 {% if solicitud.atendida %}text-muted{% endif %}">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong>{{ solicitud.nombre }}</strong>
+                                                {% if solicitud.email %}<span class="text-muted">({{ solicitud.email }})</span>{% endif %}
+                                                {% if solicitud.atendida %}<span class="badge bg-success ms-1">Atendida</span>{% endif %}
+                                                <p class="mb-0 mt-1" style="white-space:pre-wrap;">{{ solicitud.mensaje }}</p>
+                                                <span class="text-muted" style="font-size:.75rem;">{{ solicitud.created_at|date:"d/m/Y H:i" }}</span>
+                                            </div>
+                                            {% if can_manage %}
+                                            <div class="d-flex gap-1">
+                                                <form method="post" action="{% url 'capacitacion_solicitud_toggle' cap.pk solicitud.pk %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-outline-secondary p-0 px-1" title="Marcar como atendida">
+                                                        <i class="bi bi-check2"></i>
+                                                    </button>
+                                                </form>
+                                                <form method="post" action="{% url 'capacitacion_solicitud_delete' cap.pk solicitud.pk %}"
+                                                      onsubmit="return confirm('¿Eliminar esta solicitud?')">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger p-0 px-1">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+
+                            <!-- Reacciones -->
+                            <div class="mt-2 ps-2 border-start small text-muted">
+                                <i class="bi bi-hand-thumbs-up"></i> {{ clase.likes_count }}
+                                &nbsp;·&nbsp;
+                                <i class="bi bi-hand-thumbs-down"></i> {{ clase.dislikes_count }}
+                            </div>
+
+                            <!-- Comentarios -->
+                            {% if clase.comentarios.all %}
+                            <div class="mt-2 ps-2 border-start">
+                                <span class="text-muted small fw-semibold"><i class="bi bi-chat-left-text"></i> Comentarios ({{ clase.comentarios.all|length }})</span>
+                                <ul class="list-unstyled small mb-0 mt-1">
+                                    {% for comentario in clase.comentarios.all %}
+                                    <li class="mb-2">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong>{{ comentario.nombre }}</strong>
+                                                <span class="text-muted">({{ comentario.email }})</span>
+                                                <p class="mb-0 mt-1" style="white-space:pre-wrap;">{{ comentario.comentario }}</p>
+                                                <span class="text-muted" style="font-size:.75rem;">{{ comentario.created_at|date:"d/m/Y H:i" }}</span>
+                                            </div>
+                                            {% if can_manage %}
+                                            <form method="post" action="{% url 'capacitacion_comentario_delete' cap.pk comentario.pk %}"
+                                                  onsubmit="return confirm('¿Eliminar este comentario?')">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger p-0 px-1">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted small fst-italic mb-0">Sin clases agregadas.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Enlaces de Acceso -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-muted fw-semibold mb-0"><i class="bi bi-key"></i> Enlaces de Acceso</h6>
+                        {% if can_manage %}
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalAddEnlace">
+                            <i class="bi bi-plus-circle"></i> Agregar Enlace
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% if enlaces %}
+                    <ul class="list-group list-group-flush">
+                        {% for enlace in enlaces %}
+                        <li class="list-group-item px-0 d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ enlace.titulo }}</strong>
+                                <br>
+                                <a href="{{ enlace.url }}" target="_blank" rel="noopener noreferrer" class="small text-primary text-decoration-none">
+                                    <i class="bi bi-link-45deg"></i> {{ enlace.url|truncatechars:60 }}
+                                </a>
+                                {% if enlace.usuario or enlace.contrasena %}
+                                <div class="small text-muted mt-1">
+                                    {% if enlace.usuario %}<i class="bi bi-person"></i> {{ enlace.usuario }}{% endif %}
+                                    {% if enlace.contrasena %}&nbsp;·&nbsp;<i class="bi bi-shield-lock"></i> {{ enlace.contrasena }}{% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% if can_manage %}
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary p-0 px-1"
+                                        data-bs-toggle="modal" data-bs-target="#modalEditEnlace{{ enlace.pk }}" title="Editar enlace">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <form method="post" action="{% url 'capacitacion_enlace_delete' cap.pk enlace.pk %}"
+                                      onsubmit="return confirm('¿Eliminar este enlace?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger p-0 px-1">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted small fst-italic mb-0">Sin enlaces agregados.</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
         <div class="col-md-4">
             <div class="card border-0 shadow-sm">
@@ -75,10 +332,10 @@
 
     <!-- ── Líneas / Tareas ── -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0"><i class="bi bi-list-task"></i> Líneas de la Capacitación</h4>
+        <h4 class="mb-0"><i class="bi bi-list-task"></i> Lista de Tareas</h4>
         {% if can_manage %}
         <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddLinea">
-            <i class="bi bi-plus-circle"></i> Agregar Línea
+            <i class="bi bi-plus-circle"></i> Agregar Tarea
         </button>
         {% endif %}
     </div>
@@ -90,18 +347,30 @@
                 <div>
                     <span class="badge bg-primary me-1">{{ forloop.counter }}</span>
                     <strong>{{ linea.tarea }}</strong>
+                    {% if linea.fecha %}
+                    <span class="text-muted small ms-1"><i class="bi bi-calendar3"></i> {{ linea.fecha|date:"d/m/Y" }}</span>
+                    {% endif %}
+                    {% if linea.clase %}
+                    <span class="badge bg-light text-dark border ms-1"><i class="bi bi-easel"></i> {{ linea.clase.titulo }}</span>
+                    {% endif %}
                     {% if linea.descripcion %}
                     <p class="text-muted small mb-0 mt-1">{{ linea.descripcion }}</p>
                     {% endif %}
                 </div>
                 {% if can_manage %}
-                <form method="post" action="{% url 'capacitacion_linea_delete' cap.pk linea.pk %}"
-                      onsubmit="return confirm('¿Eliminar esta línea y todas sus respuestas?')">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                        <i class="bi bi-trash"></i>
+                <div class="d-flex gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-primary"
+                            data-bs-toggle="modal" data-bs-target="#modalEditLinea{{ linea.pk }}" title="Editar tarea">
+                        <i class="bi bi-pencil"></i>
                     </button>
-                </form>
+                    <form method="post" action="{% url 'capacitacion_linea_delete' cap.pk linea.pk %}"
+                          onsubmit="return confirm('¿Eliminar esta línea y todas sus respuestas?')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </div>
                 {% endif %}
             </div>
             <div class="card-body">
@@ -192,6 +461,134 @@
     {% endif %}
 </div>
 
+<!-- Modales: Registrar Asistencia (uno por clase) -->
+{% if can_manage %}
+{% for clase in clases %}
+<div class="modal fade" id="modalAddAsistencia{{ clase.pk }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_asistencia">
+                <input type="hidden" name="clase_id" value="{{ clase.pk }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-person-plus"></i> Registrar Asistencia – {{ clase.titulo }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" name="nombre" class="form-control" required placeholder="Nombre completo">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Email</label>
+                        <input type="email" name="email" class="form-control" placeholder="correo@ejemplo.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Teléfono</label>
+                        <input type="text" name="telefono" class="form-control" placeholder="Teléfono">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Cargo</label>
+                        <input type="text" name="cargo" class="form-control" placeholder="Cargo / puesto">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Registrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Modales: Editar Clase (uno por clase) -->
+{% if can_manage %}
+{% for clase in clases %}
+<div class="modal fade" id="modalEditClase{{ clase.pk }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_clase">
+                <input type="hidden" name="clase_id" value="{{ clase.pk }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar Clase</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+                        <input type="text" name="titulo" class="form-control" required value="{{ clase.titulo }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Fecha <span class="text-muted fw-normal">(opcional)</span></label>
+                        <input type="date" name="fecha" class="form-control" value="{{ clase.fecha|date:'Y-m-d' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Enlace / URL</label>
+                        <input type="url" name="enlace" class="form-control" value="{{ clase.enlace }}" placeholder="https://...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Descripción adicional</label>
+                        <textarea name="descripcion" class="form-control" rows="3">{{ clase.descripcion }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Orden</label>
+                        <input type="number" name="orden" class="form-control" value="{{ clase.orden }}" min="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Modales: Editar Resumen (uno por clase) -->
+{% if can_manage %}
+{% for clase in clases %}
+<div class="modal fade" id="modalEditResumen{{ clase.pk }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_resumen">
+                <input type="hidden" name="clase_id" value="{{ clase.pk }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-journal-text"></i> Resumen – {{ clase.titulo }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Resumen de la clase</label>
+                        <textarea name="resumen" class="form-control" rows="6"
+                                  placeholder="Escribe un resumen de lo tratado en esta clase...">{{ clase.resumen }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
 <!-- Modal: Agregar Línea -->
 {% if can_manage %}
 <div class="modal fade" id="modalAddLinea" tabindex="-1">
@@ -201,7 +598,7 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="add_linea">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Nueva Línea / Tarea</h5>
+                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Nueva Tarea</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -214,6 +611,19 @@
                         <label class="form-label fw-semibold">Descripción adicional</label>
                         <textarea name="descripcion" class="form-control" rows="3"
                                   placeholder="Detalles opcionales..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Fecha <span class="text-muted fw-normal">(opcional)</span></label>
+                        <input type="date" name="fecha" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Clase</label>
+                        <select name="clase" class="form-select">
+                            <option value="">Sin clase asignada</option>
+                            {% for clase in clases %}
+                            <option value="{{ clase.pk }}">{{ clase.titulo }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Orden</label>
@@ -230,6 +640,199 @@
         </div>
     </div>
 </div>
+
+<!-- Modales: Editar Tarea (uno por línea) -->
+{% for linea in lineas %}
+<div class="modal fade" id="modalEditLinea{{ linea.pk }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_linea">
+                <input type="hidden" name="linea_id" value="{{ linea.pk }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar Tarea</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tarea <span class="text-danger">*</span></label>
+                        <input type="text" name="tarea" class="form-control" required value="{{ linea.tarea }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Descripción adicional</label>
+                        <textarea name="descripcion" class="form-control" rows="3">{{ linea.descripcion }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Fecha <span class="text-muted fw-normal">(opcional)</span></label>
+                        <input type="date" name="fecha" class="form-control" value="{{ linea.fecha|date:'Y-m-d' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Clase</label>
+                        <select name="clase" class="form-select">
+                            <option value="">Sin clase asignada</option>
+                            {% for clase in clases %}
+                            <option value="{{ clase.pk }}" {% if linea.clase_id == clase.pk %}selected{% endif %}>{{ clase.titulo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Orden</label>
+                        <input type="number" name="orden" class="form-control" value="{{ linea.orden }}" min="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Modal: Agregar Clase -->
+{% if can_manage %}
+<div class="modal fade" id="modalAddClase" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_clase">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-easel"></i> Nueva Clase</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+                        <input type="text" name="titulo" class="form-control" required
+                               placeholder="Nombre de la clase">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Fecha</label>
+                        <input type="date" name="fecha" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Enlace / URL</label>
+                        <input type="url" name="enlace" class="form-control" placeholder="https://...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Descripción adicional</label>
+                        <textarea name="descripcion" class="form-control" rows="3"
+                                  placeholder="Detalles opcionales..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Orden</label>
+                        <input type="number" name="orden" class="form-control" value="{{ clases.count }}" min="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Agregar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal: Agregar Enlace -->
+{% if can_manage %}
+<div class="modal fade" id="modalAddEnlace" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_enlace">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-key"></i> Nuevo Enlace de Acceso</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+                        <input type="text" name="titulo" class="form-control" required placeholder="Ej: Acceso a la plataforma">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">URL <span class="text-danger">*</span></label>
+                        <input type="url" name="url" class="form-control" required placeholder="https://...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Usuario</label>
+                        <input type="text" name="usuario" class="form-control" placeholder="Usuario de acceso">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Contraseña</label>
+                        <input type="text" name="contrasena" class="form-control" placeholder="Contraseña de acceso">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Orden</label>
+                        <input type="number" name="orden" class="form-control" value="{{ enlaces.count }}" min="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Agregar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modales: Editar Enlace (uno por enlace) -->
+{% for enlace in enlaces %}
+<div class="modal fade" id="modalEditEnlace{{ enlace.pk }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_enlace">
+                <input type="hidden" name="enlace_id" value="{{ enlace.pk }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar Enlace</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+                        <input type="text" name="titulo" class="form-control" required value="{{ enlace.titulo }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">URL <span class="text-danger">*</span></label>
+                        <input type="url" name="url" class="form-control" required value="{{ enlace.url }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Usuario</label>
+                        <input type="text" name="usuario" class="form-control" value="{{ enlace.usuario }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Contraseña</label>
+                        <input type="text" name="contrasena" class="form-control" value="{{ enlace.contrasena }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Orden</label>
+                        <input type="number" name="orden" class="form-control" value="{{ enlace.orden }}" min="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endif %}
 
 <script>
@@ -239,6 +842,19 @@ function copyPublicUrl() {
         const btn = document.querySelector('[onclick="copyPublicUrl()"]');
         const original = btn.innerHTML;
         btn.innerHTML = '<i class="bi bi-check2"></i> ¡Copiado!';
+        btn.classList.replace('btn-outline-success', 'btn-success');
+        setTimeout(function() {
+            btn.innerHTML = original;
+            btn.classList.replace('btn-success', 'btn-outline-success');
+        }, 2500);
+    });
+}
+
+function copyClasePublicUrl(btn) {
+    const url = btn.getAttribute('data-clase-url');
+    navigator.clipboard.writeText(url).then(function() {
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check2"></i>';
         btn.classList.replace('btn-outline-success', 'btn-success');
         setTimeout(function() {
             btn.innerHTML = original;

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ clase.titulo }} – {{ cap.titulo }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .public-banner {
+            background: linear-gradient(135deg, #1d6fa4 0%, #145a8a 100%);
+        }
+        .cap-card { max-width: 760px; margin: 0 auto; }
+    </style>
+</head>
+<body>
+
+    <!-- Banner -->
+    <div class="public-banner text-white py-3 px-4 d-flex align-items-center gap-3">
+        <i class="bi bi-easel fs-4"></i>
+        <div>
+            <div class="fw-bold">Clase de Capacitación – Vista Pública</div>
+            <div class="small opacity-75">{{ cap.titulo }}</div>
+        </div>
+    </div>
+
+    <div class="cap-card px-3 py-4">
+
+        <!-- Encabezado -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h3 class="fw-bold mb-2">
+                    <i class="bi bi-easel text-primary"></i> {{ clase.titulo }}
+                </h3>
+                {% if clase.fecha %}
+                <p class="text-muted small mb-2"><i class="bi bi-calendar3"></i> {{ clase.fecha|date:"d/m/Y" }}</p>
+                {% endif %}
+                {% if clase.descripcion %}
+                <p class="text-muted mb-2" style="white-space:pre-wrap;">{{ clase.descripcion }}</p>
+                {% endif %}
+                {% if clase.enlace %}
+                <a href="{{ clase.enlace }}" target="_blank" rel="noopener noreferrer" class="text-primary text-decoration-none">
+                    <i class="bi bi-link-45deg"></i> {{ clase.enlace }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if clase.resumen %}
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h6 class="fw-semibold mb-2"><i class="bi bi-journal-text text-primary"></i> Resumen de la clase</h6>
+                <p class="mb-0" style="white-space:pre-wrap;">{{ clase.resumen }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Mensajes de éxito / error -->
+        {% if ok == "asistencia" %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i> ¡Asistencia registrada correctamente!
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% elif ok == "solicitud" %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i> ¡Solicitud de cambio enviada correctamente!
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+        {% if error %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> {{ error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
+        <!-- Registrar asistencia -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h6 class="fw-semibold mb-3"><i class="bi bi-person-plus text-primary"></i> Registrar mi asistencia</h6>
+                <form method="post" class="row g-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="registrar_asistencia">
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" name="nombre" class="form-control form-control-sm" required placeholder="Nombre completo">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Email</label>
+                        <input type="email" name="email" class="form-control form-control-sm" placeholder="correo@ejemplo.com">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Teléfono</label>
+                        <input type="text" name="telefono" class="form-control form-control-sm" placeholder="Teléfono">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Cargo</label>
+                        <input type="text" name="cargo" class="form-control form-control-sm" placeholder="Cargo / puesto">
+                    </div>
+                    <div class="col-12 mt-2">
+                        <button type="submit" class="btn btn-sm btn-success">
+                            <i class="bi bi-send"></i> Registrar asistencia
+                        </button>
+                    </div>
+                </form>
+
+                {% if asistencias %}
+                <hr>
+                <h6 class="text-muted small fw-semibold mb-2">Asistentes registrados ({{ asistencias.count }})</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th>Cargo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for asistencia in asistencias %}
+                            <tr>
+                                <td>{{ asistencia.nombre }}</td>
+                                <td>{{ asistencia.email|default:"—" }}</td>
+                                <td>{{ asistencia.telefono|default:"—" }}</td>
+                                <td>{{ asistencia.cargo|default:"—" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Solicitar cambio -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h6 class="fw-semibold mb-3"><i class="bi bi-pencil-square text-primary"></i> Solicitar un cambio</h6>
+                <form method="post" class="row g-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="solicitar_cambio">
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" name="nombre" class="form-control form-control-sm" required placeholder="Nombre completo">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Email</label>
+                        <input type="email" name="email" class="form-control form-control-sm" placeholder="correo@ejemplo.com">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small mb-1">¿Qué cambio necesitas? <span class="text-danger">*</span></label>
+                        <textarea name="mensaje" class="form-control form-control-sm" rows="3" required
+                                  placeholder="Describe el cambio solicitado..."></textarea>
+                    </div>
+                    <div class="col-12 mt-2">
+                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-send"></i> Enviar solicitud
+                        </button>
+                    </div>
+                </form>
+
+                {% if solicitudes %}
+                <hr>
+                <h6 class="text-muted small fw-semibold mb-2">Cambios solicitados ({{ solicitudes.count }})</h6>
+                <ul class="list-group list-group-flush">
+                    {% for solicitud in solicitudes %}
+                    <li class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong>{{ solicitud.nombre }}</strong>
+                            {% if solicitud.atendida %}
+                                <span class="badge bg-success">Atendida</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Pendiente</span>
+                            {% endif %}
+                        </div>
+                        <p class="mb-1 small" style="white-space:pre-wrap;">{{ solicitud.mensaje }}</p>
+                        <span class="text-muted" style="font-size:.75rem;">{{ solicitud.created_at|date:"d/m/Y H:i" }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="text-center text-muted small mt-4 pb-4">
+            Powered by <strong>TicketProo</strong>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelectorAll('.alert').forEach(function(el) {
+            setTimeout(function() {
+                bootstrap.Alert.getOrCreateInstance(el).close();
+            }, 4000);
+        });
+    </script>
+</body>
+</html>

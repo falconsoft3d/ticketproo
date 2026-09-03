@@ -65,6 +65,12 @@
                         {% endif %}
                     </div>
                     
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me"
+                               {% if request.COOKIES.remembered_username %}checked{% endif %}>
+                        <label class="form-check-label" for="remember_me">Recordar usuario</label>
+                    </div>
+
                     <div class="d-grid mb-3">
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
