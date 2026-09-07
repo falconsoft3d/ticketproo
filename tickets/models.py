@@ -2344,6 +2344,69 @@ class UrlManager(models.Model):
         return "Activo" if self.is_active else "Inactivo"
 
 
+class ApiEndpoint(models.Model):
+    """Modelo para generar mini-APIs consultables vía GET a partir de un registro"""
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre',
+        help_text='Nombre descriptivo de la API'
+    )
+    value = models.BooleanField(
+        default=True,
+        choices=[(True, 'Verdadero'), (False, 'Falso')],
+        verbose_name='Valor',
+        help_text='Valor booleano que devolverá la API'
+    )
+    text = models.TextField(
+        blank=True,
+        verbose_name='Texto',
+        help_text='Contenido de texto largo que devolverá la API'
+    )
+    token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        verbose_name='Token'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Si está desactivada, la API dejará de responder'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_api_endpoints',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'API'
+        verbose_name_plural = 'APIs'
+
+    def __str__(self):
+        return self.name
+
+    def get_api_url(self):
+        from django.urls import reverse
+        return reverse('api_endpoint_public', kwargs={'token': self.token})
+
+    def get_absolute_api_url(self, request=None):
+        path = self.get_api_url()
+        if request is not None:
+            return request.build_absolute_uri(path)
+        return path
+
+
 class WorkOrder(models.Model):
     """Modelo para gestionar órdenes de trabajo"""
     

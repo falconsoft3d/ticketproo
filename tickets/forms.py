@@ -54,7 +54,7 @@ from .models import (
     ClientRequest, ClientRequestResponse, ClientRequestTemplate, ClientRequestTemplateItem, Event, Trip, TripStop,
     MultiMeasurement, MultiMeasurementRecord, PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
     DynamicTable, DynamicTableField, WorkOrderRating, WorkOrderComment, FunctionalRequirementDocument, FunctionalRequirement,
-    TaskPlan, TaskPlanDay, TaskPlanItem, Checklist, ChecklistItem, PrivacyPolicy
+    TaskPlan, TaskPlanDay, TaskPlanItem, Checklist, ChecklistItem, PrivacyPolicy, ApiEndpoint
 )
 
 class CategoryForm(forms.ModelForm):
@@ -2336,6 +2336,50 @@ class UrlManagerFilterForm(forms.Form):
         }),
         label='Estado'
     )
+
+
+class ApiEndpointForm(forms.ModelForm):
+    """Formulario para crear y editar APIs simples consultables vía GET"""
+
+    class Meta:
+        model = ApiEndpoint
+        fields = ['name', 'value', 'text', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Estado de mantenimiento'
+            }),
+            'value': forms.Select(
+                choices=[(True, 'Verdadero'), (False, 'Falso')],
+                attrs={'class': 'form-select'}
+            ),
+            'text': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 6,
+                'placeholder': 'Texto largo que devolverá la API...'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'name': 'Nombre',
+            'value': 'Valor',
+            'text': 'Texto',
+            'is_active': 'Activa',
+        }
+        help_texts = {
+            'name': 'Nombre descriptivo de la API',
+            'value': 'Valor booleano que devolverá la API',
+            'text': 'Contenido de texto largo que devolverá la API',
+            'is_active': 'Desmarcar para desactivar temporalmente la API',
+        }
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name', '').strip()
+        if not name:
+            raise forms.ValidationError('El nombre es requerido.')
+        return name
 
 
 class MultipleFileInput(forms.ClearableFileInput):

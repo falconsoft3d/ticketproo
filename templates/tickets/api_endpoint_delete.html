@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h2 class="h3 mb-1">
+                    <i class="bi bi-exclamation-triangle text-danger"></i>
+                    {{ page_title }}
+                </h2>
+                <p class="text-muted mb-0">Esta acción no se puede deshacer</p>
+            </div>
+
+            <!-- Información de la API a eliminar -->
+            <div class="card mb-4">
+                <div class="card-header bg-danger bg-opacity-10">
+                    <h5 class="mb-0 text-danger">
+                        <i class="bi bi-hdd-network"></i>
+                        API a Eliminar
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nombre:</label>
+                        <p class="mb-0">{{ api_endpoint.name }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Valor:</label>
+                        <p class="mb-0">{{ api_endpoint.value|yesno:"Verdadero,Falso" }}</p>
+                    </div>
+                    {% if api_endpoint.text %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Texto:</label>
+                        <p class="mb-0">{{ api_endpoint.text|truncatechars:150 }}</p>
+                    </div>
+                    {% endif %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Creado por:</label>
+                                <p class="mb-0">{{ api_endpoint.created_by.get_full_name|default:api_endpoint.created_by.username }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Fecha de creación:</label>
+                                <p class="mb-0">{{ api_endpoint.created_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advertencia -->
+            <div class="alert alert-danger" role="alert">
+                <h6 class="alert-heading">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    ¡Advertencia!
+                </h6>
+                <p class="mb-0">
+                    Esta acción eliminará permanentemente la API y su endpoint dejará de responder.
+                    <strong>Esta operación no se puede deshacer.</strong>
+                </p>
+            </div>
+
+            <!-- Formulario de confirmación -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <p class="text-center text-muted">
+                                ¿Está seguro de que desea eliminar esta API?
+                            </p>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'api_endpoint_detail' api_endpoint.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sí, Eliminar API
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Enlaces adicionales -->
+            <div class="text-center mt-4">
+                <a href="{% url 'api_endpoint_list' %}" class="text-muted text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Volver a la Lista de APIs
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -5880,6 +5880,130 @@ def url_manager_password_view(request, url_id):
 
 
 # ===========================================
+# VISTAS PARA GESTIÓN DE APIs (SOLO AGENTES)
+# ===========================================
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def api_endpoint_list_view(request):
+    """Lista todas las APIs creadas (solo para agentes)"""
+    from .models import ApiEndpoint
+
+    api_endpoints = ApiEndpoint.objects.all()
+
+    context = {
+        'api_endpoints': api_endpoints,
+        'page_title': 'APIs',
+    }
+    return render(request, 'tickets/api_endpoint_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def api_endpoint_create_view(request):
+    """Crear nueva API (solo para agentes)"""
+    from .models import ApiEndpoint
+    from .forms import ApiEndpointForm
+
+    if request.method == 'POST':
+        form = ApiEndpointForm(request.POST)
+        if form.is_valid():
+            api_endpoint = form.save(commit=False)
+            api_endpoint.created_by = request.user
+            api_endpoint.save()
+
+            messages.success(request, f'API "{api_endpoint.name}" creada exitosamente.')
+            return redirect('api_endpoint_detail', pk=api_endpoint.pk)
+    else:
+        form = ApiEndpointForm()
+
+    context = {
+        'form': form,
+        'page_title': 'Crear Nueva API',
+        'action': 'Crear',
+    }
+    return render(request, 'tickets/api_endpoint_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def api_endpoint_edit_view(request, pk):
+    """Editar API (solo para agentes)"""
+    from .models import ApiEndpoint
+    from .forms import ApiEndpointForm
+
+    api_endpoint = get_object_or_404(ApiEndpoint, pk=pk)
+
+    if request.method == 'POST':
+        form = ApiEndpointForm(request.POST, instance=api_endpoint)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'API "{api_endpoint.name}" actualizada exitosamente.')
+            return redirect('api_endpoint_detail', pk=api_endpoint.pk)
+    else:
+        form = ApiEndpointForm(instance=api_endpoint)
+
+    context = {
+        'form': form,
+        'api_endpoint': api_endpoint,
+        'page_title': f'Editar API: {api_endpoint.name}',
+        'action': 'Actualizar',
+    }
+    return render(request, 'tickets/api_endpoint_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def api_endpoint_detail_view(request, pk):
+    """Muestra el detalle de la API junto con su documentación adaptada"""
+    from .models import ApiEndpoint
+
+    api_endpoint = get_object_or_404(ApiEndpoint, pk=pk)
+
+    context = {
+        'api_endpoint': api_endpoint,
+        'api_url': api_endpoint.get_absolute_api_url(request),
+        'page_title': f'API: {api_endpoint.name}',
+    }
+    return render(request, 'tickets/api_endpoint_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def api_endpoint_delete_view(request, pk):
+    """Eliminar API (solo para agentes)"""
+    from .models import ApiEndpoint
+
+    api_endpoint = get_object_or_404(ApiEndpoint, pk=pk)
+
+    if request.method == 'POST':
+        name = api_endpoint.name
+        api_endpoint.delete()
+        messages.success(request, f'API "{name}" eliminada exitosamente.')
+        return redirect('api_endpoint_list')
+
+    context = {
+        'api_endpoint': api_endpoint,
+        'page_title': f'Eliminar API: {api_endpoint.name}',
+    }
+    return render(request, 'tickets/api_endpoint_delete.html', context)
+
+
+@require_http_methods(["GET"])
+def api_endpoint_public_view(request, token):
+    """Endpoint público de solo lectura (GET) que expone los datos de la API"""
+    from .models import ApiEndpoint
+
+    api_endpoint = get_object_or_404(ApiEndpoint, token=token, is_active=True)
+
+    return JsonResponse({
+        'name': api_endpoint.name,
+        'value': api_endpoint.value,
+        'text': api_endpoint.text,
+    })
+
+
+# ===========================================
 # VISTAS PARA ÓRDENAS DE TRABAJO
 # ===========================================
 

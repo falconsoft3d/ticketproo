@@ -1556,12 +1556,28 @@
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item {% if request.resolver_match.url_name == 'user_create' %}active{% endif %}" 
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'user_create' %}active{% endif %}"
                                    href="{% url 'user_create' %}">
                                     <i class="bi bi-person-plus"></i> Crear Usuario
                                 </a>
                             </li>
 
+                            </li>
+
+                            <li><hr class="dropdown-divider"></li>
+
+                            <li class="dropdown-header">API</li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'api_endpoint_list' %}active{% endif %}"
+                                   href="{% url 'api_endpoint_list' %}">
+                                    <i class="bi bi-hdd-network"></i> Listado de APIs
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'api_endpoint_create' %}active{% endif %}"
+                                   href="{% url 'api_endpoint_create' %}">
+                                    <i class="bi bi-plus-circle"></i> Crear API
+                                </a>
                             </li>
 
                             <li><hr class="dropdown-divider"></li>

@@ -244,7 +244,17 @@ urlpatterns = [
     path('urls/<int:url_id>/edit/', views.url_manager_edit_view, name='url_manager_edit'),
     path('urls/<int:url_id>/delete/', views.url_manager_delete_view, name='url_manager_delete'),
     path('urls/<int:url_id>/password/', views.url_manager_password_view, name='url_manager_password'),
-    
+
+    # URLs de gestión de APIs (solo para agentes)
+    path('apis/', views.api_endpoint_list_view, name='api_endpoint_list'),
+    path('apis/create/', views.api_endpoint_create_view, name='api_endpoint_create'),
+    path('apis/<int:pk>/', views.api_endpoint_detail_view, name='api_endpoint_detail'),
+    path('apis/<int:pk>/edit/', views.api_endpoint_edit_view, name='api_endpoint_edit'),
+    path('apis/<int:pk>/delete/', views.api_endpoint_delete_view, name='api_endpoint_delete'),
+
+    # Endpoint público de la API generada (sin autenticación, solo GET)
+    path('api/data/<uuid:token>/', views.api_endpoint_public_view, name='api_endpoint_public'),
+
     # URLs de gestión de órdenes de trabajo (solo para agentes)
     path('work-orders/', views.work_order_list_view, name='work_order_list'),
     path('work-orders/create/', views.work_order_create_view, name='work_order_create'),

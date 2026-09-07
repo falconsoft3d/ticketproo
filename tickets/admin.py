@@ -19,7 +19,7 @@ from .models import (
     WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage, ImagePrompt,
     AIManager, AIManagerMeeting, AIManagerMeetingAttachment, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
     WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
-    AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
+    AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager, ApiEndpoint,
     ExpenseReport, ExpenseItem, ExpenseComment, ExpenseFund, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine, QuotationView,
     Contact, ContactTag, ContactComment, ContactAttachment, SalesPlan, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord,
     ClientRequest, ClientRequestResponse, Event, Trip, TripStop, WebCounter, WebCounterVisit, QuickQuote, QuickQuoteView, QuickQuoteComment,
@@ -4019,6 +4019,21 @@ class UrlManagerAdmin(admin.ModelAdmin):
         """Optimizar consultas"""
         return super().get_queryset(request).select_related('created_by')
     
+    def save_model(self, request, obj, form, change):
+        """Asignar usuario creador si es nuevo"""
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(ApiEndpoint)
+class ApiEndpointAdmin(admin.ModelAdmin):
+    """Administración de APIs generadas"""
+    list_display = ('name', 'value', 'is_active', 'token', 'created_by', 'created_at')
+    list_filter = ('is_active', 'value', 'created_by', 'created_at')
+    search_fields = ('name', 'text')
+    readonly_fields = ('token', 'created_at', 'updated_at')
+
     def save_model(self, request, obj, form, change):
         """Asignar usuario creador si es nuevo"""
         if not change:
