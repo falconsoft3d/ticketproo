@@ -1482,7 +1482,26 @@ def ticket_detail_view(request, pk):
             )
             messages.success(request, f'Estado actualizado a "{new_label}".')
         return redirect('ticket_detail', pk=pk)
-    
+
+    # Actualizar horas estimadas (solo agentes)
+    if request.method == 'POST' and 'update_estimated_hours' in request.POST and is_agent(request.user):
+        from decimal import Decimal, InvalidOperation
+        raw_hours = request.POST.get('estimated_hours', '').strip().replace(',', '.')
+        if raw_hours == '':
+            ticket.hours = None
+        else:
+            try:
+                value = Decimal(raw_hours)
+                if value < 0 or value >= Decimal('10000'):
+                    raise InvalidOperation
+                ticket.hours = value.quantize(Decimal('0.01'))
+            except InvalidOperation:
+                messages.error(request, 'Valor de horas estimadas no válido.')
+                return redirect('ticket_detail', pk=pk)
+        ticket.save(update_fields=['hours'])
+        messages.success(request, 'Horas estimadas actualizadas.')
+        return redirect('ticket_detail', pk=pk)
+
     # Formulario para agregar adjuntos
     attachment_form = TicketAttachmentForm()
     if request.method == 'POST' and 'upload_attachment' in request.POST:
