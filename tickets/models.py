@@ -87,6 +87,8 @@ class Company(models.Model):
         verbose_name='Última actualización'
     )
     public_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
         null=True,
         blank=True,
         editable=True,
