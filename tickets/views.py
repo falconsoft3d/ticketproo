@@ -8423,11 +8423,9 @@ def public_company_stats(request, token):
         'ticket_statuses': ticket_statuses,
         'ticket_priorities': ticket_priorities,
         'page_title': f'Estadísticas - {company.name}',
-        'total_hours': TicketHourLine.objects.filter(
-            ticket__company=company
-        ).aggregate(total=Sum('hours'))['total'] or 0,
+        'total_hours': company.tickets.aggregate(total=Sum('hours'))['total'] or 0,
     }
-    
+
     return render(request, 'tickets/public_company_stats.html', context)
 
 
