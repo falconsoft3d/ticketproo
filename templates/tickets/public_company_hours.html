@@ -57,21 +57,30 @@
 
             <!-- Resumen -->
             <div class="row mb-4">
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <div class="card h-100 border-0 shadow">
                         <div class="card-body">
                             <h6 class="text-muted mb-1">
-                                Total horas{% if status_label %} ({{ status_label }}){% endif %}
+                                Horas consumidas{% if status_label %} ({{ status_label }}){% endif %}
                             </h6>
                             <h2 class="text-info mb-0">{{ total_hours }} h</h2>
                             <small class="text-muted">{{ tickets|length }} ticket{{ tickets|length|pluralize }} con horas</small>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-8 mb-3">
+                <div class="col-md-3 mb-3">
                     <div class="card h-100 border-0 shadow">
                         <div class="card-body">
-                            <h6 class="text-muted mb-3">Horas por estado</h6>
+                            <h6 class="text-muted mb-1">Horas estimadas</h6>
+                            <h2 class="text-secondary mb-0">{{ total_estimated }} h</h2>
+                            <small class="text-muted">Presupuesto de esos tickets</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100 border-0 shadow">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-3">Horas consumidas por estado</h6>
                             <div class="d-flex flex-wrap gap-2">
                                 <a href="?" class="status-chip btn btn-sm btn-light border {% if not status_filter %}active{% endif %}">
                                     Todos
@@ -93,7 +102,7 @@
             </div>
 
             <!-- Tabla de tickets -->
-            <div class="card border-0 shadow">
+            <div class="card border-0 shadow mb-4">
                 <div class="card-header bg-white">
                     <h5 class="mb-0"><i class="bi bi-list-ul"></i> Horas por ticket</h5>
                 </div>
@@ -107,8 +116,8 @@
                                     <th>Título</th>
                                     <th>Estado</th>
                                     <th>Categoría</th>
-                                    <th>Fecha creación</th>
-                                    <th class="text-end">Horas</th>
+                                    <th class="text-end">Estimadas</th>
+                                    <th class="text-end">Consumidas</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -128,14 +137,20 @@
                                             <span class="text-muted">Sin categoría</span>
                                         {% endif %}
                                     </td>
-                                    <td class="text-nowrap">{{ ticket.created_at|date:"d/m/Y" }}</td>
-                                    <td class="text-end fw-bold text-nowrap">{{ ticket.hours }} h</td>
+                                    <td class="text-end text-muted text-nowrap">
+                                        {% if ticket.hours %}{{ ticket.hours }} h{% else %}-{% endif %}
+                                    </td>
+                                    <td class="text-end fw-bold text-nowrap {% if ticket.hours and ticket.consumed > ticket.hours %}text-danger{% endif %}"
+                                        {% if ticket.hours and ticket.consumed > ticket.hours %}title="Supera las horas estimadas"{% endif %}>
+                                        {{ ticket.consumed }} h
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                             <tfoot class="table-light">
                                 <tr>
-                                    <th colspan="5" class="text-end">Total</th>
+                                    <th colspan="4" class="text-end">Total</th>
+                                    <th class="text-end text-nowrap text-muted">{{ total_estimated }} h</th>
                                     <th class="text-end text-nowrap">{{ total_hours }} h</th>
                                 </tr>
                             </tfoot>
@@ -144,11 +159,46 @@
                     {% else %}
                     <div class="text-center text-muted py-5">
                         <i class="bi bi-clock" style="font-size: 2rem;"></i>
-                        <p class="mt-2 mb-0">No hay tickets con horas registradas{% if status_filter %} en este estado{% endif %}.</p>
+                        <p class="mt-2 mb-0">No hay horas registradas{% if status_filter %} en tickets con este estado{% endif %}.</p>
                     </div>
                     {% endif %}
                 </div>
             </div>
+
+            <!-- Líneas de horas -->
+            {% if hour_lines %}
+            <div class="card border-0 shadow">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-journal-text"></i> Detalle de líneas de horas</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Fecha</th>
+                                    <th>Ticket</th>
+                                    <th>Descripción</th>
+                                    <th class="text-end pe-3">Horas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for line in hour_lines %}
+                                <tr>
+                                    <td class="ps-3 text-nowrap">{{ line.date|date:"d/m/Y" }}</td>
+                                    <td class="text-nowrap">
+                                        <span class="badge bg-primary">#{{ line.ticket.ticket_number|default:line.ticket.pk }}</span>
+                                    </td>
+                                    <td>{{ line.description }}</td>
+                                    <td class="text-end pe-3 text-nowrap">{{ line.hours }} h</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </body>

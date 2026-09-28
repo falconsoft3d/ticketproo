@@ -8435,7 +8435,10 @@ def public_company_stats(request, token):
         'ticket_statuses': ticket_statuses,
         'ticket_priorities': ticket_priorities,
         'page_title': f'Estadísticas - {company.name}',
-        'total_hours': company.tickets.aggregate(total=Sum('hours'))['total'] or 0,
+        # Horas consumidas = líneas de horas (ticket.hours es la estimación/presupuesto)
+        'total_hours': TicketHourLine.objects.filter(
+            ticket__company=company
+        ).aggregate(total=Sum('hours'))['total'] or 0,
         'token': token,
     }
 
@@ -8443,33 +8446,39 @@ def public_company_stats(request, token):
 
 
 def public_company_hours(request, token):
-    """Vista pública con el detalle de horas consumidas por ticket de una empresa"""
+    """Vista pública con el detalle de horas consumidas (líneas de horas) por ticket de una empresa"""
     company = _get_public_company(token)
 
-    tickets = company.tickets.filter(hours__gt=0).select_related('category')
-
     status_filter = request.GET.get('status', '')
-    valid_statuses = [s[0] for s in Ticket.STATUS_CHOICES]
-    if status_filter in valid_statuses:
-        tickets = tickets.filter(status=status_filter)
-    else:
+    status_labels = dict(Ticket.STATUS_CHOICES)
+    if status_filter not in status_labels:
         status_filter = ''
 
+    # Horas consumidas = suma de líneas de horas; ticket.hours es la estimación (presupuesto)
+    tickets = company.tickets.annotate(
+        consumed=Sum('hour_lines__hours')
+    ).filter(consumed__gt=0).select_related('category')
+    hour_lines = TicketHourLine.objects.filter(ticket__company=company).select_related('ticket')
+    if status_filter:
+        tickets = tickets.filter(status=status_filter)
+        hour_lines = hour_lines.filter(ticket__status=status_filter)
     tickets = tickets.order_by('-created_at')
-    total_hours = tickets.aggregate(total=Sum('hours'))['total'] or 0
+    hour_lines = hour_lines.order_by('-date', '-created_at')
 
-    # Resumen de horas por estado (sin aplicar el filtro, para ver el reparto completo)
-    status_labels = dict(Ticket.STATUS_CHOICES)
+    total_hours = hour_lines.aggregate(total=Sum('hours'))['total'] or 0
+    total_estimated = sum((t.hours or 0) for t in tickets)
+
+    # Resumen por estado (sin aplicar el filtro, para ver el reparto completo)
     hours_by_status = [
         {
-            'status': row['status'],
-            'label': status_labels.get(row['status'], row['status']),
+            'status': row['ticket__status'],
+            'label': status_labels.get(row['ticket__status'], row['ticket__status']),
             'hours': row['total'],
             'count': row['count'],
         }
-        for row in company.tickets.filter(hours__gt=0)
-            .values('status')
-            .annotate(total=Sum('hours'), count=Count('id'))
+        for row in TicketHourLine.objects.filter(ticket__company=company)
+            .values('ticket__status')
+            .annotate(total=Sum('hours'), count=Count('ticket', distinct=True))
             .order_by('-total')
     ]
 
@@ -8477,7 +8486,9 @@ def public_company_hours(request, token):
         'company': company,
         'token': token,
         'tickets': tickets,
+        'hour_lines': hour_lines,
         'total_hours': total_hours,
+        'total_estimated': total_estimated,
         'hours_by_status': hours_by_status,
         'status_filter': status_filter,
         'status_label': status_labels.get(status_filter, ''),
