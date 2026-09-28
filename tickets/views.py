@@ -5288,12 +5288,18 @@ def company_detail_view(request, company_id):
     """Vista para ver detalles de una empresa"""
     company = get_object_or_404(Company, id=company_id)
     
-    # Generar public_token si no existe
-    if not company.public_token:
-        import uuid
-        company.public_token = uuid.uuid4()
-        company.save()
-    
+    # Generar public_token si no existe o si otra empresa (anterior) ya lo usa
+    if not company.public_token or Company.objects.filter(
+        public_token=company.public_token, pk__lt=company.pk
+    ).exists():
+        company.regenerate_public_token()
+
+    # Regenerar manualmente la URL pública (invalida el enlace anterior)
+    if request.method == 'POST' and request.POST.get('action') == 'regenerate_public_token':
+        company.regenerate_public_token()
+        messages.success(request, 'Se generó una nueva URL pública. El enlace anterior ya no funciona.')
+        return redirect(f"{reverse('company_detail', kwargs={'company_id': company.id})}?public_url=1")
+
     # Manejar actualización de objetivos empresariales (POST)
     if request.method == 'POST' and request.POST.get('action') == 'update_objectives':
         if is_agent(request.user):
@@ -5324,7 +5330,6 @@ def company_detail_view(request, company_id):
     company_users = company.users.select_related('user').order_by('user__first_name', 'user__username')
     
     # URLs públicas de CRM
-    from django.urls import reverse
     public_crm_questions_url = request.build_absolute_uri(
         reverse('public_crm_questions', kwargs={'company_uuid': company.uuid})
     )

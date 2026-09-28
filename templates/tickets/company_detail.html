@@ -333,7 +333,7 @@
                                                    readonly>
                                             <button class="btn btn-outline-success" 
                                                     type="button" 
-                                                    onclick="copyToClipboard('crmQuestionsUrl')"
+                                                    onclick="copyInputUrl('crmQuestionsUrl')"
                                                     title="Copiar URL">
                                                 <i class="bi bi-clipboard"></i>
                                             </button>
@@ -364,7 +364,7 @@
                                                    readonly>
                                             <button class="btn btn-outline-primary" 
                                                     type="button" 
-                                                    onclick="copyToClipboard('crmAskUrl')"
+                                                    onclick="copyInputUrl('crmAskUrl')"
                                                     title="Copiar URL">
                                                 <i class="bi bi-clipboard"></i>
                                             </button>
@@ -589,7 +589,7 @@
                     <input type="text" class="form-control" id="publicUrl" 
                            value="{{ request.scheme }}://{{ request.get_host }}{% url 'public_company_stats' company.public_token|default:company.id %}" 
                            readonly>
-                    <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard()">
+                    <button class="btn btn-outline-primary" type="button" onclick="copyInputUrl('publicUrl')">
                         <i class="bi bi-copy"></i> Copiar
                     </button>
                 </div>
@@ -602,7 +602,16 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <a href="{% url 'public_company_stats' company.public_token %}" 
+                <form method="post" class="me-auto"
+                      onsubmit="return confirm('Se generará una nueva URL y el enlace anterior dejará de funcionar. ¿Continuar?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="regenerate_public_token">
+                    <button type="submit" class="btn btn-outline-warning">
+                        <i class="bi bi-arrow-repeat me-2"></i>
+                        Generar nueva URL
+                    </button>
+                </form>
+                <a href="{% url 'public_company_stats' company.public_token %}"
                    target="_blank" class="btn btn-success">
                     <i class="bi bi-eye me-2"></i>
                     Vista Previa
@@ -661,33 +670,14 @@ function copyPublicUrl() {
     modal.show();
 }
 
+// Reabrir el modal tras regenerar la URL pública
+if (new URLSearchParams(window.location.search).get('public_url') === '1') {
+    document.addEventListener('DOMContentLoaded', copyPublicUrl);
+}
+
 function copyTicketUrl() {
     const modal = new bootstrap.Modal(document.getElementById('ticketUrlModal'));
     modal.show();
-}
-
-function copyToClipboard() {
-    const urlInput = document.getElementById('publicUrl');
-    urlInput.select();
-    urlInput.setSelectionRange(0, 99999); // Para móviles
-    
-    navigator.clipboard.writeText(urlInput.value).then(function() {
-        // Cambiar el texto del botón temporalmente
-        const copyBtn = event.target.closest('button');
-        const originalHTML = copyBtn.innerHTML;
-        copyBtn.innerHTML = '<i class="bi bi-check"></i> ¡Copiado!';
-        copyBtn.classList.remove('btn-outline-primary');
-        copyBtn.classList.add('btn-success');
-        
-        setTimeout(function() {
-            copyBtn.innerHTML = originalHTML;
-            copyBtn.classList.remove('btn-success');
-            copyBtn.classList.add('btn-outline-primary');
-        }, 2000);
-    }).catch(function(err) {
-        console.error('Error al copiar: ', err);
-        alert('Error al copiar la URL. Por favor, cópiala manualmente.');
-    });
 }
 
 function copyTicketToClipboard() {
@@ -733,45 +723,43 @@ function toggleEditObjectives() {
 }
 
 // Función para copiar URLs al portapapeles
-function copyToClipboard(inputId) {
+// (no se llama copyToClipboard porque base.html define una global con ese nombre que la sobrescribe)
+function copyInputUrl(inputId) {
     const input = document.getElementById(inputId);
-    if (input) {
+    if (!input) return;
+    const button = input.nextElementSibling;
+    const outlineClass = inputId === 'crmQuestionsUrl' ? 'btn-outline-success' : 'btn-outline-primary';
+
+    function onCopied() {
+        const originalHtml = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check"></i> ¡Copiado!';
+        button.classList.remove(outlineClass);
+        button.classList.add('btn-success');
+        setTimeout(() => {
+            button.innerHTML = originalHtml;
+            button.classList.remove('btn-success');
+            button.classList.add(outlineClass);
+        }, 2000);
+    }
+
+    function fallbackCopy() {
         input.select();
         input.setSelectionRange(0, 99999); // Para móviles
-        
         try {
-            document.execCommand('copy');
-            
-            // Mostrar notificación de éxito
-            const button = input.nextElementSibling;
-            const originalHtml = button.innerHTML;
-            button.innerHTML = '<i class="bi bi-check"></i>';
-            button.classList.add('btn-success');
-            button.classList.remove('btn-outline-success', 'btn-outline-primary');
-            
-            setTimeout(() => {
-                button.innerHTML = originalHtml;
-                button.classList.remove('btn-success');
-                if (inputId === 'crmQuestionsUrl') {
-                    button.classList.add('btn-outline-success');
-                } else {
-                    button.classList.add('btn-outline-primary');
-                }
-            }, 2000);
-            
-            // Mostrar notificación toast si existe
-            if (typeof showToast === 'function') {
-                showToast('URL copiada al portapapeles', 'success');
-            }
+            if (!document.execCommand('copy')) throw new Error('execCommand falló');
+            onCopied();
         } catch (err) {
             console.error('Error al copiar al portapapeles:', err);
-            // Fallback: mostrar alerta
-            alert('URL copiada: ' + input.value);
+            alert('No se pudo copiar automáticamente. Copia la URL manualmente:\n' + input.value);
         }
-        
-        // Deseleccionar el texto
         input.setSelectionRange(0, 0);
         input.blur();
+    }
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(input.value).then(onCopied).catch(fallbackCopy);
+    } else {
+        fallbackCopy();
     }
 }
 
