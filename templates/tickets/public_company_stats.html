@@ -269,15 +269,20 @@
                 </div>
 
                 <div class="col-md-4 mb-4">
-                    <div class="card h-100 border-0 shadow">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="bi bi-clock-history text-info"></i> Horas Consumidas
-                            </h5>
-                            <h3 class="text-info">{{ total_hours }} h</h3>
-                            <p class="text-muted mb-0">Total de horas trabajadas en tickets</p>
+                    <a href="{% url 'public_company_hours' token %}" class="text-decoration-none text-reset">
+                        <div class="card h-100 border-0 shadow stat-card">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="bi bi-clock-history text-info"></i> Horas Consumidas
+                                </h5>
+                                <h3 class="text-info">{{ total_hours }} h</h3>
+                                <p class="text-muted mb-0">
+                                    Total de horas trabajadas en tickets
+                                    <span class="text-info ms-1">Ver detalle <i class="bi bi-arrow-right"></i></span>
+                                </p>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
 
                 <div class="col-md-4 mb-4">

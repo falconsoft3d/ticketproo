@@ -382,6 +382,7 @@ urlpatterns = [
     
     # URL pública para estadísticas de empresa
     path('company/stats/<str:token>/', views.public_company_stats, name='public_company_stats'),
+    path('company/stats/<str:token>/hours/', views.public_company_hours, name='public_company_hours'),
     
     # ============= URLs DASHBOARD =============
     path('business-dashboard/', views.business_dashboard, name='business_dashboard'),

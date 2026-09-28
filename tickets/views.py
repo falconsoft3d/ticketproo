@@ -8354,26 +8354,33 @@ def tetris_view(request):
     return render(request, 'tickets/tetris.html', context)
 
 
-def public_company_stats(request, token):
-    """Vista pública para mostrar estadísticas de una empresa usando su token o ID"""
+def _get_public_company(token):
+    """Obtiene una empresa activa por su token público o, en su defecto, por ID numérico"""
+    from django.core.exceptions import ValidationError
     company = None
-    
+
     try:
         # Intentar primero como UUID token
         company = Company.objects.filter(public_token=token, is_active=True).first()
-    except ValueError:
+    except (ValueError, ValidationError):
         pass
-    
+
     if not company:
         try:
             # Si falla, intentar como ID numérico
             company = Company.objects.filter(id=int(token), is_active=True).first()
         except (ValueError, TypeError):
             pass
-    
+
     if not company:
         raise Http404("Empresa no encontrada o token inválido")
-    
+    return company
+
+
+def public_company_stats(request, token):
+    """Vista pública para mostrar estadísticas de una empresa usando su token o ID"""
+    company = _get_public_company(token)
+
     # Obtener estadísticas públicas
     stats = company.get_public_stats()
     
@@ -8429,9 +8436,55 @@ def public_company_stats(request, token):
         'ticket_priorities': ticket_priorities,
         'page_title': f'Estadísticas - {company.name}',
         'total_hours': company.tickets.aggregate(total=Sum('hours'))['total'] or 0,
+        'token': token,
     }
 
     return render(request, 'tickets/public_company_stats.html', context)
+
+
+def public_company_hours(request, token):
+    """Vista pública con el detalle de horas consumidas por ticket de una empresa"""
+    company = _get_public_company(token)
+
+    tickets = company.tickets.filter(hours__gt=0).select_related('category')
+
+    status_filter = request.GET.get('status', '')
+    valid_statuses = [s[0] for s in Ticket.STATUS_CHOICES]
+    if status_filter in valid_statuses:
+        tickets = tickets.filter(status=status_filter)
+    else:
+        status_filter = ''
+
+    tickets = tickets.order_by('-created_at')
+    total_hours = tickets.aggregate(total=Sum('hours'))['total'] or 0
+
+    # Resumen de horas por estado (sin aplicar el filtro, para ver el reparto completo)
+    status_labels = dict(Ticket.STATUS_CHOICES)
+    hours_by_status = [
+        {
+            'status': row['status'],
+            'label': status_labels.get(row['status'], row['status']),
+            'hours': row['total'],
+            'count': row['count'],
+        }
+        for row in company.tickets.filter(hours__gt=0)
+            .values('status')
+            .annotate(total=Sum('hours'), count=Count('id'))
+            .order_by('-total')
+    ]
+
+    context = {
+        'company': company,
+        'token': token,
+        'tickets': tickets,
+        'total_hours': total_hours,
+        'hours_by_status': hours_by_status,
+        'status_filter': status_filter,
+        'status_label': status_labels.get(status_filter, ''),
+        'page_title': f'Horas consumidas - {company.name}',
+    }
+
+    return render(request, 'tickets/public_company_hours.html', context)
 
 
 # ============= VISTAS CRM =============
