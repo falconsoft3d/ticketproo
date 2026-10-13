@@ -19462,17 +19462,24 @@ def detect_spam_landing_submission(submission):
     Retorna (is_spam: bool, reason: str | None).
     """
     def looks_random(text):
-        """Detecta strings aleatorios generados por bots: muchas mayúsculas
-        intercaladas en palabras largas, sin patrón de lenguaje natural."""
+        """Detecta strings aleatorios generados por bots (p.ej. 'xKqTzRmWpL'):
+        palabras largas que alternan mayúsculas y minúsculas sin patrón.
+        No marca palabras en MAYÚSCULAS, siglas ni CamelCase normal."""
         if not text:
             return False
         for word in text.split():
-            if len(word) < 8:
+            # Solo letras: ignorar códigos, referencias, emails, URLs, etc.
+            if len(word) < 8 or not word.isalpha():
                 continue
-            # Contar mayúsculas que NO son la primera letra del word
-            non_start_upper = sum(1 for i, c in enumerate(word) if i > 0 and c.isupper())
-            # >=4 mayúsculas internas es señal clara de string aleatorio
-            if non_start_upper >= 4:
+            # Palabras todo en mayúsculas o todo en minúsculas son normales
+            if word.isupper() or word.islower():
+                continue
+            non_start_upper = sum(1 for c in word[1:] if c.isupper())
+            # Cambios mayúscula/minúscula entre letras consecutivas
+            case_changes = sum(
+                1 for a, b in zip(word, word[1:]) if a.isupper() != b.isupper()
+            )
+            if non_start_upper >= 4 and case_changes >= 6:
                 return True
         return False
 
@@ -19484,11 +19491,13 @@ def detect_spam_landing_submission(submission):
         # Más de 4 puntos en la parte local indica relleno de puntos para evadir filtros
         if local.count('.') >= 5:
             return True
-        # Muchos dígitos intercalados en emails de proveedores de consumo
-        digits = sum(1 for c in local if c.isdigit())
+        # Dígitos intercalados (3+ grupos separados, p.ej. 'a1b22c3') en emails
+        # de proveedores de consumo. Un año o número seguido ('juan1985') es normal.
+        import re
+        digit_groups = len(re.findall(r'\d+', local))
         consumer_domains = ('gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com', 'live.com')
         domain = email.split('@')[1].lower()
-        if digits >= 4 and domain in consumer_domains:
+        if digit_groups >= 3 and domain in consumer_domains:
             return True
         return False
 
@@ -20106,6 +20115,43 @@ def spam_submissions_list(request):
         'submenu': get_crm_submenu(request, 'spam'),
     }
     return render(request, 'tickets/spam_submissions_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+@require_POST
+def spam_submission_mark_valid(request, submission_id):
+    """Marca un envío de spam como correcto: crea el contacto y envía las
+    notificaciones que se omitieron al detectarlo como spam."""
+    from .models import LandingPageSubmission
+    import logging
+    logger = logging.getLogger(__name__)
+
+    submission = get_object_or_404(LandingPageSubmission, pk=submission_id, is_spam=True)
+    submission.is_spam = False
+    submission.spam_reason = ''
+    submission.save(update_fields=['is_spam', 'spam_reason'])
+
+    landing_page = submission.landing_page
+    try:
+        create_contact_from_submission(submission, landing_page, created_by=request.user)
+    except Exception as e:
+        logger.error(f"Error creando contacto al recuperar spam {submission.pk}: {e}")
+
+    try:
+        from .utils import send_landing_page_notification
+        send_landing_page_notification(submission)
+    except Exception as e:
+        logger.error(f"Error enviando notificación al recuperar spam {submission.pk}: {e}")
+
+    try:
+        from .utils import send_telegram_notification
+        send_telegram_notification(landing_page, submission)
+    except Exception as e:
+        logger.error(f"Error enviando Telegram al recuperar spam {submission.pk}: {e}")
+
+    messages.success(request, f'Envío #{submission.pk} de {submission.email} marcado como correcto.')
+    return redirect('landing_page_submission_detail', submission_id=submission.pk)
 
 
 # ============================================================

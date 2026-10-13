@@ -84,6 +84,7 @@
                             <th>Landing</th>
                             <th>Motivo Spam</th>
                             <th>IP</th>
+                            <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -106,6 +107,26 @@
                                 </span>
                             </td>
                             <td class="text-muted font-monospace">{{ sub.ip_address|default:"—" }}</td>
+                            <td class="text-end text-nowrap">
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        data-bs-toggle="collapse" data-bs-target="#msg-{{ sub.pk }}"
+                                        title="Leer mensaje">
+                                    <i class="bi bi-envelope-open"></i> Mensaje
+                                </button>
+                                <form method="post" action="{% url 'spam_submission_mark_valid' sub.pk %}" class="d-inline"
+                                      onsubmit="return confirm('¿Marcar este envío como correcto? Se creará el contacto y se enviarán las notificaciones.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-success" title="Marcar como correcto">
+                                        <i class="bi bi-check-circle"></i> No es spam
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr class="collapse" id="msg-{{ sub.pk }}">
+                            <td colspan="10" class="bg-light">
+                                <div class="small text-muted mb-1">Mensaje:</div>
+                                <div style="white-space: pre-wrap;">{{ sub.mensaje|default:"(sin mensaje)" }}</div>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

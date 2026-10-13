@@ -925,6 +925,7 @@ urlpatterns = [
     path('landing-pages/submissions/<int:submission_id>/update-contact-tracking/', views.update_contact_tracking, name='update_contact_tracking'),
     path('landing-pages/contacts/', views.landing_page_contacts, name='landing_page_contacts'),
     path('landing-pages/spam/', views.spam_submissions_list, name='spam_submissions_list'),
+    path('landing-pages/spam/<int:submission_id>/mark-valid/', views.spam_submission_mark_valid, name='spam_submission_mark_valid'),
     path('landing-pages/submissions/<int:submission_id>/create-contact/', views.create_contact_from_submission_view, name='create_contact_from_submission'),
 
     # Registro de Entrada
