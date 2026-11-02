@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -74,22 +75,22 @@
                     <div class="text-end">
                         {% if documentation.is_active %}
                         <span class="badge bg-success fs-6 mb-2">
-                            <i class="fas fa-globe"></i> Público
+                            <i class="fas fa-globe"></i> {% translate "Público" %}
                         </span>
                         {% else %}
                         <span class="badge bg-secondary fs-6 mb-2">
-                            <i class="fas fa-eye-slash"></i> Inactivo
+                            <i class="fas fa-eye-slash"></i> {% translate "Inactivo" %}
                         </span>
                         {% endif %}
                         <br>
                         <div class="btn-group">
                             <a href="{% url 'multiple_documentation_edit' documentation.pk %}" 
                                class="btn btn-light btn-sm">
-                                <i class="fas fa-edit"></i> Editar
+                                <i class="fas fa-edit"></i> {% translate "Editar" %}
                             </a>
                             <a href="{% url 'multiple_documentation_add_item' documentation.pk %}" 
                                class="btn btn-light btn-sm">
-                                <i class="fas fa-plus"></i> Agregar Archivo
+                                <i class="fas fa-plus"></i> {% translate "Agregar Archivo" %}
                             </a>
                         </div>
                     </div>
@@ -102,11 +103,11 @@
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
-                                <i class="fas fa-list"></i> Archivos de la Documentación
+                                <i class="fas fa-list"></i> {% translate "Archivos de la Documentación" %}
                             </h5>
                             <a href="{% url 'multiple_documentation_add_item' documentation.pk %}" 
                                class="btn btn-primary btn-sm">
-                                <i class="fas fa-plus"></i> Agregar Archivo
+                                <i class="fas fa-plus"></i> {% translate "Agregar Archivo" %}
                             </a>
                         </div>
                         <div class="card-body">
@@ -150,9 +151,9 @@
                                                             {% if item.is_expired %}
                                                                 Vencido el {{ item.expiration_date|date:"d/m/Y" }}
                                                             {% elif item.days_until_expiration == 0 %}
-                                                                Vence hoy
+                                                                {% translate "Vence hoy" %}
                                                             {% elif item.days_until_expiration == 1 %}
-                                                                Vence mañana
+                                                                {% translate "Vence mañana" %}
                                                             {% elif item.days_until_expiration <= 7 %}
                                                                 Vence en {{ item.days_until_expiration }} días
                                                             {% else %}
@@ -169,16 +170,16 @@
                                                 <a href="{{ item.file.url }}" 
                                                    class="btn btn-outline-primary btn-sm"
                                                    target="_blank">
-                                                    <i class="fas fa-download"></i> Descargar
+                                                    <i class="fas fa-download"></i> {% translate "Descargar" %}
                                                 </a>
                                                 <a href="{% url 'multiple_documentation_edit_item' documentation.pk item.pk %}" 
                                                    class="btn btn-outline-secondary btn-sm">
-                                                    <i class="fas fa-edit"></i> Editar
+                                                    <i class="fas fa-edit"></i> {% translate "Editar" %}
                                                 </a>
                                                 <a href="{% url 'multiple_documentation_delete_item' documentation.pk item.pk %}" 
                                                    class="btn btn-outline-danger btn-sm"
                                                    onclick="return confirm('¿Estás seguro de eliminar este archivo?')">
-                                                    <i class="fas fa-trash"></i> Eliminar
+                                                    <i class="fas fa-trash"></i> {% translate "Eliminar" %}
                                                 </a>
                                             </div>
                                         </div>
@@ -189,11 +190,11 @@
                             {% else %}
                             <div class="text-center py-5">
                                 <i class="fas fa-file-plus fa-3x text-muted mb-3"></i>
-                                <h6 class="text-muted">No hay archivos agregados</h6>
-                                <p class="text-muted">Comienza agregando el primer archivo a esta documentación.</p>
+                                <h6 class="text-muted">{% translate "No hay archivos agregados" %}</h6>
+                                <p class="text-muted">{% translate "Comienza agregando el primer archivo a esta documentación." %}</p>
                                 <a href="{% url 'multiple_documentation_add_item' documentation.pk %}" 
                                    class="btn btn-primary">
-                                    <i class="fas fa-plus"></i> Agregar Primer Archivo
+                                    <i class="fas fa-plus"></i> {% translate "Agregar Primer Archivo" %}
                                 </a>
                             </div>
                             {% endif %}
@@ -207,9 +208,9 @@
                     <div class="card public-url-card mb-4">
                         <div class="card-body">
                             <h6 class="mb-3">
-                                <i class="fas fa-globe"></i> URL Pública
+                                <i class="fas fa-globe"></i> {% translate "URL Pública" %}
                             </h6>
-                            <p class="mb-3">Comparte esta URL para acceso público:</p>
+                            <p class="mb-3">{% translate "Comparte esta URL para acceso público:" %}</p>
                             <div class="input-group mb-3">
                                 <input type="text" 
                                        class="form-control" 
@@ -226,7 +227,7 @@
                                 <a href="{{ documentation.get_public_url }}" 
                                    class="btn btn-light btn-sm"
                                    target="_blank">
-                                    <i class="fas fa-external-link-alt"></i> Ver Página Pública
+                                    <i class="fas fa-external-link-alt"></i> {% translate "Ver Página Pública" %}
                                 </a>
                             </div>
                         </div>
@@ -237,32 +238,32 @@
                     <div class="card">
                         <div class="card-header">
                             <h6 class="mb-0">
-                                <i class="fas fa-cogs"></i> Acciones
+                                <i class="fas fa-cogs"></i> {% translate "Acciones" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
                                 <a href="{% url 'multiple_documentation_list' %}" 
                                    class="btn btn-outline-secondary">
-                                    <i class="fas fa-arrow-left"></i> Volver a la Lista
+                                    <i class="fas fa-arrow-left"></i> {% translate "Volver a la Lista" %}
                                 </a>
                                 <a href="{% url 'multiple_documentation_edit' documentation.pk %}" 
                                    class="btn btn-outline-primary">
-                                    <i class="fas fa-edit"></i> Editar Documentación
+                                    <i class="fas fa-edit"></i> {% translate "Editar Documentación" %}
                                 </a>
                                 <a href="{% url 'multiple_documentation_add_item' documentation.pk %}" 
                                    class="btn btn-primary">
-                                    <i class="fas fa-plus"></i> Agregar Archivo
+                                    <i class="fas fa-plus"></i> {% translate "Agregar Archivo" %}
                                 </a>
                                 <a href="{% url 'multiple_documentation_stats' documentation.pk %}" 
                                    class="btn btn-outline-info">
-                                    <i class="bi bi-bar-chart-line"></i> Ver Estadísticas
+                                    <i class="bi bi-bar-chart-line"></i> {% translate "Ver Estadísticas" %}
                                 </a>
                                 <hr>
                                 <a href="{% url 'multiple_documentation_delete' documentation.pk %}" 
                                    class="btn btn-outline-danger"
                                    onclick="return confirm('¿Estás seguro de eliminar toda esta documentación?')">
-                                    <i class="fas fa-trash"></i> Eliminar Documentación
+                                    <i class="fas fa-trash"></i> {% translate "Eliminar Documentación" %}
                                 </a>
                             </div>
                         </div>
@@ -272,35 +273,35 @@
                     <div class="card mt-4">
                         <div class="card-header">
                             <h6 class="mb-0">
-                                <i class="fas fa-info-circle"></i> Información
+                                <i class="fas fa-info-circle"></i> {% translate "Información" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <table class="table table-sm">
                                 <tr>
-                                    <td><strong>Creado por:</strong></td>
+                                    <td><strong>{% translate "Creado por:" %}</strong></td>
                                     <td>{{ documentation.created_by.get_full_name|default:documentation.created_by.username }}</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Creado:</strong></td>
+                                    <td><strong>{% translate "Creado:" %}</strong></td>
                                     <td>{{ documentation.created_at|date:"d/m/Y H:i" }}</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Actualizado:</strong></td>
+                                    <td><strong>{% translate "Actualizado:" %}</strong></td>
                                     <td>{{ documentation.updated_at|date:"d/m/Y H:i" }}</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Estado:</strong></td>
+                                    <td><strong>{% translate "Estado:" %}</strong></td>
                                     <td>
                                         {% if documentation.is_active %}
-                                        <span class="badge bg-success">Activo</span>
+                                        <span class="badge bg-success">{% translate "Activo" %}</span>
                                         {% else %}
-                                        <span class="badge bg-secondary">Inactivo</span>
+                                        <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                                         {% endif %}
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Archivos:</strong></td>
+                                    <td><strong>{% translate "Archivos:" %}</strong></td>
                                     <td>{{ items.count }}</td>
                                 </tr>
                             </table>

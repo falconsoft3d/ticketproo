@@ -1,18 +1,19 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 {% load project_extras %}
 
-{% block title %}{% if manual %}Editar Manual{% else %}Nuevo Manual{% endif %}{% endblock %}
+{% block title %}{% if manual %}{% translate "Editar Manual" %}{% else %}{% translate "Nuevo Manual" %}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>
             <i class="bi bi-book"></i>
-            {% if manual %}Editar Manual{% else %}Nuevo Manual{% endif %}
+            {% if manual %}{% translate "Editar Manual" %}{% else %}{% translate "Nuevo Manual" %}{% endif %}
         </h1>
         <a href="{% url 'manual_list' %}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Volver a Manuales
+            <i class="bi bi-arrow-left"></i> {% translate "Volver a Manuales" %}
         </a>
     </div>
 
@@ -34,7 +35,7 @@
 
                         <div class="mb-3">
                             <label for="id_title" class="form-label fw-bold">
-                                Título <span class="text-danger">*</span>
+                                {% translate "Título" %} <span class="text-danger">*</span>
                             </label>
                             <input
                                 type="text"
@@ -42,7 +43,7 @@
                                 name="title"
                                 class="form-control"
                                 value="{{ manual.title|default:'' }}"
-                                placeholder="Ej. Manual de Usuario v1.0"
+                                placeholder="{% translate 'Ej. Manual de Usuario v1.0' %}"
                                 required
                                 maxlength="200"
                             >
@@ -50,7 +51,7 @@
 
                         <div class="mb-3">
                             <label for="id_url" class="form-label fw-bold">
-                                URL del Manual <span class="text-danger">*</span>
+                                {% translate "URL del Manual" %} <span class="text-danger">*</span>
                             </label>
                             <input
                                 type="url"
@@ -61,11 +62,11 @@
                                 placeholder="https://ejemplo.com/manual.pdf"
                                 required
                             >
-                            <div class="form-text">Enlace directo al manual (PDF, sitio web, Google Drive, etc.)</div>
+                            <div class="form-text">{% translate "Enlace directo al manual (PDF, sitio web, Google Drive, etc.)" %}</div>
                         </div>
 
                         <div class="mb-4">
-                            <label for="id_description" class="form-label fw-bold">Descripción</label>
+                            <label for="id_description" class="form-label fw-bold">{% translate "Descripción" %}</label>
                             <textarea
                                 id="id_description"
                                 name="description"
@@ -78,10 +79,10 @@
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-lg"></i>
-                                {% if manual %}Guardar Cambios{% else %}Crear Manual{% endif %}
+                                {% if manual %}{% translate "Guardar Cambios" %}{% else %}{% translate "Crear Manual" %}{% endif %}
                             </button>
                             <a href="{% url 'manual_list' %}" class="btn btn-outline-secondary">
-                                Cancelar
+                                {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>
@@ -95,7 +96,7 @@
         <div class="col-md-8">
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Historial de Accesos</h5>
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> {% translate "Historial de Accesos" %}</h5>
                     <span class="badge bg-secondary">{{ manual.get_access_count }} total</span>
                 </div>
                 <div class="card-body p-0">
@@ -105,10 +106,10 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>#</th>
-                                    <th>Usuario</th>
-                                    <th>Fecha y Hora</th>
+                                    <th>{% translate "Usuario" %}</th>
+                                    <th>{% translate "Fecha y Hora" %}</th>
                                     <th>IP</th>
-                                    <th>Navegador</th>
+                                    <th>{% translate "Navegador" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -121,7 +122,7 @@
                                             <strong>{{ access.accessed_by.get_full_name|default:access.accessed_by.username }}</strong>
                                             <br><small class="text-muted">{{ access.accessed_by.email }}</small>
                                         {% else %}
-                                            <span class="text-muted"><i class="bi bi-person-dash"></i> Anónimo</span>
+                                            <span class="text-muted"><i class="bi bi-person-dash"></i> {% translate "Anónimo" %}</span>
                                         {% endif %}
                                     </td>
                                     <td>
@@ -142,7 +143,7 @@
                     {% else %}
                     <div class="text-center py-4 text-muted">
                         <i class="bi bi-clock-history display-4"></i>
-                        <p class="mt-2">Aún no hay accesos registrados para este manual.</p>
+                        <p class="mt-2">{% translate "Aún no hay accesos registrados para este manual." %}</p>
                     </div>
                     {% endif %}
                 </div>

@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}JointPDF - Herramientas PDF{% endblock %}
+{% block title %}{% translate "JointPDF - Herramientas PDF" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -12,15 +13,15 @@
                 <div>
                     <h1 class="h3 mb-0">
                         <i class="bi bi-files text-primary"></i>
-                        JointPDF
+                        {% translate "JointPDF" %}
                     </h1>
-                    <p class="text-muted mb-0">Une múltiples archivos PDF en un solo documento</p>
+                    <p class="text-muted mb-0">{% translate "Une múltiples archivos PDF en un solo documento" %}</p>
                 </div>
-                <nav aria-label="breadcrumb">
+                <nav aria-label="{% translate 'breadcrumb' %}">
                     <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                        <li class="breadcrumb-item">Herramientas</li>
-                        <li class="breadcrumb-item active">JointPDF</li>
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                        <li class="breadcrumb-item">{% translate "Herramientas" %}</li>
+                        <li class="breadcrumb-item active">{% translate "JointPDF" %}</li>
                     </ol>
                 </nav>
             </div>
@@ -32,28 +33,28 @@
                         <div class="card-header bg-info bg-opacity-10">
                             <h5 class="mb-0">
                                 <i class="bi bi-info-circle text-info"></i>
-                                Cómo usar esta herramienta
+                                {% translate "Cómo usar esta herramienta" %}
                             </h5>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <h6><i class="bi bi-1-circle"></i> Selecciona múltiples PDFs</h6>
-                                    <p class="text-muted small mb-3">Sube 2 o más archivos PDF que quieres unir en un solo documento.</p>
+                                    <h6><i class="bi bi-1-circle"></i> {% translate "Selecciona múltiples PDFs" %}</h6>
+                                    <p class="text-muted small mb-3">{% translate "Sube 2 o más archivos PDF que quieres unir en un solo documento." %}</p>
                                     
-                                    <h6><i class="bi bi-2-circle"></i> Orden de los archivos</h6>
-                                    <p class="text-muted small mb-3">Los PDFs se unirán en el orden que los selecciones.</p>
+                                    <h6><i class="bi bi-2-circle"></i> {% translate "Orden de los archivos" %}</h6>
+                                    <p class="text-muted small mb-3">{% translate "Los PDFs se unirán en el orden que los selecciones." %}</p>
                                 </div>
                                 <div class="col-md-6">
-                                    <h6><i class="bi bi-3-circle"></i> Resultado</h6>
-                                    <p class="text-muted small mb-3">Obtendrás un solo PDF con todas las páginas de los archivos originales.</p>
+                                    <h6><i class="bi bi-3-circle"></i> {% translate "Resultado" %}</h6>
+                                    <p class="text-muted small mb-3">{% translate "Obtendrás un solo PDF con todas las páginas de los archivos originales." %}</p>
                                     
-                                    <h6><i class="bi bi-card-list"></i> Características:</h6>
+                                    <h6><i class="bi bi-card-list"></i> {% translate "Características:" %}</h6>
                                     <ul class="list-unstyled text-muted small">
-                                        <li><i class="bi bi-check-circle text-success"></i> Mantiene calidad original</li>
-                                        <li><i class="bi bi-check-circle text-success"></i> Respeta el orden de selección</li>
-                                        <li><i class="bi bi-check-circle text-success"></i> Procesamiento rápido</li>
-                                        <li><i class="bi bi-check-circle text-success"></i> Sin límite de archivos</li>
+                                        <li><i class="bi bi-check-circle text-success"></i> {% translate "Mantiene calidad original" %}</li>
+                                        <li><i class="bi bi-check-circle text-success"></i> {% translate "Respeta el orden de selección" %}</li>
+                                        <li><i class="bi bi-check-circle text-success"></i> {% translate "Procesamiento rápido" %}</li>
+                                        <li><i class="bi bi-check-circle text-success"></i> {% translate "Sin límite de archivos" %}</li>
                                     </ul>
                                 </div>
                             </div>
@@ -65,26 +66,26 @@
                         <div class="card-header bg-warning bg-opacity-10">
                             <h6 class="mb-0">
                                 <i class="bi bi-exclamation-triangle text-warning"></i>
-                                Importante
+                                {% translate "Importante" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <ul class="list-unstyled mb-0">
                                 <li class="mb-2">
                                     <i class="bi bi-files text-primary"></i>
-                                    <small>Mínimo 2 archivos PDF</small>
+                                    <small>{% translate "Mínimo 2 archivos PDF" %}</small>
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-arrow-up-down text-info"></i>
-                                    <small>El orden importa</small>
+                                    <small>{% translate "El orden importa" %}</small>
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-hdd text-danger"></i>
-                                    <small>Tamaño máximo: 50MB por archivo</small>
+                                    <small>{% translate "Tamaño máximo: 50MB por archivo" %}</small>
                                 </li>
                                 <li class="mb-0">
                                     <i class="bi bi-shield-check text-success"></i>
-                                    <small>Archivos procesados localmente</small>
+                                    <small>{% translate "Archivos procesados localmente" %}</small>
                                 </li>
                             </ul>
                         </div>
@@ -99,7 +100,7 @@
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0">
                                 <i class="bi bi-upload"></i>
-                                Seleccionar archivos PDF para unir
+                                {% translate "Seleccionar archivos PDF para unir" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -110,7 +111,7 @@
                                 <div class="mb-4">
                                     <label for="pdf_files" class="form-label fw-bold">
                                         <i class="bi bi-file-earmark-arrow-up"></i>
-                                        Archivos PDF (selecciona múltiples)
+                                        {% translate "Archivos PDF (selecciona múltiples)" %}
                                     </label>
                                     <input type="file" 
                                            class="form-control form-control-lg" 
@@ -121,7 +122,7 @@
                                            required>
                                     <div class="form-text">
                                         <i class="bi bi-info-circle"></i>
-                                        Mantén presionado Ctrl/Cmd para seleccionar múltiples archivos. Solo archivos PDF.
+                                        {% translate "Mantén presionado Ctrl/Cmd para seleccionar múltiples archivos. Solo archivos PDF." %}
                                     </div>
                                 </div>
 
@@ -129,14 +130,14 @@
                                 <div class="mb-4" id="filesList" style="display: none;">
                                     <label class="form-label fw-bold">
                                         <i class="bi bi-list-ol"></i>
-                                        Archivos seleccionados (en orden de unión)
+                                        {% translate "Archivos seleccionados (en orden de unión)" %}
                                     </label>
                                     <div id="filesContainer" class="border rounded p-3 bg-light">
                                         <!-- Los archivos se mostrarán aquí -->
                                     </div>
                                     <div class="form-text">
                                         <i class="bi bi-lightbulb"></i>
-                                        Los archivos se unirán en el orden mostrado arriba.
+                                        {% translate "Los archivos se unirán en el orden mostrado arriba." %}
                                     </div>
                                 </div>
 
@@ -144,11 +145,11 @@
                                 <div class="d-grid gap-2 d-md-flex justify-content-md-center">
                                     <button type="submit" class="btn btn-success btn-lg px-5" id="joinBtn" disabled>
                                         <i class="bi bi-layers-fill me-2"></i>
-                                        Unir PDFs
+                                        {% translate "Unir PDFs" %}
                                     </button>
                                     <button type="reset" class="btn btn-outline-secondary btn-lg px-4">
                                         <i class="bi bi-arrow-clockwise me-2"></i>
-                                        Limpiar
+                                        {% translate "Limpiar" %}
                                     </button>
                                 </div>
                             </form>
@@ -164,7 +165,7 @@
                         <div class="card-header">
                             <h5 class="mb-0">
                                 <i class="bi bi-diagram-3"></i>
-                                Proceso de unión
+                                {% translate "Proceso de unión" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -172,8 +173,8 @@
                                 <div class="col-md-3">
                                     <div class="mb-3">
                                         <i class="bi bi-file-earmark-pdf display-4 text-danger"></i>
-                                        <h6 class="mt-2">PDF 1</h6>
-                                        <p class="text-muted small">3 páginas</p>
+                                        <h6 class="mt-2">{% translate "PDF 1" %}</h6>
+                                        <p class="text-muted small">{% translate "3 páginas" %}</p>
                                     </div>
                                 </div>
                                 <div class="col-md-1 d-flex align-items-center justify-content-center">
@@ -182,8 +183,8 @@
                                 <div class="col-md-3">
                                     <div class="mb-3">
                                         <i class="bi bi-file-earmark-pdf display-4 text-warning"></i>
-                                        <h6 class="mt-2">PDF 2</h6>
-                                        <p class="text-muted small">2 páginas</p>
+                                        <h6 class="mt-2">{% translate "PDF 2" %}</h6>
+                                        <p class="text-muted small">{% translate "2 páginas" %}</p>
                                     </div>
                                 </div>
                                 <div class="col-md-1 d-flex align-items-center justify-content-center">
@@ -192,15 +193,15 @@
                                 <div class="col-md-3">
                                     <div class="mb-3">
                                         <i class="bi bi-file-earmark-pdf display-4 text-success"></i>
-                                        <h6 class="mt-2">PDF Unido</h6>
-                                        <p class="text-muted small">5 páginas totales</p>
+                                        <h6 class="mt-2">{% translate "PDF Unido" %}</h6>
+                                        <p class="text-muted small">{% translate "5 páginas totales" %}</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="text-center mt-3">
                                 <small class="text-muted">
                                     <i class="bi bi-info-circle"></i>
-                                    El PDF resultante contendrá todas las páginas de los archivos originales en el orden seleccionado
+                                    {% translate "El PDF resultante contendrá todas las páginas de los archivos originales en el orden seleccionado" %}
                                 </small>
                             </div>
                         </div>

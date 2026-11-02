@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
 
@@ -11,7 +12,7 @@
                     <i class="bi bi-stopwatch"></i> {{ page_title }}
                 </h1>
                 <a href="{% url 'countdown_timer_list' %}" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> Volver
+                    <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                 </a>
             </div>
         </div>
@@ -23,7 +24,7 @@
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="bi bi-{% if countdown %}pencil-square{% else %}plus-circle{% endif %}"></i>
-                        {% if countdown %}Editar{% else %}Nueva{% endif %} Cuenta Regresiva
+                        {% if countdown %}{% translate "Editar" %}{% else %}{% translate "Nueva" %}{% endif %} {% translate "Cuenta Regresiva" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -123,7 +124,7 @@
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'countdown_timer_list' %}" class="btn btn-secondary me-md-2">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-{% if countdown %}check-circle{% else %}plus-circle{% endif %}"></i>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -7,12 +8,12 @@
 <div class="container mt-4">
     <div class="row mb-4">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_list' %}">Gerentes IA</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_list' %}">{% translate "Gerentes IA" %}</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'ai_manager_detail' manager.pk %}">{{ manager.name }}</a></li>
-                    <li class="breadcrumb-item active">Editar</li>
+                    <li class="breadcrumb-item active">{% translate "Editar" %}</li>
                 </ol>
             </nav>
         </div>
@@ -23,7 +24,7 @@
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">
-                        <i class="bi bi-pencil"></i> Editar Gerente IA
+                        <i class="bi bi-pencil"></i> {% translate "Editar Gerente IA" %}
                     </h4>
                 </div>
                 <div class="card-body">
@@ -33,18 +34,18 @@
                         <!-- Empresa -->
                         <div class="mb-3">
                             <label for="company" class="form-label">
-                                Empresa <span class="text-danger">*</span>
+                                {% translate "Empresa" %} <span class="text-danger">*</span>
                             </label>
                             <select class="form-select" id="company" name="company" required disabled>
                                 <option value="{{ manager.company.id }}" selected>{{ manager.company.name }}</option>
                             </select>
-                            <div class="form-text">La empresa no puede ser modificada</div>
+                            <div class="form-text">{% translate "La empresa no puede ser modificada" %}</div>
                         </div>
 
                         <!-- Nombre -->
                         <div class="mb-3">
                             <label for="name" class="form-label">
-                                Nombre del Gerente <span class="text-danger">*</span>
+                                {% translate "Nombre del Gerente" %} <span class="text-danger">*</span>
                             </label>
                             <input type="text" 
                                    class="form-control" 
@@ -53,45 +54,45 @@
                                    value="{{ manager.name }}" 
                                    required 
                                    maxlength="200">
-                            <div class="form-text">Ejemplo: "Gerente de Ventas IA", "Coach de RRHH"</div>
+                            <div class="form-text">{% translate 'Ejemplo: "Gerente de Ventas IA", "Coach de RRHH"' %}</div>
                         </div>
 
                         <!-- Categoría -->
                         <div class="mb-3">
                             <label for="category" class="form-label">
-                                Categoría <span class="text-danger">*</span>
+                                {% translate "Categoría" %} <span class="text-danger">*</span>
                             </label>
                             <select class="form-select" id="category" name="category" required>
-                                <option value="ventas" {% if manager.category == 'ventas' %}selected{% endif %}>Ventas</option>
-                                <option value="compras" {% if manager.category == 'compras' %}selected{% endif %}>Compras</option>
-                                <option value="contabilidad" {% if manager.category == 'contabilidad' %}selected{% endif %}>Contabilidad</option>
+                                <option value="ventas" {% if manager.category == 'ventas' %}selected{% endif %}>{% translate "Ventas" %}</option>
+                                <option value="compras" {% if manager.category == 'compras' %}selected{% endif %}>{% translate "Compras" %}</option>
+                                <option value="contabilidad" {% if manager.category == 'contabilidad' %}selected{% endif %}>{% translate "Contabilidad" %}</option>
                                 <option value="crm" {% if manager.category == 'crm' %}selected{% endif %}>CRM</option>
-                                <option value="inventario" {% if manager.category == 'inventario' %}selected{% endif %}>Inventario</option>
-                                <option value="rrhh" {% if manager.category == 'rrhh' %}selected{% endif %}>Recursos Humanos</option>
-                                <option value="marketing" {% if manager.category == 'marketing' %}selected{% endif %}>Marketing</option>
-                                <option value="operaciones" {% if manager.category == 'operaciones' %}selected{% endif %}>Operaciones</option>
-                                <option value="finanzas" {% if manager.category == 'finanzas' %}selected{% endif %}>Finanzas</option>
-                                <option value="ti" {% if manager.category == 'ti' %}selected{% endif %}>Tecnología</option>
-                                <option value="otro" {% if manager.category == 'otro' %}selected{% endif %}>Otro</option>
+                                <option value="inventario" {% if manager.category == 'inventario' %}selected{% endif %}>{% translate "Inventario" %}</option>
+                                <option value="rrhh" {% if manager.category == 'rrhh' %}selected{% endif %}>{% translate "Recursos Humanos" %}</option>
+                                <option value="marketing" {% if manager.category == 'marketing' %}selected{% endif %}>{% translate "Marketing" %}</option>
+                                <option value="operaciones" {% if manager.category == 'operaciones' %}selected{% endif %}>{% translate "Operaciones" %}</option>
+                                <option value="finanzas" {% if manager.category == 'finanzas' %}selected{% endif %}>{% translate "Finanzas" %}</option>
+                                <option value="ti" {% if manager.category == 'ti' %}selected{% endif %}>{% translate "Tecnología" %}</option>
+                                <option value="otro" {% if manager.category == 'otro' %}selected{% endif %}>{% translate "Otro" %}</option>
                             </select>
                         </div>
 
                         <!-- Descripción -->
                         <div class="mb-3">
                             <label for="description" class="form-label">
-                                Descripción
+                                {% translate "Descripción" %}
                             </label>
                             <textarea class="form-control" 
                                       id="description" 
                                       name="description" 
                                       rows="3">{{ manager.description }}</textarea>
-                            <div class="form-text">Breve descripción del propósito de este gerente</div>
+                            <div class="form-text">{% translate "Breve descripción del propósito de este gerente" %}</div>
                         </div>
 
                         <!-- Instrucciones -->
                         <div class="mb-3">
                             <label for="instructions" class="form-label">
-                                Instrucciones para la IA <span class="text-danger">*</span>
+                                {% translate "Instrucciones para la IA" %} <span class="text-danger">*</span>
                             </label>
                             <textarea class="form-control" 
                                       id="instructions" 
@@ -99,8 +100,7 @@
                                       rows="8" 
                                       required>{{ manager.instructions }}</textarea>
                             <div class="form-text">
-                                Define cómo debe comportarse y responder este gerente IA. 
-                                Sé específico sobre el tono, enfoque y tipo de feedback que debe dar.
+                                {% translate "Define cómo debe comportarse y responder este gerente IA. Sé específico sobre el tono, enfoque y tipo de feedback que debe dar." %}
                             </div>
                         </div>
 
@@ -113,17 +113,17 @@
                                        name="is_active"
                                        {% if manager.is_active %}checked{% endif %}>
                                 <label class="form-check-label" for="is_active">
-                                    Gerente Activo
+                                    {% translate "Gerente Activo" %}
                                 </label>
                             </div>
-                            <div class="form-text">Los gerentes inactivos no aparecen en la lista principal</div>
+                            <div class="form-text">{% translate "Los gerentes inactivos no aparecen en la lista principal" %}</div>
                         </div>
 
                         <hr>
 
                         <!-- Integración con Telegram -->
                         <h5 class="mb-3">
-                            <i class="bi bi-telegram text-info"></i> Integración con Telegram
+                            <i class="bi bi-telegram text-info"></i> {% translate "Integración con Telegram" %}
                         </h5>
 
                         <div class="mb-3">
@@ -134,35 +134,35 @@
                                        name="telegram_enabled"
                                        {% if manager.telegram_enabled %}checked{% endif %}>
                                 <label class="form-check-label" for="telegram_enabled">
-                                    <strong>Enviar resúmenes por Telegram</strong>
+                                    <strong>{% translate "Enviar resúmenes por Telegram" %}</strong>
                                 </label>
                             </div>
                             <div class="form-text">
-                                Cuando está activo, los resúmenes se enviarán automáticamente por Telegram
+                                {% translate "Cuando está activo, los resúmenes se enviarán automáticamente por Telegram" %}
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label for="telegram_bot_token" class="form-label">
-                                Token del Bot de Telegram <span class="text-danger">*</span>
+                                {% translate "Token del Bot de Telegram" %} <span class="text-danger">*</span>
                             </label>
                             <input type="text" 
                                    class="form-control" 
                                    id="telegram_bot_token" 
                                    name="telegram_bot_token" 
                                    value="{{ manager.telegram_bot_token }}" 
-                                   placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11">
+                                   placeholder="{% translate '123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11' %}">
                             <div class="form-text">
-                                Token único del bot de Telegram. 
+                                {% translate "Token único del bot de Telegram." %} 
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#telegramHelpModal">
-                                    ¿Cómo obtener el Bot Token?
+                                    {% translate "¿Cómo obtener el Bot Token?" %}
                                 </a>
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label for="telegram_chat_id" class="form-label">
-                                Chat ID de Telegram <span class="text-danger">*</span>
+                                {% translate "Chat ID de Telegram" %} <span class="text-danger">*</span>
                             </label>
                             <input type="text" 
                                    class="form-control" 
@@ -171,9 +171,9 @@
                                    value="{{ manager.telegram_chat_id }}" 
                                    placeholder="-1001234567890">
                             <div class="form-text">
-                                ID del chat, grupo o canal donde se enviarán los resúmenes.
+                                {% translate "ID del chat, grupo o canal donde se enviarán los resúmenes." %}
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#telegramHelpModal">
-                                    ¿Cómo obtener el Chat ID?
+                                    {% translate "¿Cómo obtener el Chat ID?" %}
                                 </a>
                             </div>
                         </div>
@@ -183,10 +183,10 @@
                         <!-- Botones -->
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Guardar Cambios
+                                <i class="bi bi-save"></i> {% translate "Guardar Cambios" %}
                             </button>
                             <a href="{% url 'ai_manager_detail' manager.pk %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>
@@ -200,25 +200,25 @@
             <div class="card shadow-sm border-0 mb-3 {% if manager.telegram_enabled and manager.telegram_bot_token and manager.telegram_chat_id %}border-success{% else %}border-warning{% endif %}">
                 <div class="card-body">
                     <h6 class="card-title">
-                        <i class="bi bi-telegram"></i> Estado de Telegram
+                        <i class="bi bi-telegram"></i> {% translate "Estado de Telegram" %}
                     </h6>
                     {% if manager.telegram_enabled %}
                         {% if manager.telegram_bot_token and manager.telegram_chat_id %}
                         <div class="alert alert-success mb-0 py-2">
-                            <i class="bi bi-check-circle"></i> Configurado y activo
-                            <br><small>✓ Bot Token</small>
-                            <br><small>✓ Chat ID</small>
+                            <i class="bi bi-check-circle"></i> {% translate "Configurado y activo" %}
+                            <br><small>{% translate "✓ Bot Token" %}</small>
+                            <br><small>{% translate "✓ Chat ID" %}</small>
                         </div>
                         {% else %}
                         <div class="alert alert-warning mb-0 py-2">
-                            <i class="bi bi-exclamation-triangle"></i> Configuración incompleta
-                            {% if not manager.telegram_bot_token %}<br><small>✗ Falta Bot Token</small>{% endif %}
-                            {% if not manager.telegram_chat_id %}<br><small>✗ Falta Chat ID</small>{% endif %}
+                            <i class="bi bi-exclamation-triangle"></i> {% translate "Configuración incompleta" %}
+                            {% if not manager.telegram_bot_token %}<br><small>{% translate "✗ Falta Bot Token" %}</small>{% endif %}
+                            {% if not manager.telegram_chat_id %}<br><small>{% translate "✗ Falta Chat ID" %}</small>{% endif %}
                         </div>
                         {% endif %}
                     {% else %}
                     <div class="alert alert-secondary mb-0 py-2">
-                        <i class="bi bi-x-circle"></i> Deshabilitado
+                        <i class="bi bi-x-circle"></i> {% translate "Deshabilitado" %}
                     </div>
                     {% endif %}
                 </div>
@@ -228,14 +228,14 @@
             <div class="card shadow-sm border-0 bg-light mb-3">
                 <div class="card-body">
                     <h6 class="card-title">
-                        <i class="bi bi-lightbulb text-warning"></i> Consejos para Editar
+                        <i class="bi bi-lightbulb text-warning"></i> {% translate "Consejos para Editar" %}
                     </h6>
                     <ul class="small mb-0">
-                        <li>Los cambios afectarán las próximas reuniones</li>
-                        <li>Las reuniones anteriores mantienen su contexto</li>
-                        <li>Puedes desactivar temporalmente un gerente</li>
-                        <li>Las instrucciones son clave para buenos resultados</li>
-                        <li>Sé específico sobre el estilo de feedback</li>
+                        <li>{% translate "Los cambios afectarán las próximas reuniones" %}</li>
+                        <li>{% translate "Las reuniones anteriores mantienen su contexto" %}</li>
+                        <li>{% translate "Puedes desactivar temporalmente un gerente" %}</li>
+                        <li>{% translate "Las instrucciones son clave para buenos resultados" %}</li>
+                        <li>{% translate "Sé específico sobre el estilo de feedback" %}</li>
                     </ul>
                 </div>
             </div>
@@ -244,19 +244,19 @@
             <div class="card shadow-sm border-0 mb-3">
                 <div class="card-body">
                     <h6 class="card-title">
-                        <i class="bi bi-bar-chart"></i> Estadísticas Actuales
+                        <i class="bi bi-bar-chart"></i> {% translate "Estadísticas Actuales" %}
                     </h6>
                     <div class="row text-center">
                         <div class="col-6 mb-2">
                             <div class="border rounded p-2">
                                 <h4 class="mb-0 text-primary">{{ manager.get_total_meetings }}</h4>
-                                <small class="text-muted">Reuniones</small>
+                                <small class="text-muted">{% translate "Reuniones" %}</small>
                             </div>
                         </div>
                         <div class="col-6 mb-2">
                             <div class="border rounded p-2">
                                 <h4 class="mb-0 text-success">{{ manager.get_active_users }}</h4>
-                                <small class="text-muted">Usuarios</small>
+                                <small class="text-muted">{% translate "Usuarios" %}</small>
                             </div>
                         </div>
                     </div>
@@ -267,19 +267,19 @@
             <div class="card shadow-sm border-0">
                 <div class="card-body">
                     <h6 class="card-title">
-                        <i class="bi bi-info-circle"></i> Información
+                        <i class="bi bi-info-circle"></i> {% translate "Información" %}
                     </h6>
                     <div class="small">
                         <p class="mb-1">
-                            <strong>Creado:</strong><br>
+                            <strong>{% translate "Creado:" %}</strong><br>
                             {{ manager.created_at|date:"d/m/Y H:i" }}
                         </p>
                         <p class="mb-1">
-                            <strong>Última actualización:</strong><br>
+                            <strong>{% translate "Última actualización:" %}</strong><br>
                             {{ manager.updated_at|date:"d/m/Y H:i" }}
                         </p>
                         <p class="mb-0">
-                            <strong>Creado por:</strong><br>
+                            <strong>{% translate "Creado por:" %}</strong><br>
                             {{ manager.created_by.get_full_name|default:manager.created_by.username }}
                         </p>
                     </div>
@@ -295,64 +295,64 @@
         <div class="modal-content">
             <div class="modal-header bg-info text-white">
                 <h5 class="modal-title">
-                    <i class="bi bi-telegram"></i> ¿Cómo obtener el Chat ID de Telegram?
+                    <i class="bi bi-telegram"></i> {% translate "¿Cómo obtener el Chat ID de Telegram?" %}
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <strong>Requisito previo:</strong> Antes de usar esta función, debes configurar el <strong>Bot Token de Telegram</strong> en la <strong>Configuración del Sistema</strong>.
+                    <strong>{% translate "Requisito previo:" %}</strong> {% translate "Antes de usar esta función, debes configurar el" %} <strong>{% translate "Bot Token de Telegram" %}</strong> {% translate "en la" %} <strong>{% translate "Configuración del Sistema" %}</strong>.
                     <br><br>
                     El administrador debe ir a: <code>Configuración → Sistema → Telegram Bot Token</code>
                 </div>
 
-                <h6 class="mb-3"><i class="bi bi-1-circle-fill text-primary"></i> Paso 1: Crear o usar un Bot de Telegram</h6>
+                <h6 class="mb-3"><i class="bi bi-1-circle-fill text-primary"></i> {% translate "Paso 1: Crear o usar un Bot de Telegram" %}</h6>
                 <ol>
                     <li class="mb-2">
-                        <strong>Habla con BotFather:</strong> Busca <code>@BotFather</code> en Telegram
+                        <strong>{% translate "Habla con BotFather:" %}</strong> Busca <code>@BotFather</code> en Telegram
                     </li>
                     <li class="mb-2">
-                        <strong>Crea un bot:</strong> Envía <code>/newbot</code> y sigue las instrucciones
+                        <strong>{% translate "Crea un bot:" %}</strong> Envía <code>/newbot</code> y sigue las instrucciones
                     </li>
                     <li class="mb-2">
-                        <strong>Guarda el token:</strong> BotFather te dará un token como <code>123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11</code>
+                        <strong>{% translate "Guarda el token:" %}</strong> BotFather te dará un token como <code>123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11</code>
                     </li>
                     <li class="mb-2">
-                        <strong>Configúralo en el sistema:</strong> Pega ese token en la configuración del sistema
+                        <strong>{% translate "Configúralo en el sistema:" %}</strong> {% translate "Pega ese token en la configuración del sistema" %}
                     </li>
                 </ol>
 
-                <h6 class="mb-3 mt-4"><i class="bi bi-2-circle-fill text-primary"></i> Paso 2: Obtener el Chat ID</h6>
+                <h6 class="mb-3 mt-4"><i class="bi bi-2-circle-fill text-primary"></i> {% translate "Paso 2: Obtener el Chat ID" %}</h6>
                 <ol>
                     <li class="mb-2">
-                        <strong>Busca el bot en Telegram:</strong> Busca <code>@userinfobot</code> o <code>@getidsbot</code>
+                        <strong>{% translate "Busca el bot en Telegram:" %}</strong> Busca <code>@userinfobot</code> o <code>@getidsbot</code>
                     </li>
                     <li class="mb-2">
-                        <strong>Inicia una conversación:</strong> Envía <code>/start</code> al bot
+                        <strong>{% translate "Inicia una conversación:" %}</strong> Envía <code>/start</code> al bot
                     </li>
                     <li class="mb-2">
-                        <strong>Obtén tu ID:</strong> El bot te responderá con tu Chat ID
+                        <strong>{% translate "Obtén tu ID:" %}</strong> {% translate "El bot te responderá con tu Chat ID" %}
                     </li>
                     <li class="mb-2">
-                        <strong>Para grupos:</strong> Agrega el bot al grupo y envía <code>/start@getidsbot</code>
+                        <strong>{% translate "Para grupos:" %}</strong> Agrega el bot al grupo y envía <code>/start@getidsbot</code>
                     </li>
                 </ol>
 
-                <h6 class="mb-3 mt-4">Formato del Chat ID:</h6>
+                <h6 class="mb-3 mt-4">{% translate "Formato del Chat ID:" %}</h6>
                 <ul>
-                    <li><strong>Chat personal:</strong> Número positivo (ejemplo: <code>123456789</code>)</li>
-                    <li><strong>Grupo:</strong> Número negativo (ejemplo: <code>-123456789</code>)</li>
-                    <li><strong>SuperGrupo/Canal:</strong> Número con <code>-100</code> (ejemplo: <code>-1001234567890</code>)</li>
+                    <li><strong>{% translate "Chat personal:" %}</strong> Número positivo (ejemplo: <code>123456789</code>)</li>
+                    <li><strong>{% translate "Grupo:" %}</strong> Número negativo (ejemplo: <code>-123456789</code>)</li>
+                    <li><strong>{% translate "SuperGrupo/Canal:" %}</strong> Número con <code>-100</code> (ejemplo: <code>-1001234567890</code>)</li>
                 </ul>
 
                 <div class="alert alert-warning mt-3">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <strong>Importante:</strong> Asegúrate de que el bot de tu sistema tenga permisos para enviar mensajes al chat/grupo configurado.
+                    <strong>{% translate "Importante:" %}</strong> {% translate "Asegúrate de que el bot de tu sistema tenga permisos para enviar mensajes al chat/grupo configurado." %}
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cerrar" %}</button>
             </div>
         </div>
     </div>

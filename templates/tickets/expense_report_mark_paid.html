@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -16,18 +17,18 @@
                 <div class="card-body">
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
-                        <strong>Marcar como Pagado</strong><br>
-                        Esta acción marcará la rendición como pagada y finalizará el proceso.
+                        <strong>{% translate "Marcar como Pagado" %}</strong><br>
+                        {% translate "Esta acción marcará la rendición como pagada y finalizará el proceso." %}
                     </div>
                     
                     <div class="mb-3">
-                        <h6>Detalles de la rendición:</h6>
+                        <h6>{% translate "Detalles de la rendición:" %}</h6>
                         <ul class="list-unstyled">
-                            <li><strong>Empleado:</strong> {{ expense_report.employee.get_full_name|default:expense_report.employee.username }}</li>
-                            <li><strong>Título:</strong> {{ expense_report.title }}</li>
-                            <li><strong>Total:</strong> ${{ expense_report.total_amount|floatformat:2 }}</li>
-                            <li><strong>Aprobado por:</strong> {{ expense_report.approved_by.get_full_name|default:expense_report.approved_by.username }}</li>
-                            <li><strong>Fecha aprobación:</strong> {{ expense_report.approved_at|date:"d/m/Y H:i" }}</li>
+                            <li><strong>{% translate "Empleado:" %}</strong> {{ expense_report.employee.get_full_name|default:expense_report.employee.username }}</li>
+                            <li><strong>{% translate "Título:" %}</strong> {{ expense_report.title }}</li>
+                            <li><strong>{% translate "Total:" %}</strong> ${{ expense_report.total_amount|floatformat:2 }}</li>
+                            <li><strong>{% translate "Aprobado por:" %}</strong> {{ expense_report.approved_by.get_full_name|default:expense_report.approved_by.username }}</li>
+                            <li><strong>{% translate "Fecha aprobación:" %}</strong> {{ expense_report.approved_at|date:"d/m/Y H:i" }}</li>
                         </ul>
                     </div>
                     
@@ -35,22 +36,22 @@
                         {% csrf_token %}
                         <div class="mb-3">
                             <label for="payment_reference" class="form-label">
-                                Referencia de pago (opcional):
+                                {% translate "Referencia de pago (opcional):" %}
                             </label>
                             <input type="text" name="payment_reference" id="payment_reference" 
                                    class="form-control" 
-                                   placeholder="Ej: Transferencia #12345, Cheque #678, etc.">
+                                   placeholder="{% translate 'Ej: Transferencia #12345, Cheque #678, etc.' %}">
                             <small class="form-text text-muted">
-                                Puedes agregar una referencia del método de pago utilizado.
+                                {% translate "Puedes agregar una referencia del método de pago utilizado." %}
                             </small>
                         </div>
                         
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'expense_report_detail' expense_report.pk %}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Cancelar
+                                <i class="fas fa-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-info">
-                                <i class="fas fa-dollar-sign"></i> Marcar como Pagado
+                                <i class="fas fa-dollar-sign"></i> {% translate "Marcar como Pagado" %}
                             </button>
                         </div>
                     </form>

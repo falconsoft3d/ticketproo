@@ -1,4 +1,5 @@
 {% load django_bootstrap5 %}
+{% load i18n %}
 {% load static %}
 {% load project_extras %}
 <!DOCTYPE html>
@@ -8,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- Título dinámico con nombre del usuario -->
-    <title>{% block title %}{% if user.is_authenticated %}{{ user.first_name|default:user.username }} - TicketProo{% else %}TicketProo - Sistema de Gestión de Tickets{% endif %}{% endblock %}</title>
+    <title>{% block title %}{% if user.is_authenticated %}{{ user.first_name|default:user.username }} - TicketProo{% else %}{% translate "TicketProo - Sistema de Gestión de Tickets" %}{% endif %}{% endblock %}</title>
     
     <!-- Favicon dinámico -->
     <link rel="icon" id="favicon" href="" type="image/svg+xml">
@@ -17,6 +18,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/style.css' %}?v=2.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="{% static 'css/apple-theme.css' %}?v=2.0">
+    <script src="{% static 'js/apple-theme.js' %}?v=1.1"></script>
     <style>
         /* Botón Evaluar animado */
         .evaluar-btn {
@@ -62,7 +68,7 @@
     </style>
     <script defer data-project="whprwxmjpysaxldgdhop" src="http://falcondatabase.com/a.js"></script>
 </head>
-<body class="bg-light" style="padding-top: 70px;">
+<body class="bg-light ap-theme" style="padding-top: 70px;">
     {% if user.is_authenticated %}
             {% if is_working %}
                 <!-- Navbar verde cuando está trabajando -->
@@ -93,9 +99,9 @@
                            href="{% url 'ticket_list' %}">
                             <i class="bi bi-list-ul"></i> 
                             {% if user.groups.all and user.groups.first.name == 'Agentes' %}
-                                Todos
+                                {% translate "Todos" %}
                             {% else %}
-                                Mis Tickets
+                                {% translate "Mis Tickets" %}
                                 {% if ticket_active_count > 0 %}
                                 <span class="badge bg-danger rounded-pill ms-1" style="font-size:0.65rem;">{{ ticket_active_count }}</span>
                                 {% endif %}
@@ -108,7 +114,7 @@
                     <li class="nav-item">
                         <a class="nav-link position-relative {% if request.resolver_match.url_name == 'rfi_my_list' or request.resolver_match.url_name == 'rfi_detail' or request.resolver_match.url_name == 'rfi_create' %}active{% endif %}"
                            href="{% url 'rfi_my_list' %}">
-                            <i class="bi bi-clipboard-question"></i> Mis RFI
+                            <i class="bi bi-clipboard-question"></i> {% translate "Mis RFI" %}
                             {% if rfi_open_count > 0 %}
                             <span class="badge bg-danger rounded-pill ms-1" style="font-size:0.65rem;">{{ rfi_open_count }}</span>
                             {% endif %}
@@ -135,13 +141,13 @@
                             <li>
                                 <a class="dropdown-item {% if 'business_dashboard' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'business_dashboard' %}">
-                                    <i class="bi bi-graph-up"></i> Dashboard KPI
+                                    <i class="bi bi-graph-up"></i> {% translate "Dashboard KPI" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'contact' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'contact_list' %}">
-                                    <i class="bi bi-person-lines-fill"></i> Contactos
+                                    <i class="bi bi-person-lines-fill"></i> {% translate "Contactos" %}
                                     {% if crm_counters.contacts > 0 %}
                                         <span class="badge bg-secondary ms-2">{{ crm_counters.contacts }}</span>
                                     {% endif %}
@@ -150,7 +156,7 @@
                             <li>
                                 <a class="dropdown-item {% if 'spam_submissions' in request.resolver_match.url_name %}active{% endif %}"
                                    href="{% url 'spam_submissions_list' %}">
-                                    <i class="bi bi-shield-exclamation text-danger"></i> Spam
+                                    <i class="bi bi-shield-exclamation text-danger"></i> {% translate "Spam" %}
                                     {% if crm_counters.spam > 0 %}
                                         <span class="badge bg-danger ms-2">{{ crm_counters.spam }}</span>
                                     {% endif %}
@@ -159,19 +165,19 @@
                             <li>
                                 <a class="dropdown-item {% if 'registro_entrada' in request.resolver_match.url_name %}active{% endif %}"
                                    href="{% url 'registro_entrada_list' %}">
-                                    <i class="bi bi-door-open"></i> Registro de Entrada
+                                    <i class="bi bi-door-open"></i> {% translate "Registro de Entrada" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'stage_tracking' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'contact_stage_tracking' %}">
-                                    <i class="bi bi-diagram-3"></i> Seguimiento Contactos
+                                    <i class="bi bi-diagram-3"></i> {% translate "Seguimiento Contactos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'company' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'company_list' %}">
-                                    <i class="bi bi-building"></i> Empresas
+                                    <i class="bi bi-building"></i> {% translate "Empresas" %}
                                     {% if crm_counters.companies > 0 %}
                                         <span class="badge bg-secondary ms-2">{{ crm_counters.companies }}</span>
                                     {% endif %}
@@ -189,19 +195,19 @@
                             <li>
                                 <a class="dropdown-item {% if 'my_activities' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'my_activities_dashboard' %}">
-                                    <i class="fas fa-tasks"></i> Mis Actividades
+                                    <i class="fas fa-tasks"></i> {% translate "Mis Actividades" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'opportunity_status' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'opportunity_status_list' %}">
-                                    <i class="bi bi-kanban"></i> Estados CRM
+                                    <i class="bi bi-kanban"></i> {% translate "Estados CRM" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'meeting' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'meeting_list' %}">
-                                    <i class="bi bi-calendar-event"></i> Reuniones
+                                    <i class="bi bi-calendar-event"></i> {% translate "Reuniones" %}
                                     {% if crm_counters.meetings > 0 %}
                                         <span class="badge bg-secondary ms-2">{{ crm_counters.meetings }}</span>
                                     {% endif %}
@@ -211,7 +217,7 @@
                             <li>
                                 <a class="dropdown-item {% if 'support_meeting' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'support_meeting_list' %}">
-                                    <i class="bi bi-headset"></i> Reuniones Soporte
+                                    <i class="bi bi-headset"></i> {% translate "Reuniones Soporte" %}
                                     {% if crm_counters.support_meetings > 0 %}
                                         <span class="badge bg-secondary ms-2">{{ crm_counters.support_meetings }}</span>
                                     {% endif %}
@@ -221,14 +227,14 @@
                             <li>
                                 <a class="dropdown-item {% if 'email_template' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'email_template_list' %}">
-                                    <i class="bi bi-envelope-paper"></i> Plantillas de Correo
+                                    <i class="bi bi-envelope-paper"></i> {% translate "Plantillas de Correo" %}
                                 </a>
                             </li>
                             
                             <li>
                                 <a class="dropdown-item {% if 'counter' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'counter_list' %}">
-                                    <i class="bi bi-calculator"></i> Contadores
+                                    <i class="bi bi-calculator"></i> {% translate "Contadores" %}
                                 </a>
                             </li>
 
@@ -237,7 +243,7 @@
                             <li>
                                 <a class="dropdown-item {% if 'quotation' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'quotation_list' %}">
-                                    <i class="bi bi-file-earmark-text"></i> Cotizaciones
+                                    <i class="bi bi-file-earmark-text"></i> {% translate "Cotizaciones" %}
                                     {% if crm_counters.quotations > 0 %}
                                         <span class="badge bg-secondary ms-2">{{ crm_counters.quotations }}</span>
                                     {% endif %}
@@ -246,7 +252,7 @@
                             <li>
                                 <a class="dropdown-item {% if 'quotation_template' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'quotation_template_list' %}">
-                                    <i class="bi bi-share"></i> Plantillas Públicas
+                                    <i class="bi bi-share"></i> {% translate "Plantillas Públicas" %}
                                     {% if crm_counters.templates > 0 %}
                                         <span class="badge bg-secondary ms-2">{{ crm_counters.templates }}</span>
                                     {% endif %}
@@ -263,7 +269,7 @@
                             <li>
                                 <a class="dropdown-item {% if 'sales_plan' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'sales_plan_list' %}">
-                                    <i class="bi bi-trophy"></i> Plan de Venta
+                                    <i class="bi bi-trophy"></i> {% translate "Plan de Venta" %}
                                 </a>
                             </li>
                             
@@ -272,42 +278,42 @@
                             <li>
                                 <a class="dropdown-item {% if 'quick_quote' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'quick_quote_list' %}">
-                                    <i class="bi bi-lightning-charge"></i> Cotizaciones Rápidas
+                                    <i class="bi bi-lightning-charge"></i> {% translate "Cotizaciones Rápidas" %}
                                 </a>
                             </li>
                             
                             <li>
                                 <a class="dropdown-item {% if 'support_contract' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'support_contract_list' %}">
-                                    <i class="bi bi-file-earmark-text"></i> Contratos de Soporte
+                                    <i class="bi bi-file-earmark-text"></i> {% translate "Contratos de Soporte" %}
                                 </a>
                             </li>
                             
                             <li>
                                 <a class="dropdown-item {% if 'multi_measurement' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'multi_measurement_list' %}">
-                                    <i class="bi bi-graph-up"></i> Mediciones Múltiples
+                                    <i class="bi bi-graph-up"></i> {% translate "Mediciones Múltiples" %}
                                 </a>
                             </li>
                             
                             <li>
                                 <a class="dropdown-item {% if 'budget' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'budget_list' %}">
-                                    <i class="bi bi-calculator"></i> Presupuesto Personal
+                                    <i class="bi bi-calculator"></i> {% translate "Presupuesto Personal" %}
                                 </a>
                             </li>
 
                             <li>
                                 <a class="dropdown-item {% if 'process_survey' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'process_survey_list' %}">
-                                    <i class="bi bi-clipboard-check"></i> Levantamiento de Procesos
+                                    <i class="bi bi-clipboard-check"></i> {% translate "Levantamiento de Procesos" %}
                                 </a>
                             </li>
 
                             <li>
                                 <a class="dropdown-item {% if 'project_info' in request.resolver_match.url_name %}active{% endif %}"
                                    href="{% url 'project_info_list' %}">
-                                    <i class="bi bi-folder-fill"></i> Información de Proyecto
+                                    <i class="bi bi-folder-fill"></i> {% translate "Información de Proyecto" %}
                                 </a>
                             </li>
                             
@@ -325,97 +331,97 @@
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'employee_dashboard' %}active{% endif %}" 
                                    href="{% url 'employee_dashboard' %}">
-                                    <i class="bi bi-speedometer2"></i> Dashboard de Empleado
+                                    <i class="bi bi-speedometer2"></i> {% translate "Dashboard de Empleado" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'employee_request_list' %}active{% endif %}" 
                                    href="{% url 'employee_request_list' %}">
-                                    <i class="bi bi-file-earmark-text"></i> Solicitudes de Empleados
+                                    <i class="bi bi-file-earmark-text"></i> {% translate "Solicitudes de Empleados" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'employee_request_create' %}active{% endif %}" 
                                    href="{% url 'employee_request_create' %}">
-                                    <i class="bi bi-plus-circle"></i> Nueva Solicitud
+                                    <i class="bi bi-plus-circle"></i> {% translate "Nueva Solicitud" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item {% if 'expense_report' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'expense_report_list' %}">
-                                    <i class="bi bi-receipt"></i> Administración de Gastos
+                                    <i class="bi bi-receipt"></i> {% translate "Administración de Gastos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'video_meeting' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'video_meeting_list' %}">
-                                    <i class="bi bi-camera-video"></i> Reuniones de Video
+                                    <i class="bi bi-camera-video"></i> {% translate "Reuniones de Video" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'quote_generator' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'quote_generator_list' %}">
-                                    <i class="bi bi-chat-quote"></i> Generador de Citas IA
+                                    <i class="bi bi-chat-quote"></i> {% translate "Generador de Citas IA" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'ai_manager' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'ai_manager_list' %}">
-                                    <i class="bi bi-robot"></i> AI Managers
+                                    <i class="bi bi-robot"></i> {% translate "AI Managers" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item {% if 'internal_agreement' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'internal_agreement_list' %}">
-                                    <i class="bi bi-file-earmark-check"></i> Acuerdos Internos
+                                    <i class="bi bi-file-earmark-check"></i> {% translate "Acuerdos Internos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'internal_agreement_create' %}active{% endif %}" 
                                    href="{% url 'internal_agreement_create' %}">
-                                    <i class="bi bi-plus-circle"></i> Nuevo Acuerdo
+                                    <i class="bi bi-plus-circle"></i> {% translate "Nuevo Acuerdo" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item {% if 'training_plan' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'training_plan_list' %}">
-                                    <i class="bi bi-mortarboard"></i> Planes de Capacitación
+                                    <i class="bi bi-mortarboard"></i> {% translate "Planes de Capacitación" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'my_training_progress' %}active{% endif %}" 
                                    href="{% url 'my_training_progress' %}">
-                                    <i class="bi bi-graph-up"></i> Mi Progreso
+                                    <i class="bi bi-graph-up"></i> {% translate "Mi Progreso" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item {% if 'ai_recommendation' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'ai_recommendation_list' %}">
-                                    <i class="bi bi-lightbulb"></i> Recomendaciones IA
+                                    <i class="bi bi-lightbulb"></i> {% translate "Recomendaciones IA" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item {% if 'employee_absence' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'employee_absence_list' %}">
-                                    <i class="bi bi-calendar-x"></i> Gestión de Ausencias
+                                    <i class="bi bi-calendar-x"></i> {% translate "Gestión de Ausencias" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'employee_absence_calendar' %}active{% endif %}" 
                                    href="{% url 'employee_absence_calendar' %}">
-                                    <i class="bi bi-calendar3"></i> Calendario de Ausencias
+                                    <i class="bi bi-calendar3"></i> {% translate "Calendario de Ausencias" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'absence_type' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'absence_type_list' %}">
-                                    <i class="bi bi-gear"></i> Tipos de Ausencias
+                                    <i class="bi bi-gear"></i> {% translate "Tipos de Ausencias" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
@@ -423,14 +429,14 @@
                             <li>
                                 <a class="dropdown-item {% if 'asset' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'asset_list' %}">
-                                    <i class="bi bi-laptop"></i> Control de Activos
+                                    <i class="bi bi-laptop"></i> {% translate "Control de Activos" %}
                                 </a>
                             </li>
 
                             <li>
                                 <a class="dropdown-item {% if 'ai_tutor' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'ai_tutor_list' %}">
-                                    <i class="fas fa-robot"></i> Tutor IA
+                                    <i class="fas fa-robot"></i> {% translate "Tutor IA" %}
                                 </a>
                             </li>
 
@@ -439,13 +445,13 @@
                             <li>
                                 <a class="dropdown-item {% if 'company_protocol' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'company_protocol_list' %}">
-                                    <i class="bi bi-file-text"></i> Protocolos Empresa
+                                    <i class="bi bi-file-text"></i> {% translate "Protocolos Empresa" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'company_protocol_create' %}active{% endif %}" 
                                    href="{% url 'company_protocol_create' %}">
-                                    <i class="bi bi-plus-circle"></i> Nuevo Protocolo
+                                    <i class="bi bi-plus-circle"></i> {% translate "Nuevo Protocolo" %}
                                 </a>
                             </li>
                         </ul>
@@ -465,20 +471,20 @@
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'invoice_list' %}active{% endif %}" 
                                    href="{% url 'invoice_list' %}">
-                                    <i class="bi bi-receipt"></i> Facturas de 3ros
+                                    <i class="bi bi-receipt"></i> {% translate "Facturas de 3ros" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'invoice_create' %}active{% endif %}" 
                                    href="{% url 'invoice_create' %}">
-                                    <i class="bi bi-plus-circle"></i> Nueva Factura
+                                    <i class="bi bi-plus-circle"></i> {% translate "Nueva Factura" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'invoice_sequence_config' %}active{% endif %}" 
                                    href="{% url 'invoice_sequence_config' %}">
-                                    <i class="bi bi-sliders"></i> Configurar Secuencia
+                                    <i class="bi bi-sliders"></i> {% translate "Configurar Secuencia" %}
                                 </a>
                             </li>
                         </ul>
@@ -499,32 +505,32 @@
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'social_feed' %}active{% endif %}" 
                                    href="{% url 'social_feed' %}">
-                                    <i class="bi bi-people-fill"></i> Red Social
+                                    <i class="bi bi-people-fill"></i> {% translate "Red Social" %}
                                 </a>
                             </li>
                             {% endif %}
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'course_list' %}active{% endif %}" 
                                    href="{% url 'course_list' %}">
-                                    <i class="bi bi-collection"></i> Cursos
+                                    <i class="bi bi-collection"></i> {% translate "Cursos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'exam_list' %}active{% endif %}" 
                                    href="{% url 'exam_list' %}">
-                                    <i class="bi bi-question-circle"></i> Exámenes
+                                    <i class="bi bi-question-circle"></i> {% translate "Exámenes" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'manual' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'manual_list' %}">
-                                    <i class="bi bi-book"></i> Manuales
+                                    <i class="bi bi-book"></i> {% translate "Manuales" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'project_book' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'project_book_list' %}">
-                                    <i class="bi bi-journal-bookmark"></i> Libros de Proyecto
+                                    <i class="bi bi-journal-bookmark"></i> {% translate "Libros de Proyecto" %}
                                 </a>
                             </li>
                             <li>
@@ -539,20 +545,20 @@
                             <li>
                                 <a class="dropdown-item {% if 'checklist' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'checklist_list' %}">
-                                    <i class="bi bi-check2-all"></i> Checklist de Proyecto
+                                    <i class="bi bi-check2-all"></i> {% translate "Checklist de Proyecto" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'capacitacion' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'capacitacion_list' %}">
-                                    <i class="bi bi-journal-check"></i> Capacitaciones
+                                    <i class="bi bi-journal-check"></i> {% translate "Capacitaciones" %}
                                 </a>
                             </li>
                             {% if is_agent %}
                             <li>
                                 <a class="dropdown-item {% if 'crm_question' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'crm_questions_list' %}">
-                                    <i class="bi bi-chat-square-text"></i> Preguntas
+                                    <i class="bi bi-chat-square-text"></i> {% translate "Preguntas" %}
                                     {% if crm_counters.questions > 0 %}
                                         <span class="badge bg-secondary ms-2">{{ crm_counters.questions }}</span>
                                     {% endif %}
@@ -563,19 +569,19 @@
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'qr_generator' %}active{% endif %}" 
                                    href="{% url 'qr_generator' %}">
-                                    <i class="bi bi-qr-code"></i> Generador QR
+                                    <i class="bi bi-qr-code"></i> {% translate "Generador QR" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'knowledge_base' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'knowledge_base_list' %}">
-                                    <i class="bi bi-lightbulb"></i> Base de Conocimientos
+                                    <i class="bi bi-lightbulb"></i> {% translate "Base de Conocimientos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'translation' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'translation_tool' %}">
-                                    <i class="bi bi-translate"></i> Traducciones
+                                    <i class="bi bi-translate"></i> {% translate "Traducciones" %}
                                 </a>
                             </li>
                             {% endif %}
@@ -583,7 +589,7 @@
                             <li>
                                 <a class="dropdown-item {% if 'odoo' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'odoo_connection_list' %}">
-                                    <i class="bi bi-cloud-upload"></i> Odoo RPC
+                                    <i class="bi bi-cloud-upload"></i> {% translate "Odoo RPC" %}
                                 </a>
                             </li>
                             {% endif %}
@@ -592,7 +598,7 @@
                             {% if user|can_manage_courses %}
                             <li><hr class="dropdown-divider"></li>
                             <li class="dropdown-header">
-                                Gestión 
+                                {% translate "Gestión" %} 
                                 {% if user.groups.all %}
                                     ({{ user.groups.first.name }})
                                 {% endif %}
@@ -600,20 +606,20 @@
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'course_create' %}active{% endif %}" 
                                    href="{% url 'course_create' %}">
-                                    <i class="bi bi-plus-circle"></i> Crear Curso
+                                    <i class="bi bi-plus-circle"></i> {% translate "Crear Curso" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'exam_create' %}active{% endif %}" 
                                    href="{% url 'exam_create' %}">
-                                    <i class="bi bi-plus-circle"></i> Crear Examen
+                                    <i class="bi bi-plus-circle"></i> {% translate "Crear Examen" %}
                                 </a>
                             </li>
                             {% if user.groups.all and user.groups.first.name == 'Agentes' %}
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'exam_attempts_list' %}active{% endif %}" 
                                    href="{% url 'exam_attempts_list' %}">
-                                    <i class="bi bi-clipboard-data"></i> Intentos de Exámenes
+                                    <i class="bi bi-clipboard-data"></i> {% translate "Intentos de Exámenes" %}
                                 </a>
                             </li>
                             {% endif %}
@@ -631,99 +637,99 @@
                             <i class="bi bi-folder-symlink"></i> CO
                         </a>
                         <ul class="dropdown-menu">
-                            <li class="dropdown-header">Archivos</li>
+                            <li class="dropdown-header">{% translate "Archivos" %}</li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'shared_files_list' %}active{% endif %}" 
                                    href="{% url 'shared_files_list' %}">
-                                    <i class="bi bi-files"></i> Mis Archivos
+                                    <i class="bi bi-files"></i> {% translate "Mis Archivos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'shared_file_upload' %}active{% endif %}" 
                                    href="{% url 'shared_file_upload' %}">
-                                    <i class="bi bi-cloud-upload"></i> Subir Archivo
+                                    <i class="bi bi-cloud-upload"></i> {% translate "Subir Archivo" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Grabaciones</li>
+                            <li class="dropdown-header">{% translate "Grabaciones" %}</li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'recordings_list' %}active{% endif %}" 
                                    href="{% url 'recordings_list' %}">
-                                    <i class="bi bi-mic"></i> Mis Grabaciones
+                                    <i class="bi bi-mic"></i> {% translate "Mis Grabaciones" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'recording_upload' %}active{% endif %}" 
                                    href="{% url 'recording_upload' %}">
-                                    <i class="bi bi-mic-fill"></i> Subir Grabación
+                                    <i class="bi bi-mic-fill"></i> {% translate "Subir Grabación" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Formularios y Encuestas</li>
+                            <li class="dropdown-header">{% translate "Formularios y Encuestas" %}</li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'form_list' %}active{% endif %}" 
                                    href="{% url 'form_list' %}">
-                                    Ver Formularios
+                                    {% translate "Ver Formularios" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'form_create' %}active{% endif %}" 
                                    href="{% url 'form_create' %}">
-                                    <i class="bi bi-plus-circle"></i> Crear Formulario
+                                    <i class="bi bi-plus-circle"></i> {% translate "Crear Formulario" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Alcances</li>
+                            <li class="dropdown-header">{% translate "Alcances" %}</li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'alcance_list' %}active{% endif %}" 
                                    href="{% url 'alcance_list' %}">
-                                    <i class="bi bi-bullseye"></i> Ver Alcances
+                                    <i class="bi bi-bullseye"></i> {% translate "Ver Alcances" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'alcance_create' %}active{% endif %}" 
                                    href="{% url 'alcance_create' %}">
-                                    <i class="bi bi-plus-circle"></i> Crear Alcance
+                                    <i class="bi bi-plus-circle"></i> {% translate "Crear Alcance" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">IA - Image to Prompt</li>
+                            <li class="dropdown-header">{% translate "IA - Image to Prompt" %}</li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'image_prompt_list' %}active{% endif %}" 
                                    href="{% url 'image_prompt_list' %}">
-                                    <i class="bi bi-list-task"></i> Mis Prompts
+                                    <i class="bi bi-list-task"></i> {% translate "Mis Prompts" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'image_prompt_create' %}active{% endif %}" 
                                    href="{% url 'image_prompt_create' %}">
-                                    <i class="bi bi-image"></i> Generar Prompt desde Imagen
+                                    <i class="bi bi-image"></i> {% translate "Generar Prompt desde Imagen" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Gerentes IA</li>
+                            <li class="dropdown-header">{% translate "Gerentes IA" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'company_ai_dashboard' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'company_ai_dashboard_list' %}">
-                                    <i class="bi bi-building"></i> Dashboard Empresarial
+                                    <i class="bi bi-building"></i> {% translate "Dashboard Empresarial" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'user_ai_performance' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'user_ai_performance_dashboard' %}">
-                                    <i class="bi bi-person-check"></i> Desempeño de Usuarios
+                                    <i class="bi bi-person-check"></i> {% translate "Desempeño de Usuarios" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'ai_manager_list' %}active{% endif %}" 
                                    href="{% url 'ai_manager_list' %}">
-                                    <i class="bi bi-robot"></i> Ver Gerentes IA
+                                    <i class="bi bi-robot"></i> {% translate "Ver Gerentes IA" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'ai_manager_create' %}active{% endif %}" 
                                    href="{% url 'ai_manager_create' %}">
-                                    <i class="bi bi-plus-circle"></i> Crear Gerente IA
+                                    <i class="bi bi-plus-circle"></i> {% translate "Crear Gerente IA" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
@@ -731,49 +737,49 @@
                             <li>
                                 <a class="dropdown-item {% if 'whatsapp' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'whatsapp_dashboard' %}">
-                                    <i class="fab fa-whatsapp"></i> Dashboard
+                                    <i class="fab fa-whatsapp"></i> {% translate "Dashboard" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'whatsapp_keyword_create' %}active{% endif %}" 
                                    href="{% url 'whatsapp_keyword_create' %}">
-                                    <i class="bi bi-plus-circle"></i> Nueva Palabra Clave
+                                    <i class="bi bi-plus-circle"></i> {% translate "Nueva Palabra Clave" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'whatsapp_messages' %}active{% endif %}" 
                                    href="{% url 'whatsapp_messages' %}">
-                                    <i class="bi bi-chat-dots"></i> Mensajes
+                                    <i class="bi bi-chat-dots"></i> {% translate "Mensajes" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Acceso Público</li>
+                            <li class="dropdown-header">{% translate "Acceso Público" %}</li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'public_file_upload' %}active{% endif %}" 
                                    href="{% url 'public_file_upload' %}" target="_blank">
-                                    <i class="bi bi-globe"></i> Subir Archivo Público
+                                    <i class="bi bi-globe"></i> {% translate "Subir Archivo Público" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'public_recording_upload' %}active{% endif %}" 
                                    href="{% url 'public_recording_upload' %}" target="_blank">
-                                    <i class="bi bi-broadcast"></i> Subir Grabación Pública
+                                    <i class="bi bi-broadcast"></i> {% translate "Subir Grabación Pública" %}
                                 </a>
                             </li>
                             <!-- Opciones adicionales para Agentes -->
                             {% if user.groups.all and user.groups.first.name == 'Agentes' %}
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Administración</li>
+                            <li class="dropdown-header">{% translate "Administración" %}</li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'shared_files_stats' %}active{% endif %}" 
                                    href="{% url 'shared_files_stats' %}">
-                                    <i class="bi bi-bar-chart"></i> Estadísticas Archivos
+                                    <i class="bi bi-bar-chart"></i> {% translate "Estadísticas Archivos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'recordings_stats' %}active{% endif %}" 
                                    href="{% url 'recordings_stats' %}">
-                                    <i class="bi bi-graph-up"></i> Estadísticas Grabaciones
+                                    <i class="bi bi-graph-up"></i> {% translate "Estadísticas Grabaciones" %}
                                 </a>
                             </li>
                             {% endif %}
@@ -796,56 +802,56 @@
                             <li>
                                 <a class="dropdown-item {% if 'notes' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'notes_list' %}">
-                                    <i class="bi bi-journal-text"></i> Notas Internas
+                                    <i class="bi bi-journal-text"></i> {% translate "Notas Internas" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'category' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'category_list' %}">
-                                    <i class="bi bi-tags"></i> Categorías
+                                    <i class="bi bi-tags"></i> {% translate "Categorías" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'project' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'project_list' %}">
-                                    <i class="bi bi-folder"></i> Proyectos
+                                    <i class="bi bi-folder"></i> {% translate "Proyectos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'app_catalog' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'app_catalog_list' %}">
-                                    <i class="bi bi-grid-3x3-gap-fill"></i> Catálogo de Apps
+                                    <i class="bi bi-grid-3x3-gap-fill"></i> {% translate "Catálogo de Apps" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'cart_quotation_list' %}active{% endif %}" 
                                    href="{% url 'cart_quotation_list' %}">
-                                    <i class="bi bi-receipt-cutoff"></i> Cotizaciones
+                                    <i class="bi bi-receipt-cutoff"></i> {% translate "Cotizaciones" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'product' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'product_list' %}">
-                                    <i class="bi bi-box-seam"></i> Productos
+                                    <i class="bi bi-box-seam"></i> {% translate "Productos" %}
                                 </a>
                             </li>
                             
                             <li>
                                 <a class="dropdown-item {% if 'contacto_web' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'contactos_web_list' %}">
-                                    <i class="bi bi-envelope-plus"></i> Contactos Web
+                                    <i class="bi bi-envelope-plus"></i> {% translate "Contactos Web" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'landing_page' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'landing_page_list' %}">
-                                    <i class="fas fa-rocket"></i> Landing Pages
+                                    <i class="fas fa-rocket"></i> {% translate "Landing Pages" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'landing_submissions' in request.resolver_match.url_name or 'ai_evaluation' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'landing_submissions_list' %}">
-                                    <i class="fas fa-robot text-primary"></i> Evaluación IA
+                                    <i class="fas fa-robot text-primary"></i> {% translate "Evaluación IA" %}
                                 </a>
                             </li>
                             
@@ -853,68 +859,68 @@
                             <li>
                                 <a class="dropdown-item {% if 'contact_submission' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'contact_submissions_list' %}">
-                                    <i class="bi bi-envelope-paper"></i> Formularios de Contacto
+                                    <i class="bi bi-envelope-paper"></i> {% translate "Formularios de Contacto" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Blog</li>
+                            <li class="dropdown-header">{% translate "Blog" %}</li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'blog_post_list_admin' %}active{% endif %}" 
                                    href="{% url 'blog_post_list_admin' %}">
-                                    <i class="bi bi-newspaper"></i> Gestionar Blog
+                                    <i class="bi bi-newspaper"></i> {% translate "Gestionar Blog" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'blog_post_create' %}active{% endif %}" 
                                    href="{% url 'blog_post_create' %}">
-                                    <i class="bi bi-plus-circle"></i> Nuevo Artículo
+                                    <i class="bi bi-plus-circle"></i> {% translate "Nuevo Artículo" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'blog_category_list' %}active{% endif %}" 
                                    href="{% url 'blog_category_list' %}">
-                                    <i class="bi bi-tags"></i> Categorías
+                                    <i class="bi bi-tags"></i> {% translate "Categorías" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name in 'task_list,task_create,task_detail,task_edit,task_delete,task_toggle_status,task_control_dashboard,task_control_complete,task_control_start,task_control_pause' %}active{% endif %}" 
                                    href="{% url 'task_list' %}">
-                                    <i class="bi bi-list-task"></i> Tareas
+                                    <i class="bi bi-list-task"></i> {% translate "Tareas" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name in 'daily_task_management,create_task_session,view_task_session,delete_task_session,toggle_daily_task_completion,daily_task_history' %}active{% endif %}" 
                                    href="{% url 'daily_task_management' %}">
-                                    <i class="bi bi-journal-check"></i> Gestiones de Tareas
+                                    <i class="bi bi-journal-check"></i> {% translate "Gestiones de Tareas" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item {% if 'chatbot' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'chatbot_list' %}">
-                                    <i class="bi bi-robot"></i> Chatbots
+                                    <i class="bi bi-robot"></i> {% translate "Chatbots" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item {% if 'work_order' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'work_order_list' %}">
-                                    <i class="bi bi-clipboard-check"></i> Órdenes de Trabajo
+                                    <i class="bi bi-clipboard-check"></i> {% translate "Órdenes de Trabajo" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Conceptos</li>
+                            <li class="dropdown-header">{% translate "Conceptos" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'concept' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'concept_list' %}">
-                                    <i class="bi bi-lightbulb"></i> Gestionar Conceptos
+                                    <i class="bi bi-lightbulb"></i> {% translate "Gestionar Conceptos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'concept_create' %}active{% endif %}" 
                                    href="{% url 'concept_create' %}">
-                                    <i class="bi bi-plus-circle"></i> Nuevo Concepto
+                                    <i class="bi bi-plus-circle"></i> {% translate "Nuevo Concepto" %}
                                 </a>
                             </li>
                         </ul>
@@ -927,84 +933,84 @@
                              GE
                         </a>
                         <ul class="dropdown-menu">
-                            <li class="dropdown-header">Automatización</li>
+                            <li class="dropdown-header">{% translate "Automatización" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'scheduled_task' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'scheduled_task_list' %}">
-                                    <i class="bi bi-clock-history"></i> Tareas Programadas
+                                    <i class="bi bi-clock-history"></i> {% translate "Tareas Programadas" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Contadores</li>
+                            <li class="dropdown-header">{% translate "Contadores" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'web_counter' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'web_counter_list' %}">
-                                    <i class="bi bi-globe"></i> Contadores Web
+                                    <i class="bi bi-globe"></i> {% translate "Contadores Web" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'game_counter' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'game_counter_list' %}">
-                                    <i class="bi bi-joystick"></i> Contador de Juegos
+                                    <i class="bi bi-joystick"></i> {% translate "Contador de Juegos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'exercise_counter' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'exercise_counter_list' %}">
-                                    <i class="bi bi-heart-pulse"></i> Contador de Deporte
+                                    <i class="bi bi-heart-pulse"></i> {% translate "Contador de Deporte" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'sport_goal' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'sport_goal_list' %}">
-                                    <i class="bi bi-trophy"></i> Objetivos de Deporte
+                                    <i class="bi bi-trophy"></i> {% translate "Objetivos de Deporte" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Eventos</li>
+                            <li class="dropdown-header">{% translate "Eventos" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'event_calendar' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'event_calendar' %}">
-                                    <i class="bi bi-calendar-event"></i> Calendario de Eventos
+                                    <i class="bi bi-calendar-event"></i> {% translate "Calendario de Eventos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'event_list' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'event_list' %}">
-                                    <i class="bi bi-list-ul"></i> Lista de Eventos
+                                    <i class="bi bi-list-ul"></i> {% translate "Lista de Eventos" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Viajes</li>
+                            <li class="dropdown-header">{% translate "Viajes" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'trip_list' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'trip_list' %}">
-                                    <i class="bi bi-airplane"></i> Mis Viajes
+                                    <i class="bi bi-airplane"></i> {% translate "Mis Viajes" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Navegación</li>
+                            <li class="dropdown-header">{% translate "Navegación" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'transaction' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'transaction_list' %}">
-                                    <i class="bi bi-search"></i> Transacciones Rápidas
+                                    <i class="bi bi-search"></i> {% translate "Transacciones Rápidas" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Generadores</li>
+                            <li class="dropdown-header">{% translate "Generadores" %}</li>
                             <!-- Aquí se pueden agregar futuros generadores de código -->
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Solicitudes</li>
+                            <li class="dropdown-header">{% translate "Solicitudes" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'client_request' in request.resolver_match.url_name and 'template' not in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'client_request_list' %}">
-                                    <i class="bi bi-file-text"></i> Solicitudes al Cliente
+                                    <i class="bi bi-file-text"></i> {% translate "Solicitudes al Cliente" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'client_request_template' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'client_request_template_list' %}">
-                                    <i class="bi bi-files"></i> Plantillas de Solicitudes
+                                    <i class="bi bi-files"></i> {% translate "Plantillas de Solicitudes" %}
                                 </a>
                             </li>
                         </ul>
@@ -1017,97 +1023,97 @@
                             QA
                         </a>
                         <ul class="dropdown-menu">
-                            <li class="dropdown-header">Control de Calidad</li>
+                            <li class="dropdown-header">{% translate "Control de Calidad" %}</li>
                             
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'qa_complaint_list' %}active{% endif %}" 
                                    href="{% url 'qa_complaint_list' %}">
-                                    <i class="fas fa-list"></i> Gestionar Reportes
+                                    <i class="fas fa-list"></i> {% translate "Gestionar Reportes" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'qa_complaint_create' %}active{% endif %}" 
                                    href="{% url 'qa_complaint_create' %}">
-                                    <i class="fas fa-plus-circle"></i> Nuevo Reporte QA
+                                    <i class="fas fa-plus-circle"></i> {% translate "Nuevo Reporte QA" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Calificaciones</li>
+                            <li class="dropdown-header">{% translate "Calificaciones" %}</li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'qa_rating_list' %}active{% endif %}" 
                                    href="{% url 'qa_rating_list' %}">
-                                    <i class="fas fa-star"></i> Ver Calificaciones
+                                    <i class="fas fa-star"></i> {% translate "Ver Calificaciones" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'qa_rating_create' %}active{% endif %}" 
                                    href="{% url 'qa_rating_create' %}">
-                                    <i class="fas fa-plus-circle"></i> Nueva Calificación
+                                    <i class="fas fa-plus-circle"></i> {% translate "Nueva Calificación" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Cumplimiento</li>
+                            <li class="dropdown-header">{% translate "Cumplimiento" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'monthly_cumplimiento' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'monthly_cumplimiento_list' %}">
-                                    <i class="fas fa-calendar-check"></i> Cumplimiento Mensual
+                                    <i class="fas fa-calendar-check"></i> {% translate "Cumplimiento Mensual" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Políticas</li>
+                            <li class="dropdown-header">{% translate "Políticas" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'privacy_policy' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'privacy_policy_list' %}">
-                                    <i class="bi bi-shield-check"></i> Políticas de Privacidad
+                                    <i class="bi bi-shield-check"></i> {% translate "Políticas de Privacidad" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Accesos</li>
+                            <li class="dropdown-header">{% translate "Accesos" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'access_group' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'access_group_list' %}">
-                                    <i class="bi bi-collection"></i> Grupo de Accesos
+                                    <i class="bi bi-collection"></i> {% translate "Grupo de Accesos" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Planificación</li>
+                            <li class="dropdown-header">{% translate "Planificación" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'task_plan' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'task_plan_list' %}">
-                                    <i class="bi bi-calendar-week"></i> Planificación de Tareas
+                                    <i class="bi bi-calendar-week"></i> {% translate "Planificación de Tareas" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'checklist' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'checklist_list' %}">
-                                    <i class="bi bi-check2-square"></i> Checklists
+                                    <i class="bi bi-check2-square"></i> {% translate "Checklists" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Filtros Rápidos</li>
+                            <li class="dropdown-header">{% translate "Filtros Rápidos" %}</li>
                             <li>
                                 <a class="dropdown-item" href="{% url 'qa_complaint_list' %}?status=open">
-                                    <i class="fas fa-exclamation-circle text-danger"></i> Reportes Abiertos
+                                    <i class="fas fa-exclamation-circle text-danger"></i> {% translate "Reportes Abiertos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="{% url 'qa_complaint_list' %}?assigned=me">
-                                    <i class="fas fa-user-check text-primary"></i> Mis Asignaciones
+                                    <i class="fas fa-user-check text-primary"></i> {% translate "Mis Asignaciones" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="{% url 'qa_complaint_list' %}?priority=critical">
-                                    <i class="fas fa-exclamation-triangle text-danger"></i> Prioridad Crítica
+                                    <i class="fas fa-exclamation-triangle text-danger"></i> {% translate "Prioridad Crítica" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="{% url 'qa_complaint_list' %}?type=complaint">
-                                    <i class="fas fa-frown text-warning"></i> Solo Quejas
+                                    <i class="fas fa-frown text-warning"></i> {% translate "Solo Quejas" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="{% url 'qa_complaint_list' %}?type=suggestion">
-                                    <i class="fas fa-lightbulb text-info"></i> Solo Sugerencias
+                                    <i class="fas fa-lightbulb text-info"></i> {% translate "Solo Sugerencias" %}
                                 </a>
                             </li>
                         </ul>
@@ -1119,92 +1125,92 @@
                              HM
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="toolsDropdown">
-                            <li class="dropdown-header">Herramientas de PDF</li>
+                            <li class="dropdown-header">{% translate "Herramientas de PDF" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'pdf_get_pages' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'pdf_get_pages' %}">
-                                    <i class="bi bi-file-earmark-pdf"></i> GetPDFPage
+                                    <i class="bi bi-file-earmark-pdf"></i> {% translate "GetPDFPage" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'pdf_join' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'pdf_join' %}">
-                                    <i class="bi bi-files"></i> JointPDF
+                                    <i class="bi bi-files"></i> {% translate "JointPDF" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'pdf_split' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'pdf_split' %}">
-                                    <i class="bi bi-file-earmark-break"></i> Pdf2Pdfs
+                                    <i class="bi bi-file-earmark-break"></i> {% translate "Pdf2Pdfs" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Calculadora</li>
+                            <li class="dropdown-header">{% translate "Calculadora" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'calculator' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'calculator' %}">
-                                    <i class="bi bi-calculator"></i> Calculadora
+                                    <i class="bi bi-calculator"></i> {% translate "Calculadora" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Comandos</li>
+                            <li class="dropdown-header">{% translate "Comandos" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'command_library' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'command_library' %}">
-                                    <i class="bi bi-terminal"></i> Biblioteca de Comandos
+                                    <i class="bi bi-terminal"></i> {% translate "Biblioteca de Comandos" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Diseño</li>
+                            <li class="dropdown-header">{% translate "Diseño" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'color_picker' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'color_picker' %}">
-                                    <i class="bi bi-palette"></i> Color Picker
+                                    <i class="bi bi-palette"></i> {% translate "Color Picker" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Redes y Análisis</li>
+                            <li class="dropdown-header">{% translate "Redes y Análisis" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'website_tracker' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'website_tracker_list' %}">
-                                    <i class="bi bi-radar"></i> Rastreador Web
+                                    <i class="bi bi-radar"></i> {% translate "Rastreador Web" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Proceso de Selección</li>
+                            <li class="dropdown-header">{% translate "Proceso de Selección" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'candidate' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'candidate_list' %}">
-                                    <i class="bi bi-person-check"></i> Candidatos
+                                    <i class="bi bi-person-check"></i> {% translate "Candidatos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'job_application' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'job_application_token_list' %}">
-                                    <i class="bi bi-briefcase"></i> Enlaces de Aplicación
+                                    <i class="bi bi-briefcase"></i> {% translate "Enlaces de Aplicación" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Empleados Activos</li>
+                            <li class="dropdown-header">{% translate "Empleados Activos" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'active_employee' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'active_employee_list' %}">
-                                    <i class="bi bi-people-fill"></i> Empleados
+                                    <i class="bi bi-people-fill"></i> {% translate "Empleados" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'employee' in request.resolver_match.url_name and 'active' not in request.resolver_match.url_name and 'candidate' not in request.resolver_match.url_name and 'payroll' not in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'employee_list' %}">
-                                    <i class="bi bi-list-ul"></i> Todos los Registros
+                                    <i class="bi bi-list-ul"></i> {% translate "Todos los Registros" %}
                                 </a>
                             </li>
                             
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Nóminas</li>
+                            <li class="dropdown-header">{% translate "Nóminas" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'payroll' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'active_employee_list' %}">
-                                    <i class="bi bi-receipt-cutoff"></i> Gestionar Nóminas
+                                    <i class="bi bi-receipt-cutoff"></i> {% translate "Gestionar Nóminas" %}
                                 </a>
                             </li>
                             
@@ -1213,53 +1219,53 @@
                             <li>
                                 <a class="dropdown-item {% if 'url_manager' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'url_manager_list' %}">
-                                    <i class="bi bi-link-45deg"></i> Gestión de URLs
+                                    <i class="bi bi-link-45deg"></i> {% translate "Gestión de URLs" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'short_url' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'short_url_list' %}">
-                                    <i class="bi bi-scissors"></i> Acortador de URLs
+                                    <i class="bi bi-scissors"></i> {% translate "Acortador de URLs" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'public_upload' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'public_upload_url_list' %}">
-                                    <i class="bi bi-cloud-upload"></i> URLs Públicas de Subida
+                                    <i class="bi bi-cloud-upload"></i> {% translate "URLs Públicas de Subida" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'time' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'time_clock' %}">
-                                    <i class="bi bi-clock"></i> Control de Horario
+                                    <i class="bi bi-clock"></i> {% translate "Control de Horario" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Base de Datos</li>
+                            <li class="dropdown-header">{% translate "Base de Datos" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'database_backup' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'database_backup' %}">
-                                    <i class="bi bi-download"></i> Crear Respaldo
+                                    <i class="bi bi-download"></i> {% translate "Crear Respaldo" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'database_restore' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'database_restore' %}">
-                                    <i class="bi bi-upload"></i> Restaurar Base de Datos
+                                    <i class="bi bi-upload"></i> {% translate "Restaurar Base de Datos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'attendance' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'attendance_overview' %}">
-                                    <i class="bi bi-people-fill"></i> Asistencia General
+                                    <i class="bi bi-people-fill"></i> {% translate "Asistencia General" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Juegos</li>
+                            <li class="dropdown-header">{% translate "Juegos" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'tetris' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'tetris' %}">
-                                    <i class="bi bi-grid-3x3-gap"></i> Tetris
+                                    <i class="bi bi-grid-3x3-gap"></i> {% translate "Tetris" %}
                                 </a>
                             </li>
                         </ul>
@@ -1272,118 +1278,118 @@
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="docDropdown">
                             <li>
-                                <h6 class="dropdown-header">Documentación</h6>
+                                <h6 class="dropdown-header">{% translate "Documentación" %}</h6>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'document' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'document_list' %}">
-                                    <i class="bi bi-file-earmark-text"></i> Documentos
+                                    <i class="bi bi-file-earmark-text"></i> {% translate "Documentos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'agreement' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'agreement_list' %}">
-                                    <i class="bi bi-file-earmark-check"></i> Acuerdos
+                                    <i class="bi bi-file-earmark-check"></i> {% translate "Acuerdos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'multiple_documentation' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'multiple_documentation_list' %}">
-                                    <i class="fas fa-folder-open"></i> Documentación Múltiple
+                                    <i class="fas fa-folder-open"></i> {% translate "Documentación Múltiple" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'company_documentation' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'company_documentation_list' %}">
-                                    <i class="bi bi-collection"></i> Documentaciones de Empresas
+                                    <i class="bi bi-collection"></i> {% translate "Documentaciones de Empresas" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'legal_contract' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'legal_contract_list' %}">
-                                    <i class="bi bi-file-earmark-ruled"></i> Contratos Legales
+                                    <i class="bi bi-file-earmark-ruled"></i> {% translate "Contratos Legales" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'ocr_invoice' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'ocr_invoice_list' %}">
-                                    <i class="bi bi-receipt"></i> Facturas OCR
+                                    <i class="bi bi-receipt"></i> {% translate "Facturas OCR" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'ai_book' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'ai_book_list' %}">
-                                    <i class="bi bi-book"></i> Generador de Libros IA
+                                    <i class="bi bi-book"></i> {% translate "Generador de Libros IA" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'ai_article' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'ai_article_project_list' %}">
-                                    <i class="bi bi-newspaper"></i> Generador de Artículos IA
+                                    <i class="bi bi-newspaper"></i> {% translate "Generador de Artículos IA" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'countdown_timer' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'countdown_timer_list' %}">
-                                    <i class="bi bi-stopwatch"></i> Cuentas Regresivas
+                                    <i class="bi bi-stopwatch"></i> {% translate "Cuentas Regresivas" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'procedure' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'procedure_list' %}">
-                                    <i class="bi bi-list-columns-reverse"></i> Procedimientos
+                                    <i class="bi bi-list-columns-reverse"></i> {% translate "Procedimientos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'supplier_contract_review' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'supplier_contract_review_list' %}">
-                                    <i class="bi bi-shield-check"></i> Revisar Contratos de Proveedores
+                                    <i class="bi bi-shield-check"></i> {% translate "Revisar Contratos de Proveedores" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'license' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'license_list' %}">
-                                    <i class="bi bi-key"></i> Control de Licencias
+                                    <i class="bi bi-key"></i> {% translate "Control de Licencias" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'paypal_link' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'paypal_link_list' %}">
-                                    <i class="bi bi-paypal"></i> Enlaces de Pago PayPal
+                                    <i class="bi bi-paypal"></i> {% translate "Enlaces de Pago PayPal" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'sql_query' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'sql_query_tool' %}">
-                                    <i class="bi bi-database"></i> Consultas SQL
+                                    <i class="bi bi-database"></i> {% translate "Consultas SQL" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'dynamic_table' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'dynamic_table_list' %}">
-                                    <i class="bi bi-table"></i> Tablas API
+                                    <i class="bi bi-table"></i> {% translate "Tablas API" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'api_tester' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'api_tester' %}">
-                                    <i class="bi bi-code-square"></i> Probar API
+                                    <i class="bi bi-code-square"></i> {% translate "Probar API" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <h6 class="dropdown-header">Captura de Leads</h6>
+                                <h6 class="dropdown-header">{% translate "Captura de Leads" %}</h6>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'contact_generator' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'contact_generator_list' %}">
-                                    <i class="bi bi-person-plus"></i> Crear Contactos
+                                    <i class="bi bi-person-plus"></i> {% translate "Crear Contactos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'company_request_generator' in request.resolver_match.url_name %}active{% endif %}"
                                    href="{% url 'company_request_generator_list' %}">
-                                    <i class="bi bi-file-earmark-text"></i> Crear Solicitudes Empresas
+                                    <i class="bi bi-file-earmark-text"></i> {% translate "Crear Solicitudes Empresas" %}
                                 </a>
                             </li>
                         </ul>
@@ -1398,142 +1404,142 @@
                             <li>
                                 <a class="dropdown-item {% if 'daily_report' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'daily_report' %}">
-                                    <i class="bi bi-calendar-day"></i> Parte Diario
+                                    <i class="bi bi-calendar-day"></i> {% translate "Parte Diario" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <h6 class="dropdown-header">Analytics Web</h6>
+                                <h6 class="dropdown-header">{% translate "Analytics Web" %}</h6>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'page_visits_analytics' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'page_visits_analytics' %}">
-                                    <i class="fas fa-chart-bar"></i> Analytics de Páginas
+                                    <i class="fas fa-chart-bar"></i> {% translate "Analytics de Páginas" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'page_visits_detail' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'page_visits_detail' %}">
-                                    <i class="fas fa-list"></i> Detalle de Visitas
+                                    <i class="fas fa-list"></i> {% translate "Detalle de Visitas" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <h6 class="dropdown-header">Inteligencia Artificial</h6>
+                                <h6 class="dropdown-header">{% translate "Inteligencia Artificial" %}</h6>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'ai_blog_configurator' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'ai_blog_configurators_list' %}">
-                                    <i class="fas fa-robot"></i> Configurador de IA Blog
+                                    <i class="fas fa-robot"></i> {% translate "Configurador de IA Blog" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <h6 class="dropdown-header">Documentación</h6>
+                                <h6 class="dropdown-header">{% translate "Documentación" %}</h6>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'multiple_documentation' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'multiple_documentation_list' %}">
-                                    <i class="fas fa-folder-open"></i> Documentación Múltiple
+                                    <i class="fas fa-folder-open"></i> {% translate "Documentación Múltiple" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'company_documentation' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'company_documentation_list' %}">
-                                    <i class="bi bi-collection"></i> Documentaciones de Empresas
+                                    <i class="bi bi-collection"></i> {% translate "Documentaciones de Empresas" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'legal_contract' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'legal_contract_list' %}">
-                                    <i class="bi bi-file-earmark-ruled"></i> Contratos Legales
+                                    <i class="bi bi-file-earmark-ruled"></i> {% translate "Contratos Legales" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'license' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'license_list' %}">
-                                    <i class="bi bi-key"></i> Control de Licencias
+                                    <i class="bi bi-key"></i> {% translate "Control de Licencias" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'countdown_timer' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'countdown_timer_list' %}">
-                                    <i class="bi bi-stopwatch"></i> Cuentas Regresivas
+                                    <i class="bi bi-stopwatch"></i> {% translate "Cuentas Regresivas" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <h6 class="dropdown-header">Captura de Leads</h6>
+                                <h6 class="dropdown-header">{% translate "Captura de Leads" %}</h6>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'contact_generator' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'contact_generator_list' %}">
-                                    <i class="bi bi-person-plus"></i> Crear Contactos
+                                    <i class="bi bi-person-plus"></i> {% translate "Crear Contactos" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'company_request_generator' in request.resolver_match.url_name %}active{% endif %}"
                                    href="{% url 'company_request_generator_list' %}">
-                                    <i class="bi bi-file-earmark-text"></i> Crear Solicitudes Empresas
+                                    <i class="bi bi-file-earmark-text"></i> {% translate "Crear Solicitudes Empresas" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <h6 class="dropdown-header">Planificación</h6>
+                                <h6 class="dropdown-header">{% translate "Planificación" %}</h6>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'task_schedule' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'task_schedule_list' %}">
-                                    <i class="fas fa-tasks"></i> Cronogramas de Tareas
+                                    <i class="fas fa-tasks"></i> {% translate "Cronogramas de Tareas" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <h6 class="dropdown-header">Herramientas</h6>
+                                <h6 class="dropdown-header">{% translate "Herramientas" %}</h6>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'world_clock' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'world_clock' %}">
-                                    <i class="bi bi-globe"></i> Reloj Mundial
+                                    <i class="bi bi-globe"></i> {% translate "Reloj Mundial" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'financial_actions' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'financial_actions_list' %}">
-                                    <i class="bi bi-graph-up-arrow"></i> Acciones Financieras
+                                    <i class="bi bi-graph-up-arrow"></i> {% translate "Acciones Financieras" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'client_assistance_dashboard' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'client_assistance_dashboard' %}">
-                                    <i class="fas fa-chart-line"></i> Dashboard Clientes
+                                    <i class="fas fa-chart-line"></i> {% translate "Dashboard Clientes" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'client_assistance' in request.resolver_match.url_name or 'client_time_entries' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'client_assistance_list' %}">
-                                    <i class="fas fa-users"></i> Asistencia de Cliente
+                                    <i class="fas fa-users"></i> {% translate "Asistencia de Cliente" %}
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <h6 class="dropdown-header">Productos</h6>
+                                <h6 class="dropdown-header">{% translate "Productos" %}</h6>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'product_set' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'product_set_list' %}">
-                                    <i class="bi bi-box-seam"></i> Conjuntos de Productos
+                                    <i class="bi bi-box-seam"></i> {% translate "Conjuntos de Productos" %}
                                 </a>
                             </li>
                             
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <h6 class="dropdown-header">Estimaciones</h6>
+                                <h6 class="dropdown-header">{% translate "Estimaciones" %}</h6>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if 'precotizador' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'precotizador_list' %}">
-                                    <i class="bi bi-calculator"></i> Precotizador
+                                    <i class="bi bi-calculator"></i> {% translate "Precotizador" %}
                                 </a>
                             </li>
                         </ul>
@@ -1549,17 +1555,17 @@
                         </a>
                         <ul class="dropdown-menu">
 
-                            <li class="dropdown-header">Usuarios</li>
+                            <li class="dropdown-header">{% translate "Usuarios" %}</li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'user_management' %}active{% endif %}" 
                                    href="{% url 'user_management' %}">
-                                    <i class="bi bi-people"></i> Usuarios
+                                    <i class="bi bi-people"></i> {% translate "Usuarios" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'user_create' %}active{% endif %}"
                                    href="{% url 'user_create' %}">
-                                    <i class="bi bi-person-plus"></i> Crear Usuario
+                                    <i class="bi bi-person-plus"></i> {% translate "Crear Usuario" %}
                                 </a>
                             </li>
 
@@ -1571,24 +1577,24 @@
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'api_endpoint_list' %}active{% endif %}"
                                    href="{% url 'api_endpoint_list' %}">
-                                    <i class="bi bi-hdd-network"></i> Listado de APIs
+                                    <i class="bi bi-hdd-network"></i> {% translate "Listado de APIs" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'api_endpoint_create' %}active{% endif %}"
                                    href="{% url 'api_endpoint_create' %}">
-                                    <i class="bi bi-plus-circle"></i> Crear API
+                                    <i class="bi bi-plus-circle"></i> {% translate "Crear API" %}
                                 </a>
                             </li>
 
                             <li><hr class="dropdown-divider"></li>
 
 
-                            <li class="dropdown-header">Sistema</li>
+                            <li class="dropdown-header">{% translate "Sistema" %}</li>
                             <li>
                                 <a class="dropdown-item {% if 'system_configuration' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'system_configuration' %}">
-                                    <i class="bi bi-gear-fill"></i> Configuración del Sistema
+                                    <i class="bi bi-gear-fill"></i> {% translate "Configuración del Sistema" %}
                                 </a>
                             </li>
                         </ul>
@@ -1608,13 +1614,13 @@
                             {% if is_working %}
                                 <li class="nav-item">
                                     <a class="btn btn-danger btn-sm me-2" href="{% url 'time_end_work' %}">
-                                        <i class="bi bi-stop-circle"></i>
+                                        <i class="bi bi-stop-fill"></i>
                                     </a>
                                 </li>
                             {% else %}
                                 <li class="nav-item">
                                     <a class="btn btn-success btn-sm me-2" href="{% url 'time_start_work' %}">
-                                        <i class="bi bi-play-circle"></i>
+                                        <i class="bi bi-play-fill"></i>
                                     </a>
                                 </li>
                             {% endif %}
@@ -1633,20 +1639,20 @@
                                 <span class="position-absolute bottom-0 end-0 translate-middle 
                                     badge rounded-pill bg-danger" style="font-size: 0.7em;">
                                     {{ crm_counters.pending_activities }}
-                                    <span class="visually-hidden">actividades pendientes</span>
+                                    <span class="visually-hidden">{% translate "actividades pendientes" %}</span>
                                 </span>
                             {% endif %}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" style="min-width: 350px;" id="activitiesDropdown">
                             <li>
                                 <h6 class="dropdown-header">
-                                    <i class="bi bi-list-task"></i> Mis Actividades Pendientes
+                                    <i class="bi bi-list-task"></i> {% translate "Mis Actividades Pendientes" %}
                                 </h6>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li id="activitiesLoader" class="text-center p-3">
                                 <div class="spinner-border spinner-border-sm" role="status">
-                                    <span class="visually-hidden">Cargando...</span>
+                                    <span class="visually-hidden">{% translate "Cargando..." %}</span>
                                 </div>
                             </li>
                             <li id="activitiesContent" style="display: none;">
@@ -1657,32 +1663,41 @@
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item text-center" href="{% url 'my_activities_dashboard' %}">
-                                    <i class="bi bi-arrow-right"></i> Ver todas las actividades
+                                    <i class="bi bi-arrow-right"></i> {% translate "Ver todas las actividades" %}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item text-center" href="{% url 'activity_create_standalone' %}">
-                                    <i class="bi bi-plus-circle"></i> Nueva actividad
+                                    <i class="bi bi-plus-circle"></i> {% translate "Nueva actividad" %}
                                 </a>
                             </li>
                         </ul>
                     </li>
                     {% endif %}
                     
+                    {% include 'includes/language_switcher.html' %}
+                    <li class="nav-item d-flex align-items-center ms-2 me-2">
+                        <button type="button" class="ap-theme-toggle ap-side-toggle me-2" onclick="apToggleSideIcons()" title="{% translate "Mostrar / ocultar iconos laterales" %}" aria-label="{% translate "Mostrar / ocultar iconos laterales" %}">
+                            <i class="bi bi-layout-sidebar-inset"></i>
+                        </button>
+                        <button type="button" class="ap-theme-toggle" onclick="apToggleTheme()" title="{% translate "Modo claro / oscuro" %}" aria-label="{% translate "Modo claro / oscuro" %}">
+                            <i class="bi bi-moon-stars-fill"></i><i class="bi bi-sun-fill"></i>
+                        </button>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle"></i> {{ user.username }}
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{% url 'user_profile' %}">
-                                <i class="bi bi-person-gear"></i> Mi Perfil
+                                <i class="bi bi-person-gear"></i> {% translate "Mi Perfil" %}
                             </a></li>
 
                             {% if is_agent %}
                             <li><hr class="dropdown-divider"></li>    
 
                             <li><a class="dropdown-item" href="{% url 'my_notes' %}">
-                                <i class="bi bi-journal-text"></i> Mis Notas
+                                <i class="bi bi-journal-text"></i> {% translate "Mis Notas" %}
                             </a></li>
                             
                             <!-- Menú de Juegos (Solo para agentes) -->
@@ -1690,13 +1705,13 @@
                             
                             <li><a class="dropdown-item {% if 'tetris' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'tetris' %}">
-                                <i class="bi bi-grid-3x3-gap"></i> Tetris
+                                <i class="bi bi-grid-3x3-gap"></i> {% translate "Tetris" %}
                             </a></li>
                             {% endif %}
                             
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'logout' %}">
-                                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                                <i class="bi bi-box-arrow-right"></i> {% translate "Cerrar Sesión" %}
                             </a></li>
                         </ul>
                     </li>
@@ -1720,12 +1735,12 @@
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'contacto_web' %}">
-                            <i class="bi bi-house-door"></i> Inicio
+                            <i class="bi bi-house-door"></i> {% translate "Inicio" %}
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'contacto_web' %}">
-                            <i class="bi bi-envelope"></i> Contáctanos
+                            <i class="bi bi-envelope"></i> {% translate "Contáctanos" %}
                         </a>
                     </li>
                 </ul>
@@ -1733,7 +1748,7 @@
                 <ul class="navbar-nav">
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'login' %}">
-                            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                            <i class="bi bi-box-arrow-in-right"></i> {% translate "Iniciar Sesión" %}
                         </a>
                     </li>
                 </ul>
@@ -1765,7 +1780,7 @@
                 aria-expanded="false"
                 style="border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                        border-right: none; transition: all 0.3s ease; position: relative;" 
-                title="Estadísticas de URLs Cortas"
+                title="{% translate 'Estadísticas de URLs Cortas' %}"
                 onmouseover="this.style.transform = 'scale(1.1)'"
                 onmouseout="this.style.transform = 'scale(1)'">
             <i class="bi bi-link-45deg" style="color: white; font-size: 1.2em;"></i>
@@ -1776,40 +1791,40 @@
         <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width: 300px; max-height: 400px; overflow-y: auto;">
             <li>
                 <h6 class="dropdown-header">
-                    <i class="bi bi-graph-up"></i> Estadísticas de URLs Cortas
+                    <i class="bi bi-graph-up"></i> {% translate "Estadísticas de URLs Cortas" %}
                 </h6>
             </li>
             <li><hr class="dropdown-divider"></li>
             <li class="px-3 py-2">
                 <div class="d-flex justify-content-between mb-2">
-                    <small class="text-muted">Total URLs:</small>
+                    <small class="text-muted">{% translate "Total URLs:" %}</small>
                     <strong id="totalUrls">0</strong>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
-                    <small class="text-muted">Total Clics:</small>
+                    <small class="text-muted">{% translate "Total Clics:" %}</small>
                     <strong id="totalClicks" class="text-success">0</strong>
                 </div>
             </li>
             <li><hr class="dropdown-divider"></li>
             <li>
-                <h6 class="dropdown-header">Top 5 URLs</h6>
+                <h6 class="dropdown-header">{% translate "Top 5 URLs" %}</h6>
             </li>
             <li>
                 <div id="topUrlsList" class="px-3" style="max-height: 200px; overflow-y: auto;">
                     <div class="text-center text-muted py-3">
-                        <i class="bi bi-hourglass-split"></i> Cargando...
+                        <i class="bi bi-hourglass-split"></i> {% translate "Cargando..." %}
                     </div>
                 </div>
             </li>
             <li><hr class="dropdown-divider"></li>
             <li>
                 <a class="dropdown-item" href="{% url 'short_url_list' %}">
-                    <i class="bi bi-list-ul"></i> Ver todas las URLs
+                    <i class="bi bi-list-ul"></i> {% translate "Ver todas las URLs" %}
                 </a>
             </li>
             <li>
                 <a class="dropdown-item" href="{% url 'short_url_create' %}">
-                    <i class="bi bi-plus-circle"></i> Crear nueva URL
+                    <i class="bi bi-plus-circle"></i> {% translate "Crear nueva URL" %}
                 </a>
             </li>
         </ul>
@@ -1821,7 +1836,7 @@
                    border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-right: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;
                    transition: all 0.3s ease;" 
-            title="Chat con IA"
+            title="{% translate 'Chat con IA' %}"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'">
         <i class="bi bi-robot" style="color: white; font-size: 1.2em;"></i>
@@ -1833,7 +1848,7 @@
             style="position: fixed; right: 0; top: calc(50% - 160px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-right: none; transition: all 0.3s ease;" 
-            title="Crear Ticket de Soporte"
+            title="{% translate 'Crear Ticket de Soporte' %}"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'">
         <i class="bi bi-ticket-perforated"></i>
@@ -1847,7 +1862,7 @@
             style="position: fixed; right: 0; top: calc(50% - 80px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-right: none; transition: all 0.3s ease;" 
-            title="Crear Nota Rápida"
+            title="{% translate 'Crear Nota Rápida' %}"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'">
         <i class="bi bi-sticky"></i>
@@ -1862,7 +1877,7 @@
                    border-left: none; transition: all 0.3s ease; background-color: #ff8c00; color: white;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'; this.style.backgroundColor = '#ff7700'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'; this.style.backgroundColor = '#ff8c00'"
-            title="Traducción Rápida">
+            title="{% translate 'Traducción Rápida' %}">
         <i class="bi bi-translate" style="font-size: 1.2em;"></i>
     </button>
 
@@ -1873,7 +1888,7 @@
                    border-left: none; transition: all 0.3s ease;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
-            title="Transacciones Rápidas">
+            title="{% translate 'Transacciones Rápidas' %}">
         <i class="bi bi-search" style="font-size: 1.2em;"></i>
     </button>
 
@@ -1897,7 +1912,7 @@
                    border-left: none; transition: all 0.3s ease; background-color: #ff6b6b; color: white;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'; this.style.backgroundColor = '#ff5252'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'; this.style.backgroundColor = '#ff6b6b'"
-            title="Mis Órdenes de Trabajo Pendientes">
+            title="{% translate 'Mis Órdenes de Trabajo Pendientes' %}">
         <i class="bi bi-tools" id="workOrdersIcon"></i>
         <span id="pendingWorkOrdersBadge" class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-secondary" style="font-size: 0.7em;">
             0
@@ -1911,7 +1926,7 @@
                    border-left: none; transition: all 0.3s ease;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
-            title="Crear Tarea Rápida">
+            title="{% translate 'Crear Tarea Rápida' %}">
         <i class="bi bi-clipboard-check-fill"></i>
         <span id="pendingTasksBadge" class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em;">
             0
@@ -1925,7 +1940,7 @@
                    border-left: none; transition: all 0.3s ease;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
-            title="Red Social Interna">
+            title="{% translate 'Red Social Interna' %}">
         <i class="bi bi-people-fill"></i>
         <span id="socialMentionsBadge" class="badge bg-danger" style="position: absolute; top: -5px; right: -5px; font-size: 0.7em; min-width: 18px; display: none;">
             0
@@ -1939,7 +1954,7 @@
                    border-left: none; transition: all 0.3s ease;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
-            title="Calificar Nuestro Servicio">
+            title="{% translate 'Calificar Nuestro Servicio' %}">
         <span style="font-size: 24px;">😊</span>
         <span id="qaRatingsBadge" class="badge bg-danger" style="position: absolute; top: -5px; right: -5px; font-size: 0.7em; min-width: 18px; display: none;">
             0
@@ -1955,7 +1970,7 @@
                    border-left: none; transition: all 0.3s ease; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
-            title="Base de Conocimientos">
+            title="{% translate 'Base de Conocimientos' %}">
         <i class="bi bi-lightbulb-fill"></i>
     </button>
 
@@ -1966,7 +1981,7 @@
                    border-left: none; transition: all 0.3s ease; background-color: #17a2b8; color: white;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'; this.style.backgroundColor = '#138496'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'; this.style.backgroundColor = '#17a2b8'"
-            title="Gestión de URLs">
+            title="{% translate 'Gestión de URLs' %}">
         <i class="bi bi-link-45deg" style="font-size: 1.5em;"></i>
     </button>
     {% endif %}
@@ -1999,7 +2014,7 @@
             style="position: fixed; right: 0; top: calc(50% + 160px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-right: none; transition: all 0.3s ease;" 
-            title="Lista de Tareas Rápidas"
+            title="{% translate 'Lista de Tareas Rápidas' %}"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'">
         <i class="bi bi-check2-square"></i>
@@ -2013,7 +2028,7 @@
             style="position: fixed; right: 0; top: calc(50% + 240px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-right: none; transition: all 0.3s ease; background: linear-gradient(135deg, #343a40 0%, #6c757d 100%);" 
-            title="Monitor del Sistema"
+            title="{% translate 'Monitor del Sistema' %}"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'">
         <i class="bi bi-speedometer2" style="color: white; font-size: 1.2em;"></i>
@@ -2024,7 +2039,7 @@
             style="position: fixed; right: 0; top: calc(50% + 310px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-right: none; transition: all 0.3s ease; background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);" 
-            title="Conversaciones No Revisadas"
+            title="{% translate 'Conversaciones No Revisadas' %}"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'">
         <i class="bi bi-chat-dots-fill" style="color: white; font-size: 1.2em;"></i>
@@ -2043,9 +2058,9 @@
             <div>
                 <h6 class="mb-0">
                     <i class="bi bi-calendar-event-fill me-2"></i>
-                    Próximos Eventos
+                    {% translate "Próximos Eventos" %}
                 </h6>
-                <small class="opacity-75">Calendario de actividades</small>
+                <small class="opacity-75">{% translate "Calendario de actividades" %}</small>
             </div>
             <button id="closeEventsSidebar" class="btn btn-sm btn-outline-light">
                 <i class="bi bi-x-lg"></i>
@@ -2057,7 +2072,7 @@
             <small class="text-muted d-flex justify-content-between">
                 <span>
                     <i class="bi bi-clock me-1"></i>
-                    Última actualización
+                    {% translate "Última actualización" %}
                 </span>
                 <strong id="lastUpdateEventsSidebar">--:--</strong>
             </small>
@@ -2072,7 +2087,7 @@
         <div class="p-3 border-top bg-light">
             <a href="{% url 'event_calendar' %}" class="btn btn-primary w-100">
                 <i class="bi bi-calendar3 me-2"></i>
-                Ver Calendario Completo
+                {% translate "Ver Calendario Completo" %}
             </a>
         </div>
     </div>
@@ -2088,9 +2103,9 @@
             <div>
                 <h6 class="mb-0">
                     <i class="bi bi-tools me-2"></i>
-                    Mis Órdenes de Trabajo
+                    {% translate "Mis Órdenes de Trabajo" %}
                 </h6>
-                <small class="opacity-75">Pendientes de terminar</small>
+                <small class="opacity-75">{% translate "Pendientes de terminar" %}</small>
             </div>
             <button id="closeWorkOrdersSidebar" class="btn btn-sm btn-outline-light">
                 <i class="bi bi-x-lg"></i>
@@ -2102,7 +2117,7 @@
             <small class="text-muted d-flex justify-content-between">
                 <span>
                     <i class="bi bi-clock me-1"></i>
-                    Última actualización
+                    {% translate "Última actualización" %}
                 </span>
                 <strong id="lastUpdateWorkOrdersSidebar">--:--</strong>
             </small>
@@ -2117,7 +2132,7 @@
         <div class="p-3 border-top bg-light">
             <a href="{% url 'work_order_list' %}" class="btn w-100 text-white" style="background-color: #ff6b6b;">
                 <i class="bi bi-list-check me-2"></i>
-                Ver Todas las Órdenes
+                {% translate "Ver Todas las Órdenes" %}
             </a>
         </div>
     </div>
@@ -2133,9 +2148,9 @@
             <div>
                 <h6 class="mb-0">
                     <i class="bi bi-translate me-2"></i>
-                    Traducción Rápida
+                    {% translate "Traducción Rápida" %}
                 </h6>
-                <small class="opacity-75">Traduce texto al instante</small>
+                <small class="opacity-75">{% translate "Traduce texto al instante" %}</small>
             </div>
             <button id="closeTranslationSidebar" class="btn btn-sm btn-outline-light">
                 <i class="bi bi-x-lg"></i>
@@ -2147,30 +2162,30 @@
             <form id="quickTranslationForm">
                 <div class="row mb-3">
                     <div class="col-5">
-                        <label class="form-label small"><i class="bi bi-flag"></i> De</label>
+                        <label class="form-label small"><i class="bi bi-flag"></i> {% translate "De" %}</label>
                         <select id="quickSourceLang" class="form-select form-select-sm">
-                            <option value="en" selected>Inglés</option>
-                            <option value="es">Español</option>
-                            <option value="fr">Francés</option>
-                            <option value="de">Alemán</option>
-                            <option value="it">Italiano</option>
-                            <option value="pt">Portugués</option>
-                            <option value="ru">Ruso</option>
-                            <option value="zh">Chino</option>
-                            <option value="ja">Japonés</option>
-                            <option value="ko">Coreano</option>
-                            <option value="ar">Árabe</option>
-                            <option value="hi">Hindi</option>
-                            <option value="tr">Turco</option>
-                            <option value="nl">Neerlandés</option>
-                            <option value="pl">Polaco</option>
-                            <option value="sv">Sueco</option>
-                            <option value="no">Noruego</option>
-                            <option value="da">Danés</option>
-                            <option value="fi">Finlandés</option>
-                            <option value="cs">Checo</option>
-                            <option value="ca">Catalán</option>
-                            <option value="val">Valenciano</option>
+                            <option value="en" selected>{% translate "Inglés" %}</option>
+                            <option value="es">{% translate "Español" %}</option>
+                            <option value="fr">{% translate "Francés" %}</option>
+                            <option value="de">{% translate "Alemán" %}</option>
+                            <option value="it">{% translate "Italiano" %}</option>
+                            <option value="pt">{% translate "Portugués" %}</option>
+                            <option value="ru">{% translate "Ruso" %}</option>
+                            <option value="zh">{% translate "Chino" %}</option>
+                            <option value="ja">{% translate "Japonés" %}</option>
+                            <option value="ko">{% translate "Coreano" %}</option>
+                            <option value="ar">{% translate "Árabe" %}</option>
+                            <option value="hi">{% translate "Hindi" %}</option>
+                            <option value="tr">{% translate "Turco" %}</option>
+                            <option value="nl">{% translate "Neerlandés" %}</option>
+                            <option value="pl">{% translate "Polaco" %}</option>
+                            <option value="sv">{% translate "Sueco" %}</option>
+                            <option value="no">{% translate "Noruego" %}</option>
+                            <option value="da">{% translate "Danés" %}</option>
+                            <option value="fi">{% translate "Finlandés" %}</option>
+                            <option value="cs">{% translate "Checo" %}</option>
+                            <option value="ca">{% translate "Catalán" %}</option>
+                            <option value="val">{% translate "Valenciano" %}</option>
                         </select>
                     </div>
                     <div class="col-2 text-center d-flex align-items-end justify-content-center pb-2">
@@ -2179,43 +2194,43 @@
                     <div class="col-5">
                         <label class="form-label small"><i class="bi bi-flag-fill"></i> A</label>
                         <select id="quickTargetLang" class="form-select form-select-sm">
-                            <option value="es" selected>Español</option>
-                            <option value="en">Inglés</option>
-                            <option value="fr">Francés</option>
-                            <option value="de">Alemán</option>
-                            <option value="it">Italiano</option>
-                            <option value="pt">Portugués</option>
-                            <option value="ru">Ruso</option>
-                            <option value="zh">Chino</option>
-                            <option value="ja">Japonés</option>
-                            <option value="ko">Coreano</option>
-                            <option value="ar">Árabe</option>
-                            <option value="hi">Hindi</option>
-                            <option value="tr">Turco</option>
-                            <option value="nl">Neerlandés</option>
-                            <option value="pl">Polaco</option>
-                            <option value="sv">Sueco</option>
-                            <option value="no">Noruego</option>
-                            <option value="da">Danés</option>
-                            <option value="fi">Finlandés</option>
-                            <option value="cs">Checo</option>
-                            <option value="ca">Catalán</option>
-                            <option value="val">Valenciano</option>
+                            <option value="es" selected>{% translate "Español" %}</option>
+                            <option value="en">{% translate "Inglés" %}</option>
+                            <option value="fr">{% translate "Francés" %}</option>
+                            <option value="de">{% translate "Alemán" %}</option>
+                            <option value="it">{% translate "Italiano" %}</option>
+                            <option value="pt">{% translate "Portugués" %}</option>
+                            <option value="ru">{% translate "Ruso" %}</option>
+                            <option value="zh">{% translate "Chino" %}</option>
+                            <option value="ja">{% translate "Japonés" %}</option>
+                            <option value="ko">{% translate "Coreano" %}</option>
+                            <option value="ar">{% translate "Árabe" %}</option>
+                            <option value="hi">{% translate "Hindi" %}</option>
+                            <option value="tr">{% translate "Turco" %}</option>
+                            <option value="nl">{% translate "Neerlandés" %}</option>
+                            <option value="pl">{% translate "Polaco" %}</option>
+                            <option value="sv">{% translate "Sueco" %}</option>
+                            <option value="no">{% translate "Noruego" %}</option>
+                            <option value="da">{% translate "Danés" %}</option>
+                            <option value="fi">{% translate "Finlandés" %}</option>
+                            <option value="cs">{% translate "Checo" %}</option>
+                            <option value="ca">{% translate "Catalán" %}</option>
+                            <option value="val">{% translate "Valenciano" %}</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label small"><i class="bi bi-file-text"></i> Texto a traducir</label>
-                    <textarea id="quickSourceText" class="form-control" rows="4" placeholder="Escribe el texto..."></textarea>
+                    <label class="form-label small"><i class="bi bi-file-text"></i> {% translate "Texto a traducir" %}</label>
+                    <textarea id="quickSourceText" class="form-control" rows="4" placeholder="{% translate 'Escribe el texto...' %}"></textarea>
                 </div>
 
                 <button type="submit" class="btn btn-warning w-100 mb-3" id="quickTranslateBtn">
-                    <i class="bi bi-cpu"></i> Traducir
+                    <i class="bi bi-cpu"></i> {% translate "Traducir" %}
                 </button>
 
                 <div id="quickTranslationResult" style="display: none;">
-                    <label class="form-label small text-success"><i class="bi bi-check-circle"></i> Traducción</label>
+                    <label class="form-label small text-success"><i class="bi bi-check-circle"></i> {% translate "Traducción" %}</label>
                     <div class="position-relative">
                         <textarea id="quickTranslatedText" class="form-control bg-success bg-opacity-10 border-success" rows="4" readonly></textarea>
                         <button type="button" class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 m-1" onclick="copyQuickTranslation()">
@@ -2226,12 +2241,12 @@
 
                 <!-- Últimas traducciones -->
                 <div class="mt-4">
-                    <h6 class="text-muted mb-2"><i class="bi bi-clock-history"></i> Últimas Traducciones</h6>
+                    <h6 class="text-muted mb-2"><i class="bi bi-clock-history"></i> {% translate "Últimas Traducciones" %}</h6>
                     <div id="recentTranslationsList" class="list-group list-group-flush">
                         <!-- Aquí se cargarán las traducciones dinámicamente -->
                         <div class="text-center p-3 text-muted">
                             <div class="spinner-border spinner-border-sm" role="status">
-                                <span class="visually-hidden">Cargando...</span>
+                                <span class="visually-hidden">{% translate "Cargando..." %}</span>
                             </div>
                         </div>
                     </div>
@@ -2243,7 +2258,7 @@
         <div class="p-3 border-top bg-light">
             <a href="{% url 'translation_list' %}" class="btn btn-warning w-100">
                 <i class="bi bi-list-ul me-2"></i>
-                Ver Historial Completo
+                {% translate "Ver Historial Completo" %}
             </a>
         </div>
     </div>
@@ -2259,9 +2274,9 @@
             <div>
                 <h6 class="mb-0">
                     <i class="bi bi-search me-2"></i>
-                    Transacciones Rápidas
+                    {% translate "Transacciones Rápidas" %}
                 </h6>
-                <small class="opacity-75">Accesos directos del sistema</small>
+                <small class="opacity-75">{% translate "Accesos directos del sistema" %}</small>
             </div>
             <button id="closeTransactionsSidebar" class="btn btn-sm btn-outline-light">
                 <i class="bi bi-x-lg"></i>
@@ -2273,7 +2288,7 @@
             <input type="text" 
                    id="transactionSearchSidebar" 
                    class="form-control" 
-                   placeholder="Buscar por código o nombre..."
+                   placeholder="{% translate 'Buscar por código o nombre...' %}"
                    autocomplete="off">
         </div>
 
@@ -2286,7 +2301,7 @@
         <div class="p-3 border-top bg-light">
             <a href="{% url 'transaction_list' %}" class="btn btn-primary w-100">
                 <i class="bi bi-gear me-2"></i>
-                Gestionar Transacciones
+                {% translate "Gestionar Transacciones" %}
             </a>
         </div>
     </div>
@@ -2302,9 +2317,9 @@
             <div>
                 <h6 class="mb-0">
                     <i class="bi bi-lightbulb-fill me-2"></i>
-                    Base de Conocimientos
+                    {% translate "Base de Conocimientos" %}
                 </h6>
-                <small class="opacity-75">Busca conceptos y código</small>
+                <small class="opacity-75">{% translate "Busca conceptos y código" %}</small>
             </div>
             <button id="closeKnowledgeBaseSidebar" class="btn btn-sm btn-outline-light">
                 <i class="bi bi-x-lg"></i>
@@ -2316,7 +2331,7 @@
             <input type="text" 
                    id="knowledgeBaseSearchSidebar" 
                    class="form-control" 
-                   placeholder="Buscar por título, categoría o tags..."
+                   placeholder="{% translate 'Buscar por título, categoría o tags...' %}"
                    autocomplete="off">
         </div>
 
@@ -2329,7 +2344,7 @@
         <div class="p-3 border-top bg-light">
             <a href="{% url 'knowledge_base_list' %}" class="btn w-100 text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
                 <i class="bi bi-gear me-2"></i>
-                Gestionar Conocimientos
+                {% translate "Gestionar Conocimientos" %}
             </a>
         </div>
     </div>
@@ -2345,9 +2360,9 @@
             <div>
                 <h6 class="mb-0">
                     <i class="bi bi-link-45deg me-2"></i>
-                    Gestión de URLs
+                    {% translate "Gestión de URLs" %}
                 </h6>
-                <small class="opacity-75">Busca y accede rápidamente</small>
+                <small class="opacity-75">{% translate "Busca y accede rápidamente" %}</small>
             </div>
             <button id="closeUrlManagerSidebar" class="btn btn-sm btn-outline-light">
                 <i class="bi bi-x-lg"></i>
@@ -2359,7 +2374,7 @@
             <input type="text" 
                    id="urlSearchSidebar" 
                    class="form-control" 
-                   placeholder="Buscar por nombre o URL..."
+                   placeholder="{% translate 'Buscar por nombre o URL...' %}"
                    autocomplete="off">
         </div>
 
@@ -2372,7 +2387,7 @@
         <div class="p-3 border-top bg-light">
             <a href="{% url 'url_manager_list' %}" class="btn btn-info w-100">
                 <i class="bi bi-gear me-2"></i>
-                Gestionar URLs
+                {% translate "Gestionar URLs" %}
             </a>
         </div>
     </div>
@@ -2388,9 +2403,9 @@
             <div>
                 <h6 class="mb-0">
                     <i class="bi bi-people-fill me-2"></i>
-                    Usuarios Activos
+                    {% translate "Usuarios Activos" %}
                 </h6>
-                <small class="opacity-75">En oficina ahora</small>
+                <small class="opacity-75">{% translate "En oficina ahora" %}</small>
             </div>
             <button id="closeSidebar" class="btn btn-sm btn-outline-light">
                 <i class="bi bi-x-lg"></i>
@@ -2402,7 +2417,7 @@
             <small class="text-muted d-flex justify-content-between">
                 <span>
                     <i class="bi bi-clock me-1"></i>
-                    Última actualización
+                    {% translate "Última actualización" %}
                 </span>
                 <span id="lastUpdateSidebar">--:--</span>
             </small>
@@ -2413,9 +2428,9 @@
             <!-- Loading inicial -->
             <div class="text-center py-4">
                 <div class="spinner-border text-success" role="status">
-                    <span class="visually-hidden">Cargando...</span>
+                    <span class="visually-hidden">{% translate "Cargando..." %}</span>
                 </div>
-                <p class="mt-2 text-muted">Cargando usuarios activos...</p>
+                <p class="mt-2 text-muted">{% translate "Cargando usuarios activos..." %}</p>
             </div>
         </div>
 
@@ -2424,7 +2439,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <small class="text-muted">
                     <i class="bi bi-info-circle me-1"></i>
-                    Auto-actualización cada 30s
+                    {% translate "Auto-actualización cada 30s" %}
                 </small>
                 <button id="refreshActiveUsers" class="btn btn-sm btn-outline-success">
                     <i class="bi bi-arrow-clockwise"></i>
@@ -2447,10 +2462,10 @@
         <div class="p-2 bg-primary text-white d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center">
                 <i class="bi bi-calculator me-2"></i>
-                <h6 class="mb-0">Calculadora Científica</h6>
+                <h6 class="mb-0">{% translate "Calculadora Científica" %}</h6>
             </div>
             <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-light" onclick="shareCalculator()" title="Compartir calculadora">
+                <button class="btn btn-sm btn-outline-light" onclick="shareCalculator()" title="{% translate 'Compartir calculadora' %}">
                     <i class="bi bi-share"></i>
                 </button>
                 <button id="closeCalculator" class="btn btn-sm btn-outline-light">
@@ -2475,8 +2490,8 @@
 
         <!-- Tabs para cambiar entre básica y científica -->
         <div class="btn-group btn-group-sm m-2" role="group">
-            <button type="button" class="btn btn-outline-primary active" id="btnBasic" onclick="switchCalcMode('basic')">Básica</button>
-            <button type="button" class="btn btn-outline-primary" id="btnScientific" onclick="switchCalcMode('scientific')">Científica</button>
+            <button type="button" class="btn btn-outline-primary active" id="btnBasic" onclick="switchCalcMode('basic')">{% translate "Básica" %}</button>
+            <button type="button" class="btn btn-outline-primary" id="btnScientific" onclick="switchCalcMode('scientific')">{% translate "Científica" %}</button>
         </div>
 
         <!-- Botones básicos -->
@@ -2525,34 +2540,34 @@
         <!-- Botones científicos (ocultos por defecto) -->
         <div id="scientificButtons" class="p-2" style="display: none; grid-template-columns: repeat(4, 1fr); gap: 6px;">
             <!-- Funciones trigonométricas -->
-            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.sin')">sin</button>
-            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.cos')">cos</button>
-            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.tan')">tan</button>
+            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.sin')">{% translate "sin" %}</button>
+            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.cos')">{% translate "cos" %}</button>
+            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.tan')">{% translate "tan" %}</button>
             <button class="btn btn-outline-info calc-btn" onclick="appendToExpression('Math.PI')">π</button>
 
             <!-- Funciones inversas -->
-            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.asin')">asin</button>
-            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.acos')">acos</button>
-            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.atan')">atan</button>
-            <button class="btn btn-outline-info calc-btn" onclick="appendToExpression('Math.E')">e</button>
+            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.asin')">{% translate "asin" %}</button>
+            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.acos')">{% translate "acos" %}</button>
+            <button class="btn btn-outline-success calc-btn" onclick="appendFunction('Math.atan')">{% translate "atan" %}</button>
+            <button class="btn btn-outline-info calc-btn" onclick="appendToExpression('Math.E')">{% translate "e" %}</button>
 
             <!-- Potencias y raíces -->
-            <button class="btn btn-outline-warning calc-btn" onclick="appendFunction('Math.pow')">x<sup>y</sup></button>
+            <button class="btn btn-outline-warning calc-btn" onclick="appendFunction('Math.pow')">{% translate "x" %}<sup>{% translate "y" %}</sup></button>
             <button class="btn btn-outline-warning calc-btn" onclick="appendFunction('Math.sqrt')">√</button>
-            <button class="btn btn-outline-warning calc-btn" onclick="appendToExpression('**2')">x²</button>
-            <button class="btn btn-outline-warning calc-btn" onclick="appendToExpression('**3')">x³</button>
+            <button class="btn btn-outline-warning calc-btn" onclick="appendToExpression('**2')">{% translate "x²" %}</button>
+            <button class="btn btn-outline-warning calc-btn" onclick="appendToExpression('**3')">{% translate "x³" %}</button>
 
             <!-- Logaritmos -->
-            <button class="btn btn-outline-info calc-btn" onclick="appendFunction('Math.log10')">log</button>
-            <button class="btn btn-outline-info calc-btn" onclick="appendFunction('Math.log')">ln</button>
-            <button class="btn btn-outline-info calc-btn" onclick="appendFunction('Math.exp')">e<sup>x</sup></button>
-            <button class="btn btn-outline-secondary calc-btn" onclick="appendToExpression('!')">n!</button>
+            <button class="btn btn-outline-info calc-btn" onclick="appendFunction('Math.log10')">{% translate "log" %}</button>
+            <button class="btn btn-outline-info calc-btn" onclick="appendFunction('Math.log')">{% translate "ln" %}</button>
+            <button class="btn btn-outline-info calc-btn" onclick="appendFunction('Math.exp')">{% translate "e" %}<sup>{% translate "x" %}</sup></button>
+            <button class="btn btn-outline-secondary calc-btn" onclick="appendToExpression('!')">{% translate "n!" %}</button>
 
             <!-- Otras funciones -->
-            <button class="btn btn-outline-secondary calc-btn" onclick="appendFunction('Math.abs')">|x|</button>
-            <button class="btn btn-outline-secondary calc-btn" onclick="appendFunction('Math.floor')">⌊x⌋</button>
-            <button class="btn btn-outline-secondary calc-btn" onclick="appendFunction('Math.ceil')">⌈x⌉</button>
-            <button class="btn btn-outline-secondary calc-btn" onclick="appendFunction('Math.round')">round</button>
+            <button class="btn btn-outline-secondary calc-btn" onclick="appendFunction('Math.abs')">{% translate "|x|" %}</button>
+            <button class="btn btn-outline-secondary calc-btn" onclick="appendFunction('Math.floor')">{% translate "⌊x⌋" %}</button>
+            <button class="btn btn-outline-secondary calc-btn" onclick="appendFunction('Math.ceil')">{% translate "⌈x⌉" %}</button>
+            <button class="btn btn-outline-secondary calc-btn" onclick="appendFunction('Math.round')">{% translate "round" %}</button>
         </div>
     </div>
 
@@ -2572,9 +2587,9 @@
             <div>
                 <h6 class="mb-0">
                     <i class="bi bi-check2-square me-2"></i>
-                    Lista de Tareas
+                    {% translate "Lista de Tareas" %}
                 </h6>
-                <small class="opacity-75">Tareas rápidas</small>
+                <small class="opacity-75">{% translate "Tareas rápidas" %}</small>
             </div>
             <button id="closeQuickTodo" class="btn btn-sm btn-outline-light">
                 <i class="bi bi-x-lg"></i>
@@ -2585,7 +2600,7 @@
         <div class="p-3 border-bottom bg-white">
             <div class="input-group">
                 <input type="text" id="newTodoInput" class="form-control" 
-                       placeholder="Agregar nueva tarea..." 
+                       placeholder="{% translate 'Agregar nueva tarea...' %}" 
                        style="border-radius: 20px 0 0 20px; border: 2px solid #e9ecef;">
                 <button id="addTodoButton" class="btn btn-secondary" 
                         style="border-radius: 0 20px 20px 0; border: 2px solid #6c757d; border-left: none;">
@@ -2599,9 +2614,9 @@
             <!-- Loading inicial -->
             <div id="todoLoading" class="text-center py-4">
                 <div class="spinner-border text-secondary" role="status">
-                    <span class="visually-hidden">Cargando...</span>
+                    <span class="visually-hidden">{% translate "Cargando..." %}</span>
                 </div>
-                <p class="mt-2 text-muted">Cargando tareas...</p>
+                <p class="mt-2 text-muted">{% translate "Cargando tareas..." %}</p>
             </div>
             
             <!-- Lista de tareas se carga aquí dinámicamente -->
@@ -2611,11 +2626,11 @@
         <div class="p-3 bg-white border-top">
             <div class="d-flex justify-content-between align-items-center">
                 <small class="text-muted">
-                    <span id="todoStats">0 tareas</span>
+                    <span id="todoStats">{% translate "0 tareas" %}</span>
                 </small>
                 <button id="clearCompletedTodos" class="btn btn-sm btn-outline-danger" style="display: none;">
                     <i class="bi bi-trash me-1"></i>
-                    Limpiar completadas
+                    {% translate "Limpiar completadas" %}
                 </button>
             </div>
         </div>
@@ -2637,9 +2652,9 @@
             <div>
                 <h6 class="mb-0">
                     <i class="bi bi-speedometer2 me-2"></i>
-                    Monitor del Sistema
+                    {% translate "Monitor del Sistema" %}
                 </h6>
-                <small class="opacity-75">Información en tiempo real</small>
+                <small class="opacity-75">{% translate "Información en tiempo real" %}</small>
             </div>
             <button id="closeSystemMonitor" class="btn btn-sm btn-outline-light">
                 <i class="bi bi-x-lg"></i>
@@ -2651,9 +2666,9 @@
             <!-- Loading inicial -->
             <div id="systemLoading" class="text-center py-4">
                 <div class="spinner-border text-dark" role="status">
-                    <span class="visually-hidden">Cargando...</span>
+                    <span class="visually-hidden">{% translate "Cargando..." %}</span>
                 </div>
-                <p class="mt-2 text-muted">Obteniendo información del sistema...</p>
+                <p class="mt-2 text-muted">{% translate "Obteniendo información del sistema..." %}</p>
             </div>
             
             <!-- Grid de KPIs -->
@@ -2665,7 +2680,7 @@
                             <i class="bi bi-cpu display-6 text-primary mb-1" style="font-size: 2rem;"></i>
                             <h6 class="card-title mb-1">CPU</h6>
                             <div id="cpuUsage" class="h5 text-primary mb-0">--</div>
-                            <small class="text-muted">Uso del procesador</small>
+                            <small class="text-muted">{% translate "Uso del procesador" %}</small>
                         </div>
                     </div>
 
@@ -2675,7 +2690,7 @@
                             <i class="bi bi-memory display-6 text-success mb-1" style="font-size: 2rem;"></i>
                             <h6 class="card-title mb-1">RAM</h6>
                             <div id="ramUsage" class="h5 text-success mb-0">--</div>
-                            <small class="text-muted">Memoria utilizada</small>
+                            <small class="text-muted">{% translate "Memoria utilizada" %}</small>
                         </div>
                     </div>
 
@@ -2683,9 +2698,9 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body text-center py-2">
                             <i class="bi bi-hdd display-6 text-warning mb-1" style="font-size: 2rem;"></i>
-                            <h6 class="card-title mb-1">Disco</h6>
+                            <h6 class="card-title mb-1">{% translate "Disco" %}</h6>
                             <div id="diskUsage" class="h5 text-warning mb-0">--</div>
-                            <small class="text-muted">Espacio libre</small>
+                            <small class="text-muted">{% translate "Espacio libre" %}</small>
                         </div>
                     </div>
 
@@ -2693,9 +2708,9 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body text-center py-2">
                             <i class="bi bi-wifi display-6 text-info mb-1" style="font-size: 2rem;"></i>
-                            <h6 class="card-title mb-1">Red</h6>
+                            <h6 class="card-title mb-1">{% translate "Red" %}</h6>
                             <div id="networkStatus" class="h5 text-info mb-0">--</div>
-                            <small class="text-muted">Estado de conexión</small>
+                            <small class="text-muted">{% translate "Estado de conexión" %}</small>
                         </div>
                     </div>
 
@@ -2703,9 +2718,9 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body text-center py-2">
                             <i class="bi bi-thermometer-half display-6 text-danger mb-1" style="font-size: 2rem;"></i>
-                            <h6 class="card-title mb-1">Temperatura</h6>
+                            <h6 class="card-title mb-1">{% translate "Temperatura" %}</h6>
                             <div id="systemTemp" class="h5 text-danger mb-0">--</div>
-                            <small class="text-muted">CPU Temperature</small>
+                            <small class="text-muted">{% translate "CPU Temperature" %}</small>
                         </div>
                     </div>
 
@@ -2713,9 +2728,9 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body text-center py-2">
                             <i class="bi bi-list-task display-6 text-secondary mb-1" style="font-size: 2rem;"></i>
-                            <h6 class="card-title mb-1">Procesos</h6>
+                            <h6 class="card-title mb-1">{% translate "Procesos" %}</h6>
                             <div id="processCount" class="h5 text-secondary mb-0">--</div>
-                            <small class="text-muted">Procesos activos</small>
+                            <small class="text-muted">{% translate "Procesos activos" %}</small>
                         </div>
                     </div>
 
@@ -2723,9 +2738,9 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body text-center py-2">
                             <i class="bi bi-people display-6 text-purple mb-1" style="color: #6f42c1!important; font-size: 2rem;"></i>
-                            <h6 class="card-title mb-1">Usuarios</h6>
+                            <h6 class="card-title mb-1">{% translate "Usuarios" %}</h6>
                             <div id="userSessions" class="h5 mb-0" style="color: #6f42c1!important;">--</div>
-                            <small class="text-muted">Sesiones activas</small>
+                            <small class="text-muted">{% translate "Sesiones activas" %}</small>
                         </div>
                     </div>
 
@@ -2733,9 +2748,9 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body text-center py-2">
                             <i class="bi bi-clock-history display-6 text-dark mb-1" style="font-size: 2rem;"></i>
-                            <h6 class="card-title mb-1">Uptime</h6>
+                            <h6 class="card-title mb-1">{% translate "Uptime" %}</h6>
                             <div id="systemUptime" class="h5 text-dark mb-0">--</div>
-                            <small class="text-muted">Tiempo funcionando</small>
+                            <small class="text-muted">{% translate "Tiempo funcionando" %}</small>
                         </div>
                     </div>
                 </div>
@@ -2747,33 +2762,33 @@
                         <div class="card-header bg-light">
                             <h6 class="mb-0">
                                 <i class="bi bi-info-circle me-2"></i>
-                                Información Detallada
+                                {% translate "Información Detallada" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <div class="row g-2">
                                 <div class="col-sm-6">
-                                    <strong>IP Local:</strong>
-                                    <div id="localIP" class="text-muted">Obteniendo...</div>
+                                    <strong>{% translate "IP Local:" %}</strong>
+                                    <div id="localIP" class="text-muted">{% translate "Obteniendo..." %}</div>
                                 </div>
                                 <div class="col-sm-6">
-                                    <strong>IP Pública:</strong>
-                                    <div id="publicIP" class="text-muted">Obteniendo...</div>
+                                    <strong>{% translate "IP Pública:" %}</strong>
+                                    <div id="publicIP" class="text-muted">{% translate "Obteniendo..." %}</div>
                                 </div>
                                 <div class="col-sm-6">
-                                    <strong>Navegador:</strong>
+                                    <strong>{% translate "Navegador:" %}</strong>
                                     <div id="browserInfo" class="text-muted">--</div>
                                 </div>
                                 <div class="col-sm-6">
-                                    <strong>Resolución:</strong>
+                                    <strong>{% translate "Resolución:" %}</strong>
                                     <div id="screenResolution" class="text-muted">--</div>
                                 </div>
                                 <div class="col-sm-6">
-                                    <strong>Zona Horaria:</strong>
+                                    <strong>{% translate "Zona Horaria:" %}</strong>
                                     <div id="timezone" class="text-muted">--</div>
                                 </div>
                                 <div class="col-sm-6">
-                                    <strong>Idioma:</strong>
+                                    <strong>{% translate "Idioma:" %}</strong>
                                     <div id="language" class="text-muted">--</div>
                                 </div>
                             </div>
@@ -2787,34 +2802,34 @@
                         <div class="card-header bg-light">
                             <h6 class="mb-0">
                                 <i class="bi bi-graph-up me-2"></i>
-                                Rendimiento en Tiempo Real
+                                {% translate "Rendimiento en Tiempo Real" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <!-- Mini gráfico de CPU -->
                             <div class="mb-3">
-                                <label class="form-label small">CPU (%)</label>
+                                <label class="form-label small">{% translate "CPU (%)" %}</label>
                                 <div class="progress" style="height: 8px;">
                                     <div id="cpuProgressBar" class="progress-bar bg-primary" style="width: 0%"></div>
                                 </div>
                             </div>
                             <!-- Mini gráfico de RAM -->
                             <div class="mb-3">
-                                <label class="form-label small">RAM (%)</label>
+                                <label class="form-label small">{% translate "RAM (%)" %}</label>
                                 <div class="progress" style="height: 8px;">
                                     <div id="ramProgressBar" class="progress-bar bg-success" style="width: 0%"></div>
                                 </div>
                             </div>
                             <!-- Mini gráfico de Disco -->
                             <div class="mb-3">
-                                <label class="form-label small">Disco (%)</label>
+                                <label class="form-label small">{% translate "Disco (%)" %}</label>
                                 <div class="progress" style="height: 8px;">
                                     <div id="diskProgressBar" class="progress-bar bg-warning" style="width: 0%"></div>
                                 </div>
                             </div>
                             <!-- Nueva barra de progreso para procesos -->
                             <div class="mb-3">
-                                <label class="form-label small">Procesos Activos</label>
+                                <label class="form-label small">{% translate "Procesos Activos" %}</label>
                                 <div class="progress" style="height: 8px;">
                                     <div id="processProgressBar" class="progress-bar bg-secondary" style="width: 0%"></div>
                                 </div>
@@ -2827,7 +2842,7 @@
             <div class="d-flex justify-content-between align-items-center ">
                 <small class="text-muted">
                     <i class="bi bi-arrow-clockwise me-1"></i>
-                    Actualización automática cada 5s
+                    {% translate "Actualización automática cada 5s" %}
                 </small>
                 <div>
                     <button id="refreshSystemInfo" class="btn btn-sm btn-outline-dark me-2">
@@ -2864,9 +2879,9 @@
             <div>
                 <h6 class="mb-0">
                     <i class="bi bi-chat-dots-fill me-2"></i>
-                    Conversaciones No Revisadas
+                    {% translate "Conversaciones No Revisadas" %}
                 </h6>
-                <small class="opacity-75" id="unreviewedCount">Cargando...</small>
+                <small class="opacity-75" id="unreviewedCount">{% translate "Cargando..." %}</small>
             </div>
             <button id="closeUnreviewedConversations" class="btn btn-sm btn-outline-light">
                 <i class="bi bi-x-lg"></i>
@@ -2877,9 +2892,9 @@
         <div id="unreviewedConversationsList" class="flex-grow-1 p-3" style="overflow-y: auto; background: #f8f9fa;">
             <div class="text-center py-5">
                 <div class="spinner-border text-warning" role="status">
-                    <span class="visually-hidden">Cargando...</span>
+                    <span class="visually-hidden">{% translate "Cargando..." %}</span>
                 </div>
-                <p class="mt-3 text-muted">Cargando conversaciones...</p>
+                <p class="mt-3 text-muted">{% translate "Cargando conversaciones..." %}</p>
             </div>
         </div>
         
@@ -2887,7 +2902,7 @@
         <div class="p-3 border-top bg-light">
             <a href="{% url 'chatbot_list' %}" class="btn btn-warning w-100">
                 <i class="bi bi-robot me-2"></i>
-                Gestionar Chatbots
+                {% translate "Gestionar Chatbots" %}
             </a>
         </div>
     </div>
@@ -2908,9 +2923,9 @@
             <div>
                 <h6 class="mb-0">
                     <i class="bi bi-robot me-2"></i>
-                    Chat con IA
+                    {% translate "Chat con IA" %}
                 </h6>
-                <small class="opacity-75">Asistente inteligente</small>
+                <small class="opacity-75">{% translate "Asistente inteligente" %}</small>
             </div>
             <button id="closeAIChat" class="btn btn-sm btn-outline-light">
                 <i class="bi bi-x-lg"></i>
@@ -2928,8 +2943,8 @@
                     </div>
                 </div>
                 <div class="bg-white p-3 rounded-3 shadow-sm flex-grow-1">
-                    <p class="mb-0">¡Hola! Soy tu asistente de IA. ¿En qué puedo ayudarte hoy?</p>
-                    <small class="text-muted">Puedes preguntarme sobre tickets, tareas, o cualquier cosa relacionada con el sistema.</small>
+                    <p class="mb-0">{% translate "¡Hola! Soy tu asistente de IA. ¿En qué puedo ayudarte hoy?" %}</p>
+                    <small class="text-muted">{% translate "Puedes preguntarme sobre tickets, tareas, o cualquier cosa relacionada con el sistema." %}</small>
                 </div>
             </div>
         </div>
@@ -2938,7 +2953,7 @@
         <div class="p-3 border-top bg-white">
             <div class="d-flex mb-2">
                 <input type="text" id="aiChatInput" class="form-control me-2" 
-                       placeholder="Escribe tu mensaje aquí..."
+                       placeholder="{% translate 'Escribe tu mensaje aquí...' %}"
                        onkeypress="if(event.key==='Enter') sendAIMessage()">
                 <button id="sendAIMessage" class="btn btn-primary" onclick="sendAIMessage()">
                     <i class="bi bi-send"></i>
@@ -2947,7 +2962,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <small class="text-muted">
                     <i class="bi bi-info-circle me-1"></i>
-                    Presiona Enter para enviar • Usa el botón <i class="bi bi-share"></i> en cada mensaje para compartir
+                    {% translate "Presiona Enter para enviar • Usa el botón" %} <i class="bi bi-share"></i> {% translate "en cada mensaje para compartir" %}
                 </small>
             </div>
         </div>
@@ -2964,7 +2979,7 @@
                 <div class="modal-header bg-warning text-dark">
                     <h5 class="modal-title">
                         <i class="bi bi-sticky me-2"></i>
-                        Crear Nota Rápida
+                        {% translate "Crear Nota Rápida" %}
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
@@ -2973,33 +2988,33 @@
                         <div class="mb-3">
                             <label for="quickNoteTitle" class="form-label">
                                 <i class="bi bi-card-heading me-1"></i>
-                                Título de la nota
+                                {% translate "Título de la nota" %}
                             </label>
                             <input type="text" class="form-control" id="quickNoteTitle" 
-                                   placeholder="Título descriptivo (mín. 5 caracteres)..." required>
+                                   placeholder="{% translate 'Título descriptivo (mín. 5 caracteres)...' %}" required>
                         </div>
                         <div class="mb-3">
                             <label for="quickNoteContent" class="form-label">
                                 <i class="bi bi-textarea-t me-1"></i>
-                                Contenido
+                                {% translate "Contenido" %}
                             </label>
                             <textarea class="form-control" id="quickNoteContent" rows="8" 
-                                      placeholder="Descripción detallada de la nota (mín. 10 caracteres)..." required></textarea>
+                                      placeholder="{% translate 'Descripción detallada de la nota (mín. 10 caracteres)...' %}" required></textarea>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="quickNoteCategory" class="form-label">
                                         <i class="bi bi-tags me-1"></i>
-                                        Categoría
+                                        {% translate "Categoría" %}
                                     </label>
                                     <select class="form-select" id="quickNoteCategory">
-                                        <option value="personal">Personal</option>
-                                        <option value="trabajo">Trabajo</option>
-                                        <option value="ideas">Ideas</option>
-                                        <option value="recordatorios">Recordatorios</option>
-                                        <option value="reuniones">Reuniones</option>
-                                        <option value="proyectos">Proyectos</option>
+                                        <option value="personal">{% translate "Personal" %}</option>
+                                        <option value="trabajo">{% translate "Trabajo" %}</option>
+                                        <option value="ideas">{% translate "Ideas" %}</option>
+                                        <option value="recordatorios">{% translate "Recordatorios" %}</option>
+                                        <option value="reuniones">{% translate "Reuniones" %}</option>
+                                        <option value="proyectos">{% translate "Proyectos" %}</option>
                                     </select>
                                 </div>
                             </div>
@@ -3007,13 +3022,13 @@
                                 <div class="mb-3">
                                     <label for="quickNotePriority" class="form-label">
                                         <i class="bi bi-exclamation-triangle me-1"></i>
-                                        Prioridad
+                                        {% translate "Prioridad" %}
                                     </label>
                                     <select class="form-select" id="quickNotePriority">
-                                        <option value="baja">Baja</option>
-                                        <option value="media" selected>Media</option>
-                                        <option value="alta">Alta</option>
-                                        <option value="urgente">Urgente</option>
+                                        <option value="baja">{% translate "Baja" %}</option>
+                                        <option value="media" selected>{% translate "Media" %}</option>
+                                        <option value="alta">{% translate "Alta" %}</option>
+                                        <option value="urgente">{% translate "Urgente" %}</option>
                                     </select>
                                 </div>
                             </div>
@@ -3022,11 +3037,11 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             <i class="bi bi-x-circle me-1"></i>
-                            Cancelar
+                            {% translate "Cancelar" %}
                         </button>
                         <button type="button" class="btn btn-warning" id="saveQuickNote" onclick="window.saveQuickNote()">
                             <i class="bi bi-save me-1"></i>
-                            Guardar Nota
+                            {% translate "Guardar Nota" %}
                         </button>
                     </div>
                 </form>
@@ -3041,7 +3056,7 @@
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title">
                         <i class="bi bi-clipboard-check me-2"></i>
-                        Crear Tarea Rápida
+                        {% translate "Crear Tarea Rápida" %}
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -3050,41 +3065,41 @@
                         <div class="mb-3">
                             <label for="quickTaskTitle" class="form-label">
                                 <i class="bi bi-card-heading me-1"></i>
-                                Título de la tarea *
+                                {% translate "Título de la tarea *" %}
                             </label>
                             <input type="text" class="form-control" id="quickTaskTitle" 
-                                   placeholder="¿Qué necesitas hacer?" required>
+                                   placeholder="{% translate '¿Qué necesitas hacer?' %}" required>
                         </div>
                         <div class="mb-3">
                             <label for="quickTaskDescription" class="form-label">
                                 <i class="bi bi-textarea-t me-1"></i>
-                                Descripción
+                                {% translate "Descripción" %}
                             </label>
                             <textarea class="form-control" id="quickTaskDescription" rows="3" 
-                                      placeholder="Detalles adicionales..."></textarea>
+                                      placeholder="{% translate 'Detalles adicionales...' %}"></textarea>
                         </div>
                         <div class="mb-3">
                             <label for="quickTaskAssignedUser" class="form-label">
                                 <i class="bi bi-person me-1"></i>
-                                Asignar a (opcional)
+                                {% translate "Asignar a (opcional)" %}
                             </label>
                             <select class="form-select" id="quickTaskAssignedUser">
-                                <option value="">-- Asignarme a mí (por defecto) --</option>
+                                <option value="">{% translate "-- Asignarme a mí (por defecto) --" %}</option>
                             </select>
-                            <small class="text-muted">Si no seleccionas nadie, la tarea se te asignará automáticamente</small>
+                            <small class="text-muted">{% translate "Si no seleccionas nadie, la tarea se te asignará automáticamente" %}</small>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="quickTaskPriority" class="form-label">
                                         <i class="bi bi-exclamation-triangle me-1"></i>
-                                        Prioridad
+                                        {% translate "Prioridad" %}
                                     </label>
                                     <select class="form-select" id="quickTaskPriority">
-                                        <option value="low">Baja</option>
-                                        <option value="medium" selected>Media</option>
-                                        <option value="high">Alta</option>
-                                        <option value="urgent">Urgente</option>
+                                        <option value="low">{% translate "Baja" %}</option>
+                                        <option value="medium" selected>{% translate "Media" %}</option>
+                                        <option value="high">{% translate "Alta" %}</option>
+                                        <option value="urgent">{% translate "Urgente" %}</option>
                                     </select>
                                 </div>
                             </div>
@@ -3092,7 +3107,7 @@
                                 <div class="mb-3">
                                     <label for="quickTaskDueDate" class="form-label">
                                         <i class="bi bi-calendar me-1"></i>
-                                        Fecha límite
+                                        {% translate "Fecha límite" %}
                                     </label>
                                     <input type="date" class="form-control" id="quickTaskDueDate">
                                 </div>
@@ -3102,11 +3117,11 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             <i class="bi bi-x-circle me-1"></i>
-                            Cancelar
+                            {% translate "Cancelar" %}
                         </button>
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-save me-1"></i>
-                            Crear Tarea
+                            {% translate "Crear Tarea" %}
                         </button>
                     </div>
                 </form>
@@ -3120,8 +3135,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-12">
-                    <p class="text-muted mb-1">&copy; 2025 TicketProo - Sistema de Gestión de Tickets</p>
-                    <p class="text-muted small mb-0">Desarrollado por Marlon Falcón Hdez</p>
+                    <p class="text-muted mb-1">&copy; 2025 TicketProo - {% translate "Sistema de Gestión de Tickets" %}</p>
+                    <p class="text-muted small mb-0">{% translate "Desarrollado por Marlon Falcón Hdez" %}</p>
                 </div>
             </div>
         </div>
@@ -4515,10 +4530,10 @@
         <div class="chat-widget-body" id="chat-widget-body" style="display: none;">
             <div class="chat-widget-tabs">
                 <button class="chat-tab active" onclick="showChatTab('conversations')">
-                    Conversaciones
+                    {% translate "Conversaciones" %}
                 </button>
                 <button class="chat-tab" onclick="showChatTab('users')">
-                    Usuarios
+                    {% translate "Usuarios" %}
                 </button>
             </div>
             
@@ -4526,7 +4541,7 @@
                 <div class="chat-conversations-list" id="chat-conversations">
                     <div class="text-center p-3">
                         <i class="fas fa-spinner fa-spin"></i>
-                        <small class="d-block mt-2">Cargando conversaciones...</small>
+                        <small class="d-block mt-2">{% translate "Cargando conversaciones..." %}</small>
                     </div>
                 </div>
             </div>
@@ -4535,7 +4550,7 @@
                 <div class="chat-users-list" id="chat-users">
                     <div class="text-center p-3">
                         <i class="fas fa-spinner fa-spin"></i>
-                        <small class="d-block mt-2">Cargando usuarios...</small>
+                        <small class="d-block mt-2">{% translate "Cargando usuarios..." %}</small>
                     </div>
                 </div>
             </div>
@@ -5107,11 +5122,11 @@
     <div id="ai-floating-button" class="ai-floating-btn">
         <a href="{% url 'voice_command_interface' %}" 
            class="btn btn-primary btn-lg rounded-circle shadow-lg"
-           title="Comandos de Voz IA - Crear tickets hablando">
+           title="{% translate 'Comandos de Voz IA - Crear tickets hablando' %}">
             <i class="fas fa-microphone-alt"></i>
         </a>
         <div class="ai-floating-tooltip">
-            <span>Comandos de Voz IA</span>
+            <span>{% translate "Comandos de Voz IA" %}</span>
         </div>
     </div>
     {% endif %}
@@ -5393,22 +5408,22 @@
         <div class="d-flex align-items-center h-100">
             <div class="me-3 ps-3">
                 <i class="bi bi-graph-up-arrow"></i>
-                <small class="fw-bold">MERCADOS:</small>
+                <small class="fw-bold">{% translate "MERCADOS:" %}</small>
             </div>
             <div class="flex-grow-1">
                 <div id="financial-ticker" class="d-flex align-items-center h-100">
                     <div class="ticker-content-global d-flex align-items-center">
                         <!-- Las acciones se cargarán aquí via JavaScript -->
-                        <span class="text-muted">Cargando datos del mercado...</span>
+                        <span class="text-muted">{% translate "Cargando datos del mercado..." %}</span>
                     </div>
                 </div>
             </div>
             {% if is_agent %}
             <div class="me-3">
-                <a href="{% url 'financial_actions_list' %}" class="btn btn-sm btn-outline-light" title="Configurar Acciones">
+                <a href="{% url 'financial_actions_list' %}" class="btn btn-sm btn-outline-light" title="{% translate 'Configurar Acciones' %}">
                     <i class="bi bi-gear"></i>
                 </a>
-                <button onclick="refreshFinancialTicker()" class="btn btn-sm btn-outline-light ms-2" title="Actualizar Acciones">
+                <button onclick="refreshFinancialTicker()" class="btn btn-sm btn-outline-light ms-2" title="{% translate 'Actualizar Acciones' %}">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
             </div>
@@ -5419,7 +5434,7 @@
                 <a href="{% url 'public_workorder_create' user.profile.public_token %}" 
                    target="_blank"
                    class="btn btn-sm btn-outline-info" 
-                   title="Enlace público para crear órdenes de trabajo">
+                   title="{% translate 'Enlace público para crear órdenes de trabajo' %}">
                     <i class="bi bi-tools"></i> {{ user.get_full_name|default:user.username }}
                 </a>
             </div>
@@ -5427,7 +5442,7 @@
             <!-- Fecha y hora minimalista -->
             <div class="pe-3 text-end">
                 <small class="text-white-50">
-                    Fecha: <span id="current-date"></span> | Hora: <span id="current-time"></span>
+                    {% translate "Fecha:" %} <span id="current-date"></span> {% translate "| Hora:" %} <span id="current-time"></span>
                 </small>
             </div>
         </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}Eliminar Día - {{ block.super }}{% endblock %}
 
@@ -10,16 +11,16 @@
                 <div class="card-header bg-danger text-white">
                     <h4 class="mb-0">
                         <i class="bi bi-exclamation-triangle"></i>
-                        Confirmar Eliminación de Día
+                        {% translate "Confirmar Eliminación de Día" %}
                     </h4>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-warning">
                         <i class="bi bi-info-circle"></i>
-                        Esta acción no se puede deshacer.
+                        {% translate "Esta acción no se puede deshacer." %}
                     </div>
 
-                    <h5>¿Estás seguro de que deseas eliminar este día?</h5>
+                    <h5>{% translate "¿Estás seguro de que deseas eliminar este día?" %}</h5>
                     
                     <div class="card mt-3 bg-light">
                         <div class="card-body">
@@ -37,7 +38,7 @@
 
                     {% if day.tasks.exists %}
                     <p class="text-danger mt-3 mb-0">
-                        <strong>Se eliminarán también:</strong>
+                        <strong>{% translate "Se eliminarán también:" %}</strong>
                     </p>
                     <ul class="text-danger">
                         <li>Todas las {{ day.tasks.count }} tarea{{ day.tasks.count|pluralize:",s" }} de este día</li>
@@ -48,10 +49,10 @@
                         {% csrf_token %}
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Sí, eliminar día
+                                <i class="bi bi-trash"></i> {% translate "Sí, eliminar día" %}
                             </button>
                             <a href="{% url 'task_plan_detail' day.plan.id %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>

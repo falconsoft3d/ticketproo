@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Conexiones Odoo - Ticket System{% endblock %}
+{% block title %}{% translate "Conexiones Odoo - Ticket System" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-cloud-upload"></i> Conexiones Odoo</h2>
+                <h2><i class="bi bi-cloud-upload"></i> {% translate "Conexiones Odoo" %}</h2>
                 <a href="{% url 'odoo_connection_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Nueva Conexión
+                    <i class="bi bi-plus-circle"></i> {% translate "Nueva Conexión" %}
                 </a>
             </div>
 
@@ -32,7 +33,7 @@
                             <h5 class="card-title mb-0">
                                 {{ connection.name }}
                                 {% if not connection.is_active %}
-                                <span class="badge bg-secondary">Inactiva</span>
+                                <span class="badge bg-secondary">{% translate "Inactiva" %}</span>
                                 {% endif %}
                             </h5>
                             <div class="dropdown">
@@ -42,28 +43,28 @@
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
                                         <a class="dropdown-item text-primary fw-bold" href="{% url 'odoo_rpc_operations_portal' connection.id %}">
-                                            <i class="bi bi-gear-wide-connected"></i> Portal de Operaciones RPC
+                                            <i class="bi bi-gear-wide-connected"></i> {% translate "Portal de Operaciones RPC" %}
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item" href="{% url 'odoo_rpc_table_list' connection.id %}">
-                                            <i class="bi bi-table"></i> Ver Tablas
+                                            <i class="bi bi-table"></i> {% translate "Ver Tablas" %}
                                         </a>
                                     </li>
                                     <li>
                                         <button class="dropdown-item" onclick="testConnection({{ connection.id }})">
-                                            <i class="bi bi-wifi"></i> Probar Conexión
+                                            <i class="bi bi-wifi"></i> {% translate "Probar Conexión" %}
                                         </button>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="{% url 'odoo_connection_backup' connection.id %}">
-                                            <i class="bi bi-database-down"></i> Backup Base de Datos
+                                            <i class="bi bi-database-down"></i> {% translate "Backup Base de Datos" %}
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item {% if connection.public_portal_enabled %}text-success fw-bold{% endif %}" href="{% url 'odoo_connection_manage_portal' connection.id %}">
-                                            <i class="bi bi-globe"></i> Portal Público
+                                            <i class="bi bi-globe"></i> {% translate "Portal Público" %}
                                             {% if connection.public_portal_enabled %}
                                             <i class="bi bi-check-circle-fill text-success ms-1"></i>
                                             {% endif %}
@@ -72,12 +73,12 @@
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item" href="{% url 'odoo_connection_edit' connection.id %}">
-                                            <i class="bi bi-pencil"></i> Editar
+                                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item text-danger" href="{% url 'odoo_connection_delete' connection.id %}">
-                                            <i class="bi bi-trash"></i> Eliminar
+                                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                                         </a>
                                     </li>
                                 </ul>
@@ -85,22 +86,22 @@
                         </div>
                         <div class="card-body">
                             <p class="mb-2">
-                                <strong>Base de Datos:</strong> {{ connection.database }}
+                                <strong>{% translate "Base de Datos:" %}</strong> {{ connection.database }}
                             </p>
                             <p class="mb-2">
-                                <strong>URL:</strong> {{ connection.url }}:{{ connection.port }}
+                                <strong>{% translate "URL:" %}</strong> {{ connection.url }}:{{ connection.port }}
                             </p>
                             <p class="mb-2">
-                                <strong>Usuario:</strong> {{ connection.username }}
+                                <strong>{% translate "Usuario:" %}</strong> {{ connection.username }}
                             </p>
                             <p class="mb-2">
-                                <strong>Estado:</strong> 
+                                <strong>{% translate "Estado:" %}</strong> 
                                 {% if connection.connection_status == 'success' %}
-                                    <span class="badge bg-success">Exitosa</span>
+                                    <span class="badge bg-success">{% translate "Exitosa" %}</span>
                                 {% elif connection.connection_status == 'failed' %}
-                                    <span class="badge bg-danger">Fallida</span>
+                                    <span class="badge bg-danger">{% translate "Fallida" %}</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">No probada</span>
+                                    <span class="badge bg-secondary">{% translate "No probada" %}</span>
                                 {% endif %}
                             </p>
                             {% if connection.last_tested_at %}
@@ -120,8 +121,8 @@
             </div>
             {% else %}
             <div class="alert alert-info">
-                <i class="bi bi-info-circle"></i> No tienes conexiones Odoo configuradas. 
-                <a href="{% url 'odoo_connection_create' %}">Crear una ahora</a>
+                <i class="bi bi-info-circle"></i> {% translate "No tienes conexiones Odoo configuradas." %} 
+                <a href="{% url 'odoo_connection_create' %}">{% translate "Crear una ahora" %}</a>
             </div>
             {% endif %}
         </div>

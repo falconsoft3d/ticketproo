@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Resultados del Examen{% endblock %}
+{% block title %}{% translate "Resultados del Examen" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -99,7 +100,7 @@
         <div class="col-12">
             <div class="card border-0">
                 <div class="card-header result-header text-white text-center py-4">
-                    <h2 class="mb-3">Resultados del Examen</h2>
+                    <h2 class="mb-3">{% translate "Resultados del Examen" %}</h2>
                     <h4 class="mb-0">{{ exam.title }}</h4>
                 </div>
                 <div class="card-body text-center py-5">
@@ -110,10 +111,10 @@
                             </div>
                             <h4 class="mt-3 {% if attempt.passed %}text-success{% else %}text-danger{% endif %}">
                                 {% if attempt.passed %}
-                                    <i class="bi bi-check-circle"></i> ¡APROBADO!
-                                    <br><small class="text-success">¡Felicitaciones! Puedes descargar tu certificado</small>
+                                    <i class="bi bi-check-circle"></i> {% translate "¡APROBADO!" %}
+                                    <br><small class="text-success">{% translate "¡Felicitaciones! Puedes descargar tu certificado" %}</small>
                                 {% else %}
-                                    <i class="bi bi-x-circle"></i> REPROBADO
+                                    <i class="bi bi-x-circle"></i> {% translate "REPROBADO" %}
                                 {% endif %}
                             </h4>
                         </div>
@@ -121,19 +122,19 @@
                             <div class="row text-center">
                                 <div class="col-6 col-md-3">
                                     <div class="fs-2 fw-bold text-dark">{{ attempt.correct_answers }}</div>
-                                    <small class="text-dark">Correctas</small>
+                                    <small class="text-dark">{% translate "Correctas" %}</small>
                                 </div>
                                 <div class="col-6 col-md-3">
                                     <div class="fs-2 fw-bold text-dark">{{ attempt.incorrect_answers }}</div>
-                                    <small class="text-dark">Incorrectas</small>
+                                    <small class="text-dark">{% translate "Incorrectas" %}</small>
                                 </div>
                                 <div class="col-6 col-md-3">
                                     <div class="fs-2 fw-bold text-dark">{{ attempt.total_questions }}</div>
-                                    <small class="text-dark">Total</small>
+                                    <small class="text-dark">{% translate "Total" %}</small>
                                 </div>
                                 <div class="col-6 col-md-3">
                                     <div class="fs-2 fw-bold text-dark">{{ exam.passing_score }}%</div>
-                                    <small class="text-dark">Mínimo</small>
+                                    <small class="text-dark">{% translate "Mínimo" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -148,22 +149,22 @@
         <div class="col-md-6">
             <div class="card stats-card">
                 <div class="card-header">
-                    <h5 class="mb-0 text-dark"><i class="bi bi-person"></i> Información del Participante</h5>
+                    <h5 class="mb-0 text-dark"><i class="bi bi-person"></i> {% translate "Información del Participante" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-12 mb-2">
-                            <strong class="text-dark">Nombre:</strong> <span class="text-dark">{{ attempt.participant_name }}</span>
+                            <strong class="text-dark">{% translate "Nombre:" %}</strong> <span class="text-dark">{{ attempt.participant_name }}</span>
                         </div>
                         <div class="col-12 mb-2">
-                            <strong class="text-dark">Email:</strong> <span class="text-dark">{{ attempt.participant_email }}</span>
+                            <strong class="text-dark">{% translate "Email:" %}</strong> <span class="text-dark">{{ attempt.participant_email }}</span>
                         </div>
                         <div class="col-12 mb-2">
-                            <strong class="text-dark">Fecha:</strong> <span class="text-dark">{{ attempt.completed_at|date:"d/m/Y H:i" }}</span>
+                            <strong class="text-dark">{% translate "Fecha:" %}</strong> <span class="text-dark">{{ attempt.completed_at|date:"d/m/Y H:i" }}</span>
                         </div>
                         {% if attempt.time_taken %}
                         <div class="col-12">
-                            <strong class="text-dark">Tiempo:</strong> <span class="text-dark">{{ attempt.time_taken_display }}</span>
+                            <strong class="text-dark">{% translate "Tiempo:" %}</strong> <span class="text-dark">{{ attempt.time_taken_display }}</span>
                         </div>
                         {% endif %}
                     </div>
@@ -173,7 +174,7 @@
         <div class="col-md-6">
             <div class="card stats-card">
                 <div class="card-header">
-                    <h5 class="mb-0 text-dark"><i class="bi bi-graph-up"></i> Estadísticas</h5>
+                    <h5 class="mb-0 text-dark"><i class="bi bi-graph-up"></i> {% translate "Estadísticas" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -181,7 +182,7 @@
                             <div class="fs-4 fw-bold text-dark">
                                 {{ attempt.score|floatformat:1 }}%
                             </div>
-                            <small class="text-dark">Puntuación</small>
+                            <small class="text-dark">{% translate "Puntuación" %}</small>
                         </div>
                         <div class="col-6 text-center">
                             <div class="fs-4 fw-bold text-dark">
@@ -192,7 +193,7 @@
                                 {% endif %}
                             </div>
                             <small class="text-dark">
-                                {% if attempt.passed %}Certificado{% else %}Reintentar{% endif %}
+                                {% if attempt.passed %}{% translate "Certificado" %}{% else %}{% translate "Reintentar" %}{% endif %}
                             </small>
                         </div>
                     </div>
@@ -221,33 +222,33 @@
                     <div class="btn-group" role="group">
                         {% if exam.is_public and exam.public_token %}
                         <a href="{% url 'exam_take_public' exam.public_token %}" class="btn btn-outline-primary">
-                            <i class="bi bi-arrow-left"></i> Volver al Examen
+                            <i class="bi bi-arrow-left"></i> {% translate "Volver al Examen" %}
                         </a>
                         {% else %}
                         <a href="{% url 'exam_detail' exam.pk %}" class="btn btn-outline-primary">
-                            <i class="bi bi-arrow-left"></i> Volver al Examen
+                            <i class="bi bi-arrow-left"></i> {% translate "Volver al Examen" %}
                         </a>
                         {% endif %}
                         <button onclick="window.print()" class="btn btn-outline-secondary">
-                            <i class="bi bi-printer"></i> Imprimir Resultados
+                            <i class="bi bi-printer"></i> {% translate "Imprimir Resultados" %}
                         </button>
                         {% if attempt.passed %}
                         <a href="{% url 'download_certificate' attempt.id %}" class="btn btn-success">
-                            <i class="bi bi-download"></i> Descargar Certificado
+                            <i class="bi bi-download"></i> {% translate "Descargar Certificado" %}
                         </a>
                         {% if attempt.certificate_token %}
                         <a href="{% url 'verify_certificate' attempt.certificate_token %}" class="btn btn-info" target="_blank">
-                            <i class="bi bi-qr-code"></i> Verificar Certificado
+                            <i class="bi bi-qr-code"></i> {% translate "Verificar Certificado" %}
                         </a>
                         {% endif %}
                         {% else %}
                         {% if exam.is_public and exam.public_token %}
                         <a href="{% url 'exam_take_public' exam.public_token %}" class="btn btn-warning">
-                            <i class="bi bi-arrow-repeat"></i> Reintentar Examen
+                            <i class="bi bi-arrow-repeat"></i> {% translate "Reintentar Examen" %}
                         </a>
                         {% else %}
                         <a href="{% url 'exam_take_authenticated' exam.pk %}" class="btn btn-warning">
-                            <i class="bi bi-arrow-repeat"></i> Reintentar Examen
+                            <i class="bi bi-arrow-repeat"></i> {% translate "Reintentar Examen" %}
                         </a>
                         {% endif %}
                         {% endif %}
@@ -263,8 +264,8 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0 text-dark"><i class="bi bi-list-check"></i> Revisión Detallada</h5>
-                    <small class="text-dark">Revisa cada pregunta y sus respuestas (solo agentes)</small>
+                    <h5 class="mb-0 text-dark"><i class="bi bi-list-check"></i> {% translate "Revisión Detallada" %}</h5>
+                    <small class="text-dark">{% translate "Revisa cada pregunta y sus respuestas (solo agentes)" %}</small>
                 </div>
                 <div class="card-body">
                     {% for answer in answers %}
@@ -276,9 +277,9 @@
                             </h6>
                             <span class="badge {% if answer.is_correct %}bg-success{% else %}bg-danger{% endif %}">
                                 {% if answer.is_correct %}
-                                    <i class="bi bi-check"></i> Correcta
+                                    <i class="bi bi-check"></i> {% translate "Correcta" %}
                                 {% else %}
-                                    <i class="bi bi-x"></i> Incorrecta
+                                    <i class="bi bi-x"></i> {% translate "Incorrecta" %}
                                 {% endif %}
                             </span>
                         </div>
@@ -291,7 +292,7 @@
                                     {% elif answer.selected_option == 'A' %}answer-selected-wrong
                                     {% else %}answer-not-selected{% endif %}">
                                     <div class="d-flex align-items-center">
-                                        <strong class="text-dark">A)</strong>
+                                        <strong class="text-dark">{% translate "A)" %}</strong>
                                         <span class="ms-2 text-dark">{{ answer.question.option_a }}</span>
                                         {% if answer.question.correct_option == 'A' %}
                                             <i class="bi bi-check-circle text-success ms-auto"></i>
@@ -309,7 +310,7 @@
                                     {% elif answer.selected_option == 'B' %}answer-selected-wrong
                                     {% else %}answer-not-selected{% endif %}">
                                     <div class="d-flex align-items-center">
-                                        <strong class="text-dark">B)</strong>
+                                        <strong class="text-dark">{% translate "B)" %}</strong>
                                         <span class="ms-2 text-dark">{{ answer.question.option_b }}</span>
                                         {% if answer.question.correct_option == 'B' %}
                                             <i class="bi bi-check-circle text-success ms-auto"></i>
@@ -327,7 +328,7 @@
                                     {% elif answer.selected_option == 'C' %}answer-selected-wrong
                                     {% else %}answer-not-selected{% endif %}">
                                     <div class="d-flex align-items-center">
-                                        <strong class="text-dark">C)</strong>
+                                        <strong class="text-dark">{% translate "C)" %}</strong>
                                         <span class="ms-2 text-dark">{{ answer.question.option_c }}</span>
                                         {% if answer.question.correct_option == 'C' %}
                                             <i class="bi bi-check-circle text-success ms-auto"></i>
@@ -343,8 +344,7 @@
                         <div class="mt-2">
                             <small class="text-dark">
                                 <i class="bi bi-info-circle"></i>
-                                Tu respuesta: <strong>{{ answer.selected_option }})</strong> | 
-                                Respuesta correcta: <strong>{{ answer.question.correct_option }})</strong>
+                                {% translate "Tu respuesta:" %} <strong>{{ answer.selected_option }})</strong> {% translate "| Respuesta correcta:" %} <strong>{{ answer.question.correct_option }})</strong>
                             </small>
                         </div>
                         {% endif %}
@@ -360,9 +360,9 @@
     <div class="print-hidden mt-4">
         <div class="card">
             <div class="card-body text-center">
-                <h5 class="text-dark">Certificado de Participación</h5>
-                <p class="text-dark">Se certifica que <strong>{{ attempt.participant_name }}</strong> 
-                {% if attempt.passed %}completó satisfactoriamente{% else %}participó en{% endif %} 
+                <h5 class="text-dark">{% translate "Certificado de Participación" %}</h5>
+                <p class="text-dark">{% translate "Se certifica que" %} <strong>{{ attempt.participant_name }}</strong> 
+                {% if attempt.passed %}{% translate "completó satisfactoriamente" %}{% else %}{% translate "participó en" %}{% endif %} 
                 el examen "{{ exam.title }}" con una puntuación de {{ attempt.score|floatformat:1 }}%.</p>
                 <p><small class="text-dark">Fecha: {{ attempt.completed_at|date:"d de F de Y" }}</small></p>
             </div>

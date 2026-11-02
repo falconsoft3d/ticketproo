@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -14,14 +15,14 @@
                         <i class="bi bi-link-45deg text-primary"></i>
                         {{ page_title }}
                     </h2>
-                    <p class="text-muted mb-0">Información detallada y credenciales de acceso</p>
+                    <p class="text-muted mb-0">{% translate "Información detallada y credenciales de acceso" %}</p>
                 </div>
                 <div>
                     <a href="{% url 'url_manager_edit' url_manager.id %}" class="btn btn-outline-primary me-2">
-                        <i class="bi bi-pencil"></i> Editar
+                        <i class="bi bi-pencil"></i> {% translate "Editar" %}
                     </a>
                     <a href="{% url 'url_manager_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                 </div>
             </div>
@@ -31,28 +32,28 @@
                 <div class="card-header bg-light">
                     <h5 class="mb-0">
                         <i class="bi bi-info-circle text-primary"></i>
-                        Información Básica
+                        {% translate "Información Básica" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Título:</label>
+                                <label class="form-label fw-bold">{% translate "Título:" %}</label>
                                 <p class="mb-0">{{ url_manager.title }}</p>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Estado:</label>
+                                <label class="form-label fw-bold">{% translate "Estado:" %}</label>
                                 <p class="mb-0">
                                     {% if url_manager.is_active %}
                                         <span class="badge bg-success">
-                                            <i class="bi bi-check-circle"></i> Activo
+                                            <i class="bi bi-check-circle"></i> {% translate "Activo" %}
                                         </span>
                                     {% else %}
                                         <span class="badge bg-secondary">
-                                            <i class="bi bi-x-circle"></i> Inactivo
+                                            <i class="bi bi-x-circle"></i> {% translate "Inactivo" %}
                                         </span>
                                     {% endif %}
                                 </p>
@@ -60,7 +61,7 @@
                         </div>
                         <div class="col-12">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">URL:</label>
+                                <label class="form-label fw-bold">{% translate "URL:" %}</label>
                                 <p class="mb-0">
                                     <a href="{{ url_manager.url }}" target="_blank" class="text-decoration-none">
                                         {{ url_manager.url }}
@@ -72,7 +73,7 @@
                         {% if url_manager.category %}
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Categoría:</label>
+                                <label class="form-label fw-bold">{% translate "Categoría:" %}</label>
                                 <p class="mb-0">
                                     <span class="badge bg-info">
                                         <i class="bi bi-tag"></i> {{ url_manager.category }}
@@ -84,7 +85,7 @@
                         {% if url_manager.domain %}
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Dominio:</label>
+                                <label class="form-label fw-bold">{% translate "Dominio:" %}</label>
                                 <p class="mb-0">{{ url_manager.domain }}</p>
                             </div>
                         </div>
@@ -92,7 +93,7 @@
                         {% if url_manager.description %}
                         <div class="col-12">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Descripción:</label>
+                                <label class="form-label fw-bold">{% translate "Descripción:" %}</label>
                                 <p class="mb-0">{{ url_manager.description }}</p>
                             </div>
                         </div>
@@ -106,14 +107,14 @@
                 <div class="card-header bg-warning bg-opacity-10">
                     <h5 class="mb-0">
                         <i class="bi bi-shield-lock text-warning"></i>
-                        Credenciales de Acceso
+                        {% translate "Credenciales de Acceso" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Usuario:</label>
+                                <label class="form-label fw-bold">{% translate "Usuario:" %}</label>
                                 <div class="input-group">
                                     <input type="text" class="form-control" value="{{ url_manager.username }}" readonly>
                                     <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('{{ url_manager.username }}', this)">
@@ -124,7 +125,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Contraseña:</label>
+                                <label class="form-label fw-bold">{% translate "Contraseña:" %}</label>
                                 <div class="input-group">
                                     <input type="password" id="passwordField" class="form-control" value="••••••••••" readonly>
                                     <button class="btn btn-outline-secondary" type="button" id="togglePassword">
@@ -136,7 +137,7 @@
                                 </div>
                                 <small class="form-text text-muted">
                                     <i class="bi bi-shield-check text-success"></i>
-                                    Contraseña almacenada de forma segura
+                                    {% translate "Contraseña almacenada de forma segura" %}
                                 </small>
                             </div>
                         </div>
@@ -149,33 +150,33 @@
                 <div class="card-header bg-light">
                     <h5 class="mb-0">
                         <i class="bi bi-gear text-secondary"></i>
-                        Información del Sistema
+                        {% translate "Información del Sistema" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Creado por:</label>
+                                <label class="form-label fw-bold">{% translate "Creado por:" %}</label>
                                 <p class="mb-0">{{ url_manager.created_by.get_full_name|default:url_manager.created_by.username }}</p>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Fecha de creación:</label>
+                                <label class="form-label fw-bold">{% translate "Fecha de creación:" %}</label>
                                 <p class="mb-0">{{ url_manager.created_at|date:"d/m/Y H:i" }}</p>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Última actualización:</label>
+                                <label class="form-label fw-bold">{% translate "Última actualización:" %}</label>
                                 <p class="mb-0">{{ url_manager.updated_at|date:"d/m/Y H:i" }}</p>
                             </div>
                         </div>
                         {% if url_manager.last_accessed %}
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Último acceso:</label>
+                                <label class="form-label fw-bold">{% translate "Último acceso:" %}</label>
                                 <p class="mb-0">{{ url_manager.last_accessed|date:"d/m/Y H:i" }}</p>
                             </div>
                         </div>
@@ -187,19 +188,19 @@
             <!-- Acciones -->
             <div class="card">
                 <div class="card-body">
-                    <h6 class="card-title">Acciones Rápidas</h6>
+                    <h6 class="card-title">{% translate "Acciones Rápidas" %}</h6>
                     <div class="d-flex flex-wrap gap-2">
                         <a href="{{ url_manager.url }}" target="_blank" class="btn btn-primary">
-                            <i class="bi bi-box-arrow-up-right"></i> Abrir URL
+                            <i class="bi bi-box-arrow-up-right"></i> {% translate "Abrir URL" %}
                         </a>
                         <a href="{% url 'url_manager_edit' url_manager.id %}" class="btn btn-outline-primary">
-                            <i class="bi bi-pencil"></i> Editar
+                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                         </a>
                         <button type="button" class="btn btn-outline-secondary" onclick="copyUrlToClipboard()">
-                            <i class="bi bi-clipboard"></i> Copiar URL
+                            <i class="bi bi-clipboard"></i> {% translate "Copiar URL" %}
                         </button>
                         <a href="{% url 'url_manager_delete' url_manager.id %}" class="btn btn-outline-danger">
-                            <i class="bi bi-trash"></i> Eliminar
+                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                         </a>
                     </div>
                 </div>

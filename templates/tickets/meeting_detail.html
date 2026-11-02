@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ meeting.title }}{% endblock %}
@@ -15,16 +16,16 @@
                     </h3>
                     <div class="btn-group" role="group">
                         <a href="{% url 'meeting_print' meeting.id %}" class="btn btn-info" target="_blank">
-                            <i class="fas fa-print"></i> Imprimir
+                            <i class="fas fa-print"></i> {% translate "Imprimir" %}
                         </a>
                         <a href="{% url 'meeting_edit' meeting.id %}" class="btn btn-warning">
-                            <i class="fas fa-edit"></i> Editar
+                            <i class="fas fa-edit"></i> {% translate "Editar" %}
                         </a>
                         <a href="{% url 'meeting_delete' meeting.id %}" class="btn btn-danger">
-                            <i class="fas fa-trash"></i> Eliminar
+                            <i class="fas fa-trash"></i> {% translate "Eliminar" %}
                         </a>
                         <a href="{% url 'meeting_list' %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Volver
+                            <i class="fas fa-arrow-left"></i> {% translate "Volver" %}
                         </a>
                     </div>
                 </div>
@@ -34,40 +35,40 @@
                             <!-- Información de la reunión -->
                             <div class="card mb-4">
                                 <div class="card-header">
-                                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Información de la Reunión</h5>
+                                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> {% translate "Información de la Reunión" %}</h5>
                                 </div>
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <p><strong>Fecha:</strong> {{ meeting.date|date:"d/m/Y" }}</p>
-                                            <p><strong>Hora:</strong> {{ meeting.date|time:"H:i" }}</p>
-                                            <p><strong>Duración:</strong> {{ meeting.duration }} minutos</p>
+                                            <p><strong>{% translate "Fecha:" %}</strong> {{ meeting.date|date:"d/m/Y" }}</p>
+                                            <p><strong>{% translate "Hora:" %}</strong> {{ meeting.date|time:"H:i" }}</p>
+                                            <p><strong>{% translate "Duración:" %}</strong> {{ meeting.duration }} minutos</p>
                                         </div>
                                         <div class="col-md-6">
-                                            <p><strong>Estado:</strong> 
+                                            <p><strong>{% translate "Estado:" %}</strong> 
                                                 {% if meeting.status == 'scheduled' %}
-                                                    <span class="badge bg-info text-dark">Programada</span>
+                                                    <span class="badge bg-info text-dark">{% translate "Programada" %}</span>
                                                 {% elif meeting.status == 'in_progress' %}
-                                                    <span class="badge bg-warning text-dark">En Progreso</span>
+                                                    <span class="badge bg-warning text-dark">{% translate "En Progreso" %}</span>
                                                 {% elif meeting.status == 'finished' %}
-                                                    <span class="badge bg-success text-white">Finalizada</span>
+                                                    <span class="badge bg-success text-white">{% translate "Finalizada" %}</span>
                                                 {% elif meeting.status == 'cancelled' %}
-                                                    <span class="badge bg-danger text-white">Cancelada</span>
+                                                    <span class="badge bg-danger text-white">{% translate "Cancelada" %}</span>
                                                 {% endif %}
                                             </p>
-                                            <p><strong>Organizada por:</strong> {{ meeting.organizer.get_full_name|default:meeting.organizer.username }}</p>
+                                            <p><strong>{% translate "Organizada por:" %}</strong> {{ meeting.organizer.get_full_name|default:meeting.organizer.username }}</p>
                                             {% if meeting.company %}
-                                            <p><strong>Empresa:</strong> 
+                                            <p><strong>{% translate "Empresa:" %}</strong> 
                                                 <span class="badge bg-light text-dark">
                                                     <i class="fas fa-building"></i> {{ meeting.company.name }}
                                                 </span>
                                             </p>
                                             {% endif %}
-                                            <p><strong>Preguntas:</strong> 
+                                            <p><strong>{% translate "Preguntas:" %}</strong> 
                                                 {% if meeting.allow_questions %}
-                                                    <span class="badge bg-success text-white">Habilitadas</span>
+                                                    <span class="badge bg-success text-white">{% translate "Habilitadas" %}</span>
                                                 {% else %}
-                                                    <span class="badge bg-secondary text-white">Deshabilitadas</span>
+                                                    <span class="badge bg-secondary text-white">{% translate "Deshabilitadas" %}</span>
                                                 {% endif %}
                                             </p>
                                         </div>
@@ -75,7 +76,7 @@
                                     {% if meeting.description %}
                                     <div class="row">
                                         <div class="col-md-12">
-                                            <h6><strong>Descripción:</strong></h6>
+                                            <h6><strong>{% translate "Descripción:" %}</strong></h6>
                                             <p class="text-muted">{{ meeting.description|linebreaks }}</p>
                                         </div>
                                     </div>
@@ -86,7 +87,7 @@
                             <!-- Link público -->
                             <div class="card mb-4">
                                 <div class="card-header">
-                                    <h5 class="mb-0"><i class="fas fa-link"></i> Link Público</h5>
+                                    <h5 class="mb-0"><i class="fas fa-link"></i> {% translate "Link Público" %}</h5>
                                 </div>
                                 <div class="card-body">
                                     <div class="input-group">
@@ -96,12 +97,12 @@
                                         <div class="input-group-append">
                                             <button class="btn btn-outline-secondary" type="button" 
                                                     onclick="copyToClipboard('public-link')">
-                                                <i class="fas fa-copy"></i> Copiar
+                                                <i class="fas fa-copy"></i> {% translate "Copiar" %}
                                             </button>
                                         </div>
                                     </div>
                                     <small class="text-muted mt-2 d-block">
-                                        Comparte este link con los asistentes para que puedan registrarse y hacer preguntas
+                                        {% translate "Comparte este link con los asistentes para que puedan registrarse y hacer preguntas" %}
                                     </small>
                                 </div>
                             </div>
@@ -111,7 +112,7 @@
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0"><i class="fas fa-users"></i> Asistentes ({{ attendees.count }})</h5>
                                     <button class="btn btn-sm btn-outline-primary" onclick="refreshAttendees()">
-                                        <i class="fas fa-sync-alt"></i> Actualizar
+                                        <i class="fas fa-sync-alt"></i> {% translate "Actualizar" %}
                                     </button>
                                 </div>
                                 <div class="card-body" id="attendees-list">
@@ -120,10 +121,10 @@
                                             <table class="table table-sm">
                                                 <thead>
                                                     <tr>
-                                                        <th>Nombre</th>
-                                                        <th>Email</th>
-                                                        <th>Respuesta</th>
-                                                        <th>Fecha de Registro</th>
+                                                        <th>{% translate "Nombre" %}</th>
+                                                        <th>{% translate "Email" %}</th>
+                                                        <th>{% translate "Respuesta" %}</th>
+                                                        <th>{% translate "Fecha de Registro" %}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -134,15 +135,15 @@
                                                         <td>
                                                             {% if attendee.response_status == 'accepted' %}
                                                                 <span class="badge bg-success">
-                                                                    <i class="fas fa-check"></i> Aceptada
+                                                                    <i class="fas fa-check"></i> {% translate "Aceptada" %}
                                                                 </span>
                                                             {% elif attendee.response_status == 'declined' %}
                                                                 <span class="badge bg-danger">
-                                                                    <i class="fas fa-times"></i> Rechazada
+                                                                    <i class="fas fa-times"></i> {% translate "Rechazada" %}
                                                                 </span>
                                                             {% else %}
                                                                 <span class="badge bg-warning text-dark">
-                                                                    <i class="fas fa-clock"></i> Pendiente
+                                                                    <i class="fas fa-clock"></i> {% translate "Pendiente" %}
                                                                 </span>
                                                             {% endif %}
                                                         </td>
@@ -155,7 +156,7 @@
                                     {% else %}
                                         <div class="text-center py-3">
                                             <i class="fas fa-users fa-2x text-muted mb-2"></i>
-                                            <p class="text-muted">Aún no hay asistentes registrados</p>
+                                            <p class="text-muted">{% translate "Aún no hay asistentes registrados" %}</p>
                                         </div>
                                     {% endif %}
                                 </div>
@@ -166,9 +167,9 @@
                             <!-- Preguntas -->
                             <div class="card mb-4">
                                 <div class="card-header d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0"><i class="fas fa-question-circle"></i> Preguntas</h5>
+                                    <h5 class="mb-0"><i class="fas fa-question-circle"></i> {% translate "Preguntas" %}</h5>
                                     <button class="btn btn-sm btn-outline-primary" onclick="refreshQuestions()">
-                                        <i class="fas fa-sync-alt"></i> Actualizar
+                                        <i class="fas fa-sync-alt"></i> {% translate "Actualizar" %}
                                     </button>
                                 </div>
                                 <div class="card-body" id="questions-list" style="max-height: 400px; overflow-y: auto;">
@@ -185,9 +186,9 @@
                                                         <p class="mb-1">{{ question.question }}</p>
                                                         {% if question.answer %}
                                                             <div class="alert alert-success p-2 mb-0">
-                                                                <strong>Respuesta:</strong> {{ question.answer }}
+                                                                <strong>{% translate "Respuesta:" %}</strong> {{ question.answer }}
                                                                 <small class="text-muted d-block mt-1">
-                                                                    Respondida por 
+                                                                    {% translate "Respondida por" %} 
                                                                     {% if question.answered_by.first_name or question.answered_by.last_name %}
                                                                         {{ question.answered_by.first_name }} {{ question.answered_by.last_name }}
                                                                     {% else %}
@@ -199,11 +200,11 @@
                                                         {% else %}
                                                             <div class="mt-2">
                                                                 <input type="text" class="form-control form-control-sm" 
-                                                                       placeholder="Escribir respuesta..." 
+                                                                       placeholder="{% translate 'Escribir respuesta...' %}" 
                                                                        id="answer-{{ question.id }}">
                                                                 <button class="btn btn-sm btn-primary mt-1" 
                                                                         onclick="answerQuestion({{ question.id }})">
-                                                                    Responder
+                                                                    {% translate "Responder" %}
                                                                 </button>
                                                             </div>
                                                         {% endif %}
@@ -215,7 +216,7 @@
                                     {% else %}
                                         <div class="text-center py-3">
                                             <i class="fas fa-question-circle fa-2x text-muted mb-2"></i>
-                                            <p class="text-muted">No hay preguntas aún</p>
+                                            <p class="text-muted">{% translate "No hay preguntas aún" %}</p>
                                         </div>
                                     {% endif %}
                                 </div>
@@ -224,22 +225,22 @@
                             <!-- Estadísticas -->
                             <div class="card mb-4">
                                 <div class="card-header">
-                                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Estadísticas</h5>
+                                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> {% translate "Estadísticas" %}</h5>
                                 </div>
                                 <div class="card-body">
                                     <div class="text-center">
                                         <div class="row">
                                             <div class="col-4">
                                                 <h3 class="text-primary">{{ meeting.get_attendees_count }}</h3>
-                                                <small class="text-muted">Asistentes</small>
+                                                <small class="text-muted">{% translate "Asistentes" %}</small>
                                             </div>
                                             <div class="col-4">
                                                 <h3 class="text-info">{{ meeting.get_questions_count }}</h3>
-                                                <small class="text-muted">Preguntas</small>
+                                                <small class="text-muted">{% translate "Preguntas" %}</small>
                                             </div>
                                             <div class="col-4">
                                                 <h3 class="text-success">{{ access_stats.total_accesses }}</h3>
-                                                <small class="text-muted">Accesos totales</small>
+                                                <small class="text-muted">{% translate "Accesos totales" %}</small>
                                             </div>
                                         </div>
                                     </div>
@@ -249,11 +250,11 @@
                             <!-- Estadísticas de Acceso -->
                             <div class="card mb-4">
                                 <div class="card-header">
-                                    <h5 class="mb-0"><i class="fas fa-globe"></i> Estadísticas de Acceso</h5>
+                                    <h5 class="mb-0"><i class="fas fa-globe"></i> {% translate "Estadísticas de Acceso" %}</h5>
                                 </div>
                                 <div class="card-body">
                                     <!-- Por País -->
-                                    <h6 class="mb-3"><i class="fas fa-flag"></i> Por País</h6>
+                                    <h6 class="mb-3"><i class="fas fa-flag"></i> {% translate "Por País" %}</h6>
                                     {% if access_stats.by_country %}
                                         <div class="mb-3">
                                             {% for stat in access_stats.by_country %}
@@ -264,24 +265,24 @@
                                             {% endfor %}
                                         </div>
                                     {% else %}
-                                        <p class="text-muted small">No hay datos aún</p>
+                                        <p class="text-muted small">{% translate "No hay datos aún" %}</p>
                                     {% endif %}
 
                                     <hr>
 
                                     <!-- Por Dispositivo -->
-                                    <h6 class="mb-3"><i class="fas fa-mobile-alt"></i> Por Dispositivo</h6>
+                                    <h6 class="mb-3"><i class="fas fa-mobile-alt"></i> {% translate "Por Dispositivo" %}</h6>
                                     {% if access_stats.by_device %}
                                         <div class="mb-3">
                                             {% for stat in access_stats.by_device %}
                                             <div class="d-flex justify-content-between align-items-center mb-2">
                                                 <span>
                                                     {% if stat.device_type == 'mobile' %}
-                                                        <i class="fas fa-mobile-alt text-info"></i> Móvil
+                                                        <i class="fas fa-mobile-alt text-info"></i> {% translate "Móvil" %}
                                                     {% elif stat.device_type == 'tablet' %}
-                                                        <i class="fas fa-tablet-alt text-warning"></i> Tablet
+                                                        <i class="fas fa-tablet-alt text-warning"></i> {% translate "Tablet" %}
                                                     {% else %}
-                                                        <i class="fas fa-desktop text-primary"></i> Escritorio
+                                                        <i class="fas fa-desktop text-primary"></i> {% translate "Escritorio" %}
                                                     {% endif %}
                                                 </span>
                                                 <span class="badge bg-info">{{ stat.count }}</span>
@@ -289,13 +290,13 @@
                                             {% endfor %}
                                         </div>
                                     {% else %}
-                                        <p class="text-muted small">No hay datos aún</p>
+                                        <p class="text-muted small">{% translate "No hay datos aún" %}</p>
                                     {% endif %}
 
                                     <hr>
 
                                     <!-- Por Navegador -->
-                                    <h6 class="mb-3"><i class="fab fa-chrome"></i> Por Navegador</h6>
+                                    <h6 class="mb-3"><i class="fab fa-chrome"></i> {% translate "Por Navegador" %}</h6>
                                     {% if access_stats.by_browser %}
                                         <div class="mb-3">
                                             {% for stat in access_stats.by_browser %}
@@ -306,13 +307,13 @@
                                             {% endfor %}
                                         </div>
                                     {% else %}
-                                        <p class="text-muted small">No hay datos aún</p>
+                                        <p class="text-muted small">{% translate "No hay datos aún" %}</p>
                                     {% endif %}
 
                                     <hr>
 
                                     <!-- Últimos Accesos -->
-                                    <h6 class="mb-3"><i class="fas fa-clock"></i> Últimos Accesos</h6>
+                                    <h6 class="mb-3"><i class="fas fa-clock"></i> {% translate "Últimos Accesos" %}</h6>
                                     {% if access_logs %}
                                         <div style="max-height: 200px; overflow-y: auto;">
                                             {% for log in access_logs|slice:":10" %}
@@ -337,7 +338,7 @@
                                             {% endfor %}
                                         </div>
                                     {% else %}
-                                        <p class="text-muted small">No hay accesos registrados</p>
+                                        <p class="text-muted small">{% translate "No hay accesos registrados" %}</p>
                                     {% endif %}
                                 </div>
                             </div>

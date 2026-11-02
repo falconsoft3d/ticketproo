@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -6,11 +7,11 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
                     <a href="{% url 'training_plan_list' %}">
-                        <i class="bi bi-mortarboard"></i> Planes de Capacitación
+                        <i class="bi bi-mortarboard"></i> {% translate "Planes de Capacitación" %}
                     </a>
                 </li>
                 <li class="breadcrumb-item active">Plan #{{ plan.sequence }}</li>
@@ -22,17 +23,17 @@
     {% if user.is_staff or user.groups.all and user.groups.first.name == 'Agentes' %}
     <div class="dropdown">
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-            <i class="bi bi-gear"></i> Gestionar
+            <i class="bi bi-gear"></i> {% translate "Gestionar" %}
         </button>
         <ul class="dropdown-menu">
             <li>
                 <a class="dropdown-item" href="{% url 'training_plan_edit' plan.pk %}">
-                    <i class="bi bi-pencil"></i> Editar Plan
+                    <i class="bi bi-pencil"></i> {% translate "Editar Plan" %}
                 </a>
             </li>
             <li>
                 <a class="dropdown-item" href="{% url 'training_link_create' plan.pk %}">
-                    <i class="bi bi-plus-circle"></i> Agregar URL
+                    <i class="bi bi-plus-circle"></i> {% translate "Agregar URL" %}
                 </a>
             </li>
         </ul>
@@ -46,7 +47,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-info-circle"></i> Descripción
+                    <i class="bi bi-info-circle"></i> {% translate "Descripción" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -59,7 +60,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-graph-up"></i> Mi Progreso
+                    <i class="bi bi-graph-up"></i> {% translate "Mi Progreso" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -86,15 +87,15 @@
                     
                     {% if is_completed %}
                         <span class="badge bg-success fs-6">
-                            <i class="bi bi-check-circle"></i> ¡Completado!
+                            <i class="bi bi-check-circle"></i> {% translate "¡Completado!" %}
                         </span>
                     {% elif user_progress_percent > 0 %}
                         <span class="badge bg-warning fs-6">
-                            <i class="bi bi-clock"></i> En Progreso
+                            <i class="bi bi-clock"></i> {% translate "En Progreso" %}
                         </span>
                     {% else %}
                         <span class="badge bg-secondary fs-6">
-                            <i class="bi bi-circle"></i> Sin Empezar
+                            <i class="bi bi-circle"></i> {% translate "Sin Empezar" %}
                         </span>
                     {% endif %}
                 </div>
@@ -103,11 +104,11 @@
                 
                 <div class="row text-center">
                     <div class="col">
-                        <div class="text-muted small">Total</div>
+                        <div class="text-muted small">{% translate "Total" %}</div>
                         <div class="fw-bold">{{ total_links }}</div>
                     </div>
                     <div class="col">
-                        <div class="text-muted small">Completados</div>
+                        <div class="text-muted small">{% translate "Completados" %}</div>
                         <div class="fw-bold text-success">
                             {% widthratio user_progress_percent 100 total_links as completed %}
                             {{ completed|floatformat:0 }}
@@ -124,7 +125,7 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
-            <i class="bi bi-list-ul"></i> Recursos de Capacitación
+            <i class="bi bi-list-ul"></i> {% translate "Recursos de Capacitación" %}
         </h5>
         <span class="badge bg-primary">{{ total_links }} recurso{{ total_links|pluralize }}</span>
     </div>
@@ -149,9 +150,9 @@
                                 <h6 class="mb-1">
                                     {{ link.title }}
                                     {% if link.is_required %}
-                                        <span class="badge bg-danger ms-2">Obligatorio</span>
+                                        <span class="badge bg-danger ms-2">{% translate "Obligatorio" %}</span>
                                     {% else %}
-                                        <span class="badge bg-secondary ms-2">Opcional</span>
+                                        <span class="badge bg-secondary ms-2">{% translate "Opcional" %}</span>
                                     {% endif %}
                                 </h6>
                                 
@@ -160,7 +161,7 @@
                                 {% endif %}
                                 
                                 <a href="{{ link.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                    <i class="bi bi-link-45deg"></i> Ir al Recurso
+                                    <i class="bi bi-link-45deg"></i> {% translate "Ir al Recurso" %}
                                 </a>
                                 
                                 {% if link.is_completed %}
@@ -168,7 +169,7 @@
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-outline-warning btn-sm ms-2" 
                                                 onclick="return confirm('¿Marcar como pendiente?')">
-                                            <i class="bi bi-arrow-counterclockwise"></i> Marcar Pendiente
+                                            <i class="bi bi-arrow-counterclockwise"></i> {% translate "Marcar Pendiente" %}
                                         </button>
                                     </form>
                                 {% else %}
@@ -176,8 +177,8 @@
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-success btn-sm ms-2" 
                                                 onclick="return confirm('¿Marcar este recurso como completado?')"
-                                                title="Marcar como completado">
-                                            <i class="bi bi-check-circle"></i> Marcar Completado
+                                                title="{% translate 'Marcar como completado' %}">
+                                            <i class="bi bi-check-circle"></i> {% translate "Marcar Completado" %}
                                         </button>
                                     </form>
                                 {% endif %}
@@ -192,12 +193,12 @@
                                 <ul class="dropdown-menu">
                                     <li>
                                         <a class="dropdown-item" href="{% url 'training_link_edit' link.pk %}">
-                                            <i class="bi bi-pencil"></i> Editar
+                                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item text-danger" href="{% url 'training_link_delete' link.pk %}">
-                                            <i class="bi bi-trash"></i> Eliminar
+                                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                                         </a>
                                     </li>
                                 </ul>
@@ -212,11 +213,11 @@
         {% else %}
         <div class="text-center py-5">
             <i class="bi bi-link-45deg" style="font-size: 3rem; color: #dee2e6;"></i>
-            <h5 class="text-muted mt-3">No hay recursos en este plan</h5>
+            <h5 class="text-muted mt-3">{% translate "No hay recursos en este plan" %}</h5>
             
             {% if user.is_staff or user.groups.all and user.groups.first.name == 'Agentes' %}
             <a href="{% url 'training_link_create' plan.pk %}" class="btn btn-primary mt-3">
-                <i class="bi bi-plus-circle"></i> Agregar primer recurso
+                <i class="bi bi-plus-circle"></i> {% translate "Agregar primer recurso" %}
             </a>
             {% endif %}
         </div>

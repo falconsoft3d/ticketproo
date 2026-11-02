@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ title }} - TicketProo{% endblock %}
 
@@ -72,7 +73,7 @@
                             <div class="mb-3">
                                 <div class="input-group">
                                     <select class="form-select" id="user-selector">
-                                        <option value="">Seleccionar usuario para agregar...</option>
+                                        <option value="">{% translate "Seleccionar usuario para agregar..." %}</option>
                                         {% for user in form.assigned_users.field.queryset %}
                                         <option value="{{ user.id }}" 
                                                 data-username="{{ user.username }}" 
@@ -86,7 +87,7 @@
                                         {% endfor %}
                                     </select>
                                     <button type="button" class="btn btn-outline-primary" id="add-user-btn">
-                                        <i class="bi bi-plus-circle"></i> Agregar
+                                        <i class="bi bi-plus-circle"></i> {% translate "Agregar" %}
                                     </button>
                                 </div>
                             </div>
@@ -97,7 +98,7 @@
                                     <!-- Las etiquetas se agregarán aquí dinámicamente -->
                                 </div>
                                 <div id="no-users-message" class="text-center text-muted">
-                                    <i class="bi bi-info-circle"></i> No hay usuarios asignados. Usa el selector arriba para agregar usuarios.
+                                    <i class="bi bi-info-circle"></i> {% translate "No hay usuarios asignados. Usa el selector arriba para agregar usuarios." %}
                                 </div>
                             </div>
                             
@@ -125,11 +126,11 @@
                         <div class="col-md-12">
                             <div class="d-flex justify-content-between">
                                 <a href="{% url 'task_list' %}" class="btn btn-secondary">
-                                    <i class="bi bi-arrow-left"></i> Volver a la lista
+                                    <i class="bi bi-arrow-left"></i> {% translate "Volver a la lista" %}
                                 </a>
                                 <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-check-circle"></i> 
-                                    {% if task %}Actualizar Tarea{% else %}Crear Tarea{% endif %}
+                                    {% if task %}{% translate "Actualizar Tarea" %}{% else %}{% translate "Crear Tarea" %}{% endif %}
                                 </button>
                             </div>
                         </div>

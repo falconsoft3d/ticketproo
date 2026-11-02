@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}{% if is_edit %}Editar{% else %}Nueva{% endif %} Política de Privacidad{% endblock %}
+{% block title %}{% if is_edit %}{% translate "Editar" %}{% else %}{% translate "Nueva" %}{% endif %} {% translate "Política de Privacidad" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -12,19 +13,19 @@
                 <div class="col-md-8">
                     <h1>
                         <i class="bi bi-shield-check text-primary"></i> 
-                        {% if is_edit %}Editar{% else %}Nueva{% endif %} Política de Privacidad
+                        {% if is_edit %}{% translate "Editar" %}{% else %}{% translate "Nueva" %}{% endif %} {% translate "Política de Privacidad" %}
                     </h1>
                     <p class="mb-0">
                         {% if is_edit %}
                             Modifica la política "{{ policy.title }}"
                         {% else %}
-                            Crea una nueva política de privacidad
+                            {% translate "Crea una nueva política de privacidad" %}
                         {% endif %}
                     </p>
                 </div>
                 <div class="col-md-4 text-end">
                     <a href="{% url 'privacy_policy_list' %}" class="btn btn-light">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                 </div>
             </div>
@@ -37,7 +38,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-file-text"></i> Información de la Política
+                        <i class="bi bi-file-text"></i> {% translate "Información de la Política" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -95,11 +96,11 @@
                         <!-- Botones -->
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'privacy_policy_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i> 
-                                {% if is_edit %}Guardar Cambios{% else %}Crear Política{% endif %}
+                                {% if is_edit %}{% translate "Guardar Cambios" %}{% else %}{% translate "Crear Política" %}{% endif %}
                             </button>
                         </div>
                     </form>
@@ -111,22 +112,22 @@
             <div class="card mt-4">
                 <div class="card-header bg-success text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-link-45deg"></i> URL Pública
+                        <i class="bi bi-link-45deg"></i> {% translate "URL Pública" %}
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p>Esta política está visible públicamente en:</p>
+                    <p>{% translate "Esta política está visible públicamente en:" %}</p>
                     <div class="input-group">
                         <input type="text" class="form-control" 
                                value="{{ request.scheme }}://{{ request.get_host }}{% url 'public_privacy_policy' policy.slug %}" 
                                id="publicUrl" readonly>
                         <button class="btn btn-outline-success" type="button" 
                                 onclick="copyUrl()">
-                            <i class="bi bi-clipboard"></i> Copiar
+                            <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                         </button>
                         <a href="{% url 'public_privacy_policy' policy.slug %}" 
                            class="btn btn-outline-primary" target="_blank">
-                            <i class="bi bi-box-arrow-up-right"></i> Abrir
+                            <i class="bi bi-box-arrow-up-right"></i> {% translate "Abrir" %}
                         </a>
                     </div>
                 </div>

@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Nueva Gestión de Tareas - TicketProo{% endblock %}
+{% block title %}{% translate "Nueva Gestión de Tareas - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -8,7 +9,7 @@
         <div class="card">
             <div class="card-header">
                 <h4 class="mb-0">
-                    <i class="bi bi-plus-circle"></i> Nueva Gestión de Tareas
+                    <i class="bi bi-plus-circle"></i> {% translate "Nueva Gestión de Tareas" %}
                 </h4>
             </div>
             <div class="card-body">
@@ -17,7 +18,7 @@
                     
                     <div class="mb-3">
                         <label for="date" class="form-label">
-                            <i class="bi bi-calendar"></i> Fecha de la Gestión
+                            <i class="bi bi-calendar"></i> {% translate "Fecha de la Gestión" %}
                         </label>
                         <input type="date" 
                                class="form-control" 
@@ -26,13 +27,13 @@
                                value="{{ request.POST.date|default:today }}"
                                required>
                         <div class="form-text">
-                            Selecciona la fecha para la cual quieres crear esta gestión de tareas.
+                            {% translate "Selecciona la fecha para la cual quieres crear esta gestión de tareas." %}
                         </div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="notes" class="form-label">
-                            <i class="bi bi-journal-text"></i> Notas (Opcional)
+                            <i class="bi bi-journal-text"></i> {% translate "Notas (Opcional)" %}
                         </label>
                         <textarea class="form-control" 
                                   id="notes" 
@@ -40,28 +41,28 @@
                                   rows="3"
                                   placeholder="Agrega notas sobre esta gestión de tareas...">{{ request.POST.notes }}</textarea>
                         <div class="form-text">
-                            Ejemplo: "Revisión semanal", "Tareas urgentes", "Plan de fin de mes", etc.
+                            {% translate 'Ejemplo: "Revisión semanal", "Tareas urgentes", "Plan de fin de mes", etc.' %}
                         </div>
                     </div>
                     
                     <div class="alert alert-info">
                         <h6 class="alert-heading">
-                            <i class="bi bi-info-circle"></i> ¿Qué sucederá al crear esta gestión?
+                            <i class="bi bi-info-circle"></i> {% translate "¿Qué sucederá al crear esta gestión?" %}
                         </h6>
                         <ul class="mb-0">
-                            <li>Se cargarán <strong>todas las tareas que tienes asignadas</strong> (sin importar la fecha)</li>
-                            <li>Solo se incluirán tareas que no estén <strong>completadas o canceladas</strong></li>
-                            <li>Podrás marcar cada tarea como completada tipo <strong>checklist</strong></li>
-                            <li>Puedes crear <strong>múltiples gestiones por día</strong> si lo necesitas</li>
+                            <li>{% translate "Se cargarán" %} <strong>{% translate "todas las tareas que tienes asignadas" %}</strong> {% translate "(sin importar la fecha)" %}</li>
+                            <li>{% translate "Solo se incluirán tareas que no estén" %} <strong>{% translate "completadas o canceladas" %}</strong></li>
+                            <li>{% translate "Podrás marcar cada tarea como completada tipo" %} <strong>{% translate "checklist" %}</strong></li>
+                            <li>{% translate "Puedes crear" %} <strong>{% translate "múltiples gestiones por día" %}</strong> {% translate "si lo necesitas" %}</li>
                         </ul>
                     </div>
                     
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'daily_task_management' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Cancelar
+                            <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                         </a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-circle"></i> Crear Gestión de Tareas
+                            <i class="bi bi-check-circle"></i> {% translate "Crear Gestión de Tareas" %}
                         </button>
                     </div>
                 </form>

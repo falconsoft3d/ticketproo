@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -10,7 +11,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <h2><i class="bi bi-calculator me-2"></i>{{ page_title }}</h2>
                 <a href="{% url 'budget_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle me-1"></i>Nuevo Presupuesto
+                    <i class="bi bi-plus-circle me-1"></i>{% translate "Nuevo Presupuesto" %}
                 </a>
             </div>
         </div>
@@ -31,11 +32,11 @@
                         </div>
                         <div>
                             {% if budget.is_private %}
-                            <span class="badge bg-warning text-dark" title="Presupuesto Privado">
+                            <span class="badge bg-warning text-dark" title="{% translate 'Presupuesto Privado' %}">
                                 <i class="bi bi-lock-fill"></i>
                             </span>
                             {% else %}
-                            <span class="badge bg-success" title="Presupuesto Público">
+                            <span class="badge bg-success" title="{% translate 'Presupuesto Público' %}">
                                 <i class="bi bi-unlock-fill"></i>
                             </span>
                             {% endif %}
@@ -50,7 +51,7 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="text-success"><i class="bi bi-arrow-up-circle me-1"></i>Ingresos:</span>
+                            <span class="text-success"><i class="bi bi-arrow-up-circle me-1"></i>{% translate "Ingresos:" %}</span>
                             <strong class="text-success">€{{ budget.get_total_income_budget|floatformat:2 }}</strong>
                         </div>
                         <div class="progress mb-2" style="height: 8px;">
@@ -66,7 +67,7 @@
                     
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="text-danger"><i class="bi bi-arrow-down-circle me-1"></i>Egresos:</span>
+                            <span class="text-danger"><i class="bi bi-arrow-down-circle me-1"></i>{% translate "Egresos:" %}</span>
                             <strong class="text-danger">€{{ budget.get_total_expense_budget|floatformat:2 }}</strong>
                         </div>
                         <div class="progress mb-2" style="height: 8px;">
@@ -84,7 +85,7 @@
                     {% with net_actual=budget.get_total_income_actual|add:"-"|add:budget.get_total_expense_actual %}
                     <div class="border-top pt-3">
                         <div class="d-flex justify-content-between align-items-center">
-                            <span><i class="bi bi-wallet2 me-1"></i>Balance:</span>
+                            <span><i class="bi bi-wallet2 me-1"></i>{% translate "Balance:" %}</span>
                             <strong class="{% if net_actual >= 0 %}text-success{% else %}text-danger{% endif %}">
                                 €{{ net_actual|floatformat:2 }}
                             </strong>
@@ -96,7 +97,7 @@
                 <div class="card-footer bg-light">
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'budget_detail' budget.pk %}" class="btn btn-sm btn-primary">
-                            <i class="bi bi-eye me-1"></i>Ver Detalle
+                            <i class="bi bi-eye me-1"></i>{% translate "Ver Detalle" %}
                         </a>
                         {% if budget.user == request.user %}
                         <div>
@@ -119,8 +120,8 @@
         <div class="col-12">
             <div class="alert alert-info text-center">
                 <i class="bi bi-info-circle me-2"></i>
-                No tienes presupuestos creados. 
-                <a href="{% url 'budget_create' %}" class="alert-link">Crea tu primer presupuesto</a>
+                {% translate "No tienes presupuestos creados." %} 
+                <a href="{% url 'budget_create' %}" class="alert-link">{% translate "Crea tu primer presupuesto" %}</a>
             </div>
         </div>
     </div>

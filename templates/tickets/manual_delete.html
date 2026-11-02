@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Eliminar Manual{% endblock %}
+{% block title %}{% translate "Eliminar Manual" %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -9,26 +10,26 @@
         <div class="col-md-6">
             <div class="card border-danger shadow-sm">
                 <div class="card-header bg-danger text-white">
-                    <h4 class="mb-0"><i class="bi bi-trash"></i> Eliminar Manual</h4>
+                    <h4 class="mb-0"><i class="bi bi-trash"></i> {% translate "Eliminar Manual" %}</h4>
                 </div>
                 <div class="card-body p-4">
-                    <p class="lead">¿Estás seguro de que deseas eliminar el siguiente manual?</p>
+                    <p class="lead">{% translate "¿Estás seguro de que deseas eliminar el siguiente manual?" %}</p>
                     <div class="alert alert-warning">
                         <strong><i class="bi bi-book"></i> {{ manual.title }}</strong>
                         {% if manual.description %}
                         <br><small class="text-muted">{{ manual.description|truncatewords:20 }}</small>
                         {% endif %}
                     </div>
-                    <p class="text-muted small">Esta acción no se puede deshacer.</p>
+                    <p class="text-muted small">{% translate "Esta acción no se puede deshacer." %}</p>
 
                     <form method="post">
                         {% csrf_token %}
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Sí, eliminar
+                                <i class="bi bi-trash"></i> {% translate "Sí, eliminar" %}
                             </button>
                             <a href="{% url 'manual_list' %}" class="btn btn-outline-secondary">
-                                Cancelar
+                                {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>

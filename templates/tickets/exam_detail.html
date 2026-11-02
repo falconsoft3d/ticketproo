@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ exam.title }}{% endblock %}
@@ -10,15 +11,15 @@
         <div class="col-md-8">
             <div class="d-flex align-items-center mb-3">
                 <a href="{% url 'exam_list' %}" class="btn btn-outline-secondary me-3">
-                    <i class="bi bi-arrow-left"></i> Volver
+                    <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                 </a>
                 <div>
                     <h1 class="mb-0">{{ exam.title }}</h1>
                     <div class="mt-1">
                         {% if exam.is_public %}
-                            <span class="badge bg-success me-2">Público</span>
+                            <span class="badge bg-success me-2">{% translate "Público" %}</span>
                         {% else %}
-                            <span class="badge bg-secondary me-2">Privado</span>
+                            <span class="badge bg-secondary me-2">{% translate "Privado" %}</span>
                         {% endif %}
                         <span class="text-muted">por {{ exam.created_by.get_full_name|default:exam.created_by.username }}</span>
                     </div>
@@ -35,17 +36,17 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información del Examen</h6>
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> {% translate "Información del Examen" %}</h6>
                 </div>
                 <div class="card-body">
                     <div class="row text-center">
                         <div class="col-6">
                             <div class="fw-bold fs-4 text-primary">{{ questions.count }}</div>
-                            <small class="text-muted">Preguntas</small>
+                            <small class="text-muted">{% translate "Preguntas" %}</small>
                         </div>
                         <div class="col-6">
                             <div class="fw-bold fs-4 text-success">{{ exam.passing_score }}%</div>
-                            <small class="text-muted">Mínimo</small>
+                            <small class="text-muted">{% translate "Mínimo" %}</small>
                         </div>
                     </div>
                     
@@ -53,14 +54,14 @@
                     <hr>
                     <div class="text-center">
                         <div class="fw-bold fs-5 text-warning">{{ exam.time_limit }}</div>
-                        <small class="text-muted">Minutos límite</small>
+                        <small class="text-muted">{% translate "Minutos límite" %}</small>
                     </div>
                     {% endif %}
                     
                     <hr>
                     <div class="text-center">
                         <div class="fw-bold">{{ attempts.count }}</div>
-                        <small class="text-muted">Intentos realizados</small>
+                        <small class="text-muted">{% translate "Intentos realizados" %}</small>
                     </div>
                 </div>
             </div>
@@ -75,13 +76,13 @@
                     <div class="row align-items-center">
                         <div class="col-md-8">
                             {% if questions.count > 0 %}
-                                <h5 class="mb-1">¿Listo para tomar el examen?</h5>
+                                <h5 class="mb-1">{% translate "¿Listo para tomar el examen?" %}</h5>
                                 <p class="text-muted mb-2">
                                     El examen tiene {{ questions.count }} pregunta{{ questions.count|pluralize }} 
                                     {% if exam.time_limit %}
                                     y debes completarlo en {{ exam.time_limit }} minutos.
                                     {% else %}
-                                    sin límite de tiempo.
+                                    {% translate "sin límite de tiempo." %}
                                     {% endif %}
                                     Necesitas {{ exam.passing_score }}% para aprobar.
                                 </p>
@@ -91,17 +92,17 @@
                                     <div class="d-flex align-items-center">
                                         <i class="bi {% if user_last_attempt.passed %}bi-check-circle{% else %}bi-exclamation-triangle{% endif %} me-2"></i>
                                         <div>
-                                            <strong>Tu última puntuación:</strong> {{ user_last_attempt.score|floatformat:1 }}%
+                                            <strong>{% translate "Tu última puntuación:" %}</strong> {{ user_last_attempt.score|floatformat:1 }}%
                                             {% if user_last_attempt.passed %}
-                                                <span class="badge bg-success ms-2">APROBADO</span>
+                                                <span class="badge bg-success ms-2">{% translate "APROBADO" %}</span>
                                             {% else %}
-                                                <span class="badge bg-warning ms-2">REPROBADO</span>
+                                                <span class="badge bg-warning ms-2">{% translate "REPROBADO" %}</span>
                                             {% endif %}
                                             <br>
                                             <small class="text-muted">
                                                 Realizado el {{ user_last_attempt.completed_at|date:"d/m/Y H:i" }}
                                                 {% if not user_last_attempt.passed %}
-                                                - Puedes volver a intentar
+                                                {% translate "- Puedes volver a intentar" %}
                                                 {% endif %}
                                             </small>
                                         </div>
@@ -109,25 +110,25 @@
                                 </div>
                                 {% endif %}
                             {% else %}
-                                <h5 class="mb-1 text-warning">Examen en construcción</h5>
-                                <p class="text-muted mb-0">Este examen aún no tiene preguntas. Los agentes deben agregar preguntas antes de que se pueda tomar.</p>
+                                <h5 class="mb-1 text-warning">{% translate "Examen en construcción" %}</h5>
+                                <p class="text-muted mb-0">{% translate "Este examen aún no tiene preguntas. Los agentes deben agregar preguntas antes de que se pueda tomar." %}</p>
                             {% endif %}
                         </div>
                         <div class="col-md-4 text-end">
                             {% if questions.count > 0 %}
                                 <a href="{% url 'exam_take_authenticated' exam.pk %}" class="btn btn-success btn-lg">
                                     <i class="bi bi-play-circle"></i> 
-                                    {% if user_last_attempt %}Reintentar{% else %}Tomar{% endif %} Examen
+                                    {% if user_last_attempt %}{% translate "Reintentar" %}{% else %}{% translate "Tomar" %}{% endif %} {% translate "Examen" %}
                                 </a>
                             {% endif %}
                             
                             {% if can_edit %}
                                 <div class="mt-2">
                                     <a href="{% url 'exam_edit' exam.pk %}" class="btn btn-outline-primary btn-sm me-2">
-                                        <i class="bi bi-pencil"></i> Editar
+                                        <i class="bi bi-pencil"></i> {% translate "Editar" %}
                                     </a>
                                     <a href="{% url 'question_create' exam.pk %}" class="btn btn-outline-success btn-sm">
-                                        <i class="bi bi-plus"></i> Agregar Pregunta
+                                        <i class="bi bi-plus"></i> {% translate "Agregar Pregunta" %}
                                     </a>
                                 </div>
                             {% endif %}
@@ -144,19 +145,19 @@
         <div class="col-12">
             <div class="card border-success">
                 <div class="card-header bg-success text-white">
-                    <h6 class="mb-0"><i class="bi bi-globe"></i> Examen Público</h6>
+                    <h6 class="mb-0"><i class="bi bi-globe"></i> {% translate "Examen Público" %}</h6>
                 </div>
                 <div class="card-body">
-                    <p class="mb-2">Este examen es público y puede ser tomado por cualquier persona usando el siguiente enlace:</p>
+                    <p class="mb-2">{% translate "Este examen es público y puede ser tomado por cualquier persona usando el siguiente enlace:" %}</p>
                     <div class="input-group">
                         <input type="text" class="form-control" 
                                value="{{ request.build_absolute_uri }}exam/{{ exam.public_token }}/" 
                                readonly id="publicExamUrl">
                         <button class="btn btn-success" type="button" onclick="copyToClipboard('publicExamUrl')">
-                            <i class="bi bi-clipboard"></i> Copiar Enlace
+                            <i class="bi bi-clipboard"></i> {% translate "Copiar Enlace" %}
                         </button>
                     </div>
-                    <small class="text-muted">Los participantes deberán proporcionar su nombre y email antes de comenzar.</small>
+                    <small class="text-muted">{% translate "Los participantes deberán proporcionar su nombre y email antes de comenzar." %}</small>
                 </div>
             </div>
         </div>
@@ -168,10 +169,10 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-list-ol"></i> Preguntas del Examen</h5>
+                    <h5 class="mb-0"><i class="bi bi-list-ol"></i> {% translate "Preguntas del Examen" %}</h5>
                     {% if can_edit %}
                     <a href="{% url 'question_create' exam.pk %}" class="btn btn-success btn-sm">
-                        <i class="bi bi-plus-circle"></i> Agregar Pregunta
+                        <i class="bi bi-plus-circle"></i> {% translate "Agregar Pregunta" %}
                     </a>
                     {% endif %}
                 </div>
@@ -192,9 +193,9 @@
                                                 <input class="form-check-input" type="radio" disabled 
                                                        {% if question.correct_option == 'A' and can_edit %}checked{% endif %}>
                                                 <label class="form-check-label">
-                                                    <strong>A)</strong> {{ question.option_a }}
+                                                    <strong>{% translate "A)" %}</strong> {{ question.option_a }}
                                                     {% if question.correct_option == 'A' and can_edit %}
-                                                        <span class="badge bg-success ms-2">Correcta</span>
+                                                        <span class="badge bg-success ms-2">{% translate "Correcta" %}</span>
                                                     {% endif %}
                                                 </label>
                                             </div>
@@ -204,9 +205,9 @@
                                                 <input class="form-check-input" type="radio" disabled 
                                                        {% if question.correct_option == 'B' and can_edit %}checked{% endif %}>
                                                 <label class="form-check-label">
-                                                    <strong>B)</strong> {{ question.option_b }}
+                                                    <strong>{% translate "B)" %}</strong> {{ question.option_b }}
                                                     {% if question.correct_option == 'B' and can_edit %}
-                                                        <span class="badge bg-success ms-2">Correcta</span>
+                                                        <span class="badge bg-success ms-2">{% translate "Correcta" %}</span>
                                                     {% endif %}
                                                 </label>
                                             </div>
@@ -216,9 +217,9 @@
                                                 <input class="form-check-input" type="radio" disabled 
                                                        {% if question.correct_option == 'C' and can_edit %}checked{% endif %}>
                                                 <label class="form-check-label">
-                                                    <strong>C)</strong> {{ question.option_c }}
+                                                    <strong>{% translate "C)" %}</strong> {{ question.option_c }}
                                                     {% if question.correct_option == 'C' and can_edit %}
-                                                        <span class="badge bg-success ms-2">Correcta</span>
+                                                        <span class="badge bg-success ms-2">{% translate "Correcta" %}</span>
                                                     {% endif %}
                                                 </label>
                                             </div>
@@ -244,17 +245,17 @@
                     {% else %}
                         <div class="text-center py-4">
                             <i class="bi bi-question-circle display-4 text-muted"></i>
-                            <h5 class="mt-3">No hay preguntas</h5>
+                            <h5 class="mt-3">{% translate "No hay preguntas" %}</h5>
                             <p class="text-muted">
                                 {% if can_edit %}
-                                Agrega la primera pregunta para completar el examen.
+                                {% translate "Agrega la primera pregunta para completar el examen." %}
                                 {% else %}
-                                Las preguntas serán agregadas por los agentes del sistema.
+                                {% translate "Las preguntas serán agregadas por los agentes del sistema." %}
                                 {% endif %}
                             </p>
                             {% if can_edit %}
                             <a href="{% url 'question_create' exam.pk %}" class="btn btn-primary">
-                                <i class="bi bi-plus-circle"></i> Agregar Primera Pregunta
+                                <i class="bi bi-plus-circle"></i> {% translate "Agregar Primera Pregunta" %}
                             </a>
                             {% endif %}
                         </div>
@@ -273,15 +274,15 @@
                     <h5 class="mb-0">
                         <i class="bi bi-clock-history"></i> 
                         {% if can_edit %}
-                            Últimos Intentos (Todos)
+                            {% translate "Últimos Intentos (Todos)" %}
                         {% else %}
-                            Mis Intentos
+                            {% translate "Mis Intentos" %}
                         {% endif %}
                     </h5>
                     {% if can_edit %}
-                        <small class="text-muted">Mostrando los últimos 10 intentos de todos los usuarios</small>
+                        <small class="text-muted">{% translate "Mostrando los últimos 10 intentos de todos los usuarios" %}</small>
                     {% else %}
-                        <small class="text-muted">Mostrando tus últimos 5 intentos</small>
+                        <small class="text-muted">{% translate "Mostrando tus últimos 5 intentos" %}</small>
                     {% endif %}
                 </div>
                 <div class="card-body">
@@ -291,18 +292,18 @@
                             <thead>
                                 <tr>
                                     {% if can_edit %}
-                                    <th>Participante</th>
-                                    <th>Email</th>
-                                    <th>Puntuación</th>
-                                    <th>Estado</th>
-                                    <th>Fecha</th>
-                                    <th>Tiempo</th>
-                                    <th>Acciones</th>
+                                    <th>{% translate "Participante" %}</th>
+                                    <th>{% translate "Email" %}</th>
+                                    <th>{% translate "Puntuación" %}</th>
+                                    <th>{% translate "Estado" %}</th>
+                                    <th>{% translate "Fecha" %}</th>
+                                    <th>{% translate "Tiempo" %}</th>
+                                    <th>{% translate "Acciones" %}</th>
                                     {% else %}
-                                    <th>Puntuación</th>
-                                    <th>Estado</th>
-                                    <th>Fecha</th>
-                                    <th>Tiempo</th>
+                                    <th>{% translate "Puntuación" %}</th>
+                                    <th>{% translate "Estado" %}</th>
+                                    <th>{% translate "Fecha" %}</th>
+                                    <th>{% translate "Tiempo" %}</th>
                                     {% endif %}
                                 </tr>
                             </thead>
@@ -321,9 +322,9 @@
                                     </td>
                                     <td>
                                         {% if attempt.passed %}
-                                            <span class="badge bg-success">Aprobado</span>
+                                            <span class="badge bg-success">{% translate "Aprobado" %}</span>
                                         {% else %}
-                                            <span class="badge bg-danger">Reprobado</span>
+                                            <span class="badge bg-danger">{% translate "Reprobado" %}</span>
                                         {% endif %}
                                     </td>
                                     {% if can_edit %}
@@ -341,7 +342,7 @@
                                     {% if can_edit %}
                                     <td>
                                         <a href="{% url 'exam_results' attempt.id %}" class="btn btn-outline-primary btn-sm">
-                                            <i class="bi bi-eye"></i> Ver
+                                            <i class="bi bi-eye"></i> {% translate "Ver" %}
                                         </a>
                                     </td>
                                     {% endif %}
@@ -355,16 +356,16 @@
                         <i class="bi bi-clock-history display-4 text-muted"></i>
                         <h5 class="mt-3">
                             {% if can_edit %}
-                                No hay intentos registrados
+                                {% translate "No hay intentos registrados" %}
                             {% else %}
-                                Aún no has tomado este examen
+                                {% translate "Aún no has tomado este examen" %}
                             {% endif %}
                         </h5>
                         <p class="text-muted">
                             {% if can_edit %}
-                                Los intentos aparecerán aquí cuando los usuarios tomen el examen.
+                                {% translate "Los intentos aparecerán aquí cuando los usuarios tomen el examen." %}
                             {% else %}
-                                Tus intentos aparecerán aquí después de tomar el examen.
+                                {% translate "Tus intentos aparecerán aquí después de tomar el examen." %}
                             {% endif %}
                         </p>
                     </div>

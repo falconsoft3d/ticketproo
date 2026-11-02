@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -30,14 +31,14 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2><i class="bi bi-robot text-primary"></i> {{ title }}</h2>
-                    <p class="text-muted">Historial completo de análisis de IA para el formulario: <strong>{{ form.title }}</strong></p>
+                    <p class="text-muted">{% translate "Historial completo de análisis de IA para el formulario:" %} <strong>{{ form.title }}</strong></p>
                 </div>
                 <div>
                     <a href="{% url 'form_detail' form.pk %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver al Formulario
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver al Formulario" %}
                     </a>
                     <a href="{% url 'form_ai_analysis' form.pk %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Nuevo Análisis
+                        <i class="bi bi-plus-circle"></i> {% translate "Nuevo Análisis" %}
                     </a>
                 </div>
             </div>
@@ -48,7 +49,7 @@
                     <div class="card bg-primary text-white">
                         <div class="card-body text-center">
                             <h4>{{ form.responses.count }}</h4>
-                            <small>Respuestas Totales</small>
+                            <small>{% translate "Respuestas Totales" %}</small>
                         </div>
                     </div>
                 </div>
@@ -56,7 +57,7 @@
                     <div class="card bg-info text-white">
                         <div class="card-body text-center">
                             <h4>{{ analyses.count }}</h4>
-                            <small>Análisis Realizados</small>
+                            <small>{% translate "Análisis Realizados" %}</small>
                         </div>
                     </div>
                 </div>
@@ -64,7 +65,7 @@
                     <div class="card bg-success text-white">
                         <div class="card-body text-center">
                             <h4>{{ form.get_average_score|floatformat:1 }}/10</h4>
-                            <small>Puntuación Promedio</small>
+                            <small>{% translate "Puntuación Promedio" %}</small>
                         </div>
                     </div>
                 </div>
@@ -73,10 +74,10 @@
                         <div class="card-body text-center">
                             {% if analyses.first %}
                                 <h4>{{ analyses.first.overall_score }}/10</h4>
-                                <small>Último Análisis IA</small>
+                                <small>{% translate "Último Análisis IA" %}</small>
                             {% else %}
                                 <h4>--</h4>
-                                <small>Sin Análisis</small>
+                                <small>{% translate "Sin Análisis" %}</small>
                             {% endif %}
                         </div>
                     </div>
@@ -106,31 +107,31 @@
                                         <div class="col-4">
                                             <div class="border-end">
                                                 <h5 class="text-danger">{{ analysis.get_problems_count }}</h5>
-                                                <small class="text-muted">Problemas</small>
+                                                <small class="text-muted">{% translate "Problemas" %}</small>
                                             </div>
                                         </div>
                                         <div class="col-4">
                                             <div class="border-end">
                                                 <h5 class="text-success">{{ analysis.get_improvements_count }}</h5>
-                                                <small class="text-muted">Mejoras</small>
+                                                <small class="text-muted">{% translate "Mejoras" %}</small>
                                             </div>
                                         </div>
                                         <div class="col-4">
                                             <h5 class="text-info">{{ analysis.total_responses }}</h5>
-                                            <small class="text-muted">Respuestas</small>
+                                            <small class="text-muted">{% translate "Respuestas" %}</small>
                                         </div>
                                     </div>
                                     
                                     <!-- Recomendación principal -->
                                     <div class="mb-3">
-                                        <h6><i class="bi bi-lightbulb text-warning"></i> Recomendación Principal:</h6>
+                                        <h6><i class="bi bi-lightbulb text-warning"></i> {% translate "Recomendación Principal:" %}</h6>
                                         <p class="text-muted small">{{ analysis.main_recommendation|truncatewords:20 }}</p>
                                     </div>
                                     
                                     <!-- Fortalezas -->
                                     {% if analysis.strengths %}
                                         <div class="mb-3">
-                                            <h6><i class="bi bi-check-circle text-success"></i> Fortalezas:</h6>
+                                            <h6><i class="bi bi-check-circle text-success"></i> {% translate "Fortalezas:" %}</h6>
                                             <div class="d-flex flex-wrap gap-1">
                                                 {% for strength in analysis.strengths|slice:":3" %}
                                                     <span class="badge bg-success bg-opacity-25 text-success">{{ strength }}</span>
@@ -146,7 +147,7 @@
                                     <div class="d-grid">
                                         <a href="{% url 'form_ai_analysis_detail' form.pk analysis.pk %}" 
                                            class="btn btn-outline-primary">
-                                            <i class="bi bi-eye"></i> Ver Análisis Completo
+                                            <i class="bi bi-eye"></i> {% translate "Ver Análisis Completo" %}
                                         </a>
                                     </div>
                                 </div>
@@ -158,10 +159,10 @@
                 <!-- Estado vacío -->
                 <div class="text-center py-5">
                     <i class="bi bi-robot display-1 text-muted"></i>
-                    <h4 class="mt-3">No hay análisis de IA</h4>
-                    <p class="text-muted">Este formulario aún no tiene análisis realizados con inteligencia artificial.</p>
+                    <h4 class="mt-3">{% translate "No hay análisis de IA" %}</h4>
+                    <p class="text-muted">{% translate "Este formulario aún no tiene análisis realizados con inteligencia artificial." %}</p>
                     <a href="{% url 'form_ai_analysis' form.pk %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Realizar Primer Análisis
+                        <i class="bi bi-plus-circle"></i> {% translate "Realizar Primer Análisis" %}
                     </a>
                 </div>
             {% endif %}

@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load crm_tags %}
 
-{% block title %}CRM Dashboard - TicketProo{% endblock %}
+{% block title %}{% translate "CRM Dashboard - TicketProo" %}{% endblock %}
 
 {% block content %}
 <style>
@@ -50,10 +51,10 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>
                     <i class="bi bi-graph-up-arrow text-primary"></i>
-                    CRM Dashboard
+                    {% translate "CRM Dashboard" %}
                 </h2>
                 <a href="{% url 'opportunity_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Nueva Oportunidad
+                    <i class="bi bi-plus-circle"></i> {% translate "Nueva Oportunidad" %}
                 </a>
             </div>
         </div>
@@ -67,8 +68,8 @@
                     <div class="card-body text-center">
                         <i class="bi bi-bar-chart fs-1"></i>
                         <h3 class="mt-2">{{ total_opportunities }}</h3>
-                        <p class="mb-0">Total Oportunidades</p>
-                        <small class="opacity-75">Clic para ver todas</small>
+                        <p class="mb-0">{% translate "Total Oportunidades" %}</p>
+                        <small class="opacity-75">{% translate "Clic para ver todas" %}</small>
                     </div>
                 </div>
             </a>
@@ -79,8 +80,8 @@
                     <div class="card-body text-center">
                         <i class="bi {% get_currency_icon %} fs-1"></i>
                         <h3 class="mt-2">{{ total_value|format_currency }}</h3>
-                        <p class="mb-0">Valor Total</p>
-                        <small class="opacity-75">Ordenar por valor</small>
+                        <p class="mb-0">{% translate "Valor Total" %}</p>
+                        <small class="opacity-75">{% translate "Ordenar por valor" %}</small>
                     </div>
                 </div>
             </a>
@@ -91,8 +92,8 @@
                     <div class="card-body text-center">
                         <i class="bi bi-target fs-1"></i>
                         <h3 class="mt-2">{{ total_expected_value|format_currency }}</h3>
-                        <p class="mb-0">Valor Esperado</p>
-                        <small class="opacity-75">Por probabilidad</small>
+                        <p class="mb-0">{% translate "Valor Esperado" %}</p>
+                        <small class="opacity-75">{% translate "Por probabilidad" %}</small>
                     </div>
                 </div>
             </a>
@@ -103,8 +104,8 @@
                     <div class="card-body text-center">
                         <i class="bi bi-exclamation-triangle fs-1"></i>
                         <h3 class="mt-2">{{ overdue_opportunities }}</h3>
-                        <p class="mb-0">Vencidas</p>
-                        <small class="opacity-75">Requieren atención</small>
+                        <p class="mb-0">{% translate "Vencidas" %}</p>
+                        <small class="opacity-75">{% translate "Requieren atención" %}</small>
                     </div>
                 </div>
             </a>
@@ -117,7 +118,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-kanban"></i> Pipeline de Ventas
+                        <i class="bi bi-kanban"></i> {% translate "Pipeline de Ventas" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -136,12 +137,12 @@
                                                 <div class="col-6">
                                                     <div class="border-end">
                                                         <h4 class="mb-0">{{ stats.count }}</h4>
-                                                        <small class="text-muted">Oportunidades</small>
+                                                        <small class="text-muted">{% translate "Oportunidades" %}</small>
                                                     </div>
                                                 </div>
                                                 <div class="col-6">
                                                     <h4 class="mb-0">{{ stats.value|format_currency }}</h4>
-                                                    <small class="text-muted">Valor</small>
+                                                    <small class="text-muted">{% translate "Valor" %}</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -153,9 +154,9 @@
                     {% else %}
                         <div class="text-center py-4">
                             <i class="bi bi-info-circle text-muted fs-1"></i>
-                            <p class="text-muted mt-2">No hay estados de oportunidades configurados.</p>
+                            <p class="text-muted mt-2">{% translate "No hay estados de oportunidades configurados." %}</p>
                             <a href="{% url 'opportunity_status_create' %}" class="btn btn-outline-primary">
-                                Crear primer estado
+                                {% translate "Crear primer estado" %}
                             </a>
                         </div>
                     {% endif %}
@@ -168,7 +169,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-clock"></i> Próximas a Vencer
+                        <i class="bi bi-clock"></i> {% translate "Próximas a Vencer" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -197,13 +198,13 @@
                         {% endfor %}
                         <div class="text-center mt-3">
                             <a href="{% url 'opportunity_list' %}?order_by=expected_close_date" class="btn btn-sm btn-outline-primary">
-                                Ver todas
+                                {% translate "Ver todas" %}
                             </a>
                         </div>
                     {% else %}
                         <div class="text-center py-3">
                             <i class="bi bi-check-circle text-success fs-1"></i>
-                            <p class="text-muted mt-2">No hay oportunidades próximas a vencer.</p>
+                            <p class="text-muted mt-2">{% translate "No hay oportunidades próximas a vencer." %}</p>
                         </div>
                     {% endif %}
                 </div>
@@ -217,7 +218,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-lightning"></i> Acciones Rápidas
+                        <i class="bi bi-lightning"></i> {% translate "Acciones Rápidas" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -225,25 +226,25 @@
                         <div class="col-md-3">
                             <a href="{% url 'opportunity_create' %}" class="btn btn-outline-primary w-100 mb-2">
                                 <i class="bi bi-plus-circle"></i><br>
-                                Nueva Oportunidad
+                                {% translate "Nueva Oportunidad" %}
                             </a>
                         </div>
                         <div class="col-md-3">
                             <a href="{% url 'opportunity_list' %}" class="btn btn-outline-secondary w-100 mb-2">
                                 <i class="bi bi-list"></i><br>
-                                Ver Oportunidades
+                                {% translate "Ver Oportunidades" %}
                             </a>
                         </div>
                         <div class="col-md-3">
                             <a href="{% url 'company_list' %}" class="btn btn-outline-info w-100 mb-2">
                                 <i class="bi bi-building"></i><br>
-                                Empresas
+                                {% translate "Empresas" %}
                             </a>
                         </div>
                         <div class="col-md-3">
                             <a href="{% url 'opportunity_status_list' %}" class="btn btn-outline-warning w-100 mb-2">
                                 <i class="bi bi-kanban"></i><br>
-                                Configurar Estados
+                                {% translate "Configurar Estados" %}
                             </a>
                         </div>
                     </div>

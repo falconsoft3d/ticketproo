@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Dashboard IA - {{ company.name }}{% endblock %}
@@ -8,10 +9,10 @@
     <!-- Breadcrumb -->
     <div class="row mb-3">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'company_ai_dashboard_list' %}">Dashboard Empresarial IA</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'company_ai_dashboard_list' %}">{% translate "Dashboard Empresarial IA" %}</a></li>
                     <li class="breadcrumb-item active">{{ company.name }}</li>
                 </ol>
             </nav>
@@ -31,7 +32,7 @@
         <div class="col-md-4 text-end">
             {% if user.is_staff %}
                 <a href="{% url 'company_ai_generate_summary' company.pk %}" class="btn btn-primary">
-                    <i class="bi bi-file-earmark-plus"></i> Generar Resumen Empresarial
+                    <i class="bi bi-file-earmark-plus"></i> {% translate "Generar Resumen Empresarial" %}
                 </a>
             {% endif %}
         </div>
@@ -45,10 +46,10 @@
                 <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                     <h5 class="card-title mb-0 text-white">
                         <i class="bi bi-bullseye me-2"></i>
-                        Objetivos Empresariales
+                        {% translate "Objetivos Empresariales" %}
                         <small class="float-end">
                             <i class="bi bi-robot me-1"></i>
-                            Usados por IA
+                            {% translate "Usados por IA" %}
                         </small>
                     </h5>
                 </div>
@@ -66,7 +67,7 @@
                     <div class="mt-3">
                         <small class="text-muted">
                             <i class="bi bi-info-circle me-1"></i>
-                            Estos objetivos son considerados por los gerentes IA al generar resúmenes ejecutivos y análisis estratégicos.
+                            {% translate "Estos objetivos son considerados por los gerentes IA al generar resúmenes ejecutivos y análisis estratégicos." %}
                         </small>
                     </div>
                 </div>
@@ -82,15 +83,14 @@
                     <div>
                         <h6 class="alert-heading mb-1">
                             <i class="bi bi-bullseye me-1"></i>
-                            Objetivos Empresariales No Definidos
+                            {% translate "Objetivos Empresariales No Definidos" %}
                         </h6>
                         <p class="mb-2">
-                            No se han configurado objetivos empresariales para <strong>{{ company.name }}</strong>. 
-                            Los objetivos ayudan a los gerentes IA a generar análisis más precisos y alineados con la estrategia.
+                            {% translate "No se han configurado objetivos empresariales para" %} <strong>{{ company.name }}</strong>{% translate ". Los objetivos ayudan a los gerentes IA a generar análisis más precisos y alineados con la estrategia." %}
                         </p>
                         <a href="{% url 'company_detail' company.id %}" class="btn btn-sm btn-warning">
                             <i class="bi bi-pencil me-1"></i>
-                            Definir Objetivos Ahora
+                            {% translate "Definir Objetivos Ahora" %}
                         </a>
                     </div>
                 </div>
@@ -106,7 +106,7 @@
                 <div class="card-body">
                     <i class="bi bi-robot display-4 text-primary"></i>
                     <h3 class="mt-2">{{ managers_stats|length }}</h3>
-                    <p class="text-muted mb-0">Gerentes IA</p>
+                    <p class="text-muted mb-0">{% translate "Gerentes IA" %}</p>
                 </div>
             </div>
         </div>
@@ -115,7 +115,7 @@
                 <div class="card-body">
                     <i class="bi bi-calendar-check display-4 text-info"></i>
                     <h3 class="mt-2">{{ total_meetings }}</h3>
-                    <p class="text-muted mb-0">Reuniones Totales</p>
+                    <p class="text-muted mb-0">{% translate "Reuniones Totales" %}</p>
                 </div>
             </div>
         </div>
@@ -124,7 +124,7 @@
                 <div class="card-body">
                     <i class="bi bi-people display-4 text-success"></i>
                     <h3 class="mt-2">{{ participants|length }}</h3>
-                    <p class="text-muted mb-0">Participantes</p>
+                    <p class="text-muted mb-0">{% translate "Participantes" %}</p>
                 </div>
             </div>
         </div>
@@ -133,7 +133,7 @@
                 <div class="card-body">
                     <i class="bi bi-file-text display-4 text-warning"></i>
                     <h3 class="mt-2">{{ company_summaries.count }}</h3>
-                    <p class="text-muted mb-0">Resúmenes IA</p>
+                    <p class="text-muted mb-0">{% translate "Resúmenes IA" %}</p>
                 </div>
             </div>
         </div>
@@ -143,22 +143,22 @@
     <ul class="nav nav-tabs mb-4" id="companyDashboardTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="managers-tab" data-bs-toggle="tab" data-bs-target="#managers" type="button" role="tab">
-                <i class="bi bi-robot"></i> Gerentes IA
+                <i class="bi bi-robot"></i> {% translate "Gerentes IA" %}
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
-                <i class="bi bi-people"></i> Usuarios
+                <i class="bi bi-people"></i> {% translate "Usuarios" %}
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="meetings-tab" data-bs-toggle="tab" data-bs-target="#meetings" type="button" role="tab">
-                <i class="bi bi-calendar-check"></i> Reuniones Recientes
+                <i class="bi bi-calendar-check"></i> {% translate "Reuniones Recientes" %}
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="summaries-tab" data-bs-toggle="tab" data-bs-target="#summaries" type="button" role="tab">
-                <i class="bi bi-file-text"></i> Resúmenes Empresariales
+                <i class="bi bi-file-text"></i> {% translate "Resúmenes Empresariales" %}
             </button>
         </li>
     </ul>
@@ -178,9 +178,9 @@
                                         <h5 class="card-title mb-1">
                                             <i class="bi bi-robot text-primary"></i> {{ manager_data.manager.name }}
                                             {% if manager_data.manager.is_active %}
-                                                <span class="badge bg-success">Activo</span>
+                                                <span class="badge bg-success">{% translate "Activo" %}</span>
                                             {% else %}
-                                                <span class="badge bg-secondary">Inactivo</span>
+                                                <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                                             {% endif %}
                                         </h5>
                                         <p class="text-muted small mb-0">
@@ -188,26 +188,26 @@
                                         </p>
                                     </div>
                                     <a href="{% url 'ai_manager_detail' manager_data.manager.pk %}" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-arrow-right-circle"></i> Ver
+                                        <i class="bi bi-arrow-right-circle"></i> {% translate "Ver" %}
                                     </a>
                                 </div>
                                 <div class="row g-2 mt-2">
                                     <div class="col-4">
                                         <div class="text-center p-2 bg-light rounded">
                                             <strong class="text-info">{{ manager_data.total_meetings }}</strong><br>
-                                            <small class="text-muted">Reuniones</small>
+                                            <small class="text-muted">{% translate "Reuniones" %}</small>
                                         </div>
                                     </div>
                                     <div class="col-4">
                                         <div class="text-center p-2 bg-light rounded">
                                             <strong class="text-success">{{ manager_data.active_users }}</strong><br>
-                                            <small class="text-muted">Usuarios</small>
+                                            <small class="text-muted">{% translate "Usuarios" %}</small>
                                         </div>
                                     </div>
                                     <div class="col-4">
                                         <div class="text-center p-2 bg-light rounded">
                                             <strong class="text-warning">{{ manager_data.total_tokens|default:0 }}</strong><br>
-                                            <small class="text-muted">Tokens</small>
+                                            <small class="text-muted">{% translate "Tokens" %}</small>
                                         </div>
                                     </div>
                                 </div>
@@ -218,7 +218,7 @@
                 </div>
             {% else %}
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> No hay gerentes IA configurados para esta empresa
+                    <i class="bi bi-info-circle"></i> {% translate "No hay gerentes IA configurados para esta empresa" %}
                 </div>
             {% endif %}
         </div>
@@ -230,10 +230,10 @@
                     <table class="table table-hover">
                         <thead class="table-light">
                             <tr>
-                                <th>Usuario</th>
-                                <th>Email</th>
-                                <th class="text-center">Reuniones</th>
-                                <th class="text-center">Estado</th>
+                                <th>{% translate "Usuario" %}</th>
+                                <th>{% translate "Email" %}</th>
+                                <th class="text-center">{% translate "Reuniones" %}</th>
+                                <th class="text-center">{% translate "Estado" %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -251,9 +251,9 @@
                                 </td>
                                 <td class="text-center">
                                     {% if user.is_active %}
-                                        <span class="badge bg-success">Activo</span>
+                                        <span class="badge bg-success">{% translate "Activo" %}</span>
                                     {% else %}
-                                        <span class="badge bg-secondary">Inactivo</span>
+                                        <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -263,7 +263,7 @@
                 </div>
             {% else %}
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> No hay usuarios con reuniones registradas
+                    <i class="bi bi-info-circle"></i> {% translate "No hay usuarios con reuniones registradas" %}
                 </div>
             {% endif %}
         </div>
@@ -295,7 +295,7 @@
                 </div>
             {% else %}
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> No hay reuniones registradas
+                    <i class="bi bi-info-circle"></i> {% translate "No hay reuniones registradas" %}
                 </div>
             {% endif %}
         </div>
@@ -310,7 +310,7 @@
                             <div>
                                 <h6 class="mb-1">
                                     <i class="bi bi-file-text text-primary"></i> 
-                                    Resumen Empresarial
+                                    {% translate "Resumen Empresarial" %}
                                 </h6>
                                 <p class="mb-1">
                                     <i class="bi bi-calendar-range"></i> 
@@ -332,18 +332,18 @@
                 {% if user.is_staff %}
                 <div class="text-center mt-3">
                     <a href="{% url 'company_ai_generate_summary' company.pk %}" class="btn btn-primary">
-                        <i class="bi bi-file-earmark-plus"></i> Generar Nuevo Resumen
+                        <i class="bi bi-file-earmark-plus"></i> {% translate "Generar Nuevo Resumen" %}
                     </a>
                 </div>
                 {% endif %}
             {% else %}
                 <div class="alert alert-warning text-center">
                     <i class="bi bi-file-earmark-x display-4 d-block mb-3"></i>
-                    <h5>No hay resúmenes empresariales generados</h5>
-                    <p>Los resúmenes empresariales consolidan información de todos los gerentes IA</p>
+                    <h5>{% translate "No hay resúmenes empresariales generados" %}</h5>
+                    <p>{% translate "Los resúmenes empresariales consolidan información de todos los gerentes IA" %}</p>
                     {% if user.is_staff %}
                         <a href="{% url 'company_ai_generate_summary' company.pk %}" class="btn btn-primary mt-2">
-                            <i class="bi bi-file-earmark-plus"></i> Generar Primer Resumen
+                            <i class="bi bi-file-earmark-plus"></i> {% translate "Generar Primer Resumen" %}
                         </a>
                     {% endif %}
                 </div>

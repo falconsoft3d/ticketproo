@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -16,28 +17,28 @@
                 <div class="card-body">
                     <div class="alert alert-danger">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <strong>¿Estás seguro?</strong><br>
-                        Esta acción eliminará permanentemente este gasto.
-                        <strong>Esta acción no se puede deshacer.</strong>
+                        <strong>{% translate "¿Estás seguro?" %}</strong><br>
+                        {% translate "Esta acción eliminará permanentemente este gasto." %}
+                        <strong>{% translate "Esta acción no se puede deshacer." %}</strong>
                     </div>
                     
                     <div class="mb-3">
-                        <h6>Gasto a eliminar:</h6>
+                        <h6>{% translate "Gasto a eliminar:" %}</h6>
                         <div class="card bg-light">
                             <div class="card-body">
                                 <h6 class="card-title">{{ expense_item.description }}</h6>
                                 <ul class="list-unstyled mb-0">
-                                    <li><strong>Categoría:</strong> {{ expense_item.get_category_display }}</li>
-                                    <li><strong>Monto:</strong> ${{ expense_item.amount|floatformat:2 }}</li>
-                                    <li><strong>Fecha:</strong> {{ expense_item.date|date:"d/m/Y" }}</li>
+                                    <li><strong>{% translate "Categoría:" %}</strong> {{ expense_item.get_category_display }}</li>
+                                    <li><strong>{% translate "Monto:" %}</strong> ${{ expense_item.amount|floatformat:2 }}</li>
+                                    <li><strong>{% translate "Fecha:" %}</strong> {{ expense_item.date|date:"d/m/Y" }}</li>
                                     {% if expense_item.vendor %}
-                                    <li><strong>Proveedor:</strong> {{ expense_item.vendor }}</li>
+                                    <li><strong>{% translate "Proveedor:" %}</strong> {{ expense_item.vendor }}</li>
                                     {% endif %}
                                     {% if expense_item.notes %}
-                                    <li><strong>Notas:</strong> {{ expense_item.notes|truncatechars:100 }}</li>
+                                    <li><strong>{% translate "Notas:" %}</strong> {{ expense_item.notes|truncatechars:100 }}</li>
                                     {% endif %}
                                     {% if expense_item.receipt_file %}
-                                    <li><strong>Comprobante:</strong> Sí</li>
+                                    <li><strong>{% translate "Comprobante:" %}</strong> {% translate "Sí" %}</li>
                                     {% endif %}
                                 </ul>
                             </div>
@@ -46,7 +47,7 @@
                     
                     <div class="mb-3">
                         <small class="text-muted">
-                            <strong>Rendición:</strong> {{ expense_report.title }}
+                            <strong>{% translate "Rendición:" %}</strong> {{ expense_report.title }}
                         </small>
                     </div>
                     
@@ -54,10 +55,10 @@
                         {% csrf_token %}
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'expense_report_detail' expense_report.pk %}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Cancelar
+                                <i class="fas fa-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="fas fa-trash"></i> Confirmar Eliminación
+                                <i class="fas fa-trash"></i> {% translate "Confirmar Eliminación" %}
                             </button>
                         </div>
                     </form>

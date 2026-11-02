@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ group.title|default:"Nuevo Grupo" }} - {{ block.super }}{% endblock %}
@@ -11,7 +12,7 @@
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">
                         <i class="bi bi-{% if group %}pencil{% else %}plus-circle{% endif %}"></i>
-                        {% if group %}Editar Grupo{% else %}Crear Nuevo Grupo{% endif %}
+                        {% if group %}{% translate "Editar Grupo" %}{% else %}{% translate "Crear Nuevo Grupo" %}{% endif %}
                     </h4>
                 </div>
 
@@ -20,28 +21,28 @@
                         {% csrf_token %}
 
                         <div class="mb-3">
-                            <label for="title" class="form-label">Título del Grupo <span class="text-danger">*</span></label>
+                            <label for="title" class="form-label">{% translate "Título del Grupo" %} <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="title" name="title" 
                                    value="{{ group.title|default:'' }}" required maxlength="200"
-                                   placeholder="Ej: Enlaces Importantes, Herramientas, Recursos">
-                            <small class="text-muted">Nombre descriptivo para el grupo</small>
+                                   placeholder="{% translate 'Ej: Enlaces Importantes, Herramientas, Recursos' %}">
+                            <small class="text-muted">{% translate "Nombre descriptivo para el grupo" %}</small>
                         </div>
 
                         <div class="mb-4">
-                            <label for="description" class="form-label">Descripción</label>
+                            <label for="description" class="form-label">{% translate "Descripción" %}</label>
                             <textarea class="form-control" id="description" name="description" 
                                       rows="3" placeholder="Descripción opcional del grupo">{{ group.description|default:'' }}</textarea>
-                            <small class="text-muted">Información adicional sobre el grupo (opcional)</small>
+                            <small class="text-muted">{% translate "Información adicional sobre el grupo (opcional)" %}</small>
                         </div>
 
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save"></i>
-                                {% if group %}Actualizar{% else %}Crear{% endif %} Grupo
+                                {% if group %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Grupo" %}
                             </button>
                             <a href="{% if group %}{% url 'access_group_detail' group.id %}{% else %}{% url 'access_group_list' %}{% endif %}" 
                                class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>
@@ -51,7 +52,7 @@
             {% if group %}
             <div class="alert alert-info mt-3">
                 <i class="bi bi-info-circle"></i>
-                <strong>Nota:</strong> Después de guardar, podrás agregar enlaces al grupo desde la página de detalle.
+                <strong>{% translate "Nota:" %}</strong> {% translate "Después de guardar, podrás agregar enlaces al grupo desde la página de detalle." %}
             </div>
             {% endif %}
         </div>

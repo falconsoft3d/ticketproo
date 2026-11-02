@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Checklists - {{ block.super }}{% endblock %}
@@ -8,9 +9,9 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
-                <h2><i class="bi bi-check2-square"></i> Mis Checklists</h2>
+                <h2><i class="bi bi-check2-square"></i> {% translate "Mis Checklists" %}</h2>
                 <a href="{% url 'checklist_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Nuevo Checklist
+                    <i class="bi bi-plus-circle"></i> {% translate "Nuevo Checklist" %}
                 </a>
             </div>
         </div>
@@ -56,13 +57,13 @@
                     
                     <div class="d-flex gap-2 flex-wrap">
                         <a href="{% url 'checklist_detail' data.checklist.id %}" class="btn btn-sm btn-primary">
-                            <i class="bi bi-eye"></i> Ver
+                            <i class="bi bi-eye"></i> {% translate "Ver" %}
                         </a>
                         <a href="{% url 'checklist_edit' data.checklist.id %}" class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-pencil"></i> Editar
+                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                         </a>
                         <a href="{% url 'checklist_duplicate' data.checklist.id %}" class="btn btn-sm btn-outline-info">
-                            <i class="bi bi-files"></i> Duplicar
+                            <i class="bi bi-files"></i> {% translate "Duplicar" %}
                         </a>
                     </div>
                 </div>
@@ -78,10 +79,10 @@
         <div class="col-12">
             <div class="alert alert-info text-center">
                 <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                <h5>No tienes checklists todavía</h5>
-                <p>Crea tu primer checklist para comenzar a organizar tareas</p>
+                <h5>{% translate "No tienes checklists todavía" %}</h5>
+                <p>{% translate "Crea tu primer checklist para comenzar a organizar tareas" %}</p>
                 <a href="{% url 'checklist_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Crear Primer Checklist
+                    <i class="bi bi-plus-circle"></i> {% translate "Crear Primer Checklist" %}
                 </a>
             </div>
         </div>

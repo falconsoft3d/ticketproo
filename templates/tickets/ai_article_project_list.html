@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Generación de Artículos con IA - {{ block.super }}{% endblock %}
@@ -37,12 +38,12 @@
 <div class="container-fluid mt-4">
     <div class="row mb-4">
         <div class="col-md-8">
-            <h2><i class="fas fa-newspaper"></i> Generación de Artículos con IA</h2>
-            <p class="text-muted">Crea proyectos y genera artículos profesionales con inteligencia artificial</p>
+            <h2><i class="fas fa-newspaper"></i> {% translate "Generación de Artículos con IA" %}</h2>
+            <p class="text-muted">{% translate "Crea proyectos y genera artículos profesionales con inteligencia artificial" %}</p>
         </div>
         <div class="col-md-4 text-end">
             <a href="{% url 'ai_article_project_create' %}" class="btn btn-primary btn-lg">
-                <i class="fas fa-plus"></i> Crear Proyecto
+                <i class="fas fa-plus"></i> {% translate "Crear Proyecto" %}
             </a>
         </div>
     </div>
@@ -64,7 +65,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <p class="text-muted mb-1 small">Total Proyectos</p>
+                                <p class="text-muted mb-1 small">{% translate "Total Proyectos" %}</p>
                                 <h3 class="mb-0">{{ projects.count }}</h3>
                             </div>
                             <i class="fas fa-folder-open metric-icon text-primary"></i>
@@ -78,7 +79,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <p class="text-muted mb-1 small">Total Artículos</p>
+                                <p class="text-muted mb-1 small">{% translate "Total Artículos" %}</p>
                                 <h3 class="mb-0">{{ total_articles }}</h3>
                             </div>
                             <i class="fas fa-file-alt metric-icon text-success"></i>
@@ -92,7 +93,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <p class="text-muted mb-1 small">Artículos Generados</p>
+                                <p class="text-muted mb-1 small">{% translate "Artículos Generados" %}</p>
                                 <h3 class="mb-0 text-success">{{ generated_articles }}</h3>
                                 <small class="text-muted">{{ generation_percentage }}% completado</small>
                             </div>
@@ -107,7 +108,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <p class="text-muted mb-1 small">Total Palabras</p>
+                                <p class="text-muted mb-1 small">{% translate "Total Palabras" %}</p>
                                 <h3 class="mb-0">{{ total_words|floatformat:0 }}k</h3>
                                 <small class="text-muted">{{ avg_words_per_article|floatformat:0 }} palabras/art.</small>
                             </div>
@@ -120,16 +121,16 @@
 
         <!-- Proyectos -->
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="mb-0">Mis Proyectos</h4>
+            <h4 class="mb-0">{% translate "Mis Proyectos" %}</h4>
             <div class="btn-group" role="group">
                 <button type="button" class="btn btn-sm btn-outline-secondary active" data-filter="all">
                     Todos ({{ projects.count }})
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-filter="in_progress">
-                    En Progreso
+                    {% translate "En Progreso" %}
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-filter="completed">
-                    Completados
+                    {% translate "Completados" %}
                 </button>
             </div>
         </div>
@@ -151,30 +152,30 @@
                             <div class="mb-3">
                                 <span class="badge bg-{% if project.content_format == 'markdown' %}info{% else %}secondary{% endif %} me-1">
                                     <i class="fas fa-{% if project.content_format == 'markdown' %}code{% else %}align-left{% endif %}"></i>
-                                    {% if project.content_format == 'markdown' %}Markdown{% else %}Texto Plano{% endif %}
+                                    {% if project.content_format == 'markdown' %}{% translate "Markdown" %}{% else %}{% translate "Texto Plano" %}{% endif %}
                                 </span>
                             </div>
                             <hr>
                             <div class="row text-center mb-3">
                                 <div class="col-4">
-                                    <div class="text-muted small">Propuestos</div>
+                                    <div class="text-muted small">{% translate "Propuestos" %}</div>
                                     <div class="h5 mb-0 text-primary">{{ project.get_total_articles }}</div>
                                 </div>
                                 <div class="col-4">
-                                    <div class="text-muted small">Generados</div>
+                                    <div class="text-muted small">{% translate "Generados" %}</div>
                                     <div class="h5 mb-0 text-success">{{ project.get_completed_articles }}</div>
                                 </div>
                                 <div class="col-4">
-                                    <div class="text-muted small">Palabras</div>
+                                    <div class="text-muted small">{% translate "Palabras" %}</div>
                                     <div class="h5 mb-0 text-info">
-                                        {% widthratio project.get_total_words 1000 1 %}k
+                                        {% widthratio project.get_total_words 1000 1 %}{% translate "k" %}
                                     </div>
                                 </div>
                             </div>
                             {% if project.get_total_articles > 0 %}
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between small text-muted mb-1">
-                                        <span>Progreso</span>
+                                        <span>{% translate "Progreso" %}</span>
                                         <span><strong>{{ project.get_progress_percentage }}%</strong></span>
                                     </div>
                                     <div class="progress" style="height: 10px;">
@@ -186,13 +187,13 @@
                                 </div>
                             {% else %}
                                 <div class="alert alert-light small mb-2">
-                                    <i class="fas fa-lightbulb"></i> Aún no hay artículos propuestos
+                                    <i class="fas fa-lightbulb"></i> {% translate "Aún no hay artículos propuestos" %}
                                 </div>
                             {% endif %}
                             <div class="d-flex gap-2 mt-3">
                                 <a href="{% url 'ai_article_project_proposals' project.pk %}" 
                                    class="btn btn-sm btn-outline-primary flex-fill">
-                                    <i class="fas fa-eye"></i> Ver Artículos
+                                    <i class="fas fa-eye"></i> {% translate "Ver Artículos" %}
                                 </a>
                                 <a href="{% url 'ai_article_project_edit' project.pk %}" 
                                    class="btn btn-sm btn-outline-warning">
@@ -226,10 +227,10 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-body text-center py-5">
                         <i class="fas fa-newspaper fa-5x text-muted mb-4"></i>
-                        <h3>No hay proyectos de artículos aún</h3>
-                        <p class="text-muted mb-4">Crea tu primer proyecto y comienza a generar artículos con IA</p>
+                        <h3>{% translate "No hay proyectos de artículos aún" %}</h3>
+                        <p class="text-muted mb-4">{% translate "Crea tu primer proyecto y comienza a generar artículos con IA" %}</p>
                         <a href="{% url 'ai_article_project_create' %}" class="btn btn-primary btn-lg">
-                            <i class="fas fa-plus"></i> Crear Primer Proyecto
+                            <i class="fas fa-plus"></i> {% translate "Crear Primer Proyecto" %}
                         </a>
                     </div>
                 </div>

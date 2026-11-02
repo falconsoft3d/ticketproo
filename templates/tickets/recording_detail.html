@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ recording.title }} - TicketProo{% endblock %}
@@ -15,11 +16,11 @@
                     </h4>
                     <div class="btn-group" role="group">
                         <a href="{% url 'recordings_list' %}" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-arrow-left"></i> Volver
+                            <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                         </a>
                         {% if request.user.is_superuser or is_agent %}
                         <a href="{% url 'recording_delete' recording.id %}" class="btn btn-outline-danger btn-sm">
-                            <i class="bi bi-trash"></i> Eliminar
+                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                         </a>
                         {% endif %}
                     </div>
@@ -27,36 +28,36 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>Descripción:</strong></p>
+                            <p><strong>{% translate "Descripción:" %}</strong></p>
                             <p class="text-muted">{{ recording.description|default:"Sin descripción" }}</p>
                             
-                            <p><strong>Empresa:</strong> 
+                            <p><strong>{% translate "Empresa:" %}</strong> 
                                 {% if recording.company %}
                                     <span class="badge bg-primary">{{ recording.company.name }}</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Sin empresa</span>
+                                    <span class="badge bg-secondary">{% translate "Sin empresa" %}</span>
                                 {% endif %}
                             </p>
                             
-                            <p><strong>Subido por:</strong> 
+                            <p><strong>{% translate "Subido por:" %}</strong> 
                                 {% if recording.uploaded_by %}
                                     {{ recording.uploaded_by.username }}
                                 {% else %}
-                                    <span class="text-muted">Usuario público</span>
+                                    <span class="text-muted">{% translate "Usuario público" %}</span>
                                 {% endif %}
                             </p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Fecha de creación:</strong> {{ recording.created_at|date:"d/m/Y H:i" }}</p>
+                            <p><strong>{% translate "Fecha de creación:" %}</strong> {{ recording.created_at|date:"d/m/Y H:i" }}</p>
                             
                             {% if recording.duration_seconds %}
-                            <p><strong>Duración:</strong> 
+                            <p><strong>{% translate "Duración:" %}</strong> 
                                 {{ recording.duration_seconds|floatformat:0 }} segundos
                             </p>
                             {% endif %}
                             
                             {% if recording.file_size %}
-                            <p><strong>Tamaño:</strong> 
+                            <p><strong>{% translate "Tamaño:" %}</strong> 
                                 {% if recording.file_size > 1048576 %}
                                     {{ recording.file_size|floatformat:0 }} bytes ({{ recording.file_size|filesizeformat }})
                                 {% else %}
@@ -65,11 +66,11 @@
                             </p>
                             {% endif %}
                             
-                            <p><strong>Público:</strong>
+                            <p><strong>{% translate "Público:" %}</strong>
                                 {% if recording.is_public %}
-                                    <span class="badge bg-success">Sí</span>
+                                    <span class="badge bg-success">{% translate "Sí" %}</span>
                                 {% else %}
-                                    <span class="badge bg-warning">No</span>
+                                    <span class="badge bg-warning">{% translate "No" %}</span>
                                 {% endif %}
                             </p>
                         </div>
@@ -78,11 +79,11 @@
                     <!-- Reproductor de audio -->
                     {% if recording.audio_file %}
                     <div class="mt-3">
-                        <h6><i class="bi bi-play-circle"></i> Reproductor</h6>
+                        <h6><i class="bi bi-play-circle"></i> {% translate "Reproductor" %}</h6>
                         <audio controls class="w-100">
                             <source src="{{ recording.audio_file.url }}" type="audio/webm">
                             <source src="{{ recording.audio_file.url }}" type="audio/mpeg">
-                            Tu navegador no soporta la reproducción de audio.
+                            {% translate "Tu navegador no soporta la reproducción de audio." %}
                         </audio>
                     </div>
                     {% endif %}
@@ -93,18 +94,18 @@
             <div class="card shadow">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-file-text"></i> Transcripción
+                        <i class="bi bi-file-text"></i> {% translate "Transcripción" %}
                         {% if recording.transcription_status == 'completed' %}
-                            <span class="badge bg-success ms-2">Completada</span>
+                            <span class="badge bg-success ms-2">{% translate "Completada" %}</span>
                         {% elif recording.transcription_status == 'processing' %}
                             <span class="badge bg-warning ms-2">
                                 <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                Procesando
+                                {% translate "Procesando" %}
                             </span>
                         {% elif recording.transcription_status == 'failed' %}
-                            <span class="badge bg-danger ms-2">Error</span>
+                            <span class="badge bg-danger ms-2">{% translate "Error" %}</span>
                         {% else %}
-                            <span class="badge bg-secondary ms-2">Pendiente</span>
+                            <span class="badge bg-secondary ms-2">{% translate "Pendiente" %}</span>
                         {% endif %}
                     </h5>
                     
@@ -122,14 +123,14 @@
                             {% csrf_token %}
                             {% bootstrap_form action_form %}
                             <button type="submit" name="process_ai" class="btn btn-primary">
-                                <i class="bi bi-robot"></i> Procesar con IA
+                                <i class="bi bi-robot"></i> {% translate "Procesar con IA" %}
                             </button>
                         </form>
                         
                         {% if recording.transcription_status == 'processing' %}
                         <button type="button" class="btn btn-outline-secondary ms-2" disabled>
                             <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                            Procesando...
+                            {% translate "Procesando..." %}
                         </button>
                         {% endif %}
                     </div>
@@ -143,7 +144,7 @@
                         {% if request.user.is_superuser or is_agent %}
                         <div class="d-flex justify-content-between mt-3">
                             <button type="submit" name="save_transcription" class="btn btn-success">
-                                <i class="bi bi-save"></i> Guardar Transcripción
+                                <i class="bi bi-save"></i> {% translate "Guardar Transcripción" %}
                             </button>
                             
                             <div class="text-muted small">
@@ -159,7 +160,7 @@
                         <!-- Solo lectura para usuarios no agentes -->
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i>
-                            Solo los agentes pueden editar la transcripción.
+                            {% translate "Solo los agentes pueden editar la transcripción." %}
                         </div>
                         {% endif %}
                     </form>
@@ -172,14 +173,14 @@
             <!-- Estadísticas de reproducción -->
             <div class="card shadow mb-4">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Estadísticas</h6>
+                    <h6 class="mb-0"><i class="bi bi-bar-chart"></i> {% translate "Estadísticas" %}</h6>
                 </div>
                 <div class="card-body">
                     <div class="row text-center">
                         <div class="col-6">
                             <div class="border-end">
                                 <h4 class="text-primary">{{ playback_count }}</h4>
-                                <small class="text-muted">Reproducciones</small>
+                                <small class="text-muted">{% translate "Reproducciones" %}</small>
                             </div>
                         </div>
                         <div class="col-6">
@@ -190,7 +191,7 @@
                                     N/A
                                 {% endif %}
                             </h4>
-                            <small class="text-muted">Confianza IA</small>
+                            <small class="text-muted">{% translate "Confianza IA" %}</small>
                         </div>
                     </div>
                 </div>
@@ -200,7 +201,7 @@
             {% if recent_playbacks %}
             <div class="card shadow">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> Actividad Reciente</h6>
+                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> {% translate "Actividad Reciente" %}</h6>
                 </div>
                 <div class="card-body">
                     {% for playback in recent_playbacks %}
@@ -219,22 +220,22 @@
             <!-- Información técnica -->
             <div class="card shadow mt-4">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información Técnica</h6>
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> {% translate "Información Técnica" %}</h6>
                 </div>
                 <div class="card-body">
                     <small>
-                        <strong>Estado de transcripción:</strong><br>
+                        <strong>{% translate "Estado de transcripción:" %}</strong><br>
                         <span class="text-muted">{{ recording.get_transcription_status_display }}</span><br><br>
                         
-                        <strong>Última actualización:</strong><br>
+                        <strong>{% translate "Última actualización:" %}</strong><br>
                         <span class="text-muted">{{ recording.updated_at|date:"d/m/Y H:i" }}</span><br><br>
                         
                         {% if recording.transcription_language %}
-                        <strong>Idioma detectado:</strong><br>
+                        <strong>{% translate "Idioma detectado:" %}</strong><br>
                         <span class="text-muted">{{ recording.transcription_language|upper }}</span><br><br>
                         {% endif %}
                         
-                        <strong>Formato de archivo:</strong><br>
+                        <strong>{% translate "Formato de archivo:" %}</strong><br>
                         <span class="text-muted">{{ recording.audio_file.name|slice:"-4:"|upper }}</span>
                     </small>
                 </div>
@@ -335,15 +336,15 @@ audio {
 </style>
 
                         <div class="col-md-3">
-                            <small class="text-muted d-block">Tamaño</small>
+                            <small class="text-muted d-block">{% translate "Tamaño" %}</small>
                             <strong>{{ recording.get_file_size_display }}</strong>
                         </div>
                         <div class="col-md-3">
-                            <small class="text-muted d-block">Formato</small>
+                            <small class="text-muted d-block">{% translate "Formato" %}</small>
                             <strong>{{ recording.get_audio_extension }}</strong>
                         </div>
                         <div class="col-md-3">
-                            <small class="text-muted d-block">Calidad</small>
+                            <small class="text-muted d-block">{% translate "Calidad" %}</small>
                             <strong>
                                 {% if bitrate_kbps %}
                                     {{ bitrate_kbps }} kbps
@@ -359,16 +360,16 @@ audio {
             <!-- Transcripción -->
             <div class="card shadow mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-file-text"></i> Transcripción</h5>
+                    <h5 class="mb-0"><i class="bi bi-file-text"></i> {% translate "Transcripción" %}</h5>
                     <span class="badge 
                         {% if recording.transcription_status == 'completed' %}bg-success
                         {% elif recording.transcription_status == 'processing' %}bg-warning
                         {% elif recording.transcription_status == 'failed' %}bg-danger
                         {% else %}bg-secondary{% endif %}">
-                        {% if recording.transcription_status == 'completed' %}Completada
-                        {% elif recording.transcription_status == 'processing' %}Procesando
-                        {% elif recording.transcription_status == 'failed' %}Fallida
-                        {% else %}Pendiente{% endif %}
+                        {% if recording.transcription_status == 'completed' %}{% translate "Completada" %}
+                        {% elif recording.transcription_status == 'processing' %}{% translate "Procesando" %}
+                        {% elif recording.transcription_status == 'failed' %}{% translate "Fallida" %}
+                        {% else %}{% translate "Pendiente" %}{% endif %}
                     </span>
                 </div>
                 <div class="card-body">
@@ -388,24 +389,23 @@ audio {
                         
                         <div class="mt-3">
                             <button class="btn btn-sm btn-outline-primary" onclick="copyTranscription()">
-                                <i class="bi bi-clipboard"></i> Copiar texto
+                                <i class="bi bi-clipboard"></i> {% translate "Copiar texto" %}
                             </button>
                             <button class="btn btn-sm btn-outline-secondary" onclick="downloadTranscription()">
-                                <i class="bi bi-download"></i> Descargar
+                                <i class="bi bi-download"></i> {% translate "Descargar" %}
                             </button>
                         </div>
                         
                     {% elif recording.transcription_status == 'processing' %}
                         <div class="text-center py-4">
                             <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Procesando...</span>
+                                <span class="visually-hidden">{% translate "Procesando..." %}</span>
                             </div>
                             <p class="mt-3 text-muted">
-                                La transcripción se está procesando. Esto puede tomar varios minutos 
-                                dependiendo de la duración de la grabación.
+                                {% translate "La transcripción se está procesando. Esto puede tomar varios minutos dependiendo de la duración de la grabación." %}
                             </p>
                             <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
-                                <i class="bi bi-arrow-clockwise"></i> Actualizar estado
+                                <i class="bi bi-arrow-clockwise"></i> {% translate "Actualizar estado" %}
                             </button>
                         </div>
                         
@@ -413,11 +413,10 @@ audio {
                         <div class="text-center py-4">
                             <i class="bi bi-exclamation-triangle display-4 text-danger"></i>
                             <p class="mt-3 text-muted">
-                                La transcripción falló. Esto puede deberse a la calidad del audio 
-                                o a problemas técnicos.
+                                {% translate "La transcripción falló. Esto puede deberse a la calidad del audio o a problemas técnicos." %}
                             </p>
                             <button class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-arrow-repeat"></i> Reintentar transcripción
+                                <i class="bi bi-arrow-repeat"></i> {% translate "Reintentar transcripción" %}
                             </button>
                         </div>
                         
@@ -425,11 +424,10 @@ audio {
                         <div class="text-center py-4">
                             <i class="bi bi-clock display-4 text-secondary"></i>
                             <p class="mt-3 text-muted">
-                                La transcripción está pendiente de procesamiento. 
-                                Se iniciará automáticamente en breve.
+                                {% translate "La transcripción está pendiente de procesamiento. Se iniciará automáticamente en breve." %}
                             </p>
                             <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
-                                <i class="bi bi-arrow-clockwise"></i> Actualizar estado
+                                <i class="bi bi-arrow-clockwise"></i> {% translate "Actualizar estado" %}
                             </button>
                         </div>
                     {% endif %}
@@ -442,46 +440,46 @@ audio {
             <!-- Información básica -->
             <div class="card shadow mb-4">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información</h6>
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> {% translate "Información" %}</h6>
                 </div>
                 <div class="card-body">
                     <dl class="row">
-                        <dt class="col-sm-5">Empresa:</dt>
+                        <dt class="col-sm-5">{% translate "Empresa:" %}</dt>
                         <dd class="col-sm-7">
                             {% if recording.company %}
                                 <i class="bi bi-building text-primary"></i> {{ recording.company.name }}
                             {% else %}
-                                <span class="text-muted">Sin empresa</span>
+                                <span class="text-muted">{% translate "Sin empresa" %}</span>
                             {% endif %}
                         </dd>
                         
-                        <dt class="col-sm-5">Subido por:</dt>
+                        <dt class="col-sm-5">{% translate "Subido por:" %}</dt>
                         <dd class="col-sm-7">
                             {% if recording.uploaded_by %}
                                 <i class="bi bi-person text-primary"></i> 
                                 {{ recording.uploaded_by.get_full_name|default:recording.uploaded_by.username }}
                             {% else %}
-                                <span class="text-muted">Usuario anónimo</span>
+                                <span class="text-muted">{% translate "Usuario anónimo" %}</span>
                             {% endif %}
                         </dd>
                         
-                        <dt class="col-sm-5">Fecha:</dt>
+                        <dt class="col-sm-5">{% translate "Fecha:" %}</dt>
                         <dd class="col-sm-7">
                             <i class="bi bi-calendar text-primary"></i> 
                             {{ recording.created_at|date:"d/m/Y H:i" }}
                         </dd>
                         
-                        <dt class="col-sm-5">Visibilidad:</dt>
+                        <dt class="col-sm-5">{% translate "Visibilidad:" %}</dt>
                         <dd class="col-sm-7">
                             {% if recording.is_public %}
-                                <i class="bi bi-globe text-success"></i> Público
+                                <i class="bi bi-globe text-success"></i> {% translate "Público" %}
                             {% else %}
-                                <i class="bi bi-lock text-warning"></i> Privado
+                                <i class="bi bi-lock text-warning"></i> {% translate "Privado" %}
                             {% endif %}
                         </dd>
                         
                         {% if recording.transcribed_at %}
-                        <dt class="col-sm-5">Transcrito:</dt>
+                        <dt class="col-sm-5">{% translate "Transcrito:" %}</dt>
                         <dd class="col-sm-7">
                             <i class="bi bi-clock text-primary"></i> 
                             {{ recording.transcribed_at|date:"d/m/Y H:i" }}
@@ -489,7 +487,7 @@ audio {
                         {% endif %}
                         
                         {% if recording.transcription_language %}
-                        <dt class="col-sm-5">Idioma:</dt>
+                        <dt class="col-sm-5">{% translate "Idioma:" %}</dt>
                         <dd class="col-sm-7">
                             <i class="bi bi-translate text-primary"></i> 
                             {{ recording.transcription_language|upper }}
@@ -503,7 +501,7 @@ audio {
             {% if recording.description %}
             <div class="card shadow mb-4">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-file-text"></i> Descripción</h6>
+                    <h6 class="mb-0"><i class="bi bi-file-text"></i> {% translate "Descripción" %}</h6>
                 </div>
                 <div class="card-body">
                     <p>{{ recording.description|linebreaks }}</p>
@@ -515,20 +513,20 @@ audio {
             {% if is_agent %}
             <div class="card shadow">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-graph-up"></i> Estadísticas</h6>
+                    <h6 class="mb-0"><i class="bi bi-graph-up"></i> {% translate "Estadísticas" %}</h6>
                 </div>
                 <div class="card-body">
                     <dl class="row">
-                        <dt class="col-sm-7">Reproducciones:</dt>
+                        <dt class="col-sm-7">{% translate "Reproducciones:" %}</dt>
                         <dd class="col-sm-5">{{ recording.playbacks.count }}</dd>
                         
-                        <dt class="col-sm-7">Última reproducción:</dt>
+                        <dt class="col-sm-7">{% translate "Última reproducción:" %}</dt>
                         <dd class="col-sm-5">
                             {% with recording.playbacks.first as last_playback %}
                                 {% if last_playback %}
                                     {{ last_playback.played_at|date:"d/m/Y" }}
                                 {% else %}
-                                    Nunca
+                                    {% translate "Nunca" %}
                                 {% endif %}
                             {% endwith %}
                         </dd>

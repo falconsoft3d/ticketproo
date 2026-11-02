@@ -1,3 +1,4 @@
+{% load i18n %}
 <!-- Navbar público reutilizable -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
     <div class="container">
@@ -11,30 +12,38 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Inicio</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">{% translate "Inicio" %}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'blog_list' %}active{% endif %}" href="{% url 'blog_list' %}">Blog</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'blog_list' %}active{% endif %}" href="{% url 'blog_list' %}">{% translate "Blog" %}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'public_image_prompts' %}active{% endif %}" href="{% url 'public_image_prompts' %}">Prompts IA</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'public_image_prompts' %}active{% endif %}" href="{% url 'public_image_prompts' %}">{% translate "Prompts IA" %}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'public_concepts' %}active{% endif %}" href="{% url 'public_concepts' %}">Conceptos</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'public_concepts' %}active{% endif %}" href="{% url 'public_concepts' %}">{% translate "Conceptos" %}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'alcance_publico_list' %}active{% endif %}" href="{% url 'alcance_publico_list' %}">Alcance</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'alcance_publico_list' %}active{% endif %}" href="{% url 'alcance_publico_list' %}">{% translate "Alcance" %}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'contacto_web' %}active{% endif %}" href="{% url 'contacto_web' %}">Contacto</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'contacto_web' %}active{% endif %}" href="{% url 'contacto_web' %}">{% translate "Contacto" %}</a>
                 </li>
                 <!-- Catálogos -->
                 <li class="nav-item ms-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'public_app_catalogs' or request.resolver_match.url_name == 'public_product_detail' %}active{% endif %}" href="{% url 'public_app_catalogs' %}">Catálogos</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'public_app_catalogs' or request.resolver_match.url_name == 'public_product_detail' %}active{% endif %}" href="{% url 'public_app_catalogs' %}">{% translate "Catálogos" %}</a>
+                </li>
+                <!-- Idioma -->
+                {% include 'includes/language_switcher.html' %}
+                <!-- Modo claro / oscuro -->
+                <li class="nav-item d-flex align-items-center ms-2">
+                    <button type="button" class="ap-theme-toggle" onclick="apToggleTheme()" title="{% translate "Modo claro / oscuro" %}" aria-label="{% translate "Modo claro / oscuro" %}">
+                        <i class="bi bi-moon-stars-fill"></i><i class="bi bi-sun-fill"></i>
+                    </button>
                 </li>
                 <!-- Carrito de compras -->
                 <li class="nav-item ms-1">
-                    <a href="{% url 'cart_view' %}" class="nav-link position-relative {% if request.resolver_match.url_name == 'cart_view' or request.resolver_match.url_name == 'cart_checkout' %}active{% endif %}" title="Carrito">
+                    <a href="{% url 'cart_view' %}" class="nav-link position-relative {% if request.resolver_match.url_name == 'cart_view' or request.resolver_match.url_name == 'cart_checkout' %}active{% endif %}" title="{% translate "Carrito" %}">
                         <i class="bi bi-cart3 fs-5"></i>
                         {% if cart_count > 0 %}
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.65rem;">
@@ -45,24 +54,24 @@
                 </li>
                 {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
+                        <a class="nav-link" href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             {{ user.username }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{% url 'dashboard' %}">Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">{% translate "Cerrar Sesión" %}</a></li>
                         </ul>
                     </li>
                 {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Iniciar Sesión</a>
+                        <a class="nav-link" href="{% url 'login' %}">{% translate "Iniciar Sesión" %}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link btn btn-outline-light ms-2 px-3" href="{% url 'register' %}">Registrarse</a>
+                        <a class="nav-link btn btn-outline-light ms-2 px-3" href="{% url 'register' %}">{% translate "Registrarse" %}</a>
                     </li>
                 {% endif %}
             </ul>

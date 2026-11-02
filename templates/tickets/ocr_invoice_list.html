@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -6,10 +7,10 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2><i class="bi bi-receipt me-2"></i>{{ page_title }}</h2>
-            <p class="text-muted">Gestiona tus facturas procesadas con OCR</p>
+            <p class="text-muted">{% translate "Gestiona tus facturas procesadas con OCR" %}</p>
         </div>
         <a href="{% url 'ocr_invoice_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Nueva Factura
+            <i class="bi bi-plus-circle me-1"></i> {% translate "Nueva Factura" %}
         </a>
     </div>
 
@@ -21,11 +22,10 @@
                 <div class="col-md-8">
                     <h5 class="card-title mb-2">
                         <i class="bi bi-phone text-primary me-2"></i>
-                        Subir Facturas desde el Móvil
+                        {% translate "Subir Facturas desde el Móvil" %}
                     </h5>
                     <p class="card-text text-muted mb-2">
-                        Usa este enlace para escanear y subir facturas directamente desde tu teléfono. 
-                        El sistema procesará automáticamente las imágenes con OCR.
+                        {% translate "Usa este enlace para escanear y subir facturas directamente desde tu teléfono. El sistema procesará automáticamente las imágenes con OCR." %}
                     </p>
                     {% if ocr_config.ocr_public_upload_token %}
                     <div class="input-group mb-2">
@@ -33,47 +33,47 @@
                                value="{{ request.scheme }}://{{ request.get_host }}{% url 'ocr_invoice_public_new_with_token' token=ocr_config.ocr_public_upload_token %}" 
                                id="publicUrlGlobal" readonly>
                         <button class="btn btn-outline-secondary" type="button" 
-                                onclick="copyPublicUrlGlobal()" title="Copiar enlace">
+                                onclick="copyPublicUrlGlobal()" title="{% translate 'Copiar enlace' %}">
                             <i class="bi bi-clipboard"></i>
                         </button>
                         <a href="{% url 'ocr_invoice_public_new_with_token' token=ocr_config.ocr_public_upload_token %}" target="_blank" 
-                           class="btn btn-primary" title="Abrir enlace">
-                            <i class="bi bi-box-arrow-up-right me-1"></i> Abrir
+                           class="btn btn-primary" title="{% translate 'Abrir enlace' %}">
+                            <i class="bi bi-box-arrow-up-right me-1"></i> {% translate "Abrir" %}
                         </a>
                     </div>
                     {% else %}
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        Debes generar un token primero para obtener el enlace de subida.
+                        {% translate "Debes generar un token primero para obtener el enlace de subida." %}
                     </div>
                     {% endif %}
                     <div class="mt-2">
-                        <strong class="text-primary">Token API para listar facturas:</strong>
+                        <strong class="text-primary">{% translate "Token API para listar facturas:" %}</strong>
                         {% if ocr_config.ocr_public_upload_token %}
                         <div class="input-group input-group-sm mt-1">
                             <input type="text" class="form-control font-monospace" 
                                    value="{{ ocr_config.ocr_public_upload_token }}" 
                                    id="apiTokenGlobal" readonly>
                             <button class="btn btn-outline-secondary" type="button" 
-                                    onclick="copyApiToken()" title="Copiar token">
+                                    onclick="copyApiToken()" title="{% translate 'Copiar token' %}">
                                 <i class="bi bi-clipboard"></i>
                             </button>
                             <form method="post" action="{% url 'ocr_invoice_generate_api_token' %}" class="d-inline" 
                                   onsubmit="return confirm('¿Generar nuevo token? El token actual dejará de funcionar.');">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-warning" title="Regenerar token">
-                                    <i class="bi bi-arrow-clockwise"></i> Regenerar
+                                <button type="submit" class="btn btn-warning" title="{% translate 'Regenerar token' %}">
+                                    <i class="bi bi-arrow-clockwise"></i> {% translate "Regenerar" %}
                                 </button>
                             </form>
                         </div>
                         {% else %}
                         <div class="alert alert-warning mt-2">
                             <i class="bi bi-exclamation-triangle me-2"></i>
-                            No hay token de API configurado.
+                            {% translate "No hay token de API configurado." %}
                             <form method="post" action="{% url 'ocr_invoice_generate_api_token' %}" class="d-inline">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-sm btn-primary ms-2">
-                                    <i class="bi bi-key me-1"></i> Generar Token
+                                    <i class="bi bi-key me-1"></i> {% translate "Generar Token" %}
                                 </button>
                             </form>
                         </div>
@@ -90,12 +90,12 @@
                     {% if ocr_config.ocr_public_upload_token %}
                     <div id="qrcode" class="d-inline-block"></div>
                     <p class="small text-muted mt-2 mb-0">
-                        <i class="bi bi-qr-code"></i> Escanea con el móvil
+                        <i class="bi bi-qr-code"></i> {% translate "Escanea con el móvil" %}
                     </p>
                     {% else %}
                     <div class="alert alert-warning">
                         <i class="bi bi-qr-code-scan"></i>
-                        <p class="mb-0">Genera un token para ver el código QR</p>
+                        <p class="mb-0">{% translate "Genera un token para ver el código QR" %}</p>
                     </div>
                     {% endif %}
                 </div>
@@ -105,8 +105,8 @@
     {% else %}
     <div class="alert alert-warning mb-4">
         <i class="bi bi-exclamation-triangle me-2"></i>
-        <strong>Enlace público desactivado</strong>
-        <p class="mb-0">El enlace público para subir facturas está desactivado. Puedes activarlo desde la configuración del sistema.</p>
+        <strong>{% translate "Enlace público desactivado" %}</strong>
+        <p class="mb-0">{% translate "El enlace público para subir facturas está desactivado. Puedes activarlo desde la configuración del sistema." %}</p>
     </div>
     {% endif %}
 
@@ -115,9 +115,9 @@
         <div class="card-body">
             <form method="get" class="row g-3 align-items-end">
                 <div class="col-md-3">
-                    <label for="status" class="form-label">Estado</label>
+                    <label for="status" class="form-label">{% translate "Estado" %}</label>
                     <select class="form-select" id="status" name="status">
-                        <option value="">Todos</option>
+                        <option value="">{% translate "Todos" %}</option>
                         {% for value, label in statuses %}
                         <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
                             {{ label }}
@@ -126,23 +126,23 @@
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label for="search" class="form-label">Buscar</label>
+                    <label for="search" class="form-label">{% translate "Buscar" %}</label>
                     <input type="text" class="form-control" id="search" name="search" value="{{ search }}" 
-                           placeholder="Número o proveedor...">
+                           placeholder="{% translate 'Número o proveedor...' %}">
                 </div>
                 <div class="col-md-3">
-                    <label for="view" class="form-label">Vista</label>
+                    <label for="view" class="form-label">{% translate "Vista" %}</label>
                     <select class="form-select" id="view" name="view">
-                        <option value="table" {% if view_mode == 'table' %}selected{% endif %}>Tabla</option>
-                        <option value="cards" {% if view_mode == 'cards' %}selected{% endif %}>Tarjetas</option>
+                        <option value="table" {% if view_mode == 'table' %}selected{% endif %}>{% translate "Tabla" %}</option>
+                        <option value="cards" {% if view_mode == 'cards' %}selected{% endif %}>{% translate "Tarjetas" %}</option>
                     </select>
                 </div>
                 <div class="col-12">
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-search me-1"></i> Filtrar
+                        <i class="bi bi-search me-1"></i> {% translate "Filtrar" %}
                     </button>
                     <a href="{% url 'ocr_invoice_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-x-circle me-1"></i> Limpiar
+                        <i class="bi bi-x-circle me-1"></i> {% translate "Limpiar" %}
                     </a>
                 </div>
             </form>
@@ -159,14 +159,14 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Número</th>
-                            <th>Proveedor</th>
-                            <th>Neto</th>
-                            <th>Impuesto</th>
-                            <th>Total</th>
-                            <th>Estado</th>
-                            <th>Fecha</th>
-                            <th>Acciones</th>
+                            <th>{% translate "Número" %}</th>
+                            <th>{% translate "Proveedor" %}</th>
+                            <th>{% translate "Neto" %}</th>
+                            <th>{% translate "Impuesto" %}</th>
+                            <th>{% translate "Total" %}</th>
+                            <th>{% translate "Estado" %}</th>
+                            <th>{% translate "Fecha" %}</th>
+                            <th>{% translate "Acciones" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -177,7 +177,7 @@
                                 <td>
                                     <strong>{{ invoice.number|default:"Sin número" }}</strong>
                                     {% if invoice.image %}
-                                    <br><small class="text-muted"><i class="bi bi-image me-1"></i>Con imagen</small>
+                                    <br><small class="text-muted"><i class="bi bi-image me-1"></i>{% translate "Con imagen" %}</small>
                                     {% endif %}
                                 </td>
                                 <td>{{ invoice.supplier|default:"Sin proveedor" }}</td>
@@ -200,19 +200,19 @@
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{% url 'ocr_invoice_detail' invoice.pk %}" class="btn btn-outline-primary" title="Ver detalle">
+                                        <a href="{% url 'ocr_invoice_detail' invoice.pk %}" class="btn btn-outline-primary" title="{% translate 'Ver detalle' %}">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                         {% if invoice.status == 'draft' %}
                                         <a href="{% url 'ocr_invoice_process' invoice.pk %}" class="btn btn-outline-success" 
-                                           onclick="return confirm('¿Procesar factura con OCR?');" title="Procesar OCR">
+                                           onclick="return confirm('¿Procesar factura con OCR?');" title="{% translate 'Procesar OCR' %}">
                                             <i class="bi bi-cpu"></i>
                                         </a>
                                         {% endif %}
-                                        <a href="{% url 'ocr_invoice_edit' invoice.pk %}" class="btn btn-outline-warning" title="Editar">
+                                        <a href="{% url 'ocr_invoice_edit' invoice.pk %}" class="btn btn-outline-warning" title="{% translate 'Editar' %}">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="{% url 'ocr_invoice_delete' invoice.pk %}" class="btn btn-outline-danger" title="Eliminar">
+                                        <a href="{% url 'ocr_invoice_delete' invoice.pk %}" class="btn btn-outline-danger" title="{% translate 'Eliminar' %}">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                     </div>
@@ -223,7 +223,7 @@
                             <tr>
                                 <td colspan="9" class="text-center py-4">
                                     <i class="bi bi-info-circle me-2"></i>
-                                    No hay facturas registradas.
+                                    {% translate "No hay facturas registradas." %}
                                 </td>
                             </tr>
                         {% endif %}
@@ -248,11 +248,11 @@
                         </div>
                         <h5 class="card-title">{{ invoice.number|default:"Sin número" }}</h5>
                         <p class="card-text">
-                            <strong>Proveedor:</strong> {{ invoice.supplier|default:"Sin proveedor" }}<br>
-                            <strong>Neto:</strong> <span class="text-info">${{ invoice.neto|floatformat:2 }}</span><br>
-                            <strong>Impuesto:</strong> <span class="text-warning">${{ invoice.impuesto|floatformat:2 }}</span><br>
-                            <strong>Total:</strong> <span class="text-success fw-bold">${{ invoice.total|floatformat:2 }}</span><br>
-                            <strong>Estado:</strong> 
+                            <strong>{% translate "Proveedor:" %}</strong> {{ invoice.supplier|default:"Sin proveedor" }}<br>
+                            <strong>{% translate "Neto:" %}</strong> <span class="text-info">${{ invoice.neto|floatformat:2 }}</span><br>
+                            <strong>{% translate "Impuesto:" %}</strong> <span class="text-warning">${{ invoice.impuesto|floatformat:2 }}</span><br>
+                            <strong>{% translate "Total:" %}</strong> <span class="text-success fw-bold">${{ invoice.total|floatformat:2 }}</span><br>
+                            <strong>{% translate "Estado:" %}</strong> 
                             {% if invoice.status == 'draft' %}
                                 <span class="badge bg-secondary">{{ invoice.get_status_display }}</span>
                             {% elif invoice.status == 'scanned' %}
@@ -275,16 +275,16 @@
                                        value="{{ request.scheme }}://{{ request.get_host }}{{ invoice.get_public_url }}" 
                                        id="publicUrl{{ invoice.pk }}" readonly>
                                 <button class="btn btn-outline-secondary" type="button" 
-                                        onclick="copyPublicUrl{{ invoice.pk }}()" title="Copiar link">
+                                        onclick="copyPublicUrl{{ invoice.pk }}()" title="{% translate 'Copiar link' %}">
                                     <i class="bi bi-clipboard"></i>
                                 </button>
                                 <a href="{{ invoice.get_public_url }}" target="_blank" 
-                                   class="btn btn-outline-primary" title="Abrir link público">
+                                   class="btn btn-outline-primary" title="{% translate 'Abrir link público' %}">
                                     <i class="bi bi-phone"></i>
                                 </a>
                             </div>
                             <small class="text-muted">
-                                <i class="bi bi-camera me-1"></i>Link para subir desde móvil
+                                <i class="bi bi-camera me-1"></i>{% translate "Link para subir desde móvil" %}
                             </small>
                         </div>
                         
@@ -292,20 +292,20 @@
                         <div class="d-grid gap-2">
                             <div class="btn-group" role="group">
                                 <a href="{% url 'ocr_invoice_detail' invoice.pk %}" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye"></i> Ver
+                                    <i class="bi bi-eye"></i> {% translate "Ver" %}
                                 </a>
                                 {% if invoice.status == 'draft' %}
                                 <a href="{% url 'ocr_invoice_process' invoice.pk %}" class="btn btn-sm btn-outline-success" 
                                    onclick="return confirm('¿Procesar factura con OCR?');">
-                                    <i class="bi bi-cpu"></i> Procesar
+                                    <i class="bi bi-cpu"></i> {% translate "Procesar" %}
                                 </a>
                                 {% endif %}
                                 <a href="{% url 'ocr_invoice_edit' invoice.pk %}" class="btn btn-sm btn-outline-warning">
-                                    <i class="bi bi-pencil"></i> Editar
+                                    <i class="bi bi-pencil"></i> {% translate "Editar" %}
                                 </a>
                             </div>
                             <a href="{% url 'ocr_invoice_delete' invoice.pk %}" class="btn btn-sm btn-outline-danger">
-                                <i class="bi bi-trash"></i> Eliminar
+                                <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                             </a>
                         </div>
                     </div>
@@ -316,7 +316,7 @@
             <div class="col-12">
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle me-2"></i>
-                    No hay facturas registradas.
+                    {% translate "No hay facturas registradas." %}
                 </div>
             </div>
         {% endif %}
@@ -325,14 +325,14 @@
 
     <!-- Paginación -->
     {% if page_obj.has_other_pages %}
-    <nav aria-label="Paginación" class="mt-4">
+    <nav aria-label="{% translate 'Paginación' %}" class="mt-4">
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if view_mode %}&view={{ view_mode }}{% endif %}">Primera</a>
+                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if view_mode %}&view={{ view_mode }}{% endif %}">{% translate "Primera" %}</a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if view_mode %}&view={{ view_mode }}{% endif %}">Anterior</a>
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if view_mode %}&view={{ view_mode }}{% endif %}">{% translate "Anterior" %}</a>
             </li>
             {% endif %}
             
@@ -344,10 +344,10 @@
             
             {% if page_obj.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if view_mode %}&view={{ view_mode }}{% endif %}">Siguiente</a>
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if view_mode %}&view={{ view_mode }}{% endif %}">{% translate "Siguiente" %}</a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if view_mode %}&view={{ view_mode }}{% endif %}">Última</a>
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if view_mode %}&view={{ view_mode }}{% endif %}">{% translate "Última" %}</a>
             </li>
             {% endif %}
         </ul>

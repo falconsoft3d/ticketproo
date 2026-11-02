@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -229,17 +230,17 @@
 <div class="container-fluid world-clock-container">
     <!-- Navegación breadcrumb -->
     <div class="breadcrumb-nav">
-        <a href="{% url 'dashboard' %}">Inicio</a>
+        <a href="{% url 'dashboard' %}">{% translate "Inicio" %}</a>
         <span>/</span>
-        <a href="#">Hora</a>
+        <a href="#">{% translate "Hora" %}</a>
         <span>/</span>
-        <span>Reloj en línea</span>
+        <span>{% translate "Reloj en línea" %}</span>
     </div>
     
     <!-- Encabezado -->
     <div class="header-section">
         <h1 class="header-title">
-            Reloj en línea
+            {% translate "Reloj en línea" %}
         </h1>
     </div>
     
@@ -264,7 +265,7 @@
                             <span class="time-hours">10</span><span class="time-colon">:</span><span class="time-minutes">56</span><span class="time-colon">:</span><span class="time-seconds">27</span>
                         </div>
                         <div class="current-date" id="date-{{ country.timezone|slugify }}">
-                            Cargando fecha...
+                            {% translate "Cargando fecha..." %}
                         </div>
                     </div>
                     
@@ -280,9 +281,9 @@
     
     <!-- Información de actualización -->
     <div class="refresh-info">
-        Actualización automática cada segundo
+        {% translate "Actualización automática cada segundo" %}
         <br>
-        <small>Última actualización: <span id="last-update">--</span></small>
+        <small>{% translate "Última actualización:" %} <span id="last-update">--</span></small>
     </div>
 </div>
 {% endblock %}

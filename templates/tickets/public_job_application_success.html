@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 {% load project_extras %}
 
@@ -67,8 +68,8 @@
             <div class="success-icon">
                 <i class="bi bi-check-circle"></i>
             </div>
-            <h1>¡Aplicación Enviada Exitosamente!</h1>
-            <p class="lead">Tu aplicación para <strong>{{ employee.position }}</strong> ha sido recibida</p>
+            <h1>{% translate "¡Aplicación Enviada Exitosamente!" %}</h1>
+            <p class="lead">{% translate "Tu aplicación para" %} <strong>{{ employee.position }}</strong> {% translate "ha sido recibida" %}</p>
         </div>
     </div>
 
@@ -77,37 +78,37 @@
         <div class="col-lg-8">
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5><i class="bi bi-info-circle"></i> Resumen de tu Aplicación</h5>
+                    <h5><i class="bi bi-info-circle"></i> {% translate "Resumen de tu Aplicación" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <strong>Nombre:</strong><br>
+                                <strong>{% translate "Nombre:" %}</strong><br>
                                 {{ employee.get_full_name }}
                             </div>
                             <div class="mb-3">
-                                <strong>Email:</strong><br>
+                                <strong>{% translate "Email:" %}</strong><br>
                                 {{ employee.email }}
                             </div>
                             {% if employee.phone %}
                             <div class="mb-3">
-                                <strong>Teléfono:</strong><br>
+                                <strong>{% translate "Teléfono:" %}</strong><br>
                                 {{ employee.phone }}
                             </div>
                             {% endif %}
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <strong>Puesto:</strong><br>
+                                <strong>{% translate "Puesto:" %}</strong><br>
                                 {{ employee.position }}
                             </div>
                             <div class="mb-3">
-                                <strong>Empresa:</strong><br>
+                                <strong>{% translate "Empresa:" %}</strong><br>
                                 {{ employee.company.name }}
                             </div>
                             <div class="mb-3">
-                                <strong>Fecha de aplicación:</strong><br>
+                                <strong>{% translate "Fecha de aplicación:" %}</strong><br>
                                 {{ employee.created_at|date:"d/m/Y H:i" }}
                             </div>
                         </div>
@@ -116,7 +117,7 @@
                     {% if employee.salary_euros %}
                     <div class="alert alert-info">
                         <i class="bi bi-currency-euro"></i>
-                        <strong>Salario propuesto:</strong> €{{ employee.salary_euros|floatformat:0 }} anuales
+                        <strong>{% translate "Salario propuesto:" %}</strong> €{{ employee.salary_euros|floatformat:0 }} anuales
                     </div>
                     {% endif %}
                 </div>
@@ -125,14 +126,13 @@
             <!-- Próximos pasos -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5><i class="bi bi-list-check"></i> ¿Qué sigue ahora?</h5>
+                    <h5><i class="bi bi-list-check"></i> {% translate "¿Qué sigue ahora?" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="next-steps">
-                        <h6><i class="bi bi-lightbulb"></i> Tu aplicación está en proceso</h6>
+                        <h6><i class="bi bi-lightbulb"></i> {% translate "Tu aplicación está en proceso" %}</h6>
                         <p class="mb-0">
-                            Hemos recibido tu aplicación y comenzará a ser procesada automáticamente. 
-                            Te mantendremos informado sobre el estado de tu candidatura.
+                            {% translate "Hemos recibido tu aplicación y comenzará a ser procesada automáticamente. Te mantendremos informado sobre el estado de tu candidatura." %}
                         </p>
                     </div>
 
@@ -140,9 +140,9 @@
                         <div class="timeline-item">
                             <div class="timeline-marker bg-success"></div>
                             <div class="timeline-content">
-                                <h6>✅ Aplicación Recibida</h6>
+                                <h6>{% translate "✅ Aplicación Recibida" %}</h6>
                                 <p class="text-muted mb-0">{{ employee.created_at|date:"d/m/Y H:i" }}</p>
-                                <small>Tu aplicación ha sido registrada exitosamente</small>
+                                <small>{% translate "Tu aplicación ha sido registrada exitosamente" %}</small>
                             </div>
                         </div>
                         
@@ -150,9 +150,9 @@
                         <div class="timeline-item">
                             <div class="timeline-marker bg-info"></div>
                             <div class="timeline-content">
-                                <h6>🤖 Análisis Automático Completado</h6>
-                                <p class="text-muted mb-0">Procesado automáticamente</p>
-                                <small>Tu perfil ha sido analizado por nuestro sistema de IA</small>
+                                <h6>{% translate "🤖 Análisis Automático Completado" %}</h6>
+                                <p class="text-muted mb-0">{% translate "Procesado automáticamente" %}</p>
+                                <small>{% translate "Tu perfil ha sido analizado por nuestro sistema de IA" %}</small>
                                 {% if employee.ai_score %}
                                 <div class="mt-1">
                                     <span class="badge 
@@ -171,18 +171,18 @@
                         <div class="timeline-item">
                             <div class="timeline-marker bg-warning"></div>
                             <div class="timeline-content">
-                                <h6>⏳ Revisión por RR.HH.</h6>
-                                <p class="text-muted mb-0">En proceso</p>
-                                <small>Nuestro equipo de recursos humanos revisará tu candidatura</small>
+                                <h6>{% translate "⏳ Revisión por RR.HH." %}</h6>
+                                <p class="text-muted mb-0">{% translate "En proceso" %}</p>
+                                <small>{% translate "Nuestro equipo de recursos humanos revisará tu candidatura" %}</small>
                             </div>
                         </div>
                         
                         <div class="timeline-item">
                             <div class="timeline-marker bg-secondary"></div>
                             <div class="timeline-content">
-                                <h6>📞 Contacto Directo</h6>
-                                <p class="text-muted mb-0">Pendiente</p>
-                                <small>Si tu perfil encaja, nos pondremos en contacto contigo</small>
+                                <h6>{% translate "📞 Contacto Directo" %}</h6>
+                                <p class="text-muted mb-0">{% translate "Pendiente" %}</p>
+                                <small>{% translate "Si tu perfil encaja, nos pondremos en contacto contigo" %}</small>
                             </div>
                         </div>
                     </div>
@@ -192,31 +192,28 @@
             <!-- Información adicional -->
             <div class="card">
                 <div class="card-header">
-                    <h5><i class="bi bi-question-circle"></i> Información Importante</h5>
+                    <h5><i class="bi bi-question-circle"></i> {% translate "Información Importante" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6><i class="bi bi-clock"></i> Tiempo de respuesta</h6>
+                            <h6><i class="bi bi-clock"></i> {% translate "Tiempo de respuesta" %}</h6>
                             <p class="small text-muted">
-                                Normalmente respondemos en un plazo de 3-5 días hábiles. 
-                                Si tu perfil es seleccionado, recibirás un email con los siguientes pasos.
+                                {% translate "Normalmente respondemos en un plazo de 3-5 días hábiles. Si tu perfil es seleccionado, recibirás un email con los siguientes pasos." %}
                             </p>
                         </div>
                         <div class="col-md-6">
-                            <h6><i class="bi bi-shield-check"></i> Privacidad</h6>
+                            <h6><i class="bi bi-shield-check"></i> {% translate "Privacidad" %}</h6>
                             <p class="small text-muted">
-                                Tus datos están protegidos y serán utilizados únicamente para 
-                                este proceso de selección conforme a la normativa vigente.
+                                {% translate "Tus datos están protegidos y serán utilizados únicamente para este proceso de selección conforme a la normativa vigente." %}
                             </p>
                         </div>
                     </div>
                     
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle"></i>
-                        <strong>Importante:</strong> 
-                        Guarda el enlace de esta página como referencia. 
-                        También te hemos enviado un email de confirmación a <strong>{{ employee.email }}</strong>.
+                        <strong>{% translate "Importante:" %}</strong> 
+                        {% translate "Guarda el enlace de esta página como referencia. También te hemos enviado un email de confirmación a" %} <strong>{{ employee.email }}</strong>.
                     </div>
                 </div>
             </div>
@@ -227,10 +224,10 @@
             <!-- Datos de contacto -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5><i class="bi bi-envelope"></i> Contacto</h5>
+                    <h5><i class="bi bi-envelope"></i> {% translate "Contacto" %}</h5>
                 </div>
                 <div class="card-body">
-                    <p>Si tienes alguna pregunta sobre tu aplicación:</p>
+                    <p>{% translate "Si tienes alguna pregunta sobre tu aplicación:" %}</p>
                     
                     {% if token.company.email %}
                     <div class="mb-2">
@@ -260,17 +257,17 @@
             <!-- Consejos -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5><i class="bi bi-lightbulb"></i> Consejos</h5>
+                    <h5><i class="bi bi-lightbulb"></i> {% translate "Consejos" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="small">
-                        <h6>Mientras esperas:</h6>
+                        <h6>{% translate "Mientras esperas:" %}</h6>
                         <ul class="text-muted">
-                            <li>Mantén tu email accesible</li>
-                            <li>Revisa tu carpeta de spam</li>
-                            <li>Prepárate para una posible entrevista</li>
-                            <li>Investiga más sobre la empresa</li>
-                            <li>Ten tu documentación preparada</li>
+                            <li>{% translate "Mantén tu email accesible" %}</li>
+                            <li>{% translate "Revisa tu carpeta de spam" %}</li>
+                            <li>{% translate "Prepárate para una posible entrevista" %}</li>
+                            <li>{% translate "Investiga más sobre la empresa" %}</li>
+                            <li>{% translate "Ten tu documentación preparada" %}</li>
                         </ul>
                     </div>
                 </div>
@@ -279,12 +276,12 @@
             <!-- Compartir -->
             <div class="card">
                 <div class="card-header">
-                    <h5><i class="bi bi-share"></i> Compartir</h5>
+                    <h5><i class="bi bi-share"></i> {% translate "Compartir" %}</h5>
                 </div>
                 <div class="card-body text-center">
-                    <p class="small text-muted">¿Conoces a alguien interesado en este puesto?</p>
+                    <p class="small text-muted">{% translate "¿Conoces a alguien interesado en este puesto?" %}</p>
                     <a href="{% absolute_url token.get_public_url %}" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-link-45deg"></i> Compartir Enlace
+                        <i class="bi bi-link-45deg"></i> {% translate "Compartir Enlace" %}
                     </a>
                 </div>
             </div>

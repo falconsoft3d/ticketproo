@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 {% load project_extras %}
 
@@ -9,10 +10,10 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <nav aria-label="breadcrumb">
+                <nav aria-label="{% translate 'breadcrumb' %}">
                     <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'course_list' %}">Cursos</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'course_list' %}">{% translate "Cursos" %}</a></li>
                         <li class="breadcrumb-item active">{{ course.title }}</li>
                     </ol>
                 </nav>
@@ -26,15 +27,15 @@
                             <i class="bi bi-building"></i> {{ course.company.name }}
                         </span>
                         {% if user|can_manage_courses %}
-                            <small class="text-muted ms-2">Curso empresarial - Acceso como gestor</small>
+                            <small class="text-muted ms-2">{% translate "Curso empresarial - Acceso como gestor" %}</small>
                         {% else %}
-                            <small class="text-muted ms-2">Curso empresarial</small>
+                            <small class="text-muted ms-2">{% translate "Curso empresarial" %}</small>
                         {% endif %}
                     {% else %}
                         <span class="badge bg-success">
-                            <i class="bi bi-globe"></i> Público
+                            <i class="bi bi-globe"></i> {% translate "Público" %}
                         </span>
-                        <small class="text-muted ms-2">Disponible para todos los usuarios</small>
+                        <small class="text-muted ms-2">{% translate "Disponible para todos los usuarios" %}</small>
                     {% endif %}
                 </div>
             </div>
@@ -42,39 +43,39 @@
                 {% if course.created_by == user or user.is_superuser %}
                 <div class="btn-group">
                     <a href="{% url 'course_class_create' course.pk %}" class="btn btn-success">
-                        <i class="bi bi-plus-circle"></i> Nueva Clase
+                        <i class="bi bi-plus-circle"></i> {% translate "Nueva Clase" %}
                     </a>
                     <a href="{% url 'course_edit' course.pk %}" class="btn btn-outline-primary">
-                        <i class="bi bi-pencil"></i> Editar Curso
+                        <i class="bi bi-pencil"></i> {% translate "Editar Curso" %}
                     </a>
                     <div class="btn-group" role="group">
                         <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-plus"></i> Registro Público
+                            <i class="bi bi-person-plus"></i> {% translate "Registro Público" %}
                         </button>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{% url 'course_generate_registration_token' course.pk %}">
-                                <i class="bi bi-plus-circle"></i> Crear token de registro
+                                <i class="bi bi-plus-circle"></i> {% translate "Crear token de registro" %}
                             </a></li>
                             <li><a class="dropdown-item" href="{% url 'course_registration_tokens_list' course.pk %}">
-                                <i class="bi bi-list-ul"></i> Ver tokens existentes
+                                <i class="bi bi-list-ul"></i> {% translate "Ver tokens existentes" %}
                             </a></li>
                         </ul>
                     </div>
                     <div class="btn-group" role="group">
                         <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-                            <i class="bi bi-share"></i> Compartir
+                            <i class="bi bi-share"></i> {% translate "Compartir" %}
                         </button>
                         <ul class="dropdown-menu">
                             {% if course.is_public_enabled and course.public_token %}
                                 <li><a class="dropdown-item" href="#" onclick="copyPublicLink()">
-                                    <i class="bi bi-copy"></i> Copiar enlace público
+                                    <i class="bi bi-copy"></i> {% translate "Copiar enlace público" %}
                                 </a></li>
                                 <li><a class="dropdown-item text-danger" href="{% url 'course_disable_public_access' course.pk %}" onclick="return confirm('¿Deshabilitar acceso público?')">
-                                    <i class="bi bi-lock"></i> Deshabilitar acceso público
+                                    <i class="bi bi-lock"></i> {% translate "Deshabilitar acceso público" %}
                                 </a></li>
                             {% else %}
                                 <li><a class="dropdown-item" href="{% url 'course_generate_public_token' course.pk %}" onclick="return confirm('¿Generar enlace público para este curso?')">
-                                    <i class="bi bi-unlock"></i> Generar enlace público
+                                    <i class="bi bi-unlock"></i> {% translate "Generar enlace público" %}
                                 </a></li>
                             {% endif %}
                         </ul>
@@ -93,7 +94,7 @@
         <div class="card mb-4">
             <div class="card-header bg-info text-white">
                 <h5 class="mb-0">
-                    <i class="bi bi-info-circle"></i> Descripción del Curso
+                    <i class="bi bi-info-circle"></i> {% translate "Descripción del Curso" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -106,7 +107,7 @@
         <div class="card">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">
-                    <i class="bi bi-play-circle"></i> Clases del Curso
+                    <i class="bi bi-play-circle"></i> {% translate "Clases del Curso" %}
                     <span class="badge bg-light text-dark ms-2">{{ classes.count }}</span>
                 </h5>
             </div>
@@ -121,7 +122,7 @@
                                     <span class="badge bg-secondary me-2">{{ class.order }}</span>
                                     <h6 class="mb-0">{{ class.title }}</h6>
                                     {% if class.has_video %}
-                                        <i class="bi bi-camera-video text-success ms-2" title="Tiene video"></i>
+                                        <i class="bi bi-camera-video text-success ms-2" title="{% translate 'Tiene video' %}"></i>
                                     {% endif %}
                                     {% if class.duration_minutes %}
                                         <small class="text-muted ms-2">
@@ -130,11 +131,11 @@
                                     {% endif %}
                                     {% if user_has_viewed %}
                                         <span class="badge bg-success ms-2">
-                                            <i class="bi bi-check-circle"></i> Vista
+                                            <i class="bi bi-check-circle"></i> {% translate "Vista" %}
                                         </span>
                                     {% else %}
                                         <span class="badge bg-warning ms-2">
-                                            <i class="bi bi-eye-slash"></i> Sin ver
+                                            <i class="bi bi-eye-slash"></i> {% translate "Sin ver" %}
                                         </span>
                                     {% endif %}
                                 </div>
@@ -156,24 +157,24 @@
                                     {% if user_has_viewed %}
                                         <!-- Usuario ya vio la clase, mostrar URL directamente -->
                                         <div class="alert alert-success">
-                                            <strong>URL del Video:</strong><br>
+                                            <strong>{% translate "URL del Video:" %}</strong><br>
                                             <a href="{{ class.video_url }}" target="_blank" class="text-decoration-none">
                                                 {{ class.video_url }}
                                                 <i class="bi bi-box-arrow-up-right ms-1"></i>
                                             </a>
                                         </div>
                                         <button class="btn btn-sm btn-success" onclick="window.open('{{ class.video_url }}', '_blank')">
-                                            <i class="bi bi-play-circle"></i> Ver Video
+                                            <i class="bi bi-play-circle"></i> {% translate "Ver Video" %}
                                         </button>
                                     {% else %}
                                         <!-- Usuario no ha visto la clase, ocultar URL hasta hacer clic -->
                                         <button class="btn btn-sm btn-outline-success me-2" 
                                                 onclick="markAsViewedAndShowVideo('{{ class.pk }}', '{{ class.video_url }}', '{{ course.pk }}')">
-                                            <i class="bi bi-play-circle"></i> Ver Video (Primera vez)
+                                            <i class="bi bi-play-circle"></i> {% translate "Ver Video (Primera vez)" %}
                                         </button>
                                         <div id="video-{{ class.pk }}" style="display: none;" class="mt-2">
                                             <div class="alert alert-info">
-                                                <strong>URL del Video:</strong><br>
+                                                <strong>{% translate "URL del Video:" %}</strong><br>
                                                 <a href="{{ class.video_url }}" target="_blank" class="text-decoration-none">
                                                     {{ class.video_url }}
                                                     <i class="bi bi-box-arrow-up-right ms-1"></i>
@@ -188,7 +189,7 @@
                                 <div class="btn-group mb-2">
                                     <a href="{% url 'course_class_detail' course.pk class.pk %}" 
                                        class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i> Ver
+                                        <i class="bi bi-eye"></i> {% translate "Ver" %}
                                     </a>
                                     {% if user|can_manage_courses %}
                                         {% if class.created_by == user or user.is_superuser %}
@@ -214,12 +215,12 @@
                 {% else %}
                     <div class="text-center py-4">
                         <i class="bi bi-play-circle display-4 text-muted mb-3"></i>
-                        <h5 class="text-muted">No hay clases disponibles</h5>
-                        <p class="text-muted">Este curso aún no tiene clases.</p>
+                        <h5 class="text-muted">{% translate "No hay clases disponibles" %}</h5>
+                        <p class="text-muted">{% translate "Este curso aún no tiene clases." %}</p>
                         {% if user|can_manage_courses %}
                             {% if course.created_by == user or user.is_superuser %}
                             <a href="{% url 'course_class_create' course.pk %}" class="btn btn-success">
-                                <i class="bi bi-plus-circle"></i> Agregar Primera Clase
+                                <i class="bi bi-plus-circle"></i> {% translate "Agregar Primera Clase" %}
                             </a>
                             {% endif %}
                         {% endif %}
@@ -234,7 +235,7 @@
         <div class="card mb-4">
             <div class="card-header bg-secondary text-white">
                 <h6 class="mb-0">
-                    <i class="bi bi-info-circle"></i> Información del Curso
+                    <i class="bi bi-info-circle"></i> {% translate "Información del Curso" %}
                 </h6>
             </div>
             <div class="card-body">
@@ -242,29 +243,29 @@
                     <div class="col-6">
                         <div class="border-end">
                             <h4 class="text-primary mb-0">{{ classes.count }}</h4>
-                            <small class="text-muted">{% if classes.count == 1 %}Clase{% else %}Clases{% endif %}</small>
+                            <small class="text-muted">{% if classes.count == 1 %}{% translate "Clase" %}{% else %}{% translate "Clases" %}{% endif %}</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <h4 class="text-success mb-0">{{ classes|length }}</h4>
-                        <small class="text-muted">Activas</small>
+                        <small class="text-muted">{% translate "Activas" %}</small>
                     </div>
                 </div>
                 
                 <hr>
                 
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <small class="text-muted">Instructor:</small>
+                    <small class="text-muted">{% translate "Instructor:" %}</small>
                     <span class="badge bg-primary">{{ course.created_by.get_full_name|default:course.created_by.username }}</span>
                 </div>
                 
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <small class="text-muted">Creado:</small>
+                    <small class="text-muted">{% translate "Creado:" %}</small>
                     <span>{{ course.created_at|date:"d/m/Y" }}</span>
                 </div>
                 
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <small class="text-muted">Última actualización:</small>
+                    <small class="text-muted">{% translate "Última actualización:" %}</small>
                     <span>{{ course.updated_at|date:"d/m/Y" }}</span>
                 </div>
                 
@@ -272,16 +273,16 @@
                     {% if course.created_by == user or user.is_superuser %}
                         <hr>
                         <h6 class="text-muted mb-3">
-                            <i class="bi bi-share"></i> Acceso Público
+                            <i class="bi bi-share"></i> {% translate "Acceso Público" %}
                         </h6>
                         
                         {% if course.is_public_enabled and course.public_token %}
                             <div class="alert alert-success p-2">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <small class="text-success fw-bold">
-                                        <i class="bi bi-unlock"></i> Enlace público activo
+                                        <i class="bi bi-unlock"></i> {% translate "Enlace público activo" %}
                                     </small>
-                                    <span class="badge bg-success">Habilitado</span>
+                                    <span class="badge bg-success">{% translate "Habilitado" %}</span>
                                 </div>
                                 <div class="input-group input-group-sm mb-2">
                                     <input type="text" 
@@ -300,12 +301,12 @@
                                        id="publicLinkButton"
                                        class="btn btn-sm btn-primary"
                                        target="_blank">
-                                        <i class="bi bi-box-arrow-up-right"></i> Ir al Curso Público
+                                        <i class="bi bi-box-arrow-up-right"></i> {% translate "Ir al Curso Público" %}
                                     </a>
                                     <a href="{% url 'course_disable_public_access' course.pk %}" 
                                        class="btn btn-sm btn-outline-danger"
                                        onclick="return confirm('¿Deshabilitar acceso público?')">
-                                        <i class="bi bi-lock"></i> Deshabilitar
+                                        <i class="bi bi-lock"></i> {% translate "Deshabilitar" %}
                                     </a>
                                 </div>
                             </div>
@@ -313,15 +314,15 @@
                             <div class="alert alert-warning p-2">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <small class="text-warning fw-bold">
-                                        <i class="bi bi-lock"></i> Acceso privado
+                                        <i class="bi bi-lock"></i> {% translate "Acceso privado" %}
                                     </small>
-                                    <span class="badge bg-warning text-dark">Deshabilitado</span>
+                                    <span class="badge bg-warning text-dark">{% translate "Deshabilitado" %}</span>
                                 </div>
-                                <p class="small mb-2">El curso solo es accesible para usuarios autenticados.</p>
+                                <p class="small mb-2">{% translate "El curso solo es accesible para usuarios autenticados." %}</p>
                                 <a href="{% url 'course_generate_public_token' course.pk %}" 
                                    class="btn btn-sm btn-warning"
                                    onclick="return confirm('¿Generar enlace público para este curso?')">
-                                    <i class="bi bi-unlock"></i> Generar enlace público
+                                    <i class="bi bi-unlock"></i> {% translate "Generar enlace público" %}
                                 </a>
                             </div>
                         {% endif %}
@@ -329,11 +330,11 @@
                 {% endif %}
                 
                 <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-muted">Estado:</small>
+                    <small class="text-muted">{% translate "Estado:" %}</small>
                     {% if course.is_active %}
-                        <span class="badge bg-success">Activo</span>
+                        <span class="badge bg-success">{% translate "Activo" %}</span>
                     {% else %}
-                        <span class="badge bg-secondary">Inactivo</span>
+                        <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                     {% endif %}
                 </div>
             </div>
@@ -343,24 +344,24 @@
         <div class="card">
             <div class="card-header bg-warning text-dark">
                 <h6 class="mb-0">
-                    <i class="bi bi-tools"></i> Acciones
+                    <i class="bi bi-tools"></i> {% translate "Acciones" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <a href="{% url 'course_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver a Cursos
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver a Cursos" %}
                     </a>
                     {% if user|can_manage_courses %}
                         {% if course.created_by == user or user.is_superuser %}
                         <a href="{% url 'course_class_create' course.pk %}" class="btn btn-success">
-                            <i class="bi bi-plus-circle"></i> Agregar Clase
+                            <i class="bi bi-plus-circle"></i> {% translate "Agregar Clase" %}
                         </a>
                         <a href="{% url 'course_edit' course.pk %}" class="btn btn-warning">
-                            <i class="bi bi-pencil"></i> Editar Curso
+                            <i class="bi bi-pencil"></i> {% translate "Editar Curso" %}
                         </a>
                         <a href="{% url 'course_delete' course.pk %}" class="btn btn-danger">
-                            <i class="bi bi-trash"></i> Eliminar Curso
+                            <i class="bi bi-trash"></i> {% translate "Eliminar Curso" %}
                         </a>
                         {% endif %}
                     {% endif %}
@@ -377,7 +378,7 @@
         <div class="card">
             <div class="card-header bg-info text-white">
                 <h5 class="mb-0">
-                    <i class="bi bi-chat-dots"></i> Comentarios del Curso
+                    <i class="bi bi-chat-dots"></i> {% translate "Comentarios del Curso" %}
                     {% if total_pending_comments > 0 %}
                         <span class="badge bg-warning text-dark">{{ total_pending_comments }} pendiente{{ total_pending_comments|pluralize }}</span>
                     {% endif %}
@@ -409,12 +410,12 @@
                                     <div class="row">
                                         <div class="col-md-8">
                                             <div class="mb-3">
-                                                <strong>Email:</strong> {{ comment.email }}<br>
-                                                <strong>IP:</strong> {{ comment.ip_address }}<br>
-                                                <strong>Fecha:</strong> {{ comment.created_at|date:"d/m/Y H:i" }}
+                                                <strong>{% translate "Email:" %}</strong> {{ comment.email }}<br>
+                                                <strong>{% translate "IP:" %}</strong> {{ comment.ip_address }}<br>
+                                                <strong>{% translate "Fecha:" %}</strong> {{ comment.created_at|date:"d/m/Y H:i" }}
                                             </div>
                                             <div class="mb-3">
-                                                <strong>Comentario:</strong>
+                                                <strong>{% translate "Comentario:" %}</strong>
                                                 <p class="mb-0 mt-2">{{ comment.comment }}</p>
                                             </div>
                                             {% if comment.status == 'resuelto' %}
@@ -424,13 +425,13 @@
                                                         <hr>
                                                         {% if comment.solution_link %}
                                                             <p class="mb-1">
-                                                                <strong><i class="bi bi-link-45deg"></i> Link:</strong><br>
+                                                                <strong><i class="bi bi-link-45deg"></i> {% translate "Link:" %}</strong><br>
                                                                 <a href="{{ comment.solution_link }}" target="_blank" class="text-decoration-none">{{ comment.solution_link }}</a>
                                                             </p>
                                                         {% endif %}
                                                         {% if comment.solution_note %}
                                                             <p class="mb-0">
-                                                                <strong><i class="bi bi-sticky"></i> Nota:</strong><br>
+                                                                <strong><i class="bi bi-sticky"></i> {% translate "Nota:" %}</strong><br>
                                                                 {{ comment.solution_note|linebreaks }}
                                                             </p>
                                                         {% endif %}
@@ -443,20 +444,20 @@
                                                 <form method="post" action="{% url 'course_comment_resolve' comment.pk %}" class="mb-3">
                                                     {% csrf_token %}
                                                     <div class="mb-2">
-                                                        <label for="solution_link_{{ comment.pk }}" class="form-label small">Link de solución (opcional)</label>
+                                                        <label for="solution_link_{{ comment.pk }}" class="form-label small">{% translate "Link de solución (opcional)" %}</label>
                                                         <input type="url" class="form-control form-control-sm" id="solution_link_{{ comment.pk }}" name="solution_link" placeholder="https://...">
                                                     </div>
                                                     <div class="mb-3">
-                                                        <label for="solution_note_{{ comment.pk }}" class="form-label small">Nota de solución (opcional)</label>
+                                                        <label for="solution_note_{{ comment.pk }}" class="form-label small">{% translate "Nota de solución (opcional)" %}</label>
                                                         <textarea class="form-control form-control-sm" id="solution_note_{{ comment.pk }}" name="solution_note" rows="3" placeholder="Describe la solución..."></textarea>
                                                     </div>
                                                     <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Marcar como resuelto?')">
-                                                        <i class="bi bi-check-circle"></i> Marcar como Resuelto
+                                                        <i class="bi bi-check-circle"></i> {% translate "Marcar como Resuelto" %}
                                                     </button>
                                                 </form>
                                             {% endif %}
                                             <a href="{% url 'course_class_detail' course.pk comment.course_class.pk %}" class="btn btn-outline-primary w-100">
-                                                <i class="bi bi-eye"></i> Ver Clase
+                                                <i class="bi bi-eye"></i> {% translate "Ver Clase" %}
                                             </a>
                                         </div>
                                     </div>
@@ -468,8 +469,8 @@
                 {% else %}
                     <div class="text-center py-4">
                         <i class="bi bi-chat-dots display-4 text-muted mb-3"></i>
-                        <h5 class="text-muted">No hay comentarios</h5>
-                        <p class="text-muted">Los usuarios aún no han dejado comentarios en este curso.</p>
+                        <h5 class="text-muted">{% translate "No hay comentarios" %}</h5>
+                        <p class="text-muted">{% translate "Los usuarios aún no han dejado comentarios en este curso." %}</p>
                     </div>
                 {% endif %}
             </div>

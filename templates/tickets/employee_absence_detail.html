@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -6,11 +7,11 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
                     <a href="{% url 'employee_absence_list' %}">
-                        <i class="bi bi-calendar-x"></i> Ausencias
+                        <i class="bi bi-calendar-x"></i> {% translate "Ausencias" %}
                     </a>
                 </li>
                 <li class="breadcrumb-item active">{{ page_title }}</li>
@@ -24,17 +25,17 @@
     <div class="btn-group" role="group">
         {% if absence.status == 'pending' %}
         <button type="button" class="btn btn-success" onclick="showApprovalModal()">
-            <i class="bi bi-check-circle"></i> Aprobar
+            <i class="bi bi-check-circle"></i> {% translate "Aprobar" %}
         </button>
         <button type="button" class="btn btn-danger" onclick="showRejectionModal()">
-            <i class="bi bi-x-circle"></i> Rechazar
+            <i class="bi bi-x-circle"></i> {% translate "Rechazar" %}
         </button>
         {% endif %}
         <a href="{% url 'employee_absence_edit' absence.pk %}" class="btn btn-outline-secondary">
-            <i class="bi bi-pencil"></i> Editar
+            <i class="bi bi-pencil"></i> {% translate "Editar" %}
         </a>
         <a href="{% url 'employee_absence_list' %}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Volver
+            <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
         </a>
     </div>
 </div>
@@ -46,7 +47,7 @@
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-info-circle"></i> Información de la Ausencia
+                        <i class="bi bi-info-circle"></i> {% translate "Información de la Ausencia" %}
                     </h5>
                     <span class="badge bg-{{ absence.get_status_display_class }} fs-6">
                         {{ absence.get_status_display }}
@@ -56,7 +57,7 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <h6 class="text-primary">Empleado</h6>
+                        <h6 class="text-primary">{% translate "Empleado" %}</h6>
                         <div class="mb-3">
                             <strong>{{ absence.employee.get_full_name|default:absence.employee.username }}</strong>
                             <br><small class="text-muted">Usuario: {{ absence.employee.username }}</small>
@@ -65,20 +66,20 @@
                             {% endif %}
                         </div>
                         
-                        <h6 class="text-primary">Tipo de Ausencia</h6>
+                        <h6 class="text-primary">{% translate "Tipo de Ausencia" %}</h6>
                         <div class="mb-3">
                             <span class="badge fs-6" style="background-color: {{ absence.absence_type.color }}; color: white;">
                                 {{ absence.absence_type.name }}
                             </span>
                             <div class="mt-1">
                                 {% if absence.absence_type.is_paid %}
-                                <small class="text-success"><i class="bi bi-check-circle"></i> Con goce de sueldo</small>
+                                <small class="text-success"><i class="bi bi-check-circle"></i> {% translate "Con goce de sueldo" %}</small>
                                 {% else %}
-                                <small class="text-warning"><i class="bi bi-exclamation-triangle"></i> Sin goce de sueldo</small>
+                                <small class="text-warning"><i class="bi bi-exclamation-triangle"></i> {% translate "Sin goce de sueldo" %}</small>
                                 {% endif %}
                                 
                                 {% if absence.absence_type.requires_documentation %}
-                                <br><small class="text-info"><i class="bi bi-file-earmark"></i> Requiere documentación</small>
+                                <br><small class="text-info"><i class="bi bi-file-earmark"></i> {% translate "Requiere documentación" %}</small>
                                 {% endif %}
                                 
                                 {% if absence.absence_type.max_days_per_year %}
@@ -89,12 +90,12 @@
                     </div>
                     
                     <div class="col-md-6">
-                        <h6 class="text-primary">Fechas</h6>
+                        <h6 class="text-primary">{% translate "Fechas" %}</h6>
                         <div class="mb-3">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <strong>Inicio:</strong> {{ absence.start_date|date:"d/m/Y" }}<br>
-                                    <strong>Fin:</strong> {{ absence.end_date|date:"d/m/Y" }}
+                                    <strong>{% translate "Inicio:" %}</strong> {{ absence.start_date|date:"d/m/Y" }}<br>
+                                    <strong>{% translate "Fin:" %}</strong> {{ absence.end_date|date:"d/m/Y" }}
                                 </div>
                                 <span class="badge bg-secondary fs-6">
                                     {{ absence.get_duration_days }} día{{ absence.get_duration_days|pluralize }}
@@ -103,12 +104,12 @@
                             
                             {% if absence.is_current %}
                             <div class="alert alert-warning mt-2 mb-0" role="alert">
-                                <i class="bi bi-exclamation-circle"></i> <strong>Ausencia en curso</strong>
+                                <i class="bi bi-exclamation-circle"></i> <strong>{% translate "Ausencia en curso" %}</strong>
                             </div>
                             {% endif %}
                         </div>
                         
-                        <h6 class="text-primary">Horas Perdidas</h6>
+                        <h6 class="text-primary">{% translate "Horas Perdidas" %}</h6>
                         <div class="mb-3">
                             <div class="d-flex align-items-center">
                                 <i class="bi bi-clock-history me-2 text-danger"></i>
@@ -121,7 +122,7 @@
                             {% endif %}
                         </div>
                         
-                        <h6 class="text-primary">Estado</h6>
+                        <h6 class="text-primary">{% translate "Estado" %}</h6>
                         <div class="mb-3">
                             <span class="badge bg-{{ absence.get_status_display_class }} fs-6">
                                 {{ absence.get_status_display }}
@@ -138,30 +139,30 @@
                     </div>
                 </div>
                 
-                <h6 class="text-primary">Motivo</h6>
+                <h6 class="text-primary">{% translate "Motivo" %}</h6>
                 <div class="bg-light p-3 rounded mb-3">
                     {{ absence.reason|linebreaks }}
                 </div>
                 
                 {% if absence.rejection_reason %}
-                <h6 class="text-danger">Motivo de Rechazo</h6>
+                <h6 class="text-danger">{% translate "Motivo de Rechazo" %}</h6>
                 <div class="alert alert-danger">
                     {{ absence.rejection_reason|linebreaks }}
                 </div>
                 {% endif %}
                 
                 {% if absence.notes %}
-                <h6 class="text-primary">Notas Adicionales</h6>
+                <h6 class="text-primary">{% translate "Notas Adicionales" %}</h6>
                 <div class="bg-light p-3 rounded mb-3">
                     {{ absence.notes|linebreaks }}
                 </div>
                 {% endif %}
                 
                 {% if absence.documentation_file %}
-                <h6 class="text-primary">Documentación</h6>
+                <h6 class="text-primary">{% translate "Documentación" %}</h6>
                 <div class="mb-3">
                     <a href="{{ absence.documentation_file.url }}" target="_blank" class="btn btn-outline-primary">
-                        <i class="bi bi-file-earmark-arrow-down"></i> Descargar Archivo
+                        <i class="bi bi-file-earmark-arrow-down"></i> {% translate "Descargar Archivo" %}
                     </a>
                     <small class="text-muted d-block mt-1">{{ absence.documentation_file.name }}</small>
                 </div>
@@ -175,7 +176,7 @@
         <div class="card">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-clock-history"></i> Historial
+                    <i class="bi bi-clock-history"></i> {% translate "Historial" %}
                 </h6>
             </div>
             <div class="card-body">
@@ -183,7 +184,7 @@
                     <div class="timeline-item">
                         <div class="timeline-marker bg-primary"></div>
                         <div class="timeline-content">
-                            <h6 class="mb-1">Solicitud Creada</h6>
+                            <h6 class="mb-1">{% translate "Solicitud Creada" %}</h6>
                             <small class="text-muted">{{ absence.created_at|date:"d/m/Y H:i" }}</small>
                         </div>
                     </div>
@@ -205,7 +206,7 @@
                     <div class="timeline-item">
                         <div class="timeline-marker bg-info"></div>
                         <div class="timeline-content">
-                            <h6 class="mb-1">Última Actualización</h6>
+                            <h6 class="mb-1">{% translate "Última Actualización" %}</h6>
                             <small class="text-muted">{{ absence.updated_at|date:"d/m/Y H:i" }}</small>
                         </div>
                     </div>
@@ -217,19 +218,19 @@
         <div class="card mt-3">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-gear"></i> Acciones
+                    <i class="bi bi-gear"></i> {% translate "Acciones" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <a href="{% url 'employee_absence_edit' absence.pk %}" class="btn btn-outline-primary">
-                        <i class="bi bi-pencil"></i> Editar Ausencia
+                        <i class="bi bi-pencil"></i> {% translate "Editar Ausencia" %}
                     </a>
                     <a href="{% url 'employee_absence_delete' absence.pk %}" class="btn btn-outline-danger">
-                        <i class="bi bi-trash"></i> Eliminar Ausencia
+                        <i class="bi bi-trash"></i> {% translate "Eliminar Ausencia" %}
                     </a>
                     <a href="{% url 'employee_absence_calendar' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-calendar3"></i> Ver Calendario
+                        <i class="bi bi-calendar3"></i> {% translate "Ver Calendario" %}
                     </a>
                 </div>
             </div>
@@ -242,11 +243,11 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Aprobar Ausencia</h5>
+                <h5 class="modal-title">{% translate "Aprobar Ausencia" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>¿Estás seguro de que deseas <strong>aprobar</strong> esta ausencia?</p>
+                <p>{% translate "¿Estás seguro de que deseas" %} <strong>{% translate "aprobar" %}</strong> {% translate "esta ausencia?" %}</p>
                 <div class="bg-light p-3 rounded">
                     <strong>{{ absence.employee.get_full_name|default:absence.employee.username }}</strong><br>
                     {{ absence.absence_type.name }}<br>
@@ -254,12 +255,12 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                 <form method="post" action="{% url 'employee_absence_approve' absence.pk %}" class="d-inline">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="approve">
                     <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check-circle"></i> Aprobar
+                        <i class="bi bi-check-circle"></i> {% translate "Aprobar" %}
                     </button>
                 </form>
             </div>
@@ -272,24 +273,24 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Rechazar Ausencia</h5>
+                <h5 class="modal-title">{% translate "Rechazar Ausencia" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="post" action="{% url 'employee_absence_approve' absence.pk %}">
                 <div class="modal-body">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="reject">
-                    <p>¿Estás seguro de que deseas <strong>rechazar</strong> esta ausencia?</p>
+                    <p>{% translate "¿Estás seguro de que deseas" %} <strong>{% translate "rechazar" %}</strong> {% translate "esta ausencia?" %}</p>
                     <div class="mb-3">
-                        <label for="rejection_reason" class="form-label">Motivo del rechazo <span class="text-danger">*</span></label>
+                        <label for="rejection_reason" class="form-label">{% translate "Motivo del rechazo" %} <span class="text-danger">*</span></label>
                         <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="3" 
                                   placeholder="Explica por qué se rechaza esta ausencia..." required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                     <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-x-circle"></i> Rechazar
+                        <i class="bi bi-x-circle"></i> {% translate "Rechazar" %}
                     </button>
                 </div>
             </form>

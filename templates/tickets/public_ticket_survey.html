@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -141,21 +142,21 @@
         <div class="survey-container">
             <!-- Header -->
             <div class="survey-header">
-                <h1><i class="bi bi-star-fill"></i> Encuesta de Satisfacción</h1>
-                <p class="mb-0">Tu opinión es muy importante para nosotros</p>
+                <h1><i class="bi bi-star-fill"></i> {% translate "Encuesta de Satisfacción" %}</h1>
+                <p class="mb-0">{% translate "Tu opinión es muy importante para nosotros" %}</p>
             </div>
             
             <!-- Body -->
             <div class="survey-body">
                 <!-- Información del Ticket -->
                 <div class="ticket-info">
-                    <h6><i class="bi bi-ticket-detailed"></i> Información del Ticket</h6>
+                    <h6><i class="bi bi-ticket-detailed"></i> {% translate "Información del Ticket" %}</h6>
                     <div class="row">
                         <div class="col-md-6">
-                            <strong>Número:</strong> {{ ticket.ticket_number }}
+                            <strong>{% translate "Número:" %}</strong> {{ ticket.ticket_number }}
                         </div>
                         <div class="col-md-6">
-                            <strong>Título:</strong> {{ ticket.title }}
+                            <strong>{% translate "Título:" %}</strong> {{ ticket.title }}
                         </div>
                     </div>
                 </div>
@@ -179,25 +180,25 @@
                         <div class="col-md-6">
                             <div class="form-floating">
                                 <input type="text" class="form-control" id="client_name" name="client_name" 
-                                       placeholder="Tu nombre completo" required>
-                                <label for="client_name">Nombre Completo <span class="required">*</span></label>
+                                       placeholder="{% translate 'Tu nombre completo' %}" required>
+                                <label for="client_name">{% translate "Nombre Completo" %} <span class="required">*</span></label>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-floating">
                                 <input type="email" class="form-control" id="client_email" name="client_email" 
                                        placeholder="tu@email.com" required>
-                                <label for="client_email">Correo Electrónico <span class="required">*</span></label>
+                                <label for="client_email">{% translate "Correo Electrónico" %} <span class="required">*</span></label>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Calificaciones -->
-                    <h5 class="mb-3"><i class="bi bi-star"></i> Calificaciones <span class="required">*</span></h5>
+                    <h5 class="mb-3"><i class="bi bi-star"></i> {% translate "Calificaciones" %} <span class="required">*</span></h5>
                     
                     <!-- Satisfacción General -->
                     <div class="rating-group">
-                        <label class="form-label fw-bold">¿Qué tan satisfecho está con el servicio general?</label>
+                        <label class="form-label fw-bold">{% translate "¿Qué tan satisfecho está con el servicio general?" %}</label>
                         <div class="star-rating" data-rating="overall_satisfaction">
                             {% for value, label in rating_choices %}
                                 <input type="radio" id="overall_{{ value }}" name="overall_satisfaction" value="{{ value }}" required>
@@ -209,7 +210,7 @@
                     
                     <!-- Calidad de la Solución -->
                     <div class="rating-group">
-                        <label class="form-label fw-bold">¿Cómo califica la calidad de la solución proporcionada?</label>
+                        <label class="form-label fw-bold">{% translate "¿Cómo califica la calidad de la solución proporcionada?" %}</label>
                         <div class="star-rating" data-rating="resolution_quality">
                             {% for value, label in resolution_quality_choices %}
                                 <input type="radio" id="resolution_{{ value }}" name="resolution_quality" value="{{ value }}" required>
@@ -221,7 +222,7 @@
                     
                     <!-- Tiempo de Respuesta -->
                     <div class="rating-group">
-                        <label class="form-label fw-bold">¿Cómo califica nuestro tiempo de respuesta?</label>
+                        <label class="form-label fw-bold">{% translate "¿Cómo califica nuestro tiempo de respuesta?" %}</label>
                         <div class="star-rating" data-rating="response_time">
                             {% for value, label in response_time_choices %}
                                 <input type="radio" id="response_{{ value }}" name="response_time" value="{{ value }}" required>
@@ -233,7 +234,7 @@
                     
                     <!-- Comunicación -->
                     <div class="rating-group">
-                        <label class="form-label fw-bold">¿Cómo califica la comunicación durante el proceso?</label>
+                        <label class="form-label fw-bold">{% translate "¿Cómo califica la comunicación durante el proceso?" %}</label>
                         <div class="star-rating" data-rating="communication">
                             {% for value, label in rating_choices %}
                                 <input type="radio" id="communication_{{ value }}" name="communication" value="{{ value }}" required>
@@ -244,58 +245,58 @@
                     </div>
                     
                     <!-- Comentarios -->
-                    <h5 class="mb-3"><i class="bi bi-chat-text"></i> Comentarios (Opcional)</h5>
+                    <h5 class="mb-3"><i class="bi bi-chat-text"></i> {% translate "Comentarios (Opcional)" %}</h5>
                     
                     <div class="comment-section">
                         <div class="form-floating mb-3">
                             <textarea class="form-control" id="what_went_well" name="what_went_well" 
                                     placeholder="Describa los aspectos positivos..." style="height: 100px"></textarea>
-                            <label for="what_went_well">¿Qué funcionó bien?</label>
+                            <label for="what_went_well">{% translate "¿Qué funcionó bien?" %}</label>
                         </div>
                         
                         <div class="form-floating mb-3">
                             <textarea class="form-control" id="what_could_improve" name="what_could_improve" 
                                     placeholder="Sugerencias para mejorar..." style="height: 100px"></textarea>
-                            <label for="what_could_improve">¿Qué se podría mejorar?</label>
+                            <label for="what_could_improve">{% translate "¿Qué se podría mejorar?" %}</label>
                         </div>
                         
                         <div class="form-floating">
                             <textarea class="form-control" id="additional_comments" name="additional_comments" 
                                     placeholder="Cualquier otro comentario..." style="height: 100px"></textarea>
-                            <label for="additional_comments">Comentarios adicionales</label>
+                            <label for="additional_comments">{% translate "Comentarios adicionales" %}</label>
                         </div>
                     </div>
                     
                     <!-- Recomendación -->
                     <div class="recommendation-section">
-                        <h6><i class="bi bi-hand-thumbs-up"></i> Recomendación</h6>
+                        <h6><i class="bi bi-hand-thumbs-up"></i> {% translate "Recomendación" %}</h6>
                         <div class="form-check mb-3">
                             <input class="form-check-input" type="radio" name="would_recommend" id="recommend_yes" value="true" checked>
                             <label class="form-check-label" for="recommend_yes">
-                                <i class="bi bi-hand-thumbs-up text-success"></i> Sí, recomendaría este servicio
+                                <i class="bi bi-hand-thumbs-up text-success"></i> {% translate "Sí, recomendaría este servicio" %}
                             </label>
                         </div>
                         <div class="form-check mb-3">
                             <input class="form-check-input" type="radio" name="would_recommend" id="recommend_no" value="false">
                             <label class="form-check-label" for="recommend_no">
-                                <i class="bi bi-hand-thumbs-down text-danger"></i> No recomendaría este servicio
+                                <i class="bi bi-hand-thumbs-down text-danger"></i> {% translate "No recomendaría este servicio" %}
                             </label>
                         </div>
                         
                         <div class="form-floating">
                             <textarea class="form-control" id="recommendation_reason" name="recommendation_reason" 
                                     placeholder="¿Por qué sí o por qué no?" style="height: 80px"></textarea>
-                            <label for="recommendation_reason">¿Por qué sí o por qué no?</label>
+                            <label for="recommendation_reason">{% translate "¿Por qué sí o por qué no?" %}</label>
                         </div>
                     </div>
                     
                     <!-- Botones -->
                     <div class="text-center">
                         <button type="submit" class="btn btn-success btn-submit btn-lg">
-                            <i class="bi bi-send"></i> Enviar Encuesta
+                            <i class="bi bi-send"></i> {% translate "Enviar Encuesta" %}
                         </button>
                         <a href="{% url 'public_ticket' token %}" class="btn btn-outline-secondary btn-lg ms-3">
-                            <i class="bi bi-arrow-left"></i> Volver al Ticket
+                            <i class="bi bi-arrow-left"></i> {% translate "Volver al Ticket" %}
                         </a>
                     </div>
                 </form>

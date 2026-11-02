@@ -1,22 +1,23 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Probar API - Tester{% endblock %}
+{% block title %}{% translate "Probar API - Tester" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row mb-4">
         <div class="col">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{% url 'api_tester' %}"><i class="bi bi-list"></i> Mis APIs</a>
+                        <a href="{% url 'api_tester' %}"><i class="bi bi-list"></i> {% translate "Mis APIs" %}</a>
                     </li>
-                    <li class="breadcrumb-item active">Probador</li>
+                    <li class="breadcrumb-item active">{% translate "Probador" %}</li>
                 </ol>
             </nav>
-            <h2><i class="bi bi-code-square"></i> Probador de API</h2>
-            <p class="text-muted">Interfaz estilo Postman para probar APIs internas y externas</p>
+            <h2><i class="bi bi-code-square"></i> {% translate "Probador de API" %}</h2>
+            <p class="text-muted">{% translate "Interfaz estilo Postman para probar APIs internas y externas" %}</p>
         </div>
     </div>
 
@@ -26,7 +27,7 @@
             <!-- APIs Guardadas -->
             <div class="card mb-3">
                 <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="bi bi-bookmark-star"></i> Mis APIs Guardadas</h6>
+                    <h6 class="mb-0"><i class="bi bi-bookmark-star"></i> {% translate "Mis APIs Guardadas" %}</h6>
                     <button class="btn btn-sm btn-light" onclick="toggleSavedApis()">
                         <i class="bi bi-chevron-down" id="toggleIcon"></i>
                     </button>
@@ -34,7 +35,7 @@
                 <div class="card-body p-2" id="savedApisPanel" style="display: none; max-height: 300px; overflow-y: auto;">
                     <div id="savedApisList">
                         <div class="text-center text-muted py-3">
-                            <small>Cargando...</small>
+                            <small>{% translate "Cargando..." %}</small>
                         </div>
                     </div>
                 </div>
@@ -42,29 +43,29 @@
 
             <div class="card mb-3">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-gear"></i> Configuración</h5>
+                    <h5 class="mb-0"><i class="bi bi-gear"></i> {% translate "Configuración" %}</h5>
                 </div>
                 <div class="card-body">
                     <!-- Modo: Interno o Externo -->
                     <div class="mb-3">
-                        <label class="form-label"><strong>Modo:</strong></label>
+                        <label class="form-label"><strong>{% translate "Modo:" %}</strong></label>
                         <div class="btn-group w-100" role="group">
                             <input type="radio" class="btn-check" name="apiMode" id="modeInternal" value="internal" checked onchange="toggleApiMode()">
                             <label class="btn btn-outline-primary" for="modeInternal">
-                                <i class="bi bi-house"></i> API Interna
+                                <i class="bi bi-house"></i> {% translate "API Interna" %}
                             </label>
                             <input type="radio" class="btn-check" name="apiMode" id="modeExternal" value="external" onchange="toggleApiMode()">
                             <label class="btn btn-outline-success" for="modeExternal">
-                                <i class="bi bi-globe"></i> API Externa
+                                <i class="bi bi-globe"></i> {% translate "API Externa" %}
                             </label>
                         </div>
                     </div>
 
                     <!-- Selección de Tabla (solo modo interno) -->
                     <div class="mb-3" id="tableSelectGroup">
-                        <label class="form-label"><strong>Tabla:</strong></label>
+                        <label class="form-label"><strong>{% translate "Tabla:" %}</strong></label>
                         <select class="form-select" id="tableSelect" onchange="updateEndpoint()">
-                            <option value="">Selecciona una tabla...</option>
+                            <option value="">{% translate "Selecciona una tabla..." %}</option>
                             {% for table in tables %}
                             <option value="{{ table.name }}" 
                                     data-token="{{ table.api_token }}"
@@ -78,90 +79,90 @@
 
                     <!-- Ejemplos de APIs (solo modo externo) -->
                     <div class="mb-3" id="examplesGroup" style="display: none;">
-                        <label class="form-label"><strong>Ejemplos de APIs:</strong></label>
+                        <label class="form-label"><strong>{% translate "Ejemplos de APIs:" %}</strong></label>
                         <select class="form-select" id="apiExamples" onchange="loadApiExample()">
-                            <option value="">Selecciona un ejemplo...</option>
+                            <option value="">{% translate "Selecciona un ejemplo..." %}</option>
                             <optgroup label="APIs Públicas">
-                                <option value="weather">🌤️ API del Tiempo (OpenWeather)</option>
-                                <option value="exchange">💱 API Cambio de Moneda</option>
-                                <option value="jsonplaceholder">📝 JSONPlaceholder (Posts)</option>
-                                <option value="github">🐙 GitHub API (Repos)</option>
+                                <option value="weather">{% translate "🌤️ API del Tiempo (OpenWeather)" %}</option>
+                                <option value="exchange">{% translate "💱 API Cambio de Moneda" %}</option>
+                                <option value="jsonplaceholder">{% translate "📝 JSONPlaceholder (Posts)" %}</option>
+                                <option value="github">{% translate "🐙 GitHub API (Repos)" %}</option>
                             </optgroup>
                             <optgroup label="APIs Empresariales">
-                                <option value="odoo">🟣 Odoo JSON-RPC (Authenticate)</option>
-                                <option value="odoo-search">🟣 Odoo JSON-RPC (Search)</option>
-                                <option value="odoo-create">🟣 Odoo JSON-RPC (Create)</option>
+                                <option value="odoo">{% translate "🟣 Odoo JSON-RPC (Authenticate)" %}</option>
+                                <option value="odoo-search">{% translate "🟣 Odoo JSON-RPC (Search)" %}</option>
+                                <option value="odoo-create">{% translate "🟣 Odoo JSON-RPC (Create)" %}</option>
                             </optgroup>
                         </select>
                     </div>
 
                     <!-- URL Manual (solo modo externo) -->
                     <div class="mb-3" id="manualUrlGroup" style="display: none;">
-                        <label class="form-label"><strong>URL de la API:</strong></label>
+                        <label class="form-label"><strong>{% translate "URL de la API:" %}</strong></label>
                         <input type="text" class="form-control" id="manualUrl" placeholder="https://api.ejemplo.com/endpoint" oninput="updateManualEndpoint()">
-                        <small class="text-muted">Ingresa la URL completa del endpoint</small>
+                        <small class="text-muted">{% translate "Ingresa la URL completa del endpoint" %}</small>
                     </div>
 
                     <!-- Método HTTP -->
                     <div class="mb-3">
-                        <label class="form-label"><strong>Método:</strong></label>
+                        <label class="form-label"><strong>{% translate "Método:" %}</strong></label>
                         <select class="form-select" id="methodSelect" onchange="updateMethodUI()">
-                            <option value="GET">GET - Listar/Obtener</option>
-                            <option value="POST">POST - Crear</option>
-                            <option value="PUT">PUT - Actualizar</option>
-                            <option value="DELETE">DELETE - Eliminar</option>
-                            <option value="PATCH">PATCH - Actualización Parcial</option>
+                            <option value="GET">{% translate "GET - Listar/Obtener" %}</option>
+                            <option value="POST">{% translate "POST - Crear" %}</option>
+                            <option value="PUT">{% translate "PUT - Actualizar" %}</option>
+                            <option value="DELETE">{% translate "DELETE - Eliminar" %}</option>
+                            <option value="PATCH">{% translate "PATCH - Actualización Parcial" %}</option>
                         </select>
                     </div>
 
                     <!-- ID de Registro (para GET, PUT, DELETE específicos) -->
                     <div class="mb-3" id="recordIdGroup" style="display: none;">
-                        <label class="form-label"><strong>ID de Registro:</strong></label>
-                        <input type="number" class="form-control" id="recordId" placeholder="Dejar vacío para listar todos (GET)" onchange="updateEndpoint()">
-                        <small class="text-muted">Opcional para GET, requerido para PUT/DELETE</small>
+                        <label class="form-label"><strong>{% translate "ID de Registro:" %}</strong></label>
+                        <input type="number" class="form-control" id="recordId" placeholder="{% translate 'Dejar vacío para listar todos (GET)' %}" onchange="updateEndpoint()">
+                        <small class="text-muted">{% translate "Opcional para GET, requerido para PUT/DELETE" %}</small>
                     </div>
 
                     <!-- Token/Auth (modo interno automático, externo manual) -->
                     <div class="mb-3" id="tokenGroup">
-                        <label class="form-label"><strong>Token API:</strong></label>
+                        <label class="form-label"><strong>{% translate "Token API:" %}</strong></label>
                         <div class="input-group">
-                            <input type="text" class="form-control font-monospace small" id="apiToken" placeholder="Token automático o manual">
+                            <input type="text" class="form-control font-monospace small" id="apiToken" placeholder="{% translate 'Token automático o manual' %}">
                             <button class="btn btn-outline-secondary" type="button" onclick="copyToken()">
                                 <i class="bi bi-clipboard"></i>
                             </button>
                         </div>
-                        <small class="text-muted" id="tokenHelp">Se rellena automáticamente para APIs internas</small>
+                        <small class="text-muted" id="tokenHelp">{% translate "Se rellena automáticamente para APIs internas" %}</small>
                     </div>
 
                     <!-- URL Completa -->
                     <div class="mb-3">
-                        <label class="form-label"><strong>Endpoint:</strong></label>
-                        <input type="text" class="form-control font-monospace small" id="endpoint" placeholder="URL completa del endpoint">
+                        <label class="form-label"><strong>{% translate "Endpoint:" %}</strong></label>
+                        <input type="text" class="form-control font-monospace small" id="endpoint" placeholder="{% translate 'URL completa del endpoint' %}">
                     </div>
 
                     <!-- Headers Personalizados (modo externo) -->
                     <div class="mb-3" id="customHeadersGroup" style="display: none;">
-                        <label class="form-label"><strong>Headers Personalizados:</strong></label>
+                        <label class="form-label"><strong>{% translate "Headers Personalizados:" %}</strong></label>
                         <textarea class="form-control font-monospace small" id="customHeaders" rows="4" placeholder='Authorization: Bearer token123
 Accept: application/json
 Custom-Header: valor'></textarea>
-                        <small class="text-muted">Un header por línea en formato "Nombre: Valor"</small>
+                        <small class="text-muted">{% translate 'Un header por línea en formato "Nombre: Valor"' %}</small>
                     </div>
 
                     <!-- Parámetros de Query (solo GET) -->
                     <div id="queryParamsGroup" style="display: none;">
-                        <label class="form-label"><strong>Parámetros de Query:</strong></label>
+                        <label class="form-label"><strong>{% translate "Parámetros de Query:" %}</strong></label>
                         <div class="mb-2">
-                            <label class="form-label small">Búsqueda:</label>
-                            <input type="text" class="form-control form-control-sm" id="searchParam" placeholder="Buscar...">
+                            <label class="form-label small">{% translate "Búsqueda:" %}</label>
+                            <input type="text" class="form-control form-control-sm" id="searchParam" placeholder="{% translate 'Buscar...' %}">
                         </div>
                         <div class="row">
                             <div class="col-6">
-                                <label class="form-label small">Página:</label>
+                                <label class="form-label small">{% translate "Página:" %}</label>
                                 <input type="number" class="form-control form-control-sm" id="pageParam" value="1">
                             </div>
                             <div class="col-6">
-                                <label class="form-label small">Por página:</label>
+                                <label class="form-label small">{% translate "Por página:" %}</label>
                                 <input type="number" class="form-control form-control-sm" id="perPageParam" value="50">
                             </div>
                         </div>
@@ -172,12 +173,12 @@ Custom-Header: valor'></textarea>
             <!-- Generador de Body JSON -->
             <div class="card" id="bodyJsonCard" style="display: none;">
                 <div class="card-header bg-warning">
-                    <h6 class="mb-0"><i class="bi bi-braces"></i> Body (JSON)</h6>
+                    <h6 class="mb-0"><i class="bi bi-braces"></i> {% translate "Body (JSON)" %}</h6>
                 </div>
                 <div class="card-body">
                     <div id="jsonFieldsContainer"></div>
                     <button class="btn btn-sm btn-secondary w-100 mt-2" onclick="generateJSON()">
-                        <i class="bi bi-arrow-down"></i> Generar JSON
+                        <i class="bi bi-arrow-down"></i> {% translate "Generar JSON" %}
                     </button>
                 </div>
             </div>
@@ -188,34 +189,34 @@ Custom-Header: valor'></textarea>
             <!-- Editor de Request -->
             <div class="card mb-3">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-send"></i> Petición</h5>
+                    <h5 class="mb-0"><i class="bi bi-send"></i> {% translate "Petición" %}</h5>
                     <div>
                         <button class="btn btn-outline-light btn-sm me-2" onclick="showSaveModal()">
-                            <i class="bi bi-bookmark-plus"></i> Guardar
+                            <i class="bi bi-bookmark-plus"></i> {% translate "Guardar" %}
                         </button>
                         <button class="btn btn-success btn-sm" onclick="sendRequest()">
-                            <i class="bi bi-play-fill"></i> Enviar
+                            <i class="bi bi-play-fill"></i> {% translate "Enviar" %}
                         </button>
                     </div>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label"><strong>Headers que se enviarán:</strong></label>
+                        <label class="form-label"><strong>{% translate "Headers que se enviarán:" %}</strong></label>
                         <textarea class="form-control font-monospace small" id="headersInput" rows="3" readonly>Content-Type: application/json</textarea>
                     </div>
                     <div class="mb-3" id="bodyGroup" style="display: none;">
-                        <label class="form-label"><strong>Body (JSON):</strong></label>
+                        <label class="form-label"><strong>{% translate "Body (JSON):" %}</strong></label>
                         <textarea class="form-control font-monospace small" id="bodyInput" rows="10" placeholder='{
   "campo1": "valor1",
   "campo2": "valor2"
 }'></textarea>
-                        <small class="text-muted">Escribe el JSON manualmente o usa el generador</small>
+                        <small class="text-muted">{% translate "Escribe el JSON manualmente o usa el generador" %}</small>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label"><strong>Comando cURL equivalente:</strong></label>
+                        <label class="form-label"><strong>{% translate "Comando cURL equivalente:" %}</strong></label>
                         <textarea class="form-control font-monospace small bg-dark text-light" id="curlCommand" rows="6" readonly></textarea>
                         <button class="btn btn-sm btn-outline-secondary mt-2" onclick="copyCurl()">
-                            <i class="bi bi-clipboard"></i> Copiar cURL
+                            <i class="bi bi-clipboard"></i> {% translate "Copiar cURL" %}
                         </button>
                     </div>
                 </div>
@@ -224,32 +225,32 @@ Custom-Header: valor'></textarea>
             <!-- Panel de Respuesta -->
             <div class="card">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="bi bi-arrow-down-circle"></i> Respuesta</h5>
+                    <h5 class="mb-0"><i class="bi bi-arrow-down-circle"></i> {% translate "Respuesta" %}</h5>
                 </div>
                 <div class="card-body">
                     <div id="loadingIndicator" style="display: none;" class="text-center py-4">
                         <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando...</span>
+                            <span class="visually-hidden">{% translate "Cargando..." %}</span>
                         </div>
-                        <p class="mt-2">Enviando petición...</p>
+                        <p class="mt-2">{% translate "Enviando petición..." %}</p>
                     </div>
                     <div id="responseContainer" style="display: none;">
                         <div class="mb-3">
                             <span class="badge bg-secondary" id="statusCode">200</span>
-                            <span class="badge bg-info" id="responseTime">0ms</span>
+                            <span class="badge bg-info" id="responseTime">{% translate "0ms" %}</span>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label"><strong>Headers de Respuesta:</strong></label>
+                            <label class="form-label"><strong>{% translate "Headers de Respuesta:" %}</strong></label>
                             <pre class="bg-light p-2 rounded small" id="responseHeaders"></pre>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label"><strong>Body:</strong></label>
+                            <label class="form-label"><strong>{% translate "Body:" %}</strong></label>
                             <pre class="bg-dark text-light p-3 rounded" id="responseBody" style="max-height: 500px; overflow-y: auto;"></pre>
                         </div>
                     </div>
                     <div id="noResponseMessage" class="text-center py-5 text-muted">
                         <i class="bi bi-arrow-up-circle" style="font-size: 3rem;"></i>
-                        <p class="mt-3">Configura y envía una petición para ver la respuesta aquí</p>
+                        <p class="mt-3">{% translate "Configura y envía una petición para ver la respuesta aquí" %}</p>
                     </div>
                 </div>
             </div>
@@ -262,32 +263,32 @@ Custom-Header: valor'></textarea>
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-bookmark-plus"></i> Guardar Configuración de API</h5>
+                <h5 class="modal-title"><i class="bi bi-bookmark-plus"></i> {% translate "Guardar Configuración de API" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="saveForm">
                     <div class="mb-3">
-                        <label class="form-label">Nombre de la API <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="saveTitle" required autofocus placeholder="Ej: API de Productos">
-                        <small class="text-muted">Dale un nombre descriptivo para identificarla fácilmente</small>
+                        <label class="form-label">{% translate "Nombre de la API" %} <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="saveTitle" required autofocus placeholder="{% translate 'Ej: API de Productos' %}">
+                        <small class="text-muted">{% translate "Dale un nombre descriptivo para identificarla fácilmente" %}</small>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Descripción (opcional)</label>
+                        <label class="form-label">{% translate "Descripción (opcional)" %}</label>
                         <textarea class="form-control" id="saveDescription" rows="2" placeholder="Descripción breve de para qué sirve esta API"></textarea>
                     </div>
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="saveIsFavorite">
                         <label class="form-check-label" for="saveIsFavorite">
-                            <i class="bi bi-star"></i> Marcar como favorita
+                            <i class="bi bi-star"></i> {% translate "Marcar como favorita" %}
                         </label>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                 <button type="button" class="btn btn-primary" onclick="saveApiConfiguration()">
-                    <i class="bi bi-save"></i> Guardar
+                    <i class="bi bi-save"></i> {% translate "Guardar" %}
                 </button>
             </div>
         </div>

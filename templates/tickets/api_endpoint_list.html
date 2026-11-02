@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -12,12 +13,12 @@
                 <div>
                     <h2 class="h3 mb-1">
                         <i class="bi bi-hdd-network text-primary"></i>
-                        APIs
+                        {% translate "APIs" %}
                     </h2>
-                    <p class="text-muted mb-0">Mini-APIs consultables vía GET generadas a partir de registros simples</p>
+                    <p class="text-muted mb-0">{% translate "Mini-APIs consultables vía GET generadas a partir de registros simples" %}</p>
                 </div>
                 <a href="{% url 'api_endpoint_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Nueva API
+                    <i class="bi bi-plus-circle"></i> {% translate "Nueva API" %}
                 </a>
             </div>
 
@@ -39,17 +40,17 @@
                                                 </h6>
                                                 {% if api_endpoint.is_active %}
                                                     <span class="badge bg-success me-2">
-                                                        <i class="bi bi-check-circle"></i> Activa
+                                                        <i class="bi bi-check-circle"></i> {% translate "Activa" %}
                                                     </span>
                                                 {% else %}
                                                     <span class="badge bg-secondary me-2">
-                                                        <i class="bi bi-x-circle"></i> Inactiva
+                                                        <i class="bi bi-x-circle"></i> {% translate "Inactiva" %}
                                                     </span>
                                                 {% endif %}
                                                 {% if api_endpoint.value %}
-                                                    <span class="badge bg-info me-2">Verdadero</span>
+                                                    <span class="badge bg-info me-2">{% translate "Verdadero" %}</span>
                                                 {% else %}
-                                                    <span class="badge bg-warning text-dark me-2">Falso</span>
+                                                    <span class="badge bg-warning text-dark me-2">{% translate "Falso" %}</span>
                                                 {% endif %}
                                             </div>
 
@@ -78,15 +79,15 @@
                                         <div class="d-flex flex-column gap-2 ms-3">
                                             <a href="{% url 'api_endpoint_detail' api_endpoint.pk %}"
                                                class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-eye"></i> Ver / Docs
+                                                <i class="bi bi-eye"></i> {% translate "Ver / Docs" %}
                                             </a>
                                             <a href="{% url 'api_endpoint_edit' api_endpoint.pk %}"
                                                class="btn btn-sm btn-outline-secondary">
-                                                <i class="bi bi-pencil"></i> Editar
+                                                <i class="bi bi-pencil"></i> {% translate "Editar" %}
                                             </a>
                                             <a href="{% url 'api_endpoint_delete' api_endpoint.pk %}"
                                                class="btn btn-sm btn-outline-danger">
-                                                <i class="bi bi-trash"></i> Eliminar
+                                                <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                                             </a>
                                         </div>
                                     </div>
@@ -96,10 +97,10 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="bi bi-hdd-network text-muted" style="font-size: 4rem;"></i>
-                            <h5 class="text-muted mt-3">No hay APIs disponibles</h5>
-                            <p class="text-muted">Aún no se han creado APIs.</p>
+                            <h5 class="text-muted mt-3">{% translate "No hay APIs disponibles" %}</h5>
+                            <p class="text-muted">{% translate "Aún no se han creado APIs." %}</p>
                             <a href="{% url 'api_endpoint_create' %}" class="btn btn-primary">
-                                <i class="bi bi-plus-circle"></i> Crear Primera API
+                                <i class="bi bi-plus-circle"></i> {% translate "Crear Primera API" %}
                             </a>
                         </div>
                     {% endif %}

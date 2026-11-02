@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ checklist.title }} - {{ block.super }}{% endblock %}
@@ -34,9 +35,9 @@
 <div class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'checklist_list' %}">Checklists</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'checklist_list' %}">{% translate "Checklists" %}</a></li>
                     <li class="breadcrumb-item active">{{ checklist.title }}</li>
                 </ol>
             </nav>
@@ -62,9 +63,9 @@
                         <div>
                             <span class="badge {% if checklist.is_public %}bg-success{% else %}bg-secondary{% endif %} fs-6">
                                 {% if checklist.is_public %}
-                                    <i class="bi bi-globe"></i> Público
+                                    <i class="bi bi-globe"></i> {% translate "Público" %}
                                 {% else %}
-                                    <i class="bi bi-lock"></i> Privado
+                                    <i class="bi bi-lock"></i> {% translate "Privado" %}
                                 {% endif %}
                             </span>
                         </div>
@@ -95,7 +96,7 @@
                                             <i class="bi bi-eye"></i>
                                         </div>
                                         <h3 class="mb-0 mt-2">{{ checklist.views_count }}</h3>
-                                        <p class="text-muted mb-0">Visualizaciones</p>
+                                        <p class="text-muted mb-0">{% translate "Visualizaciones" %}</p>
                                     </div>
                                 </div>
                             </div>
@@ -106,7 +107,7 @@
                                             <i class="bi bi-check-circle"></i>
                                         </div>
                                         <h3 class="mb-0 mt-2">{{ completed_items }}</h3>
-                                        <p class="text-muted mb-0">Tareas Completadas</p>
+                                        <p class="text-muted mb-0">{% translate "Tareas Completadas" %}</p>
                                     </div>
                                 </div>
                             </div>
@@ -117,7 +118,7 @@
                                             <i class="bi bi-list-task"></i>
                                         </div>
                                         <h3 class="mb-0 mt-2">{{ total_items }}</h3>
-                                        <p class="text-muted mb-0">Total Tareas</p>
+                                        <p class="text-muted mb-0">{% translate "Total Tareas" %}</p>
                                     </div>
                                 </div>
                             </div>
@@ -127,40 +128,40 @@
 
                     <div class="d-flex gap-2 mt-3 flex-wrap">
                         <a href="{% url 'checklist_item_create' checklist.id %}" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Agregar Tarea
+                            <i class="bi bi-plus-circle"></i> {% translate "Agregar Tarea" %}
                         </a>
                         <a href="{% url 'checklist_edit' checklist.id %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-pencil"></i> Editar Checklist
+                            <i class="bi bi-pencil"></i> {% translate "Editar Checklist" %}
                         </a>
                         <a href="{% url 'checklist_duplicate' checklist.id %}" class="btn btn-outline-info">
-                            <i class="bi bi-files"></i> Duplicar
+                            <i class="bi bi-files"></i> {% translate "Duplicar" %}
                         </a>
                         <form method="post" action="{% url 'checklist_toggle_public' checklist.id %}" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-outline-{% if checklist.is_public %}warning{% else %}success{% endif %}">
                                 <i class="bi bi-{% if checklist.is_public %}lock{% else %}globe{% endif %}"></i>
-                                {% if checklist.is_public %}Hacer Privado{% else %}Hacer Público{% endif %}
+                                {% if checklist.is_public %}{% translate "Hacer Privado" %}{% else %}{% translate "Hacer Público" %}{% endif %}
                             </button>
                         </form>
                         <a href="{% url 'checklist_delete' checklist.id %}" class="btn btn-outline-danger">
-                            <i class="bi bi-trash"></i> Eliminar
+                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                         </a>
                     </div>
 
                     {% if checklist.is_public %}
                     <div class="mt-4 p-3 bg-light rounded">
                         <label class="form-label fw-bold">
-                            <i class="bi bi-link-45deg"></i> URL Pública:
+                            <i class="bi bi-link-45deg"></i> {% translate "URL Pública:" %}
                         </label>
                         <div class="input-group">
                             <input type="text" class="form-control" readonly 
                                    value="{{ request.scheme }}://{{ request.get_host }}{{ checklist.get_public_url }}"
                                    id="public-url">
                             <button class="btn btn-outline-secondary" type="button" onclick="copyPublicUrl()">
-                                <i class="bi bi-clipboard"></i> Copiar
+                                <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                             </button>
                             <a href="{{ checklist.get_public_url }}" target="_blank" class="btn btn-outline-primary">
-                                <i class="bi bi-eye"></i> Vista Previa
+                                <i class="bi bi-eye"></i> {% translate "Vista Previa" %}
                             </a>
                         </div>
                     </div>
@@ -175,7 +176,7 @@
             {% if items %}
             <div class="card">
                 <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="bi bi-list-check"></i> Tareas del Checklist</h5>
+                    <h5 class="mb-0"><i class="bi bi-list-check"></i> {% translate "Tareas del Checklist" %}</h5>
                 </div>
                 <div class="card-body">
                     {% for item in items %}
@@ -201,20 +202,20 @@
                                     <div class="d-flex gap-1">
                                         <form method="post" action="{% url 'checklist_item_move_up' item.id %}" class="d-inline">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Subir" {% if forloop.first %}disabled{% endif %}>
+                                            <button type="submit" class="btn btn-sm btn-outline-primary" title="{% translate 'Subir' %}" {% if forloop.first %}disabled{% endif %}>
                                                 <i class="bi bi-arrow-up"></i>
                                             </button>
                                         </form>
                                         <form method="post" action="{% url 'checklist_item_move_down' item.id %}" class="d-inline">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Bajar" {% if forloop.last %}disabled{% endif %}>
+                                            <button type="submit" class="btn btn-sm btn-outline-primary" title="{% translate 'Bajar' %}" {% if forloop.last %}disabled{% endif %}>
                                                 <i class="bi bi-arrow-down"></i>
                                             </button>
                                         </form>
-                                        <a href="{% url 'checklist_item_edit' item.id %}" class="btn btn-sm btn-outline-secondary" title="Editar">
+                                        <a href="{% url 'checklist_item_edit' item.id %}" class="btn btn-sm btn-outline-secondary" title="{% translate 'Editar' %}">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="{% url 'checklist_item_delete' item.id %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                        <a href="{% url 'checklist_item_delete' item.id %}" class="btn btn-sm btn-outline-danger" title="{% translate 'Eliminar' %}">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                     </div>
@@ -247,7 +248,7 @@
                 {% if total_cost %}
                 <div class="card-footer bg-light">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="bi bi-calculator"></i> Subtotal:</h5>
+                        <h5 class="mb-0"><i class="bi bi-calculator"></i> {% translate "Subtotal:" %}</h5>
                         <h4 class="mb-0 text-primary"><strong>{{ total_cost|floatformat:2 }} €</strong></h4>
                     </div>
                 </div>
@@ -256,10 +257,10 @@
             {% else %}
             <div class="alert alert-info text-center">
                 <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                <h5>No hay tareas en este checklist</h5>
-                <p>Agrega tu primera tarea para comenzar</p>
+                <h5>{% translate "No hay tareas en este checklist" %}</h5>
+                <p>{% translate "Agrega tu primera tarea para comenzar" %}</p>
                 <a href="{% url 'checklist_item_create' checklist.id %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Agregar Primera Tarea
+                    <i class="bi bi-plus-circle"></i> {% translate "Agregar Primera Tarea" %}
                 </a>
             </div>
             {% endif %}

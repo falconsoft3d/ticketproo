@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -18,7 +19,7 @@
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label for="{{ form.name.id_for_label }}" class="form-label">
-                                    <i class="bi bi-tag me-1"></i>Nombre del Presupuesto
+                                    <i class="bi bi-tag me-1"></i>{% translate "Nombre del Presupuesto" %}
                                 </label>
                                 {{ form.name }}
                                 {% if form.name.errors %}
@@ -26,14 +27,14 @@
                                         {{ form.name.errors }}
                                     </div>
                                 {% endif %}
-                                <small class="form-text text-muted">Ej: Presupuesto Personal, Gastos del Hogar, etc.</small>
+                                <small class="form-text text-muted">{% translate "Ej: Presupuesto Personal, Gastos del Hogar, etc." %}</small>
                             </div>
                         </div>
                         
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label for="{{ form.year.id_for_label }}" class="form-label">
-                                    <i class="bi bi-calendar3 me-1"></i>Año
+                                    <i class="bi bi-calendar3 me-1"></i>{% translate "Año" %}
                                 </label>
                                 {{ form.year }}
                                 {% if form.year.errors %}
@@ -41,7 +42,7 @@
                                         {{ form.year.errors }}
                                     </div>
                                 {% endif %}
-                                <small class="form-text text-muted">Año del presupuesto anual</small>
+                                <small class="form-text text-muted">{% translate "Año del presupuesto anual" %}</small>
                             </div>
                         </div>
                         
@@ -50,7 +51,7 @@
                                 <div class="form-check">
                                     {{ form.is_active }}
                                     <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
-                                        <i class="bi bi-check-circle me-1"></i>Activo
+                                        <i class="bi bi-check-circle me-1"></i>{% translate "Activo" %}
                                     </label>
                                 </div>
                                 {% if form.is_active.errors %}
@@ -58,14 +59,14 @@
                                         {{ form.is_active.errors }}
                                     </div>
                                 {% endif %}
-                                <small class="form-text text-muted d-block">Los presupuestos inactivos no aparecerán en el menú principal</small>
+                                <small class="form-text text-muted d-block">{% translate "Los presupuestos inactivos no aparecerán en el menú principal" %}</small>
                             </div>
                             
                             <div class="col-md-6 mb-3">
                                 <div class="form-check">
                                     {{ form.is_private }}
                                     <label class="form-check-label" for="{{ form.is_private.id_for_label }}">
-                                        <i class="bi bi-lock-fill me-1"></i>Privado
+                                        <i class="bi bi-lock-fill me-1"></i>{% translate "Privado" %}
                                     </label>
                                 </div>
                                 {% if form.is_private.errors %}
@@ -73,16 +74,16 @@
                                         {{ form.is_private.errors }}
                                     </div>
                                 {% endif %}
-                                <small class="form-text text-muted d-block">Si está marcado, solo tú podrás ver este presupuesto</small>
+                                <small class="form-text text-muted d-block">{% translate "Si está marcado, solo tú podrás ver este presupuesto" %}</small>
                             </div>
                         </div>
                         
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'budget_list' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                <i class="bi bi-arrow-left me-1"></i>{% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save me-1"></i>Guardar
+                                <i class="bi bi-save me-1"></i>{% translate "Guardar" %}
                             </button>
                         </div>
                     </form>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -50,10 +51,10 @@
         </div>
         <div class="btn-group">
             <a href="{% url 'task_schedule_detail' schedule.pk %}" class="btn btn-secondary">
-                <i class="fas fa-list"></i> Vista Lista
+                <i class="fas fa-list"></i> {% translate "Vista Lista" %}
             </a>
             <a href="{% url 'schedule_task_create' schedule.pk %}" class="btn btn-success">
-                <i class="fas fa-plus"></i> Nueva Tarea
+                <i class="fas fa-plus"></i> {% translate "Nueva Tarea" %}
             </a>
         </div>
     </div>
@@ -64,7 +65,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body py-2">
                     <h4 class="text-primary mb-0">{{ kpis.total_tasks }}</h4>
-                    <small class="text-muted">Total</small>
+                    <small class="text-muted">{% translate "Total" %}</small>
                 </div>
             </div>
         </div>
@@ -72,7 +73,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body py-2">
                     <h4 class="text-success mb-0">{{ kpis.completed_tasks }}</h4>
-                    <small class="text-muted">Completadas</small>
+                    <small class="text-muted">{% translate "Completadas" %}</small>
                 </div>
             </div>
         </div>
@@ -80,7 +81,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body py-2">
                     <h4 class="text-warning mb-0">{{ kpis.pending_tasks }}</h4>
-                    <small class="text-muted">Pendientes</small>
+                    <small class="text-muted">{% translate "Pendientes" %}</small>
                 </div>
             </div>
         </div>
@@ -88,7 +89,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body py-2">
                     <h4 class="text-danger mb-0">{{ kpis.overdue_tasks }}</h4>
-                    <small class="text-muted">Vencidas</small>
+                    <small class="text-muted">{% translate "Vencidas" %}</small>
                 </div>
             </div>
         </div>
@@ -96,7 +97,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body py-2">
                     <h4 class="text-info mb-0">{{ kpis.progress_percentage|floatformat:0 }}%</h4>
-                    <small class="text-muted">Progreso</small>
+                    <small class="text-muted">{% translate "Progreso" %}</small>
                 </div>
             </div>
         </div>
@@ -104,7 +105,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body py-2">
                     <h4 class="text-primary mb-0">{{ kpis.on_time_rate|floatformat:0 }}%</h4>
-                    <small class="text-muted">A Tiempo</small>
+                    <small class="text-muted">{% translate "A Tiempo" %}</small>
                 </div>
             </div>
         </div>
@@ -116,19 +117,19 @@
             <div class="d-flex gap-3 flex-wrap">
                 <div class="legend-item">
                     <div class="legend-color legend-completed"></div>
-                    <span>Completada</span>
+                    <span>{% translate "Completada" %}</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color legend-in-progress"></div>
-                    <span>En Progreso</span>
+                    <span>{% translate "En Progreso" %}</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color legend-not-started"></div>
-                    <span>No Iniciada</span>
+                    <span>{% translate "No Iniciada" %}</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color legend-overdue"></div>
-                    <span>Vencida</span>
+                    <span>{% translate "Vencida" %}</span>
                 </div>
             </div>
         </div>

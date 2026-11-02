@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -9,12 +10,12 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h1 class="h3 mb-0 text-primary">
-                    <i class="bi bi-grid-3x3-gap"></i> Tetris
+                    <i class="bi bi-grid-3x3-gap"></i> {% translate "Tetris" %}
                 </h1>
-                <p class="text-muted mb-0">Juego clásico de bloques</p>
+                <p class="text-muted mb-0">{% translate "Juego clásico de bloques" %}</p>
             </div>
             <div class="text-end">
-                <span class="badge bg-info fs-6">Herramientas</span>
+                <span class="badge bg-info fs-6">{% translate "Herramientas" %}</span>
             </div>
         </div>
     </div>
@@ -29,7 +30,7 @@
                     <div class="col-md-3">
                         <div class="card bg-primary text-white">
                             <div class="card-body text-center">
-                                <h6 class="card-title mb-1">Puntuación</h6>
+                                <h6 class="card-title mb-1">{% translate "Puntuación" %}</h6>
                                 <h3 class="mb-0" id="score">0</h3>
                             </div>
                         </div>
@@ -37,7 +38,7 @@
                     <div class="col-md-3">
                         <div class="card bg-success text-white">
                             <div class="card-body text-center">
-                                <h6 class="card-title mb-1">Líneas</h6>
+                                <h6 class="card-title mb-1">{% translate "Líneas" %}</h6>
                                 <h3 class="mb-0" id="lines">0</h3>
                             </div>
                         </div>
@@ -45,7 +46,7 @@
                     <div class="col-md-3">
                         <div class="card bg-warning text-white">
                             <div class="card-body text-center">
-                                <h6 class="card-title mb-1">Nivel</h6>
+                                <h6 class="card-title mb-1">{% translate "Nivel" %}</h6>
                                 <h3 class="mb-0" id="level">1</h3>
                             </div>
                         </div>
@@ -53,7 +54,7 @@
                     <div class="col-md-3">
                         <div class="card bg-info text-white">
                             <div class="card-body text-center">
-                                <h6 class="card-title mb-1">Siguiente</h6>
+                                <h6 class="card-title mb-1">{% translate "Siguiente" %}</h6>
                                 <canvas id="nextCanvas" width="80" height="80" style="background: rgba(255,255,255,0.2); border-radius: 8px;"></canvas>
                             </div>
                         </div>
@@ -71,13 +72,13 @@
                         <!-- Controles -->
                         <div class="text-center">
                             <button id="startBtn" class="btn btn-success btn-lg mx-2">
-                                <i class="bi bi-play-fill"></i> Iniciar
+                                <i class="bi bi-play-fill"></i> {% translate "Iniciar" %}
                             </button>
                             <button id="pauseBtn" class="btn btn-warning btn-lg mx-2" disabled>
-                                <i class="bi bi-pause-fill"></i> Pausar
+                                <i class="bi bi-pause-fill"></i> {% translate "Pausar" %}
                             </button>
                             <button id="resetBtn" class="btn btn-danger btn-lg mx-2">
-                                <i class="bi bi-arrow-clockwise"></i> Reiniciar
+                                <i class="bi bi-arrow-clockwise"></i> {% translate "Reiniciar" %}
                             </button>
                         </div>
                     </div>
@@ -86,38 +87,38 @@
                         <!-- Instrucciones -->
                         <div class="card mb-4">
                             <div class="card-header bg-secondary text-white">
-                                <h6 class="mb-0"><i class="bi bi-question-circle"></i> Instrucciones</h6>
+                                <h6 class="mb-0"><i class="bi bi-question-circle"></i> {% translate "Instrucciones" %}</h6>
                             </div>
                             <div class="card-body">
                                 <div class="row text-center">
                                     <div class="col-6 mb-3">
                                         <div class="border rounded p-2">
                                             <i class="bi bi-arrow-left fs-4 text-primary"></i>
-                                            <small class="d-block">Izquierda</small>
+                                            <small class="d-block">{% translate "Izquierda" %}</small>
                                         </div>
                                     </div>
                                     <div class="col-6 mb-3">
                                         <div class="border rounded p-2">
                                             <i class="bi bi-arrow-right fs-4 text-primary"></i>
-                                            <small class="d-block">Derecha</small>
+                                            <small class="d-block">{% translate "Derecha" %}</small>
                                         </div>
                                     </div>
                                     <div class="col-6 mb-3">
                                         <div class="border rounded p-2">
                                             <i class="bi bi-arrow-down fs-4 text-success"></i>
-                                            <small class="d-block">Bajar</small>
+                                            <small class="d-block">{% translate "Bajar" %}</small>
                                         </div>
                                     </div>
                                     <div class="col-6 mb-3">
                                         <div class="border rounded p-2">
                                             <i class="bi bi-arrow-up fs-4 text-warning"></i>
-                                            <small class="d-block">Rotar</small>
+                                            <small class="d-block">{% translate "Rotar" %}</small>
                                         </div>
                                     </div>
                                 </div>
                                 <hr>
                                 <p class="small mb-0">
-                                    <strong>Objetivo:</strong> Completa líneas horizontales para eliminarlas y ganar puntos.
+                                    <strong>{% translate "Objetivo:" %}</strong> {% translate "Completa líneas horizontales para eliminarlas y ganar puntos." %}
                                 </p>
                             </div>
                         </div>
@@ -125,12 +126,12 @@
                         <!-- Mejores Puntuaciones -->
                         <div class="card">
                             <div class="card-header bg-dark text-white">
-                                <h6 class="mb-0"><i class="bi bi-trophy"></i> Mejores Puntuaciones</h6>
+                                <h6 class="mb-0"><i class="bi bi-trophy"></i> {% translate "Mejores Puntuaciones" %}</h6>
                             </div>
                             <div class="card-body">
                                 <div id="highScores">
                                     <div class="text-center text-muted">
-                                        <small>No hay puntuaciones guardadas</small>
+                                        <small>{% translate "No hay puntuaciones guardadas" %}</small>
                                     </div>
                                 </div>
                             </div>
@@ -144,23 +145,23 @@
                         <div class="modal-content">
                             <div class="modal-header bg-danger text-white">
                                 <h5 class="modal-title">
-                                    <i class="bi bi-x-circle"></i> ¡Juego Terminado!
+                                    <i class="bi bi-x-circle"></i> {% translate "¡Juego Terminado!" %}
                                 </h5>
                             </div>
                             <div class="modal-body text-center">
-                                <h4>Puntuación Final: <span id="finalScore" class="text-primary">0</span></h4>
-                                <p>Líneas completadas: <span id="finalLines" class="text-success">0</span></p>
-                                <p>Nivel alcanzado: <span id="finalLevel" class="text-warning">1</span></p>
+                                <h4>{% translate "Puntuación Final:" %} <span id="finalScore" class="text-primary">0</span></h4>
+                                <p>{% translate "Líneas completadas:" %} <span id="finalLines" class="text-success">0</span></p>
+                                <p>{% translate "Nivel alcanzado:" %} <span id="finalLevel" class="text-warning">1</span></p>
                                 <div id="newRecord" class="alert alert-success d-none">
-                                    <i class="bi bi-trophy"></i> ¡Nueva mejor puntuación!
+                                    <i class="bi bi-trophy"></i> {% translate "¡Nueva mejor puntuación!" %}
                                 </div>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-success" onclick="startNewGame()">
-                                    <i class="bi bi-play-fill"></i> Jugar de Nuevo
+                                    <i class="bi bi-play-fill"></i> {% translate "Jugar de Nuevo" %}
                                 </button>
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                    Cerrar
+                                    {% translate "Cerrar" %}
                                 </button>
                             </div>
                         </div>

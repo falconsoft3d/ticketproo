@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}Generar Capítulos - {{ book.title }} - TicketProo{% endblock %}
 
@@ -36,12 +37,12 @@
                     <h3>
                         <i class="bi bi-book"></i> {{ book.title }}
                     </h3>
-                    <p class="text-muted mb-0">Paso 2 de 3: Generar y editar capítulos</p>
+                    <p class="text-muted mb-0">{% translate "Paso 2 de 3: Generar y editar capítulos" %}</p>
                 </div>
                 <div class="card-body">
                     <!-- Información del libro -->
                     <div class="alert alert-primary">
-                        <strong><i class="bi bi-info-circle"></i> Tema del libro:</strong><br>
+                        <strong><i class="bi bi-info-circle"></i> {% translate "Tema del libro:" %}</strong><br>
                         {{ book.topic }}
                     </div>
                     
@@ -50,22 +51,22 @@
                         <button type="button" 
                                 id="generateChaptersBtn" 
                                 class="btn btn-gradient-ai btn-lg">
-                            <i class="bi bi-stars"></i> Generar Capítulos con IA
+                            <i class="bi bi-stars"></i> {% translate "Generar Capítulos con IA" %}
                         </button>
-                        <p class="text-muted mt-2">La IA analizará el tema y propondrá una estructura de capítulos</p>
+                        <p class="text-muted mt-2">{% translate "La IA analizará el tema y propondrá una estructura de capítulos" %}</p>
                     </div>
                     
                     <!-- Lista de capítulos generados -->
                     <div id="chaptersSection" style="display: none;">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5>
-                                <i class="bi bi-list-ol"></i> Capítulos Propuestos
+                                <i class="bi bi-list-ol"></i> {% translate "Capítulos Propuestos" %}
                             </h5>
                             <span class="badge bg-primary" id="chapterCount">0</span>
                         </div>
                         
                         <p class="text-muted small mb-3">
-                            <i class="bi bi-pencil"></i> Puedes editar los títulos haciendo clic en ellos, o eliminar capítulos que no necesites.
+                            <i class="bi bi-pencil"></i> {% translate "Puedes editar los títulos haciendo clic en ellos, o eliminar capítulos que no necesites." %}
                         </p>
                         
                         <div id="chaptersList" class="list-group mb-4">
@@ -74,10 +75,10 @@
                         
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'ai_book_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Volver a la Lista
+                                <i class="bi bi-arrow-left"></i> {% translate "Volver a la Lista" %}
                             </a>
                             <a href="{% url 'ai_book_detail' book.pk %}" class="btn btn-success">
-                                Continuar al Libro <i class="bi bi-arrow-right"></i>
+                                {% translate "Continuar al Libro" %} <i class="bi bi-arrow-right"></i>
                             </a>
                         </div>
                     </div>

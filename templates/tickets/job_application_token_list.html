@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 {% load project_extras %}
 
@@ -37,11 +38,11 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h1><i class="bi bi-briefcase"></i> {{ page_title }}</h1>
-                    <p class="text-muted">Enlaces públicos para aplicaciones de empleo</p>
+                    <p class="text-muted">{% translate "Enlaces públicos para aplicaciones de empleo" %}</p>
                 </div>
                 <div>
                     <a href="{% url 'job_application_token_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear Nuevo Enlace
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Nuevo Enlace" %}
                     </a>
                 </div>
             </div>
@@ -55,7 +56,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h5>Total Enlaces</h5>
+                            <h5>{% translate "Total Enlaces" %}</h5>
                             <h3>{{ page_obj.paginator.count }}</h3>
                         </div>
                         <div class="align-self-center">
@@ -70,7 +71,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h5>Enlaces Activos</h5>
+                            <h5>{% translate "Enlaces Activos" %}</h5>
                             <h3>{{ page_obj.object_list|length }}</h3>
                         </div>
                         <div class="align-self-center">
@@ -94,9 +95,9 @@
                             {{ token.job_title }}
                         </h5>
                         {% if token.is_active %}
-                            <span class="badge bg-success">Activo</span>
+                            <span class="badge bg-success">{% translate "Activo" %}</span>
                         {% else %}
-                            <span class="badge bg-danger">Inactivo</span>
+                            <span class="badge bg-danger">{% translate "Inactivo" %}</span>
                         {% endif %}
                     </div>
                 </div>
@@ -104,27 +105,27 @@
                     <div class="row">
                         <div class="col-md-8">
                             <div class="mb-3">
-                                <h6>Descripción del Puesto:</h6>
+                                <h6>{% translate "Descripción del Puesto:" %}</h6>
                                 <p class="text-muted">{{ token.job_description|truncatewords:20 }}</p>
                             </div>
                             
                             {% if token.proposed_salary_euros %}
                             <div class="mb-3">
-                                <h6>Salario Propuesto:</h6>
-                                <span class="salary-highlight">€{{ token.proposed_salary_euros|floatformat:0 }}</span> anuales
+                                <h6>{% translate "Salario Propuesto:" %}</h6>
+                                <span class="salary-highlight">€{{ token.proposed_salary_euros|floatformat:0 }}</span> {% translate "anuales" %}
                             </div>
                             {% endif %}
                             
                             <div class="mb-3">
-                                <h6>Estadísticas:</h6>
+                                <h6>{% translate "Estadísticas:" %}</h6>
                                 <div class="row">
                                     <div class="col-6">
-                                        <small class="text-muted">Aplicaciones:</small><br>
+                                        <small class="text-muted">{% translate "Aplicaciones:" %}</small><br>
                                         <strong>{{ token.application_count }}</strong>
                                         {% if token.max_applications %}/ {{ token.max_applications }}{% endif %}
                                     </div>
                                     <div class="col-6">
-                                        <small class="text-muted">Creado:</small><br>
+                                        <small class="text-muted">{% translate "Creado:" %}</small><br>
                                         <strong>{{ token.created_at|date:"d/m/Y" }}</strong>
                                     </div>
                                 </div>
@@ -132,7 +133,7 @@
                             
                             {% if token.expires_at %}
                             <div class="mb-3">
-                                <h6>Expira:</h6>
+                                <h6>{% translate "Expira:" %}</h6>
                                 <span class="{% if token.expires_at < now %}text-danger{% else %}text-warning{% endif %}">
                                     {{ token.expires_at|date:"d/m/Y H:i" }}
                                 </span>
@@ -140,17 +141,17 @@
                             {% endif %}
                         </div>
                         <div class="col-md-4 text-center">
-                            <h6>Código QR</h6>
+                            <h6>{% translate "Código QR" %}</h6>
                             <div class="qr-code-container mb-3">
                                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ token.get_qr_data|urlencode }}" 
                                      alt="QR Code" class="img-fluid qr-code">
                             </div>
-                            <small class="text-muted">Escanea para aplicar</small>
+                            <small class="text-muted">{% translate "Escanea para aplicar" %}</small>
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <h6>URL Pública:</h6>
+                        <h6>{% translate "URL Pública:" %}</h6>
                         <div class="url-box">
                             {% absolute_url token.get_public_url %}
                         </div>
@@ -163,10 +164,10 @@
                         </small>
                         <div>
                             <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('{% absolute_url token.get_public_url %}')">
-                                <i class="bi bi-clipboard"></i> Copiar URL
+                                <i class="bi bi-clipboard"></i> {% translate "Copiar URL" %}
                             </button>
                             <a href="{% url 'job_application_token_detail' token.pk %}" class="btn btn-sm btn-primary">
-                                <i class="bi bi-eye"></i> Ver Detalle
+                                <i class="bi bi-eye"></i> {% translate "Ver Detalle" %}
                             </a>
                         </div>
                     </div>
@@ -177,10 +178,10 @@
         <div class="col-12">
             <div class="alert alert-info text-center">
                 <i class="bi bi-info-circle fa-2x mb-3"></i>
-                <h5>No hay enlaces de aplicación</h5>
-                <p>No has creado ningún enlace público para aplicaciones de empleo.</p>
+                <h5>{% translate "No hay enlaces de aplicación" %}</h5>
+                <p>{% translate "No has creado ningún enlace público para aplicaciones de empleo." %}</p>
                 <a href="{% url 'job_application_token_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Crear Primer Enlace
+                    <i class="bi bi-plus-circle"></i> {% translate "Crear Primer Enlace" %}
                 </a>
             </div>
         </div>
@@ -191,7 +192,7 @@
     {% if page_obj.has_other_pages %}
     <div class="row mt-4">
         <div class="col-12">
-            <nav aria-label="Paginación de enlaces">
+            <nav aria-label="{% translate 'Paginación de enlaces' %}">
                 <ul class="pagination justify-content-center">
                     {% if page_obj.has_previous %}
                         <li class="page-item">

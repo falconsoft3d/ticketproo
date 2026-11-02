@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -57,7 +58,7 @@
       </a>
     </div>
     <div class="link-description">
-      {% if link.description %}{{ link.description }}{% else %}<span class="empty-body">Sin descripción.</span>{% endif %}
+      {% if link.description %}{{ link.description }}{% else %}<span class="empty-body">{% translate "Sin descripción." %}</span>{% endif %}
     </div>
   </div>
 
@@ -69,7 +70,7 @@
       {% if project.company %}<div style="font-size:.8rem;color:#64748b;"><i class="bi bi-building me-1"></i>{{ project.company.name }}</div>{% endif %}
     </div>
     <a href="{% url 'project_info_public' project.public_share_token %}" class="btn btn-sm ms-auto btn-primary-pi">
-      <i class="bi bi-arrow-left me-1"></i>Regresar al proyecto
+      <i class="bi bi-arrow-left me-1"></i>{% translate "Regresar al proyecto" %}
     </a>
   </div>
 

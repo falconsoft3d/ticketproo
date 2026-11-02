@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -7,7 +8,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="fas fa-tasks"></i> {{ page_title }}</h2>
         <a href="{% url 'task_schedule_create' %}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Nuevo Cronograma
+            <i class="fas fa-plus"></i> {% translate "Nuevo Cronograma" %}
         </a>
     </div>
 
@@ -19,7 +20,7 @@
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">{{ schedule.title }}</h5>
                     {% if schedule.is_public %}
-                    <span class="badge bg-light text-dark" title="Público">
+                    <span class="badge bg-light text-dark" title="{% translate 'Público' %}">
                         <i class="fas fa-globe"></i>
                     </span>
                     {% endif %}
@@ -44,7 +45,7 @@
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted">
-                                <i class="fas fa-clock"></i> Duración
+                                <i class="fas fa-clock"></i> {% translate "Duración" %}
                             </small>
                             <span class="badge bg-info">{{ schedule.get_total_days }} días laborables</span>
                         </div>
@@ -55,31 +56,31 @@
                         <div class="col-6">
                             <div class="text-center p-2 bg-light rounded">
                                 <div class="fw-bold text-success">{{ schedule.completed_tasks }}</div>
-                                <small class="text-muted">Completadas</small>
+                                <small class="text-muted">{% translate "Completadas" %}</small>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="text-center p-2 bg-light rounded">
                                 <div class="fw-bold text-primary">{{ schedule.total_tasks }}</div>
-                                <small class="text-muted">Total Tareas</small>
+                                <small class="text-muted">{% translate "Total Tareas" %}</small>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="text-center p-2 bg-light rounded">
                                 <div class="fw-bold text-info">{{ schedule.get_total_task_days }}</div>
-                                <small class="text-muted">Días Laborables</small>
+                                <small class="text-muted">{% translate "Días Laborables" %}</small>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="text-center p-2 bg-light rounded">
                                 <div class="fw-bold text-secondary">{{ schedule.get_total_task_hours }}</div>
-                                <small class="text-muted">Horas Laborables</small>
+                                <small class="text-muted">{% translate "Horas Laborables" %}</small>
                             </div>
                         </div>
                         <div class="col-12">
                             <div class="text-center p-2 bg-light rounded">
                                 <div class="fw-bold text-warning">{{ schedule.get_progress_percentage|floatformat:0 }}%</div>
-                                <small class="text-muted">Progreso</small>
+                                <small class="text-muted">{% translate "Progreso" %}</small>
                             </div>
                         </div>
                     </div>
@@ -88,11 +89,11 @@
                     <div class="btn-group w-100" role="group">
                         <a href="{% url 'task_schedule_detail' schedule.pk %}" 
                            class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-eye"></i> Ver
+                            <i class="fas fa-eye"></i> {% translate "Ver" %}
                         </a>
                         <a href="{% url 'task_schedule_edit' schedule.pk %}" 
                            class="btn btn-sm btn-outline-warning">
-                            <i class="fas fa-edit"></i> Editar
+                            <i class="fas fa-edit"></i> {% translate "Editar" %}
                         </a>
                     </div>
                 </div>
@@ -102,8 +103,8 @@
     </div>
     {% else %}
     <div class="alert alert-info">
-        <i class="fas fa-info-circle"></i> No hay cronogramas creados todavía. 
-        <a href="{% url 'task_schedule_create' %}">Crea tu primer cronograma</a>.
+        <i class="fas fa-info-circle"></i> {% translate "No hay cronogramas creados todavía." %} 
+        <a href="{% url 'task_schedule_create' %}">{% translate "Crea tu primer cronograma" %}</a>.
     </div>
     {% endif %}
 </div>

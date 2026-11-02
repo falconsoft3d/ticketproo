@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
 
@@ -11,7 +12,7 @@
                     <i class="bi bi-trash"></i> {{ page_title }}
                 </h1>
                 <a href="{% url 'countdown_timer_detail' countdown.pk %}" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> Volver
+                    <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                 </a>
             </div>
         </div>
@@ -23,16 +24,16 @@
                 <div class="card-header bg-danger text-white">
                     <h5 class="mb-0">
                         <i class="bi bi-exclamation-triangle"></i>
-                        Confirmar Eliminación
+                        {% translate "Confirmar Eliminación" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle-fill"></i>
-                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                        <strong>{% translate "¡Atención!" %}</strong> {% translate "Esta acción no se puede deshacer." %}
                     </div>
                     
-                    <p>¿Estás seguro de que deseas eliminar la siguiente cuenta regresiva?</p>
+                    <p>{% translate "¿Estás seguro de que deseas eliminar la siguiente cuenta regresiva?" %}</p>
                     
                     <div class="card">
                         <div class="card-body">
@@ -67,10 +68,10 @@
                         {% csrf_token %}
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'countdown_timer_detail' countdown.pk %}" class="btn btn-secondary me-md-2">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Eliminar Definitivamente
+                                <i class="bi bi-trash"></i> {% translate "Eliminar Definitivamente" %}
                             </button>
                         </div>
                     </form>

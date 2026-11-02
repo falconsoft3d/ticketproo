@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -115,7 +116,7 @@
                 <i class="fas fa-robot fa-3x me-3"></i>
                 <div>
                     <h2 class="mb-1">{{ tutor.title }}</h2>
-                    <p class="mb-0 opacity-75">Reportar tu progreso de aprendizaje</p>
+                    <p class="mb-0 opacity-75">{% translate "Reportar tu progreso de aprendizaje" %}</p>
                 </div>
             </div>
             
@@ -123,26 +124,26 @@
                 <div class="col-md-4">
                     <div class="border-end border-light">
                         <div class="h4 mb-0">{{ tutor.progress_reports.count }}</div>
-                        <small>Reportes Anteriores</small>
+                        <small>{% translate "Reportes Anteriores" %}</small>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="border-end border-light">
                         <div class="h4 mb-0">{{ tutor.attachments.count }}</div>
-                        <small>Archivos Totales</small>
+                        <small>{% translate "Archivos Totales" %}</small>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="h4 mb-0">
                         {% if tutor.status == 'active' %}
-                            <i class="fas fa-play text-success"></i> Activo
+                            <i class="fas fa-play text-success"></i> {% translate "Activo" %}
                         {% elif tutor.status == 'paused' %}
-                            <i class="fas fa-pause text-warning"></i> Pausado
+                            <i class="fas fa-pause text-warning"></i> {% translate "Pausado" %}
                         {% else %}
-                            <i class="fas fa-check text-info"></i> Completado
+                            <i class="fas fa-check text-info"></i> {% translate "Completado" %}
                         {% endif %}
                     </div>
-                    <small>Estado Actual</small>
+                    <small>{% translate "Estado Actual" %}</small>
                 </div>
             </div>
         </div>
@@ -154,25 +155,25 @@
             <div class="form-section">
                 <h4 class="section-title">
                     <i class="fas fa-chart-line text-primary me-2"></i>
-                    Describe tu Progreso
+                    {% translate "Describe tu Progreso" %}
                 </h4>
                 
                 <div class="help-tip">
                     <h6 class="text-warning mb-2">
-                        <i class="fas fa-lightbulb me-2"></i>Consejos para un buen reporte
+                        <i class="fas fa-lightbulb me-2"></i>{% translate "Consejos para un buen reporte" %}
                     </h6>
                     <ul class="mb-0 small">
-                        <li>Sé específico sobre lo que has logrado desde tu último reporte</li>
-                        <li>Menciona desafíos o dificultades que has enfrentado</li>
-                        <li>Incluye preguntas específicas si necesitas ayuda</li>
-                        <li>Describe qué planeas hacer a continuación</li>
+                        <li>{% translate "Sé específico sobre lo que has logrado desde tu último reporte" %}</li>
+                        <li>{% translate "Menciona desafíos o dificultades que has enfrentado" %}</li>
+                        <li>{% translate "Incluye preguntas específicas si necesitas ayuda" %}</li>
+                        <li>{% translate "Describe qué planeas hacer a continuación" %}</li>
                     </ul>
                 </div>
                 
                 <div class="mb-3">
                     <label for="{{ form.progress_description.id_for_label }}" class="form-label fw-bold">
                         <i class="fas fa-pen text-success me-2"></i>
-                        ¿Qué progreso has hecho hacia tu objetivo?
+                        {% translate "¿Qué progreso has hecho hacia tu objetivo?" %}
                     </label>
                     {{ form.progress_description }}
                     {% if form.progress_description.errors %}
@@ -182,17 +183,16 @@
                             {% endfor %}
                         </div>
                     {% endif %}
-                    <div class="char-counter" id="progress-counter">0/2000 caracteres</div>
+                    <div class="char-counter" id="progress-counter">{% translate "0/2000 caracteres" %}</div>
                 </div>
                 
                 <div class="ai-preview">
                     <h6 class="mb-2">
                         <i class="fas fa-robot me-2"></i>
-                        Vista Previa del Feedback de IA
+                        {% translate "Vista Previa del Feedback de IA" %}
                     </h6>
                     <p class="mb-0 small">
-                        Basado en tu reporte, la IA generará feedback personalizado y recomendaciones específicas 
-                        para ayudarte a continuar progresando hacia tu objetivo de aprendizaje.
+                        {% translate "Basado en tu reporte, la IA generará feedback personalizado y recomendaciones específicas para ayudarte a continuar progresando hacia tu objetivo de aprendizaje." %}
                     </p>
                 </div>
             </div>
@@ -201,21 +201,21 @@
             <div class="form-section">
                 <h4 class="section-title">
                     <i class="fas fa-paperclip text-info me-2"></i>
-                    Adjuntar Archivo (Opcional)
+                    {% translate "Adjuntar Archivo (Opcional)" %}
                 </h4>
                 
                 <p class="text-muted mb-3">
-                    Puedes adjuntar un archivo relacionado con tu progreso para que la IA lo analice y te brinde feedback más específico.
+                    {% translate "Puedes adjuntar un archivo relacionado con tu progreso para que la IA lo analice y te brinde feedback más específico." %}
                 </p>
                 
                 <div class="file-upload-area" id="fileUploadArea">
                     <div class="upload-icon">
                         <i class="fas fa-cloud-upload-alt"></i>
                     </div>
-                    <h5 class="mb-3">Arrastra un archivo aquí o haz clic para seleccionar</h5>
+                    <h5 class="mb-3">{% translate "Arrastra un archivo aquí o haz clic para seleccionar" %}</h5>
                     <p class="text-muted mb-3">
-                        Formatos soportados: PDF, DOC, DOCX, TXT, JPG, PNG, XLS, XLSX, PPT, PPTX<br>
-                        Tamaño máximo: 10 MB
+                        {% translate "Formatos soportados: PDF, DOC, DOCX, TXT, JPG, PNG, XLS, XLSX, PPT, PPTX" %}<br>
+                        {% translate "Tamaño máximo: 10 MB" %}
                     </p>
                     {{ attachment_form.file }}
                 </div>
@@ -230,7 +230,7 @@
                             <div class="text-muted small" id="fileSize"></div>
                         </div>
                         <button type="button" class="btn btn-outline-danger btn-sm" id="removeFile">
-                            <i class="fas fa-times"></i> Quitar
+                            <i class="fas fa-times"></i> {% translate "Quitar" %}
                         </button>
                     </div>
                 </div>
@@ -247,11 +247,11 @@
                 <div class="mt-3" id="fileDescriptionSection" style="display: none;">
                     <label for="{{ attachment_form.description.id_for_label }}" class="form-label fw-bold">
                         <i class="fas fa-info-circle text-primary me-2"></i>
-                        Descripción del archivo (opcional)
+                        {% translate "Descripción del archivo (opcional)" %}
                     </label>
                     {{ attachment_form.description }}
                     <div class="help-text small text-muted mt-1">
-                        Describe brevemente qué contiene este archivo y cómo se relaciona con tu progreso.
+                        {% translate "Describe brevemente qué contiene este archivo y cómo se relaciona con tu progreso." %}
                     </div>
                 </div>
             </div>
@@ -260,15 +260,15 @@
             <div class="form-section">
                 <div class="d-flex justify-content-between align-items-center">
                     <a href="{% url 'ai_tutor_detail' tutor.pk %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-2"></i>Volver al Tutor
+                        <i class="fas fa-arrow-left me-2"></i>{% translate "Volver al Tutor" %}
                     </a>
                     
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-outline-primary" id="previewBtn">
-                            <i class="fas fa-eye me-2"></i>Vista Previa
+                            <i class="fas fa-eye me-2"></i>{% translate "Vista Previa" %}
                         </button>
                         <button type="submit" class="btn btn-success">
-                            <i class="fas fa-paper-plane me-2"></i>Enviar Reporte
+                            <i class="fas fa-paper-plane me-2"></i>{% translate "Enviar Reporte" %}
                         </button>
                     </div>
                 </div>

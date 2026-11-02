@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ task.title }} - TicketProo{% endblock %}
 
@@ -23,34 +24,34 @@
             <div class="card-body">
                 <div class="row mb-4">
                     <div class="col-md-12">
-                        <h6>Descripción:</h6>
+                        <h6>{% translate "Descripción:" %}</h6>
                         <p class="text-muted">{{ task.description|linebreaks }}</p>
                     </div>
                 </div>
                 
                 <div class="row mb-4">
                     <div class="col-md-6">
-                        <h6>Información General:</h6>
+                        <h6>{% translate "Información General:" %}</h6>
                         <ul class="list-unstyled">
-                            <li><strong>Creado por:</strong> {{ task.created_by.get_full_name|default:task.created_by.username }}</li>
-                            <li><strong>Fecha de creación:</strong> {{ task.created_at|date:"d/m/Y H:i" }}</li>
-                            <li><strong>Última actualización:</strong> {{ task.updated_at|date:"d/m/Y H:i" }}</li>
+                            <li><strong>{% translate "Creado por:" %}</strong> {{ task.created_by.get_full_name|default:task.created_by.username }}</li>
+                            <li><strong>{% translate "Fecha de creación:" %}</strong> {{ task.created_at|date:"d/m/Y H:i" }}</li>
+                            <li><strong>{% translate "Última actualización:" %}</strong> {{ task.updated_at|date:"d/m/Y H:i" }}</li>
                             {% if task.due_date %}
-                            <li><strong>Fecha de vencimiento:</strong> 
+                            <li><strong>{% translate "Fecha de vencimiento:" %}</strong> 
                                 {{ task.due_date|date:"d/m/Y H:i" }}
                                 {% if task.is_overdue %}
-                                    <span class="text-danger fw-bold">(Vencida)</span>
+                                    <span class="text-danger fw-bold">{% translate "(Vencida)" %}</span>
                                 {% endif %}
                             </li>
                             {% endif %}
                             {% if task.completed_at %}
-                            <li><strong>Fecha de finalización:</strong> {{ task.completed_at|date:"d/m/Y H:i" }}</li>
+                            <li><strong>{% translate "Fecha de finalización:" %}</strong> {{ task.completed_at|date:"d/m/Y H:i" }}</li>
                             {% endif %}
                         </ul>
                     </div>
                     
                     <div class="col-md-6">
-                        <h6>Usuarios Asignados:</h6>
+                        <h6>{% translate "Usuarios Asignados:" %}</h6>
                         {% if task.assigned_users.all %}
                         <ul class="list-unstyled">
                             {% for user in task.assigned_users.all %}
@@ -60,7 +61,7 @@
                             {% endfor %}
                         </ul>
                         {% else %}
-                        <p class="text-muted">Sin usuarios asignados</p>
+                        <p class="text-muted">{% translate "Sin usuarios asignados" %}</p>
                         {% endif %}
                     </div>
                 </div>
@@ -69,7 +70,7 @@
                 {% if task.assigned_users.all and request.user in task.assigned_users.all or request.user == task.created_by or request.user.groups.all|length > 0 %}
                 <div class="row">
                     <div class="col-md-12">
-                        <h6>Cambiar Estado:</h6>
+                        <h6>{% translate "Cambiar Estado:" %}</h6>
                         <form method="post" action="{% url 'task_toggle_status' task.pk %}" class="d-inline">
                             {% csrf_token %}
                             <div class="row align-items-end">
@@ -84,7 +85,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <button type="submit" class="btn btn-primary">
-                                        <i class="bi bi-check-circle"></i> Actualizar Estado
+                                        <i class="bi bi-check-circle"></i> {% translate "Actualizar Estado" %}
                                     </button>
                                 </div>
                             </div>
@@ -100,21 +101,21 @@
         <div class="card">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-gear"></i> Acciones
+                    <i class="bi bi-gear"></i> {% translate "Acciones" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <a href="{% url 'task_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver a la lista
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver a la lista" %}
                     </a>
                     {% if task.created_by == request.user or request.user.groups.all|length > 0 %}
                     <a href="{% url 'task_edit' task.pk %}" class="btn btn-warning">
-                        <i class="bi bi-pencil"></i> Editar Tarea
+                        <i class="bi bi-pencil"></i> {% translate "Editar Tarea" %}
                     </a>
                     <a href="{% url 'task_delete' task.pk %}" class="btn btn-danger" 
                        onclick="return confirm('¿Estás seguro de que quieres eliminar esta tarea?')">
-                        <i class="bi bi-trash"></i> Eliminar Tarea
+                        <i class="bi bi-trash"></i> {% translate "Eliminar Tarea" %}
                     </a>
                     {% endif %}
                 </div>
@@ -125,7 +126,7 @@
         <div class="card mt-3 border-danger">
             <div class="card-header bg-danger text-white">
                 <h6 class="mb-0">
-                    <i class="bi bi-exclamation-triangle"></i> Tarea Vencida
+                    <i class="bi bi-exclamation-triangle"></i> {% translate "Tarea Vencida" %}
                 </h6>
             </div>
             <div class="card-body">

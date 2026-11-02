@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block extra_css %}
@@ -68,7 +69,7 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <h1><i class="bi bi-receipt"></i> Nóminas</h1>
+                    <h1><i class="bi bi-receipt"></i> {% translate "Nóminas" %}</h1>
                     <h4>{{ employee.get_full_name }}</h4>
                     <p class="mb-0">{{ employee.position }} - {{ employee.company.name }}</p>
                 </div>
@@ -79,15 +80,15 @@
                     <div class="mt-3">
                         {% if employee.status in 'candidate,in_process' %}
                             <a href="{% url 'candidate_detail' employee.pk %}" class="btn btn-light me-2">
-                                <i class="bi bi-arrow-left"></i> Volver al Perfil
+                                <i class="bi bi-arrow-left"></i> {% translate "Volver al Perfil" %}
                             </a>
                         {% else %}
                             <a href="{% url 'active_employee_detail' employee.pk %}" class="btn btn-light me-2">
-                                <i class="bi bi-arrow-left"></i> Volver al Perfil
+                                <i class="bi bi-arrow-left"></i> {% translate "Volver al Perfil" %}
                             </a>
                         {% endif %}
                         <a href="{% url 'employee_payroll_create' employee.pk %}" class="btn btn-success">
-                            <i class="bi bi-plus-circle"></i> Nueva Nómina
+                            <i class="bi bi-plus-circle"></i> {% translate "Nueva Nómina" %}
                         </a>
                     </div>
                 </div>
@@ -101,7 +102,7 @@
             <div class="card bg-primary text-white">
                 <div class="card-body text-center">
                     <h3>{{ payrolls.count }}</h3>
-                    <p class="mb-0">Total Nóminas</p>
+                    <p class="mb-0">{% translate "Total Nóminas" %}</p>
                 </div>
             </div>
         </div>
@@ -109,7 +110,7 @@
             <div class="card bg-success text-white">
                 <div class="card-body text-center">
                     <h3>{{ payrolls|length }}</h3>
-                    <p class="mb-0">Con Comprobante</p>
+                    <p class="mb-0">{% translate "Con Comprobante" %}</p>
                 </div>
             </div>
         </div>
@@ -123,7 +124,7 @@
                             -
                         {% endif %}
                     </h3>
-                    <p class="mb-0">Año Actual</p>
+                    <p class="mb-0">{% translate "Año Actual" %}</p>
                 </div>
             </div>
         </div>
@@ -141,7 +142,7 @@
                             -
                         {% endfor %}
                     </h3>
-                    <p class="mb-0">Último Salario</p>
+                    <p class="mb-0">{% translate "Último Salario" %}</p>
                 </div>
             </div>
         </div>
@@ -163,9 +164,9 @@
                                 <span class="status-indicator {% if payroll.has_payment_receipt %}has-receipt{% else %}no-receipt{% endif %}" 
                                       title="{% if payroll.has_payment_receipt %}Con comprobante{% else %}Sin comprobante{% endif %}"></span>
                                 {% if payroll.has_payment_receipt %}
-                                    <small class="text-success">Con comprobante</small>
+                                    <small class="text-success">{% translate "Con comprobante" %}</small>
                                 {% else %}
-                                    <small class="text-warning">Sin comprobante</small>
+                                    <small class="text-warning">{% translate "Sin comprobante" %}</small>
                                 {% endif %}
                             </div>
                         </div>
@@ -177,7 +178,7 @@
                                     <div class="file-icon text-danger">
                                         <i class="bi bi-file-earmark-pdf"></i>
                                     </div>
-                                    <h6>Nómina</h6>
+                                    <h6>{% translate "Nómina" %}</h6>
                                     <a href="{{ payroll.payroll_pdf.url }}" target="_blank" class="btn btn-outline-danger btn-sm">
                                         <i class="bi bi-download"></i> PDF
                                     </a>
@@ -186,13 +187,13 @@
                                     <div class="file-icon {% if payroll.payment_receipt %}text-success{% else %}text-muted{% endif %}">
                                         <i class="bi bi-receipt"></i>
                                     </div>
-                                    <h6>Comprobante</h6>
+                                    <h6>{% translate "Comprobante" %}</h6>
                                     {% if payroll.payment_receipt %}
                                         <a href="{{ payroll.payment_receipt.url }}" target="_blank" class="btn btn-outline-success btn-sm">
-                                            <i class="bi bi-download"></i> Ver
+                                            <i class="bi bi-download"></i> {% translate "Ver" %}
                                         </a>
                                     {% else %}
-                                        <span class="text-muted small">No disponible</span>
+                                        <span class="text-muted small">{% translate "No disponible" %}</span>
                                     {% endif %}
                                 </div>
                             </div>
@@ -203,13 +204,13 @@
                                     <div class="row">
                                         {% if payroll.gross_salary %}
                                             <div class="col-6">
-                                                <strong>Bruto:</strong><br>
+                                                <strong>{% translate "Bruto:" %}</strong><br>
                                                 <span class="text-primary">€{{ payroll.gross_salary|floatformat:2 }}</span>
                                             </div>
                                         {% endif %}
                                         {% if payroll.net_salary %}
                                             <div class="col-6">
-                                                <strong>Neto:</strong><br>
+                                                <strong>{% translate "Neto:" %}</strong><br>
                                                 <span class="text-success">€{{ payroll.net_salary|floatformat:2 }}</span>
                                             </div>
                                         {% endif %}
@@ -238,13 +239,13 @@
                         <div class="card-footer">
                             <div class="btn-group w-100" role="group">
                                 <a href="{% url 'employee_payroll_detail' employee.pk payroll.pk %}" class="btn btn-outline-primary">
-                                    <i class="bi bi-eye"></i> Ver
+                                    <i class="bi bi-eye"></i> {% translate "Ver" %}
                                 </a>
                                 <a href="{% url 'employee_payroll_edit' employee.pk payroll.pk %}" class="btn btn-outline-warning">
-                                    <i class="bi bi-pencil"></i> Editar
+                                    <i class="bi bi-pencil"></i> {% translate "Editar" %}
                                 </a>
                                 <a href="{% url 'employee_payroll_delete' employee.pk payroll.pk %}" class="btn btn-outline-danger">
-                                    <i class="bi bi-trash"></i> Eliminar
+                                    <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                                 </a>
                             </div>
                         </div>
@@ -256,10 +257,10 @@
         <!-- Estado vacío -->
         <div class="empty-state">
             <i class="bi bi-receipt"></i>
-            <h3>No hay nóminas registradas</h3>
-            <p>Aún no se han agregado nóminas para este empleado.</p>
+            <h3>{% translate "No hay nóminas registradas" %}</h3>
+            <p>{% translate "Aún no se han agregado nóminas para este empleado." %}</p>
             <a href="{% url 'employee_payroll_create' employee.pk %}" class="btn btn-success btn-lg">
-                <i class="bi bi-plus-circle"></i> Agregar Primera Nómina
+                <i class="bi bi-plus-circle"></i> {% translate "Agregar Primera Nómina" %}
             </a>
         </div>
     {% endif %}

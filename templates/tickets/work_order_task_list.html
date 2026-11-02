@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -15,13 +16,13 @@
                     </h4>
                     <div>
                         <a href="{% url 'work_order_detail' work_order.pk %}" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-arrow-left"></i> Volver a la Orden
+                            <i class="fas fa-arrow-left"></i> {% translate "Volver a la Orden" %}
                         </a>
                         <a href="{% url 'work_order_task_create' work_order.pk %}" class="btn btn-primary btn-sm">
-                            <i class="fas fa-plus"></i> Nueva Tarea
+                            <i class="fas fa-plus"></i> {% translate "Nueva Tarea" %}
                         </a>
                         <a href="{% url 'work_order_task_bulk_create' work_order.pk %}" class="btn btn-info btn-sm">
-                            <i class="fas fa-list"></i> Crear Múltiples
+                            <i class="fas fa-list"></i> {% translate "Crear Múltiples" %}
                         </a>
                     </div>
                 </div>
@@ -40,7 +41,7 @@
                                     <div class="card bg-light">
                                         <div class="card-body p-2">
                                             <h6 class="mb-1">{{ total_estimated_hours|floatformat:1 }}h</h6>
-                                            <small class="text-muted">Estimado</small>
+                                            <small class="text-muted">{% translate "Estimado" %}</small>
                                         </div>
                                     </div>
                                 </div>
@@ -48,7 +49,7 @@
                                     <div class="card bg-light">
                                         <div class="card-body p-2">
                                             <h6 class="mb-1">{{ total_logged_hours|floatformat:1 }}h</h6>
-                                            <small class="text-muted">Trabajado</small>
+                                            <small class="text-muted">{% translate "Trabajado" %}</small>
                                         </div>
                                     </div>
                                 </div>
@@ -77,12 +78,12 @@
                                 <thead class="thead-light">
                                     <tr>
                                         <th width="5%">#</th>
-                                        <th width="30%">Título</th>
-                                        <th width="20%">Estado</th>
-                                        <th width="10%">Estimado</th>
-                                        <th width="10%">Trabajado</th>
-                                        <th width="15%">Progreso</th>
-                                        <th width="10%">Acciones</th>
+                                        <th width="30%">{% translate "Título" %}</th>
+                                        <th width="20%">{% translate "Estado" %}</th>
+                                        <th width="10%">{% translate "Estimado" %}</th>
+                                        <th width="10%">{% translate "Trabajado" %}</th>
+                                        <th width="15%">{% translate "Progreso" %}</th>
+                                        <th width="10%">{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -106,13 +107,13 @@
                                                 </button>
                                                 <div class="dropdown-menu">
                                                     <a class="dropdown-item" href="#" onclick="updateTaskStatus({{ task.id }}, 'pending')">
-                                                        <i class="fas fa-clock text-secondary"></i> Pendiente
+                                                        <i class="fas fa-clock text-secondary"></i> {% translate "Pendiente" %}
                                                     </a>
                                                     <a class="dropdown-item" href="#" onclick="updateTaskStatus({{ task.id }}, 'in_progress')">
-                                                        <i class="fas fa-play text-warning"></i> En Progreso
+                                                        <i class="fas fa-play text-warning"></i> {% translate "En Progreso" %}
                                                     </a>
                                                     <a class="dropdown-item" href="#" onclick="updateTaskStatus({{ task.id }}, 'completed')">
-                                                        <i class="fas fa-check text-success"></i> Completada
+                                                        <i class="fas fa-check text-success"></i> {% translate "Completada" %}
                                                     </a>
                                                 </div>
                                             </div>
@@ -140,24 +141,24 @@
                                             <div class="btn-group btn-group-sm">
                                                 <!-- Botón de tiempo -->
                                                 {% if task.has_active_time_entry %}
-                                                    <button class="btn btn-danger btn-sm" onclick="stopTaskTime({{ task.id }})" title="Detener tiempo">
+                                                    <button class="btn btn-danger btn-sm" onclick="stopTaskTime({{ task.id }})" title="{% translate 'Detener tiempo' %}">
                                                         <i class="fas fa-stop"></i>
                                                     </button>
                                                 {% else %}
-                                                    <button class="btn btn-success btn-sm" onclick="startTaskTime({{ task.id }})" title="Iniciar tiempo">
+                                                    <button class="btn btn-success btn-sm" onclick="startTaskTime({{ task.id }})" title="{% translate 'Iniciar tiempo' %}">
                                                         <i class="fas fa-play"></i>
                                                     </button>
                                                 {% endif %}
                                                 
                                                 <!-- Botón editar -->
                                                 <a href="{% url 'work_order_task_edit' work_order.pk task.pk %}" 
-                                                   class="btn btn-outline-primary btn-sm" title="Editar">
+                                                   class="btn btn-outline-primary btn-sm" title="{% translate 'Editar' %}">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 
                                                 <!-- Botón eliminar -->
                                                 <a href="{% url 'work_order_task_delete' work_order.pk task.pk %}" 
-                                                   class="btn btn-outline-danger btn-sm" title="Eliminar">
+                                                   class="btn btn-outline-danger btn-sm" title="{% translate 'Eliminar' %}">
                                                     <i class="fas fa-trash"></i>
                                                 </a>
                                             </div>
@@ -170,10 +171,10 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
-                            <h5 class="text-muted">No hay tareas registradas</h5>
-                            <p class="text-muted">Comienza agregando la primera tarea a esta orden de trabajo.</p>
+                            <h5 class="text-muted">{% translate "No hay tareas registradas" %}</h5>
+                            <p class="text-muted">{% translate "Comienza agregando la primera tarea a esta orden de trabajo." %}</p>
                             <a href="{% url 'work_order_task_create' work_order.pk %}" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Crear Primera Tarea
+                                <i class="fas fa-plus"></i> {% translate "Crear Primera Tarea" %}
                             </a>
                         </div>
                     {% endif %}

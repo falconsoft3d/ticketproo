@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -55,40 +56,40 @@
 <div class="meta-grid">
     {% if book.company %}
     <div class="meta-item">
-        <div class="label">Empresa</div>
+        <div class="label">{% translate "Empresa" %}</div>
         <div class="value">{{ book.company.name }}</div>
     </div>
     {% endif %}
     {% if book.assigned_user %}
     <div class="meta-item">
-        <div class="label">Usuario asignado</div>
+        <div class="label">{% translate "Usuario asignado" %}</div>
         <div class="value">{{ book.assigned_user.get_full_name|default:book.assigned_user.username }}</div>
     </div>
     {% endif %}
     {% if book.created_by %}
     <div class="meta-item">
-        <div class="label">Creado por</div>
+        <div class="label">{% translate "Creado por" %}</div>
         <div class="value">{{ book.created_by.get_full_name|default:book.created_by.username }}</div>
     </div>
     {% endif %}
     <div class="meta-item">
-        <div class="label">Fecha de creación</div>
+        <div class="label">{% translate "Fecha de creación" %}</div>
         <div class="value">{{ book.created_at|date:"d/m/Y" }}</div>
     </div>
     {% if book.start_date %}
     <div class="meta-item">
-        <div class="label">Inicio</div>
+        <div class="label">{% translate "Inicio" %}</div>
         <div class="value">{{ book.start_date|date:"d/m/Y" }}</div>
     </div>
     {% endif %}
     {% if book.end_date %}
     <div class="meta-item">
-        <div class="label">Cierre estimado</div>
+        <div class="label">{% translate "Cierre estimado" %}</div>
         <div class="value">{{ book.end_date|date:"d/m/Y" }}</div>
     </div>
     {% endif %}
     <div class="meta-item">
-        <div class="label">Total de entradas</div>
+        <div class="label">{% translate "Total de entradas" %}</div>
         <div class="value">{{ entries|length }}</div>
     </div>
 </div>
@@ -105,7 +106,7 @@
 </div>
 {% endif %}
 
-<h2 class="section-title">Historial de Trazabilidad</h2>
+<h2 class="section-title">{% translate "Historial de Trazabilidad" %}</h2>
 
 {% if entries %}
     {% for entry in entries %}
@@ -115,7 +116,7 @@
                 {% if entry.is_agent_entry %}
                 <span class="badge-agent">AGENTE</span>
                 {% else %}
-                <span class="badge-user">USUARIO</span>
+                <span class="badge-user">{% translate "USUARIO" %}</span>
                 {% endif %}
                 {{ entry.author.get_full_name|default:entry.author.username }}
             </span>
@@ -125,12 +126,12 @@
     </div>
     {% endfor %}
 {% else %}
-<p style="color:#6c757d; text-align:center; padding:20px 0;">Sin entradas registradas.</p>
+<p style="color:#6c757d; text-align:center; padding:20px 0;">{% translate "Sin entradas registradas." %}</p>
 {% endif %}
 
 <div class="footer">
     <span>{{ book.title }}</span>
-    <span>Generado por TicketProo</span>
+    <span>{% translate "Generado por TicketProo" %}</span>
 </div>
 </body>
 </html>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -16,20 +17,20 @@
                 <div class="card-body">
                     <!-- Información de la jornada actual -->
                     <div class="alert alert-info">
-                        <h6><i class="bi bi-info-circle"></i> Jornada Actual</h6>
+                        <h6><i class="bi bi-info-circle"></i> {% translate "Jornada Actual" %}</h6>
                         <div class="row">
                             <div class="col-6">
-                                <strong>Inicio:</strong><br>
+                                <strong>{% translate "Inicio:" %}</strong><br>
                                 {{ active_entry.fecha_entrada|date:"H:i" }}
                             </div>
                             <div class="col-6">
-                                <strong>Tiempo Trabajado:</strong><br>
+                                <strong>{% translate "Tiempo Trabajado:" %}</strong><br>
                                 <span id="tiempo-transcurrido">{{ active_entry.duracion_formateada }}</span>
                             </div>
                         </div>
                         {% if active_entry.notas %}
                             <div class="mt-2">
-                                <strong>Notas de entrada:</strong><br>
+                                <strong>{% translate "Notas de entrada:" %}</strong><br>
                                 <small>{{ active_entry.notas }}</small>
                             </div>
                         {% endif %}
@@ -39,7 +40,7 @@
                         <div class="display-4 text-danger">
                             <i class="bi bi-stop-fill-circle"></i>
                         </div>
-                        <p class="text-muted">Hora actual: <strong id="current-time"></strong></p>
+                        <p class="text-muted">{% translate "Hora actual:" %} <strong id="current-time"></strong></p>
                     </div>
                     
                     <form method="post">
@@ -55,10 +56,10 @@
                         
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-danger btn-lg">
-                                <i class="bi bi-stop-fill"></i> Finalizar Jornada Laboral
+                                <i class="bi bi-stop-fill"></i> {% translate "Finalizar Jornada Laboral" %}
                             </button>
                             <a href="{% url 'time_clock' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>
@@ -66,8 +67,7 @@
                     <div class="alert alert-warning mt-3">
                         <small>
                             <i class="bi bi-exclamation-triangle"></i>
-                            Al hacer clic en "Finalizar Jornada" se cerrará tu registro de tiempo.
-                            No podrás modificar la hora de salida después de confirmar.
+                            {% translate 'Al hacer clic en "Finalizar Jornada" se cerrará tu registro de tiempo. No podrás modificar la hora de salida después de confirmar.' %}
                         </small>
                     </div>
                 </div>

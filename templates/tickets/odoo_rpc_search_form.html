@@ -1,20 +1,21 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% block title %}Buscar en Odoo - {{ table.name }} - Ticket System{% endblock %}
 {% block content %}
 <div class="container mt-4">
     <div class="col-lg-8 offset-lg-2">
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">Conexiones</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">{% translate "Conexiones" %}</a></li>
                 <li class="breadcrumb-item"><a href="{% url 'odoo_rpc_table_list' table.connection.id %}">{{ table.connection.name }}</a></li>
                 <li class="breadcrumb-item"><a href="{% url 'odoo_rpc_table_detail' table.id %}">{{ table.name }}</a></li>
-                <li class="breadcrumb-item active">Buscar en Odoo</li>
+                <li class="breadcrumb-item active">{% translate "Buscar en Odoo" %}</li>
             </ol>
         </nav>
 
         <div class="card">
             <div class="card-header">
-                <h4 class="mb-0"><i class="bi bi-search"></i> Buscar Datos en Odoo</h4>
+                <h4 class="mb-0"><i class="bi bi-search"></i> {% translate "Buscar Datos en Odoo" %}</h4>
             </div>
             <div class="card-body">
                 {% if messages %}
@@ -27,11 +28,11 @@
                 {% endif %}
 
                 <div class="alert alert-info">
-                    <h5><i class="bi bi-info-circle"></i> Información:</h5>
+                    <h5><i class="bi bi-info-circle"></i> {% translate "Información:" %}</h5>
                     <ul class="mb-0">
                         <li>Se buscarán los registros del modelo <code>{{ table.odoo_model }}</code> en Odoo</li>
-                        <li>Se leerán los siguientes campos: <strong>{{ fields.count }}</strong></li>
-                        <li>Los datos se mostrarán en pantalla y podrás exportarlos a Excel</li>
+                        <li>{% translate "Se leerán los siguientes campos:" %} <strong>{{ fields.count }}</strong></li>
+                        <li>{% translate "Los datos se mostrarán en pantalla y podrás exportarlos a Excel" %}</li>
                     </ul>
                 </div>
 
@@ -52,18 +53,18 @@
                 <form method="post" id="searchForm">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label for="limit" class="form-label">Límite de Registros</label>
+                        <label for="limit" class="form-label">{% translate "Límite de Registros" %}</label>
                         <select class="form-select" id="limit" name="limit">
-                            <option value="10">10 registros</option>
-                            <option value="50">50 registros</option>
-                            <option value="100" selected>100 registros</option>
-                            <option value="500">500 registros</option>
-                            <option value="1000">1000 registros</option>
-                            <option value="5000">5000 registros</option>
-                            <option value="0">Sin límite (Todos los registros)</option>
+                            <option value="10">{% translate "10 registros" %}</option>
+                            <option value="50">{% translate "50 registros" %}</option>
+                            <option value="100" selected>{% translate "100 registros" %}</option>
+                            <option value="500">{% translate "500 registros" %}</option>
+                            <option value="1000">{% translate "1000 registros" %}</option>
+                            <option value="5000">{% translate "5000 registros" %}</option>
+                            <option value="0">{% translate "Sin límite (Todos los registros)" %}</option>
                         </select>
                         <small class="form-text text-muted">
-                            Cantidad máxima de registros a traer desde Odoo. "Sin límite" puede tardar mucho tiempo.
+                            {% translate 'Cantidad máxima de registros a traer desde Odoo. "Sin límite" puede tardar mucho tiempo.' %}
                         </small>
                     </div>
                     
@@ -71,25 +72,24 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="save_to_db" name="save_to_db" checked>
                             <label class="form-check-label" for="save_to_db">
-                                <i class="bi bi-save"></i> Guardar resultados en el sistema
+                                <i class="bi bi-save"></i> {% translate "Guardar resultados en el sistema" %}
                             </label>
                         </div>
                         <small class="form-text text-muted">
-                            Los datos se guardarán en la base de datos local para consultas futuras
+                            {% translate "Los datos se guardarán en la base de datos local para consultas futuras" %}
                         </small>
                     </div>
 
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle"></i>
-                        <strong>Importante:</strong> La búsqueda traerá los registros desde Odoo usando la conexión configurada.
-                        Asegúrate de que la conexión esté activa y funcionando correctamente.
+                        <strong>{% translate "Importante:" %}</strong> {% translate "La búsqueda traerá los registros desde Odoo usando la conexión configurada. Asegúrate de que la conexión esté activa y funcionando correctamente." %}
                     </div>
 
                     <!-- Progress Log -->
                     <div id="progressContainer" class="mb-3" style="display: none;">
                         <div class="card">
                             <div class="card-header bg-info text-white">
-                                <h6 class="mb-0"><i class="bi bi-clock-history"></i> Progreso de Búsqueda</h6>
+                                <h6 class="mb-0"><i class="bi bi-clock-history"></i> {% translate "Progreso de Búsqueda" %}</h6>
                             </div>
                             <div class="card-body">
                                 <div class="progress mb-3">
@@ -105,10 +105,10 @@
 
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'odoo_rpc_table_detail' table.id %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Cancelar
+                            <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                         </a>
                         <button type="submit" class="btn btn-primary" id="searchBtn">
-                            <i class="bi bi-search"></i> Buscar en Odoo
+                            <i class="bi bi-search"></i> {% translate "Buscar en Odoo" %}
                         </button>
                     </div>
                 </form>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ upload_url.title }} - TicketProo{% endblock %}
 
@@ -7,10 +8,10 @@
     <div class="row">
         <div class="col-12">
             <!-- Breadcrumb -->
-            <nav aria-label="breadcrumb" class="mb-4">
+            <nav aria-label="{% translate 'breadcrumb' %}" class="mb-4">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'public_upload_url_list' %}">URLs Públicas</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'public_upload_url_list' %}">{% translate "URLs Públicas" %}</a></li>
                     <li class="breadcrumb-item active">{{ upload_url.title|truncatechars:30 }}</li>
                 </ol>
             </nav>
@@ -22,17 +23,17 @@
                         <i class="bi bi-cloud-upload text-primary me-2"></i>
                         {{ upload_url.title }}
                     </h1>
-                    <p class="text-muted">Gestión de URL pública de subida</p>
+                    <p class="text-muted">{% translate "Gestión de URL pública de subida" %}</p>
                 </div>
                 <div class="btn-group">
                     <a href="{% url 'public_upload_url_toggle' upload_url.pk %}" 
                        class="btn btn-{% if upload_url.is_active %}warning{% else %}success{% endif %}">
                         <i class="bi bi-{% if upload_url.is_active %}toggle-off{% else %}toggle-on{% endif %} me-1"></i>
-                        {% if upload_url.is_active %}Desactivar{% else %}Activar{% endif %}
+                        {% if upload_url.is_active %}{% translate "Desactivar" %}{% else %}{% translate "Activar" %}{% endif %}
                     </a>
                     <a href="{% url 'public_upload_url_list' %}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-1"></i>
-                        Volver
+                        {% translate "Volver" %}
                     </a>
                 </div>
             </div>
@@ -54,25 +55,25 @@
                         <div class="card-header">
                             <h5 class="card-title mb-0">
                                 <i class="bi bi-info-circle me-2"></i>
-                                Información de la URL
+                                {% translate "Información de la URL" %}
                             </h5>
                         </div>
                         <div class="card-body">
                             <!-- Estado -->
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Estado:</label>
+                                <label class="form-label fw-bold">{% translate "Estado:" %}</label>
                                 <div>
                                     {% if not upload_url.is_active %}
                                         <span class="badge bg-danger fs-6">
-                                            <i class="bi bi-x-circle me-1"></i>Desactivada
+                                            <i class="bi bi-x-circle me-1"></i>{% translate "Desactivada" %}
                                         </span>
                                     {% elif not upload_url.is_valid %}
                                         <span class="badge bg-warning fs-6">
-                                            <i class="bi bi-exclamation-triangle me-1"></i>Expirada
+                                            <i class="bi bi-exclamation-triangle me-1"></i>{% translate "Expirada" %}
                                         </span>
                                     {% else %}
                                         <span class="badge bg-success fs-6">
-                                            <i class="bi bi-check-circle me-1"></i>Activa
+                                            <i class="bi bi-check-circle me-1"></i>{% translate "Activa" %}
                                         </span>
                                     {% endif %}
                                 </div>
@@ -80,7 +81,7 @@
 
                             <!-- URL Pública -->
                             <div class="mb-3">
-                                <label class="form-label fw-bold">URL Pública:</label>
+                                <label class="form-label fw-bold">{% translate "URL Pública:" %}</label>
                                 <div class="input-group">
                                     <input type="text" 
                                            class="form-control" 
@@ -95,23 +96,23 @@
                                 </div>
                                 <div class="form-text">
                                     <i class="bi bi-info-circle me-1"></i>
-                                    Comparte esta URL para que otros puedan subir documentos
+                                    {% translate "Comparte esta URL para que otros puedan subir documentos" %}
                                 </div>
                             </div>
 
                             <!-- QR Code -->
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Código QR:</label>
+                                <label class="form-label fw-bold">{% translate "Código QR:" %}</label>
                                 <div class="text-center p-3 border rounded">
                                     <div id="qrcode"></div>
-                                    <small class="text-muted">Escanea con tu móvil para acceder rápidamente</small>
+                                    <small class="text-muted">{% translate "Escanea con tu móvil para acceder rápidamente" %}</small>
                                 </div>
                             </div>
 
                             <!-- Descripción -->
                             {% if upload_url.description %}
                                 <div class="mb-3">
-                                    <label class="form-label fw-bold">Instrucciones:</label>
+                                    <label class="form-label fw-bold">{% translate "Instrucciones:" %}</label>
                                     <p class="text-muted">{{ upload_url.description }}</p>
                                 </div>
                             {% endif %}
@@ -119,7 +120,7 @@
                             <!-- Empresa -->
                             {% if upload_url.company %}
                                 <div class="mb-3">
-                                    <label class="form-label fw-bold">Empresa:</label>
+                                    <label class="form-label fw-bold">{% translate "Empresa:" %}</label>
                                     <p class="text-muted">
                                         <i class="bi bi-building me-1"></i>
                                         {{ upload_url.company.name }}
@@ -130,7 +131,7 @@
                             <!-- Fechas -->
                             <div class="row">
                                 <div class="col-sm-6 mb-3">
-                                    <label class="form-label fw-bold">Creada:</label>
+                                    <label class="form-label fw-bold">{% translate "Creada:" %}</label>
                                     <p class="text-muted">
                                         <i class="bi bi-calendar me-1"></i>
                                         {{ upload_url.created_at|date:"d/m/Y H:i" }}
@@ -138,7 +139,7 @@
                                 </div>
                                 {% if upload_url.expires_at %}
                                     <div class="col-sm-6 mb-3">
-                                        <label class="form-label fw-bold">Expira:</label>
+                                        <label class="form-label fw-bold">{% translate "Expira:" %}</label>
                                         <p class="text-muted">
                                             <i class="bi bi-clock me-1"></i>
                                             {{ upload_url.expires_at|date:"d/m/Y H:i" }}
@@ -149,7 +150,7 @@
 
                             {% if upload_url.last_used_at %}
                                 <div class="mb-3">
-                                    <label class="form-label fw-bold">Último uso:</label>
+                                    <label class="form-label fw-bold">{% translate "Último uso:" %}</label>
                                     <p class="text-muted">
                                         <i class="bi bi-clock-history me-1"></i>
                                         {{ upload_url.last_used_at|date:"d/m/Y H:i" }}
@@ -166,7 +167,7 @@
                         <div class="card-header">
                             <h5 class="card-title mb-0">
                                 <i class="bi bi-bar-chart me-2"></i>
-                                Estadísticas
+                                {% translate "Estadísticas" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -174,7 +175,7 @@
                                 <div class="col-6 mb-4">
                                     <div class="border-end">
                                         <div class="display-4 fw-bold text-primary">{{ upload_url.upload_count }}</div>
-                                        <div class="text-muted">Documentos Subidos</div>
+                                        <div class="text-muted">{% translate "Documentos Subidos" %}</div>
                                     </div>
                                 </div>
                                 <div class="col-6 mb-4">
@@ -185,14 +186,14 @@
                                             ∞
                                         {% endif %}
                                     </div>
-                                    <div class="text-muted">Subidas Restantes</div>
+                                    <div class="text-muted">{% translate "Subidas Restantes" %}</div>
                                 </div>
                             </div>
 
                             {% if upload_url.max_uploads %}
                                 <!-- Barra de progreso -->
                                 <div class="mb-3">
-                                    <label class="form-label fw-bold">Progreso:</label>
+                                    <label class="form-label fw-bold">{% translate "Progreso:" %}</label>
                                     {% widthratio upload_url.upload_count upload_url.max_uploads 100 as percentage %}
                                     <div class="progress">
                                         <div class="progress-bar {% if percentage >= 90 %}bg-danger{% elif percentage >= 70 %}bg-warning{% else %}bg-success{% endif %}" 
@@ -212,7 +213,7 @@
 
                             <!-- Token -->
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Token:</label>
+                                <label class="form-label fw-bold">{% translate "Token:" %}</label>
                                 <div class="input-group">
                                     <input type="text" 
                                            class="form-control font-monospace small" 
@@ -245,10 +246,10 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Documento</th>
-                                        <th>Tamaño</th>
-                                        <th>Fecha</th>
-                                        <th>Acciones</th>
+                                        <th>{% translate "Documento" %}</th>
+                                        <th>{% translate "Tamaño" %}</th>
+                                        <th>{% translate "Fecha" %}</th>
+                                        <th>{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -278,7 +279,7 @@
                                             <td>
                                                 <a href="{% url 'document_detail' document.pk %}" 
                                                    class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-eye me-1"></i>Ver
+                                                    <i class="bi bi-eye me-1"></i>{% translate "Ver" %}
                                                 </a>
                                             </td>
                                         </tr>
@@ -292,8 +293,8 @@
                 <div class="card">
                     <div class="card-body text-center py-5">
                         <i class="bi bi-inbox display-1 text-muted mb-3"></i>
-                        <h4 class="text-muted">No hay documentos subidos aún</h4>
-                        <p class="text-muted">Los documentos subidos usando esta URL aparecerán aquí</p>
+                        <h4 class="text-muted">{% translate "No hay documentos subidos aún" %}</h4>
+                        <p class="text-muted">{% translate "Los documentos subidos usando esta URL aparecerán aquí" %}</p>
                     </div>
                 </div>
             {% endif %}

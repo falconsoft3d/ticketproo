@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Dashboard - {{ project.name }}{% endblock %}
@@ -93,7 +94,7 @@
 <div class="container-fluid py-4">
     <!-- Header del Proyecto -->
     <div class="project-header">
-        <h1><i class="fas fa-chart-line"></i> Dashboard del Proyecto</h1>
+        <h1><i class="fas fa-chart-line"></i> {% translate "Dashboard del Proyecto" %}</h1>
         <h2>{{ project.name }}</h2>
         {% if client_name %}
         <div class="client-info mt-3">
@@ -109,7 +110,7 @@
         <div class="col-xl-3 col-lg-6 col-md-6 col-12">
             <div class="stat-card primary">
                 <div class="stat-number">{{ total_hours_this_month|floatformat:1 }}</div>
-                <div class="stat-label">Total Horas Este Mes</div>
+                <div class="stat-label">{% translate "Total Horas Este Mes" %}</div>
                 <div class="stat-description">
                     <i class="fas fa-calendar-month"></i> Horas trabajadas en {{ month_start|date:"F Y" }}
                 </div>
@@ -120,9 +121,9 @@
         <div class="col-xl-3 col-lg-6 col-md-6 col-12">
             <div class="stat-card success">
                 <div class="stat-number">{{ project_hours_this_month|floatformat:1 }}</div>
-                <div class="stat-label">Proyecto - Este Mes</div>
+                <div class="stat-label">{% translate "Proyecto - Este Mes" %}</div>
                 <div class="stat-description">
-                    <i class="fas fa-project-diagram"></i> Horas dedicadas al proyecto actual
+                    <i class="fas fa-project-diagram"></i> {% translate "Horas dedicadas al proyecto actual" %}
                 </div>
             </div>
         </div>
@@ -131,9 +132,9 @@
         <div class="col-xl-3 col-lg-6 col-md-6 col-12">
             <div class="stat-card warning">
                 <div class="stat-number">{{ total_project_hours|floatformat:1 }}</div>
-                <div class="stat-label">Total del Proyecto</div>
+                <div class="stat-label">{% translate "Total del Proyecto" %}</div>
                 <div class="stat-description">
-                    <i class="fas fa-clock"></i> Total acumulado desde el inicio
+                    <i class="fas fa-clock"></i> {% translate "Total acumulado desde el inicio" %}
                 </div>
             </div>
         </div>
@@ -142,9 +143,9 @@
         <div class="col-xl-3 col-lg-6 col-md-6 col-12">
             <div class="stat-card info">
                 <div class="stat-number">{{ team_total_hours|floatformat:1 }}</div>
-                <div class="stat-label">Total del Equipo</div>
+                <div class="stat-label">{% translate "Total del Equipo" %}</div>
                 <div class="stat-description">
-                    <i class="fas fa-users"></i> Horas de todo el equipo en el proyecto
+                    <i class="fas fa-users"></i> {% translate "Horas de todo el equipo en el proyecto" %}
                 </div>
             </div>
         </div>
@@ -155,7 +156,7 @@
         <div class="col-xl-3 col-lg-6 col-md-6 col-12">
             <div class="stat-card" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
                 <div class="stat-number">{{ week_hours|floatformat:1 }}</div>
-                <div class="stat-label">Horas Esta Semana</div>
+                <div class="stat-label">{% translate "Horas Esta Semana" %}</div>
                 <div class="stat-description">
                     <i class="fas fa-calendar-week"></i> Desde {{ week_start|date:"d/m" }}
                 </div>
@@ -165,9 +166,9 @@
         <div class="col-xl-3 col-lg-6 col-md-6 col-12">
             <div class="stat-card" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
                 <div class="stat-number">{{ avg_daily_hours|floatformat:1 }}</div>
-                <div class="stat-label">Promedio Diario</div>
+                <div class="stat-label">{% translate "Promedio Diario" %}</div>
                 <div class="stat-description">
-                    <i class="fas fa-chart-bar"></i> Horas por día trabajado
+                    <i class="fas fa-chart-bar"></i> {% translate "Horas por día trabajado" %}
                 </div>
             </div>
         </div>
@@ -175,9 +176,9 @@
         <div class="col-xl-3 col-lg-6 col-md-6 col-12">
             <div class="stat-card" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
                 <div class="stat-number">{{ total_entries }}</div>
-                <div class="stat-label">Total Registros</div>
+                <div class="stat-label">{% translate "Total Registros" %}</div>
                 <div class="stat-description">
-                    <i class="fas fa-list"></i> Entradas de tiempo registradas
+                    <i class="fas fa-list"></i> {% translate "Entradas de tiempo registradas" %}
                 </div>
             </div>
         </div>
@@ -185,9 +186,9 @@
         <div class="col-xl-3 col-lg-6 col-md-6 col-12">
             <div class="stat-card" style="background: linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%);">
                 <div class="stat-number">{{ unique_clients }}</div>
-                <div class="stat-label">Clientes Activos</div>
+                <div class="stat-label">{% translate "Clientes Activos" %}</div>
                 <div class="stat-description">
-                    <i class="fas fa-user-friends"></i> Colaboradores en el proyecto
+                    <i class="fas fa-user-friends"></i> {% translate "Colaboradores en el proyecto" %}
                 </div>
             </div>
         </div>
@@ -197,7 +198,7 @@
     <div class="row">
         <div class="col-12">
             <div class="chart-container">
-                <h4 class="mb-4"><i class="fas fa-chart-line"></i> Tendencia de Horas Semanales</h4>
+                <h4 class="mb-4"><i class="fas fa-chart-line"></i> {% translate "Tendencia de Horas Semanales" %}</h4>
                 <canvas id="weeklyChart" height="100"></canvas>
             </div>
         </div>
@@ -207,14 +208,14 @@
     <div class="row">
         <div class="col-lg-6">
             <div class="chart-container">
-                <h4 class="mb-4"><i class="fas fa-pie-chart"></i> Distribución por Categorías</h4>
+                <h4 class="mb-4"><i class="fas fa-pie-chart"></i> {% translate "Distribución por Categorías" %}</h4>
                 <canvas id="categoryChart"></canvas>
             </div>
         </div>
         
         <div class="col-lg-6">
             <div class="chart-container">
-                <h4 class="mb-4"><i class="fas fa-chart-bar"></i> Actividad por Día de la Semana</h4>
+                <h4 class="mb-4"><i class="fas fa-chart-bar"></i> {% translate "Actividad por Día de la Semana" %}</h4>
                 <canvas id="weekdayChart"></canvas>
             </div>
         </div>
@@ -225,16 +226,16 @@
     <div class="row">
         <div class="col-12">
             <div class="table-container">
-                <h4 class="mb-4"><i class="fas fa-table"></i> Detalle por Categorías</h4>
+                <h4 class="mb-4"><i class="fas fa-table"></i> {% translate "Detalle por Categorías" %}</h4>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead class="table-dark">
                             <tr>
-                                <th>Categoría</th>
-                                <th>Total Horas</th>
-                                <th>Registros</th>
-                                <th>% del Total</th>
-                                <th>Progreso</th>
+                                <th>{% translate "Categoría" %}</th>
+                                <th>{% translate "Total Horas" %}</th>
+                                <th>{% translate "Registros" %}</th>
+                                <th>{% translate "% del Total" %}</th>
+                                <th>{% translate "Progreso" %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -270,17 +271,17 @@
     <div class="row">
         <div class="col-12">
             <div class="table-container">
-                <h4 class="mb-4"><i class="fas fa-trophy"></i> Top Colaboradores</h4>
+                <h4 class="mb-4"><i class="fas fa-trophy"></i> {% translate "Top Colaboradores" %}</h4>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead class="table-dark">
                             <tr>
-                                <th>Posición</th>
-                                <th>Cliente</th>
-                                <th>Email</th>
-                                <th>Total Horas</th>
-                                <th>Registros</th>
-                                <th>Contribución</th>
+                                <th>{% translate "Posición" %}</th>
+                                <th>{% translate "Cliente" %}</th>
+                                <th>{% translate "Email" %}</th>
+                                <th>{% translate "Total Horas" %}</th>
+                                <th>{% translate "Registros" %}</th>
+                                <th>{% translate "Contribución" %}</th>
                             </tr>
                         </thead>
                         <tbody>

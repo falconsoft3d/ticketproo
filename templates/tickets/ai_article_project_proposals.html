@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ project.title }} - Artículos - {{ block.super }}{% endblock %}
@@ -23,9 +24,9 @@
 <div class="container-fluid mt-4">
     <div class="row mb-3">
         <div class="col-md-8">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'ai_article_project_list' %}">Proyectos</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_article_project_list' %}">{% translate "Proyectos" %}</a></li>
                     <li class="breadcrumb-item active">{{ project.title }}</li>
                 </ol>
             </nav>
@@ -34,7 +35,7 @@
             <div class="mt-2">
                 <span class="badge bg-{% if project.content_format == 'markdown' %}info{% else %}secondary{% endif %}">
                     <i class="fas fa-{% if project.content_format == 'markdown' %}code{% else %}align-left{% endif %}"></i>
-                    {% if project.content_format == 'markdown' %}Formato: Markdown{% else %}Formato: Texto Plano{% endif %}
+                    {% if project.content_format == 'markdown' %}{% translate "Formato: Markdown" %}{% else %}{% translate "Formato: Texto Plano" %}{% endif %}
                 </span>
                 {% if project.company %}
                     <span class="badge" style="background-color: {{ project.company.color }};">
@@ -45,13 +46,13 @@
         </div>
         <div class="col-md-4 text-end">
             <a href="{% url 'ai_article_project_edit' project.pk %}" class="btn btn-warning">
-                <i class="fas fa-edit"></i> Editar Proyecto
+                <i class="fas fa-edit"></i> {% translate "Editar Proyecto" %}
             </a>
             <button type="button" class="btn btn-success" id="btn-generate-proposals">
-                <i class="fas fa-magic"></i> Proponer 10 Artículos
+                <i class="fas fa-magic"></i> {% translate "Proponer 10 Artículos" %}
             </button>
             <a href="{% url 'ai_article_project_list' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Volver
+                <i class="fas fa-arrow-left"></i> {% translate "Volver" %}
             </a>
         </div>
     </div>
@@ -71,15 +72,15 @@
                 <div class="card-body">
                     <div class="row text-center">
                         <div class="col-md-4">
-                            <h5 class="text-muted">Total Artículos</h5>
+                            <h5 class="text-muted">{% translate "Total Artículos" %}</h5>
                             <h2 class="mb-0" id="total-articles">{{ project.get_total_articles }}</h2>
                         </div>
                         <div class="col-md-4">
-                            <h5 class="text-muted">Artículos Generados</h5>
+                            <h5 class="text-muted">{% translate "Artículos Generados" %}</h5>
                             <h2 class="mb-0 text-success">{{ project.get_completed_articles }}</h2>
                         </div>
                         <div class="col-md-4">
-                            <h5 class="text-muted">Progreso</h5>
+                            <h5 class="text-muted">{% translate "Progreso" %}</h5>
                             <h2 class="mb-0 text-primary">{{ project.get_progress_percentage }}%</h2>
                         </div>
                     </div>
@@ -102,19 +103,19 @@
                         <h5 class="card-title">{{ article.title }}</h5>
                         
                         <div class="mb-3">
-                            <small class="text-muted d-block mb-1">Palabras Clave:</small>
+                            <small class="text-muted d-block mb-1">{% translate "Palabras Clave:" %}</small>
                             <div class="keywords-container" data-article-id="{{ article.id }}">
                                 {% if article.keywords %}
                                     {% for keyword in article.get_keywords_list %}
                                         <span class="badge bg-info keywords-badge">{{ keyword }}</span>
                                     {% endfor %}
                                 {% else %}
-                                    <span class="text-muted small">Sin palabras clave</span>
+                                    <span class="text-muted small">{% translate "Sin palabras clave" %}</span>
                                 {% endif %}
                             </div>
                             <button type="button" class="btn btn-sm btn-outline-secondary mt-2 btn-edit-keywords" 
                                     data-article-id="{{ article.id }}" data-keywords="{{ article.keywords }}">
-                                <i class="fas fa-edit"></i> Editar Palabras Clave
+                                <i class="fas fa-edit"></i> {% translate "Editar Palabras Clave" %}
                             </button>
                         </div>
 
@@ -128,12 +129,12 @@
                             {% if not article.content %}
                                 <button type="button" class="btn btn-sm btn-primary flex-fill btn-generate-content" 
                                         data-article-id="{{ article.id }}">
-                                    <i class="fas fa-wand-magic-sparkles"></i> Generar Contenido
+                                    <i class="fas fa-wand-magic-sparkles"></i> {% translate "Generar Contenido" %}
                                 </button>
                             {% else %}
                                 <a href="{% url 'ai_article_detail' project.pk article.id %}" 
                                    class="btn btn-sm btn-success flex-fill">
-                                    <i class="fas fa-eye"></i> Ver Contenido
+                                    <i class="fas fa-eye"></i> {% translate "Ver Contenido" %}
                                 </a>
                             {% endif %}
                             <button type="button" class="btn btn-sm btn-outline-danger btn-delete-article" 
@@ -147,8 +148,7 @@
         {% empty %}
             <div class="col-12">
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> No hay artículos propuestos aún. 
-                    Pulsa el botón <strong>"Proponer 10 Artículos"</strong> para que la IA genere propuestas.
+                    <i class="fas fa-info-circle"></i> {% translate "No hay artículos propuestos aún. Pulsa el botón" %} <strong>{% translate '"Proponer 10 Artículos"' %}</strong> {% translate "para que la IA genere propuestas." %}
                 </div>
             </div>
         {% endfor %}
@@ -157,9 +157,9 @@
     <!-- Loading spinner -->
     <div id="loading-spinner" class="text-center py-5" style="display: none;">
         <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Generando...</span>
+            <span class="visually-hidden">{% translate "Generando..." %}</span>
         </div>
-        <p class="mt-2 text-muted">La IA está trabajando...</p>
+        <p class="mt-2 text-muted">{% translate "La IA está trabajando..." %}</p>
     </div>
 </div>
 
@@ -168,17 +168,17 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Editar Palabras Clave</h5>
+                <h5 class="modal-title">{% translate "Editar Palabras Clave" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <textarea class="form-control" id="keywords-input" rows="3" 
                           placeholder="palabra1, palabra2, palabra3"></textarea>
-                <small class="text-muted">Separa las palabras clave con comas</small>
+                <small class="text-muted">{% translate "Separa las palabras clave con comas" %}</small>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="btn-save-keywords">Guardar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
+                <button type="button" class="btn btn-primary" id="btn-save-keywords">{% translate "Guardar" %}</button>
             </div>
         </div>
     </div>

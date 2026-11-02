@@ -1,83 +1,127 @@
 {% extends 'public_base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block title %}{{ title }}{% endblock %}
 
-{% block hero_icon %}<i class="bi bi-lightbulb"></i>{% endblock %}
-{% block hero_title %}Conceptos{% endblock %}
-{% block hero_description %}Glosario de términos y conceptos clave para entender mejor nuestra plataforma y metodologías.{% endblock %}
+{% block extra_css %}
+    .ap-glo-hero { padding: 72px 0 8px; text-align: center; }
+    .ap-glo-hero h1 { font-size: clamp(2.4rem, 6vw, 4rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; margin-bottom: .6rem; }
+    .ap-glo-hero p { font-size: clamp(1.05rem, 2vw, 1.35rem); color: var(--ap-ink-2); max-width: 680px; margin: 0 auto; }
+    .ap-filter-search {
+        max-width: 560px; margin: 2rem auto 0;
+        display: flex; align-items: center; gap: .5rem;
+        background: var(--ap-surface); border: 1px solid var(--ap-line);
+        border-radius: 980px; padding: 6px 18px;
+        box-shadow: 0 12px 32px -16px var(--ap-shadow);
+    }
+    .ap-filter-search i { color: var(--ap-ink-3); }
+    .ap-filter-search input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; color: var(--ap-ink); font-size: 1.02rem; padding: .6rem .2rem; }
+    .ap-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin-top: 1.25rem; }
+    .ap-chip-btn {
+        border: none; border-radius: 980px; padding: .4rem .95rem;
+        background: var(--ap-fill); color: var(--ap-ink); font-size: .85rem; font-weight: 500;
+        transition: background .15s ease, color .15s ease;
+    }
+    .ap-chip-btn:hover { background: var(--ap-fill-3); }
+    .ap-chip-btn.on { background: var(--ap-contrast-bg); color: var(--ap-contrast-fg); }
+    .ap-glo-hero p.ap-count { font-size: .85rem; max-width: none; }
+    .ap-count { text-align: center; color: var(--ap-ink-3); font-size: .85rem; margin-top: 1rem; }
+
+    .ap-glo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .ap-glo-card {
+        background: var(--ap-fill-2); border-radius: 20px; padding: 22px 24px;
+        transition: transform .3s cubic-bezier(.2, .8, .2, 1), box-shadow .3s ease;
+    }
+    .ap-glo-card:hover { transform: translateY(-3px); box-shadow: 0 16px 36px -20px var(--ap-shadow); }
+    .ap-glo-card h3 { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 .45rem; }
+    .ap-glo-card p { color: var(--ap-ink-2); font-size: .93rem; line-height: 1.55; margin: 0; }
+    .ap-glo-cat { display: inline-block; font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #bf4800; margin-bottom: .55rem; }
+    html[data-theme="dark"] .ap-glo-cat { color: #ff9f5a; }
+    .ap-empty-state { text-align: center; padding: 4rem 1rem; color: var(--ap-ink-2); }
+    .ap-empty-state i { font-size: 2.6rem; color: var(--ap-line-strong); display: block; margin-bottom: .8rem; }
+    [hidden] { display: none !important; }
+    @media (prefers-reduced-motion: reduce) { .ap-glo-card:hover { transform: none; } }
+{% endblock %}
+
+{% block hero_section %}
+<section class="ap-glo-hero">
+    <div class="container">
+        <h1>{% translate "Conceptos." %}</h1>
+        <p>{% translate "Glosario de términos y conceptos clave para entender mejor nuestra plataforma y metodologías." %}</p>
+        {% if concepts %}
+        <label class="ap-filter-search">
+            <i class="bi bi-search"></i>
+            <input type="search" id="glo-search" placeholder="{% translate 'Buscar un concepto' %}" aria-label="{% translate 'Buscar un concepto' %}" autocomplete="off">
+        </label>
+        <div class="ap-chips" id="glo-chips">
+            <button type="button" class="ap-chip-btn on" data-cat="">{% translate "Todas" %}</button>
+            {% regroup concepts|dictsort:"category" by category as by_category %}
+            {% for group in by_category %}{% if group.grouper %}
+            <button type="button" class="ap-chip-btn" data-cat="{{ group.grouper }}">{{ group.grouper }}</button>
+            {% endif %}{% endfor %}
+        </div>
+        <p class="ap-count"><span id="glo-count">{{ concepts|length }}</span> {% translate "conceptos" %}</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <!-- Header principal -->
-    {% if concepts %}
-        <!-- Tabla simple de conceptos -->
-        <div class="row justify-content-center">
-            <div class="col-12">
-                <div class="card shadow-lg bg-white">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped">
-                                <thead class="table-primary">
-                                    <tr>
-                                        <th width="20%">Concepto</th>
-                                        <th width="60%">Descripción</th>
-                                        <th width="20%">Categoría</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for concept in concepts %}
-                                    <tr>
-                                        <td>
-                                            <strong class="text-primary">{{ concept.term }}</strong>
-                                        </td>
-                                        <td>
-                                            {{ concept.definition }}
-                                        </td>
-                                        <td>
-                                            {% if concept.category %}
-                                                <span class="badge bg-secondary">{{ concept.category }}</span>
-                                            {% else %}
-                                                <span class="text-muted">-</span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Información adicional -->
-        <div class="row justify-content-center mt-4">
-            <div class="col-12">
-                <div class="card bg-light bg-opacity-90">
-                    <div class="card-body text-center">
-                        <small class="text-muted">
-                            <i class="bi bi-info-circle"></i> 
-                            Utiliza <kbd>Ctrl+F</kbd> (o <kbd>Cmd+F</kbd> en Mac) para buscar términos específicos
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-    {% else %}
-        <!-- Estado vacío -->
-        <div class="row justify-content-center">
-            <div class="col-12 col-lg-6">
-                <div class="card bg-white">
-                    <div class="card-body text-center py-5">
-                        <i class="bi bi-book display-1 text-muted"></i>
-                        <h3 class="mt-3">Glosario en construcción</h3>
-                        <p class="text-muted">Pronto tendremos conceptos disponibles para consulta</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% endif %}
+{% if concepts %}
+<div id="glo-list" class="ap-glo-grid">
+            {% for concept in concepts|dictsort:"term" %}
+            <article class="ap-glo-card" data-cat="{{ concept.category|default:'' }}" data-text="{{ concept.term|lower }} {{ concept.definition|lower }}">
+                {% if concept.category %}<span class="ap-glo-cat">{{ concept.category }}</span>{% endif %}
+                <h3>{{ concept.term }}</h3>
+                <p>{{ concept.definition }}</p>
+            </article>
+            {% endfor %}
 </div>
+<div class="ap-empty-state" id="glo-empty" hidden>
+    <i class="bi bi-search"></i>
+    {% translate "No hay conceptos que coincidan con la búsqueda." %}
+</div>
+{% else %}
+<div class="ap-empty-state">
+    <i class="bi bi-book"></i>
+    <h3 class="fw-semibold">{% translate "Glosario en construcción" %}</h3>
+    <p>{% translate "Pronto tendremos conceptos disponibles para consulta." %}</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var search = document.getElementById('glo-search');
+    if (!search) return;
+    var cards = Array.prototype.slice.call(document.querySelectorAll('.ap-glo-card'));
+    var chips = document.querySelectorAll('#glo-chips .ap-chip-btn');
+    var count = document.getElementById('glo-count');
+    var empty = document.getElementById('glo-empty');
+    var category = '';
+
+    function apply() {
+        var q = search.value.trim().toLowerCase();
+        var visible = 0;
+        cards.forEach(function (card) {
+            var show = (!category || card.dataset.cat === category) && (!q || card.dataset.text.indexOf(q) !== -1);
+            card.hidden = !show;
+            if (show) visible++;
+        });
+        count.textContent = visible;
+        empty.hidden = visible !== 0;
+    }
+
+    search.addEventListener('input', apply);
+    chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            chips.forEach(function (c) { c.classList.remove('on'); });
+            chip.classList.add('on');
+            category = chip.dataset.cat;
+            apply();
+        });
+    });
+})();
+</script>
 {% endblock %}

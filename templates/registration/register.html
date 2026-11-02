@@ -1,11 +1,12 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}Registro - TicketProo{% endblock %}
+{% block title %}{% translate "Registro - TicketProo" %}{% endblock %}
 
 {% block hero_icon %}<i class="bi bi-person-plus"></i>{% endblock %}
-{% block hero_title %}Crear Cuenta{% endblock %}
-{% block hero_description %}Únete a TicketProo y comienza a gestionar tus tickets de manera profesional.{% endblock %}
+{% block hero_title %}{% translate "Crear Cuenta" %}{% endblock %}
+{% block hero_description %}{% translate "Únete a TicketProo y comienza a gestionar tus tickets de manera profesional." %}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -14,8 +15,8 @@
             <div class="card-body p-5">
                 <div class="text-center mb-4">
                     <i class="bi bi-person-plus display-4 text-primary"></i>
-                    <h3 class="mt-3 mb-1">Crear Nueva Cuenta</h3>
-                    <p class="text-muted">Completa el formulario para registrarte</p>
+                    <h3 class="mt-3 mb-1">{% translate "Crear Nueva Cuenta" %}</h3>
+                    <p class="text-muted">{% translate "Completa el formulario para registrarte" %}</p>
                 </div>
 
                 {% if form.non_field_errors %}
@@ -35,7 +36,7 @@
                             <input type="text" class="form-control" 
                                    id="{{ form.first_name.id_for_label }}" 
                                    name="{{ form.first_name.name }}" 
-                                   placeholder="Tu nombre"
+                                   placeholder="{% translate 'Tu nombre' %}"
                                    value="{{ form.first_name.value|default:'' }}">
                             {% if form.first_name.errors %}
                                 <div class="text-danger small mt-1">
@@ -53,7 +54,7 @@
                             <input type="text" class="form-control" 
                                    id="{{ form.last_name.id_for_label }}" 
                                    name="{{ form.last_name.name }}" 
-                                   placeholder="Tu apellido"
+                                   placeholder="{% translate 'Tu apellido' %}"
                                    value="{{ form.last_name.value|default:'' }}">
                             {% if form.last_name.errors %}
                                 <div class="text-danger small mt-1">
@@ -72,7 +73,7 @@
                         <input type="text" class="form-control" 
                                id="{{ form.username.id_for_label }}" 
                                name="{{ form.username.name }}" 
-                               placeholder="Elige un nombre de usuario"
+                               placeholder="{% translate 'Elige un nombre de usuario' %}"
                                value="{{ form.username.value|default:'' }}"
                                required>
                         {% if form.username.errors %}
@@ -111,7 +112,7 @@
                             <input type="password" class="form-control" 
                                    id="{{ form.password1.id_for_label }}" 
                                    name="{{ form.password1.name }}" 
-                                   placeholder="Contraseña segura"
+                                   placeholder="{% translate 'Contraseña segura' %}"
                                    required>
                             {% if form.password1.errors %}
                                 <div class="text-danger small mt-1">
@@ -129,7 +130,7 @@
                             <input type="password" class="form-control" 
                                    id="{{ form.password2.id_for_label }}" 
                                    name="{{ form.password2.name }}" 
-                                   placeholder="Confirmar contraseña"
+                                   placeholder="{% translate 'Confirmar contraseña' %}"
                                    required>
                             {% if form.password2.errors %}
                                 <div class="text-danger small mt-1">
@@ -143,15 +144,15 @@
                     
                     <div class="d-grid mb-3">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-person-check me-2"></i>Crear Cuenta
+                            <i class="bi bi-person-check me-2"></i>{% translate "Crear Cuenta" %}
                         </button>
                     </div>
                 </form>
 
                 <div class="text-center">
-                    <p class="mb-0 text-muted">¿Ya tienes cuenta?</p>
+                    <p class="mb-0 text-muted">{% translate "¿Ya tienes cuenta?" %}</p>
                     <a href="{% url 'login' %}" class="btn btn-outline-primary mt-2">
-                        <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión
+                        <i class="bi bi-box-arrow-in-right me-1"></i>{% translate "Iniciar sesión" %}
                     </a>
                 </div>
                 
@@ -159,7 +160,7 @@
                 
                 <div class="text-center">
                     <a href="{% url 'home' %}" class="btn btn-link text-decoration-none">
-                        <i class="bi bi-arrow-left me-1"></i>Volver al inicio
+                        <i class="bi bi-arrow-left me-1"></i>{% translate "Volver al inicio" %}
                     </a>
                 </div>
             </div>

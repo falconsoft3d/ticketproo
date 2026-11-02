@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Color Picker - Herramientas{% endblock %}
+{% block title %}{% translate "Color Picker - Herramientas" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -68,11 +69,11 @@
 <div class="container mt-4">
     <div class="row mb-4">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    <li class="breadcrumb-item">Herramientas</li>
-                    <li class="breadcrumb-item active" aria-current="page">Color Picker</li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                    <li class="breadcrumb-item">{% translate "Herramientas" %}</li>
+                    <li class="breadcrumb-item active" aria-current="page">{% translate "Color Picker" %}</li>
                 </ol>
             </nav>
         </div>
@@ -83,10 +84,10 @@
             <div class="card shadow-sm border-0">
                 <div class="card-body">
                     <h1 class="card-title mb-3">
-                        <i class="bi bi-palette text-primary"></i> Color Picker
+                        <i class="bi bi-palette text-primary"></i> {% translate "Color Picker" %}
                     </h1>
                     <p class="text-muted mb-0">
-                        Selecciona colores de cualquier parte de tu pantalla y obtén sus códigos en diferentes formatos.
+                        {% translate "Selecciona colores de cualquier parte de tu pantalla y obtén sus códigos en diferentes formatos." %}
                     </p>
                 </div>
             </div>
@@ -103,12 +104,12 @@
                     
                     <div class="mb-4">
                         <button class="btn btn-primary eyedropper-btn" id="eyedropperBtn">
-                            <i class="bi bi-eyedropper"></i> Seleccionar Color de Pantalla
+                            <i class="bi bi-eyedropper"></i> {% translate "Seleccionar Color de Pantalla" %}
                         </button>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="colorInput" class="form-label fw-bold">O elige un color manualmente:</label>
+                        <label for="colorInput" class="form-label fw-bold">{% translate "O elige un color manualmente:" %}</label>
                         <input type="color" class="form-control form-control-color mx-auto" id="colorInput" value="#3498db" style="width: 100px; height: 50px;">
                     </div>
                 </div>
@@ -124,7 +125,7 @@
                         <i class="bi bi-hash text-primary"></i> HEX
                     </h5>
                     <p class="card-text fs-4 fw-bold" id="hexCode">#3498db</p>
-                    <small class="text-muted"><i class="bi bi-clipboard"></i> Click para copiar</small>
+                    <small class="text-muted"><i class="bi bi-clipboard"></i> {% translate "Click para copiar" %}</small>
                 </div>
             </div>
         </div>
@@ -135,8 +136,8 @@
                     <h5 class="card-title">
                         <i class="bi bi-grid-3x3 text-success"></i> RGB
                     </h5>
-                    <p class="card-text fs-4 fw-bold" id="rgbCode">rgb(52, 152, 219)</p>
-                    <small class="text-muted"><i class="bi bi-clipboard"></i> Click para copiar</small>
+                    <p class="card-text fs-4 fw-bold" id="rgbCode">{% translate "rgb(52, 152, 219)" %}</p>
+                    <small class="text-muted"><i class="bi bi-clipboard"></i> {% translate "Click para copiar" %}</small>
                 </div>
             </div>
         </div>
@@ -147,8 +148,8 @@
                     <h5 class="card-title">
                         <i class="bi bi-circle-half text-warning"></i> HSL
                     </h5>
-                    <p class="card-text fs-4 fw-bold" id="hslCode">hsl(204, 70%, 53%)</p>
-                    <small class="text-muted"><i class="bi bi-clipboard"></i> Click para copiar</small>
+                    <p class="card-text fs-4 fw-bold" id="hslCode">{% translate "hsl(204, 70%, 53%)" %}</p>
+                    <small class="text-muted"><i class="bi bi-clipboard"></i> {% translate "Click para copiar" %}</small>
                 </div>
             </div>
         </div>
@@ -159,8 +160,8 @@
                     <h5 class="card-title">
                         <i class="bi bi-printer text-info"></i> CMYK
                     </h5>
-                    <p class="card-text fs-4 fw-bold" id="cmykCode">cmyk(76%, 31%, 0%, 14%)</p>
-                    <small class="text-muted"><i class="bi bi-clipboard"></i> Click para copiar</small>
+                    <p class="card-text fs-4 fw-bold" id="cmykCode">{% translate "cmyk(76%, 31%, 0%, 14%)" %}</p>
+                    <small class="text-muted"><i class="bi bi-clipboard"></i> {% translate "Click para copiar" %}</small>
                 </div>
             </div>
         </div>
@@ -171,13 +172,13 @@
             <div class="card shadow-sm border-0">
                 <div class="card-body">
                     <h5 class="card-title mb-3">
-                        <i class="bi bi-clock-history"></i> Historial de Colores
+                        <i class="bi bi-clock-history"></i> {% translate "Historial de Colores" %}
                     </h5>
                     <div class="d-flex flex-wrap gap-3" id="colorHistory">
-                        <div class="text-muted">No hay colores guardados aún</div>
+                        <div class="text-muted">{% translate "No hay colores guardados aún" %}</div>
                     </div>
                     <button class="btn btn-sm btn-outline-danger mt-3" id="clearHistoryBtn">
-                        <i class="bi bi-trash"></i> Limpiar Historial
+                        <i class="bi bi-trash"></i> {% translate "Limpiar Historial" %}
                     </button>
                 </div>
             </div>

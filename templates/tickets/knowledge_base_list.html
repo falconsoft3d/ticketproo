@@ -1,25 +1,26 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Base de Conocimientos{% endblock %}
+{% block title %}{% translate "Base de Conocimientos" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb">
+    <nav aria-label="{% translate 'breadcrumb' %}">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
-            <li class="breadcrumb-item active">Base de Conocimientos</li>
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">{% translate "Inicio" %}</a></li>
+            <li class="breadcrumb-item active">{% translate "Base de Conocimientos" %}</li>
         </ol>
     </nav>
 
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>
-            <i class="bi bi-book"></i> Base de Conocimientos
+            <i class="bi bi-book"></i> {% translate "Base de Conocimientos" %}
         </h2>
         <a href="{% url 'knowledge_base_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Nuevo Conocimiento
+            <i class="bi bi-plus-circle"></i> {% translate "Nuevo Conocimiento" %}
         </a>
     </div>
 
@@ -37,7 +38,7 @@
                         </h5>
                         {% if kb.source_code %}
                         <span class="badge bg-info">
-                            <i class="bi bi-code-slash"></i> Código
+                            <i class="bi bi-code-slash"></i> {% translate "Código" %}
                         </span>
                         {% endif %}
                     </div>
@@ -64,13 +65,13 @@
                     
                     <div class="btn-group w-100" role="group">
                         <a href="{% url 'knowledge_base_detail' kb.id %}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye"></i> Ver
+                            <i class="bi bi-eye"></i> {% translate "Ver" %}
                         </a>
                         <a href="{% url 'knowledge_base_edit' kb.id %}" class="btn btn-sm btn-outline-warning">
-                            <i class="bi bi-pencil"></i> Editar
+                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                         </a>
                         <a href="{% url 'knowledge_base_delete' kb.id %}" class="btn btn-sm btn-outline-danger">
-                            <i class="bi bi-trash"></i> Eliminar
+                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                         </a>
                     </div>
                 </div>
@@ -81,10 +82,10 @@
     {% else %}
     <div class="text-center py-5">
         <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
-        <h4 class="text-muted mt-3">No hay conocimientos registrados</h4>
-        <p class="text-muted">Comienza creando tu primer conocimiento</p>
+        <h4 class="text-muted mt-3">{% translate "No hay conocimientos registrados" %}</h4>
+        <p class="text-muted">{% translate "Comienza creando tu primer conocimiento" %}</p>
         <a href="{% url 'knowledge_base_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Crear Conocimiento
+            <i class="bi bi-plus-circle"></i> {% translate "Crear Conocimiento" %}
         </a>
     </div>
     {% endif %}

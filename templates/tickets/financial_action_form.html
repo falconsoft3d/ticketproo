@@ -1,31 +1,32 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}
-    {% if is_edit %}Editar Acción Financiera{% else %}Crear Acción Financiera{% endif %} - TicketProo
+    {% if is_edit %}{% translate "Editar Acción Financiera" %}{% else %}{% translate "Crear Acción Financiera" %}{% endif %} {% translate "- TicketProo" %}
 {% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col">
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="{% url 'financial_actions_list' %}">Acciones Financieras</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'financial_actions_list' %}">{% translate "Acciones Financieras" %}</a></li>
                 <li class="breadcrumb-item active">
-                    {% if is_edit %}Editar{% else %}Crear{% endif %}
+                    {% if is_edit %}{% translate "Editar" %}{% else %}{% translate "Crear" %}{% endif %}
                 </li>
             </ol>
         </nav>
         
         <h1 class="mb-2">
             <i class="bi bi-graph-up-arrow"></i> 
-            {% if is_edit %}Editar Acción Financiera{% else %}Nueva Acción Financiera{% endif %}
+            {% if is_edit %}{% translate "Editar Acción Financiera" %}{% else %}{% translate "Nueva Acción Financiera" %}{% endif %}
         </h1>
         <p class="text-muted">
             {% if is_edit %}
                 Modifique los datos de la acción financiera "{{ action.symbol }}"
             {% else %}
-                Configure una nueva acción para mostrar en el ticker del dashboard
+                {% translate "Configure una nueva acción para mostrar en el ticker del dashboard" %}
             {% endif %}
         </p>
     </div>
@@ -36,11 +37,11 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">
-                    <i class="bi bi-pencil"></i> Datos de la Acción
+                    <i class="bi bi-pencil"></i> {% translate "Datos de la Acción" %}
                 </h5>
                 {% if is_edit and action %}
                 <button type="button" class="btn btn-info btn-sm" onclick="updatePrice({{ action.pk }}, '{{ action.symbol }}')" id="updatePriceBtn">
-                    <i class="bi bi-arrow-clockwise"></i> Actualizar Precio
+                    <i class="bi bi-arrow-clockwise"></i> {% translate "Actualizar Precio" %}
                 </button>
                 {% endif %}
             </div>
@@ -89,7 +90,7 @@
                             <div class="input-group">
                                 {{ form.current_price }}
                                 {% if is_edit %}
-                                <span class="input-group-text" title="Campo de solo lectura - depende de API">
+                                <span class="input-group-text" title="{% translate 'Campo de solo lectura - depende de API' %}">
                                     <i class="bi bi-lock"></i>
                                 </span>
                                 {% endif %}
@@ -99,7 +100,7 @@
                             {% endif %}
                             {% if is_edit %}
                                 <div class="form-text text-info">
-                                    <i class="bi bi-info-circle"></i> Precio obtenido automáticamente desde API
+                                    <i class="bi bi-info-circle"></i> {% translate "Precio obtenido automáticamente desde API" %}
                                 </div>
                             {% endif %}
                             {% if form.current_price.errors %}
@@ -112,7 +113,7 @@
                             <div class="input-group">
                                 {{ form.previous_price }}
                                 {% if is_edit %}
-                                <span class="input-group-text" title="Campo de solo lectura - depende de API">
+                                <span class="input-group-text" title="{% translate 'Campo de solo lectura - depende de API' %}">
                                     <i class="bi bi-lock"></i>
                                 </span>
                                 {% endif %}
@@ -122,7 +123,7 @@
                             {% endif %}
                             {% if is_edit %}
                                 <div class="form-text text-info">
-                                    <i class="bi bi-info-circle"></i> Precio del día anterior a la misma hora
+                                    <i class="bi bi-info-circle"></i> {% translate "Precio del día anterior a la misma hora" %}
                                 </div>
                             {% endif %}
                             {% if form.previous_price.errors %}
@@ -160,10 +161,10 @@
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-circle"></i> 
-                            {% if is_edit %}Actualizar{% else %}Crear{% endif %} Acción
+                            {% if is_edit %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Acción" %}
                         </button>
                         <a href="{% url 'financial_actions_list' %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
+                            <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                         </a>
                     </div>
                 </form>
@@ -176,28 +177,27 @@
         <div class="card">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-info-circle"></i> Información
+                    <i class="bi bi-info-circle"></i> {% translate "Información" %}
                 </h6>
             </div>
             <div class="card-body">
-                <h6>Tipos de símbolos soportados:</h6>
+                <h6>{% translate "Tipos de símbolos soportados:" %}</h6>
                 <ul class="list-unstyled">
-                    <li><strong>Divisas:</strong> EUR/USD, GBP/USD, USD/JPY</li>
-                    <li><strong>Acciones:</strong> AAPL, GOOGL, MSFT, TSLA</li>
-                    <li><strong>Criptomonedas:</strong> BTC/USD, ETH/USD</li>
+                    <li><strong>{% translate "Divisas:" %}</strong> {% translate "EUR/USD, GBP/USD, USD/JPY" %}</li>
+                    <li><strong>{% translate "Acciones:" %}</strong> {% translate "AAPL, GOOGL, MSFT, TSLA" %}</li>
+                    <li><strong>{% translate "Criptomonedas:" %}</strong> {% translate "BTC/USD, ETH/USD" %}</li>
                 </ul>
                 
                 {% if is_edit %}
                 <div class="mt-4">
-                    <h6>Precios desde API:</h6>
+                    <h6>{% translate "Precios desde API:" %}</h6>
                     <p class="text-muted small">
-                        Los precios se obtienen automáticamente desde APIs externas.
-                        El precio anterior corresponde al día anterior a la misma hora.
+                        {% translate "Los precios se obtienen automáticamente desde APIs externas. El precio anterior corresponde al día anterior a la misma hora." %}
                     </p>
                     
                     {% if action.last_updated %}
                     <p class="text-muted small">
-                        <strong>Última actualización:</strong><br>
+                        <strong>{% translate "Última actualización:" %}</strong><br>
                         {{ action.last_updated|date:"d/m/Y H:i" }}
                     </p>
                     {% endif %}
@@ -205,11 +205,11 @@
                 {% endif %}
                 
                 <div class="mt-4">
-                    <h6>Configuración del ticker:</h6>
+                    <h6>{% translate "Configuración del ticker:" %}</h6>
                     <ul class="text-muted small">
-                        <li>Las acciones activas aparecen en el ticker</li>
-                        <li>El orden determina la secuencia de aparición</li>
-                        <li>Los cambios se reflejan inmediatamente</li>
+                        <li>{% translate "Las acciones activas aparecen en el ticker" %}</li>
+                        <li>{% translate "El orden determina la secuencia de aparición" %}</li>
+                        <li>{% translate "Los cambios se reflejan inmediatamente" %}</li>
                     </ul>
                 </div>
             </div>
@@ -220,7 +220,7 @@
         <div class="card mt-3">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-eye"></i> Vista Previa
+                    <i class="bi bi-eye"></i> {% translate "Vista Previa" %}
                 </h6>
             </div>
             <div class="card-body">

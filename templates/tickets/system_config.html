@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Configuración del Sistema - TicketProo{% endblock %}
+{% block title %}{% translate "Configuración del Sistema - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -8,10 +9,10 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
                 <i class="bi bi-gear-fill text-primary"></i> 
-                Configuración del Sistema
+                {% translate "Configuración del Sistema" %}
             </h1>
             <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver al Dashboard
+                <i class="bi bi-arrow-left"></i> {% translate "Volver al Dashboard" %}
             </a>
         </div>
 
@@ -25,7 +26,7 @@
                         <div class="card-header">
                             <h5 class="mb-0">
                                 <i class="bi bi-gear text-secondary"></i> 
-                                Configuración General
+                                {% translate "Configuración General" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -68,11 +69,11 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
                                 <i class="bi bi-telegram text-primary"></i> 
-                                Notificaciones de Telegram
+                                {% translate "Notificaciones de Telegram" %}
                             </h5>
                             {% if config.telegram_bot_token and config.telegram_chat_id %}
                                 <button type="submit" name="test_telegram" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-send"></i> Probar Conexión
+                                    <i class="bi bi-send"></i> {% translate "Probar Conexión" %}
                                 </button>
                             {% endif %}
                         </div>
@@ -81,13 +82,13 @@
                                 <div class="d-flex align-items-start">
                                     <i class="bi bi-info-circle me-2 mt-1"></i>
                                     <div>
-                                        <strong>¿Cómo configurar Telegram?</strong><br>
+                                        <strong>{% translate "¿Cómo configurar Telegram?" %}</strong><br>
                                         <small>
-                                            1. Habla con <a href="https://t.me/BotFather" target="_blank">@BotFather</a> en Telegram<br>
+                                            {% translate "1. Habla con" %} <a href="https://t.me/BotFather" target="_blank">@BotFather</a> {% translate "en Telegram" %}<br>
                                             2. Crea un nuevo bot con <code>/newbot</code><br>
-                                            3. Copia el token que te proporciona<br>
-                                            4. Agrega el bot a tu grupo y obtén el ID del chat<br>
-                                            5. Configura los datos aquí y prueba la conexión
+                                            {% translate "3. Copia el token que te proporciona" %}<br>
+                                            {% translate "4. Agrega el bot a tu grupo y obtén el ID del chat" %}<br>
+                                            {% translate "5. Configura los datos aquí y prueba la conexión" %}
                                         </small>
                                     </div>
                                 </div>
@@ -144,26 +145,26 @@
                                 {% if config.enable_telegram_notifications %}
                                 <div class="alert alert-light border">
                                     <h6 class="mb-2">
-                                        <i class="bi bi-gear"></i> Estado de la configuración
+                                        <i class="bi bi-gear"></i> {% translate "Estado de la configuración" %}
                                     </h6>
                                     <div class="row text-center">
                                         <div class="col-md-4">
                                             <div class="text-{% if config.enable_telegram_notifications %}success{% else %}muted{% endif %}">
                                                 <i class="bi bi-{% if config.enable_telegram_notifications %}check-circle-fill{% else %}x-circle{% endif %}"></i>
                                             </div>
-                                            <small>Habilitado</small>
+                                            <small>{% translate "Habilitado" %}</small>
                                         </div>
                                         <div class="col-md-4">
                                             <div class="text-{% if config.telegram_bot_token %}success{% else %}warning{% endif %}">
                                                 <i class="bi bi-{% if config.telegram_bot_token %}check-circle-fill{% else %}exclamation-triangle{% endif %}"></i>
                                             </div>
-                                            <small>Token Bot</small>
+                                            <small>{% translate "Token Bot" %}</small>
                                         </div>
                                         <div class="col-md-4">
                                             <div class="text-{% if config.telegram_chat_id %}success{% else %}warning{% endif %}">
                                                 <i class="bi bi-{% if config.telegram_chat_id %}check-circle-fill{% else %}exclamation-triangle{% endif %}"></i>
                                             </div>
-                                            <small>Chat ID</small>
+                                            <small>{% translate "Chat ID" %}</small>
                                         </div>
                                     </div>
                                 </div>
@@ -174,10 +175,10 @@
 
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-circle"></i> Guardar Configuración
+                            <i class="bi bi-check-circle"></i> {% translate "Guardar Configuración" %}
                         </button>
                         <a href="{% url 'dashboard' %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
+                            <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                         </a>
                     </div>
                 </form>
@@ -188,34 +189,33 @@
                 <div class="card">
                     <div class="card-header">
                         <h6 class="mb-0">
-                            <i class="bi bi-question-circle"></i> Ayuda
+                            <i class="bi bi-question-circle"></i> {% translate "Ayuda" %}
                         </h6>
                     </div>
                     <div class="card-body">
-                        <h6>Notificaciones de Telegram</h6>
+                        <h6>{% translate "Notificaciones de Telegram" %}</h6>
                         <p class="small text-muted">
-                            Cuando se active, el sistema enviará un mensaje al grupo de Telegram 
-                            cada vez que se cree un nuevo ticket con información como:
+                            {% translate "Cuando se active, el sistema enviará un mensaje al grupo de Telegram cada vez que se cree un nuevo ticket con información como:" %}
                         </p>
                         <ul class="small text-muted">
-                            <li>Número del ticket</li>
-                            <li>Título y descripción</li>
-                            <li>Usuario que lo creó</li>
-                            <li>Prioridad y empresa</li>
-                            <li>Fecha de creación</li>
+                            <li>{% translate "Número del ticket" %}</li>
+                            <li>{% translate "Título y descripción" %}</li>
+                            <li>{% translate "Usuario que lo creó" %}</li>
+                            <li>{% translate "Prioridad y empresa" %}</li>
+                            <li>{% translate "Fecha de creación" %}</li>
                         </ul>
 
                         <hr>
 
-                        <h6>Ejemplo de notificación:</h6>
+                        <h6>{% translate "Ejemplo de notificación:" %}</h6>
                         <div class="bg-light p-2 rounded small">
-                            🎫 <strong>Nuevo Ticket Creado</strong><br>
-                            📋 <strong>Ticket:</strong> #T01-001<br>
-                            📝 <strong>Título:</strong> Crear clientes<br>
-                            👤 <strong>Creado por:</strong> Juan Pérez<br>
-                            🟡 <strong>Prioridad:</strong> Media<br>
-                            🏢 <strong>Empresa:</strong> Mi Empresa<br>
-                            📅 <strong>Fecha:</strong> 08/10/2025 15:30
+                            🎫 <strong>{% translate "Nuevo Ticket Creado" %}</strong><br>
+                            📋 <strong>{% translate "Ticket:" %}</strong> #T01-001<br>
+                            📝 <strong>{% translate "Título:" %}</strong> {% translate "Crear clientes" %}<br>
+                            👤 <strong>{% translate "Creado por:" %}</strong> {% translate "Juan Pérez" %}<br>
+                            🟡 <strong>{% translate "Prioridad:" %}</strong> {% translate "Media" %}<br>
+                            🏢 <strong>{% translate "Empresa:" %}</strong> {% translate "Mi Empresa" %}<br>
+                            📅 <strong>{% translate "Fecha:" %}</strong> 08/10/2025 15:30
                         </div>
                     </div>
                 </div>

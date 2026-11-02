@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -17,12 +18,12 @@
                     <div class="alert alert-light border">
                         <div class="row">
                             <div class="col-md-8">
-                                <strong>Reunión:</strong> #{{ meeting.sequence }} - {{ meeting.company.name }}<br>
+                                <strong>{% translate "Reunión:" %}</strong> #{{ meeting.sequence }} - {{ meeting.company.name }}<br>
                                 <small class="text-muted">{{ meeting.date|date:"d/m/Y" }}</small>
                             </div>
                             <div class="col-md-4 text-end">
                                 <a href="{% url 'support_meeting_detail' meeting.pk %}" class="btn btn-outline-secondary btn-sm">
-                                    <i class="fas fa-arrow-left"></i> Volver a Reunión
+                                    <i class="fas fa-arrow-left"></i> {% translate "Volver a Reunión" %}
                                 </a>
                             </div>
                         </div>
@@ -78,10 +79,10 @@
                         
                         <div class="d-flex justify-content-end gap-2">
                             <a href="{% url 'support_meeting_detail' meeting.pk %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-times"></i> Cancelar
+                                <i class="fas fa-times"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Guardar Cambios
+                                <i class="fas fa-save"></i> {% translate "Guardar Cambios" %}
                             </button>
                         </div>
                     </form>

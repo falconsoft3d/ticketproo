@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -7,13 +8,13 @@
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1><i class="fas fa-rocket text-primary"></i> Landing Pages</h1>
+                <h1><i class="fas fa-rocket text-primary"></i> {% translate "Landing Pages" %}</h1>
                 <div class="btn-group" role="group">
                     <a href="{% url 'landing_page_contacts' %}" class="btn btn-outline-info">
-                        <i class="fas fa-users"></i> Ver Contactos
+                        <i class="fas fa-users"></i> {% translate "Ver Contactos" %}
                     </a>
                     <a href="{% url 'landing_page_create' %}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Nueva Landing Page
+                        <i class="fas fa-plus"></i> {% translate "Nueva Landing Page" %}
                     </a>
                 </div>
             </div>
@@ -41,15 +42,15 @@
                                         <div class="row text-center">
                                             <div class="col-4">
                                                 <div class="text-primary fw-bold">{{ landing_page.total_views }}</div>
-                                                <small class="text-muted">Vistas</small>
+                                                <small class="text-muted">{% translate "Vistas" %}</small>
                                             </div>
                                             <div class="col-4">
                                                 <div class="text-success fw-bold">{{ landing_page.total_submissions }}</div>
-                                                <small class="text-muted">Envíos</small>
+                                                <small class="text-muted">{% translate "Envíos" %}</small>
                                             </div>
                                             <div class="col-4">
                                                 <div class="text-info fw-bold">{{ landing_page.conversion_rate|floatformat:1 }}%</div>
-                                                <small class="text-muted">Conversión</small>
+                                                <small class="text-muted">{% translate "Conversión" %}</small>
                                             </div>
                                         </div>
                                     </div>
@@ -57,13 +58,13 @@
                                     <div class="d-flex flex-column gap-2">
                                         <!-- Botón prominente para ver la landing pública -->
                                         <a href="{% url 'landing_page_public' landing_page.slug %}" class="btn btn-success" target="_blank">
-                                            <i class="fas fa-globe"></i> Ver Landing Pública
+                                            <i class="fas fa-globe"></i> {% translate "Ver Landing Pública" %}
                                         </a>
                                         
                                         <!-- Botones de gestión -->
                                         <div class="d-flex gap-2">
                                             <a href="{% url 'landing_page_detail' landing_page.pk %}" class="btn btn-outline-primary btn-sm flex-grow-1">
-                                                <i class="fas fa-eye"></i> Detalle
+                                                <i class="fas fa-eye"></i> {% translate "Detalle" %}
                                             </a>
                                             <a href="{% url 'landing_page_edit' landing_page.pk %}" class="btn btn-outline-secondary btn-sm">
                                                 <i class="fas fa-edit"></i>
@@ -81,9 +82,9 @@
                                             <i class="fas fa-user"></i> {{ landing_page.created_by.get_full_name|default:landing_page.created_by.username }}
                                         </small>
                                         {% if landing_page.is_active %}
-                                            <span class="badge bg-success">Activa</span>
+                                            <span class="badge bg-success">{% translate "Activa" %}</span>
                                         {% else %}
-                                            <span class="badge bg-secondary">Inactiva</span>
+                                            <span class="badge bg-secondary">{% translate "Inactiva" %}</span>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -94,10 +95,10 @@
             {% else %}
                 <div class="text-center py-5">
                     <i class="fas fa-rocket fa-4x text-muted mb-3"></i>
-                    <h3 class="text-muted">No hay Landing Pages creadas</h3>
-                    <p class="text-muted">Crea tu primera landing page para generar leads y capturar información de clientes potenciales.</p>
+                    <h3 class="text-muted">{% translate "No hay Landing Pages creadas" %}</h3>
+                    <p class="text-muted">{% translate "Crea tu primera landing page para generar leads y capturar información de clientes potenciales." %}</p>
                     <a href="{% url 'landing_page_create' %}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Crear Landing Page
+                        <i class="fas fa-plus"></i> {% translate "Crear Landing Page" %}
                     </a>
                 </div>
             {% endif %}

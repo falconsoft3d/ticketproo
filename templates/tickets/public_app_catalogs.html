@@ -1,159 +1,239 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Catálogos de Apps{% endblock %}
+{% block title %}{% translate "Catálogos de Apps" %}{% endblock %}
+
+{% block extra_css %}
+    .ap-cat-hero { padding: 72px 0 8px; text-align: center; }
+    .ap-cat-hero h1 {
+        font-size: clamp(2.4rem, 6vw, 4rem);
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        line-height: 1.05;
+        margin-bottom: .6rem;
+    }
+    .ap-cat-hero p { font-size: clamp(1.05rem, 2vw, 1.35rem); color: var(--ap-ink-2); margin-bottom: 0; }
+    .ap-cat-search {
+        max-width: 620px;
+        margin: 2rem auto 0;
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        background: var(--ap-surface);
+        border: 1px solid var(--ap-line);
+        border-radius: 980px;
+        padding: 6px 6px 6px 20px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, .04), 0 12px 32px rgba(0, 0, 0, .06);
+    }
+    .ap-cat-search > i { color: var(--ap-ink-3); font-size: 1.05rem; }
+    .ap-cat-search input {
+        flex: 1; min-width: 0;
+        border: none; outline: none; background: transparent;
+        font-size: 1.02rem; padding: .65rem .6rem; color: var(--ap-ink);
+    }
+    .ap-cat-search button, .ap-cat-search a {
+        border: none;
+        border-radius: 980px;
+        padding: .6rem 1.25rem;
+        font-size: .92rem;
+        font-weight: 500;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .ap-cat-search button { background: #0071e3; color: #fff; }
+    .ap-cat-search button:hover { background: #0077ed; }
+    .ap-cat-search a { background: var(--ap-fill-2); color: var(--ap-ink); }
+    .ap-cat-search a:hover { background: var(--ap-fill); }
+    .ap-cat-result { text-align: center; color: var(--ap-ink-3); font-size: .88rem; margin-top: .9rem; }
+
+    .ap-cat-section { margin-top: 4rem; }
+    .ap-cat-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: .5rem 1rem;
+        padding-bottom: 1rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--ap-line);
+    }
+    .ap-cat-head h2 { font-size: clamp(1.6rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.03em; margin: 0; }
+    .ap-cat-head p { color: var(--ap-ink-2); margin: .3rem 0 0; }
+    .ap-cat-count { color: var(--ap-ink-3); font-size: .9rem; white-space: nowrap; }
+
+    .ap-prod {
+        background: var(--ap-fill-2);
+        border-radius: 24px;
+        padding: 26px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        transition: transform .3s cubic-bezier(.2, .8, .2, 1), box-shadow .3s ease;
+    }
+    .ap-prod:hover { transform: translateY(-4px); box-shadow: 0 20px 44px -22px rgba(0, 0, 0, .25); }
+    .ap-prod-icon {
+        width: 46px; height: 46px;
+        border-radius: 13px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.3rem; color: #fff;
+        background: linear-gradient(160deg, #5ac8fa, #0071e3);
+        margin-bottom: 1rem;
+    }
+    .ap-prod h3 { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.02em; margin-bottom: .2rem; }
+    .ap-prod h3 a { color: var(--ap-ink); text-decoration: none; }
+    .ap-prod h3 a:hover { color: #0071e3; }
+    .ap-prod code { font-size: .75rem; color: var(--ap-ink-3); background: none; padding: 0; }
+    .ap-prod-desc { color: var(--ap-ink-2); font-size: .9rem; margin: .75rem 0 0; flex-grow: 1; }
+    .ap-prod-price {
+        display: flex; justify-content: space-between; align-items: baseline;
+        margin: 1.1rem 0 .9rem;
+    }
+    .ap-prod-price strong { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.02em; }
+    .ap-prod-qty { font-size: .78rem; color: var(--ap-ink-2); background: var(--ap-fill); border-radius: 980px; padding: .2rem .6rem; }
+    .ap-prod-note { color: var(--ap-ink-3); font-size: .82rem; font-style: italic; margin-bottom: .9rem; }
+    .ap-prod-video {
+        display: block; position: relative;
+        border-radius: 14px; overflow: hidden;
+        aspect-ratio: 16 / 9; margin-bottom: .75rem;
+    }
+    .ap-prod-video img { width: 100%; height: 100%; object-fit: cover; }
+    .ap-prod-video span {
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 50px; height: 50px; border-radius: 50%;
+        background: rgba(255, 255, 255, .85);
+        -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+        display: flex; align-items: center; justify-content: center;
+        color: #000; font-size: 1.4rem;
+    }
+    .ap-prod-links { display: flex; justify-content: space-between; gap: .75rem; margin-bottom: .75rem; font-size: .88rem; }
+    .ap-prod-links a { color: var(--ap-link); text-decoration: none; }
+    .ap-prod-links a:hover { text-decoration: underline; }
+    .ap-prod-cart {
+        width: 100%;
+        border: none;
+        border-radius: 980px;
+        background: var(--ap-contrast-bg);
+        color: var(--ap-contrast-fg);
+        padding: .65rem 1rem;
+        font-size: .92rem;
+        font-weight: 500;
+        transition: background .15s ease, transform .1s ease;
+    }
+    .ap-prod-cart:hover { opacity: .85; }
+    .ap-prod-cart:active { transform: scale(.98); }
+
+    .ap-cat-empty { text-align: center; padding: 5rem 1rem; color: var(--ap-ink-2); }
+    .ap-cat-empty i { font-size: 3rem; color: var(--ap-line-strong); display: block; margin-bottom: 1rem; }
+
+    @media (prefers-reduced-motion: reduce) { .ap-prod:hover { transform: none; } }
+{% endblock %}
+
+{% block hero_section %}
+<section class="ap-cat-hero">
+    <div class="container">
+        <h1>{% translate "Catálogos de apps." %}</h1>
+        <p>{% translate "Explora todos nuestros productos y recursos disponibles." %}</p>
+
+        <form action="{% url 'public_app_catalogs' %}" method="get" class="ap-cat-search" role="search">
+            <i class="bi bi-search"></i>
+            <input type="text" name="q" placeholder="{% translate 'Buscar producto o servicio' %}"
+                   value="{{ query }}" autocomplete="off" aria-label="{% translate 'Buscar producto o servicio' %}">
+            {% if query %}
+            <a href="{% url 'public_app_catalogs' %}" title="{% translate 'Limpiar búsqueda' %}">{% translate "Limpiar" %}</a>
+            {% endif %}
+            <button type="submit">{% translate "Buscar" %}</button>
+        </form>
+        {% if query %}
+        <p class="ap-cat-result">
+            {% translate "Resultados para" %} <strong>{{ query }}</strong> · {{ catalogs|length }} catálogo(s) encontrado(s)
+        </p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="text-center mb-4">
-        <h1 class="display-5 fw-bold">
-            <i class="bi bi-grid-3x3-gap-fill text-primary"></i> Catálogos de Apps
-        </h1>
-        <p class="lead text-muted">Explora todos nuestros productos y recursos disponibles</p>
-    </div>
-
-    <!-- Buscador -->
-    <div class="row justify-content-center mb-5">
-        <div class="col-lg-6">
-            <form action="{% url 'public_app_catalogs' %}" method="get">
-                <div class="input-group shadow-sm">
-                    <input type="text" name="q" class="form-control border-end-0"
-                           placeholder="Buscar producto o servicio..."
-                           value="{{ query }}" autocomplete="off">
-                    <button class="btn btn-primary" type="submit">
-                        <i class="bi bi-search"></i>
-                    </button>
-                    {% if query %}
-                    <a href="{% url 'public_app_catalogs' %}" class="btn btn-outline-secondary" title="Limpiar búsqueda">
-                        <i class="bi bi-x-lg"></i>
-                    </a>
-                    {% endif %}
-                </div>
-                {% if query %}
-                <p class="text-muted small mt-2 mb-0">
-                    Resultados para: <strong>{{ query }}</strong>
-                    &mdash; {{ catalogs|length }} catálogo(s) encontrado(s)
-                </p>
-                {% endif %}
-            </form>
-        </div>
-    </div>
-
-    {% if catalogs %}
+{% if catalogs %}
     {% for catalog in catalogs %}
-    <div class="mb-5">
-        <!-- Cabecera del catálogo -->
-        <div class="card border-0 shadow-sm mb-4" style="border-left: 6px solid #0d6efd !important;">
-            <div class="card-body py-3 px-4">
-                <h2 class="fw-bold mb-1">
-                    <i class="bi bi-grid-3x3-gap text-primary"></i> {{ catalog.name }}
-                </h2>
-                {% if catalog.description %}
-                <p class="text-muted mb-0">{{ catalog.description }}</p>
-                {% endif %}
+    <section class="ap-cat-section{% if forloop.first %} mt-0{% endif %}">
+        {% with lines=catalog.lines.all %}
+        <div class="ap-cat-head">
+            <div>
+                <h2>{{ catalog.name }}</h2>
+                {% if catalog.description %}<p>{{ catalog.description }}</p>{% endif %}
             </div>
+            <span class="ap-cat-count">{{ lines|length }} producto{{ lines|length|pluralize }}</span>
         </div>
 
-        {% with lines=catalog.lines.all %}
         {% if lines %}
         <div class="row g-4">
             {% for line in lines %}
             <div class="col-lg-4 col-md-6">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-header bg-primary bg-opacity-10 border-0">
-                        <h5 class="mb-0 text-primary fw-bold">
-                            <a href="{% url 'public_product_detail' line.product.pk %}" class="text-primary text-decoration-none">
-                                <i class="bi bi-box-seam"></i> {{ line.product.name }}
-                            </a>
-                        </h5>
-                        {% if line.product.technical_name %}
-                        <small class="text-muted"><code>{{ line.product.technical_name }}</code></small>
-                        {% endif %}
+                <div class="ap-prod">
+                    <span class="ap-prod-icon"><i class="bi bi-box-seam"></i></span>
+                    <h3><a href="{% url 'public_product_detail' line.product.pk %}">{{ line.product.name }}</a></h3>
+                    {% if line.product.technical_name %}<code>{{ line.product.technical_name }}</code>{% endif %}
+
+                    {% if line.product.description %}
+                    <p class="ap-prod-desc">{{ line.product.description }}</p>
+                    {% else %}
+                    <div class="flex-grow-1"></div>
+                    {% endif %}
+
+                    <div class="ap-prod-price">
+                        <strong>{{ line.product.price_with_currency }}</strong>
+                        {% if line.quantity > 1 %}<span class="ap-prod-qty">Cantidad: {{ line.quantity }}</span>{% endif %}
                     </div>
-                    <div class="card-body d-flex flex-column">
-                        {% if line.product.description %}
-                        <p class="text-muted small flex-grow-1 mb-3">{{ line.product.description }}</p>
-                        {% endif %}
 
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="fw-bold text-success fs-5">{{ line.product.price_with_currency }}</span>
-                            {% if line.quantity > 1 %}
-                            <span class="badge bg-secondary">Cantidad: {{ line.quantity }}</span>
-                            {% endif %}
-                        </div>
+                    {% if line.notes %}
+                    <p class="ap-prod-note">{{ line.notes }}</p>
+                    {% endif %}
 
-                        {% if line.notes %}
-                        <p class="text-muted small fst-italic mb-3">
-                            <i class="bi bi-sticky"></i> {{ line.notes }}
-                        </p>
-                        {% endif %}
-
-                        <!-- Videos del producto (miniatura del primero) -->
-                        {% with videos=line.product.videos.all %}
-                        {% if videos %}
-                        <div class="mt-auto">
-                            {% with video=videos.0 %}
-                            {% with thumb=video.get_thumbnail_url %}
-                            {% if thumb %}
-                            <a href="{{ video.url }}" target="_blank" rel="noopener noreferrer" class="d-block position-relative mb-2 rounded overflow-hidden" style="aspect-ratio:16/9;">
-                                <img src="{{ thumb }}" alt="{{ video.title|default:'Video' }}" class="w-100 h-100 object-fit-cover">
-                                <span class="position-absolute top-50 start-50 translate-middle bg-dark bg-opacity-50 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                                    <i class="bi bi-play-fill text-white fs-4"></i>
-                                </span>
-                            </a>
-                            {% endif %}
-                            {% endwith %}
-                            {% endwith %}
-                            <a href="{% url 'public_product_detail' line.product.pk %}" class="btn btn-outline-danger btn-sm w-100 mb-2">
-                                <i class="bi bi-play-circle"></i> Ver todos los videos ({{ videos|length }})
-                            </a>
-                            <a href="{% url 'public_product_detail' line.product.pk %}" class="btn btn-outline-secondary btn-sm w-100 mb-2">
-                                <i class="bi bi-eye"></i> Ver detalle
-                            </a>
-                            <form method="post" action="{% url 'cart_add' line.product.pk %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="next" value="{{ request.path }}">
-                                <button type="submit" class="btn btn-primary btn-sm w-100">
-                                    <i class="bi bi-cart-plus"></i> Agregar al carrito
-                                </button>
-                            </form>
-                        </div>
-                        {% else %}
-                        <div class="mt-auto">
-                            <a href="{% url 'public_product_detail' line.product.pk %}" class="btn btn-outline-secondary btn-sm w-100 mb-2">
-                                <i class="bi bi-arrow-right"></i> Ver detalle
-                            </a>
-                            <form method="post" action="{% url 'cart_add' line.product.pk %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="next" value="{{ request.path }}">
-                                <button type="submit" class="btn btn-primary btn-sm w-100">
-                                    <i class="bi bi-cart-plus"></i> Agregar al carrito
-                                </button>
-                            </form>
-                        </div>
+                    {% with videos=line.product.videos.all %}
+                    {% if videos %}
+                        {% with video=videos.0 %}
+                        {% with thumb=video.get_thumbnail_url %}
+                        {% if thumb %}
+                        <a href="{{ video.url }}" target="_blank" rel="noopener noreferrer" class="ap-prod-video">
+                            <img src="{{ thumb }}" alt="{{ video.title|default:'Video' }}" loading="lazy">
+                            <span><i class="bi bi-play-fill"></i></span>
+                        </a>
                         {% endif %}
                         {% endwith %}
+                        {% endwith %}
+                    {% endif %}
+
+                    <div class="ap-prod-links">
+                        <a href="{% url 'public_product_detail' line.product.pk %}">{% translate "Ver detalle ›" %}</a>
+                        {% if videos %}
+                        <a href="{% url 'public_product_detail' line.product.pk %}">Videos ({{ videos|length }}) ›</a>
+                        {% endif %}
                     </div>
+                    {% endwith %}
+
+                    <form method="post" action="{% url 'cart_add' line.product.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <button type="submit" class="ap-prod-cart">
+                            <i class="bi bi-bag-plus me-1"></i> {% translate "Agregar al carrito" %}
+                        </button>
+                    </form>
                 </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
-        <p class="text-muted">Este catálogo no tiene productos aún.</p>
+        <p class="text-muted">{% translate "Este catálogo no tiene productos aún." %}</p>
         {% endif %}
         {% endwith %}
-    </div>
-
-    {% if not forloop.last %}
-    <hr class="my-5">
-    {% endif %}
+    </section>
     {% endfor %}
-
-    {% else %}
-    <div class="text-center py-5">
-        <i class="bi bi-grid-3x3-gap display-1 text-muted mb-3 d-block"></i>
-        <h4 class="text-muted">No hay catálogos disponibles en este momento</h4>
+{% else %}
+    <div class="ap-cat-empty">
+        <i class="bi bi-grid-3x3-gap"></i>
+        <h4 class="fw-semibold">{% translate "No hay catálogos disponibles en este momento" %}</h4>
     </div>
-    {% endif %}
-</div>
+{% endif %}
 {% endblock %}

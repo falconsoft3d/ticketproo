@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -76,10 +77,10 @@
                 <h2><i class="fas fa-chart-line me-2"></i>{{ title }}</h2>
                 <div>
                     <a href="{% url 'client_assistance_list' %}" class="btn btn-outline-secondary me-2">
-                        <i class="fas fa-cog me-2"></i>Configuración
+                        <i class="fas fa-cog me-2"></i>{% translate "Configuración" %}
                     </a>
                     <a href="{% url 'client_time_entries_list' %}" class="btn btn-outline-info">
-                        <i class="fas fa-list me-2"></i>Ver Entradas
+                        <i class="fas fa-list me-2"></i>{% translate "Ver Entradas" %}
                     </a>
                 </div>
             </div>
@@ -87,12 +88,12 @@
             <!-- Filtros -->
             <div class="card filters-card mb-4">
                 <div class="card-body">
-                    <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filtros de Análisis</h5>
+                    <h5 class="mb-3"><i class="fas fa-filter me-2"></i>{% translate "Filtros de Análisis" %}</h5>
                     <form method="get" class="row g-3">
                         <div class="col-md-3">
-                            <label for="project" class="form-label">Proyecto</label>
+                            <label for="project" class="form-label">{% translate "Proyecto" %}</label>
                             <select name="project" id="project" class="form-select btn-filter">
-                                <option value="">Todos los proyectos</option>
+                                <option value="">{% translate "Todos los proyectos" %}</option>
                                 {% for project in projects %}
                                     <option value="{{ project.id }}" {% if selected_project == project.id|stringformat:"s" %}selected{% endif %}>
                                         {{ project.name }}
@@ -101,9 +102,9 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="category" class="form-label">Categoría</label>
+                            <label for="category" class="form-label">{% translate "Categoría" %}</label>
                             <select name="category" id="category" class="form-select btn-filter">
-                                <option value="">Todas las categorías</option>
+                                <option value="">{% translate "Todas las categorías" %}</option>
                                 {% for value, label in categories %}
                                     <option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>
                                         {{ label }}
@@ -112,12 +113,12 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label for="date_from" class="form-label">Desde</label>
+                            <label for="date_from" class="form-label">{% translate "Desde" %}</label>
                             <input type="date" name="date_from" id="date_from" class="form-control btn-filter" 
                                    value="{{ selected_date_from }}">
                         </div>
                         <div class="col-md-2">
-                            <label for="date_to" class="form-label">Hasta</label>
+                            <label for="date_to" class="form-label">{% translate "Hasta" %}</label>
                             <input type="date" name="date_to" id="date_to" class="form-control btn-filter" 
                                    value="{{ selected_date_to }}">
                         </div>
@@ -125,7 +126,7 @@
                             <label class="form-label">&nbsp;</label>
                             <div class="d-flex gap-2">
                                 <button type="submit" class="btn btn-filter">
-                                    <i class="fas fa-search"></i> Filtrar
+                                    <i class="fas fa-search"></i> {% translate "Filtrar" %}
                                 </button>
                                 <a href="{% url 'client_assistance_dashboard' %}" class="btn btn-filter">
                                     <i class="fas fa-undo"></i>
@@ -142,7 +143,7 @@
                     <div class="card kpi-card text-center">
                         <div class="card-body">
                             <div class="kpi-number text-primary">{{ total_hours|floatformat:1 }}h</div>
-                            <div class="kpi-label">Total Horas</div>
+                            <div class="kpi-label">{% translate "Total Horas" %}</div>
                         </div>
                     </div>
                 </div>
@@ -150,7 +151,7 @@
                     <div class="card kpi-card text-center">
                         <div class="card-body">
                             <div class="kpi-number text-success">{{ week_hours|floatformat:1 }}h</div>
-                            <div class="kpi-label">Esta Semana</div>
+                            <div class="kpi-label">{% translate "Esta Semana" %}</div>
                             {% if week_growth != 0 %}
                                 <small class="{% if week_growth > 0 %}growth-positive{% else %}growth-negative{% endif %}">
                                     <i class="fas fa-{% if week_growth > 0 %}arrow-up{% else %}arrow-down{% endif %}"></i>
@@ -164,7 +165,7 @@
                     <div class="card kpi-card text-center">
                         <div class="card-body">
                             <div class="kpi-number text-info">{{ month_hours|floatformat:1 }}h</div>
-                            <div class="kpi-label">Este Mes</div>
+                            <div class="kpi-label">{% translate "Este Mes" %}</div>
                         </div>
                     </div>
                 </div>
@@ -172,8 +173,8 @@
                     <div class="card kpi-card text-center">
                         <div class="card-body">
                             <div class="kpi-number text-warning">{{ avg_daily_hours }}h</div>
-                            <div class="kpi-label">Promedio Diario</div>
-                            <small class="text-muted">(30 días)</small>
+                            <div class="kpi-label">{% translate "Promedio Diario" %}</div>
+                            <small class="text-muted">{% translate "(30 días)" %}</small>
                         </div>
                     </div>
                 </div>
@@ -181,7 +182,7 @@
                     <div class="card kpi-card text-center">
                         <div class="card-body">
                             <div class="kpi-number text-purple">{{ unique_clients }}</div>
-                            <div class="kpi-label">Clientes Únicos</div>
+                            <div class="kpi-label">{% translate "Clientes Únicos" %}</div>
                         </div>
                     </div>
                 </div>
@@ -189,7 +190,7 @@
                     <div class="card kpi-card text-center">
                         <div class="card-body">
                             <div class="kpi-number text-dark">{{ total_entries }}</div>
-                            <div class="kpi-label">Total Entradas</div>
+                            <div class="kpi-label">{% translate "Total Entradas" %}</div>
                         </div>
                     </div>
                 </div>
@@ -199,7 +200,7 @@
                 <div class="col-12">
                     <div class="card kpi-card">
                         <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-table me-2"></i>Distribución Detallada por Categorías</h5>
+                            <h5 class="mb-0"><i class="fas fa-table me-2"></i>{% translate "Distribución Detallada por Categorías" %}</h5>
                         </div>
                         <div class="card-body">
                             {% if category_distribution %}
@@ -207,11 +208,11 @@
                                     <table class="table table-hover">
                                         <thead class="table-dark">
                                             <tr>
-                                                <th>Categoría</th>
-                                                <th>Total Horas</th>
-                                                <th>Registros</th>
+                                                <th>{% translate "Categoría" %}</th>
+                                                <th>{% translate "Total Horas" %}</th>
+                                                <th>{% translate "Registros" %}</th>
                                                 
-                                                <th>Progreso Visual</th>
+                                                <th>{% translate "Progreso Visual" %}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -260,7 +261,7 @@
                                                 <th>
                                                     <div class="progress" style="height: 20px;">
                                                         <div class="progress-bar bg-dark" style="width: 100%">
-                                                            Total
+                                                            {% translate "Total" %}
                                                         </div>
                                                     </div>
                                                 </th>
@@ -271,8 +272,8 @@
                             {% else %}
                                 <div class="text-center py-4">
                                     <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
-                                    <h5 class="text-muted">Sin datos de categorías</h5>
-                                    <p class="text-muted">No hay entradas de tiempo registradas aún.</p>
+                                    <h5 class="text-muted">{% translate "Sin datos de categorías" %}</h5>
+                                    <p class="text-muted">{% translate "No hay entradas de tiempo registradas aún." %}</p>
                                 </div>
                             {% endif %}
                         </div>
@@ -285,7 +286,7 @@
                 <div class="col-lg-6">
                     <div class="card kpi-card">
                         <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Top 10 - Total Horas</h5>
+                            <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>{% translate "Top 10 - Total Horas" %}</h5>
                         </div>
                         <div class="card-body" style="max-height: 400px; overflow-y: auto;">
                             {% for user in top_users_total %}
@@ -304,7 +305,7 @@
                             {% empty %}
                                 <div class="text-center text-muted py-4">
                                     <i class="fas fa-users fa-2x mb-2"></i>
-                                    <div>No hay datos disponibles</div>
+                                    <div>{% translate "No hay datos disponibles" %}</div>
                                 </div>
                             {% endfor %}
                         </div>
@@ -315,7 +316,7 @@
                 <div class="col-lg-6">
                     <div class="card kpi-card">
                         <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-star me-2"></i>Top 10 - Esta Semana</h5>
+                            <h5 class="mb-0"><i class="fas fa-star me-2"></i>{% translate "Top 10 - Esta Semana" %}</h5>
                         </div>
                         <div class="card-body" style="max-height: 300px; overflow-y: auto;">
                             {% for user in top_users_week %}
@@ -334,7 +335,7 @@
                             {% empty %}
                                 <div class="text-center text-muted py-4">
                                     <i class="fas fa-calendar-week fa-2x mb-2"></i>
-                                    <div>Sin actividad esta semana</div>
+                                    <div>{% translate "Sin actividad esta semana" %}</div>
                                 </div>
                             {% endfor %}
                         </div>
@@ -349,32 +350,32 @@
             <!-- Información adicional -->
             <div class="card mt-4 kpi-card">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información del Dashboard</h6>
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>{% translate "Información del Dashboard" %}</h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4">
-                            <h6>Métricas Calculadas:</h6>
+                            <h6>{% translate "Métricas Calculadas:" %}</h6>
                             <ul class="small">
-                                <li><strong>Promedio Diario:</strong> Basado en los últimos 30 días</li>
-                                <li><strong>Crecimiento Semanal:</strong> Comparado con semana anterior</li>
-                                <li><strong>Rankings:</strong> Ordenados por total de horas</li>
+                                <li><strong>{% translate "Promedio Diario:" %}</strong> {% translate "Basado en los últimos 30 días" %}</li>
+                                <li><strong>{% translate "Crecimiento Semanal:" %}</strong> {% translate "Comparado con semana anterior" %}</li>
+                                <li><strong>{% translate "Rankings:" %}</strong> {% translate "Ordenados por total de horas" %}</li>
                             </ul>
                         </div>
                         <div class="col-md-4">
-                            <h6>Filtros Disponibles:</h6>
+                            <h6>{% translate "Filtros Disponibles:" %}</h6>
                             <ul class="small">
-                                <li>Por proyecto específico</li>
-                                <li>Por categoría de trabajo</li>
-                                <li>Por rango de fechas personalizado</li>
+                                <li>{% translate "Por proyecto específico" %}</li>
+                                <li>{% translate "Por categoría de trabajo" %}</li>
+                                <li>{% translate "Por rango de fechas personalizado" %}</li>
                             </ul>
                         </div>
                         <div class="col-md-4">
-                            <h6>Datos Actualizados:</h6>
+                            <h6>{% translate "Datos Actualizados:" %}</h6>
                             <ul class="small">
-                                <li><strong>Última actualización:</strong> {{ today|date:"d/m/Y" }}</li>
-                                <li><strong>Período analizado:</strong> Todos los registros</li>
-                                <li><strong>Zona horaria:</strong> Local del servidor</li>
+                                <li><strong>{% translate "Última actualización:" %}</strong> {{ today|date:"d/m/Y" }}</li>
+                                <li><strong>{% translate "Período analizado:" %}</strong> {% translate "Todos los registros" %}</li>
+                                <li><strong>{% translate "Zona horaria:" %}</strong> {% translate "Local del servidor" %}</li>
                             </ul>
                         </div>
                     </div>

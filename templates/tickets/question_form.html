@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}{% if question %}Editar Pregunta{% else %}Agregar Pregunta{% endif %}{% endblock %}
+{% block title %}{% if question %}{% translate "Editar Pregunta" %}{% else %}{% translate "Agregar Pregunta" %}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -11,7 +12,7 @@
                 <div class="card-header">
                     <h3 class="mb-0">
                         <i class="bi bi-question-circle"></i> 
-                        {% if question %}Editar Pregunta{% else %}Agregar Nueva Pregunta{% endif %}
+                        {% if question %}{% translate "Editar Pregunta" %}{% else %}{% translate "Agregar Nueva Pregunta" %}{% endif %}
                     </h3>
                     <small class="text-muted">Examen: {{ exam.title }}</small>
                 </div>
@@ -20,12 +21,12 @@
                         {% csrf_token %}
                         
                         <div class="mb-4">
-                            <label for="question_text" class="form-label">Pregunta *</label>
+                            <label for="question_text" class="form-label">{% translate "Pregunta *" %}</label>
                             <textarea class="form-control" id="question_text" name="question_text" rows="3" required>{% if question %}{{ question.question_text }}{% endif %}</textarea>
-                            <div class="form-text">Escribe la pregunta de forma clara y precisa</div>
+                            <div class="form-text">{% translate "Escribe la pregunta de forma clara y precisa" %}</div>
                         </div>
 
-                        <h5 class="mb-3"><i class="bi bi-list"></i> Opciones de Respuesta</h5>
+                        <h5 class="mb-3"><i class="bi bi-list"></i> {% translate "Opciones de Respuesta" %}</h5>
                         
                         <div class="row">
                             <div class="col-md-4 mb-3">
@@ -36,7 +37,7 @@
                                                    value="A" id="correct_A" 
                                                    {% if question.correct_option == 'A' or not question %}checked{% endif %} required>
                                             <label class="form-check-label fw-bold" for="correct_A">
-                                                Opción A (Correcta)
+                                                {% translate "Opción A (Correcta)" %}
                                             </label>
                                         </div>
                                     </div>
@@ -54,7 +55,7 @@
                                                    value="B" id="correct_B" 
                                                    {% if question.correct_option == 'B' %}checked{% endif %} required>
                                             <label class="form-check-label fw-bold" for="correct_B">
-                                                Opción B (Incorrecta)
+                                                {% translate "Opción B (Incorrecta)" %}
                                             </label>
                                         </div>
                                     </div>
@@ -72,7 +73,7 @@
                                                    value="C" id="correct_C" 
                                                    {% if question.correct_option == 'C' %}checked{% endif %} required>
                                             <label class="form-check-label fw-bold" for="correct_C">
-                                                Opción C (Incorrecta)
+                                                {% translate "Opción C (Incorrecta)" %}
                                             </label>
                                         </div>
                                     </div>
@@ -85,22 +86,22 @@
 
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i>
-                            <strong>Instrucciones:</strong>
+                            <strong>{% translate "Instrucciones:" %}</strong>
                             <ul class="mb-0 mt-2">
-                                <li>Marca la opción que será la respuesta <strong>correcta</strong></li>
-                                <li>Las otras dos opciones serán automáticamente <strong>incorrectas</strong></li>
-                                <li>Asegúrate de que las opciones incorrectas sean plausibles pero claramente erróneas</li>
-                                <li>Todas las opciones deben estar completas antes de guardar</li>
+                                <li>{% translate "Marca la opción que será la respuesta" %} <strong>{% translate "correcta" %}</strong></li>
+                                <li>{% translate "Las otras dos opciones serán automáticamente" %} <strong>{% translate "incorrectas" %}</strong></li>
+                                <li>{% translate "Asegúrate de que las opciones incorrectas sean plausibles pero claramente erróneas" %}</li>
+                                <li>{% translate "Todas las opciones deben estar completas antes de guardar" %}</li>
                             </ul>
                         </div>
 
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'exam_detail' exam.pk %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-success">
                                 <i class="bi bi-check"></i> 
-                                {% if question %}Actualizar Pregunta{% else %}Agregar Pregunta{% endif %}
+                                {% if question %}{% translate "Actualizar Pregunta" %}{% else %}{% translate "Agregar Pregunta" %}{% endif %}
                             </button>
                         </div>
                     </form>
@@ -110,19 +111,19 @@
             <!-- Preview de la pregunta -->
             <div class="card mt-4">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-eye"></i> Vista Previa</h5>
+                    <h5 class="mb-0"><i class="bi bi-eye"></i> {% translate "Vista Previa" %}</h5>
                 </div>
                 <div class="card-body">
                     <div id="question-preview">
                         <div class="mb-3">
-                            <h6 id="preview-question">Escribe la pregunta arriba para ver la vista previa...</h6>
+                            <h6 id="preview-question">{% translate "Escribe la pregunta arriba para ver la vista previa..." %}</h6>
                         </div>
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="preview" disabled>
                                     <label class="form-check-label">
-                                        <strong>A)</strong> <span id="preview-option-a">Opción A...</span>
+                                        <strong>{% translate "A)" %}</strong> <span id="preview-option-a">{% translate "Opción A..." %}</span>
                                     </label>
                                 </div>
                             </div>
@@ -130,7 +131,7 @@
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="preview" disabled>
                                     <label class="form-check-label">
-                                        <strong>B)</strong> <span id="preview-option-b">Opción B...</span>
+                                        <strong>{% translate "B)" %}</strong> <span id="preview-option-b">{% translate "Opción B..." %}</span>
                                     </label>
                                 </div>
                             </div>
@@ -138,7 +139,7 @@
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="preview" disabled>
                                     <label class="form-check-label">
-                                        <strong>C)</strong> <span id="preview-option-c">Opción C...</span>
+                                        <strong>{% translate "C)" %}</strong> <span id="preview-option-c">{% translate "Opción C..." %}</span>
                                     </label>
                                 </div>
                             </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Generar Cotización - {{ precotizador.title }}{% endblock %}
@@ -48,7 +49,7 @@
                         <i class="bi bi-cpu"></i> Generar Cotización - {{ precotizador.title }}
                     </h5>
                     <a href="{% url 'precotizador_detail' precotizador.pk %}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -56,12 +57,12 @@
                         <div class="col-md-8">
                             <p class="text-muted mb-0">
                                 <i class="bi bi-info-circle"></i>
-                                Describe el proyecto o trabajo que el cliente necesita y la IA estimará las horas y costos basándose en los casos de ejemplo.
+                                {% translate "Describe el proyecto o trabajo que el cliente necesita y la IA estimará las horas y costos basándose en los casos de ejemplo." %}
                             </p>
                         </div>
                         <div class="col-md-4 text-end">
                             <div class="d-flex justify-content-end align-items-center">
-                                <span class="me-2">Tarifa:</span>
+                                <span class="me-2">{% translate "Tarifa:" %}</span>
                                 <span class="fw-bold text-success fs-5">{{ precotizador.get_formatted_hourly_rate }}/hr</span>
                             </div>
                         </div>
@@ -75,7 +76,7 @@
                     <div class="card">
                         <div class="card-header">
                             <h6 class="mb-0">
-                                <i class="bi bi-chat-dots"></i> Solicitud del Cliente
+                                <i class="bi bi-chat-dots"></i> {% translate "Solicitud del Cliente" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -90,10 +91,10 @@
                                         {{ form.client_request }}
                                         <div class="d-flex justify-content-between align-items-center mt-1">
                                             <small class="text-muted">
-                                                Describe detalladamente el proyecto, funcionalidades, tecnologías y requisitos específicos.
+                                                {% translate "Describe detalladamente el proyecto, funcionalidades, tecnologías y requisitos específicos." %}
                                             </small>
                                             <small class="character-counter text-muted" id="charCounter">
-                                                0 / 2000 caracteres
+                                                {% translate "0 / 2000 caracteres" %}
                                             </small>
                                         </div>
                                     </div>
@@ -107,11 +108,11 @@
                                 <div class="d-grid">
                                     <button type="submit" class="btn btn-success btn-lg" id="generateBtn">
                                         <span class="btn-text">
-                                            <i class="bi bi-cpu"></i> Generar Cotización con IA
+                                            <i class="bi bi-cpu"></i> {% translate "Generar Cotización con IA" %}
                                         </span>
                                         <span class="btn-loading d-none">
                                             <span class="spinner-grow spinner-grow-custom me-2" role="status"></span>
-                                            Procesando con IA...
+                                            {% translate "Procesando con IA..." %}
                                         </span>
                                     </button>
                                 </div>
@@ -125,12 +126,12 @@
                     <div class="card">
                         <div class="card-header">
                             <h6 class="mb-0">
-                                <i class="bi bi-lightbulb"></i> Casos de Referencia
+                                <i class="bi bi-lightbulb"></i> {% translate "Casos de Referencia" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <p class="small text-muted mb-3">
-                                La IA usará estos casos como referencia para estimar tu proyecto:
+                                {% translate "La IA usará estos casos como referencia para estimar tu proyecto:" %}
                             </p>
                             
                             {% if examples %}
@@ -152,7 +153,7 @@
                             {% else %}
                                 <div class="text-center py-3">
                                     <i class="bi bi-exclamation-triangle text-warning"></i>
-                                    <p class="small text-muted mb-0">No hay casos de ejemplo configurados.</p>
+                                    <p class="small text-muted mb-0">{% translate "No hay casos de ejemplo configurados." %}</p>
                                 </div>
                             {% endif %}
                         </div>
@@ -162,9 +163,9 @@
                     <div class="card mt-3">
                         <div class="card-body text-center">
                             <i class="bi bi-shield-check text-success fs-4"></i>
-                            <h6 class="mt-2">Estimación Inteligente</h6>
+                            <h6 class="mt-2">{% translate "Estimación Inteligente" %}</h6>
                             <p class="small text-muted mb-0">
-                                Usando ChatGPT para analizar tu solicitud y proporcionar estimaciones precisas basadas en casos similares.
+                                {% translate "Usando ChatGPT para analizar tu solicitud y proporcionar estimaciones precisas basadas en casos similares." %}
                             </p>
                         </div>
                     </div>
@@ -182,8 +183,8 @@
                 <div class="ai-processing rounded-circle mx-auto mb-3" style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
                     <i class="bi bi-cpu text-white fs-1"></i>
                 </div>
-                <h5>Generando Cotización</h5>
-                <p class="text-muted mb-0">La IA está analizando tu solicitud...</p>
+                <h5>{% translate "Generando Cotización" %}</h5>
+                <p class="text-muted mb-0">{% translate "La IA está analizando tu solicitud..." %}</p>
                 <div class="progress mt-3" style="height: 6px;">
                     <div class="progress-bar progress-bar-striped progress-bar-animated" 
                          role="progressbar" style="width: 100%"></div>

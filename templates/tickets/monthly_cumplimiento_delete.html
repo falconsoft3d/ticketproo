@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -11,38 +12,38 @@
                 <div class="card-header bg-danger text-white">
                     <h4 class="mb-0">
                         <i class="bi bi-exclamation-triangle"></i>
-                        Confirmar Eliminación
+                        {% translate "Confirmar Eliminación" %}
                     </h4>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-warning">
                         <i class="bi bi-info-circle"></i>
-                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                        <strong>{% translate "¡Atención!" %}</strong> {% translate "Esta acción no se puede deshacer." %}
                     </div>
                     
-                    <p>¿Estás seguro de que deseas eliminar la siguiente meta de cumplimiento?</p>
+                    <p>{% translate "¿Estás seguro de que deseas eliminar la siguiente meta de cumplimiento?" %}</p>
                     
                     <div class="bg-light p-3 rounded mb-3">
                         <h5><i class="bi bi-bullseye text-primary"></i> {{ cumplimiento.name }}</h5>
-                        <p class="mb-1"><strong>Usuario:</strong> {{ cumplimiento.user }}</p>
+                        <p class="mb-1"><strong>{% translate "Usuario:" %}</strong> {{ cumplimiento.user }}</p>
                         <p class="mb-1">
-                            <strong>Frecuencia:</strong> 
+                            <strong>{% translate "Frecuencia:" %}</strong> 
                             {% if cumplimiento.frequency_type == 'daily' %}
-                                Todos los días
+                                {% translate "Todos los días" %}
                             {% else %}
                                 {{ cumplimiento.target_days }} días al mes
                             {% endif %}
                         </p>
-                        <p class="mb-0"><strong>Creado:</strong> {{ cumplimiento.created_at|date:"d/m/Y" }}</p>
+                        <p class="mb-0"><strong>{% translate "Creado:" %}</strong> {{ cumplimiento.created_at|date:"d/m/Y" }}</p>
                     </div>
                     
                     <div class="alert alert-danger">
                         <i class="bi bi-trash"></i>
-                        <strong>Datos que se eliminarán:</strong>
+                        <strong>{% translate "Datos que se eliminarán:" %}</strong>
                         <ul class="mb-0 mt-2">
-                            <li>La meta de cumplimiento</li>
+                            <li>{% translate "La meta de cumplimiento" %}</li>
                             <li>Todos los registros diarios asociados ({{ cumplimiento.daily_cumplimientos.count }} registros)</li>
-                            <li>El acceso público móvil</li>
+                            <li>{% translate "El acceso público móvil" %}</li>
                         </ul>
                     </div>
 
@@ -51,10 +52,10 @@
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'monthly_cumplimiento_detail' cumplimiento.pk %}" 
                                class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Sí, Eliminar Meta
+                                <i class="bi bi-trash"></i> {% translate "Sí, Eliminar Meta" %}
                             </button>
                         </div>
                     </form>

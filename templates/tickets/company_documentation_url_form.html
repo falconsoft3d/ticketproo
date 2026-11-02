@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -60,9 +61,9 @@
     <div class="row">
         <div class="col-12">
             <!-- Breadcrumb -->
-            <nav aria-label="breadcrumb" class="mb-4">
+            <nav aria-label="{% translate 'breadcrumb' %}" class="mb-4">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'company_documentation_list' %}">Documentaciones</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'company_documentation_list' %}">{% translate "Documentaciones" %}</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'company_documentation_detail' documentation.pk %}">{{ documentation.title }}</a></li>
                     <li class="breadcrumb-item active" aria-current="page">{{ page_title }}</li>
                 </ol>
@@ -96,7 +97,7 @@
                                 <!-- Información Básica -->
                                 <div class="section-title">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    Información Básica
+                                    {% translate "Información Básica" %}
                                 </div>
                                 
                                 <div class="row">
@@ -123,13 +124,13 @@
                                         
                                         <!-- Title Field -->
                                         <div class="mb-3">
-                                            <label for="{{ form.title.id_for_label }}" class="form-label required-field">Título</label>
+                                            <label for="{{ form.title.id_for_label }}" class="form-label required-field">{% translate "Título" %}</label>
                                             <input type="text" 
                                                    name="{{ form.title.name }}" 
                                                    value="{{ form.title.value|default:'' }}" 
                                                    class="form-control{% if form.title.errors %} is-invalid{% endif %}"
                                                    id="{{ form.title.id_for_label }}"
-                                                   placeholder="Nombre descriptivo del enlace"
+                                                   placeholder="{% translate 'Nombre descriptivo del enlace' %}"
                                                    required>
                                             {% if form.title.help_text %}
                                                 <div class="form-text">{{ form.title.help_text }}</div>
@@ -145,7 +146,7 @@
                                     <div class="col-md-4">
                                         <!-- Order Field -->
                                         <div class="mb-3">
-                                            <label for="{{ form.order.id_for_label }}" class="form-label">Orden</label>
+                                            <label for="{{ form.order.id_for_label }}" class="form-label">{% translate "Orden" %}</label>
                                             <input type="number" 
                                                    name="{{ form.order.name }}" 
                                                    value="{{ form.order.value|default:'1' }}" 
@@ -167,7 +168,7 @@
                                 
                                 <!-- Description Field -->
                                 <div class="mb-4">
-                                    <label for="{{ form.description.id_for_label }}" class="form-label">Descripción</label>
+                                    <label for="{{ form.description.id_for_label }}" class="form-label">{% translate "Descripción" %}</label>
                                     <textarea name="{{ form.description.name }}" 
                                               class="form-control{% if form.description.errors %} is-invalid{% endif %}"
                                               id="{{ form.description.id_for_label }}"
@@ -187,21 +188,21 @@
                                 <div class="credential-section">
                                     <div class="section-title">
                                         <i class="fas fa-key me-2"></i>
-                                        Credenciales de Acceso
-                                        <small class="text-muted ms-2">(Opcional)</small>
+                                        {% translate "Credenciales de Acceso" %}
+                                        <small class="text-muted ms-2">{% translate "(Opcional)" %}</small>
                                     </div>
                                     
                                     <div class="row">
                                         <div class="col-md-6">
                                             <!-- Username Field -->
                                             <div class="mb-3">
-                                                <label for="{{ form.username.id_for_label }}" class="form-label">Usuario</label>
+                                                <label for="{{ form.username.id_for_label }}" class="form-label">{% translate "Usuario" %}</label>
                                                 <input type="text" 
                                                        name="{{ form.username.name }}" 
                                                        value="{{ form.username.value|default:'' }}" 
                                                        class="form-control{% if form.username.errors %} is-invalid{% endif %}"
                                                        id="{{ form.username.id_for_label }}"
-                                                       placeholder="Usuario (opcional)">
+                                                       placeholder="{% translate 'Usuario (opcional)' %}">
                                                 {% if form.username.help_text %}
                                                     <div class="form-text">{{ form.username.help_text }}</div>
                                                 {% endif %}
@@ -216,14 +217,14 @@
                                         <div class="col-md-6">
                                             <!-- Password Field -->
                                             <div class="mb-3">
-                                                <label for="{{ form.password.id_for_label }}" class="form-label">Contraseña</label>
+                                                <label for="{{ form.password.id_for_label }}" class="form-label">{% translate "Contraseña" %}</label>
                                                 <div class="input-group">
                                                     <input type="password" 
                                                            name="{{ form.password.name }}" 
                                                            value="{{ form.password.value|default:'' }}" 
                                                            class="form-control{% if form.password.errors %} is-invalid{% endif %}"
                                                            id="{{ form.password.id_for_label }}"
-                                                           placeholder="Contraseña (opcional)">
+                                                           placeholder="{% translate 'Contraseña (opcional)' %}">
                                                     <button class="btn btn-outline-secondary password-toggle" 
                                                             type="button" 
                                                             id="togglePassword">
@@ -247,7 +248,7 @@
                                 <div class="mb-4">
                                     <label for="{{ form.notes.id_for_label }}" class="form-label">
                                         <i class="fas fa-sticky-note me-2"></i>
-                                        Notas Adicionales
+                                        {% translate "Notas Adicionales" %}
                                     </label>
                                     <textarea name="{{ form.notes.name }}" 
                                               class="form-control{% if form.notes.errors %} is-invalid{% endif %}"
@@ -274,7 +275,7 @@
                                                {% if form.is_active.value %}checked{% endif %}>
                                         <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
                                             <i class="fas fa-toggle-on me-2"></i>
-                                            Enlace Activo
+                                            {% translate "Enlace Activo" %}
                                         </label>
                                         {% if form.is_active.help_text %}
                                             <div class="form-text">{{ form.is_active.help_text }}</div>
@@ -290,11 +291,11 @@
                                 <!-- Form Actions -->
                                 <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
                                     <a href="{% url 'company_documentation_detail' documentation.pk %}" class="btn btn-outline-secondary">
-                                        <i class="fas fa-arrow-left me-2"></i>Cancelar
+                                        <i class="fas fa-arrow-left me-2"></i>{% translate "Cancelar" %}
                                     </a>
                                     
                                     <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save me-2"></i>Guardar Enlace
+                                        <i class="fas fa-save me-2"></i>{% translate "Guardar Enlace" %}
                                     </button>
                                 </div>
                             </form>

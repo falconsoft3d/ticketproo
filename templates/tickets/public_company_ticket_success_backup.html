@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -61,7 +62,7 @@
                                     {% endif %}
                                     <div>
                                         <h1 class="h3 mb-1">{{ company.name }}</h1>
-                                        <p class="mb-0 text-muted">Solicitud de soporte creada exitosamente</p>
+                                        <p class="mb-0 text-muted">{% translate "Solicitud de soporte creada exitosamente" %}</p>
                                     </div>
                                 </div>
                             </div>
@@ -73,8 +74,8 @@
                 <div class="container success-container">
                     <div class="text-center mb-5">
                         <i class="fas fa-check-circle success-icon mb-3"></i>
-                        <h2 class="h3 text-success mb-3">¡Ticket Creado Exitosamente!</h2>
-                        <p class="lead text-muted">Tu solicitud de soporte ha sido enviada correctamente</p>
+                        <h2 class="h3 text-success mb-3">{% translate "¡Ticket Creado Exitosamente!" %}</h2>
+                        <p class="lead text-muted">{% translate "Tu solicitud de soporte ha sido enviada correctamente" %}</p>
                     </div>
 
                     <!-- Información del ticket -->
@@ -92,23 +93,23 @@
                                     <div class="info-card bg-light p-3 mb-3">
                                         <h6 class="text-dark mb-2">
                                             <i class="fas fa-clipboard-list me-2" style="color: {{ company.color }};"></i>
-                                            Detalles del Ticket
+                                            {% translate "Detalles del Ticket" %}
                                         </h6>
-                                        <p class="mb-1"><strong>Asunto:</strong> {{ ticket.title }}</p>
-                                        <p class="mb-1"><strong>Prioridad:</strong> 
+                                        <p class="mb-1"><strong>{% translate "Asunto:" %}</strong> {{ ticket.title }}</p>
+                                        <p class="mb-1"><strong>{% translate "Prioridad:" %}</strong> 
                                             <span class="badge 
                                                 {% if ticket.priority == 'low' %}bg-info
                                                 {% elif ticket.priority == 'medium' %}bg-warning
                                                 {% elif ticket.priority == 'high' %}bg-danger
                                                 {% endif %}">
-                                                {% if ticket.priority == 'low' %}Baja
-                                                {% elif ticket.priority == 'medium' %}Media
-                                                {% elif ticket.priority == 'high' %}Alta
+                                                {% if ticket.priority == 'low' %}{% translate "Baja" %}
+                                                {% elif ticket.priority == 'medium' %}{% translate "Media" %}
+                                                {% elif ticket.priority == 'high' %}{% translate "Alta" %}
                                                 {% endif %}
                                             </span>
                                         </p>
-                                        <p class="mb-0"><strong>Estado:</strong> 
-                                            <span class="badge bg-primary">Abierto</span>
+                                        <p class="mb-0"><strong>{% translate "Estado:" %}</strong> 
+                                            <span class="badge bg-primary">{% translate "Abierto" %}</span>
                                         </p>
                                     </div>
                                 </div>
@@ -116,10 +117,10 @@
                                     <div class="info-card bg-light p-3 mb-3">
                                         <h6 class="text-dark mb-2">
                                             <i class="fas fa-user me-2" style="color: {{ company.color }};"></i>
-                                            Información de Contacto
+                                            {% translate "Información de Contacto" %}
                                         </h6>
-                                        <p class="mb-1"><strong>Nombre:</strong> {{ customer_name }}</p>
-                                        <p class="mb-0"><strong>Email:</strong> {{ customer_email }}</p>
+                                        <p class="mb-1"><strong>{% translate "Nombre:" %}</strong> {{ customer_name }}</p>
+                                        <p class="mb-0"><strong>{% translate "Email:" %}</strong> {{ customer_email }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -127,7 +128,7 @@
                             <div class="bg-light rounded p-3">
                                 <h6 class="text-dark mb-2">
                                     <i class="fas fa-align-left me-2" style="color: {{ company.color }};"></i>
-                                    Descripción
+                                    {% translate "Descripción" %}
                                 </h6>
                                 <p class="mb-0 text-muted">{{ ticket.description|linebreaks|truncatewords:50 }}</p>
                             </div>
@@ -139,7 +140,7 @@
                         <div class="card-header bg-success text-white">
                             <h5 class="mb-0">
                                 <i class="fas fa-route me-2"></i>
-                                ¿Qué sigue ahora?
+                                {% translate "¿Qué sigue ahora?" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -148,22 +149,22 @@
                                     <div class="text-success mb-2">
                                         <i class="fas fa-envelope" style="font-size: 2rem;"></i>
                                     </div>
-                                    <h6>1. Confirmación por Email</h6>
-                                    <small class="text-muted">Recibirás una confirmación en tu correo electrónico</small>
+                                    <h6>{% translate "1. Confirmación por Email" %}</h6>
+                                    <small class="text-muted">{% translate "Recibirás una confirmación en tu correo electrónico" %}</small>
                                 </div>
                                 <div class="col-md-4 text-center mb-3">
                                     <div class="text-warning mb-2">
                                         <i class="fas fa-search" style="font-size: 2rem;"></i>
                                     </div>
-                                    <h6>2. Revisión</h6>
-                                    <small class="text-muted">Nuestro equipo revisará tu solicitud</small>
+                                    <h6>{% translate "2. Revisión" %}</h6>
+                                    <small class="text-muted">{% translate "Nuestro equipo revisará tu solicitud" %}</small>
                                 </div>
                                 <div class="col-md-4 text-center mb-3">
                                     <div class="text-info mb-2">
                                         <i class="fas fa-reply" style="font-size: 2rem;"></i>
                                     </div>
-                                    <h6>3. Respuesta</h6>
-                                    <small class="text-muted">Te contactaremos con una solución</small>
+                                    <h6>{% translate "3. Respuesta" %}</h6>
+                                    <small class="text-muted">{% translate "Te contactaremos con una solución" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -174,20 +175,20 @@
                         <div class="card-body text-center">
                             <h6 class="text-dark mb-3">
                                 <i class="fas fa-info-circle me-2" style="color: {{ company.color }};"></i>
-                                Información Importante
+                                {% translate "Información Importante" %}
                             </h6>
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <i class="fas fa-clock mb-2" style="color: {{ company.color }};"></i>
-                                        <h6>Tiempo de Respuesta</h6>
+                                        <h6>{% translate "Tiempo de Respuesta" %}</h6>
                                         <small class="text-muted">
                                             {% if ticket.priority == 'high' %}
-                                                Responderemos en las próximas 2-4 horas
+                                                {% translate "Responderemos en las próximas 2-4 horas" %}
                                             {% elif ticket.priority == 'medium' %}
-                                                Responderemos en el mismo día hábil
+                                                {% translate "Responderemos en el mismo día hábil" %}
                                             {% else %}
-                                                Responderemos en 1-2 días hábiles
+                                                {% translate "Responderemos en 1-2 días hábiles" %}
                                             {% endif %}
                                         </small>
                                     </div>
@@ -195,7 +196,7 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <i class="fas fa-phone mb-2" style="color: {{ company.color }};"></i>
-                                        <h6>Contacto Urgente</h6>
+                                        <h6>{% translate "Contacto Urgente" %}</h6>
                                         <small class="text-muted">
                                             Para emergencias, contacta directamente a {{ company.name }}
                                             {% if company.phone %}
@@ -213,7 +214,7 @@
                         <a href="{% url 'public_company_ticket_create' public_token=company.public_token %}" 
                            class="btn btn-new-ticket text-white btn-lg px-4">
                             <i class="fas fa-plus me-2"></i>
-                            Crear Otra Solicitud
+                            {% translate "Crear Otra Solicitud" %}
                         </a>
                     </div>
 

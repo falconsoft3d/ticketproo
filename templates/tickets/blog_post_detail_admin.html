@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 
 {% block page_title %}{{ page_title }}{% endblock %}
 
@@ -85,11 +86,11 @@ hr.my-4 {
                 <a href="{% url 'blog_post_detail' post.slug %}" 
                    class="btn btn-outline-info"
                    target="_blank">
-                    <i class="fas fa-external-link-alt"></i> Ver público
+                    <i class="fas fa-external-link-alt"></i> {% translate "Ver público" %}
                 </a>
                 {% endif %}
                 <a href="{% url 'blog_post_list_admin' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver a la lista
+                    <i class="fas fa-arrow-left"></i> {% translate "Volver a la lista" %}
                 </a>
             </div>
         </div>
@@ -97,40 +98,40 @@ hr.my-4 {
         <!-- Información del artículo -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5><i class="fas fa-info-circle"></i> Información del Artículo</h5>
+                <h5><i class="fas fa-info-circle"></i> {% translate "Información del Artículo" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <p><strong>Categoría:</strong> 
+                        <p><strong>{% translate "Categoría:" %}</strong> 
                             <span class="badge bg-secondary">{{ post.category.name }}</span>
                         </p>
-                        <p><strong>Estado:</strong> 
+                        <p><strong>{% translate "Estado:" %}</strong> 
                             {% if post.status == 'published' %}
-                            <span class="badge bg-success">Publicado</span>
+                            <span class="badge bg-success">{% translate "Publicado" %}</span>
                             {% else %}
-                            <span class="badge bg-warning text-dark">Borrador</span>
+                            <span class="badge bg-warning text-dark">{% translate "Borrador" %}</span>
                             {% endif %}
                         </p>
-                        <p><strong>Autor:</strong> {{ post.created_by.get_full_name|default:post.created_by.username }}</p>
-                        <p><strong>Destacado:</strong> 
+                        <p><strong>{% translate "Autor:" %}</strong> {{ post.created_by.get_full_name|default:post.created_by.username }}</p>
+                        <p><strong>{% translate "Destacado:" %}</strong> 
                             {% if post.is_featured %}
-                            <span class="badge bg-warning text-dark">Sí</span>
+                            <span class="badge bg-warning text-dark">{% translate "Sí" %}</span>
                             {% else %}
-                            <span class="badge bg-light text-dark">No</span>
+                            <span class="badge bg-light text-dark">{% translate "No" %}</span>
                             {% endif %}
                         </p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>Creado:</strong> {{ post.created_at|date:"d M Y, H:i" }}</p>
-                        <p><strong>Actualizado:</strong> {{ post.updated_at|date:"d M Y, H:i" }}</p>
-                        <p><strong>Vistas:</strong> {{ post.views }}</p>
-                        <p><strong>Comentarios:</strong> {{ post.comments.count }}</p>
+                        <p><strong>{% translate "Creado:" %}</strong> {{ post.created_at|date:"d M Y, H:i" }}</p>
+                        <p><strong>{% translate "Actualizado:" %}</strong> {{ post.updated_at|date:"d M Y, H:i" }}</p>
+                        <p><strong>{% translate "Vistas:" %}</strong> {{ post.views }}</p>
+                        <p><strong>{% translate "Comentarios:" %}</strong> {{ post.comments.count }}</p>
                     </div>
                 </div>
                 
                 {% if post.tags %}
-                <p><strong>Tags:</strong> 
+                <p><strong>{% translate "Tags:" %}</strong> 
                     {% for tag in post.tags.split %}
                     <span class="badge bg-light text-dark me-1">#{{ tag }}</span>
                     {% endfor %}
@@ -138,7 +139,7 @@ hr.my-4 {
                 {% endif %}
                 
                 {% if post.meta_description %}
-                <p><strong>Meta descripción (SEO):</strong><br>
+                <p><strong>{% translate "Meta descripción (SEO):" %}</strong><br>
                     <small class="text-muted">{{ post.meta_description }}</small>
                 </p>
                 {% endif %}
@@ -149,7 +150,7 @@ hr.my-4 {
         {% if post.featured_image %}
         <div class="card mb-4">
             <div class="card-header">
-                <h6><i class="fas fa-image"></i> Imagen Destacada</h6>
+                <h6><i class="fas fa-image"></i> {% translate "Imagen Destacada" %}</h6>
             </div>
             <div class="card-body text-center">
                 <img src="{{ post.featured_image.url }}" 
@@ -164,7 +165,7 @@ hr.my-4 {
         {% if post.excerpt %}
         <div class="card mb-4">
             <div class="card-header">
-                <h6><i class="fas fa-quote-left"></i> Extracto</h6>
+                <h6><i class="fas fa-quote-left"></i> {% translate "Extracto" %}</h6>
             </div>
             <div class="card-body">
                 <p class="lead mb-0">{{ post.excerpt }}</p>
@@ -175,7 +176,7 @@ hr.my-4 {
         <!-- Contenido -->
         <div class="card mb-4">
             <div class="card-header">
-                <h6><i class="fas fa-file-alt"></i> Contenido</h6>
+                <h6><i class="fas fa-file-alt"></i> {% translate "Contenido" %}</h6>
             </div>
             <div class="card-body">
                 <div class="blog-content">
@@ -187,30 +188,30 @@ hr.my-4 {
         <!-- Acciones -->
         <div class="card mb-4">
             <div class="card-header">
-                <h6><i class="fas fa-cog"></i> Acciones</h6>
+                <h6><i class="fas fa-cog"></i> {% translate "Acciones" %}</h6>
             </div>
             <div class="card-body">
                 <div class="btn-group" role="group">
                     <a href="{% url 'blog_post_edit' post.pk %}" class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Editar Artículo
+                        <i class="fas fa-edit"></i> {% translate "Editar Artículo" %}
                     </a>
                     {% if post.status == 'draft' %}
                     <a href="{% url 'blog_post_toggle_status' post.pk %}" 
                        class="btn btn-success"
                        onclick="return confirm('¿Publicar este artículo?')">
-                        <i class="fas fa-eye"></i> Publicar
+                        <i class="fas fa-eye"></i> {% translate "Publicar" %}
                     </a>
                     {% else %}
                     <a href="{% url 'blog_post_toggle_status' post.pk %}" 
                        class="btn btn-warning"
                        onclick="return confirm('¿Despublicar este artículo?')">
-                        <i class="fas fa-eye-slash"></i> Despublicar
+                        <i class="fas fa-eye-slash"></i> {% translate "Despublicar" %}
                     </a>
                     {% endif %}
                     <a href="{% url 'blog_post_delete' post.pk %}" 
                        class="btn btn-danger"
                        onclick="return confirm('¿Estás seguro de que quieres eliminar este artículo?')">
-                        <i class="fas fa-trash"></i> Eliminar
+                        <i class="fas fa-trash"></i> {% translate "Eliminar" %}
                     </a>
                 </div>
             </div>
@@ -220,7 +221,7 @@ hr.my-4 {
         <div class="card">
             <div class="card-header bg-gradient-primary text-white">
                 <h6 class="mb-0">
-                    <i class="fas fa-robot"></i> Mejoras con Inteligencia Artificial
+                    <i class="fas fa-robot"></i> {% translate "Mejoras con Inteligencia Artificial" %}
                 </h6>
             </div>
             <div class="card-body">
@@ -228,11 +229,11 @@ hr.my-4 {
                 <div class="row mb-4">
                     <div class="col-12">
                         <button class="btn btn-gradient-primary btn-lg w-100 ai-button" onclick="improveCompleteArticle()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; font-weight: bold;">
-                            <i class="fas fa-rocket"></i> Mejorar Artículo Completo con IA
+                            <i class="fas fa-rocket"></i> {% translate "Mejorar Artículo Completo con IA" %}
                         </button>
                         <small class="text-muted d-block text-center mt-2">
                             <i class="fas fa-info-circle"></i> 
-                            Mejora automáticamente título y contenido basándose en el tema actual
+                            {% translate "Mejora automáticamente título y contenido basándose en el tema actual" %}
                         </small>
                     </div>
                 </div>
@@ -241,11 +242,11 @@ hr.my-4 {
                 <div class="row mb-4">
                     <div class="col-12">
                         <button class="btn btn-warning btn-lg w-100 ai-button" onclick="generateArticleImage()" style="font-weight: bold;">
-                            <i class="fas fa-image"></i> Generar Imagen con IA
+                            <i class="fas fa-image"></i> {% translate "Generar Imagen con IA" %}
                         </button>
                         <small class="text-muted d-block text-center mt-2">
                             <i class="fas fa-info-circle"></i> 
-                            Genera una imagen atractiva basándose en el título del artículo
+                            {% translate "Genera una imagen atractiva basándose en el título del artículo" %}
                         </small>
                     </div>
                 </div>
@@ -254,43 +255,43 @@ hr.my-4 {
                 
                 <!-- Funciones individuales -->
                 <h6 class="text-muted mb-3">
-                    <i class="fas fa-tools"></i> Herramientas Específicas
+                    <i class="fas fa-tools"></i> {% translate "Herramientas Específicas" %}
                 </h6>
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <button class="btn btn-outline-primary btn-sm w-100 ai-button" onclick="improveContent()">
-                            <i class="fas fa-magic"></i> Mejorar Solo Contenido
+                            <i class="fas fa-magic"></i> {% translate "Mejorar Solo Contenido" %}
                         </button>
                     </div>
                     <div class="col-md-6 mb-3">
                         <button class="btn btn-outline-info btn-sm w-100 ai-button" onclick="generateMetaDescription()">
-                            <i class="fas fa-search"></i> Generar Meta SEO
+                            <i class="fas fa-search"></i> {% translate "Generar Meta SEO" %}
                         </button>
                     </div>
                     <div class="col-md-6 mb-3">
                         <button class="btn btn-outline-success btn-sm w-100 ai-button" onclick="suggestTitles()">
-                            <i class="fas fa-lightbulb"></i> Sugerir Títulos
+                            <i class="fas fa-lightbulb"></i> {% translate "Sugerir Títulos" %}
                         </button>
                     </div>
                     <div class="col-md-6 mb-3">
                         <button class="btn btn-outline-warning btn-sm w-100 ai-button" onclick="generateTags()">
-                            <i class="fas fa-tags"></i> Generar Etiquetas
+                            <i class="fas fa-tags"></i> {% translate "Generar Etiquetas" %}
                         </button>
                     </div>
                     <div class="col-12 mb-3">
                         <button class="btn btn-outline-secondary btn-sm w-100 ai-button" onclick="analyzeReadability()">
-                            <i class="fas fa-chart-line"></i> Analizar Legibilidad
+                            <i class="fas fa-chart-line"></i> {% translate "Analizar Legibilidad" %}
                         </button>
                     </div>
                     <div class="col-12 mb-3">
                         <button class="btn btn-outline-dark btn-sm w-100 ai-button" onclick="testAIConnection()">
-                            <i class="fas fa-wifi"></i> Probar Conexión IA
+                            <i class="fas fa-wifi"></i> {% translate "Probar Conexión IA" %}
                         </button>
                     </div>
                     <div class="col-12">
                         <small class="text-muted">
                             <i class="fas fa-info-circle"></i> 
-                            Las mejoras son sugerencias generadas por IA. Revisa antes de aplicar.
+                            {% translate "Las mejoras son sugerencias generadas por IA. Revisa antes de aplicar." %}
                         </small>
                     </div>
                 </div>
@@ -299,11 +300,11 @@ hr.my-4 {
                 <div id="ai-results" style="display: none;" class="ai-results-container">
                     <div id="ai-loading" style="display: none;" class="text-center">
                         <div class="spinner-border spinner-border-sm text-primary" role="status">
-                            <span class="visually-hidden">Procesando...</span>
+                            <span class="visually-hidden">{% translate "Procesando..." %}</span>
                         </div>
-                        <span class="ms-2"><strong>Procesando con IA...</strong></span>
+                        <span class="ms-2"><strong>{% translate "Procesando con IA..." %}</strong></span>
                         <div class="mt-2">
-                            <small class="text-muted">Esto puede tomar unos segundos</small>
+                            <small class="text-muted">{% translate "Esto puede tomar unos segundos" %}</small>
                         </div>
                     </div>
                     <div id="ai-content" class="ai-content-preview"></div>
@@ -317,17 +318,17 @@ hr.my-4 {
         <!-- Estadísticas -->
         <div class="card mb-3">
             <div class="card-header">
-                <h6><i class="fas fa-chart-bar"></i> Estadísticas</h6>
+                <h6><i class="fas fa-chart-bar"></i> {% translate "Estadísticas" %}</h6>
             </div>
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-6">
                         <h4 class="text-primary">{{ post.views }}</h4>
-                        <small class="text-muted">Visualizaciones</small>
+                        <small class="text-muted">{% translate "Visualizaciones" %}</small>
                     </div>
                     <div class="col-6">
                         <h4 class="text-success">{{ post.comments.count }}</h4>
-                        <small class="text-muted">Comentarios</small>
+                        <small class="text-muted">{% translate "Comentarios" %}</small>
                     </div>
                 </div>
             </div>
@@ -337,7 +338,7 @@ hr.my-4 {
         {% if pending_comments %}
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0"><i class="fas fa-clock"></i> Comentarios Pendientes</h6>
+                <h6 class="mb-0"><i class="fas fa-clock"></i> {% translate "Comentarios Pendientes" %}</h6>
                 <span class="badge bg-warning">{{ pending_comments.count }}</span>
             </div>
             <div class="card-body">
@@ -370,7 +371,7 @@ hr.my-4 {
         {% if approved_comments %}
         <div class="card mb-3">
             <div class="card-header">
-                <h6><i class="fas fa-comments"></i> Comentarios Recientes</h6>
+                <h6><i class="fas fa-comments"></i> {% translate "Comentarios Recientes" %}</h6>
             </div>
             <div class="card-body">
                 {% for comment in approved_comments|slice:":5" %}
@@ -394,23 +395,23 @@ hr.my-4 {
         <!-- Enlaces útiles -->
         <div class="card">
             <div class="card-header">
-                <h6><i class="fas fa-link"></i> Enlaces Útiles</h6>
+                <h6><i class="fas fa-link"></i> {% translate "Enlaces Útiles" %}</h6>
             </div>
             <div class="card-body">
                 <ul class="list-unstyled small mb-0">
                     <li class="mb-2">
                         <a href="{% url 'blog_list' %}" class="text-decoration-none">
-                            <i class="fas fa-blog"></i> Ver blog público
+                            <i class="fas fa-blog"></i> {% translate "Ver blog público" %}
                         </a>
                     </li>
                     <li class="mb-2">
                         <a href="{% url 'blog_post_create' %}" class="text-decoration-none">
-                            <i class="fas fa-plus"></i> Nuevo artículo
+                            <i class="fas fa-plus"></i> {% translate "Nuevo artículo" %}
                         </a>
                     </li>
                     <li class="mb-2">
                         <a href="{% url 'blog_category_list' %}" class="text-decoration-none">
-                            <i class="fas fa-tags"></i> Gestionar categorías
+                            <i class="fas fa-tags"></i> {% translate "Gestionar categorías" %}
                         </a>
                     </li>
                     <li>

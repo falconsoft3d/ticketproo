@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -62,11 +63,11 @@
     <div class="row">
         <div class="col-12">
             <!-- Breadcrumb -->
-            <nav aria-label="breadcrumb" class="mb-4">
+            <nav aria-label="{% translate 'breadcrumb' %}" class="mb-4">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'company_documentation_list' %}">Documentaciones</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'company_documentation_list' %}">{% translate "Documentaciones" %}</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'company_documentation_detail' documentation.pk %}">{{ documentation.title }}</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Eliminar Enlace</li>
+                    <li class="breadcrumb-item active" aria-current="page">{% translate "Eliminar Enlace" %}</li>
                 </ol>
             </nav>
             
@@ -77,9 +78,9 @@
                         <div class="card-header delete-header">
                             <h4 class="mb-0">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
-                                Confirmar Eliminación
+                                {% translate "Confirmar Eliminación" %}
                             </h4>
-                            <small class="opacity-75">Esta acción no se puede deshacer</small>
+                            <small class="opacity-75">{% translate "Esta acción no se puede deshacer" %}</small>
                         </div>
                         
                         <div class="card-body delete-body">
@@ -88,11 +89,9 @@
                                 <div class="d-flex">
                                     <i class="fas fa-exclamation-circle text-warning me-3 mt-1"></i>
                                     <div>
-                                        <h6 class="text-warning mb-2">¡Atención!</h6>
+                                        <h6 class="text-warning mb-2">{% translate "¡Atención!" %}</h6>
                                         <p class="mb-0">
-                                            Estás a punto de eliminar permanentemente este enlace. 
-                                            Esta acción no se puede deshacer y el enlace será removido 
-                                            de la documentación.
+                                            {% translate "Estás a punto de eliminar permanentemente este enlace. Esta acción no se puede deshacer y el enlace será removido de la documentación." %}
                                         </p>
                                     </div>
                                 </div>
@@ -102,49 +101,49 @@
                             <div class="url-info">
                                 <h6 class="mb-3">
                                     <i class="fas fa-link me-2"></i>
-                                    Información del Enlace
+                                    {% translate "Información del Enlace" %}
                                 </h6>
                                 
                                 <div class="info-item">
-                                    <span class="info-label">Título:</span>
+                                    <span class="info-label">{% translate "Título:" %}</span>
                                     <span class="info-value">{{ url_obj.title }}</span>
                                 </div>
                                 
                                 <div class="info-item">
-                                    <span class="info-label">URL:</span>
+                                    <span class="info-label">{% translate "URL:" %}</span>
                                     <span class="info-value">{{ url_obj.url }}</span>
                                 </div>
                                 
                                 {% if url_obj.description %}
                                 <div class="info-item">
-                                    <span class="info-label">Descripción:</span>
+                                    <span class="info-label">{% translate "Descripción:" %}</span>
                                     <span class="info-value">{{ url_obj.description }}</span>
                                 </div>
                                 {% endif %}
                                 
                                 {% if url_obj.has_credentials %}
                                 <div class="info-item">
-                                    <span class="info-label">Credenciales:</span>
+                                    <span class="info-label">{% translate "Credenciales:" %}</span>
                                     <span class="info-value">
                                         <i class="fas fa-key me-1"></i>
-                                        Tiene credenciales guardadas
+                                        {% translate "Tiene credenciales guardadas" %}
                                     </span>
                                 </div>
                                 {% endif %}
                                 
                                 <div class="info-item">
-                                    <span class="info-label">Estado:</span>
+                                    <span class="info-label">{% translate "Estado:" %}</span>
                                     <span class="info-value">
                                         {% if url_obj.is_active %}
-                                            <span class="badge bg-success">Activo</span>
+                                            <span class="badge bg-success">{% translate "Activo" %}</span>
                                         {% else %}
-                                            <span class="badge bg-secondary">Inactivo</span>
+                                            <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                                         {% endif %}
                                     </span>
                                 </div>
                                 
                                 <div class="info-item">
-                                    <span class="info-label">Creado:</span>
+                                    <span class="info-label">{% translate "Creado:" %}</span>
                                     <span class="info-value">{{ url_obj.created_at|date:"d/m/Y H:i" }}</span>
                                 </div>
                             </div>
@@ -155,11 +154,11 @@
                                 
                                 <div class="d-flex justify-content-between align-items-center">
                                     <a href="{% url 'company_documentation_detail' documentation.pk %}" class="btn btn-outline-secondary">
-                                        <i class="fas fa-arrow-left me-2"></i>Cancelar
+                                        <i class="fas fa-arrow-left me-2"></i>{% translate "Cancelar" %}
                                     </a>
                                     
                                     <button type="submit" class="btn btn-danger" id="delete-btn">
-                                        <i class="fas fa-trash me-2"></i>Sí, Eliminar Enlace
+                                        <i class="fas fa-trash me-2"></i>{% translate "Sí, Eliminar Enlace" %}
                                     </button>
                                 </div>
                             </form>

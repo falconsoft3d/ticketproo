@@ -1,31 +1,32 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}Archivos Compartidos - TicketProo{% endblock %}
+{% block title %}{% translate "Archivos Compartidos - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-folder-symlink"></i> Archivos Compartidos</h2>
+                <h2><i class="bi bi-folder-symlink"></i> {% translate "Archivos Compartidos" %}</h2>
                 <div class="d-flex gap-2">
                     <!-- Controles de vista -->
-                    <div class="btn-group" role="group" aria-label="Vista">
-                        <button type="button" class="btn btn-outline-secondary" id="viewList" title="Vista lista">
+                    <div class="btn-group" role="group" aria-label="{% translate 'Vista' %}">
+                        <button type="button" class="btn btn-outline-secondary" id="viewList" title="{% translate 'Vista lista' %}">
                             <i class="bi bi-list-ul"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-secondary" id="viewCards" title="Vista tarjetas">
+                        <button type="button" class="btn btn-outline-secondary" id="viewCards" title="{% translate 'Vista tarjetas' %}">
                             <i class="bi bi-grid-3x3-gap"></i>
                         </button>
                     </div>
                     
                     <a href="{% url 'shared_file_upload' %}" class="btn btn-primary">
-                        <i class="bi bi-cloud-upload"></i> Subir Archivo
+                        <i class="bi bi-cloud-upload"></i> {% translate "Subir Archivo" %}
                     </a>
                     {% if user.groups.all and user.groups.first.name == 'Agentes' %}
                     <a href="{% url 'shared_files_stats' %}" class="btn btn-outline-info">
-                        <i class="bi bi-bar-chart"></i> Estadísticas
+                        <i class="bi bi-bar-chart"></i> {% translate "Estadísticas" %}
                     </a>
                     {% endif %}
                 </div>
@@ -36,14 +37,14 @@
                 <div class="card-body">
                     <form method="get" class="row g-3">
                         <div class="col-md-4">
-                            <label for="search" class="form-label">Buscar</label>
+                            <label for="search" class="form-label">{% translate "Buscar" %}</label>
                             <input type="text" class="form-control" id="search" name="search" 
-                                   value="{{ search }}" placeholder="Buscar por título o descripción...">
+                                   value="{{ search }}" placeholder="{% translate 'Buscar por título o descripción...' %}">
                         </div>
                         <div class="col-md-3">
-                            <label for="company" class="form-label">Empresa</label>
+                            <label for="company" class="form-label">{% translate "Empresa" %}</label>
                             <select class="form-control" id="company" name="company">
-                                <option value="">Todas las empresas</option>
+                                <option value="">{% translate "Todas las empresas" %}</option>
                                 {% for company in companies %}
                                 <option value="{{ company.id }}" {% if company.id|stringformat:"s" == selected_company %}selected{% endif %}>
                                     {{ company.name }}
@@ -52,9 +53,9 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="file_type" class="form-label">Tipo de Archivo</label>
+                            <label for="file_type" class="form-label">{% translate "Tipo de Archivo" %}</label>
                             <select class="form-control" id="file_type" name="file_type">
-                                <option value="">Todos los tipos</option>
+                                <option value="">{% translate "Todos los tipos" %}</option>
                                 {% for file_type in file_types %}
                                 <option value="{{ file_type }}" {% if file_type == selected_file_type %}selected{% endif %}>
                                     {{ file_type }}
@@ -66,7 +67,7 @@
                             <label class="form-label">&nbsp;</label>
                             <div class="d-flex gap-2">
                                 <button type="submit" class="btn btn-outline-primary">
-                                    <i class="bi bi-search"></i> Filtrar
+                                    <i class="bi bi-search"></i> {% translate "Filtrar" %}
                                 </button>
                                 <a href="{% url 'shared_files_list' %}" class="btn btn-outline-secondary">
                                     <i class="bi bi-x-circle"></i>
@@ -87,15 +88,15 @@
                             <thead class="table-light">
                                 <tr>
                                     <th width="5%"><i class="bi bi-file-earmark"></i></th>
-                                    <th width="25%">Archivo</th>
-                                    <th width="15%">Empresa</th>
-                                    <th width="10%">Tipo</th>
-                                    <th width="10%">Tamaño</th>
-                                    <th width="10%">Subido por</th>
-                                    <th width="10%">Fecha</th>
-                                    <th width="8%">Descargas</th>
-                                    <th width="7%">Estado</th>
-                                    <th width="15%" class="text-center">Acciones</th>
+                                    <th width="25%">{% translate "Archivo" %}</th>
+                                    <th width="15%">{% translate "Empresa" %}</th>
+                                    <th width="10%">{% translate "Tipo" %}</th>
+                                    <th width="10%">{% translate "Tamaño" %}</th>
+                                    <th width="10%">{% translate "Subido por" %}</th>
+                                    <th width="10%">{% translate "Fecha" %}</th>
+                                    <th width="8%">{% translate "Descargas" %}</th>
+                                    <th width="7%">{% translate "Estado" %}</th>
+                                    <th width="15%" class="text-center">{% translate "Acciones" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -143,7 +144,7 @@
                                         {% if file.uploaded_by %}
                                             <i class="bi bi-person"></i> {{ file.uploaded_by.username }}
                                         {% else %}
-                                            <i class="bi bi-person-x"></i> Anónimo
+                                            <i class="bi bi-person-x"></i> {% translate "Anónimo" %}
                                         {% endif %}
                                     </td>
                                     <td class="small">
@@ -155,11 +156,11 @@
                                     </td>
                                     <td class="text-center">
                                         {% if file.is_public %}
-                                        <span class="badge bg-success" title="Público para la empresa">
+                                        <span class="badge bg-success" title="{% translate 'Público para la empresa' %}">
                                             <i class="bi bi-globe"></i>
                                         </span>
                                         {% else %}
-                                        <span class="badge bg-warning" title="Privado">
+                                        <span class="badge bg-warning" title="{% translate 'Privado' %}">
                                             <i class="bi bi-lock"></i>
                                         </span>
                                         {% endif %}
@@ -168,18 +169,18 @@
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a href="{% url 'shared_file_detail' file.id %}" 
                                                class="btn btn-outline-info btn-sm" 
-                                               title="Ver detalles">
+                                               title="{% translate 'Ver detalles' %}">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             <a href="{% url 'shared_file_download' file.id %}" 
                                                class="btn btn-primary btn-sm" 
-                                               title="Descargar">
+                                               title="{% translate 'Descargar' %}">
                                                 <i class="bi bi-download"></i>
                                             </a>
                                             {% if user.groups.all and user.groups.first.name == 'Agentes' %}
                                             <a href="{% url 'shared_file_delete' file.id %}" 
                                                class="btn btn-outline-danger btn-sm" 
-                                               title="Eliminar">
+                                               title="{% translate 'Eliminar' %}">
                                                 <i class="bi bi-trash"></i>
                                             </a>
                                             {% endif %}
@@ -235,11 +236,11 @@
                             
                             {% if file.is_public %}
                             <span class="badge bg-success mb-2">
-                                <i class="bi bi-globe"></i> Público
+                                <i class="bi bi-globe"></i> {% translate "Público" %}
                             </span>
                             {% else %}
                             <span class="badge bg-warning mb-2">
-                                <i class="bi bi-lock"></i> Privado
+                                <i class="bi bi-lock"></i> {% translate "Privado" %}
                             </span>
                             {% endif %}
                         </div>
@@ -247,10 +248,10 @@
                         <div class="card-footer">
                             <div class="d-flex gap-2">
                                 <a href="{% url 'shared_file_detail' file.id %}" class="btn btn-sm btn-outline-info">
-                                    <i class="bi bi-eye"></i> Ver
+                                    <i class="bi bi-eye"></i> {% translate "Ver" %}
                                 </a>
                                 <a href="{% url 'shared_file_download' file.id %}" class="btn btn-sm btn-primary">
-                                    <i class="bi bi-download"></i> Descargar
+                                    <i class="bi bi-download"></i> {% translate "Descargar" %}
                                 </a>
                                 {% if user.groups.all and user.groups.first.name == 'Agentes' %}
                                 <a href="{% url 'shared_file_delete' file.id %}" class="btn btn-sm btn-outline-danger">
@@ -266,7 +267,7 @@
 
             <!-- Paginación -->
             {% if files.has_other_pages %}
-            <nav aria-label="Paginación de archivos">
+            <nav aria-label="{% translate 'Paginación de archivos' %}">
                 <ul class="pagination justify-content-center">
                     {% if files.has_previous %}
                         <li class="page-item">
@@ -306,10 +307,10 @@
             {% else %}
             <div class="text-center py-5">
                 <i class="bi bi-folder-x display-1 text-muted"></i>
-                <h4 class="text-muted mt-3">No hay archivos compartidos</h4>
-                <p class="text-muted">No se encontraron archivos que coincidan con los filtros aplicados.</p>
+                <h4 class="text-muted mt-3">{% translate "No hay archivos compartidos" %}</h4>
+                <p class="text-muted">{% translate "No se encontraron archivos que coincidan con los filtros aplicados." %}</p>
                 <a href="{% url 'shared_file_upload' %}" class="btn btn-primary">
-                    <i class="bi bi-cloud-upload"></i> Subir Primer Archivo
+                    <i class="bi bi-cloud-upload"></i> {% translate "Subir Primer Archivo" %}
                 </a>
             </div>
             {% endif %}

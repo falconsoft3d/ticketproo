@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load tickets_tags %}
 
 {% block title %}{{ chatbot.title }}{% endblock %}
@@ -9,23 +10,23 @@
         <h2>
             <i class="bi bi-robot me-2"></i>{{ chatbot.title }}
             {% if chatbot.type == 'internal' %}
-                <span class="badge bg-info">Interno</span>
+                <span class="badge bg-info">{% translate "Interno" %}</span>
             {% else %}
-                <span class="badge bg-success">Externo</span>
+                <span class="badge bg-success">{% translate "Externo" %}</span>
             {% endif %}
             {% if not chatbot.is_active %}
-                <span class="badge bg-secondary">Inactivo</span>
+                <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
             {% endif %}
         </h2>
         <div>
             <a href="{% url 'chatbot_conversations' chatbot.pk %}" class="btn btn-success">
-                <i class="bi bi-chat-dots me-1"></i>Ver Conversaciones
+                <i class="bi bi-chat-dots me-1"></i>{% translate "Ver Conversaciones" %}
             </a>
             <a href="{% url 'chatbot_edit' chatbot.pk %}" class="btn btn-primary">
-                <i class="bi bi-pencil me-1"></i>Editar
+                <i class="bi bi-pencil me-1"></i>{% translate "Editar" %}
             </a>
             <a href="{% url 'chatbot_list' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i>Volver
+                <i class="bi bi-arrow-left me-1"></i>{% translate "Volver" %}
             </a>
         </div>
     </div>
@@ -35,30 +36,30 @@
         <div class="col-lg-8 mb-4">
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-info-circle me-2"></i>Información</h5>
+                    <h5 class="card-title"><i class="bi bi-info-circle me-2"></i>{% translate "Información" %}</h5>
                     
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <strong>Descripción:</strong>
+                            <strong>{% translate "Descripción:" %}</strong>
                             <p>{{ chatbot.description }}</p>
                         </div>
                         <div class="col-md-6">
-                            <strong>Mensaje de Bienvenida:</strong>
+                            <strong>{% translate "Mensaje de Bienvenida:" %}</strong>
                             <p>{{ chatbot.welcome_message }}</p>
                         </div>
                     </div>
                     
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <strong>Usar IA:</strong> 
+                            <strong>{% translate "Usar IA:" %}</strong> 
                             {% if chatbot.use_ai %}
-                                <span class="badge bg-success">Sí</span>
+                                <span class="badge bg-success">{% translate "Sí" %}</span>
                             {% else %}
-                                <span class="badge bg-secondary">No</span>
+                                <span class="badge bg-secondary">{% translate "No" %}</span>
                             {% endif %}
                         </div>
                         <div class="col-md-6">
-                            <strong>Color Principal:</strong> 
+                            <strong>{% translate "Color Principal:" %}</strong> 
                             <span class="badge" style="background-color: {{ chatbot.primary_color }};">
                                 {{ chatbot.primary_color }}
                             </span>
@@ -67,7 +68,7 @@
                     
                     {% if chatbot.ai_context %}
                     <div class="mb-3">
-                        <strong>Contexto IA:</strong>
+                        <strong>{% translate "Contexto IA:" %}</strong>
                         <p class="small text-muted">{{ chatbot.ai_context }}</p>
                     </div>
                     {% endif %}
@@ -77,24 +78,24 @@
             <!-- Estadísticas -->
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-graph-up me-2"></i>Estadísticas</h5>
+                    <h5 class="card-title"><i class="bi bi-graph-up me-2"></i>{% translate "Estadísticas" %}</h5>
                     
                     <div class="row text-center">
                         <div class="col-md-3">
                             <h3 class="text-warning">{{ chatbot.total_clicks }}</h3>
-                            <p class="text-muted"><i class="bi bi-cursor-fill"></i> Clicks en Botón</p>
+                            <p class="text-muted"><i class="bi bi-cursor-fill"></i> {% translate "Clicks en Botón" %}</p>
                         </div>
                         <div class="col-md-3">
                             <h3 class="text-primary">{{ chatbot.total_conversations }}</h3>
-                            <p class="text-muted"><i class="bi bi-chat-dots"></i> Conversaciones</p>
+                            <p class="text-muted"><i class="bi bi-chat-dots"></i> {% translate "Conversaciones" %}</p>
                         </div>
                         <div class="col-md-3">
                             <h3 class="text-success">{{ chatbot.total_messages }}</h3>
-                            <p class="text-muted"><i class="bi bi-chat-left-text"></i> Mensajes</p>
+                            <p class="text-muted"><i class="bi bi-chat-left-text"></i> {% translate "Mensajes" %}</p>
                         </div>
                         <div class="col-md-3">
                             <h3 class="text-info">{{ questions.count }}</h3>
-                            <p class="text-muted"><i class="bi bi-question-circle"></i> Preguntas</p>
+                            <p class="text-muted"><i class="bi bi-question-circle"></i> {% translate "Preguntas" %}</p>
                         </div>
                     </div>
                     
@@ -103,7 +104,7 @@
                         <div class="col-12">
                             <div class="alert alert-info mb-0">
                                 <i class="bi bi-info-circle me-2"></i>
-                                <strong>Tasa de conversión:</strong> 
+                                <strong>{% translate "Tasa de conversión:" %}</strong> 
                                 {{ chatbot.total_conversations|floatformat:0 }} conversaciones de {{ chatbot.total_clicks }} clicks 
                                 ({{ chatbot.total_conversations|multiply:100|divide:chatbot.total_clicks|floatformat:1 }}%)
                             </div>
@@ -116,9 +117,9 @@
             <!-- Preguntas y Respuestas -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-question-circle me-2"></i>Preguntas y Respuestas</h5>
+                    <h5 class="mb-0"><i class="bi bi-question-circle me-2"></i>{% translate "Preguntas y Respuestas" %}</h5>
                     <a href="{% url 'chatbot_question_create' chatbot.pk %}" class="btn btn-sm btn-primary">
-                        <i class="bi bi-plus-circle me-1"></i>Agregar Pregunta
+                        <i class="bi bi-plus-circle me-1"></i>{% translate "Agregar Pregunta" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -131,7 +132,7 @@
                                         <h6 class="mb-1">
                                             {{ question.question }}
                                             {% if not question.is_active %}
-                                                <span class="badge bg-secondary">Inactiva</span>
+                                                <span class="badge bg-secondary">{% translate "Inactiva" %}</span>
                                             {% endif %}
                                             {% if question.use_ai %}
                                                 <span class="badge bg-primary">
@@ -142,7 +143,7 @@
                                         <p class="mb-2 text-muted small">{{ question.answer|truncatewords:30 }}</p>
                                         <small class="text-muted">
                                             <i class="bi bi-tags me-1"></i>
-                                            <strong>Keywords:</strong> {{ question.keywords }}
+                                            <strong>{% translate "Keywords:" %}</strong> {{ question.keywords }}
                                             <span class="ms-3">
                                                 <i class="bi bi-bar-chart me-1"></i>
                                                 Usada {{ question.times_used }} veces
@@ -170,8 +171,8 @@
                     {% else %}
                         <div class="alert alert-info mb-0">
                             <i class="bi bi-info-circle me-2"></i>
-                            No hay preguntas configuradas. 
-                            <a href="{% url 'chatbot_question_create' chatbot.pk %}" class="alert-link">Agregar la primera</a>
+                            {% translate "No hay preguntas configuradas." %} 
+                            <a href="{% url 'chatbot_question_create' chatbot.pk %}" class="alert-link">{% translate "Agregar la primera" %}</a>
                         </div>
                     {% endif %}
                 </div>
@@ -182,22 +183,22 @@
                 <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-graph-up-arrow me-2"></i>
-                        Evolución de Contactos (Últimos 30 días)
+                        {% translate "Evolución de Contactos (Últimos 30 días)" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div id="statsChartLoading" class="text-center py-5">
                         <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando...</span>
+                            <span class="visually-hidden">{% translate "Cargando..." %}</span>
                         </div>
-                        <p class="text-muted mt-3">Cargando estadísticas...</p>
+                        <p class="text-muted mt-3">{% translate "Cargando estadísticas..." %}</p>
                     </div>
                     <div id="statsChartContainer" style="display: none;">
                         <canvas id="statsChart" style="max-height: 400px;"></canvas>
                     </div>
                     <div id="statsChartError" style="display: none;" class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        No se pudieron cargar las estadísticas del gráfico.
+                        {% translate "No se pudieron cargar las estadísticas del gráfico." %}
                     </div>
                 </div>
             </div>
@@ -209,22 +210,22 @@
             {% if chatbot.type == 'external' and chatbot.script_token %}
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-code-square me-2"></i>Código de Integración</h5>
+                    <h5 class="card-title"><i class="bi bi-code-square me-2"></i>{% translate "Código de Integración" %}</h5>
                     
                     <p class="small text-muted">Copia este código en tu sitio web antes del cierre de la etiqueta <code>&lt;/body&gt;</code>:</p>
                     
                     <div class="mb-3">
-                        <label class="form-label small">Script de Integración:</label>
+                        <label class="form-label small">{% translate "Script de Integración:" %}</label>
                         <div class="input-group input-group-sm">
                             <textarea class="form-control font-monospace" rows="3" id="integration-script" readonly><script src="{{ request.scheme }}://{{ request.get_host }}{% url 'chatbot_script' token=chatbot.script_token %}"></script></textarea>
                         </div>
                         <button class="btn btn-sm btn-outline-primary mt-2 w-100" onclick="copyIntegrationCode()">
-                            <i class="bi bi-clipboard me-1"></i>Copiar Código
+                            <i class="bi bi-clipboard me-1"></i>{% translate "Copiar Código" %}
                         </button>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label small">URL del Widget:</label>
+                        <label class="form-label small">{% translate "URL del Widget:" %}</label>
                         <div class="input-group input-group-sm">
                             <input type="text" class="form-control font-monospace" 
                                    value="{{ request.scheme }}://{{ request.get_host }}{% url 'chatbot_widget' token=chatbot.script_token %}" 
@@ -238,7 +239,7 @@
                     {% if chatbot.allowed_domains %}
                     <div class="alert alert-warning small mb-0">
                         <i class="bi bi-shield-check me-1"></i>
-                        <strong>Dominios Permitidos:</strong><br>
+                        <strong>{% translate "Dominios Permitidos:" %}</strong><br>
                         {{ chatbot.allowed_domains|linebreaksbr }}
                     </div>
                     {% endif %}
@@ -249,7 +250,7 @@
             <!-- Vista Previa -->
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-eye me-2"></i>Vista Previa</h5>
+                    <h5 class="card-title"><i class="bi bi-eye me-2"></i>{% translate "Vista Previa" %}</h5>
                     
                     <div class="text-center">
                         <div style="width: 60px; height: 60px; border-radius: 50%; background: {{ chatbot.primary_color }}; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
@@ -257,7 +258,7 @@
                                 <path d="M8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6-.097 1.016-.417 2.13-.771 2.966-.079.186.074.394.273.362 2.256-.37 3.597-.938 4.18-1.234A9.06 9.06 0 0 0 8 15z"/>
                             </svg>
                         </div>
-                        <p class="mt-2 small text-muted">Así se verá el botón del chatbot</p>
+                        <p class="mt-2 small text-muted">{% translate "Así se verá el botón del chatbot" %}</p>
                     </div>
                 </div>
             </div>

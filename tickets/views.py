@@ -1,3 +1,5 @@
+from django.utils.translation import gettext
+from urllib.parse import urlparse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import login, authenticate, logout
@@ -214,7 +216,7 @@ def contact_chart(request):
         'users_data': json.dumps(users_data),
         'group_by': group_by,
         'time_range': time_range,
-        'page_title': 'Gráfico de Creación de Contactos',
+        'page_title': gettext('Gráfico de Creación de Contactos'),
         'activity_data': json.dumps(activity_data),
         'activity_total': total_contributions,
         'activity_max': max_contributions,
@@ -413,6 +415,24 @@ def home_view(request):
         is_public=True, is_active=True
     ).prefetch_related('lines__product__videos').order_by('-created_at')
     
+    # Webs propias (tabla dinámica "mis_webs": nombre, web, descripcion)
+    from .models import DynamicTableRecord
+    my_websites = []
+    for record in DynamicTableRecord.objects.filter(
+        table__name='mis_webs', table__is_active=True
+    ).order_by('created_at'):
+        data = record.data or {}
+        url = (data.get('web') or '').strip()
+        if url and not url.lower().startswith(('http://', 'https://')):
+            # Solo enlaces http(s); evita esquemas como javascript:
+            url = '' if ':' in url.split('/')[0] else 'https://' + url
+        my_websites.append({
+            'name': (data.get('nombre') or '').strip(),
+            'url': url,
+            'domain': urlparse(url).netloc.removeprefix('www.') if url else '',
+            'description': (data.get('descripcion') or '').strip(),
+        })
+
     context = {
         'total_tickets': total_tickets,
         'total_users': total_users,
@@ -424,6 +444,7 @@ def home_view(request):
         'alcances': alcances,
         'latest_blog_posts': latest_blog_posts,
         'public_catalogs': public_catalogs,
+        'my_websites': my_websites,
     }
     return render(request, 'tickets/home.html', context)
 
@@ -433,7 +454,7 @@ def register_view(request):
     config = SystemConfiguration.get_config()
     
     if not config.allow_user_registration:
-        messages.error(request, 'El registro de nuevos usuarios está deshabilitado. Contacta a un administrador.')
+        messages.error(request, gettext('El registro de nuevos usuarios está deshabilitado. Contacta a un administrador.'))
         return redirect('login')
     
     if request.method == 'POST':
@@ -916,7 +937,7 @@ def ticket_chart(request):
         'labels': json.dumps(labels),
         'counts': json.dumps(counts),
         'group_by': group_by,
-        'page_title': 'Gráfico de Creación de Tickets',
+        'page_title': gettext('Gráfico de Creación de Tickets'),
         'activity_data': json.dumps(activity_data),
         'activity_total': total_contributions,
         'activity_max': max_contributions,
@@ -1199,7 +1220,7 @@ def ticket_create_view(request):
             except Exception:
                 ai_pending = False
 
-            messages.success(request, 'Ticket creado exitosamente.')
+            messages.success(request, gettext('Ticket creado exitosamente.'))
             detail_url = reverse('ticket_detail', kwargs={'pk': ticket.pk})
             if ai_pending:
                 return redirect(f"{detail_url}?ai_pending=1")
@@ -1225,7 +1246,7 @@ def ticket_import_view(request):
     
     # Solo agentes pueden importar tickets
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para importar tickets.')
+        messages.error(request, gettext('No tienes permisos para importar tickets.'))
         return redirect('ticket_list')
     
     if request.method == 'POST':
@@ -1313,7 +1334,7 @@ def ticket_import_view(request):
     
     context = {
         'form': form,
-        'page_title': 'Importar Tickets desde Excel'
+        'page_title': gettext('Importar Tickets desde Excel')
     }
     
     return render(request, 'tickets/ticket_import.html', context)
@@ -1328,7 +1349,7 @@ def ticket_import_example(request):
     
     # Solo agentes pueden descargar el ejemplo
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta función.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta función.'))
         return redirect('ticket_list')
     
     # Crear datos de ejemplo
@@ -1422,7 +1443,7 @@ def ticket_detail_view(request, pk):
         
         # Verificar que el usuario tenga acceso al ticket
         if not Ticket.objects.filter(pk=pk).filter(query_conditions).exists():
-            messages.error(request, 'No tienes permisos para ver este ticket.')
+            messages.error(request, gettext('No tienes permisos para ver este ticket.'))
             return redirect('ticket_list')
     
     # Manejar autoasignación para agentes
@@ -1436,20 +1457,20 @@ def ticket_detail_view(request, pk):
     if request.method == 'POST' and 'enable_public_share' in request.POST and is_agent(request.user):
         ticket.is_public_shareable = True
         ticket.save()
-        messages.success(request, 'Compartir público activado. Ahora puedes compartir este ticket mediante un enlace.')
+        messages.success(request, gettext('Compartir público activado. Ahora puedes compartir este ticket mediante un enlace.'))
         return redirect('ticket_detail', pk=pk)
     
     # Manejar desactivar compartir público (solo agentes)
     if request.method == 'POST' and 'disable_public_share' in request.POST and is_agent(request.user):
         ticket.is_public_shareable = False
         ticket.save()
-        messages.warning(request, 'Compartir público desactivado. El enlace ya no será accesible.')
+        messages.warning(request, gettext('Compartir público desactivado. El enlace ya no será accesible.'))
         return redirect('ticket_detail', pk=pk)
     
     # Manejar regenerar token (solo agentes)
     if request.method == 'POST' and 'regenerate_token' in request.POST and is_agent(request.user):
         ticket.regenerate_public_token()
-        messages.info(request, 'Enlace público regenerado. El enlace anterior ya no es válido.')
+        messages.info(request, gettext('Enlace público regenerado. El enlace anterior ya no es válido.'))
         return redirect('ticket_detail', pk=pk)
     
     # Formulario para agregar comentarios
@@ -1461,7 +1482,7 @@ def ticket_detail_view(request, pk):
             comment.ticket = ticket
             comment.user = request.user
             comment.save()
-            messages.success(request, 'Comentario agregado exitosamente.')
+            messages.success(request, gettext('Comentario agregado exitosamente.'))
             return redirect('ticket_detail', pk=pk)
 
     # Cambio rápido de estado desde el panel de acciones
@@ -1496,10 +1517,10 @@ def ticket_detail_view(request, pk):
                     raise InvalidOperation
                 ticket.hours = value.quantize(Decimal('0.01'))
             except InvalidOperation:
-                messages.error(request, 'Valor de horas estimadas no válido.')
+                messages.error(request, gettext('Valor de horas estimadas no válido.'))
                 return redirect('ticket_detail', pk=pk)
         ticket.save(update_fields=['hours'])
-        messages.success(request, 'Horas estimadas actualizadas.')
+        messages.success(request, gettext('Horas estimadas actualizadas.'))
         return redirect('ticket_detail', pk=pk)
 
     # Formulario para agregar adjuntos
@@ -1513,7 +1534,7 @@ def ticket_detail_view(request, pk):
             attachment.original_filename = attachment.file.name
             attachment.file_size = attachment.file.size
             attachment.save()
-            messages.success(request, 'Adjunto subido exitosamente.')
+            messages.success(request, gettext('Adjunto subido exitosamente.'))
             return redirect('ticket_detail', pk=pk)
 
     # Formulario para agregar líneas de horas
@@ -1525,7 +1546,7 @@ def ticket_detail_view(request, pk):
             hour_line.ticket = ticket
             hour_line.created_by = request.user
             hour_line.save()
-            messages.success(request, 'Línea de horas agregada exitosamente.')
+            messages.success(request, gettext('Línea de horas agregada exitosamente.'))
             return redirect('ticket_detail', pk=pk)
 
     # Obtener comentarios del ticket
@@ -1564,11 +1585,11 @@ def ticket_hour_line_delete(request, pk, line_id):
     hour_line = get_object_or_404(TicketHourLine, pk=line_id, ticket__pk=pk)
     # Solo el creador de la línea o un agente puede eliminarla
     if not (hour_line.created_by == request.user or is_agent(request.user)):
-        messages.error(request, 'No tienes permisos para eliminar esta línea de horas.')
+        messages.error(request, gettext('No tienes permisos para eliminar esta línea de horas.'))
         return redirect('ticket_detail', pk=pk)
     if request.method == 'POST':
         hour_line.delete()
-        messages.success(request, 'Línea de horas eliminada.')
+        messages.success(request, gettext('Línea de horas eliminada.'))
     return redirect('ticket_detail', pk=pk)
 
 
@@ -1605,7 +1626,7 @@ def ticket_edit_view(request, pk):
         
         # Verificar que el usuario tenga acceso al ticket
         if not Ticket.objects.filter(pk=pk).filter(query_conditions).exists():
-            messages.error(request, 'No tienes permisos para editar este ticket.')
+            messages.error(request, gettext('No tienes permisos para editar este ticket.'))
             return redirect('ticket_list')
         
         FormClass = UserTicketEditForm
@@ -1625,7 +1646,7 @@ def ticket_edit_view(request, pk):
                     content=f'🔄 Estado cambiado de **{old_label}** → **{new_label}** por {nombre}',
                     is_system=True,
                 )
-            messages.success(request, 'Ticket actualizado exitosamente.')
+            messages.success(request, gettext('Ticket actualizado exitosamente.'))
             return redirect('ticket_detail', pk=ticket.pk)
     else:
         form = FormClass(instance=ticket)
@@ -1650,7 +1671,7 @@ def ticket_delete_view(request, pk):
     
     if request.method == 'POST':
         ticket.delete()
-        messages.success(request, 'Ticket eliminado exitosamente.')
+        messages.success(request, gettext('Ticket eliminado exitosamente.'))
         return redirect('ticket_list')
     
     context = {
@@ -1666,18 +1687,18 @@ def ticket_comment_edit(request, comment_id):
     """Vista para editar un comentario de ticket (solo agentes y solo sus propios comentarios)"""
     comment = get_object_or_404(TicketComment, pk=comment_id)
     if not comment.can_edit(request.user):
-        messages.error(request, 'No tienes permisos para editar este comentario.')
+        messages.error(request, gettext('No tienes permisos para editar este comentario.'))
         return redirect('ticket_detail', pk=comment.ticket.pk)
     if request.method == 'POST':
         content = request.POST.get('content', '').strip()
         if len(content) < 10:
-            messages.error(request, 'El comentario debe tener al menos 10 caracteres.')
+            messages.error(request, gettext('El comentario debe tener al menos 10 caracteres.'))
         elif len(content) > 1000:
-            messages.error(request, 'El comentario no puede superar 1000 caracteres.')
+            messages.error(request, gettext('El comentario no puede superar 1000 caracteres.'))
         else:
             comment.content = content
             comment.save()
-            messages.success(request, 'Comentario editado exitosamente.')
+            messages.success(request, gettext('Comentario editado exitosamente.'))
         return redirect('ticket_detail', pk=comment.ticket.pk)
     return redirect('ticket_detail', pk=comment.ticket.pk)
 
@@ -1687,12 +1708,12 @@ def ticket_comment_delete(request, comment_id):
     """Vista para eliminar un comentario de ticket (solo agentes y solo sus propios comentarios)"""
     comment = get_object_or_404(TicketComment, pk=comment_id)
     if not comment.can_delete(request.user):
-        messages.error(request, 'No tienes permisos para eliminar este comentario.')
+        messages.error(request, gettext('No tienes permisos para eliminar este comentario.'))
         return redirect('ticket_detail', pk=comment.ticket.pk)
     if request.method == 'POST':
         ticket_pk = comment.ticket.pk
         comment.delete()
-        messages.success(request, 'Comentario eliminado exitosamente.')
+        messages.success(request, gettext('Comentario eliminado exitosamente.'))
         return redirect('ticket_detail', pk=ticket_pk)
     return redirect('ticket_detail', pk=comment.ticket.pk)
 
@@ -1719,7 +1740,7 @@ def ticket_ai_analyze_now(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
     # Solo agentes pueden solicitar el análisis
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para solicitar análisis de IA.')
+        messages.error(request, gettext('No tienes permisos para solicitar análisis de IA.'))
         return redirect('ticket_detail', pk=pk)
     if request.method == 'POST':
         # Evitar duplicados
@@ -1759,7 +1780,7 @@ def ticket_approve_view(request, pk):
         
         # Verificar que el usuario tenga acceso al ticket
         if not Ticket.objects.filter(pk=pk).filter(query_conditions).exists():
-            messages.error(request, 'No tienes permisos para aprobar este ticket.')
+            messages.error(request, gettext('No tienes permisos para aprobar este ticket.'))
             return redirect('ticket_list')
     
     if request.method == 'POST':
@@ -1770,14 +1791,14 @@ def ticket_approve_view(request, pk):
                 ticket.approve_ticket(request.user)
                 messages.success(request, f'Ticket #{ticket.ticket_number} aprobado exitosamente.')
             else:
-                messages.info(request, 'Este ticket ya estaba aprobado.')
+                messages.info(request, gettext('Este ticket ya estaba aprobado.'))
         
         elif action == 'unapprove':
             if ticket.is_approved:
                 ticket.unapprove_ticket()
                 messages.success(request, f'Aprobación del ticket #{ticket.ticket_number} removida.')
             else:
-                messages.info(request, 'Este ticket no estaba aprobado.')
+                messages.info(request, gettext('Este ticket no estaba aprobado.'))
         
         return redirect('ticket_detail', pk=ticket.pk)
     
@@ -1788,7 +1809,7 @@ def ticket_approve_view(request, pk):
 def logout_view(request):
     """Vista personalizada para logout"""
     logout(request)
-    messages.info(request, 'Has cerrado sesión exitosamente.')
+    messages.info(request, gettext('Has cerrado sesión exitosamente.'))
     return redirect('home')
 
 # ========== VISTAS DE GESTIÓN DE USUARIOS ==========
@@ -1995,7 +2016,7 @@ def user_toggle_status_view(request, user_id):
     user_to_toggle = get_object_or_404(User, pk=user_id)
     
     if user_to_toggle == request.user:
-        messages.error(request, 'No puedes desactivar tu propia cuenta.')
+        messages.error(request, gettext('No puedes desactivar tu propia cuenta.'))
     else:
         user_to_toggle.is_active = not user_to_toggle.is_active
         user_to_toggle.save()
@@ -2087,11 +2108,11 @@ def download_attachment_view(request, attachment_id):
                     response['Content-Disposition'] = f'attachment; filename="{attachment.original_filename}"'
                     return response
             except FileNotFoundError:
-                messages.error(request, 'El archivo no se encontró en el servidor.')
+                messages.error(request, gettext('El archivo no se encontró en el servidor.'))
         else:
-            messages.error(request, 'No hay archivo asociado.')
+            messages.error(request, gettext('No hay archivo asociado.'))
     else:
-        messages.error(request, 'No tienes permisos para descargar este archivo.')
+        messages.error(request, gettext('No tienes permisos para descargar este archivo.'))
     
     return redirect('ticket_detail', pk=attachment.ticket.pk)
 
@@ -2105,9 +2126,9 @@ def delete_attachment_view(request, attachment_id):
     # Verificar permisos (solo el que subió el archivo o agentes pueden eliminarlo)
     if is_agent(request.user) or attachment.uploaded_by == request.user:
         attachment.delete()
-        messages.success(request, 'Adjunto eliminado exitosamente.')
+        messages.success(request, gettext('Adjunto eliminado exitosamente.'))
     else:
-        messages.error(request, 'No tienes permisos para eliminar este archivo.')
+        messages.error(request, gettext('No tienes permisos para eliminar este archivo.'))
     
     return redirect('ticket_detail', pk=ticket_pk)
 
@@ -2139,7 +2160,7 @@ def category_list_view(request):
     
     context = {
         'categories': categories,
-        'page_title': 'Gestión de Categorías'
+        'page_title': gettext('Gestión de Categorías')
     }
     return render(request, 'tickets/category_list.html', context)
 
@@ -2159,7 +2180,7 @@ def category_create_view(request):
     
     context = {
         'form': form,
-        'page_title': 'Crear Categoría',
+        'page_title': gettext('Crear Categoría'),
         'form_title': 'Nueva Categoría'
     }
     return render(request, 'tickets/category_form.html', context)
@@ -2183,7 +2204,7 @@ def category_edit_view(request, pk):
     context = {
         'form': form,
         'category': category,
-        'page_title': 'Editar Categoría',
+        'page_title': gettext('Editar Categoría'),
         'form_title': f'Editar: {category.name}'
     }
     return render(request, 'tickets/category_form.html', context)
@@ -2205,7 +2226,7 @@ def category_delete_view(request, pk):
     context = {
         'category': category,
         'ticket_count': ticket_count,
-        'page_title': 'Eliminar Categoría'
+        'page_title': gettext('Eliminar Categoría')
     }
     return render(request, 'tickets/category_delete.html', context)
 
@@ -2276,12 +2297,12 @@ def public_ticket_approve(request, token):
     try:
         ticket = get_object_or_404(Ticket, public_share_token=token, is_public_shareable=True)
     except:
-        messages.error(request, 'Ticket no encontrado o no es público.')
+        messages.error(request, gettext('Ticket no encontrado o no es público.'))
         return redirect('ticket_list')
     
     # Verificar si ya tiene aprobación
     if hasattr(ticket, 'client_approval'):
-        messages.warning(request, 'Este ticket ya ha sido aprobado anteriormente.')
+        messages.warning(request, gettext('Este ticket ya ha sido aprobado anteriormente.'))
         return redirect('public_ticket', token=token)
     
     if request.method == 'POST':
@@ -2293,7 +2314,7 @@ def public_ticket_approve(request, token):
             
             # Validaciones básicas
             if not client_name or not client_email:
-                messages.error(request, 'Nombre y correo electrónico son obligatorios.')
+                messages.error(request, gettext('Nombre y correo electrónico son obligatorios.'))
                 return redirect('public_ticket', token=token)
             
             # Validar formato de email
@@ -2302,7 +2323,7 @@ def public_ticket_approve(request, token):
             try:
                 validate_email(client_email)
             except ValidationError:
-                messages.error(request, 'Por favor ingresa un correo electrónico válido.')
+                messages.error(request, gettext('Por favor ingresa un correo electrónico válido.'))
                 return redirect('public_ticket', token=token)
             
             # Obtener IP del cliente
@@ -2365,12 +2386,12 @@ def public_ticket_survey(request, token):
     try:
         ticket = get_object_or_404(Ticket, public_share_token=token, is_public_shareable=True)
     except:
-        messages.error(request, 'Ticket no encontrado o no es público.')
+        messages.error(request, gettext('Ticket no encontrado o no es público.'))
         return redirect('ticket_list')
     
     # Verificar si ya tiene encuesta de satisfacción
     if hasattr(ticket, 'satisfaction_survey'):
-        messages.info(request, 'Ya has enviado una encuesta de satisfacción para este ticket.')
+        messages.info(request, gettext('Ya has enviado una encuesta de satisfacción para este ticket.'))
         return redirect('public_ticket', token=token)
     
     if request.method == 'POST':
@@ -2396,11 +2417,11 @@ def public_ticket_survey(request, token):
             
             # Validaciones básicas
             if not client_name or not client_email:
-                messages.error(request, 'Nombre y correo electrónico son obligatorios.')
+                messages.error(request, gettext('Nombre y correo electrónico son obligatorios.'))
                 return redirect('public_ticket_survey', token=token)
             
             if not all([overall_satisfaction, resolution_quality, response_time, communication]):
-                messages.error(request, 'Todas las calificaciones son obligatorias.')
+                messages.error(request, gettext('Todas las calificaciones son obligatorias.'))
                 return redirect('public_ticket_survey', token=token)
             
             # Validar formato de email
@@ -2409,7 +2430,7 @@ def public_ticket_survey(request, token):
             try:
                 validate_email(client_email)
             except ValidationError:
-                messages.error(request, 'Por favor ingresa un correo electrónico válido.')
+                messages.error(request, gettext('Por favor ingresa un correo electrónico válido.'))
                 return redirect('public_ticket_survey', token=token)
             
             # Validar que las calificaciones sean números válidos
@@ -2424,7 +2445,7 @@ def public_ticket_survey(request, token):
                     raise ValueError("Las calificaciones deben estar entre 1 y 5")
                     
             except (ValueError, TypeError):
-                messages.error(request, 'Las calificaciones deben ser números válidos entre 1 y 5.')
+                messages.error(request, gettext('Las calificaciones deben ser números válidos entre 1 y 5.'))
                 return redirect('public_ticket_survey', token=token)
             
             # Obtener IP del cliente
@@ -2504,7 +2525,7 @@ def public_ticket_upload(request, token):
     try:
         ticket = get_object_or_404(Ticket, public_share_token=token, is_public_shareable=True)
     except:
-        messages.error(request, 'Ticket no encontrado o no es público.')
+        messages.error(request, gettext('Ticket no encontrado o no es público.'))
         return redirect('ticket_list')
     
     if request.method == 'POST':
@@ -2516,7 +2537,7 @@ def public_ticket_upload(request, token):
             
             # Validaciones básicas
             if not client_name or not client_email:
-                messages.error(request, 'Nombre y correo electrónico son obligatorios.')
+                messages.error(request, gettext('Nombre y correo electrónico son obligatorios.'))
                 return redirect('public_ticket_upload', token=token)
             
             # Validar formato de email
@@ -2525,13 +2546,13 @@ def public_ticket_upload(request, token):
             try:
                 validate_email(client_email)
             except ValidationError:
-                messages.error(request, 'Por favor ingresa un correo electrónico válido.')
+                messages.error(request, gettext('Por favor ingresa un correo electrónico válido.'))
                 return redirect('public_ticket_upload', token=token)
             
             # Verificar que se haya subido al menos un archivo
             files = request.FILES.getlist('attachments')
             if not files:
-                messages.error(request, 'Debes subir al menos un archivo.')
+                messages.error(request, gettext('Debes subir al menos un archivo.'))
                 return redirect('public_ticket_upload', token=token)
             
             # Validar cada archivo
@@ -2643,7 +2664,7 @@ def user_profile_view(request):
             )
             if profile_form.is_valid():
                 profile_form.save(user=request.user)
-                messages.success(request, 'Tu perfil ha sido actualizado exitosamente.')
+                messages.success(request, gettext('Tu perfil ha sido actualizado exitosamente.'))
                 return redirect('user_profile')
         
         elif 'update_contact_form_toggle' in request.POST:
@@ -2660,7 +2681,7 @@ def user_profile_view(request):
                 user = password_form.save()
                 from django.contrib.auth import update_session_auth_hash
                 update_session_auth_hash(request, user)  # Mantener la sesión activa
-                messages.success(request, 'Tu contraseña ha sido cambiada exitosamente.')
+                messages.success(request, gettext('Tu contraseña ha sido cambiada exitosamente.'))
                 return redirect('user_profile')
         
         elif 'save_signature' in request.POST:
@@ -2673,13 +2694,13 @@ def user_profile_view(request):
                 img_bytes = base64.b64decode(sig_b64[len(prefix):])
                 filename = f'firma_{request.user.pk}.png'
                 profile.signature_image.save(filename, ContentFile(img_bytes), save=True)
-                messages.success(request, 'Firma guardada correctamente.')
+                messages.success(request, gettext('Firma guardada correctamente.'))
             return redirect('user_profile')
 
         elif 'regenerate_token' in request.POST:
             # Regenerar token público
             new_token = profile.regenerate_token()
-            messages.success(request, 'Tu token de acceso público ha sido regenerado.')
+            messages.success(request, gettext('Tu token de acceso público ha sido regenerado.'))
             return redirect('user_profile')
     
     # Construir URL pública para tareas
@@ -2715,7 +2736,7 @@ def user_profile_view(request):
         'public_contact_form_url': public_contact_form_url,
         'contact_form_stats': contact_form_stats,
         'is_agent': utils.is_agent(request.user),
-        'page_title': 'Mi Perfil'
+        'page_title': gettext('Mi Perfil')
     }
     return render(request, 'tickets/user_profile.html', context)
 
@@ -2780,7 +2801,7 @@ def notes_list_view(request):
         'search_query': search_query,
         'user_filter': user_filter,
         'privacy_filter': privacy_filter,
-        'page_title': 'Notas Internas'
+        'page_title': gettext('Notas Internas')
     }
     return render(request, 'tickets/notes_list.html', context)
 
@@ -2811,7 +2832,7 @@ def note_detail_view(request, note_id):
     
     # Verificar permisos usando el método del modelo
     if not note.can_view(request.user):
-        messages.error(request, 'No tienes permisos para ver esta nota.')
+        messages.error(request, gettext('No tienes permisos para ver esta nota.'))
         return redirect('notes_list')
     
     context = {
@@ -2887,7 +2908,7 @@ def note_create_view(request):
     
     context = {
         'form': form,
-        'page_title': 'Crear Nota Interna'
+        'page_title': gettext('Crear Nota Interna')
     }
     return render(request, 'tickets/note_form.html', context)
 
@@ -2909,7 +2930,7 @@ def note_edit_view(request, note_id):
     
     # Verificar permisos usando el método del modelo
     if not note.can_edit(request.user):
-        messages.error(request, 'No tienes permisos para editar esta nota.')
+        messages.error(request, gettext('No tienes permisos para editar esta nota.'))
         return redirect('note_detail', note_id=note.id)
     
     if request.method == 'POST':
@@ -2953,7 +2974,7 @@ def note_delete_view(request, note_id):
     
     # Verificar permisos usando el método del modelo
     if not note.can_delete(request.user):
-        messages.error(request, 'No tienes permisos para eliminar esta nota.')
+        messages.error(request, gettext('No tienes permisos para eliminar esta nota.'))
         return redirect('note_detail', note_id=note.id)
     
     if request.method == 'POST':
@@ -2995,7 +3016,7 @@ def note_pdf_view(request, note_id):
     
     # Verificar permisos usando el método del modelo
     if not note.can_view(request.user):
-        messages.error(request, 'No tienes permisos para ver esta nota.')
+        messages.error(request, gettext('No tienes permisos para ver esta nota.'))
         return redirect('notes_list')
     
     # Crear el PDF
@@ -3097,19 +3118,19 @@ def note_generate_share_link(request, note_id):
     
     # Verificar permisos usando el método del modelo
     if not note.can_edit(request.user):
-        messages.error(request, 'No tienes permisos para generar enlace de esta nota.')
+        messages.error(request, gettext('No tienes permisos para generar enlace de esta nota.'))
         return redirect('note_detail', note_id=note_id)
     
     if request.method == 'POST':
         if not note.share_token:
             # Generar token si no existe
             note.generate_share_token()
-            messages.success(request, 'Enlace para compartir generado exitosamente.')
+            messages.success(request, gettext('Enlace para compartir generado exitosamente.'))
         else:
             # Si ya existe, solo activar compartir
             note.is_shareable = True
             note.save()
-            messages.info(request, 'Enlace para compartir activado.')
+            messages.info(request, gettext('Enlace para compartir activado.'))
     
     return redirect('note_detail', note_id=note_id)
 
@@ -3131,12 +3152,12 @@ def note_disable_sharing(request, note_id):
     
     # Verificar permisos usando el método del modelo
     if not note.can_edit(request.user):
-        messages.error(request, 'No tienes permisos para deshabilitar enlace de esta nota.')
+        messages.error(request, gettext('No tienes permisos para deshabilitar enlace de esta nota.'))
         return redirect('note_detail', note_id=note_id)
     
     if request.method == 'POST':
         note.disable_sharing()
-        messages.warning(request, 'Enlace para compartir deshabilitado.')
+        messages.warning(request, gettext('Enlace para compartir deshabilitado.'))
     
     return redirect('note_detail', note_id=note_id)
 
@@ -3158,13 +3179,13 @@ def note_regenerate_share_link(request, note_id):
     
     # Verificar permisos usando el método del modelo
     if not note.can_edit(request.user):
-        messages.error(request, 'No tienes permisos para regenerar enlace de esta nota.')
+        messages.error(request, gettext('No tienes permisos para regenerar enlace de esta nota.'))
         return redirect('note_detail', note_id=note_id)
     
     if request.method == 'POST':
         # Generar nuevo token
         note.generate_share_token()
-        messages.info(request, 'Enlace para compartir regenerado. El enlace anterior ya no es válido.')
+        messages.info(request, gettext('Enlace para compartir regenerado. El enlace anterior ya no es válido.'))
     
     return redirect('note_detail', note_id=note_id)
 
@@ -3314,11 +3335,11 @@ def user_notes_view(request, user_id=None):
         notes = UserNote.objects.filter(user=target_user, is_private=False)
     else:
         # Otros usuarios no pueden ver las notas
-        messages.error(request, 'No tienes permisos para ver estas notas.')
+        messages.error(request, gettext('No tienes permisos para ver estas notas.'))
         return redirect('dashboard')
     
     if not can_view_notes:
-        messages.error(request, 'No tienes permisos para ver estas notas.')
+        messages.error(request, gettext('No tienes permisos para ver estas notas.'))
         return redirect('dashboard')
     
     # Ordenar por fecha de creación descendente
@@ -3425,7 +3446,7 @@ def time_clock_view(request):
         'can_start': not active_entry,
         'can_end': bool(active_entry),
         'public_access': public_access,
-        'page_title': 'Control de Horario'
+        'page_title': gettext('Control de Horario')
     }
     
     return render(request, 'tickets/time_clock.html', context)
@@ -3485,7 +3506,7 @@ def time_start_work(request):
     
     context = {
         'form': form,
-        'page_title': 'Iniciar Jornada'
+        'page_title': gettext('Iniciar Jornada')
     }
     return render(request, 'tickets/time_start.html', context)
 
@@ -3498,7 +3519,7 @@ def time_end_work(request):
     # Verificar que hay una jornada activa
     active_entry = TimeEntry.get_active_entry_for_agent(request.user)
     if not active_entry:
-        messages.error(request, 'No tienes una jornada activa para finalizar.')
+        messages.error(request, gettext('No tienes una jornada activa para finalizar.'))
         return redirect('time_clock')
     
     if request.method == 'POST':
@@ -3526,7 +3547,7 @@ def time_end_work(request):
     context = {
         'form': form,
         'active_entry': active_entry,
-        'page_title': 'Finalizar Jornada'
+        'page_title': gettext('Finalizar Jornada')
     }
     return render(request, 'tickets/time_end.html', context)
 
@@ -3550,7 +3571,7 @@ def time_entries_list(request):
             fecha_desde_dt = datetime.strptime(fecha_desde, '%Y-%m-%d').date()
             entries = entries.filter(fecha_entrada__date__gte=fecha_desde_dt)
         except ValueError:
-            messages.warning(request, 'Formato de fecha inválido')
+            messages.warning(request, gettext('Formato de fecha inválido'))
     
     if fecha_hasta:
         try:
@@ -3558,7 +3579,7 @@ def time_entries_list(request):
             fecha_hasta_dt = datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
             entries = entries.filter(fecha_entrada__date__lte=fecha_hasta_dt)
         except ValueError:
-            messages.warning(request, 'Formato de fecha inválido')
+            messages.warning(request, gettext('Formato de fecha inválido'))
     
     # Ordenar por fecha descendente
     entries = entries.order_by('-fecha_entrada')
@@ -3583,7 +3604,7 @@ def time_entries_list(request):
         'fecha_hasta': fecha_hasta,
         'total_horas': total_horas,
         'total_dias': total_dias,
-        'page_title': 'Mis Registros de Horario'
+        'page_title': gettext('Mis Registros de Horario')
     }
     
     return render(request, 'tickets/time_entries_list.html', context)
@@ -3753,7 +3774,7 @@ def time_entry_detail(request, entry_id):
     
     # Verificar permisos - solo el propietario puede ver sus registros
     if not entry.can_view(request.user):
-        messages.error(request, 'No tienes permisos para ver este registro.')
+        messages.error(request, gettext('No tienes permisos para ver este registro.'))
         return redirect('time_entries_list')
     
     context = {
@@ -3773,7 +3794,7 @@ def time_entry_edit(request, entry_id):
     
     # Verificar permisos
     if not entry.can_edit(request.user):
-        messages.error(request, 'No tienes permisos para editar este registro.')
+        messages.error(request, gettext('No tienes permisos para editar este registro.'))
         return redirect('time_entry_detail', entry_id=entry.id)
     
     if request.method == 'POST':
@@ -3782,7 +3803,7 @@ def time_entry_edit(request, entry_id):
             # Establecer el usuario para el log de auditoría
             form._user = request.user
             form.save()
-            messages.success(request, 'Registro actualizado exitosamente.')
+            messages.success(request, gettext('Registro actualizado exitosamente.'))
             return redirect('time_entry_detail', entry_id=entry.id)
     else:
         form = TimeEntryEditForm(instance=entry, user=request.user)
@@ -3809,7 +3830,7 @@ def time_entry_audit_log(request, entry_id):
     
     # Verificar permisos
     if not entry.can_view(request.user):
-        messages.error(request, 'No tienes permisos para ver este registro.')
+        messages.error(request, gettext('No tienes permisos para ver este registro.'))
         return redirect('time_entries_list')
     
     # Obtener todos los logs de auditoría
@@ -4019,7 +4040,7 @@ def public_time_access_list(request):
         'page_obj': page_obj,
         'search': search,
         'status': status,
-        'page_title': 'Gestión de Accesos Públicos de Horario'
+        'page_title': gettext('Gestión de Accesos Públicos de Horario')
     }
     
     return render(request, 'tickets/public_time_access_list.html', context)
@@ -4098,7 +4119,7 @@ def public_time_access_delete(request, access_id):
     
     context = {
         'access': access,
-        'page_title': 'Confirmar Eliminación'
+        'page_title': gettext('Confirmar Eliminación')
     }
     
     return render(request, 'tickets/public_time_access_delete.html', context)
@@ -4137,7 +4158,7 @@ def project_list(request):
     system_config = SystemConfiguration.get_config()
     
     context = {
-        'page_title': 'Gestión de Proyectos',
+        'page_title': gettext('Gestión de Proyectos'),
         'page_obj': page_obj,
         'search_query': search_query,
         'status_filter': status_filter,
@@ -4162,7 +4183,7 @@ def project_create(request):
         form = ProjectForm()
     
     context = {
-        'page_title': 'Crear Nuevo Proyecto',
+        'page_title': gettext('Crear Nuevo Proyecto'),
         'form': form,
         'action': 'create'
     }
@@ -4178,7 +4199,7 @@ def project_edit(request, project_id):
     
     # Verificar permisos
     if not project.can_edit(request.user):
-        messages.error(request, 'No tienes permisos para editar este proyecto.')
+        messages.error(request, gettext('No tienes permisos para editar este proyecto.'))
         return redirect('project_list')
     
     if request.method == 'POST':
@@ -4237,7 +4258,7 @@ def project_delete(request, project_id):
     
     # Verificar permisos
     if not project.can_delete(request.user):
-        messages.error(request, 'No tienes permisos para eliminar este proyecto.')
+        messages.error(request, gettext('No tienes permisos para eliminar este proyecto.'))
         return redirect('project_list')
     
     # Verificar si hay registros de tiempo asociados
@@ -4269,7 +4290,7 @@ def project_generate_public_token(request, project_id):
     
     # Verificar permisos
     if not project.can_edit(request.user):
-        messages.error(request, 'No tienes permisos para gestionar este proyecto.')
+        messages.error(request, gettext('No tienes permisos para gestionar este proyecto.'))
         return redirect('project_detail', project_id=project.id)
     
     if request.method == 'POST':
@@ -4293,7 +4314,7 @@ def project_duplicate(request, project_id):
     
     # Verificar permisos
     if not original_project.can_edit(request.user):
-        messages.error(request, 'No tienes permisos para duplicar este proyecto.')
+        messages.error(request, gettext('No tienes permisos para duplicar este proyecto.'))
         return redirect('project_detail', project_id=project_id)
     
     if request.method == 'POST':
@@ -4509,7 +4530,7 @@ def cart_remove(request, product_id):
         cart.pop(str(product_id), None)
         request.session['cart'] = cart
         request.session.modified = True
-        messages.success(request, 'Producto eliminado del carrito.')
+        messages.success(request, gettext('Producto eliminado del carrito.'))
     return redirect('cart_view')
 
 
@@ -4527,7 +4548,7 @@ def cart_update(request):
                     cart.pop(key, None)
         request.session['cart'] = cart
         request.session.modified = True
-        messages.success(request, 'Carrito actualizado.')
+        messages.success(request, gettext('Carrito actualizado.'))
     return redirect('cart_view')
 
 
@@ -4537,7 +4558,7 @@ def cart_checkout(request):
     from decimal import Decimal
     cart = request.session.get('cart', {})
     if not cart:
-        messages.warning(request, 'Tu carrito está vacío.')
+        messages.warning(request, gettext('Tu carrito está vacío.'))
         return redirect('cart_view')
 
     config = SystemConfiguration.objects.first()
@@ -4551,7 +4572,7 @@ def cart_checkout(request):
         notes = request.POST.get('notes', '').strip()
 
         if not name or not email:
-            messages.error(request, 'Nombre y correo son obligatorios.')
+            messages.error(request, gettext('Nombre y correo son obligatorios.'))
         else:
             # Calcular total
             total = Decimal('0')
@@ -4742,11 +4763,11 @@ def app_catalog_create(request):
             catalog = form.save(commit=False)
             catalog.created_by = request.user
             catalog.save()
-            messages.success(request, 'Catálogo creado correctamente.')
+            messages.success(request, gettext('Catálogo creado correctamente.'))
             return redirect('app_catalog_detail', pk=catalog.pk)
     else:
         form = AppCatalogForm()
-    return render(request, 'tickets/app_catalog_form.html', {'form': form, 'page_title': 'Nuevo Catálogo'})
+    return render(request, 'tickets/app_catalog_form.html', {'form': form, 'page_title': gettext('Nuevo Catálogo')})
 
 
 @login_required
@@ -4792,11 +4813,11 @@ def app_catalog_edit(request, pk):
         form = AppCatalogForm(request.POST, instance=catalog)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Catálogo actualizado.')
+            messages.success(request, gettext('Catálogo actualizado.'))
             return redirect('app_catalog_detail', pk=catalog.pk)
     else:
         form = AppCatalogForm(instance=catalog)
-    return render(request, 'tickets/app_catalog_form.html', {'form': form, 'catalog': catalog, 'page_title': 'Editar Catálogo'})
+    return render(request, 'tickets/app_catalog_form.html', {'form': form, 'catalog': catalog, 'page_title': gettext('Editar Catálogo')})
 
 
 @login_required
@@ -4806,7 +4827,7 @@ def app_catalog_delete(request, pk):
     catalog = get_object_or_404(AppCatalog, pk=pk)
     if request.method == 'POST':
         catalog.delete()
-        messages.success(request, 'Catálogo eliminado.')
+        messages.success(request, gettext('Catálogo eliminado.'))
         return redirect('app_catalog_list')
     return render(request, 'tickets/app_catalog_confirm_delete.html', {'catalog': catalog})
 
@@ -4824,14 +4845,14 @@ def app_catalog_line_add(request, catalog_pk):
             line.catalog = catalog
             line.order = catalog.lines.count()
             line.save()
-            messages.success(request, 'Producto agregado al catálogo.')
+            messages.success(request, gettext('Producto agregado al catálogo.'))
             return redirect('app_catalog_detail', pk=catalog.pk)
     else:
         form = AppCatalogLineForm()
     return render(request, 'tickets/app_catalog_line_form.html', {
         'form': form,
         'catalog': catalog,
-        'page_title': 'Agregar Producto',
+        'page_title': gettext('Agregar Producto'),
     })
 
 
@@ -4842,7 +4863,7 @@ def app_catalog_line_delete(request, pk):
     line = get_object_or_404(AppCatalogLine, pk=pk)
     catalog_pk = line.catalog.pk
     line.delete()
-    messages.success(request, 'Línea eliminada.')
+    messages.success(request, gettext('Línea eliminada.'))
     return redirect('app_catalog_detail', pk=catalog_pk)
 
 
@@ -4857,7 +4878,7 @@ def cart_quotation_list(request):
     from .models import CartQuotation
     quotations = CartQuotation.objects.all().order_by('-created_at')
     return render(request, 'tickets/cart_quotation_list.html', {
-        'page_title': 'Cotizaciones',
+        'page_title': gettext('Cotizaciones'),
         'quotations': quotations,
     })
 
@@ -4868,7 +4889,7 @@ def product_category_list(request):
     from .models import ProductCategory
     categories = ProductCategory.objects.all().order_by('name')
     return render(request, 'tickets/product_category_list.html', {
-        'page_title': 'Categorías de Producto',
+        'page_title': gettext('Categorías de Producto'),
         'categories': categories,
     })
 
@@ -4881,12 +4902,12 @@ def product_category_create(request):
         form = ProductCategoryForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Categoría creada correctamente.')
+            messages.success(request, gettext('Categoría creada correctamente.'))
             return redirect('product_category_list')
     else:
         form = ProductCategoryForm()
     return render(request, 'tickets/product_category_form.html', {
-        'page_title': 'Nueva Categoría',
+        'page_title': gettext('Nueva Categoría'),
         'form': form,
     })
 
@@ -4901,7 +4922,7 @@ def product_category_edit(request, pk):
         form = ProductCategoryForm(request.POST, instance=category)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Categoría actualizada correctamente.')
+            messages.success(request, gettext('Categoría actualizada correctamente.'))
             return redirect('product_category_list')
     else:
         form = ProductCategoryForm(instance=category)
@@ -4923,7 +4944,7 @@ def product_category_delete(request, pk):
         messages.success(request, f'Categoría "{name}" eliminada.')
         return redirect('product_category_list')
     return render(request, 'tickets/product_category_confirm_delete.html', {
-        'page_title': 'Eliminar Categoría',
+        'page_title': gettext('Eliminar Categoría'),
         'category': category,
     })
 
@@ -4970,7 +4991,7 @@ def product_list(request):
     page_obj = paginator.get_page(page_number)
     
     context = {
-        'page_title': 'Gestión de Productos',
+        'page_title': gettext('Gestión de Productos'),
         'page_obj': page_obj,
         'search': search,
         'status': status,
@@ -5005,7 +5026,7 @@ def product_create(request):
         form = ProductForm()
     
     context = {
-        'page_title': 'Crear Producto',
+        'page_title': gettext('Crear Producto'),
         'form': form,
         'currency_symbol': currency_symbol,
     }
@@ -5075,9 +5096,9 @@ def product_video_add(request, product_id):
         title = request.POST.get('title', '').strip()
         if url:
             ProductVideo.objects.create(product=product, url=url, title=title)
-            messages.success(request, 'Video agregado correctamente.')
+            messages.success(request, gettext('Video agregado correctamente.'))
         else:
-            messages.error(request, 'La URL es obligatoria.')
+            messages.error(request, gettext('La URL es obligatoria.'))
     return redirect('product_detail', product_id=product.pk)
 
 
@@ -5090,7 +5111,7 @@ def product_video_delete(request, pk):
     product_id = video.product.pk
     if request.method == 'POST':
         video.delete()
-        messages.success(request, 'Video eliminado.')
+        messages.success(request, gettext('Video eliminado.'))
     return redirect('product_detail', product_id=product_id)
 
 
@@ -5194,7 +5215,7 @@ def attendance_overview(request):
     ).order_by('first_name', 'username')
     
     context = {
-        'page_title': 'Control de Asistencia General',
+        'page_title': gettext('Control de Asistencia General'),
         'page_obj': page_obj,
         'total_entries': total_entries,
         'active_entries': active_entries,
@@ -5249,7 +5270,7 @@ def company_list_view(request):
     active_companies = Company.objects.filter(is_active=True).count()
     
     context = {
-        'page_title': 'Gestión de Empresas',
+        'page_title': gettext('Gestión de Empresas'),
         'page_obj': page_obj,
         'search_query': search_query,
         'status_filter': status_filter,
@@ -5274,7 +5295,7 @@ def company_create_view(request):
         form = CompanyForm()
     
     context = {
-        'page_title': 'Crear Nueva Empresa',
+        'page_title': gettext('Crear Nueva Empresa'),
         'form': form,
         'is_create': True,
     }
@@ -5297,7 +5318,7 @@ def company_detail_view(request, company_id):
     # Regenerar manualmente la URL pública (invalida el enlace anterior)
     if request.method == 'POST' and request.POST.get('action') == 'regenerate_public_token':
         company.regenerate_public_token()
-        messages.success(request, 'Se generó una nueva URL pública. El enlace anterior ya no funciona.')
+        messages.success(request, gettext('Se generó una nueva URL pública. El enlace anterior ya no funciona.'))
         return redirect(f"{reverse('company_detail', kwargs={'company_id': company.id})}?public_url=1")
 
     # Manejar actualización de objetivos empresariales (POST)
@@ -5308,7 +5329,7 @@ def company_detail_view(request, company_id):
             company.save()
             messages.success(request, f'✅ Objetivos empresariales de "{company.name}" actualizados exitosamente.')
         else:
-            messages.error(request, '❌ No tienes permisos para modificar esta empresa.')
+            messages.error(request, gettext('❌ No tienes permisos para modificar esta empresa.'))
         return redirect('company_detail', company_id=company.id)
     
     # Estadísticas de la empresa
@@ -5448,7 +5469,7 @@ def system_configuration_view(request):
             config.paypal_payment_email = request.POST.get('paypal_payment_email', '').strip()
             config.forma_trabajo_url = request.POST.get('forma_trabajo_url', '').strip()
             config.save(update_fields=['contact_name', 'contact_email', 'paypal_payment_email', 'forma_trabajo_url'])
-            messages.success(request, 'Datos de contacto de cotizaciones actualizados.')
+            messages.success(request, gettext('Datos de contacto de cotizaciones actualizados.'))
             return redirect(reverse('system_configuration') + '?tab=cotizaciones')
 
         # Verificar si es una prueba de email
@@ -5473,9 +5494,9 @@ def system_configuration_view(request):
                 result = send_contact_notification(contacto_prueba)
                 
                 if result:
-                    messages.success(request, '✅ Email de prueba enviado exitosamente. Revisa los emails configurados.')
+                    messages.success(request, gettext('✅ Email de prueba enviado exitosamente. Revisa los emails configurados.'))
                 else:
-                    messages.error(request, '❌ Error enviando el email de prueba. Revisa la configuración.')
+                    messages.error(request, gettext('❌ Error enviando el email de prueba. Revisa la configuración.'))
                     
             except Exception as e:
                 messages.error(request, f'❌ Error en la prueba de email: {str(e)}')
@@ -5486,7 +5507,7 @@ def system_configuration_view(request):
         form = SystemConfigurationForm(request.POST, instance=config)
         if form.is_valid():
             form.save()
-            messages.success(request, 'La configuración del sistema ha sido actualizada exitosamente.')
+            messages.success(request, gettext('La configuración del sistema ha sido actualizada exitosamente.'))
             return redirect('system_configuration')
     else:
         form = SystemConfigurationForm(instance=config)
@@ -5504,7 +5525,7 @@ def system_configuration_view(request):
         api_documentation = "Documentación no disponible."
     
     context = {
-        'page_title': 'Configuración del Sistema',
+        'page_title': gettext('Configuración del Sistema'),
         'form': form,
         'config': config,
         'api_documentation': api_documentation,
@@ -5561,7 +5582,7 @@ def document_list_view(request):
     all_tags = sorted(list(all_tags))
     
     context = {
-        'page_title': 'Gestión de Documentos',
+        'page_title': gettext('Gestión de Documentos'),
         'page_obj': page_obj,
         'search_query': search_query,
         'company_filter': company_filter,
@@ -5590,7 +5611,7 @@ def document_create_view(request):
         form = DocumentForm()
     
     context = {
-        'page_title': 'Subir Nuevo Documento',
+        'page_title': gettext('Subir Nuevo Documento'),
         'form': form,
         'is_create': True,
     }
@@ -5770,7 +5791,7 @@ def url_manager_list_view(request):
         'search_query': form.cleaned_data.get('search', '') if form.is_valid() else '',
         'category_filter': form.cleaned_data.get('category', '') if form.is_valid() else '',
         'status_filter': form.cleaned_data.get('is_active', '') if form.is_valid() else '',
-        'page_title': 'Gestión de URLs'
+        'page_title': gettext('Gestión de URLs')
     }
     
     return render(request, 'tickets/url_manager_list.html', context)
@@ -5797,7 +5818,7 @@ def url_manager_create_view(request):
     
     context = {
         'form': form,
-        'page_title': 'Crear Nueva URL',
+        'page_title': gettext('Crear Nueva URL'),
         'action': 'Crear'
     }
     
@@ -5917,7 +5938,7 @@ def api_endpoint_list_view(request):
 
     context = {
         'api_endpoints': api_endpoints,
-        'page_title': 'APIs',
+        'page_title': gettext('APIs'),
     }
     return render(request, 'tickets/api_endpoint_list.html', context)
 
@@ -5943,7 +5964,7 @@ def api_endpoint_create_view(request):
 
     context = {
         'form': form,
-        'page_title': 'Crear Nueva API',
+        'page_title': gettext('Crear Nueva API'),
         'action': 'Crear',
     }
     return render(request, 'tickets/api_endpoint_form.html', context)
@@ -6084,7 +6105,7 @@ def work_order_list_view(request):
     context = {
         'page_obj': page_obj,
         'filter_form': form,
-        'page_title': 'Órdenes de Trabajo'
+        'page_title': gettext('Órdenes de Trabajo')
     }
     
     return render(request, 'tickets/work_order_list.html', context)
@@ -6107,7 +6128,7 @@ def work_order_create_view(request):
     
     context = {
         'form': form,
-        'page_title': 'Crear Orden de Trabajo'
+        'page_title': gettext('Crear Orden de Trabajo')
     }
     
     return render(request, 'tickets/work_order_form.html', context)
@@ -6136,7 +6157,7 @@ def work_order_edit_view(request, pk):
     
     # Verificar permisos
     if not work_order.can_edit(request.user):
-        messages.error(request, 'No tienes permisos para editar esta orden de trabajo.')
+        messages.error(request, gettext('No tienes permisos para editar esta orden de trabajo.'))
         return redirect('work_order_detail', pk=work_order.pk)
     
     if request.method == 'POST':
@@ -6165,7 +6186,7 @@ def work_order_delete_view(request, pk):
     
     # Verificar permisos
     if not work_order.can_delete(request.user):
-        messages.error(request, 'No puedes eliminar esta orden de trabajo. Solo se pueden eliminar órdenes en estado borrador.')
+        messages.error(request, gettext('No puedes eliminar esta orden de trabajo. Solo se pueden eliminar órdenes en estado borrador.'))
         return redirect('work_order_detail', pk=work_order.pk)
     
     if request.method == 'POST':
@@ -6232,9 +6253,9 @@ def work_order_public_view(request, token):
             if work_order.status == 'draft':
                 work_order.status = 'accepted'
                 work_order.save()
-                messages.success(request, '¡Orden de trabajo aprobada exitosamente!')
+                messages.success(request, gettext('¡Orden de trabajo aprobada exitosamente!'))
             else:
-                messages.info(request, 'Esta orden ya ha sido procesada.')
+                messages.info(request, gettext('Esta orden ya ha sido procesada.'))
             return redirect('public_work_order', token=token)
         
         # Manejar envío de calificación
@@ -6244,7 +6265,7 @@ def work_order_public_view(request, token):
                 rating = rating_form.save(commit=False)
                 rating.work_order = work_order
                 rating.save()
-                messages.success(request, '¡Gracias por tu calificación!')
+                messages.success(request, gettext('¡Gracias por tu calificación!'))
                 return redirect('public_work_order', token=token)
         
         # Manejar envío de comentario
@@ -6255,7 +6276,7 @@ def work_order_public_view(request, token):
                 comment.work_order = work_order
                 comment.is_public = True
                 comment.save()
-                messages.success(request, '¡Comentario agregado exitosamente!')
+                messages.success(request, gettext('¡Comentario agregado exitosamente!'))
                 return redirect('public_work_order', token=token)
     
     # Obtener otras órdenes de trabajo de la misma empresa
@@ -6319,7 +6340,7 @@ def work_order_public_create_view(request, token):
                     work_order.created_by = first_staff
             
             work_order.save()
-            messages.success(request, '¡Nueva orden de trabajo creada exitosamente! Te contactaremos pronto.')
+            messages.success(request, gettext('¡Nueva orden de trabajo creada exitosamente! Te contactaremos pronto.'))
             
             # Redirigir a la nueva orden creada
             return redirect('public_work_order', token=work_order.public_share_token)
@@ -6329,7 +6350,7 @@ def work_order_public_create_view(request, token):
     context = {
         'form': form,
         'original_work_order': original_work_order,
-        'page_title': 'Crear Nueva Orden de Trabajo',
+        'page_title': gettext('Crear Nueva Orden de Trabajo'),
         'is_public_view': True
     }
     
@@ -6445,7 +6466,7 @@ def daily_report_view(request):
         'fecha_hasta': fecha_hasta,
         'usuario_seleccionado': usuario_id,
         'usuario_nombre': usuario_nombre,
-        'page_title': 'Reporte de Parte Diario',
+        'page_title': gettext('Reporte de Parte Diario'),
         'total_entries': total_entries,
         'entries_in_progress': entries_in_progress,
         'total_hours': total_hours,
@@ -6736,7 +6757,7 @@ def task_create_view(request):
     
     context = {
         'form': form,
-        'title': 'Crear Nueva Tarea'
+        'title': gettext('Crear Nueva Tarea')
     }
     return render(request, 'tickets/task_form.html', context)
 
@@ -6759,7 +6780,7 @@ def task_edit_view(request, pk):
     
     # Solo el creador o agentes pueden editar
     if not is_agent(request.user) and task.created_by != request.user:
-        messages.error(request, 'No tienes permisos para editar esta tarea.')
+        messages.error(request, gettext('No tienes permisos para editar esta tarea.'))
         return redirect('task_detail', pk=task.pk)
     
     if request.method == 'POST':
@@ -6788,7 +6809,7 @@ def task_delete_view(request, pk):
     
     # Solo el creador o agentes pueden eliminar
     if not is_agent(request.user) and task.created_by != request.user:
-        messages.error(request, 'No tienes permisos para eliminar esta tarea.')
+        messages.error(request, gettext('No tienes permisos para eliminar esta tarea.'))
         return redirect('task_detail', pk=task.pk)
     
     if request.method == 'POST':
@@ -6968,7 +6989,7 @@ def create_task_session(request):
             )
             return redirect('view_task_session', session_id=session.id)
         else:
-            messages.error(request, 'Debes seleccionar una fecha.')
+            messages.error(request, gettext('Debes seleccionar una fecha.'))
     
     # Pasar la fecha de hoy al template
     today = timezone.now().date()
@@ -6984,7 +7005,7 @@ def view_task_session(request, session_id):
             user=request.user
         )
     except DailyTaskSession.DoesNotExist:
-        messages.error(request, 'Gestión de tareas no encontrada.')
+        messages.error(request, gettext('Gestión de tareas no encontrada.'))
         return redirect('daily_task_management')
     
     # Obtener items de la sesión
@@ -7006,7 +7027,7 @@ def delete_task_session(request, session_id):
         
         # Verificar permisos: solo el propietario o superusuario puede eliminar
         if session.user != request.user and not request.user.is_superuser:
-            messages.error(request, 'No tienes permisos para eliminar esta gestión.')
+            messages.error(request, gettext('No tienes permisos para eliminar esta gestión.'))
             return redirect('daily_task_management')
         
         if request.method == 'POST':
@@ -7023,7 +7044,7 @@ def delete_task_session(request, session_id):
         return render(request, 'tickets/delete_task_session.html', context)
         
     except DailyTaskSession.DoesNotExist:
-        messages.error(request, 'Gestión de tareas no encontrada.')
+        messages.error(request, gettext('Gestión de tareas no encontrada.'))
         return redirect('daily_task_management')
 
 
@@ -7056,10 +7077,10 @@ def add_task_to_daily_session(request):
                 
                 messages.success(request, f'Tarea "{task.title}" agregada a tu plan del día.')
             else:
-                messages.warning(request, 'Esta tarea ya está en tu plan del día.')
+                messages.warning(request, gettext('Esta tarea ya está en tu plan del día.'))
                 
         except Task.DoesNotExist:
-            messages.error(request, 'Tarea no encontrada o no tienes permisos.')
+            messages.error(request, gettext('Tarea no encontrada o no tienes permisos.'))
     
     return redirect('daily_task_management')
 
@@ -7084,7 +7105,7 @@ def toggle_daily_task_completion(request, item_id):
         return redirect('view_task_session', session_id=item.session.id)
         
     except DailyTaskItem.DoesNotExist:
-        messages.error(request, 'Item no encontrado.')
+        messages.error(request, gettext('Item no encontrado.'))
         return redirect('daily_task_management')
 
 
@@ -7101,7 +7122,7 @@ def remove_task_from_daily_session(request, item_id):
         messages.info(request, f'Tarea "{task_title}" removida de tu plan del día.')
         
     except DailyTaskItem.DoesNotExist:
-        messages.error(request, 'Item no encontrado.')
+        messages.error(request, gettext('Item no encontrado.'))
     
     return redirect('daily_task_management')
 
@@ -7121,7 +7142,7 @@ def update_daily_session_notes(request):
         session.notes = notes
         session.save()
         
-        messages.success(request, 'Notas del día actualizadas.')
+        messages.success(request, gettext('Notas del día actualizadas.'))
     
     return redirect('daily_task_management')
 
@@ -7244,11 +7265,11 @@ def refresh_daily_tasks(request):
         else:
             messages.info(
                 request, 
-                'No hay nuevas tareas relevantes para agregar hoy.'
+                gettext('No hay nuevas tareas relevantes para agregar hoy.')
             )
             
     except DailyTaskSession.DoesNotExist:
-        messages.error(request, 'No tienes una sesión activa para hoy.')
+        messages.error(request, gettext('No tienes una sesión activa para hoy.'))
     
     return redirect('daily_task_management')
 
@@ -7305,7 +7326,7 @@ def task_control_complete(request, pk):
     
     # Verificar que el usuario esté asignado a la tarea
     if request.user not in task.assigned_users.all():
-        messages.error(request, 'No tienes permisos para completar esta tarea.')
+        messages.error(request, gettext('No tienes permisos para completar esta tarea.'))
         return redirect('task_control_dashboard')
     
     if request.method == 'POST':
@@ -7327,7 +7348,7 @@ def task_control_start(request, pk):
     
     # Verificar que el usuario esté asignado a la tarea
     if request.user not in task.assigned_users.all():
-        messages.error(request, 'No tienes permisos para modificar esta tarea.')
+        messages.error(request, gettext('No tienes permisos para modificar esta tarea.'))
         return redirect('task_control_dashboard')
     
     if request.method == 'POST':
@@ -7340,7 +7361,7 @@ def task_control_start(request, pk):
                 f'Has comenzado a trabajar en la tarea "{task.title}".'
             )
         else:
-            messages.warning(request, 'Esta tarea ya está en progreso o completada.')
+            messages.warning(request, gettext('Esta tarea ya está en progreso o completada.'))
     
     return redirect('task_control_dashboard')
 
@@ -7352,7 +7373,7 @@ def task_control_pause(request, pk):
     
     # Verificar que el usuario esté asignado a la tarea
     if request.user not in task.assigned_users.all():
-        messages.error(request, 'No tienes permisos para modificar esta tarea.')
+        messages.error(request, gettext('No tienes permisos para modificar esta tarea.'))
         return redirect('task_control_dashboard')
     
     if request.method == 'POST':
@@ -7365,7 +7386,7 @@ def task_control_pause(request, pk):
                 f'Has pausado la tarea "{task.title}". Puedes retomarla cuando quieras.'
             )
         else:
-            messages.warning(request, 'Solo puedes pausar tareas que estén en progreso.')
+            messages.warning(request, gettext('Solo puedes pausar tareas que estén en progreso.'))
     
     return redirect('task_control_dashboard')
 
@@ -7514,7 +7535,7 @@ def chat_list_view(request):
     
     context = {
         'rooms': user_rooms,
-        'page_title': 'Chat - Mensajes',
+        'page_title': gettext('Chat - Mensajes'),
     }
     
     return render(request, 'tickets/chat_list.html', context)
@@ -7566,7 +7587,7 @@ def chat_start_conversation(request, user_id):
     
     # Verificar que no es el mismo usuario
     if other_user == request.user:
-        messages.error(request, 'No puedes iniciar una conversación contigo mismo.')
+        messages.error(request, gettext('No puedes iniciar una conversación contigo mismo.'))
         return redirect('chat_list')
     
     # Buscar si ya existe una sala 1:1 entre estos usuarios
@@ -7599,7 +7620,7 @@ def chat_create_group(request):
     
     context = {
         'form': form,
-        'page_title': 'Crear Grupo de Chat',
+        'page_title': gettext('Crear Grupo de Chat'),
     }
     
     return render(request, 'tickets/chat_create_group.html', context)
@@ -7614,7 +7635,7 @@ def chat_users_list(request):
     
     context = {
         'users': users,
-        'page_title': 'Usuarios - Chat',
+        'page_title': gettext('Usuarios - Chat'),
     }
     
     return render(request, 'tickets/chat_users.html', context)
@@ -7695,7 +7716,7 @@ def pdf_get_pages_view(request):
     """Vista para extraer páginas específicas de un PDF"""
     if request.method == 'POST':
         if 'pdf_file' not in request.FILES:
-            messages.error(request, 'No se ha seleccionado ningún archivo PDF.')
+            messages.error(request, gettext('No se ha seleccionado ningún archivo PDF.'))
             return render(request, 'tickets/pdf_get_pages.html')
         
         pdf_file = request.FILES['pdf_file']
@@ -7703,12 +7724,12 @@ def pdf_get_pages_view(request):
         
         # Validar que el archivo sea PDF
         if not pdf_file.name.lower().endswith('.pdf'):
-            messages.error(request, 'El archivo debe ser un PDF.')
+            messages.error(request, gettext('El archivo debe ser un PDF.'))
             return render(request, 'tickets/pdf_get_pages.html')
         
         # Validar entrada de páginas
         if not pages_input:
-            messages.error(request, 'Debe especificar las páginas a extraer.')
+            messages.error(request, gettext('Debe especificar las páginas a extraer.'))
             return render(request, 'tickets/pdf_get_pages.html')
         
         try:
@@ -7782,11 +7803,11 @@ def pdf_join_view(request):
         pdf_files = request.FILES.getlist('pdf_files')
         
         if not pdf_files:
-            messages.error(request, 'No se han seleccionado archivos PDF.')
+            messages.error(request, gettext('No se han seleccionado archivos PDF.'))
             return render(request, 'tickets/pdf_join.html')
         
         if len(pdf_files) < 2:
-            messages.error(request, 'Debe seleccionar al menos 2 archivos PDF para unir.')
+            messages.error(request, gettext('Debe seleccionar al menos 2 archivos PDF para unir.'))
             return render(request, 'tickets/pdf_join.html')
         
         # Validar que todos los archivos sean PDF
@@ -7845,14 +7866,14 @@ def pdf_split_view(request):
     """Vista para dividir un PDF en archivos individuales por página"""
     if request.method == 'POST':
         if 'pdf_file' not in request.FILES:
-            messages.error(request, 'No se ha seleccionado ningún archivo PDF.')
+            messages.error(request, gettext('No se ha seleccionado ningún archivo PDF.'))
             return render(request, 'tickets/pdf_split.html')
         
         pdf_file = request.FILES['pdf_file']
         
         # Validar que el archivo sea PDF
         if not pdf_file.name.lower().endswith('.pdf'):
-            messages.error(request, 'El archivo debe ser un PDF.')
+            messages.error(request, gettext('El archivo debe ser un PDF.'))
             return render(request, 'tickets/pdf_split.html')
         
         try:
@@ -7867,11 +7888,11 @@ def pdf_split_view(request):
             total_pages = len(pdf_reader.pages)
             
             if total_pages == 0:
-                messages.error(request, 'El PDF no contiene páginas válidas.')
+                messages.error(request, gettext('El PDF no contiene páginas válidas.'))
                 return render(request, 'tickets/pdf_split.html')
             
             if total_pages == 1:
-                messages.warning(request, 'El PDF solo tiene una página. No es necesario dividirlo.')
+                messages.warning(request, gettext('El PDF solo tiene una página. No es necesario dividirlo.'))
                 return render(request, 'tickets/pdf_split.html')
             
             # Crear un archivo ZIP en memoria
@@ -8012,14 +8033,14 @@ def command_create_view(request):
             command = form.save(commit=False)
             command.created_by = request.user
             command.save()
-            messages.success(request, 'Comando creado exitosamente.')
+            messages.success(request, gettext('Comando creado exitosamente.'))
             return redirect('command_detail', pk=command.pk)
     else:
         form = CommandForm()
     
     return render(request, 'tickets/command_form.html', {
         'form': form,
-        'title': 'Crear Comando',
+        'title': gettext('Crear Comando'),
         'action': 'Crear'
     })
 
@@ -8052,7 +8073,7 @@ def command_edit_view(request, pk):
         form = CommandForm(request.POST, instance=command)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Comando actualizado exitosamente.')
+            messages.success(request, gettext('Comando actualizado exitosamente.'))
             return redirect('command_detail', pk=command.pk)
     else:
         form = CommandForm(instance=command)
@@ -8060,7 +8081,7 @@ def command_edit_view(request, pk):
     return render(request, 'tickets/command_form.html', {
         'form': form,
         'command': command,
-        'title': 'Editar Comando',
+        'title': gettext('Editar Comando'),
         'action': 'Actualizar'
     })
 
@@ -8075,7 +8096,7 @@ def command_delete_view(request, pk):
     
     if request.method == 'POST':
         command.delete()
-        messages.success(request, 'Comando eliminado exitosamente.')
+        messages.success(request, gettext('Comando eliminado exitosamente.'))
         return redirect('command_library')
     
     return render(request, 'tickets/command_delete.html', {
@@ -8207,7 +8228,7 @@ def contact_submissions_list(request):
         'stats': stats,
         'status_filter': status_filter,
         'status_choices': ContactFormSubmission.STATUS_CHOICES,
-        'page_title': 'Formularios de Contacto Recibidos'
+        'page_title': gettext('Formularios de Contacto Recibidos')
     }
     
     return render(request, 'tickets/contact_submissions_list.html', context)
@@ -8231,7 +8252,7 @@ def contact_submission_detail(request, pk):
             admin_notes = request.POST.get('admin_notes', '')
             submission.admin_notes = admin_notes
             submission.save()
-            messages.success(request, 'Notas administrativas actualizadas exitosamente.')
+            messages.success(request, gettext('Notas administrativas actualizadas exitosamente.'))
             return redirect('contact_submission_detail', pk=pk)
         else:
             # Actualizar el formulario completo
@@ -8243,7 +8264,7 @@ def contact_submission_detail(request, pk):
                     updated_submission.processed_at = timezone.now()
                 updated_submission.save()
                 
-                messages.success(request, 'Formulario de contacto actualizado exitosamente.')
+                messages.success(request, gettext('Formulario de contacto actualizado exitosamente.'))
                 return redirect('contact_submission_detail', pk=pk)
     else:
         form = ContactFormManagementForm(instance=submission)
@@ -8323,7 +8344,7 @@ def contact_submission_reject(request, pk):
             submission.admin_notes = f"Rechazado: {reason}"
             submission.save()
         
-        messages.success(request, 'Formulario de contacto rechazado.')
+        messages.success(request, gettext('Formulario de contacto rechazado.'))
         return redirect('contact_submissions_list')
     
     context = {
@@ -8348,7 +8369,7 @@ def get_client_ip(request):
 def tetris_view(request):
     """Vista para el juego Tetris - para todos los usuarios autenticados"""
     context = {
-        'page_title': 'Tetris - Juegos',
+        'page_title': gettext('Tetris - Juegos'),
         'user_role': get_user_role(request.user)
     }
     return render(request, 'tickets/tetris.html', context)
@@ -8547,7 +8568,7 @@ def crm_dashboard(request):
         'status_stats': status_stats,
         'upcoming_opportunities': upcoming_opportunities,
         'overdue_opportunities': overdue_opportunities,
-        'page_title': 'CRM Dashboard',
+        'page_title': gettext('CRM Dashboard'),
         'system_config': system_config,
     }
     
@@ -8627,7 +8648,7 @@ def opportunity_list(request):
             'search': search,
             'order_by': order_by,
         },
-        'page_title': 'Oportunidades'
+        'page_title': gettext('Oportunidades')
     }
     
     return render(request, 'tickets/opportunity_list.html', context)
@@ -8642,7 +8663,7 @@ def opportunity_detail(request, pk):
     from . import utils
     if not utils.is_agent(request.user):
         if opportunity.created_by != request.user and opportunity.assigned_to != request.user:
-            messages.error(request, 'No tienes permisos para ver esta oportunidad.')
+            messages.error(request, gettext('No tienes permisos para ver esta oportunidad.'))
             return redirect('opportunity_list')
     
     # Obtener notas y historial
@@ -8712,7 +8733,7 @@ def opportunity_create(request):
                 comment="Oportunidad creada"
             )
             
-            messages.success(request, 'Oportunidad creada exitosamente.')
+            messages.success(request, gettext('Oportunidad creada exitosamente.'))
             return redirect('opportunity_detail', pk=opportunity.pk)
             
         except Exception as e:
@@ -8763,7 +8784,7 @@ def opportunity_create(request):
         'statuses': statuses,
         'users': users,
         'probability_choices': probability_choices,
-        'page_title': 'Nueva Oportunidad',
+        'page_title': gettext('Nueva Oportunidad'),
         'default_close_date': default_close_date,
         'default_status': default_status,
         'default_assigned_to': default_assigned_to,
@@ -8780,7 +8801,7 @@ def opportunity_edit(request, pk):
     
     # Verificar permisos
     if not opportunity.can_be_edited_by(request.user):
-        messages.error(request, 'No tienes permisos para editar esta oportunidad.')
+        messages.error(request, gettext('No tienes permisos para editar esta oportunidad.'))
         return redirect('opportunity_detail', pk=pk)
     
     if request.method == 'POST':
@@ -8813,7 +8834,7 @@ def opportunity_edit(request, pk):
             )
         
         opportunity.save()
-        messages.success(request, 'Oportunidad actualizada exitosamente.')
+        messages.success(request, gettext('Oportunidad actualizada exitosamente.'))
         return redirect('opportunity_detail', pk=pk)
     
     # Para GET request
@@ -8847,12 +8868,12 @@ def opportunity_delete(request, pk):
     # Verificar permisos
     from . import utils
     if not utils.is_agent(request.user) and opportunity.created_by != request.user:
-        messages.error(request, 'No tienes permisos para eliminar esta oportunidad.')
+        messages.error(request, gettext('No tienes permisos para eliminar esta oportunidad.'))
         return redirect('opportunity_detail', pk=pk)
     
     if request.method == 'POST':
         opportunity.delete()
-        messages.success(request, 'Oportunidad eliminada exitosamente.')
+        messages.success(request, gettext('Oportunidad eliminada exitosamente.'))
         return redirect('opportunity_list')
     
     context = {
@@ -8868,14 +8889,14 @@ def opportunity_status_list(request):
     """Lista de estados de oportunidades"""
     from . import utils
     if not utils.is_agent(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('crm_dashboard')
     
     statuses = OpportunityStatus.objects.all().order_by('order', 'name')
     
     context = {
         'statuses': statuses,
-        'page_title': 'Estados de Oportunidades'
+        'page_title': gettext('Estados de Oportunidades')
     }
     
     return render(request, 'tickets/opportunity_status_list.html', context)
@@ -8886,7 +8907,7 @@ def opportunity_status_create(request):
     """Crear estado de oportunidad"""
     from . import utils
     if not utils.is_agent(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('crm_dashboard')
     
     if request.method == 'POST':
@@ -8907,13 +8928,13 @@ def opportunity_status_create(request):
                 order=order,
                 created_by=request.user
             )
-            messages.success(request, 'Estado creado exitosamente.')
+            messages.success(request, gettext('Estado creado exitosamente.'))
             return redirect('opportunity_status_list')
         except Exception as e:
             messages.error(request, f'Error al crear el estado: {str(e)}')
     
     context = {
-        'page_title': 'Nuevo Estado'
+        'page_title': gettext('Nuevo Estado')
     }
     
     return render(request, 'tickets/opportunity_status_form.html', context)
@@ -8928,7 +8949,7 @@ def opportunity_status_edit(request, pk):
     status = get_object_or_404(OpportunityStatus, pk=pk)
     
     if not utils.is_agent(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('crm_dashboard')
     
     if request.method == 'POST':
@@ -8941,7 +8962,7 @@ def opportunity_status_edit(request, pk):
         status.is_active = request.POST.get('is_active') == 'on'
         
         status.save()
-        messages.success(request, 'Estado actualizado exitosamente.')
+        messages.success(request, gettext('Estado actualizado exitosamente.'))
         return redirect('opportunity_status_list')
     
     context = {
@@ -8961,12 +8982,12 @@ def opportunity_status_delete(request, pk):
     
     # Verificar si hay oportunidades usando este estado
     if status.opportunities.exists():
-        messages.error(request, 'No se puede eliminar este estado porque hay oportunidades que lo utilizan.')
+        messages.error(request, gettext('No se puede eliminar este estado porque hay oportunidades que lo utilizan.'))
         return redirect('opportunity_status_list')
     
     if request.method == 'POST':
         status.delete()
-        messages.success(request, 'Estado eliminado exitosamente.')
+        messages.success(request, gettext('Estado eliminado exitosamente.'))
         return redirect('opportunity_status_list')
     
     context = {
@@ -8986,7 +9007,7 @@ def opportunity_add_note(request, pk):
     from . import utils
     if not utils.is_agent(request.user):
         if opportunity.created_by != request.user and opportunity.assigned_to != request.user:
-            messages.error(request, 'No tienes permisos para agregar notas a esta oportunidad.')
+            messages.error(request, gettext('No tienes permisos para agregar notas a esta oportunidad.'))
             return redirect('opportunity_detail', pk=pk)
     
     if request.method == 'POST':
@@ -9000,9 +9021,9 @@ def opportunity_add_note(request, pk):
                 is_important=is_important,
                 created_by=request.user
             )
-            messages.success(request, 'Nota agregada exitosamente.')
+            messages.success(request, gettext('Nota agregada exitosamente.'))
         else:
-            messages.error(request, 'El contenido de la nota es requerido.')
+            messages.error(request, gettext('El contenido de la nota es requerido.'))
     
     return redirect('opportunity_detail', pk=pk)
 
@@ -9023,7 +9044,7 @@ def opportunity_activity_create(request, opportunity_id):
     from . import utils
     if not utils.is_agent(request.user):
         if opportunity.created_by != request.user and opportunity.assigned_to != request.user:
-            messages.error(request, 'No tienes permisos para crear actividades en esta oportunidad.')
+            messages.error(request, gettext('No tienes permisos para crear actividades en esta oportunidad.'))
             return redirect('opportunity_detail', pk=opportunity_id)
     
     if request.method == 'POST':
@@ -9059,7 +9080,7 @@ def opportunity_activity_list(request, opportunity_id):
     from . import utils
     if not utils.is_agent(request.user):
         if opportunity.created_by != request.user and opportunity.assigned_to != request.user:
-            messages.error(request, 'No tienes permisos para ver las actividades de esta oportunidad.')
+            messages.error(request, gettext('No tienes permisos para ver las actividades de esta oportunidad.'))
             return redirect('opportunity_detail', pk=opportunity_id)
     
     activities = opportunity.activities.all()
@@ -9094,7 +9115,7 @@ def opportunity_activity_detail(request, pk):
     if not utils.is_agent(request.user):
         if (activity.created_by != request.user and 
             activity.assigned_to != request.user):
-            messages.error(request, 'No tienes permisos para ver esta actividad.')
+            messages.error(request, gettext('No tienes permisos para ver esta actividad.'))
             return redirect('opportunity_detail', pk=activity.opportunity.pk)
     
     context = {
@@ -9118,14 +9139,14 @@ def opportunity_activity_edit(request, pk):
     if not utils.is_agent(request.user):
         if (activity.created_by != request.user and 
             activity.assigned_to != request.user):
-            messages.error(request, 'No tienes permisos para editar esta actividad.')
+            messages.error(request, gettext('No tienes permisos para editar esta actividad.'))
             return redirect('opportunity_activity_detail', pk=pk)
     
     if request.method == 'POST':
         form = OpportunityActivityForm(request.POST, instance=activity, opportunity=activity.opportunity)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Actividad actualizada exitosamente.')
+            messages.success(request, gettext('Actividad actualizada exitosamente.'))
             return redirect('opportunity_activity_detail', pk=pk)
     else:
         form = OpportunityActivityForm(instance=activity, opportunity=activity.opportunity)
@@ -9150,7 +9171,7 @@ def opportunity_activity_complete(request, pk):
     
     # Verificar permisos
     if activity.assigned_to != request.user:
-        messages.error(request, 'Solo el asignado puede completar esta actividad.')
+        messages.error(request, gettext('Solo el asignado puede completar esta actividad.'))
         return redirect('opportunity_activity_detail', pk=pk)
     
     if request.method == 'POST':
@@ -9161,7 +9182,7 @@ def opportunity_activity_complete(request, pk):
                 activity.completed_date = timezone.now()
             activity.save()
             
-            messages.success(request, 'Actividad completada exitosamente.')
+            messages.success(request, gettext('Actividad completada exitosamente.'))
             return redirect('opportunity_activity_detail', pk=pk)
     else:
         form = OpportunityActivityCompleteForm(instance=activity)
@@ -9187,7 +9208,7 @@ def opportunity_activity_delete(request, pk):
     from . import utils
     if not utils.is_agent(request.user):
         if activity.created_by != request.user:
-            messages.error(request, 'No tienes permisos para eliminar esta actividad.')
+            messages.error(request, gettext('No tienes permisos para eliminar esta actividad.'))
             return redirect('opportunity_activity_detail', pk=pk)
     
     if request.method == 'POST':
@@ -9260,7 +9281,7 @@ def my_activities_dashboard(request):
         'upcoming_activities': upcoming_activities,
         'completed_recent': completed_recent,
         'stats': stats,
-        'page_title': 'Mis Actividades'
+        'page_title': gettext('Mis Actividades')
     }
     
     return render(request, 'tickets/my_activities_dashboard.html', context)
@@ -9299,7 +9320,7 @@ def activity_create_standalone(request):
     
     context = {
         'form': form,
-        'page_title': 'Nueva Actividad'
+        'page_title': gettext('Nueva Actividad')
     }
     
     return render(request, 'tickets/activity_standalone_form.html', context)
@@ -9858,7 +9879,7 @@ def meeting_list_view(request):
     }
     
     context = {
-        'page_title': 'Reuniones',
+        'page_title': gettext('Reuniones'),
         'meetings': meetings,
         'stats': stats,
         'current_status': status,
@@ -9885,7 +9906,7 @@ def meeting_create_view(request):
         form = MeetingForm(user=request.user)
     
     context = {
-        'page_title': 'Nueva Reunión',
+        'page_title': gettext('Nueva Reunión'),
         'form': form,
     }
     return render(request, 'tickets/meeting_form.html', context)
@@ -10274,7 +10295,7 @@ def meeting_register_view(request, token):
     # Verificar si ya hay un usuario registrado en esta sesión
     session_key = f'meeting_{meeting.id}_attendee_id'
     if session_key in request.session:
-        messages.warning(request, 'Ya hay una persona registrada en esta sesión. Solo se permite un registro por sesión.')
+        messages.warning(request, gettext('Ya hay una persona registrada en esta sesión. Solo se permite un registro por sesión.'))
         return redirect('meeting_public', token=token)
     
     if request.method == 'POST':
@@ -10288,7 +10309,7 @@ def meeting_register_view(request, token):
             # Guardar el ID del asistente en la sesión
             request.session[session_key] = attendee.id
             
-            messages.success(request, '¡Te has registrado exitosamente en la reunión!')
+            messages.success(request, gettext('¡Te has registrado exitosamente en la reunión!'))
             return redirect('meeting_public', token=token)
     else:
         form = MeetingAttendeeForm(meeting=meeting)
@@ -10308,7 +10329,7 @@ def meeting_questions_public_view(request, token):
     meeting = get_object_or_404(Meeting, public_token=token, is_active=True)
     
     if not meeting.allow_questions:
-        messages.error(request, 'Esta reunión no permite preguntas.')
+        messages.error(request, gettext('Esta reunión no permite preguntas.'))
         return redirect('meeting_public', token=token)
     
     questions = meeting.meetingquestion_set.filter(status__in=['pending', 'answered']).order_by('-asked_at')
@@ -10329,7 +10350,7 @@ def meeting_ask_question_view(request, token):
     meeting = get_object_or_404(Meeting, public_token=token, is_active=True)
     
     if not meeting.allow_questions:
-        messages.error(request, 'Esta reunión no permite preguntas.')
+        messages.error(request, gettext('Esta reunión no permite preguntas.'))
         return redirect('meeting_public', token=token)
     
     # Verificar si hay un asistente registrado en la sesión
@@ -10360,7 +10381,7 @@ def meeting_ask_question_view(request, token):
                 question.asker_email = user_attendee.email
             
             question.save()
-            messages.success(request, '¡Tu pregunta ha sido enviada!')
+            messages.success(request, gettext('¡Tu pregunta ha sido enviada!'))
             return redirect('meeting_public', token=token)
     else:
         form = MeetingQuestionForm()
@@ -10385,21 +10406,21 @@ def meeting_respond_view(request, token):
     session_key = f'meeting_{meeting.id}_attendee_id'
     
     if session_key not in request.session:
-        messages.error(request, 'Debes registrarte primero para responder a la reunión.')
+        messages.error(request, gettext('Debes registrarte primero para responder a la reunión.'))
         return redirect('meeting_public', token=token)
     
     try:
         attendee_id = request.session[session_key]
         attendee = MeetingAttendee.objects.get(id=attendee_id, meeting=meeting)
     except MeetingAttendee.DoesNotExist:
-        messages.error(request, 'No se encontró tu registro.')
+        messages.error(request, gettext('No se encontró tu registro.'))
         return redirect('meeting_public', token=token)
     
     # Obtener la respuesta del formulario
     response = request.POST.get('response')
     
     if response not in ['accepted', 'declined']:
-        messages.error(request, 'Respuesta inválida.')
+        messages.error(request, gettext('Respuesta inválida.'))
         return redirect('meeting_public', token=token)
     
     # Actualizar el estado de respuesta
@@ -10408,9 +10429,9 @@ def meeting_respond_view(request, token):
     attendee.save()
     
     if response == 'accepted':
-        messages.success(request, '¡Has aceptado la reunión! Nos vemos allí.')
+        messages.success(request, gettext('¡Has aceptado la reunión! Nos vemos allí.'))
     else:
-        messages.info(request, 'Has rechazado la reunión. Gracias por tu respuesta.')
+        messages.info(request, gettext('Has rechazado la reunión. Gracias por tu respuesta.'))
     
     return redirect('meeting_public', token=token)
 
@@ -10426,14 +10447,14 @@ def meeting_rate_view(request, token):
     session_key = f'meeting_{meeting.id}_attendee_id'
     
     if session_key not in request.session:
-        messages.error(request, 'Debes registrarte primero para evaluar la reunión.')
+        messages.error(request, gettext('Debes registrarte primero para evaluar la reunión.'))
         return redirect('meeting_public', token=token)
     
     try:
         attendee_id = request.session[session_key]
         attendee = MeetingAttendee.objects.get(id=attendee_id, meeting=meeting)
     except MeetingAttendee.DoesNotExist:
-        messages.error(request, 'No se encontró tu registro.')
+        messages.error(request, gettext('No se encontró tu registro.'))
         return redirect('meeting_public', token=token)
     
     # Obtener la calificación del formulario
@@ -10441,7 +10462,7 @@ def meeting_rate_view(request, token):
     comment = request.POST.get('comment', '')
     
     if rating not in ['sad', 'neutral', 'happy']:
-        messages.error(request, 'Calificación inválida.')
+        messages.error(request, gettext('Calificación inválida.'))
         return redirect('meeting_public', token=token)
     
     # Crear o actualizar la evaluación de la reunión
@@ -10469,7 +10490,7 @@ def meeting_rate_view(request, token):
         is_public=True
     )
     
-    messages.success(request, '¡Gracias por tu evaluación!')
+    messages.success(request, gettext('¡Gracias por tu evaluación!'))
     return redirect('meeting_public', token=token)
     
     context = {
@@ -10570,7 +10591,7 @@ def support_meeting_list(request):
     companies = Company.objects.filter(is_active=True).order_by('name')
     
     context = {
-        'page_title': 'Reuniones de Soporte',
+        'page_title': gettext('Reuniones de Soporte'),
         'meetings': meetings,
         'all_meetings': meetings_base,  # Para el calendario sin paginación
         'stats': stats,
@@ -10599,7 +10620,7 @@ def support_meeting_create(request):
         form = SupportMeetingForm()
     
     context = {
-        'page_title': 'Nueva Reunión de Soporte',
+        'page_title': gettext('Nueva Reunión de Soporte'),
         'form': form,
     }
     return render(request, 'tickets/support_meeting_form.html', context)
@@ -10650,7 +10671,7 @@ def support_meeting_detail(request, pk):
             point = point_form.save(commit=False)
             point.meeting = meeting
             point.save()
-            messages.success(request, 'Punto agregado exitosamente.')
+            messages.success(request, gettext('Punto agregado exitosamente.'))
             return redirect('support_meeting_detail', pk=meeting.pk)
     else:
         point_form = SupportMeetingPointForm()
@@ -10731,7 +10752,7 @@ def support_meeting_create_tickets(request, pk):
         selected_points = meeting.support_meeting_points.filter(is_selected=True)
         
         if not selected_points.exists():
-            messages.warning(request, 'No hay puntos seleccionados para crear tickets.')
+            messages.warning(request, gettext('No hay puntos seleccionados para crear tickets.'))
             return redirect('support_meeting_detail', pk=meeting.pk)
         
         tickets_created = 0
@@ -10957,7 +10978,7 @@ def support_meeting_disable_public_link(request, pk):
                 'message': 'Enlace público deshabilitado exitosamente'
             })
         
-        messages.success(request, 'Enlace público deshabilitado exitosamente.')
+        messages.success(request, gettext('Enlace público deshabilitado exitosamente.'))
     except SupportMeetingPublicLink.DoesNotExist:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
@@ -10965,7 +10986,7 @@ def support_meeting_disable_public_link(request, pk):
                 'error': 'No existe enlace público para esta reunión'
             })
         
-        messages.error(request, 'No existe enlace público para esta reunión.')
+        messages.error(request, gettext('No existe enlace público para esta reunión.'))
     
     return redirect('support_meeting_detail', pk=meeting.pk)
 
@@ -11003,7 +11024,7 @@ def support_meeting_point_edit(request, meeting_pk, point_pk):
             form = SupportMeetingPointForm(request.POST, instance=point)
             if form.is_valid():
                 form.save()
-                messages.success(request, 'Punto actualizado exitosamente.')
+                messages.success(request, gettext('Punto actualizado exitosamente.'))
                 return redirect('support_meeting_detail', pk=meeting.pk)
     else:
         form = SupportMeetingPointForm(instance=point)
@@ -11109,7 +11130,7 @@ def course_generate_public_token(request, pk):
         # Verificar si es una petición AJAX usando headers
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'No tienes permisos para esta acción'})
-        messages.error(request, 'No tienes permisos para generar enlaces públicos.')
+        messages.error(request, gettext('No tienes permisos para generar enlaces públicos.'))
         return redirect('course_detail', pk=pk)
     
     # Generar token
@@ -11142,7 +11163,7 @@ def course_disable_public_access(request, pk):
         # Verificar si es una petición AJAX usando headers
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'No tienes permisos para esta acción'})
-        messages.error(request, 'No tienes permisos para deshabilitar el acceso público.')
+        messages.error(request, gettext('No tienes permisos para deshabilitar el acceso público.'))
         return redirect('course_detail', pk=pk)
     
     course.disable_public_access()
@@ -11151,7 +11172,7 @@ def course_disable_public_access(request, pk):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': True, 'message': 'Acceso público deshabilitado'})
     
-    messages.success(request, 'Acceso público deshabilitado correctamente.')
+    messages.success(request, gettext('Acceso público deshabilitado correctamente.'))
     return redirect('course_detail', pk=pk)
 
 def course_public(request, token):
@@ -11514,7 +11535,7 @@ def client_request_list(request):
     
     context = {
         'requests': requests,
-        'page_title': 'Solicitudes al Cliente',
+        'page_title': gettext('Solicitudes al Cliente'),
         'is_agent': is_agent,
         # Estadísticas
         'total_requests': total_requests,
@@ -11581,7 +11602,7 @@ def client_request_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Nueva Solicitud al Cliente'
+        'page_title': gettext('Nueva Solicitud al Cliente')
     }
     
     return render(request, 'tickets/client_request_form.html', context)
@@ -11604,10 +11625,10 @@ def client_request_detail(request, pk):
         try:
             user_profile = request.user.userprofile
             if not user_profile.company or client_request.company != user_profile.company:
-                messages.error(request, 'No tienes permisos para ver esta solicitud.')
+                messages.error(request, gettext('No tienes permisos para ver esta solicitud.'))
                 return redirect('client_request_list')
         except:
-            messages.error(request, 'No tienes permisos para ver esta solicitud.')
+            messages.error(request, gettext('No tienes permisos para ver esta solicitud.'))
             return redirect('client_request_list')
     
     # Verificar si ya hay respuesta
@@ -11627,7 +11648,7 @@ def client_request_detail(request, pk):
             client_request.status = 'completed'
             client_request.save()
             
-            messages.success(request, 'Respuesta enviada exitosamente.')
+            messages.success(request, gettext('Respuesta enviada exitosamente.'))
             return redirect('client_request_detail', pk=client_request.pk)
     elif not has_response:
         response_form = ClientRequestResponseForm()
@@ -11653,19 +11674,19 @@ def client_request_edit(request, pk):
     
     # Solo el creador puede editar
     if client_request.created_by != request.user:
-        messages.error(request, 'No tienes permisos para editar esta solicitud.')
+        messages.error(request, gettext('No tienes permisos para editar esta solicitud.'))
         return redirect('client_request_detail', pk=client_request.pk)
     
     # No se puede editar si ya tiene respuesta
     if hasattr(client_request, 'response'):
-        messages.error(request, 'No puedes editar una solicitud que ya tiene respuesta.')
+        messages.error(request, gettext('No puedes editar una solicitud que ya tiene respuesta.'))
         return redirect('client_request_detail', pk=client_request.pk)
     
     if request.method == 'POST':
         form = ClientRequestForm(request.POST, instance=client_request)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Solicitud actualizada exitosamente.')
+            messages.success(request, gettext('Solicitud actualizada exitosamente.'))
             return redirect('client_request_detail', pk=client_request.pk)
     else:
         form = ClientRequestForm(instance=client_request)
@@ -11688,12 +11709,12 @@ def client_request_delete(request, pk):
     
     # Solo el creador puede eliminar
     if client_request.created_by != request.user:
-        messages.error(request, 'No tienes permisos para eliminar esta solicitud.')
+        messages.error(request, gettext('No tienes permisos para eliminar esta solicitud.'))
         return redirect('client_request_detail', pk=client_request.pk)
     
     # No se puede eliminar si ya tiene respuesta
     if hasattr(client_request, 'response'):
-        messages.error(request, 'No puedes eliminar una solicitud que ya tiene respuesta.')
+        messages.error(request, gettext('No puedes eliminar una solicitud que ya tiene respuesta.'))
         return redirect('client_request_detail', pk=client_request.pk)
     
     if request.method == 'POST':
@@ -11734,10 +11755,10 @@ def client_request_pdf(request, pk):
         try:
             user_profile = request.user.userprofile
             if not user_profile.company or client_request.company != user_profile.company:
-                messages.error(request, 'No tienes permisos para ver esta solicitud.')
+                messages.error(request, gettext('No tienes permisos para ver esta solicitud.'))
                 return redirect('client_request_list')
         except:
-            messages.error(request, 'No tienes permisos para ver esta solicitud.')
+            messages.error(request, gettext('No tienes permisos para ver esta solicitud.'))
             return redirect('client_request_list')
     
     # Crear el PDF
@@ -11944,7 +11965,7 @@ def public_client_request_detail(request, token, pk):
             client_request.status = 'completed'
             client_request.save()
             
-            messages.success(request, 'Respuesta enviada exitosamente.')
+            messages.success(request, gettext('Respuesta enviada exitosamente.'))
             return redirect('public_client_request_detail', token=token, pk=client_request.pk)
     elif not has_response:
         response_form = ClientRequestResponseForm()
@@ -11974,7 +11995,7 @@ def client_request_template_list(request):
     
     context = {
         'templates': templates,
-        'page_title': 'Plantillas de Solicitudes'
+        'page_title': gettext('Plantillas de Solicitudes')
     }
     
     return render(request, 'tickets/client_request_template_list.html', context)
@@ -11999,7 +12020,7 @@ def client_request_template_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Nueva Plantilla de Solicitudes'
+        'page_title': gettext('Nueva Plantilla de Solicitudes')
     }
     
     return render(request, 'tickets/client_request_template_form.html', context)
@@ -12034,7 +12055,7 @@ def client_request_template_edit(request, pk):
         form = ClientRequestTemplateForm(request.POST, instance=template)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Plantilla actualizada exitosamente.')
+            messages.success(request, gettext('Plantilla actualizada exitosamente.'))
             return redirect('client_request_template_detail', pk=template.pk)
     else:
         form = ClientRequestTemplateForm(instance=template)
@@ -12083,7 +12104,7 @@ def client_request_template_item_create(request, template_pk):
             item = form.save(commit=False)
             item.template = template
             item.save()
-            messages.success(request, 'Item agregado exitosamente.')
+            messages.success(request, gettext('Item agregado exitosamente.'))
             return redirect('client_request_template_detail', pk=template.pk)
     else:
         # Sugerir el siguiente orden
@@ -12111,14 +12132,14 @@ def client_request_template_item_edit(request, pk):
     
     # Verificar que el usuario sea el creador de la plantilla
     if template.created_by != request.user:
-        messages.error(request, 'No tienes permisos para editar este item.')
+        messages.error(request, gettext('No tienes permisos para editar este item.'))
         return redirect('client_request_template_detail', pk=template.pk)
     
     if request.method == 'POST':
         form = ClientRequestTemplateItemForm(request.POST, request.FILES, instance=item)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Item actualizado exitosamente.')
+            messages.success(request, gettext('Item actualizado exitosamente.'))
             return redirect('client_request_template_detail', pk=template.pk)
     else:
         form = ClientRequestTemplateItemForm(instance=item)
@@ -12143,18 +12164,18 @@ def client_request_template_item_delete(request, pk):
     
     # Verificar que el usuario sea el creador de la plantilla
     if template.created_by != request.user:
-        messages.error(request, 'No tienes permisos para eliminar este item.')
+        messages.error(request, gettext('No tienes permisos para eliminar este item.'))
         return redirect('client_request_template_detail', pk=template.pk)
     
     if request.method == 'POST':
         item.delete()
-        messages.success(request, 'Item eliminado exitosamente.')
+        messages.success(request, gettext('Item eliminado exitosamente.'))
         return redirect('client_request_template_detail', pk=template.pk)
     
     context = {
         'item': item,
         'template': template,
-        'page_title': 'Eliminar Item'
+        'page_title': gettext('Eliminar Item')
     }
     
     return render(request, 'tickets/client_request_template_item_delete.html', context)
@@ -12169,11 +12190,11 @@ def client_request_template_execute(request, pk):
     template = get_object_or_404(ClientRequestTemplate, pk=pk, created_by=request.user)
     
     if not template.is_active:
-        messages.error(request, 'Esta plantilla está inactiva.')
+        messages.error(request, gettext('Esta plantilla está inactiva.'))
         return redirect('client_request_template_detail', pk=template.pk)
     
     if template.items.count() == 0:
-        messages.error(request, 'Esta plantilla no tiene items para crear.')
+        messages.error(request, gettext('Esta plantilla no tiene items para crear.'))
         return redirect('client_request_template_detail', pk=template.pk)
     
     if request.method == 'POST':
@@ -12236,7 +12257,7 @@ def course_list(request):
     context = {
         'courses': user_accessible_courses,
         'can_manage_courses': can_manage,
-        'page_title': 'Cursos de Capacitación'
+        'page_title': gettext('Cursos de Capacitación')
     }
     
     return render(request, 'tickets/course_list.html', context)
@@ -12255,7 +12276,7 @@ def course_detail(request, pk):
     
     # Verificar si el usuario puede acceder a este curso
     if not can_manage and not course.can_user_access(request.user):
-        messages.error(request, 'No tienes permisos para acceder a este curso.')
+        messages.error(request, gettext('No tienes permisos para acceder a este curso.'))
         return redirect('course_list')
     
     classes = course.classes.filter(is_active=True).order_by('order', 'title')
@@ -12310,7 +12331,7 @@ def course_comment_resolve(request, comment_id):
                 'success': False,
                 'error': 'No tienes permisos para esta acción'
             }, status=403)
-        messages.error(request, 'No tienes permisos para esta acción')
+        messages.error(request, gettext('No tienes permisos para esta acción'))
         return redirect('course_list')
     
     comment = get_object_or_404(CourseComment, pk=comment_id)
@@ -12338,7 +12359,7 @@ def course_comment_resolve(request, comment_id):
                 'message': 'Comentario marcado como resuelto'
             })
         
-        messages.success(request, 'Comentario marcado como resuelto')
+        messages.success(request, gettext('Comentario marcado como resuelto'))
         return redirect('course_detail', pk=course.pk)
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -12347,7 +12368,7 @@ def course_comment_resolve(request, comment_id):
             'error': 'Método no permitido'
         }, status=405)
     
-    messages.error(request, 'Método no permitido')
+    messages.error(request, gettext('Método no permitido'))
     return redirect('course_detail', pk=course.pk)
 
 
@@ -12359,7 +12380,7 @@ def course_create(request):
     from . import utils
     
     if not utils.can_manage_courses(request.user):
-        messages.error(request, 'Solo los agentes y profesores pueden crear cursos.')
+        messages.error(request, gettext('Solo los agentes y profesores pueden crear cursos.'))
         return redirect('course_list')
     
     if request.method == 'POST':
@@ -12375,7 +12396,7 @@ def course_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Crear Nuevo Curso'
+        'page_title': gettext('Crear Nuevo Curso')
     }
     
     return render(request, 'tickets/course_form.html', context)
@@ -12391,7 +12412,7 @@ def course_edit(request, pk):
     course = get_object_or_404(Course, pk=pk)
     
     if not utils.can_manage_courses(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('crm_dashboard')
     
     if request.method == 'POST':
@@ -12421,7 +12442,7 @@ def course_delete(request, pk):
     course = get_object_or_404(Course, pk=pk)
     
     if not utils.can_manage_courses(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('crm_dashboard')
     
     if request.method == 'POST':
@@ -12448,7 +12469,7 @@ def course_class_create(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
     
     if not utils.can_manage_courses(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('crm_dashboard')
     
     if request.method == 'POST':
@@ -12485,7 +12506,7 @@ def course_class_edit(request, course_id, pk):
     course_class = get_object_or_404(CourseClass, pk=pk, course=course)
     
     if not utils.can_manage_courses(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('crm_dashboard')
     
     if request.method == 'POST':
@@ -12517,7 +12538,7 @@ def course_class_delete(request, course_id, pk):
     course_class = get_object_or_404(CourseClass, pk=pk, course=course)
     
     if not utils.can_manage_courses(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('crm_dashboard')
     
     if request.method == 'POST':
@@ -12548,7 +12569,7 @@ def course_class_detail(request, course_id, pk):
     
     # Verificar si el usuario puede acceder a este curso
     if not is_agent and not course.can_user_access(request.user):
-        messages.error(request, 'No tienes permisos para acceder a este curso.')
+        messages.error(request, gettext('No tienes permisos para acceder a este curso.'))
         return redirect('course_list')
     
     # Registrar la visualización si no existe
@@ -13230,7 +13251,7 @@ def contact_list(request):
         'status_labels': status_labels,
         'available_years': available_years,
         'current_year': timezone.now().year,
-        'page_title': 'Contactos',
+        'page_title': gettext('Contactos'),
         'today_total_contacts': today_total_contacts,
         'comparison_total_contacts': comparison_total_contacts,
         'comparison_label': comparison_label,
@@ -13274,7 +13295,7 @@ def contact_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Nuevo Contacto'
+        'page_title': gettext('Nuevo Contacto')
     }
     
     return render(request, 'tickets/contact_form.html', context)
@@ -13629,13 +13650,13 @@ def contact_detail(request, pk):
             comment_form = ContactCommentForm(request.POST, user=request.user, contact=contact)
             if comment_form.is_valid():
                 comment = comment_form.save()
-                messages.success(request, 'Comentario agregado exitosamente.')
+                messages.success(request, gettext('Comentario agregado exitosamente.'))
                 return redirect('contact_detail', pk=contact.pk)
         elif 'attachment_submit' in request.POST:
             attachment_form = ContactAttachmentForm(request.POST, request.FILES, user=request.user, contact=contact)
             if attachment_form.is_valid():
                 attachment = attachment_form.save()
-                messages.success(request, 'Archivo adjuntado exitosamente.')
+                messages.success(request, gettext('Archivo adjuntado exitosamente.'))
                 return redirect('contact_detail', pk=contact.pk)
     
     context = {
@@ -13786,12 +13807,12 @@ def contact_comment_delete(request, pk):
     
     # Verificar permisos
     if not comment.can_delete(request.user):
-        messages.error(request, 'No tienes permisos para eliminar este comentario.')
+        messages.error(request, gettext('No tienes permisos para eliminar este comentario.'))
         return redirect('contact_detail', pk=contact.pk)
     
     if request.method == 'POST':
         comment.delete()
-        messages.success(request, 'Comentario eliminado exitosamente.')
+        messages.success(request, gettext('Comentario eliminado exitosamente.'))
         return redirect('contact_detail', pk=contact.pk)
     
     return redirect('contact_detail', pk=contact.pk)
@@ -13866,7 +13887,7 @@ def contact_stage_tracking(request):
         total_positive_qs = total_positive_qs.filter(company__iexact=company_filter)
     
     context = {
-        'page_title': 'Seguimiento de Contactos Positivos por Etapas',
+        'page_title': gettext('Seguimiento de Contactos Positivos por Etapas'),
         'stages_data': stages_data,
         'contacts_no_stage': contacts_no_stage,
         'total_positive': total_positive_qs.count(),
@@ -14194,7 +14215,7 @@ def business_dashboard(request):
     total_evaluations = UserAIPerformanceEvaluation.objects.count()
     
     context = {
-        'page_title': 'Dashboard Empresarial',
+        'page_title': gettext('Dashboard Empresarial'),
         'contacts_today': contacts_today,
         'contacts_yesterday': contacts_yesterday,
         'contacts_variation': contacts_variation,
@@ -14339,7 +14360,7 @@ def business_dashboard_public(request, token):
     total_evaluations = UserAIPerformanceEvaluation.objects.count()
     
     context = {
-        'page_title': 'Dashboard Empresarial',
+        'page_title': gettext('Dashboard Empresarial'),
         'contacts_today': contacts_today,
         'contacts_yesterday': contacts_yesterday,
         'contacts_variation': contacts_variation,
@@ -14603,7 +14624,7 @@ def sales_plan_list(request):
     
     context = {
         'plans': plans,
-        'page_title': 'Planes de Venta'
+        'page_title': gettext('Planes de Venta')
     }
     
     return render(request, 'tickets/sales_plan_list.html', context)
@@ -14623,7 +14644,7 @@ def sales_plan_create(request):
             if not request.user.is_staff:
                 plan.user = request.user
             plan.save()
-            messages.success(request, 'Plan de venta creado exitosamente.')
+            messages.success(request, gettext('Plan de venta creado exitosamente.'))
             return redirect('sales_plan_list')
     else:
         form = SalesPlanForm()
@@ -14634,7 +14655,7 @@ def sales_plan_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Nuevo Plan de Venta'
+        'page_title': gettext('Nuevo Plan de Venta')
     }
     
     return render(request, 'tickets/sales_plan_form.html', context)
@@ -14650,14 +14671,14 @@ def sales_plan_edit(request, pk):
     
     # Verificar permisos
     if not request.user.is_staff and plan.user != request.user:
-        messages.error(request, 'No tienes permiso para editar este plan.')
+        messages.error(request, gettext('No tienes permiso para editar este plan.'))
         return redirect('sales_plan_list')
     
     if request.method == 'POST':
         form = SalesPlanForm(request.POST, instance=plan)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Plan de venta actualizado exitosamente.')
+            messages.success(request, gettext('Plan de venta actualizado exitosamente.'))
             return redirect('sales_plan_list')
     else:
         form = SalesPlanForm(instance=plan)
@@ -14680,7 +14701,7 @@ def sales_plan_delete(request, pk):
     
     # Verificar permisos
     if not request.user.is_staff and plan.user != request.user:
-        messages.error(request, 'No tienes permiso para eliminar este plan.')
+        messages.error(request, gettext('No tienes permiso para eliminar este plan.'))
         return redirect('sales_plan_list')
     
     if request.method == 'POST':
@@ -14738,7 +14759,7 @@ def blog_list(request):
         'categories': categories,
         'featured_posts': featured_posts,
         'current_category': category_slug,
-        'page_title': 'Blog',
+        'page_title': gettext('Blog'),
         'is_authenticated': request.user.is_authenticated,
     }
     
@@ -14768,7 +14789,7 @@ def blog_post_detail(request, slug):
                 comment.ip_address = request.META.get('REMOTE_ADDR')
             
             comment.save()
-            messages.success(request, 'Tu comentario ha sido enviado y está pendiente de aprobación.')
+            messages.success(request, gettext('Tu comentario ha sido enviado y está pendiente de aprobación.'))
             return redirect('blog_post_detail', slug=slug)
     else:
         from .forms import BlogCommentForm
@@ -14802,7 +14823,7 @@ def blog_category_list(request):
     
     context = {
         'categories': categories,
-        'page_title': 'Categorías de Blog'
+        'page_title': gettext('Categorías de Blog')
     }
     
     return render(request, 'tickets/blog_category_list.html', context)
@@ -14847,13 +14868,13 @@ def blog_category_create(request):
                 print(f"Exception al crear categoría: {str(e)}")
                 messages.error(request, f'Error al crear la categoría: {str(e)}')
         else:
-            messages.error(request, 'Por favor corrige los errores en el formulario.')
+            messages.error(request, gettext('Por favor corrige los errores en el formulario.'))
     else:
         form = BlogCategoryForm()
     
     context = {
         'form': form,
-        'page_title': 'Nueva Categoría'
+        'page_title': gettext('Nueva Categoría')
     }
     
     return render(request, 'tickets/blog_category_form.html', context)
@@ -14892,7 +14913,7 @@ def blog_post_list_admin(request):
         'page_obj': page_obj,
         'posts': page_obj.object_list,
         'categories': categories,
-        'page_title': 'Gestión de Blog'
+        'page_title': gettext('Gestión de Blog')
     }
     
     return render(request, 'tickets/blog_post_list_admin.html', context)
@@ -14917,7 +14938,7 @@ def blog_post_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Nuevo Artículo'
+        'page_title': gettext('Nuevo Artículo')
     }
     
     return render(request, 'tickets/blog_post_form.html', context)
@@ -14949,7 +14970,7 @@ def blog_comment_approve(request, pk):
     comment.is_approved = True
     comment.save()
     
-    messages.success(request, 'Comentario aprobado exitosamente.')
+    messages.success(request, gettext('Comentario aprobado exitosamente.'))
     return redirect('blog_post_detail_admin', pk=comment.post.pk)
 
 
@@ -14960,7 +14981,7 @@ def blog_comment_delete(request, pk):
     post_pk = comment.post.pk
     comment.delete()
     
-    messages.success(request, 'Comentario eliminado exitosamente.')
+    messages.success(request, gettext('Comentario eliminado exitosamente.'))
     return redirect('blog_post_detail_admin', pk=post_pk)
 
 
@@ -15077,12 +15098,12 @@ def ai_chat_list_view(request):
     
     # Verificar si el chat IA está habilitado
     if not config.ai_chat_enabled:
-        messages.warning(request, 'El chat con IA no está habilitado en el sistema.')
+        messages.warning(request, gettext('El chat con IA no está habilitado en el sistema.'))
         return redirect('dashboard')
     
     # Verificar si hay API key configurada
     if not config.openai_api_key:
-        messages.warning(request, 'El chat con IA no está configurado. Contacta al administrador.')
+        messages.warning(request, gettext('El chat con IA no está configurado. Contacta al administrador.'))
         return redirect('dashboard')
     
     # Obtener sesiones del usuario
@@ -15116,7 +15137,7 @@ def ai_chat_session_view(request, session_id):
     
     # Verificar si el chat IA está habilitado
     if not config.ai_chat_enabled or not config.openai_api_key:
-        messages.warning(request, 'El chat con IA no está disponible.')
+        messages.warning(request, gettext('El chat con IA no está disponible.'))
         return redirect('dashboard')
     
     # Obtener la sesión
@@ -15164,7 +15185,7 @@ def ai_chat_session_view(request, session_id):
                 )
                 print(f"DEBUG: Respuesta de IA guardada con ID: {ai_msg.id}")
                 
-                messages.success(request, 'Mensaje enviado correctamente.')
+                messages.success(request, gettext('Mensaje enviado correctamente.'))
                 
             except Exception as e:
                 print(f"DEBUG: Error en OpenAI API: {str(e)}")
@@ -15251,7 +15272,7 @@ def ai_chat_debug_view(request, session_id):
                 )
                 print(f"DEBUG: Respuesta de IA guardada con ID: {ai_msg.id}")
                 
-                messages.success(request, 'Mensaje enviado correctamente.')
+                messages.success(request, gettext('Mensaje enviado correctamente.'))
                 
             except Exception as e:
                 print(f"DEBUG: Error en OpenAI API: {str(e)}")
@@ -15280,7 +15301,7 @@ def ai_chat_simple_view(request, session_id):
     
     # Verificar configuración
     if not config.ai_chat_enabled or not config.openai_api_key:
-        messages.warning(request, 'El chat con IA no está disponible.')
+        messages.warning(request, gettext('El chat con IA no está disponible.'))
         return redirect('dashboard')
     
     # Obtener sesión
@@ -15317,14 +15338,14 @@ def ai_chat_simple_view(request, session_id):
                 )
                 print(f"IA mensaje guardado: {ai_msg.id}")
                 
-                messages.success(request, 'Mensaje enviado correctamente.')
+                messages.success(request, gettext('Mensaje enviado correctamente.'))
                 return redirect('ai_chat_simple', session_id=session.id)
                 
             except Exception as e:
                 print(f"Error: {e}")
                 messages.error(request, f'Error: {str(e)}')
         else:
-            messages.error(request, 'El mensaje debe tener al menos 5 caracteres.')
+            messages.error(request, gettext('El mensaje debe tener al menos 5 caracteres.'))
     
     # Crear formulario vacío para los errores
     form = AIChatMessageForm()
@@ -15444,11 +15465,11 @@ def ai_chat_live_view(request, session_id):
     
     # Verificar configuración
     if not config.ai_chat_enabled:
-        messages.warning(request, 'El chat con IA no está habilitado en el sistema.')
+        messages.warning(request, gettext('El chat con IA no está habilitado en el sistema.'))
         return redirect('dashboard')
     
     if not config.openai_api_key:
-        messages.warning(request, 'El chat con IA no está configurado. Contacta al administrador.')
+        messages.warning(request, gettext('El chat con IA no está configurado. Contacta al administrador.'))
         return redirect('dashboard')
     
     # Obtener sesión
@@ -15473,11 +15494,11 @@ def ai_chat_modern_view(request, session_id):
     
     # Verificar configuración
     if not config.ai_chat_enabled:
-        messages.warning(request, 'El chat con IA no está habilitado en el sistema.')
+        messages.warning(request, gettext('El chat con IA no está habilitado en el sistema.'))
         return redirect('dashboard')
     
     if not config.openai_api_key:
-        messages.warning(request, 'El chat con IA no está configurado. Contacta al administrador.')
+        messages.warning(request, gettext('El chat con IA no está configurado. Contacta al administrador.'))
         return redirect('dashboard')
     
     # Obtener sesión
@@ -16439,7 +16460,7 @@ def concept_list_view(request):
     
     context = {
         'concepts': concepts,
-        'title': 'Gestión de Conceptos'
+        'title': gettext('Gestión de Conceptos')
     }
     return render(request, 'tickets/concept_list.html', context)
 
@@ -16461,7 +16482,7 @@ def concept_create_view(request):
     
     context = {
         'form': form,
-        'title': 'Crear Concepto'
+        'title': gettext('Crear Concepto')
     }
     return render(request, 'tickets/concept_form.html', context)
 
@@ -16484,7 +16505,7 @@ def concept_edit_view(request, pk):
     context = {
         'form': form,
         'concept': concept,
-        'title': 'Editar Concepto'
+        'title': gettext('Editar Concepto')
     }
     return render(request, 'tickets/concept_form.html', context)
 
@@ -16503,7 +16524,7 @@ def concept_delete_view(request, pk):
     
     context = {
         'concept': concept,
-        'title': 'Eliminar Concepto'
+        'title': gettext('Eliminar Concepto')
     }
     return render(request, 'tickets/concept_delete.html', context)
 
@@ -16526,7 +16547,7 @@ def public_concepts_view(request):
     
     context = {
         'concepts': concepts,
-        'title': 'Glosario de Conceptos'
+        'title': gettext('Glosario de Conceptos')
     }
     return render(request, 'tickets/public_concepts.html', context)
 
@@ -16790,7 +16811,7 @@ def exam_create(request):
     from .utils import can_manage_courses
     
     if not can_manage_courses(request.user):
-        messages.error(request, 'No tienes permisos para crear exámenes')
+        messages.error(request, gettext('No tienes permisos para crear exámenes'))
         return redirect('exam_list')
     
     if request.method == 'POST':
@@ -16856,7 +16877,7 @@ def exam_edit(request, pk):
     exam = get_object_or_404(Exam, pk=pk)
     
     if not (can_manage_courses(request.user) or exam.created_by == request.user):
-        messages.error(request, 'No tienes permisos para editar este examen')
+        messages.error(request, gettext('No tienes permisos para editar este examen'))
         return redirect('exam_detail', pk=exam.pk)
     
     if request.method == 'POST':
@@ -16867,7 +16888,7 @@ def exam_edit(request, pk):
         exam.is_public = request.POST.get('is_public') == 'on'
         exam.save()
         
-        messages.success(request, 'Examen actualizado exitosamente')
+        messages.success(request, gettext('Examen actualizado exitosamente'))
         return redirect('exam_detail', pk=exam.pk)
     
     context = {'exam': exam}
@@ -16882,7 +16903,7 @@ def exam_delete(request, pk):
     exam = get_object_or_404(Exam, pk=pk)
     
     if not (can_manage_courses(request.user) or exam.created_by == request.user):
-        messages.error(request, 'No tienes permisos para eliminar este examen')
+        messages.error(request, gettext('No tienes permisos para eliminar este examen'))
         return redirect('exam_detail', pk=exam.pk)
     
     if request.method == 'POST':
@@ -16905,7 +16926,7 @@ def exam_take_public(request, token):
         participant_email = request.POST.get('participant_email')
         
         if not participant_name or not participant_email:
-            messages.error(request, 'Nombre y email son requeridos')
+            messages.error(request, gettext('Nombre y email son requeridos'))
             return render(request, 'tickets/exam_public_start.html', {'exam': exam})
         
         # Redirigir al examen con los datos en sesión
@@ -17087,15 +17108,15 @@ def download_certificate(request, attempt_id):
     if not attempt.exam.is_public and request.user.is_authenticated:
         if not (attempt.user == request.user or 
                 request.user.groups.filter(name='Agentes').exists()):
-            messages.error(request, 'No tienes permisos para descargar este certificado')
+            messages.error(request, gettext('No tienes permisos para descargar este certificado'))
             return redirect('exam_results', attempt_id=attempt_id)
     elif not attempt.exam.is_public and not request.user.is_authenticated:
-        messages.error(request, 'Debes iniciar sesión para descargar este certificado')
+        messages.error(request, gettext('Debes iniciar sesión para descargar este certificado'))
         return redirect('exam_results', attempt_id=attempt_id)
     
     # Verificar que el examen fue aprobado
     if not attempt.passed:
-        messages.error(request, 'Solo se pueden generar certificados para exámenes aprobados')
+        messages.error(request, gettext('Solo se pueden generar certificados para exámenes aprobados'))
         return redirect('exam_results', attempt_id=attempt_id)
     
     # Generar y retornar el certificado
@@ -17103,7 +17124,7 @@ def download_certificate(request, attempt_id):
     if response:
         return response
     else:
-        messages.error(request, 'Error al generar el certificado')
+        messages.error(request, gettext('Error al generar el certificado'))
         return redirect('exam_results', attempt_id=attempt_id)
 
 
@@ -17128,7 +17149,7 @@ def question_create(request, exam_pk):
     exam = get_object_or_404(Exam, pk=exam_pk)
     
     if not (can_manage_courses(request.user) or exam.created_by == request.user):
-        messages.error(request, 'No tienes permisos para agregar preguntas')
+        messages.error(request, gettext('No tienes permisos para agregar preguntas'))
         return redirect('exam_detail', pk=exam.pk)
     
     if request.method == 'POST':
@@ -17142,7 +17163,7 @@ def question_create(request, exam_pk):
             order=exam.questions.count() + 1
         )
         
-        messages.success(request, 'Pregunta agregada exitosamente')
+        messages.success(request, gettext('Pregunta agregada exitosamente'))
         return redirect('exam_detail', pk=exam.pk)
     
     context = {'exam': exam}
@@ -17158,7 +17179,7 @@ def question_edit(request, pk):
     exam = question.exam
     
     if not (can_manage_courses(request.user) or exam.created_by == request.user):
-        messages.error(request, 'No tienes permisos para editar esta pregunta')
+        messages.error(request, gettext('No tienes permisos para editar esta pregunta'))
         return redirect('exam_detail', pk=exam.pk)
     
     if request.method == 'POST':
@@ -17169,7 +17190,7 @@ def question_edit(request, pk):
         question.correct_option = request.POST.get('correct_option')
         question.save()
         
-        messages.success(request, 'Pregunta actualizada exitosamente')
+        messages.success(request, gettext('Pregunta actualizada exitosamente'))
         return redirect('exam_detail', pk=exam.pk)
     
     context = {'question': question, 'exam': exam}
@@ -17185,12 +17206,12 @@ def question_delete(request, pk):
     exam = question.exam
     
     if not (can_manage_courses(request.user) or exam.created_by == request.user):
-        messages.error(request, 'No tienes permisos para eliminar esta pregunta')
+        messages.error(request, gettext('No tienes permisos para eliminar esta pregunta'))
         return redirect('exam_detail', pk=exam.pk)
     
     if request.method == 'POST':
         question.delete()
-        messages.success(request, 'Pregunta eliminada exitosamente')
+        messages.success(request, gettext('Pregunta eliminada exitosamente'))
         return redirect('exam_detail', pk=exam.pk)
     
     context = {'question': question, 'exam': exam}
@@ -17203,7 +17224,7 @@ def exam_attempts_list(request):
     from .utils import is_agent
     
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección'))
         return redirect('dashboard')
     
     # Obtener parámetros de filtrado
@@ -17479,7 +17500,7 @@ def contacto_web(request):
     ).count()
     
     if recent_contacts >= 3:
-        messages.error(request, 'Has alcanzado el límite de contactos por hora. Por favor, inténtalo más tarde.')
+        messages.error(request, gettext('Has alcanzado el límite de contactos por hora. Por favor, inténtalo más tarde.'))
         form = ContactoWebForm()
         # Generar CAPTCHA aunque no se pueda enviar
         import random
@@ -17504,7 +17525,7 @@ def contacto_web(request):
         
         context = {
             'form': form,
-            'page_title': 'Contáctanos',
+            'page_title': gettext('Contáctanos'),
             'rate_limited': True
         }
         return render(request, 'tickets/contacto_web.html', context)
@@ -17551,7 +17572,7 @@ def contacto_web(request):
             if 'captcha_answer' in request.session:
                 del request.session['captcha_answer']
             
-            messages.success(request, '¡Gracias por contactarnos! Hemos recibido tu mensaje y te responderemos pronto.')
+            messages.success(request, gettext('¡Gracias por contactarnos! Hemos recibido tu mensaje y te responderemos pronto.'))
             return redirect('contacto_web')
     else:
         form = ContactoWebForm()
@@ -17583,7 +17604,7 @@ def contacto_web(request):
     
     context = {
         'form': form,
-        'page_title': 'Contáctanos'
+        'page_title': gettext('Contáctanos')
     }
     
     return render(request, 'tickets/contacto_web.html', context)
@@ -17596,7 +17617,7 @@ def contactos_web_list(request):
     from .models import ContactoWeb
     
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección'))
         return redirect('dashboard')
     
     # Filtros
@@ -17671,7 +17692,7 @@ def contactos_web_list(request):
             'respondidos': respondidos,
             'pendientes': pendientes,
         },
-        'page_title': 'Contactos Web'
+        'page_title': gettext('Contactos Web')
     }
     
     return render(request, 'tickets/contactos_web_list.html', context)
@@ -17684,7 +17705,7 @@ def contacto_web_detail(request, pk):
     from .models import ContactoWeb
     
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección'))
         return redirect('dashboard')
     
     contacto = get_object_or_404(ContactoWeb, pk=pk)
@@ -17699,11 +17720,11 @@ def contacto_web_detail(request, pk):
         if 'marcar_respondido' in request.POST:
             contacto.respondido = True
             contacto.save()
-            messages.success(request, 'Contacto marcado como respondido')
+            messages.success(request, gettext('Contacto marcado como respondido'))
         elif 'marcar_pendiente' in request.POST:
             contacto.respondido = False
             contacto.save()
-            messages.success(request, 'Contacto marcado como pendiente')
+            messages.success(request, gettext('Contacto marcado como pendiente'))
         
         return redirect('contacto_web_detail', pk=pk)
     
@@ -17727,7 +17748,7 @@ def public_upload_url_list(request):
     
     context = {
         'upload_urls': upload_urls,
-        'page_title': 'URLs Públicas de Subida'
+        'page_title': gettext('URLs Públicas de Subida')
     }
     
     return render(request, 'tickets/public_upload_url_list.html', context)
@@ -17769,7 +17790,7 @@ def public_upload_url_create(request):
     
     context = {
         'companies': companies,
-        'page_title': 'Crear URL Pública de Subida'
+        'page_title': gettext('Crear URL Pública de Subida')
     }
     
     return render(request, 'tickets/public_upload_url_form.html', context)
@@ -17832,9 +17853,9 @@ def public_document_upload(request, token):
         uploaded_file = request.FILES.get('file')
         
         if not title:
-            messages.error(request, 'El título es obligatorio')
+            messages.error(request, gettext('El título es obligatorio'))
         elif not uploaded_file:
-            messages.error(request, 'Debe seleccionar un archivo')
+            messages.error(request, gettext('Debe seleccionar un archivo'))
         else:
             try:
                 # Crear el documento
@@ -17858,7 +17879,7 @@ def public_document_upload(request, token):
                 upload_url.last_used_at = timezone.now()
                 upload_url.save()
                 
-                messages.success(request, '¡Archivo subido exitosamente!')
+                messages.success(request, gettext('¡Archivo subido exitosamente!'))
                 
                 # Redirigir a una página de éxito
                 context = {
@@ -17890,7 +17911,7 @@ def course_generate_registration_token(request, pk):
     course = get_object_or_404(Course, pk=pk)
     
     if not utils.can_manage_courses(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('course_detail', pk=pk)
     
     if request.method == 'POST':
@@ -17944,13 +17965,13 @@ def course_disable_registration_token(request, pk, token_id):
     token = get_object_or_404(CourseRegistrationToken, pk=token_id, course=course)
     
     if not utils.can_manage_courses(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('course_detail', pk=pk)
     
     token.is_active = False
     token.save()
     
-    messages.success(request, 'Token de registro desactivado exitosamente.')
+    messages.success(request, gettext('Token de registro desactivado exitosamente.'))
     return redirect('course_detail', pk=pk)
 
 
@@ -17964,7 +17985,7 @@ def course_public_register(request, token):
     try:
         registration_token = CourseRegistrationToken.objects.get(token=token)
     except CourseRegistrationToken.DoesNotExist:
-        messages.error(request, 'Token de registro no válido.')
+        messages.error(request, gettext('Token de registro no válido.'))
         return redirect('course_public')
     
     # Verificar si el token es válido
@@ -18073,7 +18094,7 @@ def course_registration_tokens_list(request, pk):
     course = get_object_or_404(Course, pk=pk)
     
     if not utils.can_manage_courses(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('course_detail', pk=pk)
     
     tokens = CourseRegistrationToken.objects.filter(course=course).order_by('-created_at')
@@ -18095,7 +18116,7 @@ def course_registration_tokens_list(request, pk):
 def employee_list(request):
     """Lista de empleados"""
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('dashboard')
     
     # Filtrar por empresa del usuario
@@ -18130,7 +18151,7 @@ def employee_list(request):
         'status_choices': Employee.STATUS_CHOICES,
         'current_status': status_filter,
         'search': search,
-        'page_title': 'Gestión de Empleados'
+        'page_title': gettext('Gestión de Empleados')
     }
     
     return render(request, 'tickets/employee_list.html', context)
@@ -18143,20 +18164,20 @@ def employee_detail(request, pk):
     
     # Verificar permisos
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('employee_list')
     
     # Verificar que el usuario puede ver este empleado (misma empresa)
     user_profile = UserProfile.objects.filter(user=request.user).first()
     if user_profile and user_profile.company and employee.company != user_profile.company:
-        messages.error(request, 'No tienes permisos para ver este empleado.')
+        messages.error(request, gettext('No tienes permisos para ver este empleado.'))
         return redirect('employee_list')
     
     if request.method == 'POST' and 'analyze_ai' in request.POST:
         # Obtener configuración del sistema
         config = SystemConfiguration.objects.first()
         if not config or not config.openai_api_key:
-            messages.error(request, 'La configuración de IA no está disponible. Contacta al administrador.')
+            messages.error(request, gettext('La configuración de IA no está disponible. Contacta al administrador.'))
             return redirect('employee_detail', pk=pk)
             
         # Preparar datos para IA
@@ -18210,7 +18231,7 @@ def employee_detail(request, pk):
             employee.ai_score = puntuacion
             employee.save()
             
-            messages.success(request, "Análisis de IA completado y guardado correctamente.")
+            messages.success(request, gettext("Análisis de IA completado y guardado correctamente."))
             
         except Exception as e:
             messages.error(request, f"Error al analizar con IA: {str(e)}")
@@ -18231,13 +18252,13 @@ def employee_change_status(request, pk):
     
     # Verificar permisos
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('employee_list')
     
     # Verificar que el usuario puede modificar este empleado (misma empresa)
     user_profile = UserProfile.objects.filter(user=request.user).first()
     if user_profile and user_profile.company and employee.company != user_profile.company:
-        messages.error(request, 'No tienes permisos para modificar este empleado.')
+        messages.error(request, gettext('No tienes permisos para modificar este empleado.'))
         return redirect('employee_list')
     
     if request.method == 'POST':
@@ -18248,7 +18269,7 @@ def employee_change_status(request, pk):
             messages.success(request, f'Estado actualizado a {employee.get_status_display()}')
             return redirect('employee_detail', pk=pk)
         else:
-            messages.error(request, 'Estado no válido.')
+            messages.error(request, gettext('Estado no válido.'))
     
     return redirect('employee_detail', pk=pk)
 
@@ -18260,20 +18281,20 @@ def employee_edit_hiring_opinion(request, pk):
     
     # Verificar permisos
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('employee_list')
     
     # Verificar que el usuario puede modificar este empleado (misma empresa)
     user_profile = UserProfile.objects.filter(user=request.user).first()
     if user_profile and user_profile.company and employee.company != user_profile.company:
-        messages.error(request, 'No tienes permisos para modificar este empleado.')
+        messages.error(request, gettext('No tienes permisos para modificar este empleado.'))
         return redirect('employee_list')
     
     if request.method == 'POST':
         form = EmployeeHiringOpinionForm(request.POST, instance=employee)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Opinión de reunión actualizada correctamente.')
+            messages.success(request, gettext('Opinión de reunión actualizada correctamente.'))
             
             # Redirigir según el tipo de empleado
             if employee.status in ['candidate', 'in_process']:
@@ -18281,7 +18302,7 @@ def employee_edit_hiring_opinion(request, pk):
             else:
                 return redirect('active_employee_detail', pk=pk)
         else:
-            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+            messages.error(request, gettext('Por favor, corrige los errores en el formulario.'))
     else:
         form = EmployeeHiringOpinionForm(instance=employee)
     
@@ -18301,13 +18322,13 @@ def employee_payroll_list(request, pk):
     
     # Verificar permisos
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('employee_list')
     
     # Verificar que el usuario puede ver este empleado (misma empresa)
     user_profile = UserProfile.objects.filter(user=request.user).first()
     if user_profile and user_profile.company and employee.company != user_profile.company:
-        messages.error(request, 'No tienes permisos para ver este empleado.')
+        messages.error(request, gettext('No tienes permisos para ver este empleado.'))
         return redirect('employee_list')
     
     # Obtener nóminas del empleado
@@ -18329,13 +18350,13 @@ def employee_payroll_create(request, pk):
     
     # Verificar permisos
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('employee_list')
     
     # Verificar que el usuario puede modificar este empleado (misma empresa)
     user_profile = UserProfile.objects.filter(user=request.user).first()
     if user_profile and user_profile.company and employee.company != user_profile.company:
-        messages.error(request, 'No tienes permisos para modificar este empleado.')
+        messages.error(request, gettext('No tienes permisos para modificar este empleado.'))
         return redirect('employee_list')
     
     if request.method == 'POST':
@@ -18354,7 +18375,7 @@ def employee_payroll_create(request, pk):
                 else:
                     messages.error(request, f'Error al guardar la nómina: {str(e)}')
         else:
-            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+            messages.error(request, gettext('Por favor, corrige los errores en el formulario.'))
     else:
         form = EmployeePayrollForm()
     
@@ -18375,13 +18396,13 @@ def employee_payroll_detail(request, employee_pk, payroll_pk):
     
     # Verificar permisos
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('employee_list')
     
     # Verificar que el usuario puede ver este empleado (misma empresa)
     user_profile = UserProfile.objects.filter(user=request.user).first()
     if user_profile and user_profile.company and employee.company != user_profile.company:
-        messages.error(request, 'No tienes permisos para ver este empleado.')
+        messages.error(request, gettext('No tienes permisos para ver este empleado.'))
         return redirect('employee_list')
     
     context = {
@@ -18401,13 +18422,13 @@ def employee_payroll_edit(request, employee_pk, payroll_pk):
     
     # Verificar permisos
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('employee_list')
     
     # Verificar que el usuario puede modificar este empleado (misma empresa)
     user_profile = UserProfile.objects.filter(user=request.user).first()
     if user_profile and user_profile.company and employee.company != user_profile.company:
-        messages.error(request, 'No tienes permisos para modificar este empleado.')
+        messages.error(request, gettext('No tienes permisos para modificar este empleado.'))
         return redirect('employee_list')
     
     if request.method == 'POST':
@@ -18427,7 +18448,7 @@ def employee_payroll_edit(request, employee_pk, payroll_pk):
                 messages.error(request, f'Error al actualizar la nómina: {str(e)}')
         else:
             print(f"DEBUG - Errores del formulario: {form.errors}")
-            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+            messages.error(request, gettext('Por favor, corrige los errores en el formulario.'))
     else:
         form = EmployeePayrollForm(instance=payroll)
     
@@ -18449,13 +18470,13 @@ def employee_payroll_delete(request, employee_pk, payroll_pk):
     
     # Verificar permisos
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('employee_list')
     
     # Verificar que el usuario puede modificar este empleado (misma empresa)
     user_profile = UserProfile.objects.filter(user=request.user).first()
     if user_profile and user_profile.company and employee.company != user_profile.company:
-        messages.error(request, 'No tienes permisos para modificar este empleado.')
+        messages.error(request, gettext('No tienes permisos para modificar este empleado.'))
         return redirect('employee_list')
     
     if request.method == 'POST':
@@ -18477,7 +18498,7 @@ def employee_payroll_delete(request, employee_pk, payroll_pk):
 def candidate_list(request):
     """Lista de candidatos (estado: candidato e in_process)"""
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('dashboard')
     
     # Filtrar por empresa del usuario
@@ -18508,7 +18529,7 @@ def candidate_list(request):
     context = {
         'employees': page_obj,
         'search': search,
-        'page_title': 'Candidatos',
+        'page_title': gettext('Candidatos'),
         'section': 'candidates'
     }
     
@@ -18522,20 +18543,20 @@ def candidate_detail(request, pk):
     
     # Verificar permisos
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('candidate_list')
     
     # Verificar que el usuario puede ver este candidato (misma empresa)
     user_profile = UserProfile.objects.filter(user=request.user).first()
     if user_profile and user_profile.company and employee.company != user_profile.company:
-        messages.error(request, 'No tienes permisos para ver este candidato.')
+        messages.error(request, gettext('No tienes permisos para ver este candidato.'))
         return redirect('candidate_list')
     
     # Análisis de IA (mismo código que employee_detail)
     if request.method == 'POST' and 'analyze_ai' in request.POST:
         config = SystemConfiguration.objects.first()
         if not config or not config.openai_api_key:
-            messages.error(request, 'La configuración de IA no está disponible. Contacta al administrador.')
+            messages.error(request, gettext('La configuración de IA no está disponible. Contacta al administrador.'))
             return redirect('candidate_detail', pk=pk)
             
         # Preparar datos para IA
@@ -18589,7 +18610,7 @@ def candidate_detail(request, pk):
             employee.ai_score = puntuacion
             employee.save()
             
-            messages.success(request, "Análisis de IA completado y guardado correctamente.")
+            messages.success(request, gettext("Análisis de IA completado y guardado correctamente."))
             
         except Exception as e:
             messages.error(request, f"Error al analizar con IA: {str(e)}")
@@ -18610,7 +18631,7 @@ def candidate_detail(request, pk):
 def active_employee_list(request):
     """Lista de empleados activos (estado: employee)"""
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('dashboard')
     
     # Filtrar por empresa del usuario
@@ -18641,7 +18662,7 @@ def active_employee_list(request):
     context = {
         'employees': page_obj,
         'search': search,
-        'page_title': 'Empleados Activos',
+        'page_title': gettext('Empleados Activos'),
         'section': 'employees'
     }
     
@@ -18655,13 +18676,13 @@ def active_employee_detail(request, pk):
     
     # Verificar permisos
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('active_employee_list')
     
     # Verificar que el usuario puede ver este empleado (misma empresa)
     user_profile = UserProfile.objects.filter(user=request.user).first()
     if user_profile and user_profile.company and employee.company != user_profile.company:
-        messages.error(request, 'No tienes permisos para ver este empleado.')
+        messages.error(request, gettext('No tienes permisos para ver este empleado.'))
         return redirect('active_employee_list')
     
     context = {
@@ -18678,7 +18699,7 @@ def active_employee_detail(request, pk):
 def job_application_token_list(request):
     """Lista de tokens de aplicación de trabajo"""
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('dashboard')
     
     # Filtrar por empresa del usuario
@@ -18695,7 +18716,7 @@ def job_application_token_list(request):
     
     context = {
         'page_obj': page_obj,
-        'page_title': 'Enlaces de Aplicación de Empleo'
+        'page_title': gettext('Enlaces de Aplicación de Empleo')
     }
     
     return render(request, 'tickets/job_application_token_list.html', context)
@@ -18705,7 +18726,7 @@ def job_application_token_list(request):
 def job_application_token_create(request):
     """Crear nuevo token de aplicación de trabajo"""
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('dashboard')
     
     if request.method == 'POST':
@@ -18717,13 +18738,13 @@ def job_application_token_create(request):
             expires_at = request.POST.get('expires_at')
             
             if not job_title or not job_description:
-                messages.error(request, 'El título y descripción del trabajo son obligatorios.')
+                messages.error(request, gettext('El título y descripción del trabajo son obligatorios.'))
                 return render(request, 'tickets/job_application_token_form.html')
             
             # Obtener empresa del usuario
             user_profile = UserProfile.objects.filter(user=request.user).first()
             if not user_profile or not user_profile.company:
-                messages.error(request, 'Debes estar asociado a una empresa para crear enlaces de aplicación.')
+                messages.error(request, gettext('Debes estar asociado a una empresa para crear enlaces de aplicación.'))
                 return redirect('job_application_token_list')
             
             # Crear el token
@@ -18744,7 +18765,7 @@ def job_application_token_create(request):
             messages.error(request, f'Error al crear el enlace: {str(e)}')
     
     context = {
-        'page_title': 'Crear Enlace de Aplicación de Empleo'
+        'page_title': gettext('Crear Enlace de Aplicación de Empleo')
     }
     
     return render(request, 'tickets/job_application_token_form.html', context)
@@ -18757,13 +18778,13 @@ def job_application_token_detail(request, pk):
     
     # Verificar permisos
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('job_application_token_list')
     
     # Verificar que el usuario puede ver este token (misma empresa)
     user_profile = UserProfile.objects.filter(user=request.user).first()
     if user_profile and user_profile.company and token.company != user_profile.company:
-        messages.error(request, 'No tienes permisos para ver este enlace.')
+        messages.error(request, gettext('No tienes permisos para ver este enlace.'))
         return redirect('job_application_token_list')
     
     # Obtener aplicaciones relacionadas
@@ -18813,7 +18834,7 @@ def public_job_application(request, token):
             
             # Validaciones básicas
             if not all([first_name, last_name, email, description]):
-                messages.error(request, 'Todos los campos marcados con * son obligatorios.')
+                messages.error(request, gettext('Todos los campos marcados con * son obligatorios.'))
                 return render(request, 'tickets/public_job_application.html', {
                     'token': application_token,
                     'page_title': f'Aplicar a: {application_token.job_title}'
@@ -18821,7 +18842,7 @@ def public_job_application(request, token):
             
             # Verificar que el email no exista ya
             if Employee.objects.filter(email=email, company=application_token.company).exists():
-                messages.error(request, 'Ya existe una aplicación con este correo electrónico.')
+                messages.error(request, gettext('Ya existe una aplicación con este correo electrónico.'))
                 return render(request, 'tickets/public_job_application.html', {
                     'token': application_token,
                     'page_title': f'Aplicar a: {application_token.job_title}'
@@ -18854,7 +18875,7 @@ def public_job_application(request, token):
             return render(request, 'tickets/public_job_application_success.html', {
                 'employee': employee,
                 'token': application_token,
-                'page_title': 'Aplicación Enviada'
+                'page_title': gettext('Aplicación Enviada')
             })
             
         except Exception as e:
@@ -18958,7 +18979,7 @@ def analyze_resume_with_ai(employee):
 def agreement_list(request):
     """Lista de acuerdos"""
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('dashboard')
     
     # Filtrar por empresa del usuario si es necesario
@@ -18993,7 +19014,7 @@ def agreement_list(request):
         'agreements': agreements,
         'search': search,
         'status_filter': status_filter,
-        'page_title': 'Gestión de Acuerdos',
+        'page_title': gettext('Gestión de Acuerdos'),
     }
     
     return render(request, 'tickets/agreement_list.html', context)
@@ -19003,7 +19024,7 @@ def agreement_list(request):
 def agreement_create(request):
     """Crear nuevo acuerdo"""
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('dashboard')
     
     if request.method == 'POST':
@@ -19024,21 +19045,21 @@ def agreement_create(request):
                 )
                 if ai_content:
                     agreement.body = ai_content
-                    messages.success(request, 'Contenido generado con IA exitosamente.')
+                    messages.success(request, gettext('Contenido generado con IA exitosamente.'))
                 else:
-                    messages.warning(request, 'No se pudo generar contenido con IA. Verifica la configuración.')
+                    messages.warning(request, gettext('No se pudo generar contenido con IA. Verifica la configuración.'))
             
             agreement.save()
             messages.success(request, f'Acuerdo "{agreement.title}" creado correctamente.')
             return redirect('agreement_detail', pk=agreement.pk)
         else:
-            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+            messages.error(request, gettext('Por favor, corrige los errores en el formulario.'))
     else:
         form = AgreementForm()
     
     context = {
         'form': form,
-        'page_title': 'Nuevo Acuerdo',
+        'page_title': gettext('Nuevo Acuerdo'),
     }
     
     return render(request, 'tickets/agreement_form.html', context)
@@ -19051,13 +19072,13 @@ def agreement_detail(request, pk):
     
     # Verificar permisos
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('dashboard')
     
     # Verificar empresa
     user_profile = UserProfile.objects.filter(user=request.user).first()
     if user_profile and user_profile.company and agreement.company != user_profile.company:
-        messages.error(request, 'No tienes permisos para ver este acuerdo.')
+        messages.error(request, gettext('No tienes permisos para ver este acuerdo.'))
         return redirect('agreement_list')
     
     signatures = agreement.signatures.all().order_by('-signed_at')
@@ -19078,18 +19099,18 @@ def agreement_edit(request, pk):
     
     # Verificar permisos
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('dashboard')
     
     # Verificar empresa
     user_profile = UserProfile.objects.filter(user=request.user).first()
     if user_profile and user_profile.company and agreement.company != user_profile.company:
-        messages.error(request, 'No tienes permisos para editar este acuerdo.')
+        messages.error(request, gettext('No tienes permisos para editar este acuerdo.'))
         return redirect('agreement_list')
     
     # Verificar si es editable
     if not agreement.is_editable:
-        messages.error(request, 'Este acuerdo ya no se puede editar porque tiene firmas válidas.')
+        messages.error(request, gettext('Este acuerdo ya no se puede editar porque tiene firmas válidas.'))
         return redirect('agreement_detail', pk=agreement.pk)
     
     if request.method == 'POST':
@@ -19105,14 +19126,14 @@ def agreement_edit(request, pk):
                 if ai_content:
                     agreement.body = ai_content
                     agreement.save()
-                    messages.success(request, 'Contenido actualizado con IA exitosamente.')
+                    messages.success(request, gettext('Contenido actualizado con IA exitosamente.'))
                 else:
-                    messages.warning(request, 'No se pudo generar contenido con IA.')
+                    messages.warning(request, gettext('No se pudo generar contenido con IA.'))
             
             messages.success(request, f'Acuerdo "{agreement.title}" actualizado correctamente.')
             return redirect('agreement_detail', pk=agreement.pk)
         else:
-            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+            messages.error(request, gettext('Por favor, corrige los errores en el formulario.'))
     else:
         form = AgreementForm(instance=agreement)
     
@@ -19132,13 +19153,13 @@ def agreement_delete(request, pk):
     
     # Verificar permisos
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('dashboard')
     
     # Verificar empresa
     user_profile = UserProfile.objects.filter(user=request.user).first()
     if user_profile and user_profile.company and agreement.company != user_profile.company:
-        messages.error(request, 'No tienes permisos para eliminar este acuerdo.')
+        messages.error(request, gettext('No tienes permisos para eliminar este acuerdo.'))
         return redirect('agreement_list')
     
     if request.method == 'POST':
@@ -19162,13 +19183,13 @@ def agreement_publish(request, pk):
     
     # Verificar permisos
     if not request.user.groups.filter(name__in=['Administradores', 'Agentes']).exists():
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('dashboard')
     
     # Verificar empresa
     user_profile = UserProfile.objects.filter(user=request.user).first()
     if user_profile and user_profile.company and agreement.company != user_profile.company:
-        messages.error(request, 'No tienes permisos para publicar este acuerdo.')
+        messages.error(request, gettext('No tienes permisos para publicar este acuerdo.'))
         return redirect('agreement_list')
     
     if request.method == 'POST':
@@ -19189,7 +19210,7 @@ def agreement_publish(request, pk):
             
             return redirect('agreement_detail', pk=agreement.pk)
         else:
-            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+            messages.error(request, gettext('Por favor, corrige los errores en el formulario.'))
     else:
         form = AgreementPublicForm()
     
@@ -19245,10 +19266,10 @@ def public_agreement_sign(request, token):
             
             signature.save()
             
-            messages.success(request, '¡Acuerdo firmado correctamente!')
+            messages.success(request, gettext('¡Acuerdo firmado correctamente!'))
             return redirect('public_agreement_success', token=token, signature_id=signature.pk)
         else:
-            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+            messages.error(request, gettext('Por favor, corrige los errores en el formulario.'))
     else:
         form = AgreementSignatureForm()
     
@@ -19358,7 +19379,7 @@ def landing_page_list(request):
     landing_pages = LandingPage.objects.all().order_by('-created_at')
     
     context = {
-        'page_title': 'Landing Pages',
+        'page_title': gettext('Landing Pages'),
         'landing_pages': landing_pages,
     }
     
@@ -19375,7 +19396,7 @@ def landing_page_create(request):
             landing_page = form.save(commit=False)
             landing_page.created_by = request.user
             landing_page.save()
-            messages.success(request, 'Landing Page creada exitosamente.')
+            messages.success(request, gettext('Landing Page creada exitosamente.'))
             return redirect('landing_page_detail', pk=landing_page.pk)
         else:
             # Agregar errores del formulario a los mensajes
@@ -19386,7 +19407,7 @@ def landing_page_create(request):
         form = LandingPageForm()
     
     context = {
-        'page_title': 'Crear Landing Page',
+        'page_title': gettext('Crear Landing Page'),
         'form': form,
     }
     
@@ -19423,7 +19444,7 @@ def landing_page_edit(request, pk):
         form = LandingPageForm(request.POST, request.FILES, instance=landing_page)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Landing Page actualizada exitosamente.')
+            messages.success(request, gettext('Landing Page actualizada exitosamente.'))
             return redirect('landing_page_detail', pk=landing_page.pk)
     else:
         form = LandingPageForm(instance=landing_page)
@@ -19445,7 +19466,7 @@ def landing_page_delete(request, pk):
     
     if request.method == 'POST':
         landing_page.delete()
-        messages.success(request, 'Landing Page eliminada exitosamente.')
+        messages.success(request, gettext('Landing Page eliminada exitosamente.'))
         return redirect('landing_page_list')
     
     context = {
@@ -19928,7 +19949,7 @@ def create_contact_from_submission_view(request, submission_id):
                 from .utils import send_contact_creation_notification
                 send_contact_creation_notification(contact, submission.landing_page)
             except Exception as e:
-                messages.warning(request, 'Contacto creado pero no se pudo enviar la notificación por email.')
+                messages.warning(request, gettext('Contacto creado pero no se pudo enviar la notificación por email.'))
                 
         except Exception as e:
             messages.error(request, f'Error al crear el contacto: {str(e)}')
@@ -20067,7 +20088,7 @@ def landing_page_contacts(request):
     negative_contacts = contacts.filter(status='negative').count()
     
     context = {
-        'page_title': 'Contactos desde Landing Pages',
+        'page_title': gettext('Contactos desde Landing Pages'),
         'contacts': contacts,
         'total_contacts': total_contacts,
         'positive_contacts': positive_contacts,
@@ -20106,7 +20127,7 @@ def spam_submissions_list(request):
     landing_pages = LandingPage.objects.filter(submissions__is_spam=True).distinct()
 
     context = {
-        'page_title': 'Spam - Envíos de Landing Pages',
+        'page_title': gettext('Spam - Envíos de Landing Pages'),
         'submissions': submissions,
         'total': total,
         'landing_pages': landing_pages,
@@ -20195,7 +20216,7 @@ def registro_entrada_list(request):
     public_url = request.build_absolute_uri(f'/registro-entrada/{config.public_token}/')
 
     context = {
-        'page_title': 'Registro de Entrada',
+        'page_title': gettext('Registro de Entrada'),
         'registros': registros,
         'total': total,
         'hoy': hoy,
@@ -20310,7 +20331,7 @@ def registro_entrada_create(request):
             return redirect('registro_entrada_list')
 
     return render(request, 'tickets/registro_entrada_form.html', {
-        'page_title': 'Nuevo Registro de Entrada',
+        'page_title': gettext('Nuevo Registro de Entrada'),
         'action': 'create',
         'errors': errors,
         'post_data': post_data,
@@ -20381,7 +20402,7 @@ def registro_entrada_delete(request, pk):
         return redirect('registro_entrada_list')
 
     return render(request, 'tickets/registro_entrada_delete.html', {
-        'page_title': 'Eliminar Registro de Entrada',
+        'page_title': gettext('Eliminar Registro de Entrada'),
         'registro': registro,
     })
 
@@ -20952,7 +20973,7 @@ def work_order_public_task_view(request, token):
                 new_status_display = task.get_status_display()
                 messages.success(request, f'Tarea "{task.title}" actualizada de "{old_status}" a "{new_status_display}".')
             except WorkOrderTask.DoesNotExist:
-                messages.error(request, 'Tarea no encontrada.')
+                messages.error(request, gettext('Tarea no encontrada.'))
         
         return redirect('public_work_order_tasks', token=token)
     
@@ -21101,7 +21122,7 @@ def landing_submissions_list_view(request):
         stats = {}
     
     context = {
-        'page_title': 'Evaluación IA - Landing Pages',
+        'page_title': gettext('Evaluación IA - Landing Pages'),
         'page_obj': page_obj,
         'evaluated_filter': evaluated_filter,
         'priority_filter': priority_filter,
@@ -21149,7 +21170,7 @@ def evaluate_submission_ai_view(request, submission_id):
             if success:
                 messages.success(request, f'Evaluación IA completada. Puntuación: {submission.ai_overall_score}/10')
             else:
-                messages.error(request, 'Error al evaluar con IA')
+                messages.error(request, gettext('Error al evaluar con IA'))
         except Exception as e:
             messages.error(request, f'Error: {str(e)}')
     
@@ -21251,7 +21272,7 @@ def ai_evaluation_dashboard_view(request):
     ).order_by('-month')[:10]
     
     context = {
-        'page_title': 'Dashboard Evaluación IA',
+        'page_title': gettext('Dashboard Evaluación IA'),
         'stats': stats,
         'top_submissions': top_submissions,
         'pending_submissions': pending_submissions,
@@ -21315,7 +21336,7 @@ def shared_files_list_view(request):
     file_types = SharedFile.objects.values_list('file_type', flat=True).distinct()
     
     context = {
-        'page_title': 'Archivos Compartidos',
+        'page_title': gettext('Archivos Compartidos'),
         'files': files_page,
         'companies': companies,
         'file_types': file_types,
@@ -21349,13 +21370,13 @@ def shared_file_upload_view(request):
                         shared_file.company = first_company
             
             shared_file.save()
-            messages.success(request, 'Archivo subido exitosamente.')
+            messages.success(request, gettext('Archivo subido exitosamente.'))
             return redirect('shared_files_list')
     else:
         form = SharedFileForm(user=request.user)
     
     context = {
-        'page_title': 'Subir Archivo',
+        'page_title': gettext('Subir Archivo'),
         'form': form,
     }
     
@@ -21376,7 +21397,7 @@ def shared_file_detail_view(request, file_id):
         # Si no es agente, verificar que tenga acceso
         if not (shared_file.uploaded_by == user or 
                 (user_profile and user_profile.company == shared_file.company)):
-            messages.error(request, 'No tienes permisos para ver este archivo.')
+            messages.error(request, gettext('No tienes permisos para ver este archivo.'))
             return redirect('shared_files_list')
     
     context = {
@@ -21402,7 +21423,7 @@ def shared_file_download_view(request, file_id):
         # Si no es agente, verificar que tenga acceso
         if not (shared_file.uploaded_by == user or 
                 (user_profile and user_profile.company == shared_file.company)):
-            messages.error(request, 'No tienes permisos para descargar este archivo.')
+            messages.error(request, gettext('No tienes permisos para descargar este archivo.'))
             return redirect('shared_files_list')
     
     # Registrar la descarga
@@ -21425,7 +21446,7 @@ def shared_file_download_view(request, file_id):
         )
         return response
     except FileNotFoundError:
-        messages.error(request, 'El archivo no se encontró en el servidor.')
+        messages.error(request, gettext('El archivo no se encontró en el servidor.'))
         return redirect('shared_file_detail', file_id=file_id)
 
 
@@ -21449,12 +21470,12 @@ def public_file_upload_view(request):
                 else:
                     messages.success(
                         request, 
-                        'Archivo subido exitosamente. Tu cuenta no tiene empresa asignada, por lo que el archivo estará disponible para revisión de los agentes.'
+                        gettext('Archivo subido exitosamente. Tu cuenta no tiene empresa asignada, por lo que el archivo estará disponible para revisión de los agentes.')
                     )
             except User.DoesNotExist:
                 messages.success(
                     request, 
-                    'Archivo subido exitosamente. No se encontró una cuenta con este email, por lo que el archivo estará disponible para revisión de los agentes.'
+                    gettext('Archivo subido exitosamente. No se encontró una cuenta con este email, por lo que el archivo estará disponible para revisión de los agentes.')
                 )
             
             return redirect('public_file_upload')
@@ -21462,7 +21483,7 @@ def public_file_upload_view(request):
         form = PublicSharedFileForm()
     
     context = {
-        'page_title': 'Subir Archivo Público',
+        'page_title': gettext('Subir Archivo Público'),
         'form': form,
     }
     
@@ -21485,11 +21506,11 @@ def shared_file_delete_view(request, file_id):
                 pass
         
         shared_file.delete()
-        messages.success(request, 'Archivo eliminado exitosamente.')
+        messages.success(request, gettext('Archivo eliminado exitosamente.'))
         return redirect('shared_files_list')
     
     context = {
-        'page_title': 'Eliminar Archivo',
+        'page_title': gettext('Eliminar Archivo'),
         'shared_file': shared_file,
     }
     
@@ -21541,7 +21562,7 @@ def shared_files_stats_view(request):
     ).order_by('-downloaded_at')[:10]
     
     context = {
-        'page_title': 'Estadísticas de Archivos Compartidos',
+        'page_title': gettext('Estadísticas de Archivos Compartidos'),
         'total_files': total_files,
         'total_downloads': total_downloads,
         'total_size': total_size,
@@ -21586,7 +21607,7 @@ def recordings_list_view(request):
     recordings_page = paginator.get_page(page_number)
     
     context = {
-        'page_title': 'Grabaciones',
+        'page_title': gettext('Grabaciones'),
         'recordings': recordings_page,
         'is_agent': is_agent(request.user),
     }
@@ -21646,9 +21667,9 @@ def recording_upload_view(request):
                         thread.daemon = True
                         thread.start()
                         
-                        messages.success(request, 'Grabación guardada exitosamente. La transcripción se procesará automáticamente.')
+                        messages.success(request, gettext('Grabación guardada exitosamente. La transcripción se procesará automáticamente.'))
                     except Exception as e:
-                        messages.success(request, 'Grabación guardada exitosamente. La transcripción se procesará manualmente.')
+                        messages.success(request, gettext('Grabación guardada exitosamente. La transcripción se procesará manualmente.'))
                         print(f"Error iniciando transcripción automática: {e}")
                     
                     return redirect('recordings_list')
@@ -21656,12 +21677,12 @@ def recording_upload_view(request):
                 except Exception as e:
                     messages.error(request, f'Error al procesar la grabación: {str(e)}')
             else:
-                messages.error(request, 'No se recibieron datos de audio.')
+                messages.error(request, gettext('No se recibieron datos de audio.'))
     else:
         form = RecordingForm()
     
     context = {
-        'page_title': 'Grabar Audio',
+        'page_title': gettext('Grabar Audio'),
         'form': form,
     }
     
@@ -21688,7 +21709,7 @@ def recording_detail_view(request, recording_id):
         user_can_access = True
     
     if not user_can_access:
-        messages.error(request, 'No tienes permisos para ver esta grabación.')
+        messages.error(request, gettext('No tienes permisos para ver esta grabación.'))
         return redirect('recordings_list')
     
     # Registrar reproducción
@@ -21825,12 +21846,12 @@ def public_recording_upload_view(request):
                         else:
                             messages.success(
                                 request, 
-                                'Grabación guardada exitosamente. Tu cuenta no tiene empresa asignada, por lo que la grabación estará disponible para revisión de los agentes.'
+                                gettext('Grabación guardada exitosamente. Tu cuenta no tiene empresa asignada, por lo que la grabación estará disponible para revisión de los agentes.')
                             )
                     except User.DoesNotExist:
                         messages.success(
                             request, 
-                            'Grabación guardada exitosamente. No se encontró una cuenta con este email, por lo que la grabación estará disponible para revisión de los agentes.'
+                            gettext('Grabación guardada exitosamente. No se encontró una cuenta con este email, por lo que la grabación estará disponible para revisión de los agentes.')
                         )
                     
                     return redirect('public_recording_upload')
@@ -21838,12 +21859,12 @@ def public_recording_upload_view(request):
                 except Exception as e:
                     messages.error(request, f'Error al procesar la grabación: {str(e)}')
             else:
-                messages.error(request, 'No se recibieron datos de audio.')
+                messages.error(request, gettext('No se recibieron datos de audio.'))
     else:
         form = PublicRecordingForm()
     
     context = {
-        'page_title': 'Grabar Audio Público',
+        'page_title': gettext('Grabar Audio Público'),
         'form': form,
     }
     
@@ -21867,11 +21888,11 @@ def recording_delete_view(request, recording_id):
                 pass
         
         recording.delete()
-        messages.success(request, 'Grabación eliminada exitosamente.')
+        messages.success(request, gettext('Grabación eliminada exitosamente.'))
         return redirect('recordings_list')
     
     context = {
-        'page_title': 'Eliminar Grabación',
+        'page_title': gettext('Eliminar Grabación'),
         'recording': recording,
     }
     
@@ -21924,7 +21945,7 @@ def recordings_stats_view(request):
     ).order_by('-played_at')[:10]
     
     context = {
-        'page_title': 'Estadísticas de Grabaciones',
+        'page_title': gettext('Estadísticas de Grabaciones'),
         'total_recordings': total_recordings,
         'total_playbacks': total_playbacks,
         'total_size': total_size,
@@ -21975,7 +21996,7 @@ def recording_detail_view(request, recording_id):
             transcription_form = TranscriptionEditForm(request.POST, instance=recording)
             if transcription_form.is_valid():
                 transcription_form.save()
-                messages.success(request, 'Transcripción guardada exitosamente.')
+                messages.success(request, gettext('Transcripción guardada exitosamente.'))
                 return redirect('recording_detail', recording_id=recording.id)
         
         elif 'process_ai' in request.POST:
@@ -21989,7 +22010,7 @@ def recording_detail_view(request, recording_id):
                         # Transcribir desde audio
                         result = transcribe_recording(recording.id)
                         if result['success']:
-                            messages.success(request, 'Transcripción generada exitosamente con IA.')
+                            messages.success(request, gettext('Transcripción generada exitosamente con IA.'))
                         else:
                             messages.error(request, f'Error al generar transcripción: {result["error"]}')
                     
@@ -22009,11 +22030,11 @@ def recording_detail_view(request, recording_id):
                             if improved_text != recording.transcription_text:
                                 recording.transcription_text = improved_text
                                 recording.save()
-                                messages.success(request, 'Transcripción mejorada exitosamente con IA.')
+                                messages.success(request, gettext('Transcripción mejorada exitosamente con IA.'))
                             else:
-                                messages.info(request, 'La transcripción ya estaba optimizada.')
+                                messages.info(request, gettext('La transcripción ya estaba optimizada.'))
                         else:
-                            messages.error(request, 'No hay transcripción para mejorar.')
+                            messages.error(request, gettext('No hay transcripción para mejorar.'))
                     
                     return redirect('recording_detail', recording_id=recording.id)
                     
@@ -22125,7 +22146,7 @@ def recording_bulk_transcribe_view(request):
             except Recording.DoesNotExist:
                 results.append({
                     'id': recording_id,
-                    'title': 'Desconocido',
+                    'title': gettext('Desconocido'),
                     'success': False,
                     'error': 'Grabación no encontrada'
                 })
@@ -22230,7 +22251,7 @@ def voice_command_interface_view(request):
     open_tickets = Ticket.objects.filter(created_by=request.user, status='open').count()
     
     context = {
-        'page_title': 'Comandos de Voz IA - TicketProo',
+        'page_title': gettext('Comandos de Voz IA - TicketProo'),
         'recent_tickets': recent_tickets,
         'total_tickets': total_tickets,
         'open_tickets': open_tickets,
@@ -22368,7 +22389,7 @@ def page_visits_analytics_view(request):
     countries = visits.exclude(country_code='').values('country_code', 'country').distinct().order_by('country')
     
     context = {
-        'page_title': 'Analytics de Páginas Públicas',
+        'page_title': gettext('Analytics de Páginas Públicas'),
         'start_date': start_date,
         'end_date': end_date,
         'total_visits': total_visits,
@@ -22470,7 +22491,7 @@ def page_visits_detail_view(request):
     countries = PageVisit.objects.exclude(country_code='').values('country_code', 'country').distinct().order_by('country')
     
     context = {
-        'page_title': 'Detalle de Visitas',
+        'page_title': gettext('Detalle de Visitas'),
         'page_obj': page_obj,
         'page_types': page_types,
         'countries': countries,
@@ -22623,7 +22644,7 @@ def ai_blog_configurators_list_view(request):
         config.posts_generated = posts_generated
     
     context = {
-        'page_title': 'Configuradores de IA para Blog',
+        'page_title': gettext('Configuradores de IA para Blog'),
         'configurators': configurators,
     }
     
@@ -22662,7 +22683,7 @@ def ai_blog_configurator_create_view(request):
     categories = BlogCategory.objects.filter(is_active=True).order_by('name')
     
     context = {
-        'page_title': 'Crear Configurador de IA',
+        'page_title': gettext('Crear Configurador de IA'),
         'categories': categories,
     }
     
@@ -22702,7 +22723,7 @@ def ai_blog_configurator_edit_view(request, pk):
     categories = BlogCategory.objects.filter(is_active=True).order_by('name')
     
     context = {
-        'page_title': 'Editar Configurador de IA',
+        'page_title': gettext('Editar Configurador de IA'),
         'configurator': configurator,
         'categories': categories,
     }
@@ -22825,7 +22846,7 @@ def multiple_documentation_list_view(request):
     page_obj = paginator.get_page(page_number)
     
     context = {
-        'page_title': 'Documentación Múltiple',
+        'page_title': gettext('Documentación Múltiple'),
         'page_obj': page_obj,
         'search': search,
     }
@@ -22852,7 +22873,7 @@ def multiple_documentation_create_view(request):
         form = MultipleDocumentationForm()
     
     context = {
-        'page_title': 'Crear Documentación Múltiple',
+        'page_title': gettext('Crear Documentación Múltiple'),
         'form': form,
         'is_create': True,
     }
@@ -23430,7 +23451,7 @@ def task_schedule_list(request):
             ).order_by('-created_at')
     
     context = {
-        'page_title': 'Planificación de Tareas',
+        'page_title': gettext('Planificación de Tareas'),
         'schedules': schedules,
     }
     
@@ -23446,7 +23467,7 @@ def task_schedule_create(request):
             schedule = form.save(commit=False)
             schedule.created_by = request.user
             schedule.save()
-            messages.success(request, 'Cronograma creado exitosamente. Las fechas de inicio y fin se calcularán automáticamente basándose en las tareas que agregues.')
+            messages.success(request, gettext('Cronograma creado exitosamente. Las fechas de inicio y fin se calcularán automáticamente basándose en las tareas que agregues.'))
             return redirect('task_schedule_detail', pk=schedule.pk)
     else:
         form = TaskScheduleForm()
@@ -23454,7 +23475,7 @@ def task_schedule_create(request):
         form.fields['company'].queryset = get_user_companies_queryset(request.user)
     
     context = {
-        'page_title': 'Crear Cronograma',
+        'page_title': gettext('Crear Cronograma'),
         'form': form,
         'auto_dates_info': True,
     }
@@ -23472,7 +23493,7 @@ def task_schedule_detail(request, pk):
     
     # Verificar permisos
     if not user_has_company_access(request.user, schedule.company):
-        messages.error(request, 'No tienes permiso para ver este cronograma.')
+        messages.error(request, gettext('No tienes permiso para ver este cronograma.'))
         return redirect('task_schedule_list')
     
     tasks = schedule.tasks.select_related('assigned_to').prefetch_related('dependencies')
@@ -23508,7 +23529,7 @@ def task_schedule_export(request, pk):
     
     # Verificar permisos
     if not user_has_company_access(request.user, schedule.company):
-        messages.error(request, 'No tienes permiso para exportar este cronograma.')
+        messages.error(request, gettext('No tienes permiso para exportar este cronograma.'))
         return redirect('task_schedule_list')
     
     # Importar pandas y crear DataFrame
@@ -23625,7 +23646,7 @@ def task_schedule_export(request, pk):
         return response
         
     except ImportError:
-        messages.error(request, 'La funcionalidad de exportación requiere la instalación de pandas. Contacta al administrador.')
+        messages.error(request, gettext('La funcionalidad de exportación requiere la instalación de pandas. Contacta al administrador.'))
         return redirect('task_schedule_detail', pk=pk)
     except Exception as e:
         messages.error(request, f'Error al exportar: {str(e)}')
@@ -23639,14 +23660,14 @@ def task_schedule_edit(request, pk):
     
     # Verificar permisos
     if not user_has_company_access(request.user, schedule.company):
-        messages.error(request, 'No tienes permiso para editar este cronograma.')
+        messages.error(request, gettext('No tienes permiso para editar este cronograma.'))
         return redirect('task_schedule_list')
     
     if request.method == 'POST':
         form = TaskScheduleForm(request.POST, instance=schedule)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Cronograma actualizado exitosamente.')
+            messages.success(request, gettext('Cronograma actualizado exitosamente.'))
             return redirect('task_schedule_detail', pk=schedule.pk)
     else:
         form = TaskScheduleForm(instance=schedule)
@@ -23669,12 +23690,12 @@ def task_schedule_delete(request, pk):
     
     # Verificar permisos
     if not user_has_company_access(request.user, schedule.company):
-        messages.error(request, 'No tienes permiso para eliminar este cronograma.')
+        messages.error(request, gettext('No tienes permiso para eliminar este cronograma.'))
         return redirect('task_schedule_list')
     
     if request.method == 'POST':
         schedule.delete()
-        messages.success(request, 'Cronograma eliminado exitosamente.')
+        messages.success(request, gettext('Cronograma eliminado exitosamente.'))
         return redirect('task_schedule_list')
     
     context = {
@@ -23692,7 +23713,7 @@ def task_schedule_duplicate(request, pk):
     
     # Verificar permisos
     if not user_has_company_access(request.user, original_schedule.company):
-        messages.error(request, 'No tienes permiso para duplicar este cronograma.')
+        messages.error(request, gettext('No tienes permiso para duplicar este cronograma.'))
         return redirect('task_schedule_list')
     
     if request.method == 'POST':
@@ -23764,7 +23785,7 @@ def task_schedule_reschedule(request, pk):
     
     # Verificar permisos
     if not user_has_company_access(request.user, schedule.company):
-        messages.error(request, 'No tienes permiso para reprogramar este cronograma.')
+        messages.error(request, gettext('No tienes permiso para reprogramar este cronograma.'))
         return redirect('task_schedule_list')
     
     if request.method == 'POST':
@@ -23773,7 +23794,7 @@ def task_schedule_reschedule(request, pk):
             
             new_start_date_str = request.POST.get('new_start_date')
             if not new_start_date_str:
-                messages.error(request, 'Debes especificar una nueva fecha de inicio.')
+                messages.error(request, gettext('Debes especificar una nueva fecha de inicio.'))
                 return redirect('task_schedule_detail', pk=pk)
             
             # Convertir la nueva fecha de inicio
@@ -23784,7 +23805,7 @@ def task_schedule_reschedule(request, pk):
             date_difference = (new_start_date - current_start_date).days
             
             if date_difference == 0:
-                messages.info(request, 'La nueva fecha de inicio es la misma que la actual.')
+                messages.info(request, gettext('La nueva fecha de inicio es la misma que la actual.'))
                 return redirect('task_schedule_detail', pk=pk)
             
             # Reprogramar todas las tareas
@@ -23810,7 +23831,7 @@ def task_schedule_reschedule(request, pk):
             )
             
         except ValueError:
-            messages.error(request, 'Formato de fecha inválido.')
+            messages.error(request, gettext('Formato de fecha inválido.'))
         except Exception as e:
             messages.error(request, f'Error al reprogramar el cronograma: {str(e)}')
     
@@ -23877,7 +23898,7 @@ def schedule_task_create(request, schedule_pk):
     
     # Verificar permisos
     if not user_has_company_access(request.user, schedule.company):
-        messages.error(request, 'No tienes permiso para agregar tareas a este cronograma.')
+        messages.error(request, gettext('No tienes permiso para agregar tareas a este cronograma.'))
         return redirect('task_schedule_list')
     
     if request.method == 'POST':
@@ -23887,7 +23908,7 @@ def schedule_task_create(request, schedule_pk):
             task.schedule = schedule
             task.save()
             form.save_m2m()  # Guardar relaciones many-to-many
-            messages.success(request, 'Tarea creada exitosamente.')
+            messages.success(request, gettext('Tarea creada exitosamente.'))
             return redirect('task_schedule_detail', pk=schedule.pk)
     else:
         # Establecer fechas por defecto del cronograma
@@ -23914,14 +23935,14 @@ def schedule_task_edit(request, pk):
     
     # Verificar permisos
     if not user_has_company_access(request.user, schedule.company):
-        messages.error(request, 'No tienes permiso para editar esta tarea.')
+        messages.error(request, gettext('No tienes permiso para editar esta tarea.'))
         return redirect('task_schedule_list')
     
     if request.method == 'POST':
         form = ScheduleTaskForm(request.POST, instance=task, schedule=schedule)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Tarea actualizada exitosamente.')
+            messages.success(request, gettext('Tarea actualizada exitosamente.'))
             return redirect('task_schedule_detail', pk=schedule.pk)
     else:
         form = ScheduleTaskForm(instance=task, schedule=schedule)
@@ -23944,12 +23965,12 @@ def schedule_task_delete(request, pk):
     
     # Verificar permisos
     if not user_has_company_access(request.user, schedule.company):
-        messages.error(request, 'No tienes permiso para eliminar esta tarea.')
+        messages.error(request, gettext('No tienes permiso para eliminar esta tarea.'))
         return redirect('task_schedule_list')
     
     if request.method == 'POST':
         task.delete()
-        messages.success(request, 'Tarea eliminada exitosamente.')
+        messages.success(request, gettext('Tarea eliminada exitosamente.'))
         return redirect('task_schedule_detail', pk=schedule.pk)
     
     context = {
@@ -24147,7 +24168,7 @@ def world_clock_view(request):
     }
     
     context = {
-        'page_title': 'Reloj Mundial - Países de Habla Hispana',
+        'page_title': gettext('Reloj Mundial - Países de Habla Hispana'),
         'countries_by_timezone': countries_by_timezone,
     }
     
@@ -24182,7 +24203,7 @@ def financial_actions_list_view(request):
         actions = actions.filter(is_active=False)
     
     context = {
-        'page_title': 'Gestión de Acciones Financieras',
+        'page_title': gettext('Gestión de Acciones Financieras'),
         'actions': actions,
         'search': search,
         'status': status,
@@ -24205,7 +24226,7 @@ def financial_action_create_view(request):
             messages.success(request, f'Acción financiera "{action.symbol}" creada exitosamente.')
             return redirect('financial_actions_list')
         else:
-            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+            messages.error(request, gettext('Por favor, corrige los errores en el formulario.'))
     else:
         # Obtener el siguiente orden sugerido
         last_action = FinancialAction.objects.order_by('-order').first()
@@ -24214,7 +24235,7 @@ def financial_action_create_view(request):
         form = FinancialActionForm(initial={'order': suggested_order})
     
     context = {
-        'page_title': 'Crear Acción Financiera',
+        'page_title': gettext('Crear Acción Financiera'),
         'form': form,
         'suggested_order': form.initial.get('order', 1),
         'is_edit': False,
@@ -24251,7 +24272,7 @@ def financial_action_edit_view(request, pk):
             messages.success(request, f'Acción financiera "{action.symbol}" actualizada exitosamente.')
             return redirect('financial_actions_list')
         else:
-            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+            messages.error(request, gettext('Por favor, corrige los errores en el formulario.'))
     else:
         form = FinancialActionForm(instance=action)
     
@@ -24455,7 +24476,7 @@ def generate_client_proposals(content):
         proposals.append({
             'type': 'solution',
             'icon': 'fa-store',
-            'title': 'Sistema de Gestión de Inventario Inteligente',
+            'title': gettext('Sistema de Gestión de Inventario Inteligente'),
             'suggestion': '🎯 Propuesta: Implementar sistema automatizado que optimice control de stock, reduzca mermas 25% y mejore rotación de productos con alertas inteligentes de restock.',
             'action': 'Proponer Sistema de Inventario',
             'priority': 'high'
@@ -24465,7 +24486,7 @@ def generate_client_proposals(content):
         proposals.append({
             'type': 'crm',
             'icon': 'fa-users',
-            'title': 'Plataforma CRM con Automatización de Marketing',
+            'title': gettext('Plataforma CRM con Automatización de Marketing'),
             'suggestion': '🎯 Propuesta: Centralizar gestión de clientes con automatización de campañas, aumento del 40% en conversión de leads y reportes en tiempo real.',
             'action': 'Implementar CRM Personalizado',
             'priority': 'high'
@@ -24475,7 +24496,7 @@ def generate_client_proposals(content):
         proposals.append({
             'type': 'hr',
             'icon': 'fa-user-friends',
-            'title': 'Sistema Integral de Recursos Humanos',
+            'title': gettext('Sistema Integral de Recursos Humanos'),
             'suggestion': '🎯 Propuesta: Digitalizar RR.HH. con control de asistencia biométrico, nóminas automatizadas y evaluaciones de desempeño. Ahorro de 15 horas semanales.',
             'action': 'Desarrollar Módulo de RR.HH.',
             'priority': 'medium'
@@ -24485,7 +24506,7 @@ def generate_client_proposals(content):
         proposals.append({
             'type': 'finance',
             'icon': 'fa-calculator',
-            'title': 'Módulo Financiero con Facturación Electrónica',
+            'title': gettext('Módulo Financiero con Facturación Electrónica'),
             'suggestion': '🎯 Propuesta: Automatizar gestión financiera con facturación electrónica, control de flujo de caja y reportes fiscales automáticos para cumplimiento normativo.',
             'action': 'Implementar Sistema Financiero',
             'priority': 'high'
@@ -24495,7 +24516,7 @@ def generate_client_proposals(content):
         proposals.append({
             'type': 'web',
             'icon': 'fa-globe',
-            'title': 'Presencia Digital Completa con E-commerce',
+            'title': gettext('Presencia Digital Completa con E-commerce'),
             'suggestion': '🎯 Propuesta: Desarrollar plataforma web con tienda online 24/7, múltiples métodos de pago, integración con redes sociales y marketing digital automático.',
             'action': 'Crear Plataforma Digital',
             'priority': 'medium'
@@ -24505,7 +24526,7 @@ def generate_client_proposals(content):
         proposals.append({
             'type': 'automation',
             'icon': 'fa-cogs',
-            'title': 'Suite de Automatización de Procesos',
+            'title': gettext('Suite de Automatización de Procesos'),
             'suggestion': '🎯 Propuesta: Automatizar procesos repetitivos con workflows inteligentes, reducir 60% tareas manuales y eliminar errores humanos.',
             'action': 'Desarrollar Automatización',
             'priority': 'medium'
@@ -24515,7 +24536,7 @@ def generate_client_proposals(content):
         proposals.append({
             'type': 'mobile',
             'icon': 'fa-mobile-alt',
-            'title': 'Aplicación Móvil Nativa para Clientes',
+            'title': gettext('Aplicación Móvil Nativa para Clientes'),
             'suggestion': '🎯 Propuesta: Desarrollar app móvil para iOS/Android con autoservicio, notificaciones push personalizadas y mayor engagement 24/7 con clientes.',
             'action': 'Desarrollar App Móvil',
             'priority': 'medium'
@@ -24525,7 +24546,7 @@ def generate_client_proposals(content):
         proposals.append({
             'type': 'security',
             'icon': 'fa-shield-alt',
-            'title': 'Solución Integral de Seguridad y Backup',
+            'title': gettext('Solución Integral de Seguridad y Backup'),
             'suggestion': '🎯 Propuesta: Implementar seguridad multicapa con protección 99.9% contra amenazas, backups automáticos diarios y cumplimiento normativo.',
             'action': 'Implementar Seguridad Avanzada',
             'priority': 'high'
@@ -24535,7 +24556,7 @@ def generate_client_proposals(content):
         proposals.append({
             'type': 'analytics',
             'icon': 'fa-chart-line',
-            'title': 'Plataforma de Business Intelligence',
+            'title': gettext('Plataforma de Business Intelligence'),
             'suggestion': '🎯 Propuesta: Implementar dashboards ejecutivos con KPIs en tiempo real, alertas automáticas y análisis predictivo para decisiones basadas en datos.',
             'action': 'Desarrollar BI Dashboard',
             'priority': 'medium'
@@ -24545,7 +24566,7 @@ def generate_client_proposals(content):
         proposals.append({
             'type': 'training',
             'icon': 'fa-graduation-cap',
-            'title': 'Plataforma de Capacitación Digital',
+            'title': gettext('Plataforma de Capacitación Digital'),
             'suggestion': '🎯 Propuesta: Crear LMS personalizado con cursos interactivos, certificaciones automáticas y seguimiento de progreso para maximizar adopción tecnológica.',
             'action': 'Diseñar Plataforma Educativa',
             'priority': 'medium'
@@ -24557,7 +24578,7 @@ def generate_client_proposals(content):
             {
                 'type': 'consultation',
                 'icon': 'fa-lightbulb',
-                'title': 'Consultoría de Transformación Digital Gratuita',
+                'title': gettext('Consultoría de Transformación Digital Gratuita'),
                 'suggestion': '🎯 Propuesta: Análisis completo de procesos actuales con roadmap personalizado de digitalización, diagnóstico gratuito y ROI proyectado.',
                 'action': 'Realizar Consultoría Estratégica',
                 'priority': 'high'
@@ -24565,7 +24586,7 @@ def generate_client_proposals(content):
             {
                 'type': 'pilot',
                 'icon': 'fa-flask',
-                'title': 'Proyecto Piloto de Automatización',
+                'title': gettext('Proyecto Piloto de Automatización'),
                 'suggestion': '🎯 Propuesta: Implementar solución piloto en área específica para demostrar valor tangible antes de expansión, con inversión inicial mínima.',
                 'action': 'Iniciar Proyecto Piloto',
                 'priority': 'medium'
@@ -24573,7 +24594,7 @@ def generate_client_proposals(content):
             {
                 'type': 'integration',
                 'icon': 'fa-link',
-                'title': 'Integración de Sistemas Existentes',
+                'title': gettext('Integración de Sistemas Existentes'),
                 'suggestion': '🎯 Propuesta: Conectar sistemas actuales mediante APIs robustas para eliminar silos de información y crear flujo de datos unificado.',
                 'action': 'Integrar Sistemas Actuales',
                 'priority': 'high'
@@ -24581,7 +24602,7 @@ def generate_client_proposals(content):
             {
                 'type': 'support',
                 'icon': 'fa-headset',
-                'title': 'Mesa de Ayuda Especializada',
+                'title': gettext('Mesa de Ayuda Especializada'),
                 'suggestion': '🎯 Propuesta: Implementar sistema de tickets con IA para soporte técnico 24/7, categorización automática y resolución proactiva.',
                 'action': 'Crear Mesa de Ayuda',
                 'priority': 'medium'
@@ -24589,7 +24610,7 @@ def generate_client_proposals(content):
             {
                 'type': 'maintenance',
                 'icon': 'fa-tools',
-                'title': 'Plan de Mantenimiento Preventivo',
+                'title': gettext('Plan de Mantenimiento Preventivo'),
                 'suggestion': '🎯 Propuesta: Establecer mantenimiento predictivo con monitoreo continuo, actualizaciones automáticas y garantía de uptime 99.9%.',
                 'action': 'Estructurar Plan de Mantenimiento',
                 'priority': 'medium'
@@ -25323,7 +25344,7 @@ def client_assistance_list(request):
     
     context = {
         'accesses': accesses,
-        'title': 'Asistencia de Cliente - Proyectos Públicos'
+        'title': gettext('Asistencia de Cliente - Proyectos Públicos')
     }
     return render(request, 'tickets/client_assistance_list.html', context)
 
@@ -25346,7 +25367,7 @@ def client_assistance_create(request):
     
     context = {
         'form': form,
-        'title': 'Crear Acceso Público para Proyecto'
+        'title': gettext('Crear Acceso Público para Proyecto')
     }
     return render(request, 'tickets/client_assistance_form.html', context)
 
@@ -25364,7 +25385,7 @@ def client_assistance_edit(request, pk):
         form = ClientProjectAccessForm(request.POST, instance=access)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Acceso público actualizado exitosamente')
+            messages.success(request, gettext('Acceso público actualizado exitosamente'))
             return redirect('client_assistance_list')
     else:
         form = ClientProjectAccessForm(instance=access)
@@ -25402,7 +25423,7 @@ def client_time_entries_list(request, project_id=None):
         'entries': entries,
         'projects': projects,
         'selected_project': project,
-        'title': 'Entradas de Tiempo de Clientes'
+        'title': gettext('Entradas de Tiempo de Clientes')
     }
     return render(request, 'tickets/client_time_entries_list.html', context)
 
@@ -25419,14 +25440,14 @@ def client_time_entry_form(request, token):
             is_active=True
         )
     except ClientProjectAccess.DoesNotExist:
-        messages.error(request, 'El enlace no es válido o ha expirado.')
+        messages.error(request, gettext('El enlace no es válido o ha expirado.'))
         return render(request, 'tickets/client_time_entry_error.html', {
             'error_message': 'El enlace no es válido o ha expirado.'
         })
     
     # Verificar si se pueden aceptar más entradas hoy
     if not access.can_accept_entries_today():
-        messages.error(request, 'Se ha alcanzado el límite de entradas para hoy. Intente mañana.')
+        messages.error(request, gettext('Se ha alcanzado el límite de entradas para hoy. Intente mañana.'))
         return render(request, 'tickets/client_time_entry_error.html', {
             'error_message': 'Se ha alcanzado el límite de entradas para hoy.'
         })
@@ -25443,7 +25464,7 @@ def client_time_entry_form(request, token):
             
             entry.save()
             
-            messages.success(request, '¡Sus horas han sido registradas exitosamente!')
+            messages.success(request, gettext('¡Sus horas han sido registradas exitosamente!'))
             return render(request, 'tickets/client_time_entry_success.html', {
                 'entry': entry,
                 'project': access.project
@@ -25707,7 +25728,7 @@ def client_assistance_dashboard(request):
     categories = ClientTimeEntry.CATEGORY_CHOICES
 
     context = {
-        'title': 'Dashboard de Asistencia de Cliente',
+        'title': gettext('Dashboard de Asistencia de Cliente'),
         
         # KPIs principales
         'total_hours': total_hours,
@@ -25986,7 +26007,7 @@ def short_url_list(request):
     short_urls = ShortUrl.objects.filter(created_by=request.user).order_by('-created_at')
     
     context = {
-        'page_title': 'Acortador de URLs',
+        'page_title': gettext('Acortador de URLs'),
         'short_urls': short_urls,
     }
     
@@ -26037,10 +26058,10 @@ def short_url_create(request):
             messages.success(request, f'URL corta creada exitosamente: {short_url.get_short_url(request)}')
             return redirect('short_url_list')
         else:
-            messages.error(request, 'La URL es requerida.')
+            messages.error(request, gettext('La URL es requerida.'))
     
     context = {
-        'page_title': 'Crear URL Corta',
+        'page_title': gettext('Crear URL Corta'),
     }
     
     return render(request, 'tickets/short_url_create.html', context)
@@ -26087,7 +26108,7 @@ def short_url_edit(request, pk):
         short_url.is_sales_kpi = request.POST.get('is_sales_kpi') == 'on'
         
         short_url.save()
-        messages.success(request, 'URL corta actualizada exitosamente.')
+        messages.success(request, gettext('URL corta actualizada exitosamente.'))
         return redirect('short_url_list')
     
     # Preparar datos para el formulario
@@ -26099,7 +26120,7 @@ def short_url_edit(request, pk):
     }
     
     context = {
-        'page_title': 'Editar URL Corta',
+        'page_title': gettext('Editar URL Corta'),
         'short_url': short_url,
         'object': short_url,  # Para compatibilidad con el template
         'form': form_data,
@@ -26116,11 +26137,11 @@ def short_url_delete(request, pk):
     
     if request.method == 'POST':
         short_url.delete()
-        messages.success(request, 'URL corta eliminada exitosamente.')
+        messages.success(request, gettext('URL corta eliminada exitosamente.'))
         return redirect('short_url_list')
     
     context = {
-        'page_title': 'Eliminar URL Corta',
+        'page_title': gettext('Eliminar URL Corta'),
         'short_url': short_url,
     }
     
@@ -26138,7 +26159,7 @@ def short_url_redirect(request, short_code):
     
     # Verificar si ha expirado
     if short_url.is_expired():
-        messages.error(request, 'Esta URL corta ha expirado.')
+        messages.error(request, gettext('Esta URL corta ha expirado.'))
         return render(request, 'tickets/short_url_expired.html', {'short_url': short_url})
     
     # Incrementar contador de clics
@@ -26485,7 +26506,7 @@ def product_set_list(request):
     product_sets = ProductSet.objects.filter(created_by=request.user).order_by('-created_at')
     
     context = {
-        'page_title': 'Conjuntos de Productos',
+        'page_title': gettext('Conjuntos de Productos'),
         'product_sets': product_sets,
     }
     
@@ -26515,7 +26536,7 @@ def product_set_create(request):
         formset = ProductItemFormSet(queryset=ProductItem.objects.none())
     
     context = {
-        'page_title': 'Crear Conjunto de Productos',
+        'page_title': gettext('Crear Conjunto de Productos'),
         'form': form,
         'formset': formset,
     }
@@ -26650,7 +26671,7 @@ def precotizador_list(request):
     precotizadores = Precotizador.objects.filter(created_by=request.user)
     
     context = {
-        'page_title': 'Precotizadores',
+        'page_title': gettext('Precotizadores'),
         'precotizadores': precotizadores,
     }
     
@@ -26682,7 +26703,7 @@ def precotizador_create(request):
         formset = PrecotizadorExampleFormSet()
     
     context = {
-        'page_title': 'Crear Precotizador',
+        'page_title': gettext('Crear Precotizador'),
         'form': form,
         'formset': formset,
     }
@@ -26927,17 +26948,17 @@ def precotizador_quote_edit(request, pk):
         
         # Validar que los campos obligatorios no estén vacíos
         if not client_request:
-            messages.error(request, 'La solicitud del cliente es obligatoria.')
+            messages.error(request, gettext('La solicitud del cliente es obligatoria.'))
             return render(request, 'tickets/precotizador_quote_edit.html', {'quote': quote})
         
         if not ai_detailed_description:
-            messages.error(request, 'La descripción del trabajo es obligatoria.')
+            messages.error(request, gettext('La descripción del trabajo es obligatoria.'))
             return render(request, 'tickets/precotizador_quote_edit.html', {'quote': quote})
         
         # Validar el estado
         valid_statuses = ['pending', 'accepted', 'rejected']
         if new_status not in valid_statuses:
-            messages.error(request, 'Estado no válido.')
+            messages.error(request, gettext('Estado no válido.'))
             return render(request, 'tickets/precotizador_quote_edit.html', {'quote': quote})
         
         # Obtener el estado anterior para el mensaje
@@ -26954,14 +26975,14 @@ def precotizador_quote_edit(request, pk):
             quote.client_response_date = None
             quote.client_comments = ''
             quote.save(update_fields=['client_request', 'ai_detailed_description', 'ai_reasoning', 'status', 'client_response_date', 'client_comments'])
-            messages.success(request, 'Cotización actualizada y restablecida a estado pendiente. El cliente podrá responder nuevamente.')
+            messages.success(request, gettext('Cotización actualizada y restablecida a estado pendiente. El cliente podrá responder nuevamente.'))
         else:
             quote.save(update_fields=['client_request', 'ai_detailed_description', 'ai_reasoning', 'status'])
             if old_status != new_status:
                 status_names = {'pending': 'Pendiente', 'accepted': 'Aceptada', 'rejected': 'Rechazada'}
                 messages.success(request, f'Cotización actualizada. Estado cambiado de "{status_names[old_status]}" a "{status_names[new_status]}".')
             else:
-                messages.success(request, 'Cotización actualizada exitosamente.')
+                messages.success(request, gettext('Cotización actualizada exitosamente.'))
         
         return redirect('precotizador_quote_detail', pk=quote.pk)
     
@@ -26981,7 +27002,7 @@ def precotizador_quote_delete(request, pk):
     
     if request.method == 'POST':
         quote.delete()
-        messages.success(request, 'Cotización eliminada exitosamente.')
+        messages.success(request, gettext('Cotización eliminada exitosamente.'))
         return redirect('precotizador_detail', pk=quote.precotizador.pk)
     
     context = {
@@ -27004,7 +27025,7 @@ def precotizador_quote_share(request, pk):
         quote.is_public = True
         quote.save(update_fields=['is_public'])
         
-        messages.success(request, 'Cotización compartida exitosamente. El enlace público está disponible.')
+        messages.success(request, gettext('Cotización compartida exitosamente. El enlace público está disponible.'))
         return redirect('precotizador_quote_detail', pk=quote.pk)
     
     context = {
@@ -27022,7 +27043,7 @@ def precotizador_quote_public(request, token):
     if request.method == 'POST':
         # Solo permitir responder si la cotización está pendiente
         if quote.status != 'pending':
-            messages.error(request, 'Esta cotización ya fue respondida anteriormente y no puede ser modificada.')
+            messages.error(request, gettext('Esta cotización ya fue respondida anteriormente y no puede ser modificada.'))
             return redirect('precotizador_quote_public', token=token)
         
         action = request.POST.get('action')
@@ -27031,12 +27052,12 @@ def precotizador_quote_public(request, token):
         try:
             if action == 'accept':
                 quote.accept(client_comments)
-                messages.success(request, '¡Cotización aceptada! Nos pondremos en contacto contigo pronto.')
+                messages.success(request, gettext('¡Cotización aceptada! Nos pondremos en contacto contigo pronto.'))
             elif action == 'reject':
                 quote.reject(client_comments)
-                messages.info(request, 'Cotización rechazada. Gracias por tu tiempo.')
+                messages.info(request, gettext('Cotización rechazada. Gracias por tu tiempo.'))
             else:
-                messages.error(request, 'Acción no válida.')
+                messages.error(request, gettext('Acción no válida.'))
         except ValueError as e:
             messages.error(request, str(e))
         except Exception as e:
@@ -27073,7 +27094,7 @@ def precotizador_public_request(request, token):
         
         # Validaciones básicas
         if not client_request or len(client_request) < 50:
-            messages.error(request, 'Por favor, proporciona más detalles sobre tu proyecto (mínimo 50 caracteres).')
+            messages.error(request, gettext('Por favor, proporciona más detalles sobre tu proyecto (mínimo 50 caracteres).'))
             return render(request, 'tickets/precotizador_public_request.html', {
                 'precotizador': precotizador,
                 'client_request': client_request,
@@ -27083,7 +27104,7 @@ def precotizador_public_request(request, token):
         
         # Mostrar página de carga
         context = {
-            'page_title': 'Generando tu Cotización...',
+            'page_title': gettext('Generando tu Cotización...'),
             'precotizador': precotizador,
             'client_request': client_request,
             'client_name': client_name,
@@ -27261,7 +27282,7 @@ def company_documentation_list(request):
     
     context = {
         'page_obj': page_obj,
-        'page_title': 'Documentaciones de Empresas',
+        'page_title': gettext('Documentaciones de Empresas'),
         'section': 'documentation'
     }
     
@@ -27284,7 +27305,7 @@ def company_documentation_create(request):
             formset.instance = documentation
             formset.save()
             
-            messages.success(request, 'Documentación creada exitosamente.')
+            messages.success(request, gettext('Documentación creada exitosamente.'))
             return redirect('company_documentation_detail', pk=documentation.pk)
     else:
         form = CompanyDocumentationForm(user=request.user)
@@ -27293,7 +27314,7 @@ def company_documentation_create(request):
     context = {
         'form': form,
         'formset': formset,
-        'page_title': 'Crear Documentación',
+        'page_title': gettext('Crear Documentación'),
         'section': 'documentation'
     }
     
@@ -27329,7 +27350,7 @@ def company_documentation_edit(request, pk):
             form.save()
             formset.save()
             
-            messages.success(request, 'Documentación actualizada exitosamente.')
+            messages.success(request, gettext('Documentación actualizada exitosamente.'))
             return redirect('company_documentation_detail', pk=documentation.pk)
     else:
         form = CompanyDocumentationForm(instance=documentation, user=None)
@@ -27356,12 +27377,12 @@ def company_documentation_delete(request, pk):
             request.user.groups.filter(name='Administradores').exists() or
             (hasattr(request.user, 'profile') and 
              request.user.profile.company == documentation.company)):
-        messages.error(request, 'No tienes permisos para eliminar esta documentación.')
+        messages.error(request, gettext('No tienes permisos para eliminar esta documentación.'))
         return redirect('company_documentation_list')
     
     if request.method == 'POST':
         documentation.delete()
-        messages.success(request, 'Documentación eliminada exitosamente.')
+        messages.success(request, gettext('Documentación eliminada exitosamente.'))
         return redirect('company_documentation_list')
     
     context = {
@@ -27383,7 +27404,7 @@ def company_documentation_toggle_public(request, pk):
             request.user.groups.filter(name='Administradores').exists() or
             (hasattr(request.user, 'profile') and 
              request.user.profile.company == documentation.company)):
-        messages.error(request, 'No tienes permisos para modificar esta documentación.')
+        messages.error(request, gettext('No tienes permisos para modificar esta documentación.'))
         return redirect('company_documentation_list')
     
     if request.method == 'POST':
@@ -27391,9 +27412,9 @@ def company_documentation_toggle_public(request, pk):
         documentation.save()
         
         if documentation.is_public:
-            messages.success(request, 'Documentación ahora es pública. Los clientes pueden acceder con el enlace.')
+            messages.success(request, gettext('Documentación ahora es pública. Los clientes pueden acceder con el enlace.'))
         else:
-            messages.warning(request, 'Documentación ya no es pública. El enlace ha sido desactivado.')
+            messages.warning(request, gettext('Documentación ya no es pública. El enlace ha sido desactivado.'))
     
     return redirect('company_documentation_detail', pk=documentation.pk)
 
@@ -27432,7 +27453,7 @@ def company_documentation_url_create(request, doc_pk):
             request.user.groups.filter(name='Administradores').exists() or
             (hasattr(request.user, 'profile') and 
              request.user.profile.company == documentation.company)):
-        messages.error(request, 'No tienes permisos para agregar enlaces a esta documentación.')
+        messages.error(request, gettext('No tienes permisos para agregar enlaces a esta documentación.'))
         return redirect('company_documentation_detail', pk=doc_pk)
     
     if request.method == 'POST':
@@ -27473,7 +27494,7 @@ def company_documentation_url_edit(request, doc_pk, url_pk):
             request.user.groups.filter(name='Administradores').exists() or
             (hasattr(request.user, 'profile') and 
              request.user.profile.company == documentation.company)):
-        messages.error(request, 'No tienes permisos para editar este enlace.')
+        messages.error(request, gettext('No tienes permisos para editar este enlace.'))
         return redirect('company_documentation_detail', pk=doc_pk)
     
     if request.method == 'POST':
@@ -27508,7 +27529,7 @@ def company_documentation_url_delete(request, doc_pk, url_pk):
             request.user.groups.filter(name='Administradores').exists() or
             (hasattr(request.user, 'profile') and 
              request.user.profile.company == documentation.company)):
-        messages.error(request, 'No tienes permisos para eliminar este enlace.')
+        messages.error(request, gettext('No tienes permisos para eliminar este enlace.'))
         return redirect('company_documentation_detail', pk=doc_pk)
     
     if request.method == 'POST':
@@ -27538,7 +27559,7 @@ def company_documentation_url_toggle(request, doc_pk, url_pk):
             request.user.groups.filter(name='Administradores').exists() or
             (hasattr(request.user, 'profile') and 
              request.user.profile.company == documentation.company)):
-        messages.error(request, 'No tienes permisos para modificar este enlace.')
+        messages.error(request, gettext('No tienes permisos para modificar este enlace.'))
         return redirect('company_documentation_detail', pk=doc_pk)
     
     if request.method == 'POST':
@@ -27559,14 +27580,14 @@ def company_documentation_url_toggle(request, doc_pk, url_pk):
 def terms_of_use_list(request):
     """Lista de condiciones de uso"""
     if not (request.user.is_superuser or request.user.groups.filter(name='Administradores').exists()):
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('dashboard')
     
     terms = TermsOfUse.objects.all()
     
     context = {
         'terms': terms,
-        'page_title': 'Condiciones de Uso',
+        'page_title': gettext('Condiciones de Uso'),
         'section': 'documentation'
     }
     
@@ -27577,7 +27598,7 @@ def terms_of_use_list(request):
 def terms_of_use_create(request):
     """Crear nueva condición de uso"""
     if not (request.user.is_superuser or request.user.groups.filter(name='Administradores').exists()):
-        messages.error(request, 'No tienes permisos para crear condiciones de uso.')
+        messages.error(request, gettext('No tienes permisos para crear condiciones de uso.'))
         return redirect('terms_of_use_list')
     
     if request.method == 'POST':
@@ -27593,7 +27614,7 @@ def terms_of_use_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Nueva Condición de Uso',
+        'page_title': gettext('Nueva Condición de Uso'),
         'section': 'documentation',
         'action': 'create'
     }
@@ -27605,7 +27626,7 @@ def terms_of_use_create(request):
 def terms_of_use_detail(request, pk):
     """Ver detalle de condición de uso"""
     if not (request.user.is_superuser or request.user.groups.filter(name='Administradores').exists()):
-        messages.error(request, 'No tienes permisos para ver esta condición de uso.')
+        messages.error(request, gettext('No tienes permisos para ver esta condición de uso.'))
         return redirect('dashboard')
     
     term = get_object_or_404(TermsOfUse, pk=pk)
@@ -27623,7 +27644,7 @@ def terms_of_use_detail(request, pk):
 def terms_of_use_edit(request, pk):
     """Editar condición de uso"""
     if not (request.user.is_superuser or request.user.groups.filter(name='Administradores').exists()):
-        messages.error(request, 'No tienes permisos para editar condiciones de uso.')
+        messages.error(request, gettext('No tienes permisos para editar condiciones de uso.'))
         return redirect('terms_of_use_list')
     
     term = get_object_or_404(TermsOfUse, pk=pk)
@@ -27652,7 +27673,7 @@ def terms_of_use_edit(request, pk):
 def terms_of_use_delete(request, pk):
     """Eliminar condición de uso"""
     if not (request.user.is_superuser or request.user.groups.filter(name='Administradores').exists()):
-        messages.error(request, 'No tienes permisos para eliminar condiciones de uso.')
+        messages.error(request, gettext('No tienes permisos para eliminar condiciones de uso.'))
         return redirect('terms_of_use_list')
     
     term = get_object_or_404(TermsOfUse, pk=pk)
@@ -27676,7 +27697,7 @@ def terms_of_use_delete(request, pk):
 def terms_of_use_toggle(request, pk):
     """Activar/desactivar condición de uso"""
     if not (request.user.is_superuser or request.user.groups.filter(name='Administradores').exists()):
-        messages.error(request, 'No tienes permisos para cambiar el estado de condiciones de uso.')
+        messages.error(request, gettext('No tienes permisos para cambiar el estado de condiciones de uso.'))
         return redirect('terms_of_use_list')
     
     term = get_object_or_404(TermsOfUse, pk=pk)
@@ -27716,7 +27737,7 @@ def contact_generator_list(request):
     
     context = {
         'generators': generators,
-        'page_title': 'Generadores de Contactos'
+        'page_title': gettext('Generadores de Contactos')
     }
     
     return render(request, 'tickets/contact_generator_list.html', context)
@@ -27742,7 +27763,7 @@ def contact_generator_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Crear Generador de Contactos',
+        'page_title': gettext('Crear Generador de Contactos'),
         'form_title': 'Nuevo Generador de Contactos'
     }
     
@@ -27766,7 +27787,7 @@ def contact_generator_detail(request, pk):
             user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
         
         if generator.company.id not in user_companies:
-            messages.error(request, 'No tienes permisos para ver este generador.')
+            messages.error(request, gettext('No tienes permisos para ver este generador.'))
             return redirect('contact_generator_list')
     
     # Obtener estadísticas de contactos generados
@@ -27802,7 +27823,7 @@ def contact_generator_edit(request, pk):
             user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
         
         if generator.company.id not in user_companies:
-            messages.error(request, 'No tienes permisos para editar este generador.')
+            messages.error(request, gettext('No tienes permisos para editar este generador.'))
             return redirect('contact_generator_list')
     
     if request.method == 'POST':
@@ -27841,7 +27862,7 @@ def contact_generator_delete(request, pk):
             user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
         
         if generator.company.id not in user_companies:
-            messages.error(request, 'No tienes permisos para eliminar este generador.')
+            messages.error(request, gettext('No tienes permisos para eliminar este generador.'))
             return redirect('contact_generator_list')
     
     if request.method == 'POST':
@@ -27876,7 +27897,7 @@ def contact_generator_toggle_active(request, pk):
             user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
         
         if generator.company.id not in user_companies:
-            messages.error(request, 'No tienes permisos para modificar este generador.')
+            messages.error(request, gettext('No tienes permisos para modificar este generador.'))
             return redirect('contact_generator_list')
     
     generator.is_active = not generator.is_active
@@ -27951,7 +27972,7 @@ def company_request_generator_list(request):
 
     context = {
         'generators': generators,
-        'page_title': 'Generadores de Solicitudes Empresas'
+        'page_title': gettext('Generadores de Solicitudes Empresas')
     }
     return render(request, 'tickets/company_request_generator_list.html', context)
 
@@ -27974,7 +27995,7 @@ def company_request_generator_create(request):
 
     context = {
         'form': form,
-        'page_title': 'Crear Generador de Solicitudes Empresas',
+        'page_title': gettext('Crear Generador de Solicitudes Empresas'),
         'form_title': 'Nuevo Generador de Solicitudes'
     }
     return render(request, 'tickets/company_request_generator_form.html', context)
@@ -27995,7 +28016,7 @@ def company_request_generator_detail(request, pk):
             user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
 
         if generator.company.id not in user_companies:
-            messages.error(request, 'No tienes permisos para ver este generador.')
+            messages.error(request, gettext('No tienes permisos para ver este generador.'))
             return redirect('company_request_generator_list')
 
     recent_requests = generator.get_recent_requests()
@@ -28024,7 +28045,7 @@ def company_request_generator_edit(request, pk):
             user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
 
         if generator.company.id not in user_companies:
-            messages.error(request, 'No tienes permisos para editar este generador.')
+            messages.error(request, gettext('No tienes permisos para editar este generador.'))
             return redirect('company_request_generator_list')
 
     if request.method == 'POST':
@@ -28060,7 +28081,7 @@ def company_request_generator_delete(request, pk):
             user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
 
         if generator.company.id not in user_companies:
-            messages.error(request, 'No tienes permisos para eliminar este generador.')
+            messages.error(request, gettext('No tienes permisos para eliminar este generador.'))
             return redirect('company_request_generator_list')
 
     if request.method == 'POST':
@@ -28092,7 +28113,7 @@ def company_request_generator_toggle_active(request, pk):
             user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
 
         if generator.company.id not in user_companies:
-            messages.error(request, 'No tienes permisos para modificar este generador.')
+            messages.error(request, gettext('No tienes permisos para modificar este generador.'))
             return redirect('company_request_generator_list')
 
     generator.is_active = not generator.is_active
@@ -28157,7 +28178,7 @@ def company_request_list(request, generator_pk):
             user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
         
         if generator.company.id not in user_companies:
-            messages.error(request, 'No tienes permisos para ver estas solicitudes.')
+            messages.error(request, gettext('No tienes permisos para ver estas solicitudes.'))
             return redirect('company_request_generator_list')
     
     # Filtros
@@ -28238,7 +28259,7 @@ def public_tickets_and_requests_view(request):
         'recent_requests': recent_requests,
         'total_requests': total_requests,
         'status_stats': status_stats,
-        'page_title': 'Dashboard Público - Solicitudes de Empresa'
+        'page_title': gettext('Dashboard Público - Solicitudes de Empresa')
     }
     
     return render(request, 'tickets/public_tickets_and_requests.html', context)
@@ -28307,7 +28328,7 @@ def form_list(request):
     
     context = {
         'forms': forms,
-        'page_title': 'Mis Formularios'
+        'page_title': gettext('Mis Formularios')
     }
     return render(request, 'tickets/form_list.html', context)
 
@@ -28321,14 +28342,14 @@ def form_create(request):
             form_obj = form.save(commit=False)
             form_obj.created_by = request.user
             form_obj.save()
-            messages.success(request, 'Formulario creado exitosamente')
+            messages.success(request, gettext('Formulario creado exitosamente'))
             return redirect('form_detail', pk=form_obj.pk)
     else:
         form = FormForm(user=request.user)
     
     context = {
         'form': form,
-        'page_title': 'Crear Formulario'
+        'page_title': gettext('Crear Formulario')
     }
     return render(request, 'tickets/form_form.html', context)
 
@@ -28560,7 +28581,7 @@ def form_edit(request, pk):
         form = FormForm(request.POST, instance=form_obj, user=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Formulario actualizado exitosamente')
+            messages.success(request, gettext('Formulario actualizado exitosamente'))
             return redirect('form_detail', pk=form_obj.pk)
     else:
         form = FormForm(instance=form_obj, user=request.user)
@@ -28936,7 +28957,7 @@ def license_list(request):
         'total_licenses': total_licenses,
         'active_licenses': active_licenses,
         'expired_licenses': expired_licenses,
-        'title': 'Control de Licencias',
+        'title': gettext('Control de Licencias'),
         'current_filters': {
             'company': company_filter,
             'status': status_filter,
@@ -28967,16 +28988,16 @@ def license_create(request):
                 if not License.objects.filter(license_key=custom_key).exists():
                     license_obj.license_key = custom_key
                 else:
-                    messages.error(request, 'La clave de licencia ya existe.')
+                    messages.error(request, gettext('La clave de licencia ya existe.'))
                     return render(request, 'tickets/license_form.html', {
                         'companies': Company.objects.all(),
-                        'title': 'Crear Licencia'
+                        'title': gettext('Crear Licencia')
                     })
             else:
-                messages.error(request, 'La clave debe tener exactamente 12 caracteres alfanuméricos.')
+                messages.error(request, gettext('La clave debe tener exactamente 12 caracteres alfanuméricos.'))
                 return render(request, 'tickets/license_form.html', {
                     'companies': Company.objects.all(),
-                    'title': 'Crear Licencia'
+                    'title': gettext('Crear Licencia')
                 })
         
         license_obj.save()
@@ -28986,7 +29007,7 @@ def license_create(request):
     companies = Company.objects.all()
     context = {
         'companies': companies,
-        'title': 'Crear Licencia'
+        'title': gettext('Crear Licencia')
     }
     
     return render(request, 'tickets/license_form.html', context)
@@ -29030,14 +29051,14 @@ def license_edit(request, pk):
                 if not License.objects.filter(license_key=custom_key).exclude(pk=pk).exists():
                     license_obj.license_key = custom_key
                 else:
-                    messages.error(request, 'La clave de licencia ya existe.')
+                    messages.error(request, gettext('La clave de licencia ya existe.'))
                     return render(request, 'tickets/license_edit.html', {
                         'license': license_obj,
                         'companies': Company.objects.all(),
                         'title': f'Editar Licencia {license_obj.license_key}'
                     })
             else:
-                messages.error(request, 'La clave debe tener exactamente 12 caracteres alfanuméricos.')
+                messages.error(request, gettext('La clave debe tener exactamente 12 caracteres alfanuméricos.'))
                 return render(request, 'tickets/license_edit.html', {
                     'license': license_obj,
                     'companies': Company.objects.all(),
@@ -29180,7 +29201,7 @@ def form_question_create(request, form_pk):
     
     # Verificar permisos
     if form_obj.created_by != request.user:
-        messages.error(request, 'No tienes permisos para agregar preguntas a este formulario')
+        messages.error(request, gettext('No tienes permisos para agregar preguntas a este formulario'))
         return redirect('form_detail', pk=form_obj.pk)
     
     if request.method == 'POST':
@@ -29191,7 +29212,7 @@ def form_question_create(request, form_pk):
             order=int(request.POST.get('order', form_obj.questions.count() + 1)),
             is_required=bool(request.POST.get('is_required'))
         )
-        messages.success(request, 'Pregunta agregada exitosamente')
+        messages.success(request, gettext('Pregunta agregada exitosamente'))
         return redirect('form_detail', pk=form_obj.pk)
     
     return redirect('form_detail', pk=form_obj.pk)
@@ -29205,7 +29226,7 @@ def form_question_edit(request, form_pk, question_pk):
     
     # Verificar permisos
     if form_obj.created_by != request.user:
-        messages.error(request, 'No tienes permisos para editar preguntas de este formulario')
+        messages.error(request, gettext('No tienes permisos para editar preguntas de este formulario'))
         return redirect('form_detail', pk=form_obj.pk)
     
     if request.method == 'POST':
@@ -29214,13 +29235,13 @@ def form_question_edit(request, form_pk, question_pk):
         question.order = int(request.POST.get('order', question.order))
         question.is_required = bool(request.POST.get('is_required'))
         question.save()
-        messages.success(request, 'Pregunta actualizada exitosamente')
+        messages.success(request, gettext('Pregunta actualizada exitosamente'))
         return redirect('form_detail', pk=form_obj.pk)
     
     context = {
         'form_obj': form_obj,
         'question': question,
-        'page_title': 'Editar Pregunta'
+        'page_title': gettext('Editar Pregunta')
     }
     return render(request, 'tickets/form_question_edit.html', context)
 
@@ -29233,18 +29254,18 @@ def form_question_delete(request, form_pk, question_pk):
     
     # Verificar permisos
     if form_obj.created_by != request.user:
-        messages.error(request, 'No tienes permisos para eliminar preguntas de este formulario')
+        messages.error(request, gettext('No tienes permisos para eliminar preguntas de este formulario'))
         return redirect('form_detail', pk=form_obj.pk)
     
     if request.method == 'POST':
         question.delete()
-        messages.success(request, 'Pregunta eliminada exitosamente')
+        messages.success(request, gettext('Pregunta eliminada exitosamente'))
         return redirect('form_detail', pk=form_obj.pk)
     
     context = {
         'form_obj': form_obj,
         'question': question,
-        'page_title': 'Eliminar Pregunta'
+        'page_title': gettext('Eliminar Pregunta')
     }
     return render(request, 'tickets/form_question_delete.html', context)
 
@@ -29257,7 +29278,7 @@ def form_option_create(request, form_pk, question_pk):
     
     # Verificar permisos
     if form_obj.created_by != request.user:
-        messages.error(request, 'No tienes permisos para agregar opciones a este formulario')
+        messages.error(request, gettext('No tienes permisos para agregar opciones a este formulario'))
         return redirect('form_detail', pk=form_obj.pk)
     
     if request.method == 'POST':
@@ -29267,13 +29288,13 @@ def form_option_create(request, form_pk, question_pk):
             order=int(request.POST.get('order', question.options.count() + 1)),
             score=int(request.POST.get('score', 0))
         )
-        messages.success(request, 'Opción agregada exitosamente')
+        messages.success(request, gettext('Opción agregada exitosamente'))
         return redirect('form_detail', pk=form_obj.pk)
     
     context = {
         'form_obj': form_obj,
         'question': question,
-        'page_title': 'Agregar Opción'
+        'page_title': gettext('Agregar Opción')
     }
     return render(request, 'tickets/form_option_create.html', context)
 
@@ -29329,14 +29350,14 @@ def form_option_edit(request, form_pk, option_pk):
         option.score = int(request.POST.get('score', option.score))
         option.save()
         
-        messages.success(request, 'Opción actualizada exitosamente')
+        messages.success(request, gettext('Opción actualizada exitosamente'))
         return redirect('form_detail', pk=form_obj.pk)
     
     context = {
         'form_obj': form_obj,
         'option': option,
         'question': option.question,
-        'page_title': 'Editar Opción'
+        'page_title': gettext('Editar Opción')
     }
     return render(request, 'tickets/form_option_edit.html', context)
 
@@ -29350,14 +29371,14 @@ def form_option_delete(request, form_pk, option_pk):
     if request.method == 'POST':
         question_id = option.question.id
         option.delete()
-        messages.success(request, 'Opción eliminada exitosamente')
+        messages.success(request, gettext('Opción eliminada exitosamente'))
         return redirect('form_detail', pk=form_obj.pk)
     
     context = {
         'form_obj': form_obj,
         'option': option,
         'question': option.question,
-        'page_title': 'Eliminar Opción'
+        'page_title': gettext('Eliminar Opción')
     }
     return render(request, 'tickets/form_option_delete.html', context)
 
@@ -29370,7 +29391,7 @@ def alcance_publico_list(request):
     
     context = {
         'alcances': alcances,
-        'page_title': 'Alcances Públicos'
+        'page_title': gettext('Alcances Públicos')
     }
     return render(request, 'tickets/alcance_publico_list.html', context)
 
@@ -29382,7 +29403,7 @@ def alcance_list(request):
     
     context = {
         'alcances': alcances,
-        'page_title': 'Gestión de Alcances'
+        'page_title': gettext('Gestión de Alcances')
     }
     return render(request, 'tickets/alcance_list.html', context)
 
@@ -29406,11 +29427,11 @@ def alcance_create(request):
             creado_por=request.user
         )
         
-        messages.success(request, 'Alcance creado exitosamente')
+        messages.success(request, gettext('Alcance creado exitosamente'))
         return redirect('alcance_list')
     
     context = {
-        'page_title': 'Crear Alcance'
+        'page_title': gettext('Crear Alcance')
     }
     return render(request, 'tickets/alcance_form.html', context)
 
@@ -29428,12 +29449,12 @@ def alcance_edit(request, pk):
         alcance.publico = request.POST.get('publico') == 'on'
         alcance.save()
         
-        messages.success(request, 'Alcance actualizado exitosamente')
+        messages.success(request, gettext('Alcance actualizado exitosamente'))
         return redirect('alcance_list')
     
     context = {
         'alcance': alcance,
-        'page_title': 'Editar Alcance'
+        'page_title': gettext('Editar Alcance')
     }
     return render(request, 'tickets/alcance_form.html', context)
 
@@ -29445,12 +29466,12 @@ def alcance_delete(request, pk):
     
     if request.method == 'POST':
         alcance.delete()
-        messages.success(request, 'Alcance eliminado exitosamente')
+        messages.success(request, gettext('Alcance eliminado exitosamente'))
         return redirect('alcance_list')
     
     context = {
         'alcance': alcance,
-        'page_title': 'Eliminar Alcance'
+        'page_title': gettext('Eliminar Alcance')
     }
     return render(request, 'tickets/alcance_confirm_delete.html', context)
 
@@ -29482,7 +29503,7 @@ def whatsapp_dashboard(request):
         'auto_replies': auto_replies,
         'total_keywords': total_keywords,
         'active_keywords': active_keywords,
-        'page_title': 'WhatsApp - Dashboard'
+        'page_title': gettext('WhatsApp - Dashboard')
     }
     return render(request, 'tickets/whatsapp_dashboard.html', context)
 
@@ -29513,7 +29534,7 @@ def whatsapp_keyword_create(request):
     
     context = {
         'connection': connection,
-        'page_title': 'Nueva Palabra Clave'
+        'page_title': gettext('Nueva Palabra Clave')
     }
     return render(request, 'tickets/whatsapp_keyword_form.html', context)
 
@@ -29532,12 +29553,12 @@ def whatsapp_keyword_edit(request, pk):
         keyword.is_active = request.POST.get('is_active') == 'on'
         keyword.save()
         
-        messages.success(request, 'Palabra clave actualizada exitosamente')
+        messages.success(request, gettext('Palabra clave actualizada exitosamente'))
         return redirect('whatsapp_dashboard')
     
     context = {
         'keyword': keyword,
-        'page_title': 'Editar Palabra Clave'
+        'page_title': gettext('Editar Palabra Clave')
     }
     return render(request, 'tickets/whatsapp_keyword_form.html', context)
 
@@ -29549,12 +29570,12 @@ def whatsapp_keyword_delete(request, pk):
     
     if request.method == 'POST':
         keyword.delete()
-        messages.success(request, 'Palabra clave eliminada exitosamente')
+        messages.success(request, gettext('Palabra clave eliminada exitosamente'))
         return redirect('whatsapp_dashboard')
     
     context = {
         'keyword': keyword,
-        'page_title': 'Eliminar Palabra Clave'
+        'page_title': gettext('Eliminar Palabra Clave')
     }
     return render(request, 'tickets/whatsapp_keyword_delete.html', context)
 
@@ -29581,13 +29602,13 @@ def whatsapp_connect(request):
             
             # Manejar diferentes respuestas del servidor
             if data.get('already_connected'):
-                messages.success(request, '✅ Ya estás conectado a WhatsApp')
+                messages.success(request, gettext('✅ Ya estás conectado a WhatsApp'))
             elif data.get('already_connecting'):
-                messages.info(request, '⏳ Conexión en proceso. Escanea el código QR para continuar')
+                messages.info(request, gettext('⏳ Conexión en proceso. Escanea el código QR para continuar'))
             elif data.get('already_exists'):
                 messages.info(request, f"ℹ️ {data.get('message', 'Cliente existente')}")
             elif data.get('qr'):
-                messages.success(request, '✅ Escanea el código QR con tu WhatsApp')
+                messages.success(request, gettext('✅ Escanea el código QR con tu WhatsApp'))
             else:
                 messages.info(request, f"ℹ️ {data.get('message', 'Conexión iniciada')}")
         else:
@@ -29598,7 +29619,7 @@ def whatsapp_connect(request):
     except requests.exceptions.ConnectionError:
         connection.status = 'error'
         connection.save()
-        messages.error(request, '❌ No se pudo conectar al servidor WhatsApp. Asegúrate de que esté ejecutándose en http://localhost:3000')
+        messages.error(request, gettext('❌ No se pudo conectar al servidor WhatsApp. Asegúrate de que esté ejecutándose en http://localhost:3000'))
     except Exception as e:
         connection.status = 'error'
         connection.save()
@@ -29626,7 +29647,7 @@ def whatsapp_disconnect(request):
             connection.qr_code = None
             connection.phone_number = None
             connection.save()
-            messages.success(request, '✅ Desconectado de WhatsApp exitosamente')
+            messages.success(request, gettext('✅ Desconectado de WhatsApp exitosamente'))
         else:
             messages.error(request, f'❌ Error al desconectar: {response.text}')
             
@@ -29636,7 +29657,7 @@ def whatsapp_disconnect(request):
         connection.qr_code = None
         connection.phone_number = None
         connection.save()
-        messages.warning(request, '⚠️ Servidor WhatsApp no disponible. Conexión marcada como desconectada.')
+        messages.warning(request, gettext('⚠️ Servidor WhatsApp no disponible. Conexión marcada como desconectada.'))
     except Exception as e:
         messages.error(request, f'❌ Error inesperado: {str(e)}')
     
@@ -29659,7 +29680,7 @@ def whatsapp_simulate_connection(request):
         message_type='received'
     )
     
-    messages.success(request, '✅ Conexión simulada exitosamente (modo demostración)')
+    messages.success(request, gettext('✅ Conexión simulada exitosamente (modo demostración)'))
     return redirect('whatsapp_dashboard')
 
 
@@ -29735,7 +29756,7 @@ def whatsapp_messages(request):
     context = {
         'connection': connection,
         'page_obj': page_obj,
-        'page_title': 'Mensajes WhatsApp'
+        'page_title': gettext('Mensajes WhatsApp')
     }
     return render(request, 'tickets/whatsapp_messages.html', context)
 
@@ -29766,7 +29787,7 @@ def image_prompt_list(request):
         'page_obj': page_obj,
         'search': search,
         'total_prompts': ImagePrompt.objects.filter(user=request.user).count(),
-        'page_title': 'Mis Prompts de Imágenes'
+        'page_title': gettext('Mis Prompts de Imágenes')
     }
     return render(request, 'tickets/image_prompt_list.html', context)
 
@@ -29781,7 +29802,7 @@ def image_prompt_create(request):
         image_file = request.FILES.get('image')
         
         if not title or not image_file:
-            messages.error(request, 'Por favor completa todos los campos requeridos')
+            messages.error(request, gettext('Por favor completa todos los campos requeridos'))
             return render(request, 'tickets/image_prompt_create.html')
         
         # Crear el objeto ImagePrompt
@@ -29799,7 +29820,7 @@ def image_prompt_create(request):
             config = SystemConfiguration.get_config()
             
             if not config.openai_api_key:
-                messages.warning(request, 'Imagen guardada, pero no se pudo generar el prompt (API key no configurada)')
+                messages.warning(request, gettext('Imagen guardada, pero no se pudo generar el prompt (API key no configurada)'))
                 return redirect('image_prompt_detail', pk=image_prompt.pk)
             
             # Usar OpenAI Vision para analizar la imagen
@@ -29847,7 +29868,7 @@ def image_prompt_create(request):
             image_prompt.tokens_used = tokens_used
             image_prompt.save()
             
-            messages.success(request, 'Imagen subida y prompt generado exitosamente!')
+            messages.success(request, gettext('Imagen subida y prompt generado exitosamente!'))
             return redirect('image_prompt_detail', pk=image_prompt.pk)
             
         except Exception as e:
@@ -29855,7 +29876,7 @@ def image_prompt_create(request):
             return redirect('image_prompt_detail', pk=image_prompt.pk)
     
     context = {
-        'page_title': 'Generar Prompt desde Imagen'
+        'page_title': gettext('Generar Prompt desde Imagen')
     }
     return render(request, 'tickets/image_prompt_create.html', context)
 
@@ -29884,7 +29905,7 @@ def image_prompt_edit(request, pk):
         image_prompt.is_public = request.POST.get('is_public') == 'on'
         image_prompt.save()
         
-        messages.success(request, 'Prompt actualizado exitosamente')
+        messages.success(request, gettext('Prompt actualizado exitosamente'))
         return redirect('image_prompt_detail', pk=image_prompt.pk)
     
     context = {
@@ -29935,7 +29956,7 @@ def public_image_prompts(request):
         'page_obj': page_obj,
         'search': search,
         'total_prompts': ImagePrompt.objects.filter(is_public=True).count(),
-        'page_title': 'Prompts Públicos'
+        'page_title': gettext('Prompts Públicos')
     }
     return render(request, 'tickets/public_image_prompts.html', context)
 
@@ -29970,7 +29991,7 @@ def ai_manager_list(request):
     user_companies = get_user_companies(request.user)
     
     if not user_companies.exists():
-        messages.warning(request, 'No tienes una empresa asignada. Por favor crea una empresa primero.')
+        messages.warning(request, gettext('No tienes una empresa asignada. Por favor crea una empresa primero.'))
         return redirect('dashboard')
     
     # Obtener TODOS los gerentes de TODAS las empresas del usuario
@@ -29983,7 +30004,7 @@ def ai_manager_list(request):
         'managers': managers,
         'companies': user_companies,
         'total_companies': user_companies.count(),
-        'page_title': 'Gerentes IA'
+        'page_title': gettext('Gerentes IA')
     }
     return render(request, 'tickets/ai_manager_list.html', context)
 
@@ -29994,7 +30015,7 @@ def ai_manager_create(request):
     user_companies = get_user_companies(request.user)
     
     if not user_companies.exists():
-        messages.warning(request, 'No tienes una empresa asignada.')
+        messages.warning(request, gettext('No tienes una empresa asignada.'))
         return redirect('dashboard')
     
     if request.method == 'POST':
@@ -30008,7 +30029,7 @@ def ai_manager_create(request):
         telegram_chat_id = request.POST.get('telegram_chat_id', '').strip()
         
         if not all([company_id, name, category, instructions]):
-            messages.error(request, 'Por favor completa todos los campos requeridos')
+            messages.error(request, gettext('Por favor completa todos los campos requeridos'))
         else:
             company = get_object_or_404(Company, pk=company_id)
             AIManager.objects.create(
@@ -30027,7 +30048,7 @@ def ai_manager_create(request):
     
     context = {
         'companies': user_companies,
-        'page_title': 'Crear Gerente IA'
+        'page_title': gettext('Crear Gerente IA')
     }
     return render(request, 'tickets/ai_manager_form.html', context)
 
@@ -30041,7 +30062,7 @@ def ai_manager_detail(request, pk):
     user_companies = get_user_companies(request.user)
     
     if manager.company not in user_companies:
-        messages.error(request, 'No tienes permiso para ver este gerente IA')
+        messages.error(request, gettext('No tienes permiso para ver este gerente IA'))
         return redirect('ai_manager_list')
     
     # Obtener últimas reuniones
@@ -30083,7 +30104,7 @@ def ai_manager_edit(request, pk):
     user_companies = get_user_companies(request.user)
     
     if manager.company not in user_companies:
-        messages.error(request, 'No tienes permiso para editar este gerente IA')
+        messages.error(request, gettext('No tienes permiso para editar este gerente IA'))
         return redirect('ai_manager_list')
     
     if request.method == 'POST':
@@ -30100,7 +30121,7 @@ def ai_manager_edit(request, pk):
         
         manager.save()
         
-        messages.success(request, 'Gerente IA actualizado exitosamente')
+        messages.success(request, gettext('Gerente IA actualizado exitosamente'))
         return redirect('ai_manager_detail', pk=manager.pk)
     
     context = {
@@ -30119,7 +30140,7 @@ def ai_manager_delete(request, pk):
     user_companies = get_user_companies(request.user)
     
     if manager.company not in user_companies:
-        messages.error(request, 'No tienes permiso para eliminar este gerente IA')
+        messages.error(request, gettext('No tienes permiso para eliminar este gerente IA'))
         return redirect('ai_manager_list')
     
     if request.method == 'POST':
@@ -30153,7 +30174,7 @@ def ai_manager_meeting_create(request, pk):
     user_companies = get_user_companies(request.user)
     
     if manager.company not in user_companies:
-        messages.error(request, 'No tienes permiso para reunirte con este gerente IA')
+        messages.error(request, gettext('No tienes permiso para reunirte con este gerente IA'))
         return redirect('ai_manager_list')
     
     if request.method == 'POST':
@@ -30188,7 +30209,7 @@ def ai_manager_meeting_create(request, pk):
                 })
         
         if not title or not user_input:
-            messages.error(request, 'Por favor completa todos los campos requeridos')
+            messages.error(request, gettext('Por favor completa todos los campos requeridos'))
             return render(request, 'tickets/ai_manager_meeting_form.html', {
                 'manager': manager,
                 'page_title': f'Nueva Reunión con {manager.name}'
@@ -30209,7 +30230,7 @@ def ai_manager_meeting_create(request, pk):
             config = SystemConfiguration.get_config()
             
             if not config.openai_api_key:
-                messages.warning(request, 'Reunión guardada, pero no se pudo generar respuesta IA (API key no configurada)')
+                messages.warning(request, gettext('Reunión guardada, pero no se pudo generar respuesta IA (API key no configurada)'))
                 meeting = AIManagerMeeting.objects.create(
                     ai_manager=manager,
                     user=request.user,
@@ -30376,11 +30397,11 @@ IMPORTANTE:
                         parse_mode='Markdown'
                     )
                     
-                    messages.success(request, 'Reunión registrada, análisis generado y enviado por Telegram exitosamente')
+                    messages.success(request, gettext('Reunión registrada, análisis generado y enviado por Telegram exitosamente'))
                 except Exception as telegram_error:
                     messages.success(request, f'Reunión registrada exitosamente (Telegram: {str(telegram_error)})')
             else:
-                messages.success(request, 'Reunión registrada y análisis generado exitosamente')
+                messages.success(request, gettext('Reunión registrada y análisis generado exitosamente'))
             
             return redirect('ai_manager_meeting_detail', pk=meeting.pk)
             
@@ -30407,7 +30428,7 @@ def ai_manager_meetings(request, pk):
     user_companies = get_user_companies(request.user)
     
     if manager.company not in user_companies:
-        messages.error(request, 'No tienes permiso para ver estas reuniones')
+        messages.error(request, gettext('No tienes permiso para ver estas reuniones'))
         return redirect('ai_manager_list')
     
     # Si es admin/gerente, ver todas. Si no, solo las suyas
@@ -30472,7 +30493,7 @@ def ai_manager_meeting_detail(request, pk):
     
     # Verificar permisos
     if meeting.user != request.user and not request.user.is_staff:
-        messages.error(request, 'No tienes permiso para ver esta reunión')
+        messages.error(request, gettext('No tienes permiso para ver esta reunión'))
         return redirect('ai_manager_list')
     
     context = {
@@ -30489,7 +30510,7 @@ def ai_manager_generate_summary(request, pk):
     
     # Verificar permisos (solo admin o creador)
     if not request.user.is_staff and request.user != manager.created_by:
-        messages.error(request, 'No tienes permiso para generar resúmenes')
+        messages.error(request, gettext('No tienes permiso para generar resúmenes'))
         return redirect('ai_manager_detail', pk=pk)
     
     if request.method == 'POST':
@@ -30497,7 +30518,7 @@ def ai_manager_generate_summary(request, pk):
         period_end = request.POST.get('period_end')
         
         if not period_start or not period_end:
-            messages.error(request, 'Por favor selecciona las fechas')
+            messages.error(request, gettext('Por favor selecciona las fechas'))
             return redirect('ai_manager_detail', pk=pk)
         
         try:
@@ -30512,7 +30533,7 @@ def ai_manager_generate_summary(request, pk):
             ).select_related('user')
             
             if not meetings.exists():
-                messages.warning(request, 'No hay reuniones en este período')
+                messages.warning(request, gettext('No hay reuniones en este período'))
                 return redirect('ai_manager_detail', pk=pk)
             
             # Generar resumen con IA
@@ -30520,7 +30541,7 @@ def ai_manager_generate_summary(request, pk):
             config = SystemConfiguration.get_config()
             
             if not config.openai_api_key:
-                messages.warning(request, 'No se puede generar resumen (API key no configurada)')
+                messages.warning(request, gettext('No se puede generar resumen (API key no configurada)'))
                 return redirect('ai_manager_detail', pk=pk)
             
             from openai import OpenAI
@@ -30664,14 +30685,14 @@ Por favor genera el resumen ejecutivo completo."""
                     )
                     
                     if success:
-                        messages.success(request, 'Resumen ejecutivo generado y enviado por Telegram exitosamente')
+                        messages.success(request, gettext('Resumen ejecutivo generado y enviado por Telegram exitosamente'))
                     else:
-                        messages.warning(request, 'Resumen generado pero no se pudo enviar por Telegram')
+                        messages.warning(request, gettext('Resumen generado pero no se pudo enviar por Telegram'))
                     
                 except Exception as telegram_error:
                     messages.warning(request, f'Resumen generado pero error al enviar por Telegram: {str(telegram_error)}')
             else:
-                messages.success(request, 'Resumen ejecutivo generado exitosamente')
+                messages.success(request, gettext('Resumen ejecutivo generado exitosamente'))
             
             return redirect('ai_manager_detail', pk=pk)
             
@@ -30706,7 +30727,7 @@ def ai_manager_summary_detail(request, pk):
     user_companies = get_user_companies(request.user)
     
     if summary.ai_manager.company not in user_companies:
-        messages.error(request, 'No tienes permiso para ver este resumen')
+        messages.error(request, gettext('No tienes permiso para ver este resumen'))
         return redirect('ai_manager_list')
     
     context = {
@@ -30772,7 +30793,7 @@ def company_ai_dashboard_list(request):
     
     context = {
         'companies_data': companies_data,
-        'page_title': 'Dashboard Empresarial IA'
+        'page_title': gettext('Dashboard Empresarial IA')
     }
     return render(request, 'tickets/company_ai_dashboard_list.html', context)
 
@@ -30786,7 +30807,7 @@ def company_ai_dashboard_detail(request, pk):
     user_companies = get_user_companies(request.user)
     
     if company not in user_companies:
-        messages.error(request, 'No tienes permiso para ver este dashboard')
+        messages.error(request, gettext('No tienes permiso para ver este dashboard'))
         return redirect('company_ai_dashboard_list')
     
     # Obtener todos los gerentes de la empresa
@@ -30850,11 +30871,11 @@ def company_ai_generate_summary(request, pk):
     user_companies = get_user_companies(request.user)
     
     if company not in user_companies:
-        messages.error(request, 'No tienes permiso para generar resúmenes')
+        messages.error(request, gettext('No tienes permiso para generar resúmenes'))
         return redirect('company_ai_dashboard_list')
     
     if not request.user.is_staff:
-        messages.error(request, 'Solo administradores pueden generar resúmenes empresariales')
+        messages.error(request, gettext('Solo administradores pueden generar resúmenes empresariales'))
         return redirect('company_ai_dashboard_detail', pk=pk)
     
     if request.method == 'POST':
@@ -30862,7 +30883,7 @@ def company_ai_generate_summary(request, pk):
         period_end = request.POST.get('period_end')
         
         if not period_start or not period_end:
-            messages.error(request, 'Por favor selecciona las fechas')
+            messages.error(request, gettext('Por favor selecciona las fechas'))
             return redirect('company_ai_dashboard_detail', pk=pk)
         
         try:
@@ -30879,7 +30900,7 @@ def company_ai_generate_summary(request, pk):
             ).select_related('ai_manager', 'user')
             
             if not meetings.exists():
-                messages.warning(request, 'No hay reuniones en este período')
+                messages.warning(request, gettext('No hay reuniones en este período'))
                 return redirect('company_ai_dashboard_detail', pk=pk)
             
             # Generar resumen con IA
@@ -30887,7 +30908,7 @@ def company_ai_generate_summary(request, pk):
             config = SystemConfiguration.get_config()
             
             if not config.openai_api_key:
-                messages.warning(request, 'No se puede generar resumen (API key no configurada)')
+                messages.warning(request, gettext('No se puede generar resumen (API key no configurada)'))
                 return redirect('company_ai_dashboard_detail', pk=pk)
             
             from openai import OpenAI
@@ -31079,7 +31100,7 @@ FORMATO:
                 generated_by=request.user
             )
             
-            messages.success(request, 'Resumen empresarial generado exitosamente')
+            messages.success(request, gettext('Resumen empresarial generado exitosamente'))
             return redirect('company_ai_summary_detail', pk=summary.pk)
             
         except Exception as e:
@@ -31116,7 +31137,7 @@ def company_ai_summary_detail(request, pk):
     user_companies = get_user_companies(request.user)
     
     if summary.company not in user_companies:
-        messages.error(request, 'No tienes permiso para ver este resumen')
+        messages.error(request, gettext('No tienes permiso para ver este resumen'))
         return redirect('company_ai_dashboard_list')
     
     context = {
@@ -31162,7 +31183,7 @@ def user_ai_performance_dashboard(request):
     context = {
         'users_data': users_data,
         'total_users': len(users_data),
-        'page_title': 'Dashboard de Desempeño de Usuarios IA'
+        'page_title': gettext('Dashboard de Desempeño de Usuarios IA')
     }
     return render(request, 'tickets/user_ai_performance_dashboard.html', context)
 
@@ -31180,7 +31201,7 @@ def user_ai_performance_detail(request, user_id):
     )
     
     if not user_meetings.exists():
-        messages.error(request, 'Este usuario no tiene reuniones registradas')
+        messages.error(request, gettext('Este usuario no tiene reuniones registradas'))
         return redirect('user_ai_performance_dashboard')
     
     # Obtener evaluaciones
@@ -31224,7 +31245,7 @@ def user_ai_performance_generate(request, user_id):
         period_end = request.POST.get('period_end')
         
         if not period_start or not period_end:
-            messages.error(request, 'Por favor selecciona las fechas del período')
+            messages.error(request, gettext('Por favor selecciona las fechas del período'))
             return redirect('user_ai_performance_detail', user_id=user_id)
         
         try:
@@ -31241,7 +31262,7 @@ def user_ai_performance_generate(request, user_id):
             ).select_related('ai_manager')
             
             if not meetings.exists():
-                messages.warning(request, 'No hay reuniones en este período')
+                messages.warning(request, gettext('No hay reuniones en este período'))
                 return redirect('user_ai_performance_detail', user_id=user_id)
             
             # Generar evaluación con IA
@@ -31249,7 +31270,7 @@ def user_ai_performance_generate(request, user_id):
             config = SystemConfiguration.get_config()
             
             if not config.openai_api_key:
-                messages.error(request, 'No hay API key configurada')
+                messages.error(request, gettext('No hay API key configurada'))
                 return redirect('user_ai_performance_detail', user_id=user_id)
             
             from openai import OpenAI
@@ -31422,7 +31443,7 @@ def website_tracker_list(request):
     
     context = {
         'trackers': trackers,
-        'page_title': 'Rastreador Web'
+        'page_title': gettext('Rastreador Web')
     }
     return render(request, 'tickets/website_tracker_list.html', context)
 
@@ -31434,7 +31455,7 @@ def website_tracker_create(request):
         target = request.POST.get('target', '').strip()
         
         if not target:
-            messages.error(request, 'Debes proporcionar una URL o IP')
+            messages.error(request, gettext('Debes proporcionar una URL o IP'))
             return redirect('website_tracker_list')
         
         try:
@@ -31543,7 +31564,7 @@ def legal_contract_list(request):
         'page_obj': page_obj,
         'status_filter': status_filter,
         'search': search,
-        'page_title': 'Contratos Legales'
+        'page_title': gettext('Contratos Legales')
     }
     return render(request, 'tickets/legal_contract_list.html', context)
 
@@ -31567,7 +31588,7 @@ def legal_contract_create(request):
                 status='draft'
             )
             
-            messages.success(request, 'Contrato creado exitosamente')
+            messages.success(request, gettext('Contrato creado exitosamente'))
             return redirect('legal_contract_detail', pk=contract.pk)
             
         except Exception as e:
@@ -31577,7 +31598,7 @@ def legal_contract_create(request):
     
     context = {
         'companies': companies,
-        'page_title': 'Nuevo Contrato Legal'
+        'page_title': gettext('Nuevo Contrato Legal')
     }
     return render(request, 'tickets/legal_contract_form.html', context)
 
@@ -31617,7 +31638,7 @@ def legal_contract_edit(request, pk):
             contract.notes = request.POST.get('notes', '')
             contract.save()
             
-            messages.success(request, 'Contrato actualizado exitosamente')
+            messages.success(request, gettext('Contrato actualizado exitosamente'))
             return redirect('legal_contract_detail', pk=contract.pk)
             
         except Exception as e:
@@ -31660,13 +31681,13 @@ def legal_contract_update_content(request, pk):
         try:
             new_content = request.POST.get('generated_content', '').strip()
             if not new_content:
-                messages.error(request, 'El contenido no puede estar vacío')
+                messages.error(request, gettext('El contenido no puede estar vacío'))
                 return redirect('legal_contract_detail', pk=contract.pk)
             
             contract.generated_content = new_content
             contract.save()
             
-            messages.success(request, 'Contenido del contrato actualizado exitosamente')
+            messages.success(request, gettext('Contenido del contrato actualizado exitosamente'))
         except Exception as e:
             messages.error(request, f'Error al actualizar el contenido: {str(e)}')
     
@@ -31681,7 +31702,7 @@ def legal_contract_generate(request, pk):
     if request.method == 'POST':
         try:
             contract.generate_with_ai()
-            messages.success(request, 'Contrato generado exitosamente con IA')
+            messages.success(request, gettext('Contrato generado exitosamente con IA'))
         except Exception as e:
             messages.error(request, f'Error al generar el contrato: {str(e)}')
         
@@ -32097,7 +32118,7 @@ def supplier_contract_review_list(request):
     context = {
         'reviews': reviews,
         'companies': companies,
-        'page_title': 'Revisión de Contratos de Proveedores'
+        'page_title': gettext('Revisión de Contratos de Proveedores')
     }
     return render(request, 'tickets/supplier_contract_review_list.html', context)
 
@@ -32123,7 +32144,7 @@ def supplier_contract_review_create(request):
             review.internal_notes = request.POST.get('internal_notes', '')
             review.save()
             
-            messages.success(request, 'Contrato guardado exitosamente. Ahora puedes generar la revisión con IA.')
+            messages.success(request, gettext('Contrato guardado exitosamente. Ahora puedes generar la revisión con IA.'))
             return redirect('supplier_contract_review_detail', pk=review.pk)
             
         except Exception as e:
@@ -32133,7 +32154,7 @@ def supplier_contract_review_create(request):
     
     context = {
         'companies': companies,
-        'page_title': 'Nueva Revisión de Contrato'
+        'page_title': gettext('Nueva Revisión de Contrato')
     }
     return render(request, 'tickets/supplier_contract_review_form.html', context)
 
@@ -32173,7 +32194,7 @@ def supplier_contract_review_edit(request, pk):
             review.internal_notes = request.POST.get('internal_notes', '')
             review.save()
             
-            messages.success(request, 'Contrato actualizado exitosamente')
+            messages.success(request, gettext('Contrato actualizado exitosamente'))
             return redirect('supplier_contract_review_detail', pk=review.pk)
             
         except Exception as e:
@@ -32219,7 +32240,7 @@ def supplier_contract_review_generate(request, pk):
     if request.method == 'POST':
         try:
             review.review_with_ai()
-            messages.success(request, 'Revisión generada exitosamente con IA')
+            messages.success(request, gettext('Revisión generada exitosamente con IA'))
         except Exception as e:
             messages.error(request, f'Error al generar revisión: {str(e)}')
     
@@ -32240,7 +32261,7 @@ def supplier_contract_review_update_status(request, pk):
             review.save()
             messages.success(request, f'Estado actualizado a {review.get_status_display()}')
         else:
-            messages.error(request, 'Estado inválido')
+            messages.error(request, gettext('Estado inválido'))
     
     return redirect('supplier_contract_review_detail', pk=review.pk)
 
@@ -32371,7 +32392,7 @@ def paypal_link_list(request):
     context = {
         'links': links,
         'companies': companies,
-        'page_title': 'Enlaces de Pago PayPal'
+        'page_title': gettext('Enlaces de Pago PayPal')
     }
     return render(request, 'tickets/paypal_link_list.html', context)
 
@@ -32417,7 +32438,7 @@ def paypal_link_create(request):
     
     context = {
         'companies': companies,
-        'page_title': 'Nuevo Enlace de Pago'
+        'page_title': gettext('Nuevo Enlace de Pago')
     }
     return render(request, 'tickets/paypal_link_form.html', context)
 
@@ -32471,7 +32492,7 @@ def paypal_link_edit(request, pk):
             link.notes = request.POST.get('notes', '')
             link.save()
             
-            messages.success(request, 'Producto actualizado exitosamente. Los cambios solo afectarán a las nuevas compras.')
+            messages.success(request, gettext('Producto actualizado exitosamente. Los cambios solo afectarán a las nuevas compras.'))
             return redirect('paypal_link_detail', pk=link.pk)
             
         except Exception as e:
@@ -32496,7 +32517,7 @@ def paypal_link_delete(request, pk):
     
     # No permitir eliminación si ya está pagado
     if link.status == 'paid':
-        messages.warning(request, 'No se puede eliminar un enlace que ya ha sido pagado')
+        messages.warning(request, gettext('No se puede eliminar un enlace que ya ha sido pagado'))
         return redirect('paypal_link_detail', pk=link.pk)
     
     if request.method == 'POST':
@@ -32522,7 +32543,7 @@ def paypal_link_cancel(request, pk):
     if link.status in ['active']:
         link.status = 'cancelled'
         link.save()
-        messages.success(request, 'Enlace cancelado exitosamente')
+        messages.success(request, gettext('Enlace cancelado exitosamente'))
     else:
         messages.warning(request, f'No se puede cancelar un enlace con estado {link.get_status_display()}')
     
@@ -32566,7 +32587,7 @@ def public_products_catalog(request, token):
     config = SystemConfiguration.get_config()
     
     if not config.products_catalog_token or str(config.products_catalog_token) != str(token):
-        messages.error(request, 'Token inválido o catálogo no disponible')
+        messages.error(request, gettext('Token inválido o catálogo no disponible'))
         return render(request, 'tickets/public_products_error.html', status=404)
     
     # Obtener productos activos
@@ -32594,7 +32615,7 @@ def create_payment_from_product(request, token, product_id):
     config = SystemConfiguration.get_config()
     
     if not config.products_catalog_token or str(config.products_catalog_token) != str(token):
-        messages.error(request, 'Token inválido')
+        messages.error(request, gettext('Token inválido'))
         return redirect('home')
     
     # Obtener producto
@@ -32640,7 +32661,7 @@ def paypal_debug_config(request):
     context = {
         'debug_info': debug_info,
         'config': config,
-        'page_title': 'Debug PayPal'
+        'page_title': gettext('Debug PayPal')
     }
     
     return render(request, 'tickets/paypal_debug.html', context)
@@ -32658,7 +32679,7 @@ def paypal_payment_page(request, token):
         context = {
             'error': 'Este enlace de pago ya no está disponible',
             'link': link,
-            'page_title': 'Enlace No Disponible'
+            'page_title': gettext('Enlace No Disponible')
         }
         return render(request, 'tickets/paypal_payment_page.html', context)
     
@@ -32671,7 +32692,7 @@ def paypal_payment_page(request, token):
         if not config or not config.paypal_enabled:
             context = {
                 'error': 'El sistema de pagos no está disponible en este momento',
-                'page_title': 'Sistema No Disponible'
+                'page_title': gettext('Sistema No Disponible')
             }
             return render(request, 'tickets/paypal_payment_page.html', context)
         
@@ -32681,7 +32702,7 @@ def paypal_payment_page(request, token):
     except Exception as e:
         context = {
             'error': 'Error al cargar la configuración de pago',
-            'page_title': 'Error'
+            'page_title': gettext('Error')
         }
         return render(request, 'tickets/paypal_payment_page.html', context)
     
@@ -33000,7 +33021,7 @@ def paypal_link_orders(request, token):
     
     # Solo el dueño puede ver las órdenes
     if request.user != link.user:
-        messages.error(request, 'No tienes permiso para ver estas órdenes')
+        messages.error(request, gettext('No tienes permiso para ver estas órdenes'))
         return redirect('dashboard')
     
     # Obtener todas las órdenes
@@ -33037,7 +33058,7 @@ def paypal_order_download(request, token):
     
     # Verificar que está pagado
     if not order.is_paid():
-        messages.error(request, 'Esta orden no ha sido completada')
+        messages.error(request, gettext('Esta orden no ha sido completada'))
         return redirect('paypal_order_detail', token=order.order_token)
     
     # Verificar que el token no ha expirado (72 horas)
@@ -33047,13 +33068,13 @@ def paypal_order_download(request, token):
             'link': order.payment_link,
             'error': 'El enlace de descarga ha expirado',
             'error_detail': 'Los enlaces de descarga son válidos por 72 horas después del pago. Por favor, contacta con el vendedor para obtener un nuevo enlace.',
-            'page_title': 'Enlace Expirado'
+            'page_title': gettext('Enlace Expirado')
         }
         return render(request, 'tickets/paypal_download_expired.html', context)
     
     # Verificar que tiene archivo
     if not order.payment_link.attachment:
-        messages.error(request, 'Este producto no tiene archivo adjunto')
+        messages.error(request, gettext('Este producto no tiene archivo adjunto'))
         return redirect('paypal_order_detail', token=order.order_token)
     
     # Incrementar contador de descargas
@@ -33068,7 +33089,7 @@ def paypal_order_download(request, token):
             response['Content-Disposition'] = f'attachment; filename="{order.payment_link.attachment_name or os.path.basename(file_path)}"'
             return response
     
-    messages.error(request, 'Archivo no encontrado en el servidor')
+    messages.error(request, gettext('Archivo no encontrado en el servidor'))
     return redirect('paypal_order_detail', token=order.order_token)
 
 
@@ -33084,7 +33105,7 @@ def paypal_file_download(request, token):
         return redirect('paypal_order_summary', token=token)
     
     # Si no está pagado, redirigir a la página de pago
-    messages.warning(request, 'Debes completar el pago antes de acceder a tu orden')
+    messages.warning(request, gettext('Debes completar el pago antes de acceder a tu orden'))
     return redirect('paypal_payment_page', token=token)
 
 
@@ -33414,7 +33435,7 @@ def ai_book_create(request):
         company_id = request.POST.get('company')
         
         if not title or not topic:
-            messages.error(request, 'El título y el tema son obligatorios')
+            messages.error(request, gettext('El título y el tema son obligatorios'))
             return redirect('ai_book_create')
         
         # Crear el libro
@@ -33643,9 +33664,9 @@ def ai_book_edit(request, pk):
         company_id = request.POST.get('company', None)
         
         if not title:
-            messages.error(request, 'El título es obligatorio')
+            messages.error(request, gettext('El título es obligatorio'))
         elif not topic:
-            messages.error(request, 'El tema/descripción es obligatorio')
+            messages.error(request, gettext('El tema/descripción es obligatorio'))
         else:
             book.title = title
             book.author = author
@@ -33688,7 +33709,7 @@ def ai_book_chapter_detail(request, pk, chapter_id):
         if summary:
             chapter.status = 'summary_created'
         chapter.save()
-        messages.success(request, 'Resumen guardado exitosamente')
+        messages.success(request, gettext('Resumen guardado exitosamente'))
         return redirect('ai_book_chapter_detail', pk=pk, chapter_id=chapter_id)
     
     context = {
@@ -33963,7 +33984,7 @@ def ai_book_export(request, pk):
     chapters = book.chapters.filter(status__in=['content_generated', 'completed']).order_by('order')
     
     if not chapters.exists():
-        messages.error(request, 'No hay capítulos con contenido generado para exportar')
+        messages.error(request, gettext('No hay capítulos con contenido generado para exportar'))
         return redirect('ai_book_detail', pk=pk)
     
     # Formato para exportar
@@ -34362,7 +34383,7 @@ def ai_book_export(request, pk):
         response['Content-Disposition'] = f'attachment; filename="{book.title}.html"'
         return response
     
-    messages.error(request, 'Formato de exportación no válido')
+    messages.error(request, gettext('Formato de exportación no válido'))
     return redirect('ai_book_detail', pk=pk)
 
 
@@ -34439,7 +34460,7 @@ def ai_article_project_create(request):
         company_id = request.POST.get('company')
         
         if not title or not main_topic:
-            messages.error(request, 'El título y el tema principal son obligatorios.')
+            messages.error(request, gettext('El título y el tema principal son obligatorios.'))
             return redirect('ai_article_project_create')
         
         project = AIArticleProject.objects.create(
@@ -34730,7 +34751,7 @@ def ai_article_delete(request, pk, article_id):
     
     if request.method == 'POST':
         article.delete()
-        messages.success(request, 'Artículo eliminado exitosamente.')
+        messages.success(request, gettext('Artículo eliminado exitosamente.'))
         return redirect('ai_article_project_proposals', pk=project.pk)
     
     context = {
@@ -34910,7 +34931,7 @@ def employee_request_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Nueva Solicitud de Empleado',
+        'page_title': gettext('Nueva Solicitud de Empleado'),
         'is_create': True,
     }
     
@@ -34928,7 +34949,7 @@ def employee_request_detail(request, pk):
     if not (request.user.is_staff or 
             request.user.groups.filter(name='Agentes').exists() or 
             employee_request.created_by == request.user):
-        messages.error(request, 'No tienes permisos para ver esta solicitud.')
+        messages.error(request, gettext('No tienes permisos para ver esta solicitud.'))
         return redirect('employee_request_list')
     
     context = {
@@ -34955,7 +34976,7 @@ def employee_request_edit(request, pk):
     )
     
     if not can_edit:
-        messages.error(request, 'No tienes permisos para editar esta solicitud.')
+        messages.error(request, gettext('No tienes permisos para editar esta solicitud.'))
         return redirect('employee_request_detail', pk=pk)
     
     if request.method == 'POST':
@@ -34992,7 +35013,7 @@ def employee_request_delete(request, pk):
     )
     
     if not can_delete:
-        messages.error(request, 'No tienes permisos para eliminar esta solicitud.')
+        messages.error(request, gettext('No tienes permisos para eliminar esta solicitud.'))
         return redirect('employee_request_detail', pk=pk)
     
     if request.method == 'POST':
@@ -35032,10 +35053,10 @@ def employee_dashboard(request):
         try:
             selected_employee = User.objects.get(id=selected_employee_id)
         except User.DoesNotExist:
-            messages.warning(request, 'El empleado seleccionado no existe.')
+            messages.warning(request, gettext('El empleado seleccionado no existe.'))
             selected_employee = request.user
     elif selected_employee_id and not can_view_others:
-        messages.warning(request, 'No tienes permisos para ver el dashboard de otros empleados.')
+        messages.warning(request, gettext('No tienes permisos para ver el dashboard de otros empleados.'))
     
     # Obtener lista de empleados para el selector (solo si puede ver otros)
     available_employees = []
@@ -35255,7 +35276,7 @@ def internal_agreement_list(request):
     
     # Solo agentes y administradores pueden acceder
     if not (is_agent(request.user) or request.user.is_staff):
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('dashboard')
     
     # Filtros básicos
@@ -35322,7 +35343,7 @@ def internal_agreement_create(request):
     
     # Solo agentes y administradores pueden crear
     if not (is_agent(request.user) or request.user.is_staff):
-        messages.error(request, 'No tienes permisos para crear acuerdos internos.')
+        messages.error(request, gettext('No tienes permisos para crear acuerdos internos.'))
         return redirect('internal_agreement_list')
     
     if request.method == 'POST':
@@ -35338,7 +35359,7 @@ def internal_agreement_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Nuevo Acuerdo Interno',
+        'page_title': gettext('Nuevo Acuerdo Interno'),
         'is_create': True,
     }
     
@@ -35353,7 +35374,7 @@ def internal_agreement_detail(request, pk):
     
     # Solo agentes y administradores pueden ver
     if not (is_agent(request.user) or request.user.is_staff):
-        messages.error(request, 'No tienes permisos para ver los acuerdos internos.')
+        messages.error(request, gettext('No tienes permisos para ver los acuerdos internos.'))
         return redirect('dashboard')
     
     agreement = get_object_or_404(InternalAgreement, pk=pk)
@@ -35387,7 +35408,7 @@ def internal_agreement_edit(request, pk):
     
     # Verificar permisos de edición
     if not agreement.can_edit(request.user):
-        messages.error(request, 'No tienes permisos para editar este acuerdo.')
+        messages.error(request, gettext('No tienes permisos para editar este acuerdo.'))
         return redirect('internal_agreement_detail', pk=pk)
     
     if request.method == 'POST':
@@ -35435,7 +35456,7 @@ def internal_agreement_delete(request, pk):
     
     # Verificar permisos de eliminación
     if not agreement.can_delete(request.user):
-        messages.error(request, 'No tienes permisos para eliminar este acuerdo.')
+        messages.error(request, gettext('No tienes permisos para eliminar este acuerdo.'))
         return redirect('internal_agreement_detail', pk=pk)
     
     if request.method == 'POST':
@@ -35461,7 +35482,7 @@ def internal_agreement_sign(request, pk):
     
     # Solo agentes y administradores pueden firmar
     if not (is_agent(request.user) or request.user.is_staff):
-        messages.error(request, 'No tienes permisos para firmar acuerdos internos.')
+        messages.error(request, gettext('No tienes permisos para firmar acuerdos internos.'))
         return redirect('dashboard')
     
     agreement = get_object_or_404(InternalAgreement, pk=pk)
@@ -35474,12 +35495,12 @@ def internal_agreement_sign(request, pk):
             if signer_number not in [1, 2]:
                 raise ValueError("Número de firmante inválido")
         except (ValueError, TypeError):
-            messages.error(request, 'Número de firmante inválido.')
+            messages.error(request, gettext('Número de firmante inválido.'))
             return redirect('internal_agreement_detail', pk=pk)
         
         # Verificar si el usuario puede firmar
         if not agreement.can_sign(request.user, signer_number):
-            messages.error(request, 'No tienes permisos para firmar como este firmante o ya has firmado.')
+            messages.error(request, gettext('No tienes permisos para firmar como este firmante o ya has firmado.'))
             return redirect('internal_agreement_detail', pk=pk)
         
         # Firmar el acuerdo
@@ -35509,7 +35530,7 @@ def internal_agreement_sign(request, pk):
                     f'🎉 ¡El acuerdo está completamente firmado! Todos los firmantes requeridos han confirmado su firma.'
                 )
         else:
-            messages.error(request, 'No se pudo completar la firma. Verifica que tengas permisos.')
+            messages.error(request, gettext('No se pudo completar la firma. Verifica que tengas permisos.'))
         
         return redirect('internal_agreement_detail', pk=pk)
     
@@ -35569,7 +35590,7 @@ def ticket_print(request, ticket_id):
         
         # Verificar permisos - solo puede imprimir tickets asignados a él o que ha creado
         if not (ticket.assigned_to == request.user or ticket.created_by == request.user or request.user.is_staff):
-            messages.error(request, 'No tienes permisos para imprimir este ticket.')
+            messages.error(request, gettext('No tienes permisos para imprimir este ticket.'))
             return redirect('employee_dashboard')
         
         context = {
@@ -35579,10 +35600,10 @@ def ticket_print(request, ticket_id):
         return render(request, 'tickets/ticket_print.html', context)
         
     except Ticket.DoesNotExist:
-        messages.error(request, 'Ticket no encontrado.')
+        messages.error(request, gettext('Ticket no encontrado.'))
         return redirect('employee_dashboard')
     except Exception as e:
-        messages.error(request, 'Error al cargar el ticket para impresión.')
+        messages.error(request, gettext('Error al cargar el ticket para impresión.'))
         return redirect('employee_dashboard')
 
 
@@ -35605,7 +35626,7 @@ def ticket_print_pdf(request, pk):
         
         # Verificar permisos - solo puede generar PDF de tickets asignados a él o que ha creado
         if not (ticket.assigned_to == request.user or ticket.created_by == request.user or request.user.is_staff):
-            messages.error(request, 'No tienes permisos para generar PDF de este ticket.')
+            messages.error(request, gettext('No tienes permisos para generar PDF de este ticket.'))
             return redirect('ticket_detail', pk=pk)
         
         # Crear el objeto HttpResponse con el tipo de contenido PDF
@@ -35729,7 +35750,7 @@ def ticket_print_pdf(request, pk):
         return response
         
     except Ticket.DoesNotExist:
-        messages.error(request, 'Ticket no encontrado.')
+        messages.error(request, gettext('Ticket no encontrado.'))
         return redirect('ticket_list')
     except Exception as e:
         messages.error(request, f'Error al generar el PDF: {str(e)}')
@@ -35740,7 +35761,7 @@ def ticket_print_pdf(request, pk):
 def tickets_export_pdf(request):
     """Vista para exportar múltiples tickets a PDF"""
     if request.method != 'POST':
-        messages.error(request, 'Método no permitido.')
+        messages.error(request, gettext('Método no permitido.'))
         return redirect('ticket_list')
     
     from django.http import HttpResponse
@@ -35758,7 +35779,7 @@ def tickets_export_pdf(request):
         ticket_ids = request.POST.getlist('ticket_ids')
         
         if not ticket_ids:
-            messages.error(request, 'No se seleccionaron tickets para exportar.')
+            messages.error(request, gettext('No se seleccionaron tickets para exportar.'))
             return redirect('ticket_list')
         
         # Obtener los tickets con verificación de permisos
@@ -35773,7 +35794,7 @@ def tickets_export_pdf(request):
                 continue
         
         if not tickets:
-            messages.error(request, 'No tienes permisos para exportar ninguno de los tickets seleccionados.')
+            messages.error(request, gettext('No tienes permisos para exportar ninguno de los tickets seleccionados.'))
             return redirect('ticket_list')
         
         # Crear el objeto HttpResponse con el tipo de contenido PDF
@@ -36028,7 +36049,7 @@ def training_plan_list(request):
     
     context = {
         'plans': plans,
-        'page_title': 'Planes de Capacitación',
+        'page_title': gettext('Planes de Capacitación'),
     }
     
     return render(request, 'tickets/training_plan_list.html', context)
@@ -36178,7 +36199,7 @@ def my_training_progress(request):
     
     context = {
         'progress_data': progress_data,
-        'page_title': 'Mi Progreso de Capacitación',
+        'page_title': gettext('Mi Progreso de Capacitación'),
         'total_plans': total_plans,
         'completed_plans': completed_plans,
         'in_progress_plans': in_progress_plans,
@@ -36197,7 +36218,7 @@ def training_plan_create(request):
     # Verificar permisos
     if not (request.user.is_staff or (hasattr(request.user, 'groups') and 
             request.user.groups.filter(name='Agentes').exists())):
-        messages.error(request, 'No tienes permisos para crear planes de capacitación.')
+        messages.error(request, gettext('No tienes permisos para crear planes de capacitación.'))
         return redirect('training_plan_list')
     
     if request.method == 'POST':
@@ -36213,10 +36234,10 @@ def training_plan_create(request):
             messages.success(request, f'Plan de capacitación #{plan.sequence} creado exitosamente.')
             return redirect('training_plan_detail', pk=plan.pk)
         else:
-            messages.error(request, 'Título y descripción son requeridos.')
+            messages.error(request, gettext('Título y descripción son requeridos.'))
     
     context = {
-        'page_title': 'Crear Plan de Capacitación',
+        'page_title': gettext('Crear Plan de Capacitación'),
     }
     
     return render(request, 'tickets/training_plan_form.html', context)
@@ -36230,7 +36251,7 @@ def training_plan_edit(request, pk):
     # Verificar permisos
     if not (request.user.is_staff or (hasattr(request.user, 'groups') and 
             request.user.groups.filter(name='Agentes').exists())):
-        messages.error(request, 'No tienes permisos para editar planes de capacitación.')
+        messages.error(request, gettext('No tienes permisos para editar planes de capacitación.'))
         return redirect('training_plan_list')
     
     plan = get_object_or_404(TrainingPlan, pk=pk)
@@ -36248,7 +36269,7 @@ def training_plan_edit(request, pk):
             messages.success(request, f'Plan de capacitación #{plan.sequence} actualizado exitosamente.')
             return redirect('training_plan_detail', pk=plan.pk)
         else:
-            messages.error(request, 'Título y descripción son requeridos.')
+            messages.error(request, gettext('Título y descripción son requeridos.'))
     
     context = {
         'plan': plan,
@@ -36266,7 +36287,7 @@ def training_link_create(request, plan_pk):
     # Verificar permisos
     if not (request.user.is_staff or (hasattr(request.user, 'groups') and 
             request.user.groups.filter(name='Agentes').exists())):
-        messages.error(request, 'No tienes permisos para gestionar enlaces de capacitación.')
+        messages.error(request, gettext('No tienes permisos para gestionar enlaces de capacitación.'))
         return redirect('training_plan_list')
     
     plan = get_object_or_404(TrainingPlan, pk=plan_pk)
@@ -36302,7 +36323,7 @@ def training_link_create(request, plan_pk):
             messages.success(request, f'Enlace "{title}" agregado al plan exitosamente.')
             return redirect('training_plan_detail', pk=plan.pk)
         else:
-            messages.error(request, 'Título y URL son requeridos.')
+            messages.error(request, gettext('Título y URL son requeridos.'))
     
     context = {
         'plan': plan,
@@ -36320,7 +36341,7 @@ def training_link_edit(request, pk):
     # Verificar permisos
     if not (request.user.is_staff or (hasattr(request.user, 'groups') and 
             request.user.groups.filter(name='Agentes').exists())):
-        messages.error(request, 'No tienes permisos para editar enlaces de capacitación.')
+        messages.error(request, gettext('No tienes permisos para editar enlaces de capacitación.'))
         return redirect('training_plan_list')
     
     training_link = get_object_or_404(TrainingLink, pk=pk)
@@ -36354,7 +36375,7 @@ def training_link_edit(request, pk):
             messages.success(request, f'Enlace "{title}" actualizado exitosamente.')
             return redirect('training_plan_detail', pk=training_link.plan.pk)
         else:
-            messages.error(request, 'Título y URL son requeridos.')
+            messages.error(request, gettext('Título y URL son requeridos.'))
     
     context = {
         'training_link': training_link,
@@ -36373,7 +36394,7 @@ def training_link_delete(request, pk):
     # Verificar permisos
     if not (request.user.is_staff or (hasattr(request.user, 'groups') and 
             request.user.groups.filter(name='Agentes').exists())):
-        messages.error(request, 'No tienes permisos para eliminar enlaces de capacitación.')
+        messages.error(request, gettext('No tienes permisos para eliminar enlaces de capacitación.'))
         return redirect('training_plan_list')
     
     training_link = get_object_or_404(TrainingLink, pk=pk)
@@ -36404,7 +36425,7 @@ def ai_recommendation_list(request):
     
     context = {
         'recommendations': recommendations,
-        'page_title': 'Recomendaciones IA',
+        'page_title': gettext('Recomendaciones IA'),
     }
     
     return render(request, 'tickets/ai_recommendation_list.html', context)
@@ -36428,10 +36449,10 @@ def ai_recommendation_create(request):
             messages.success(request, f'Recomendación "{title}" creada exitosamente.')
             return redirect('ai_recommendation_list')
         else:
-            messages.error(request, 'Por favor, completa todos los campos requeridos.')
+            messages.error(request, gettext('Por favor, completa todos los campos requeridos.'))
     
     context = {
-        'page_title': 'Crear Recomendación IA',
+        'page_title': gettext('Crear Recomendación IA'),
     }
     
     return render(request, 'tickets/ai_recommendation_form.html', context)
@@ -36445,7 +36466,7 @@ def ai_recommendation_edit(request, pk):
     try:
         recommendation = AIRecommendation.objects.get(pk=pk)
     except AIRecommendation.DoesNotExist:
-        messages.error(request, 'La recomendación solicitada no existe.')
+        messages.error(request, gettext('La recomendación solicitada no existe.'))
         return redirect('ai_recommendation_list')
     
     if request.method == 'POST':
@@ -36473,7 +36494,7 @@ def ai_recommendation_detail(request, pk):
     try:
         recommendation = AIRecommendation.objects.get(pk=pk)
     except AIRecommendation.DoesNotExist:
-        messages.error(request, 'La recomendación solicitada no existe.')
+        messages.error(request, gettext('La recomendación solicitada no existe.'))
         return redirect('ai_recommendation_list')
     
     ai_response = None
@@ -36527,16 +36548,16 @@ Responde únicamente con la sugerencia de respuesta, sin explicaciones adicional
                         ai_response=ai_response
                     )
                     
-                    messages.success(request, 'Respuesta generada exitosamente.')
+                    messages.success(request, gettext('Respuesta generada exitosamente.'))
                     
                 except (KeyError, IndexError) as e:
-                    messages.error(request, 'Error al procesar la respuesta de la IA.')
+                    messages.error(request, gettext('Error al procesar la respuesta de la IA.'))
                     ai_response = "Error al generar la respuesta. Por favor, intenta nuevamente."
             else:
                 messages.error(request, f'Error de IA: {result["error"]}')
                 ai_response = "Error al conectar con el servicio de IA. Verifica la configuración."
         else:
-            messages.error(request, 'Por favor, ingresa el caso del cliente.')
+            messages.error(request, gettext('Por favor, ingresa el caso del cliente.'))
     
     # Obtener el historial de usos recientes
     recent_usage = AIRecommendationUsage.objects.filter(
@@ -36562,7 +36583,7 @@ def ai_recommendation_delete(request, pk):
     try:
         recommendation = AIRecommendation.objects.get(pk=pk)
     except AIRecommendation.DoesNotExist:
-        messages.error(request, 'La recomendación solicitada no existe.')
+        messages.error(request, gettext('La recomendación solicitada no existe.'))
         return redirect('ai_recommendation_list')
     
     if request.method == 'POST':
@@ -36662,7 +36683,7 @@ def employee_absence_list(request):
         'status_filter': status_filter,
         'date_from': date_from,
         'date_to': date_to,
-        'page_title': 'Gestión de Ausencias',
+        'page_title': gettext('Gestión de Ausencias'),
     }
     
     return render(request, 'tickets/employee_absence_list.html', context)
@@ -36707,7 +36728,7 @@ def employee_absence_create(request):
             return redirect('employee_absence_list')
             
         except (User.DoesNotExist, AbsenceType.DoesNotExist) as e:
-            messages.error(request, 'Error en los datos seleccionados.')
+            messages.error(request, gettext('Error en los datos seleccionados.'))
         except Exception as e:
             messages.error(request, f'Error al crear la ausencia: {str(e)}')
     
@@ -36718,7 +36739,7 @@ def employee_absence_create(request):
     context = {
         'employees': employees,
         'absence_types': absence_types,
-        'page_title': 'Registrar Nueva Ausencia',
+        'page_title': gettext('Registrar Nueva Ausencia'),
     }
     
     return render(request, 'tickets/employee_absence_form.html', context)
@@ -36734,7 +36755,7 @@ def employee_absence_detail(request, pk):
             'employee', 'absence_type', 'approved_by'
         ).get(pk=pk)
     except EmployeeAbsence.DoesNotExist:
-        messages.error(request, 'La ausencia solicitada no existe.')
+        messages.error(request, gettext('La ausencia solicitada no existe.'))
         return redirect('employee_absence_list')
     
     context = {
@@ -36754,7 +36775,7 @@ def employee_absence_edit(request, pk):
     try:
         absence = EmployeeAbsence.objects.get(pk=pk)
     except EmployeeAbsence.DoesNotExist:
-        messages.error(request, 'La ausencia solicitada no existe.')
+        messages.error(request, gettext('La ausencia solicitada no existe.'))
         return redirect('employee_absence_list')
     
     if request.method == 'POST':
@@ -36776,7 +36797,7 @@ def employee_absence_edit(request, pk):
         
         try:
             absence.save()
-            messages.success(request, 'Ausencia actualizada exitosamente.')
+            messages.success(request, gettext('Ausencia actualizada exitosamente.'))
             return redirect('employee_absence_detail', pk=absence.pk)
         except Exception as e:
             messages.error(request, f'Error al actualizar la ausencia: {str(e)}')
@@ -36803,7 +36824,7 @@ def employee_absence_approve(request, pk):
     try:
         absence = EmployeeAbsence.objects.get(pk=pk)
     except EmployeeAbsence.DoesNotExist:
-        messages.error(request, 'La ausencia solicitada no existe.')
+        messages.error(request, gettext('La ausencia solicitada no existe.'))
         return redirect('employee_absence_list')
     
     if request.method == 'POST':
@@ -36819,7 +36840,7 @@ def employee_absence_approve(request, pk):
                 absence.reject(rejection_reason, request.user)
                 messages.success(request, f'Ausencia de {absence.employee.get_full_name() or absence.employee.username} rechazada.')
             else:
-                messages.error(request, 'Debes proporcionar un motivo para el rechazo.')
+                messages.error(request, gettext('Debes proporcionar un motivo para el rechazo.'))
                 return redirect('employee_absence_detail', pk=pk)
         
         return redirect('employee_absence_detail', pk=pk)
@@ -36835,7 +36856,7 @@ def employee_absence_delete(request, pk):
     try:
         absence = EmployeeAbsence.objects.get(pk=pk)
     except EmployeeAbsence.DoesNotExist:
-        messages.error(request, 'La ausencia solicitada no existe.')
+        messages.error(request, gettext('La ausencia solicitada no existe.'))
         return redirect('employee_absence_list')
     
     if request.method == 'POST':
@@ -37234,7 +37255,7 @@ def company_protocol_list(request):
         'protocols': protocols,
         'search': search,
         'active_filter': active_filter,
-        'page_title': 'Protocolos de Empresa',
+        'page_title': gettext('Protocolos de Empresa'),
     }
     
     return render(request, 'tickets/company_protocol_list.html', context)
@@ -37254,7 +37275,7 @@ def company_protocol_create(request):
         
         # Validaciones básicas
         if not all([title, content, company_id]):
-            messages.error(request, 'El título, contenido y empresa son requeridos.')
+            messages.error(request, gettext('El título, contenido y empresa son requeridos.'))
         else:
             try:
                 company = Company.objects.get(pk=company_id)
@@ -37271,7 +37292,7 @@ def company_protocol_create(request):
                 return redirect('company_protocol_detail', pk=protocol.pk)
                 
             except Company.DoesNotExist:
-                messages.error(request, 'La empresa seleccionada no existe.')
+                messages.error(request, gettext('La empresa seleccionada no existe.'))
             except Exception as e:
                 messages.error(request, f'Error al crear el protocolo: {str(e)}')
     
@@ -37279,7 +37300,7 @@ def company_protocol_create(request):
     companies = Company.objects.all().order_by('name')
     
     context = {
-        'page_title': 'Crear Protocolo de Empresa',
+        'page_title': gettext('Crear Protocolo de Empresa'),
         'companies': companies,
     }
     
@@ -37294,7 +37315,7 @@ def company_protocol_detail(request, pk):
     try:
         protocol = CompanyProtocol.objects.select_related('created_by').get(pk=pk)
     except CompanyProtocol.DoesNotExist:
-        messages.error(request, 'El protocolo solicitado no existe.')
+        messages.error(request, gettext('El protocolo solicitado no existe.'))
         return redirect('company_protocol_list')
     
     context = {
@@ -37313,7 +37334,7 @@ def company_protocol_edit(request, pk):
     try:
         protocol = CompanyProtocol.objects.get(pk=pk)
     except CompanyProtocol.DoesNotExist:
-        messages.error(request, 'El protocolo solicitado no existe.')
+        messages.error(request, gettext('El protocolo solicitado no existe.'))
         return redirect('company_protocol_list')
     
     if request.method == 'POST':
@@ -37327,7 +37348,7 @@ def company_protocol_edit(request, pk):
             try:
                 protocol.company = Company.objects.get(pk=company_id)
             except Company.DoesNotExist:
-                messages.error(request, 'La empresa seleccionada no existe.')
+                messages.error(request, gettext('La empresa seleccionada no existe.'))
                 return render(request, 'tickets/company_protocol_form.html', {
                     'protocol': protocol,
                     'companies': Company.objects.all().order_by('name'),
@@ -37336,7 +37357,7 @@ def company_protocol_edit(request, pk):
         
         try:
             protocol.save()
-            messages.success(request, 'Protocolo actualizado exitosamente.')
+            messages.success(request, gettext('Protocolo actualizado exitosamente.'))
             return redirect('company_protocol_detail', pk=protocol.pk)
         except Exception as e:
             messages.error(request, f'Error al actualizar el protocolo: {str(e)}')
@@ -37361,7 +37382,7 @@ def company_protocol_delete(request, pk):
     try:
         protocol = CompanyProtocol.objects.get(pk=pk)
     except CompanyProtocol.DoesNotExist:
-        messages.error(request, 'El protocolo solicitado no existe.')
+        messages.error(request, gettext('El protocolo solicitado no existe.'))
         return redirect('company_protocol_list')
     
     if request.method == 'POST':
@@ -37698,7 +37719,7 @@ def company_protocol_toggle_public(request, pk):
     try:
         protocol = CompanyProtocol.objects.get(pk=pk)
     except CompanyProtocol.DoesNotExist:
-        messages.error(request, 'El protocolo solicitado no existe.')
+        messages.error(request, gettext('El protocolo solicitado no existe.'))
         return redirect('company_protocol_list')
     
     if request.method == 'POST':
@@ -37858,7 +37879,7 @@ def qa_complaint_list(request):
         'status_filter': status_filter,
         'priority_filter': priority_filter,
         'assigned_filter': assigned_filter,
-        'page_title': 'Gestión QA - Quejas y Sugerencias',
+        'page_title': gettext('Gestión QA - Quejas y Sugerencias'),
         'type_choices': QAComplaint.TYPE_CHOICES,
         'status_choices': QAComplaint.STATUS_CHOICES,
         'priority_choices': QAComplaint.PRIORITY_CHOICES,
@@ -37884,7 +37905,7 @@ def qa_complaint_create(request):
         
         # Validaciones
         if not all([title, description, type, company_id]):
-            messages.error(request, 'Título, descripción, tipo y empresa son requeridos.')
+            messages.error(request, gettext('Título, descripción, tipo y empresa son requeridos.'))
         else:
             try:
                 company = Company.objects.get(pk=company_id)
@@ -37904,7 +37925,7 @@ def qa_complaint_create(request):
                 return redirect('qa_complaint_detail', pk=complaint.pk)
                 
             except Company.DoesNotExist:
-                messages.error(request, 'La empresa seleccionada no existe.')
+                messages.error(request, gettext('La empresa seleccionada no existe.'))
             except Exception as e:
                 messages.error(request, f'Error al crear el reporte: {str(e)}')
     
@@ -37914,7 +37935,7 @@ def qa_complaint_create(request):
         'companies': companies,
         'type_choices': QAComplaint.TYPE_CHOICES,
         'priority_choices': QAComplaint.PRIORITY_CHOICES,
-        'page_title': 'Nuevo Reporte QA',
+        'page_title': gettext('Nuevo Reporte QA'),
     }
     
     return render(request, 'tickets/qa_complaint_form.html', context)
@@ -37933,7 +37954,7 @@ def qa_complaint_detail(request, pk):
             'comments__author'
         ).get(pk=pk)
     except QAComplaint.DoesNotExist:
-        messages.error(request, 'El reporte QA solicitado no existe.')
+        messages.error(request, gettext('El reporte QA solicitado no existe.'))
         return redirect('qa_complaint_list')
     
     # Manejar comentarios
@@ -37948,7 +37969,7 @@ def qa_complaint_detail(request, pk):
                 content=content,
                 is_internal=is_internal
             )
-            messages.success(request, 'Comentario agregado exitosamente.')
+            messages.success(request, gettext('Comentario agregado exitosamente.'))
             return redirect('qa_complaint_detail', pk=pk)
     
     # Usuarios para asignación
@@ -37973,12 +37994,12 @@ def qa_complaint_edit(request, pk):
     try:
         complaint = QAComplaint.objects.get(pk=pk)
     except QAComplaint.DoesNotExist:
-        messages.error(request, 'El reporte QA solicitado no existe.')
+        messages.error(request, gettext('El reporte QA solicitado no existe.'))
         return redirect('qa_complaint_list')
     
     # Verificar permisos
     if not complaint.can_edit(request.user):
-        messages.error(request, 'No tienes permisos para editar este reporte.')
+        messages.error(request, gettext('No tienes permisos para editar este reporte.'))
         return redirect('qa_complaint_detail', pk=pk)
     
     if request.method == 'POST':
@@ -37995,7 +38016,7 @@ def qa_complaint_edit(request, pk):
             try:
                 complaint.company = Company.objects.get(pk=company_id)
             except Company.DoesNotExist:
-                messages.error(request, 'La empresa seleccionada no existe.')
+                messages.error(request, gettext('La empresa seleccionada no existe.'))
                 return render(request, 'tickets/qa_complaint_form.html', {
                     'complaint': complaint,
                     'companies': Company.objects.all().order_by('name'),
@@ -38021,7 +38042,7 @@ def qa_complaint_edit(request, pk):
         
         try:
             complaint.save()
-            messages.success(request, 'Reporte QA actualizado exitosamente.')
+            messages.success(request, gettext('Reporte QA actualizado exitosamente.'))
             return redirect('qa_complaint_detail', pk=complaint.pk)
         except Exception as e:
             messages.error(request, f'Error al actualizar el reporte: {str(e)}')
@@ -38052,12 +38073,12 @@ def qa_complaint_delete(request, pk):
     try:
         complaint = QAComplaint.objects.get(pk=pk)
     except QAComplaint.DoesNotExist:
-        messages.error(request, 'El reporte QA solicitado no existe.')
+        messages.error(request, gettext('El reporte QA solicitado no existe.'))
         return redirect('qa_complaint_list')
     
     # Verificar permisos
     if not request.user.is_staff and not request.user.is_superuser:
-        messages.error(request, 'No tienes permisos para eliminar este reporte.')
+        messages.error(request, gettext('No tienes permisos para eliminar este reporte.'))
         return redirect('qa_complaint_detail', pk=pk)
     
     if request.method == 'POST':
@@ -38221,7 +38242,7 @@ def qa_dashboard(request):
         'recent_complaints': recent_complaints,
         'my_assignments': my_assignments,
         'recent_ratings': recent_ratings,
-        'page_title': 'Dashboard QA',
+        'page_title': gettext('Dashboard QA'),
     }
     
     return render(request, 'tickets/qa_dashboard.html', context)
@@ -38281,7 +38302,7 @@ def qa_rating_list(request):
         'neutral_count': neutral_count,
         'sad_count': sad_count,
         'companies': companies,
-        'page_title': 'Calificaciones QA',
+        'page_title': gettext('Calificaciones QA'),
     }
     
     return render(request, 'tickets/qa_rating_list.html', context)
@@ -38300,11 +38321,11 @@ def qa_rating_create(request):
         
         # Validaciones
         if not rating or rating not in ['sad', 'neutral', 'happy']:
-            messages.error(request, 'Debes seleccionar una calificación válida.')
+            messages.error(request, gettext('Debes seleccionar una calificación válida.'))
             return redirect('qa_rating_create')
         
         if not opinion or len(opinion.strip()) < 10:
-            messages.error(request, 'La opinión debe tener al menos 10 caracteres.')
+            messages.error(request, gettext('La opinión debe tener al menos 10 caracteres.'))
             return redirect('qa_rating_create')
         
         # Crear la calificación
@@ -38332,7 +38353,7 @@ def qa_rating_create(request):
         
         qa_rating.save()
         
-        messages.success(request, '¡Gracias por tu calificación! Tu opinión es muy importante para nosotros.')
+        messages.success(request, gettext('¡Gracias por tu calificación! Tu opinión es muy importante para nosotros.'))
         
         if request.user.is_authenticated:
             return redirect('qa_rating_list')
@@ -38345,7 +38366,7 @@ def qa_rating_create(request):
     
     context = {
         'companies': companies,
-        'page_title': 'Nueva Calificación QA',
+        'page_title': gettext('Nueva Calificación QA'),
     }
     
     return render(request, 'tickets/qa_rating_create.html', context)
@@ -38364,11 +38385,11 @@ def qa_rating_public(request):
         
         # Validaciones
         if not rating or rating not in ['sad', 'neutral', 'happy']:
-            messages.error(request, 'Debes seleccionar una calificación válida.')
+            messages.error(request, gettext('Debes seleccionar una calificación válida.'))
             return redirect('qa_rating_public')
         
         if not opinion or len(opinion.strip()) < 10:
-            messages.error(request, 'La opinión debe tener al menos 10 caracteres.')
+            messages.error(request, gettext('La opinión debe tener al menos 10 caracteres.'))
             return redirect('qa_rating_public')
         
         # Crear la calificación
@@ -38396,7 +38417,7 @@ def qa_rating_public(request):
         
         qa_rating.save()
         
-        messages.success(request, '¡Gracias por tu calificación! Tu opinión es muy importante para nosotros.')
+        messages.success(request, gettext('¡Gracias por tu calificación! Tu opinión es muy importante para nosotros.'))
         return redirect('qa_rating_public')
     
     # GET request
@@ -38414,7 +38435,7 @@ def qa_rating_public(request):
     
     context = {
         'companies': companies,
-        'page_title': 'Evalúa nuestro servicio',
+        'page_title': gettext('Evalúa nuestro servicio'),
         'is_public_page': True,
         'total_ratings': total_ratings,
         'happy_count': happy_count,
@@ -38536,12 +38557,12 @@ def qa_rating_delete(request, pk):
     
     if request.method == 'POST':
         rating.delete()
-        messages.success(request, 'Calificación eliminada correctamente.')
+        messages.success(request, gettext('Calificación eliminada correctamente.'))
         return redirect('qa_rating_list')
     
     context = {
         'rating': rating,
-        'page_title': 'Eliminar Calificación',
+        'page_title': gettext('Eliminar Calificación'),
     }
     
     return render(request, 'tickets/qa_rating_delete.html', context)
@@ -38619,7 +38640,7 @@ def asset_list(request):
         'assigned_assets': assigned_assets,
         'available_assets': available_assets,
         'maintenance_assets': maintenance_assets,
-        'title': 'Control de Activos'
+        'title': gettext('Control de Activos')
     }
     
     return render(request, 'tickets/asset_list.html', context)
@@ -38666,7 +38687,7 @@ def asset_create(request):
     
     context = {
         'form': form,
-        'title': 'Crear Nuevo Activo',
+        'title': gettext('Crear Nuevo Activo'),
         'submit_text': 'Crear Activo'
     }
     
@@ -38717,7 +38738,7 @@ def asset_edit(request, pk):
             if changes:
                 messages.success(request, f'Activo actualizado exitosamente. Cambios: {", ".join(changes)}.')
             else:
-                messages.success(request, 'Activo actualizado exitosamente.')
+                messages.success(request, gettext('Activo actualizado exitosamente.'))
             
             return redirect('asset_detail', pk=asset.pk)
     else:
@@ -38918,7 +38939,7 @@ def ai_tutor_list(request):
         'status_filter': status_filter,
         'visibility_filter': visibility_filter,
         'search': search,
-        'title': 'Tutor IA'
+        'title': gettext('Tutor IA')
     }
     
     return render(request, 'tickets/ai_tutor_list.html', context)
@@ -38948,7 +38969,7 @@ def ai_tutor_create(request):
     
     context = {
         'form': form,
-        'title': 'Crear Tutor IA'
+        'title': gettext('Crear Tutor IA')
     }
     
     return render(request, 'tickets/ai_tutor_form.html', context)
@@ -38961,7 +38982,7 @@ def ai_tutor_detail(request, pk):
     
     # Verificar permisos
     if tutor.is_private and tutor.created_by != request.user:
-        messages.error(request, 'No tienes permisos para ver este tutor.')
+        messages.error(request, gettext('No tienes permisos para ver este tutor.'))
         return redirect('ai_tutor_list')
     
     # Obtener reportes de progreso
@@ -38988,7 +39009,7 @@ def ai_tutor_edit(request, pk):
     
     # Verificar permisos
     if tutor.created_by != request.user:
-        messages.error(request, 'Solo puedes editar tus propios tutores.')
+        messages.error(request, gettext('Solo puedes editar tus propios tutores.'))
         return redirect('ai_tutor_detail', pk=pk)
     
     if request.method == 'POST':
@@ -39022,7 +39043,7 @@ def ai_tutor_delete(request, pk):
     
     # Verificar permisos
     if tutor.created_by != request.user:
-        messages.error(request, 'Solo puedes eliminar tus propios tutores.')
+        messages.error(request, gettext('Solo puedes eliminar tus propios tutores.'))
         return redirect('ai_tutor_detail', pk=pk)
     
     if request.method == 'POST':
@@ -39046,7 +39067,7 @@ def ai_tutor_progress_report(request, pk):
     
     # Verificar permisos
     if tutor.is_private and tutor.created_by != request.user:
-        messages.error(request, 'No tienes permisos para reportar en este tutor.')
+        messages.error(request, gettext('No tienes permisos para reportar en este tutor.'))
         return redirect('ai_tutor_list')
     
     if request.method == 'POST':
@@ -39075,7 +39096,7 @@ def ai_tutor_progress_report(request, pk):
                 attachment.ai_analysis = generate_file_analysis(attachment)
                 attachment.save()
             
-            messages.success(request, 'Reporte de progreso creado exitosamente.')
+            messages.success(request, gettext('Reporte de progreso creado exitosamente.'))
             return redirect('ai_tutor_detail', pk=tutor.pk)
     else:
         form = AITutorProgressReportForm()
@@ -39098,7 +39119,7 @@ def ai_tutor_upload_attachment(request, pk):
     
     # Verificar permisos
     if tutor.is_private and tutor.created_by != request.user:
-        messages.error(request, 'No tienes permisos para subir archivos a este tutor.')
+        messages.error(request, gettext('No tienes permisos para subir archivos a este tutor.'))
         return redirect('ai_tutor_list')
     
     if request.method == 'POST':
@@ -39113,7 +39134,7 @@ def ai_tutor_upload_attachment(request, pk):
             attachment.ai_analysis = generate_file_analysis(attachment)
             attachment.save()
             
-            messages.success(request, 'Archivo subido exitosamente.')
+            messages.success(request, gettext('Archivo subido exitosamente.'))
             return redirect('ai_tutor_detail', pk=tutor.pk)
     else:
         form = AITutorAttachmentForm()
@@ -39544,7 +39565,7 @@ def expense_report_list(request):
     context = {
         'expense_reports': expense_reports,
         'form': form,
-        'title': 'Administración de Gastos',
+        'title': gettext('Administración de Gastos'),
         'is_agent': is_agent(request.user),
         'page_total_expenses': page_total_expenses,
         'page_total_funds': page_total_funds,
@@ -39571,14 +39592,14 @@ def expense_report_create(request):
             except:
                 pass
             expense_report.save()
-            messages.success(request, 'Rendición de gastos creada exitosamente.')
+            messages.success(request, gettext('Rendición de gastos creada exitosamente.'))
             return redirect('expense_report_detail', pk=expense_report.pk)
     else:
         form = ExpenseReportForm()
     
     context = {
         'form': form,
-        'title': 'Nueva Rendición de Gastos',
+        'title': gettext('Nueva Rendición de Gastos'),
         'action': 'Crear'
     }
     
@@ -39592,7 +39613,7 @@ def expense_report_detail(request, pk):
     
     # Verificar permisos
     if not is_agent(request.user) and expense_report.employee != request.user:
-        messages.error(request, 'No tienes permisos para ver esta rendición.')
+        messages.error(request, gettext('No tienes permisos para ver esta rendición.'))
         return redirect('expense_report_list')
     
     # Obtener items de gastos con paginación
@@ -39643,18 +39664,18 @@ def expense_report_edit(request, pk):
     
     # Verificar permisos
     if not expense_report.can_edit():
-        messages.error(request, 'Esta rendición no puede ser editada.')
+        messages.error(request, gettext('Esta rendición no puede ser editada.'))
         return redirect('expense_report_detail', pk=pk)
     
     if not is_agent(request.user) and expense_report.employee != request.user:
-        messages.error(request, 'No tienes permisos para editar esta rendición.')
+        messages.error(request, gettext('No tienes permisos para editar esta rendición.'))
         return redirect('expense_report_detail', pk=pk)
     
     if request.method == 'POST':
         form = ExpenseReportForm(request.POST, instance=expense_report)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Rendición actualizada exitosamente.')
+            messages.success(request, gettext('Rendición actualizada exitosamente.'))
             return redirect('expense_report_detail', pk=pk)
     else:
         form = ExpenseReportForm(instance=expense_report)
@@ -39676,16 +39697,16 @@ def expense_report_delete(request, pk):
     
     # Verificar permisos
     if not expense_report.can_edit():
-        messages.error(request, 'Esta rendición no puede ser eliminada.')
+        messages.error(request, gettext('Esta rendición no puede ser eliminada.'))
         return redirect('expense_report_detail', pk=pk)
     
     if not is_agent(request.user) and expense_report.employee != request.user:
-        messages.error(request, 'No tienes permisos para eliminar esta rendición.')
+        messages.error(request, gettext('No tienes permisos para eliminar esta rendición.'))
         return redirect('expense_report_detail', pk=pk)
     
     if request.method == 'POST':
         expense_report.delete()
-        messages.success(request, 'Rendición eliminada exitosamente.')
+        messages.success(request, gettext('Rendición eliminada exitosamente.'))
         return redirect('expense_report_list')
     
     context = {
@@ -39703,7 +39724,7 @@ def expense_report_submit(request, pk):
     
     # Verificar permisos
     if not expense_report.can_submit() or expense_report.employee != request.user:
-        messages.error(request, 'No puedes enviar esta rendición.')
+        messages.error(request, gettext('No puedes enviar esta rendición.'))
         return redirect('expense_report_detail', pk=pk)
     
     if request.method == 'POST':
@@ -39711,7 +39732,7 @@ def expense_report_submit(request, pk):
         expense_report.submitted_at = timezone.now()
         expense_report.save()
         
-        messages.success(request, 'Rendición enviada para aprobación.')
+        messages.success(request, gettext('Rendición enviada para aprobación.'))
         return redirect('expense_report_detail', pk=pk)
     
     context = {
@@ -39726,13 +39747,13 @@ def expense_report_submit(request, pk):
 def expense_report_approve(request, pk):
     """Aprobar rendición de gastos"""
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para aprobar rendiciones.')
+        messages.error(request, gettext('No tienes permisos para aprobar rendiciones.'))
         return redirect('expense_report_detail', pk=pk)
     
     expense_report = get_object_or_404(ExpenseReport, pk=pk)
     
     if not expense_report.can_approve():
-        messages.error(request, 'Esta rendición no puede ser aprobada.')
+        messages.error(request, gettext('Esta rendición no puede ser aprobada.'))
         return redirect('expense_report_detail', pk=pk)
     
     if request.method == 'POST':
@@ -39741,7 +39762,7 @@ def expense_report_approve(request, pk):
         expense_report.approved_at = timezone.now()
         expense_report.save()
         
-        messages.success(request, 'Rendición aprobada exitosamente.')
+        messages.success(request, gettext('Rendición aprobada exitosamente.'))
         return redirect('expense_report_detail', pk=pk)
     
     context = {
@@ -39756,26 +39777,26 @@ def expense_report_approve(request, pk):
 def expense_report_reject(request, pk):
     """Rechazar rendición de gastos"""
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para rechazar rendiciones.')
+        messages.error(request, gettext('No tienes permisos para rechazar rendiciones.'))
         return redirect('expense_report_detail', pk=pk)
     
     expense_report = get_object_or_404(ExpenseReport, pk=pk)
     
     if not expense_report.can_approve():
-        messages.error(request, 'Esta rendición no puede ser rechazada.')
+        messages.error(request, gettext('Esta rendición no puede ser rechazada.'))
         return redirect('expense_report_detail', pk=pk)
     
     if request.method == 'POST':
         reason = request.POST.get('reason', '')
         if not reason:
-            messages.error(request, 'Debes proporcionar un motivo de rechazo.')
+            messages.error(request, gettext('Debes proporcionar un motivo de rechazo.'))
             return redirect('expense_report_detail', pk=pk)
         
         expense_report.status = 'rejected'
         expense_report.rejection_reason = reason
         expense_report.save()
         
-        messages.success(request, 'Rendición rechazada.')
+        messages.success(request, gettext('Rendición rechazada.'))
         return redirect('expense_report_detail', pk=pk)
     
     context = {
@@ -39790,13 +39811,13 @@ def expense_report_reject(request, pk):
 def expense_report_mark_paid(request, pk):
     """Marcar rendición como pagada"""
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para marcar como pagado.')
+        messages.error(request, gettext('No tienes permisos para marcar como pagado.'))
         return redirect('expense_report_detail', pk=pk)
     
     expense_report = get_object_or_404(ExpenseReport, pk=pk)
     
     if expense_report.status != 'approved':
-        messages.error(request, 'Solo se pueden marcar como pagadas las rendiciones aprobadas.')
+        messages.error(request, gettext('Solo se pueden marcar como pagadas las rendiciones aprobadas.'))
         return redirect('expense_report_detail', pk=pk)
     
     if request.method == 'POST':
@@ -39806,7 +39827,7 @@ def expense_report_mark_paid(request, pk):
         expense_report.paid_at = timezone.now()
         expense_report.save()
         
-        messages.success(request, 'Rendición marcada como pagada.')
+        messages.success(request, gettext('Rendición marcada como pagada.'))
         return redirect('expense_report_detail', pk=pk)
     
     context = {
@@ -39824,11 +39845,11 @@ def expense_item_create(request, report_pk):
     
     # Verificar permisos
     if not expense_report.can_edit():
-        messages.error(request, 'No se pueden agregar gastos a esta rendición.')
+        messages.error(request, gettext('No se pueden agregar gastos a esta rendición.'))
         return redirect('expense_report_detail', pk=report_pk)
     
     if not is_agent(request.user) and expense_report.employee != request.user:
-        messages.error(request, 'No tienes permisos para agregar gastos a esta rendición.')
+        messages.error(request, gettext('No tienes permisos para agregar gastos a esta rendición.'))
         return redirect('expense_report_detail', pk=report_pk)
     
     if request.method == 'POST':
@@ -39841,7 +39862,7 @@ def expense_item_create(request, report_pk):
             expense_item = form.save(commit=False)
             expense_item.expense_report = expense_report
             expense_item.save()
-            messages.success(request, 'Gasto agregado exitosamente.')
+            messages.success(request, gettext('Gasto agregado exitosamente.'))
             return redirect('expense_report_detail', pk=report_pk)
     else:
         form = ExpenseItemForm(expense_report=expense_report)
@@ -39867,18 +39888,18 @@ def expense_item_edit(request, pk):
     
     # Verificar permisos
     if not expense_report.can_edit():
-        messages.error(request, 'Esta rendición no puede ser editada.')
+        messages.error(request, gettext('Esta rendición no puede ser editada.'))
         return redirect('expense_report_detail', pk=expense_report.pk)
     
     if not is_agent(request.user) and expense_report.employee != request.user:
-        messages.error(request, 'No tienes permisos para editar este gasto.')
+        messages.error(request, gettext('No tienes permisos para editar este gasto.'))
         return redirect('expense_report_detail', pk=expense_report.pk)
     
     if request.method == 'POST':
         form = ExpenseItemForm(request.POST, request.FILES, instance=expense_item, expense_report=expense_report)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Gasto actualizado exitosamente.')
+            messages.success(request, gettext('Gasto actualizado exitosamente.'))
             return redirect('expense_report_detail', pk=expense_report.pk)
     else:
         form = ExpenseItemForm(instance=expense_item, expense_report=expense_report)
@@ -39902,16 +39923,16 @@ def expense_item_delete(request, pk):
     
     # Verificar permisos
     if not expense_report.can_edit():
-        messages.error(request, 'Esta rendición no puede ser editada.')
+        messages.error(request, gettext('Esta rendición no puede ser editada.'))
         return redirect('expense_report_detail', pk=expense_report.pk)
     
     if not is_agent(request.user) and expense_report.employee != request.user:
-        messages.error(request, 'No tienes permisos para eliminar este gasto.')
+        messages.error(request, gettext('No tienes permisos para eliminar este gasto.'))
         return redirect('expense_report_detail', pk=expense_report.pk)
     
     if request.method == 'POST':
         expense_item.delete()
-        messages.success(request, 'Gasto eliminado exitosamente.')
+        messages.success(request, gettext('Gasto eliminado exitosamente.'))
         return redirect('expense_report_detail', pk=expense_report.pk)
     
     context = {
@@ -39930,7 +39951,7 @@ def expense_comment_create(request, report_pk):
     
     # Verificar permisos de lectura
     if not is_agent(request.user) and expense_report.employee != request.user:
-        messages.error(request, 'No tienes permisos para comentar en esta rendición.')
+        messages.error(request, gettext('No tienes permisos para comentar en esta rendición.'))
         return redirect('expense_report_detail', pk=report_pk)
     
     if request.method == 'POST':
@@ -39943,9 +39964,9 @@ def expense_comment_create(request, report_pk):
             if not is_agent(request.user):
                 comment.is_internal = False
             comment.save()
-            messages.success(request, 'Comentario agregado exitosamente.')
+            messages.success(request, gettext('Comentario agregado exitosamente.'))
         else:
-            messages.error(request, 'Error al agregar el comentario.')
+            messages.error(request, gettext('Error al agregar el comentario.'))
     
     return redirect('expense_report_detail', pk=report_pk)
 
@@ -39956,7 +39977,7 @@ def expense_fund_create(request, report_pk):
     expense_report = get_object_or_404(ExpenseReport, pk=report_pk)
 
     if not is_agent(request.user) and expense_report.employee != request.user:
-        messages.error(request, 'No tienes permisos para agregar fondos a esta rendición.')
+        messages.error(request, gettext('No tienes permisos para agregar fondos a esta rendición.'))
         return redirect('expense_report_detail', pk=report_pk)
 
     if request.method == 'POST':
@@ -39965,7 +39986,7 @@ def expense_fund_create(request, report_pk):
             fund = form.save(commit=False)
             fund.expense_report = expense_report
             fund.save()
-            messages.success(request, 'Fondo agregado exitosamente.')
+            messages.success(request, gettext('Fondo agregado exitosamente.'))
             return redirect('expense_report_detail', pk=report_pk)
     else:
         from django.utils import timezone
@@ -39987,14 +40008,14 @@ def expense_fund_edit(request, pk):
     expense_report = fund.expense_report
 
     if not is_agent(request.user) and expense_report.employee != request.user:
-        messages.error(request, 'No tienes permisos para editar este fondo.')
+        messages.error(request, gettext('No tienes permisos para editar este fondo.'))
         return redirect('expense_report_detail', pk=expense_report.pk)
 
     if request.method == 'POST':
         form = ExpenseFundForm(request.POST, instance=fund)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Fondo actualizado exitosamente.')
+            messages.success(request, gettext('Fondo actualizado exitosamente.'))
             return redirect('expense_report_detail', pk=expense_report.pk)
     else:
         form = ExpenseFundForm(instance=fund)
@@ -40016,12 +40037,12 @@ def expense_fund_delete(request, pk):
     expense_report = fund.expense_report
 
     if not is_agent(request.user) and expense_report.employee != request.user:
-        messages.error(request, 'No tienes permisos para eliminar este fondo.')
+        messages.error(request, gettext('No tienes permisos para eliminar este fondo.'))
         return redirect('expense_report_detail', pk=expense_report.pk)
 
     if request.method == 'POST':
         fund.delete()
-        messages.success(request, 'Fondo eliminado exitosamente.')
+        messages.success(request, gettext('Fondo eliminado exitosamente.'))
         return redirect('expense_report_detail', pk=expense_report.pk)
 
     context = {
@@ -40121,14 +40142,14 @@ def video_meeting_create(request):
             meeting.save()
             form.save_m2m()  # Guardar participantes (ManyToMany)
             
-            messages.success(request, 'Reunión creada exitosamente. Ahora puedes subir archivos en la edición.')
+            messages.success(request, gettext('Reunión creada exitosamente. Ahora puedes subir archivos en la edición.'))
             return redirect('video_meeting_edit', pk=meeting.pk)
     else:
         form = VideoMeetingForm(user=request.user)
     
     context = {
         'form': form,
-        'title': 'Nueva Reunión de Video',
+        'title': gettext('Nueva Reunión de Video'),
         'action': 'Crear',
         'is_create': True
     }
@@ -40147,7 +40168,7 @@ def video_meeting_detail(request, pk):
     # Verificar permisos
     if not is_agent(request.user):
         if request.user != meeting.organizer and request.user not in meeting.participants.all():
-            messages.error(request, 'No tienes permisos para ver esta reunión.')
+            messages.error(request, gettext('No tienes permisos para ver esta reunión.'))
             return redirect('video_meeting_list')
     
     # Manejar formulario de notas
@@ -40159,7 +40180,7 @@ def video_meeting_detail(request, pk):
                 note.meeting = meeting
                 note.user = request.user
                 note.save()
-                messages.success(request, 'Nota agregada exitosamente.')
+                messages.success(request, gettext('Nota agregada exitosamente.'))
                 return redirect('video_meeting_detail', pk=pk)
         
         elif 'transcribe_now' in request.POST or 'force_transcription' in request.POST:
@@ -40194,7 +40215,7 @@ def video_meeting_detail(request, pk):
                 except Exception as e:
                     messages.error(request, f'Error al iniciar el procesamiento: {str(e)}')
             else:
-                messages.error(request, 'No hay archivos para transcribir.')
+                messages.error(request, gettext('No hay archivos para transcribir.'))
             
             return redirect('video_meeting_detail', pk=pk)
     
@@ -40227,11 +40248,11 @@ def video_meeting_edit(request, pk):
     
     # Verificar permisos
     if not is_agent(request.user) and meeting.organizer != request.user:
-        messages.error(request, 'No tienes permisos para editar esta reunión.')
+        messages.error(request, gettext('No tienes permisos para editar esta reunión.'))
         return redirect('video_meeting_detail', pk=pk)
     
     if not meeting.can_edit():
-        messages.error(request, 'Esta reunión no puede ser editada.')
+        messages.error(request, gettext('Esta reunión no puede ser editada.'))
         return redirect('video_meeting_detail', pk=pk)
     
     if request.method == 'POST':
@@ -40276,7 +40297,7 @@ def video_meeting_edit(request, pk):
                     'El análisis de IA se generará automáticamente.'
                 )
             else:
-                messages.success(request, 'Reunión actualizada exitosamente.')
+                messages.success(request, gettext('Reunión actualizada exitosamente.'))
             
             return redirect('video_meeting_detail', pk=meeting.pk)
     else:
@@ -40303,7 +40324,7 @@ def video_meeting_transcription(request, pk):
     # Verificar permisos
     if not is_agent(request.user):
         if request.user != meeting.organizer and request.user not in meeting.participants.all():
-            messages.error(request, 'No tienes permisos para editar la transcripción.')
+            messages.error(request, gettext('No tienes permisos para editar la transcripción.'))
             return redirect('video_meeting_detail', pk=pk)
     
     if request.method == 'POST':
@@ -40315,7 +40336,7 @@ def video_meeting_transcription(request, pk):
                 meeting.transcription_status = 'completed'
                 meeting.save()
             
-            messages.success(request, 'Transcripción actualizada exitosamente.')
+            messages.success(request, gettext('Transcripción actualizada exitosamente.'))
             return redirect('video_meeting_detail', pk=meeting.pk)
     else:
         form = MeetingTranscriptionForm(instance=meeting)
@@ -40336,7 +40357,7 @@ def video_meeting_delete(request, pk):
     
     # Verificar permisos
     if not is_agent(request.user) and meeting.organizer != request.user:
-        messages.error(request, 'No tienes permisos para eliminar esta reunión.')
+        messages.error(request, gettext('No tienes permisos para eliminar esta reunión.'))
         return redirect('video_meeting_detail', pk=pk)
     
     if request.method == 'POST':
@@ -40426,12 +40447,12 @@ def meeting_note_delete(request, meeting_pk, note_pk):
     
     # Verificar permisos
     if not is_agent(request.user) and note.user != request.user:
-        messages.error(request, 'No tienes permisos para eliminar esta nota.')
+        messages.error(request, gettext('No tienes permisos para eliminar esta nota.'))
         return redirect('video_meeting_detail', pk=meeting_pk)
     
     if request.method == 'POST':
         note.delete()
-        messages.success(request, 'Nota eliminada exitosamente.')
+        messages.success(request, gettext('Nota eliminada exitosamente.'))
     
     return redirect('video_meeting_detail', pk=meeting_pk)
 
@@ -40443,12 +40464,12 @@ def video_meeting_download_transcription(request, pk):
     
     # Verificar que la transcripción esté completa y disponible
     if meeting.transcription_status != 'completed' or not meeting.transcription_text:
-        messages.error(request, 'La transcripción no está disponible para descarga.')
+        messages.error(request, gettext('La transcripción no está disponible para descarga.'))
         return redirect('dashboard')
     
     # Verificar permisos (organizador, participantes o agentes)
     if not is_agent(request.user) and meeting.organizer != request.user and request.user not in meeting.participants.all():
-        messages.error(request, 'No tienes permisos para descargar esta transcripción.')
+        messages.error(request, gettext('No tienes permisos para descargar esta transcripción.'))
         return redirect('dashboard')
     
     # Crear el contenido del archivo
@@ -40517,7 +40538,7 @@ def quote_generator_list(request):
     
     return render(request, 'tickets/quote_generator_list.html', {
         'generators': generators,
-        'page_title': 'Generadores de Citas IA'
+        'page_title': gettext('Generadores de Citas IA')
     })
 
 
@@ -40552,7 +40573,7 @@ def quote_generator_create(request):
     
     return render(request, 'tickets/quote_generator_form.html', {
         'form': form,
-        'page_title': 'Crear Generador de Citas',
+        'page_title': gettext('Crear Generador de Citas'),
         'submit_text': 'Generar Citas'
     })
 
@@ -40571,7 +40592,7 @@ def quote_generator_detail(request, pk):
             pass
         
         if not user_company or generator.company != user_company:
-            messages.error(request, 'No tienes permisos para ver este generador.')
+            messages.error(request, gettext('No tienes permisos para ver este generador.'))
             return redirect('quote_generator_list')
     
     quotes_list = generator.get_quotes_list()
@@ -40590,16 +40611,16 @@ def quote_generator_regenerate(request, pk):
     
     # Verificar permisos
     if not is_agent(request.user) and generator.created_by != request.user:
-        messages.error(request, 'No tienes permisos para regenerar estas citas.')
+        messages.error(request, gettext('No tienes permisos para regenerar estas citas.'))
         return redirect('quote_generator_list')
     
     if request.method == 'POST':
         success = generate_quotes_with_ai(generator)
         
         if success:
-            messages.success(request, 'Citas regeneradas exitosamente.')
+            messages.success(request, gettext('Citas regeneradas exitosamente.'))
         else:
-            messages.error(request, 'Error al regenerar las citas. Inténtalo de nuevo.')
+            messages.error(request, gettext('Error al regenerar las citas. Inténtalo de nuevo.'))
     
     return redirect('quote_generator_detail', pk=pk)
 
@@ -40611,7 +40632,7 @@ def quote_generator_edit(request, pk):
     
     # Verificar permisos
     if not is_agent(request.user) and generator.created_by != request.user:
-        messages.error(request, 'No tienes permisos para editar este generador.')
+        messages.error(request, gettext('No tienes permisos para editar este generador.'))
         return redirect('quote_generator_list')
     
     if request.method == 'POST':
@@ -40792,7 +40813,7 @@ def countdown_timer_list(request):
     
     return render(request, 'tickets/countdown_timer_list.html', {
         'countdowns': countdowns,
-        'page_title': 'Cuentas Regresivas'
+        'page_title': gettext('Cuentas Regresivas')
     })
 
 
@@ -40820,7 +40841,7 @@ def countdown_timer_create(request):
     
     return render(request, 'tickets/countdown_timer_form.html', {
         'form': form,
-        'page_title': 'Nueva Cuenta Regresiva',
+        'page_title': gettext('Nueva Cuenta Regresiva'),
         'submit_text': 'Crear Cuenta Regresiva'
     })
 
@@ -40834,7 +40855,7 @@ def countdown_timer_detail(request, pk):
     
     # Verificar permisos de privacidad
     if countdown.is_private and countdown.created_by != request.user:
-        messages.error(request, 'Esta cuenta regresiva es privada y no tienes permisos para verla.')
+        messages.error(request, gettext('Esta cuenta regresiva es privada y no tienes permisos para verla.'))
         return redirect('countdown_timer_list')
     
     # Verificar permisos de empresa (solo si no es privada)
@@ -40844,7 +40865,7 @@ def countdown_timer_detail(request, pk):
             user_company = request.user.profile.company
         
         if countdown.company != user_company and countdown.created_by != request.user:
-            messages.error(request, 'No tienes permisos para ver esta cuenta regresiva.')
+            messages.error(request, gettext('No tienes permisos para ver esta cuenta regresiva.'))
             return redirect('countdown_timer_list')
     
     return render(request, 'tickets/countdown_timer_detail.html', {
@@ -40863,7 +40884,7 @@ def countdown_timer_edit(request, pk):
     
     # Verificar permisos
     if not is_agent(request.user) and countdown.created_by != request.user:
-        messages.error(request, 'No tienes permisos para editar esta cuenta regresiva.')
+        messages.error(request, gettext('No tienes permisos para editar esta cuenta regresiva.'))
         return redirect('countdown_timer_list')
     
     if request.method == 'POST':
@@ -40892,7 +40913,7 @@ def countdown_timer_delete(request, pk):
     
     # Verificar permisos
     if not is_agent(request.user) and countdown.created_by != request.user:
-        messages.error(request, 'No tienes permisos para eliminar esta cuenta regresiva.')
+        messages.error(request, gettext('No tienes permisos para eliminar esta cuenta regresiva.'))
         return redirect('countdown_timer_list')
     
     if request.method == 'POST':
@@ -40925,7 +40946,7 @@ def absence_type_list(request):
         'absence_types': absence_types,
         'total_types': total_types,
         'active_types': active_types,
-        'page_title': 'Tipos de Ausencias'
+        'page_title': gettext('Tipos de Ausencias')
     }
     
     return render(request, 'tickets/absence_type_list.html', context)
@@ -40948,7 +40969,7 @@ def absence_type_create(request):
     
     return render(request, 'tickets/absence_type_form.html', {
         'form': form,
-        'page_title': 'Crear Tipo de Ausencia',
+        'page_title': gettext('Crear Tipo de Ausencia'),
         'submit_text': 'Crear Tipo de Ausencia'
     })
 
@@ -41048,7 +41069,7 @@ def procedure_list(request):
     context = {
         'procedures': procedures,
         'search': search,
-        'page_title': 'Procedimientos'
+        'page_title': gettext('Procedimientos')
     }
     
     return render(request, 'tickets/procedure_list.html', context)
@@ -41081,7 +41102,7 @@ def procedure_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Crear Procedimiento'
+        'page_title': gettext('Crear Procedimiento')
     }
     
     return render(request, 'tickets/procedure_form.html', context)
@@ -41200,7 +41221,7 @@ def monthly_cumplimiento_list(request):
     
     context = {
         'page_obj': page_obj,
-        'page_title': 'Cumplimiento Mensual',
+        'page_title': gettext('Cumplimiento Mensual'),
         'section': 'qa'
     }
     
@@ -41227,7 +41248,7 @@ def monthly_cumplimiento_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Nuevo Cumplimiento Mensual',
+        'page_title': gettext('Nuevo Cumplimiento Mensual'),
         'section': 'qa'
     }
     
@@ -41512,7 +41533,7 @@ def qr_generator(request):
         'qr_codes': qr_codes,
         'total_qrs': total_qrs,
         'qr_types_stats': qr_types_stats,
-        'page_title': 'Generador de Códigos QR',
+        'page_title': gettext('Generador de Códigos QR'),
         'section': 'training'
     }
     
@@ -41538,7 +41559,7 @@ def qr_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Crear Código QR',
+        'page_title': gettext('Crear Código QR'),
         'section': 'training'
     }
     
@@ -41898,7 +41919,7 @@ def database_backup(request):
     
     context = {
         'backups': backups,
-        'title': 'Respaldo de Base de Datos',
+        'title': gettext('Respaldo de Base de Datos'),
         'db_engine': db_engine,
         'is_sqlite': is_sqlite,
         'is_postgresql': is_postgresql
@@ -41950,13 +41971,13 @@ def database_restore(request):
     if request.method == 'POST':
         backup_filename = request.POST.get('backup_file')
         if not backup_filename:
-            messages.error(request, 'Debe seleccionar un archivo de respaldo')
+            messages.error(request, gettext('Debe seleccionar un archivo de respaldo'))
             return redirect('database_restore')
         
         backup_path = os.path.join(backup_dir, backup_filename)
         
         if not os.path.exists(backup_path):
-            messages.error(request, 'El archivo de respaldo no existe')
+            messages.error(request, gettext('El archivo de respaldo no existe'))
             return redirect('database_restore')
         
         try:
@@ -42085,7 +42106,7 @@ def database_restore(request):
     
     context = {
         'backups': backups,
-        'title': 'Restaurar Base de Datos',
+        'title': gettext('Restaurar Base de Datos'),
         'db_engine': db_engine,
         'is_sqlite': is_sqlite,
         'is_postgresql': is_postgresql
@@ -42134,7 +42155,7 @@ def delete_backup(request, filename):
             except Exception as e:
                 messages.error(request, f'Error al eliminar respaldo: {str(e)}')
         else:
-            messages.error(request, 'Archivo de respaldo no encontrado')
+            messages.error(request, gettext('Archivo de respaldo no encontrado'))
     
     return redirect('database_backup')
 
@@ -42202,7 +42223,7 @@ def quotation_list_view(request):
     salespeople = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
     
     context = {
-        'page_title': 'Cotizaciones',
+        'page_title': gettext('Cotizaciones'),
         'quotations': quotations,
         'stats': stats,
         'companies': companies,
@@ -42234,7 +42255,7 @@ def quotation_create_view(request):
         currency_symbol = config.get_currency_symbol() if config else '€'
         
         return {
-            'page_title': 'Nueva Cotización',
+            'page_title': gettext('Nueva Cotización'),
             'companies': companies,
             'salespeople': salespeople,
             'products': products,
@@ -42250,15 +42271,15 @@ def quotation_create_view(request):
             date = request.POST.get('date')
             
             if not company_id:
-                messages.error(request, 'Debe seleccionar una empresa')
+                messages.error(request, gettext('Debe seleccionar una empresa'))
                 return render(request, 'tickets/quotation_form.html', get_form_context())
             
             if not salesperson_id:
-                messages.error(request, 'Debe seleccionar un vendedor')
+                messages.error(request, gettext('Debe seleccionar un vendedor'))
                 return render(request, 'tickets/quotation_form.html', get_form_context())
             
             if not date:
-                messages.error(request, 'Debe especificar una fecha')
+                messages.error(request, gettext('Debe especificar una fecha'))
                 return render(request, 'tickets/quotation_form.html', get_form_context())
             
             quotation = Quotation(
@@ -43262,9 +43283,9 @@ def quotation_template_create_new_view(request):
         quotation_id = request.POST.get('quotation_id')
         
         if not title:
-            messages.error(request, 'El título es obligatorio.')
+            messages.error(request, gettext('El título es obligatorio.'))
         elif not quotation_id:
-            messages.error(request, 'Debes seleccionar una cotización base.')
+            messages.error(request, gettext('Debes seleccionar una cotización base.'))
         else:
             try:
                 quotation = Quotation.objects.get(id=quotation_id)
@@ -43282,7 +43303,7 @@ def quotation_template_create_new_view(request):
                 return redirect('quotation_template_detail', template_id=template.id)
                 
             except Quotation.DoesNotExist:
-                messages.error(request, 'La cotización seleccionada no existe.')
+                messages.error(request, gettext('La cotización seleccionada no existe.'))
     
     # Obtener cotizaciones disponibles para usar como plantilla
     quotations = Quotation.objects.select_related('company').filter(
@@ -43290,7 +43311,7 @@ def quotation_template_create_new_view(request):
     ).order_by('-created_at')[:50]  # Últimas 50
     
     context = {
-        'page_title': 'Crear Nueva Plantilla',
+        'page_title': gettext('Crear Nueva Plantilla'),
         'quotations': quotations,
     }
     
@@ -43312,9 +43333,9 @@ def quotation_template_edit_view(request, template_id):
         is_active = request.POST.get('is_active') == 'on'
         
         if not title:
-            messages.error(request, 'El título es obligatorio.')
+            messages.error(request, gettext('El título es obligatorio.'))
         elif not quotation_id:
-            messages.error(request, 'Debes seleccionar una cotización base.')
+            messages.error(request, gettext('Debes seleccionar una cotización base.'))
         else:
             try:
                 quotation = Quotation.objects.get(id=quotation_id)
@@ -43330,7 +43351,7 @@ def quotation_template_edit_view(request, template_id):
                 return redirect('quotation_template_detail', template_id=template.id)
                 
             except Quotation.DoesNotExist:
-                messages.error(request, 'La cotización seleccionada no existe.')
+                messages.error(request, gettext('La cotización seleccionada no existe.'))
     
     # Obtener cotizaciones disponibles para usar como plantilla
     quotations = Quotation.objects.select_related('company').filter(
@@ -43422,7 +43443,7 @@ def quotation_template_list_view(request):
         template.public_url_full = request.build_absolute_uri(template.get_public_url())
     
     context = {
-        'page_title': 'Plantillas Públicas',
+        'page_title': gettext('Plantillas Públicas'),
         'templates': templates,
     }
     
@@ -43594,7 +43615,7 @@ def quotation_template_requests_view(request):
     ).order_by('title')
     
     context = {
-        'page_title': 'Solicitudes de Plantillas',
+        'page_title': gettext('Solicitudes de Plantillas'),
         'requests': page_obj,
         'templates_for_filter': templates_for_filter,
         'total_requests': total_requests,
@@ -43714,7 +43735,7 @@ def crm_questions_list(request):
     pending_all_questions = total_all_questions - answered_all_questions
     
     context = {
-        'page_title': 'Preguntas CRM',
+        'page_title': gettext('Preguntas CRM'),
         'questions': page_obj,
         'filter_form': filter_form,
         'total_questions': total_questions,
@@ -43766,7 +43787,7 @@ def crm_question_create(request):
         form = CrmQuestionForm(user=request.user)
     
     context = {
-        'page_title': 'Nueva Pregunta',
+        'page_title': gettext('Nueva Pregunta'),
         'form': form,
         'action': 'create'
     }
@@ -43969,14 +43990,14 @@ def scheduled_task_create(request):
             task = form.save(commit=False)
             task.created_by = request.user
             task.save()
-            messages.success(request, 'Tarea programada creada exitosamente.')
+            messages.success(request, gettext('Tarea programada creada exitosamente.'))
             return redirect('scheduled_task_list')
     else:
         form = ScheduledTaskForm()
     
     context = {
         'form': form,
-        'title': 'Crear Tarea Programada',
+        'title': gettext('Crear Tarea Programada'),
     }
     
     return render(request, 'tickets/scheduled_task_form.html', context)
@@ -43991,7 +44012,7 @@ def scheduled_task_edit(request, pk):
         form = ScheduledTaskForm(request.POST, instance=task)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Tarea programada actualizada exitosamente.')
+            messages.success(request, gettext('Tarea programada actualizada exitosamente.'))
             return redirect('scheduled_task_list')
     else:
         form = ScheduledTaskForm(instance=task)
@@ -43999,7 +44020,7 @@ def scheduled_task_edit(request, pk):
     context = {
         'form': form,
         'task': task,
-        'title': 'Editar Tarea Programada',
+        'title': gettext('Editar Tarea Programada'),
     }
     
     return render(request, 'tickets/scheduled_task_form.html', context)
@@ -44136,7 +44157,7 @@ def game_counter_list(request):
     
     context = {
         'games': games_page,
-        'page_title': 'Contadores de Juegos',
+        'page_title': gettext('Contadores de Juegos'),
         'status_filter': status_filter,
     }
     
@@ -44158,7 +44179,7 @@ def game_counter_create(request):
         
         # Validaciones
         if not name or not player1_name or not player2_name:
-            messages.error(request, 'Debes completar todos los campos obligatorios.')
+            messages.error(request, gettext('Debes completar todos los campos obligatorios.'))
             return redirect('game_counter_create')
         
         # Crear el juego
@@ -44187,7 +44208,7 @@ def game_counter_create(request):
     
     context = {
         'companies': companies,
-        'page_title': 'Nuevo Contador de Juego',
+        'page_title': gettext('Nuevo Contador de Juego'),
     }
     
     return render(request, 'tickets/game_counter_create.html', context)
@@ -44378,7 +44399,7 @@ def exercise_counter_list(request):
     context = {
         'exercises': exercises,
         'status_filter': status_filter,
-        'page_title': 'Contador de Ejercicios',
+        'page_title': gettext('Contador de Ejercicios'),
     }
     
     return render(request, 'tickets/exercise_counter_list.html', context)
@@ -44398,7 +44419,7 @@ def exercise_counter_create(request):
         
         # Validaciones
         if not title or not sets_target or not reps_target:
-            messages.error(request, 'Debes completar todos los campos obligatorios.')
+            messages.error(request, gettext('Debes completar todos los campos obligatorios.'))
             return redirect('exercise_counter_create')
         
         # Crear el ejercicio
@@ -44426,7 +44447,7 @@ def exercise_counter_create(request):
     
     context = {
         'companies': companies,
-        'page_title': 'Nuevo Contador de Ejercicio',
+        'page_title': gettext('Nuevo Contador de Ejercicio'),
     }
     
     return render(request, 'tickets/exercise_counter_create.html', context)
@@ -44460,7 +44481,7 @@ def exercise_counter_delete(request, pk):
     
     if request.method == 'POST':
         exercise.delete()
-        messages.success(request, 'Ejercicio eliminado exitosamente.')
+        messages.success(request, gettext('Ejercicio eliminado exitosamente.'))
         return redirect('exercise_counter_list')
     
     context = {
@@ -44686,7 +44707,7 @@ def sport_goal_create(request):
         
         # Validación
         if not title or not player_name:
-            messages.error(request, 'El título y el nombre del jugador son obligatorios.')
+            messages.error(request, gettext('El título y el nombre del jugador son obligatorios.'))
             return render(request, 'tickets/sport_goal_create.html')
         
         # Crear objetivo
@@ -44720,7 +44741,7 @@ def sport_goal_detail(request, pk):
     
     # Verificar permisos
     if hasattr(request.user, 'company') and request.user.company and sport_goal.company != request.user.company:
-        messages.error(request, 'No tienes permiso para ver este objetivo.')
+        messages.error(request, gettext('No tienes permiso para ver este objetivo.'))
         return redirect('sport_goal_list')
     
     # Obtener todos los registros
@@ -44759,7 +44780,7 @@ def sport_goal_delete(request, pk):
     
     # Verificar permisos
     if hasattr(request.user, 'company') and request.user.company and sport_goal.company != request.user.company:
-        messages.error(request, 'No tienes permiso para eliminar este objetivo.')
+        messages.error(request, gettext('No tienes permiso para eliminar este objetivo.'))
         return redirect('sport_goal_list')
     
     if request.method == 'POST':
@@ -44842,7 +44863,7 @@ def event_list(request):
     
     context = {
         'events': events,
-        'page_title': 'Lista de Eventos',
+        'page_title': gettext('Lista de Eventos'),
         'now': now,
     }
     
@@ -44880,7 +44901,7 @@ def event_calendar(request):
     
     context = {
         'events_json': json.dumps(events_data),
-        'page_title': 'Calendario de Eventos',
+        'page_title': gettext('Calendario de Eventos'),
     }
     
     return render(request, 'tickets/event_calendar.html', context)
@@ -44897,14 +44918,14 @@ def event_create(request):
             event = form.save(commit=False)
             event.created_by = request.user
             event.save()
-            messages.success(request, 'Evento creado exitosamente.')
+            messages.success(request, gettext('Evento creado exitosamente.'))
             return redirect('event_calendar')
     else:
         form = EventForm()
     
     context = {
         'form': form,
-        'page_title': 'Crear Evento',
+        'page_title': gettext('Crear Evento'),
     }
     
     return render(request, 'tickets/event_form.html', context)
@@ -44922,7 +44943,7 @@ def event_edit(request, pk):
         form = EventForm(request.POST, instance=event)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Evento actualizado exitosamente.')
+            messages.success(request, gettext('Evento actualizado exitosamente.'))
             return redirect('event_calendar')
     else:
         form = EventForm(instance=event)
@@ -44930,7 +44951,7 @@ def event_edit(request, pk):
     context = {
         'form': form,
         'event': event,
-        'page_title': 'Editar Evento',
+        'page_title': gettext('Editar Evento'),
     }
     
     return render(request, 'tickets/event_form.html', context)
@@ -44945,12 +44966,12 @@ def event_delete(request, pk):
     
     if request.method == 'POST':
         event.delete()
-        messages.success(request, 'Evento eliminado exitosamente.')
+        messages.success(request, gettext('Evento eliminado exitosamente.'))
         return redirect('event_calendar')
     
     context = {
         'event': event,
-        'page_title': 'Eliminar Evento',
+        'page_title': gettext('Eliminar Evento'),
     }
     
     return render(request, 'tickets/event_delete.html', context)
@@ -45110,7 +45131,7 @@ def trip_list(request):
     
     context = {
         'trips': trips,
-        'page_title': 'Mis Viajes',
+        'page_title': gettext('Mis Viajes'),
     }
     
     return render(request, 'tickets/trip_list.html', context)
@@ -45127,14 +45148,14 @@ def trip_create(request):
             trip = form.save(commit=False)
             trip.created_by = request.user
             trip.save()
-            messages.success(request, 'Viaje creado exitosamente.')
+            messages.success(request, gettext('Viaje creado exitosamente.'))
             return redirect('trip_detail', pk=trip.pk)
     else:
         form = TripForm()
     
     context = {
         'form': form,
-        'page_title': 'Crear Viaje',
+        'page_title': gettext('Crear Viaje'),
     }
     
     return render(request, 'tickets/trip_form.html', context)
@@ -45169,7 +45190,7 @@ def trip_edit(request, pk):
         form = TripForm(request.POST, instance=trip)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Viaje actualizado exitosamente.')
+            messages.success(request, gettext('Viaje actualizado exitosamente.'))
             return redirect('trip_detail', pk=trip.pk)
     else:
         form = TripForm(instance=trip)
@@ -45192,7 +45213,7 @@ def trip_delete(request, pk):
     
     if request.method == 'POST':
         trip.delete()
-        messages.success(request, 'Viaje eliminado exitosamente.')
+        messages.success(request, gettext('Viaje eliminado exitosamente.'))
         return redirect('trip_list')
     
     context = {
@@ -45457,7 +45478,7 @@ def web_counter_list(request):
     
     context = {
         'counters': counters,
-        'page_title': 'Contadores Web',
+        'page_title': gettext('Contadores Web'),
     }
     return render(request, 'tickets/web_counter_list.html', context)
 
@@ -45472,7 +45493,7 @@ def web_counter_create(request):
         domain = request.POST.get('domain', '')
         
         if not title:
-            messages.error(request, 'El título es obligatorio')
+            messages.error(request, gettext('El título es obligatorio'))
             return redirect('web_counter_list')
         
         counter = WebCounter.objects.create(
@@ -45485,7 +45506,7 @@ def web_counter_create(request):
         return redirect('web_counter_detail', pk=counter.pk)
     
     context = {
-        'page_title': 'Crear Contador Web',
+        'page_title': gettext('Crear Contador Web'),
     }
     return render(request, 'tickets/web_counter_form.html', context)
 
@@ -45580,7 +45601,7 @@ def web_counter_edit(request, pk):
         counter.is_active = request.POST.get('is_active') == 'on'
         counter.save()
         
-        messages.success(request, 'Contador actualizado exitosamente')
+        messages.success(request, gettext('Contador actualizado exitosamente'))
         return redirect('web_counter_detail', pk=counter.pk)
     
     context = {
@@ -45656,7 +45677,7 @@ def quick_quote_list(request):
     context = {
         'quotes': quotes,
         'status_filter': status_filter,
-        'page_title': 'Cotizaciones Rápidas',
+        'page_title': gettext('Cotizaciones Rápidas'),
         'total_quotes': total_quotes,
         'pending_quotes': pending_quotes,
         'accepted_quotes': accepted_quotes,
@@ -45706,7 +45727,7 @@ def quick_quote_create(request):
             valid_until=timezone.now() + timedelta(days=valid_days)
         )
         
-        messages.success(request, 'Cotización creada exitosamente')
+        messages.success(request, gettext('Cotización creada exitosamente'))
         return redirect('quick_quote_detail', pk=quote.pk)
     
     # Obtener empresas y contactos para selector
@@ -45736,7 +45757,7 @@ def quick_quote_create(request):
         }
     
     context = {
-        'page_title': 'Nueva Cotización Rápida',
+        'page_title': gettext('Nueva Cotización Rápida'),
         'companies': companies,
         'contacts': contacts,
         'clients_data_json': json.dumps(clients_data),
@@ -45810,7 +45831,7 @@ def quick_quote_edit(request, pk):
         
         quote.save()
         
-        messages.success(request, 'Cotización actualizada exitosamente')
+        messages.success(request, gettext('Cotización actualizada exitosamente'))
         return redirect('quick_quote_detail', pk=quote.pk)
     
     # Calcular días de validez restantes
@@ -45916,9 +45937,9 @@ def quick_quote_public(request, token):
                     comment=comment_text,
                     ip_address=request.META.get('REMOTE_ADDR')
                 )
-                messages.success(request, 'Comentario enviado exitosamente')
+                messages.success(request, gettext('Comentario enviado exitosamente'))
             else:
-                messages.error(request, 'Por favor complete todos los campos del comentario')
+                messages.error(request, gettext('Por favor complete todos los campos del comentario'))
         
         elif action in ['accept', 'reject']:
             quote.status = 'accepted' if action == 'accept' else 'rejected'
@@ -45992,7 +46013,7 @@ def quick_quote_duplicate(request, pk):
         status='pending'
     )
     
-    messages.success(request, 'Cotización duplicada exitosamente')
+    messages.success(request, gettext('Cotización duplicada exitosamente'))
     return redirect('quick_quote_detail', pk=duplicate.pk)
 
 
@@ -46055,7 +46076,7 @@ def support_contract_list(request):
     
     context = {
         'contracts': contracts,
-        'page_title': 'Contratos de Soporte',
+        'page_title': gettext('Contratos de Soporte'),
     }
     return render(request, 'tickets/support_contract_list.html', context)
 
@@ -46119,7 +46140,7 @@ def support_contract_create(request):
             )
             current_date += increment
         
-        messages.success(request, 'Contrato de soporte creado exitosamente')
+        messages.success(request, gettext('Contrato de soporte creado exitosamente'))
         return redirect('support_contract_detail', pk=contract.pk)
     
     # Obtener todas las empresas activas del sistema
@@ -46128,7 +46149,7 @@ def support_contract_create(request):
     
     context = {
         'companies': companies,
-        'page_title': 'Crear Contrato de Soporte',
+        'page_title': gettext('Crear Contrato de Soporte'),
     }
     return render(request, 'tickets/support_contract_form.html', context)
 
@@ -46187,7 +46208,7 @@ def support_contract_edit(request, pk):
         
         contract.save()
         
-        messages.success(request, 'Contrato actualizado exitosamente')
+        messages.success(request, gettext('Contrato actualizado exitosamente'))
         return redirect('support_contract_detail', pk=contract.pk)
     
     # Obtener todas las empresas activas del sistema
@@ -46352,7 +46373,7 @@ def support_contract_public(request, token):
             signed_by_email = request.POST.get('signed_by_email', '').strip()
             
             if not signed_by_name or not signed_by_email:
-                messages.error(request, 'Por favor complete todos los campos para firmar')
+                messages.error(request, gettext('Por favor complete todos los campos para firmar'))
             else:
                 contract.signed_by_name = signed_by_name
                 contract.signed_by_email = signed_by_email
@@ -46360,7 +46381,7 @@ def support_contract_public(request, token):
                 contract.status = 'signed'
                 contract.save()
                 
-                messages.success(request, '¡Contrato firmado exitosamente!')
+                messages.success(request, gettext('¡Contrato firmado exitosamente!'))
     
     payments = contract.payments.all()
     
@@ -46728,7 +46749,7 @@ def multi_measurement_list(request):
     
     context = {
         'measurements': measurements,
-        'page_title': 'Mediciones Múltiples',
+        'page_title': gettext('Mediciones Múltiples'),
     }
     return render(request, 'tickets/multi_measurement_list.html', context)
 
@@ -46745,14 +46766,14 @@ def multi_measurement_create(request):
             measurement = form.save(commit=False)
             measurement.user = request.user
             measurement.save()
-            messages.success(request, 'Medición creada exitosamente')
+            messages.success(request, gettext('Medición creada exitosamente'))
             return redirect('multi_measurement_detail', pk=measurement.pk)
     else:
         form = MultiMeasurementForm()
     
     context = {
         'form': form,
-        'page_title': 'Nueva Medición Múltiple',
+        'page_title': gettext('Nueva Medición Múltiple'),
     }
     return render(request, 'tickets/multi_measurement_form.html', context)
 
@@ -46816,7 +46837,7 @@ def multi_measurement_edit(request, pk):
         form = MultiMeasurementForm(request.POST, instance=measurement)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Medición actualizada exitosamente')
+            messages.success(request, gettext('Medición actualizada exitosamente'))
             return redirect('multi_measurement_detail', pk=measurement.pk)
     else:
         form = MultiMeasurementForm(instance=measurement)
@@ -46824,7 +46845,7 @@ def multi_measurement_edit(request, pk):
     context = {
         'form': form,
         'measurement': measurement,
-        'page_title': 'Editar Medición',
+        'page_title': gettext('Editar Medición'),
     }
     return render(request, 'tickets/multi_measurement_form.html', context)
 
@@ -46838,12 +46859,12 @@ def multi_measurement_delete(request, pk):
     
     if request.method == 'POST':
         measurement.delete()
-        messages.success(request, 'Medición eliminada exitosamente')
+        messages.success(request, gettext('Medición eliminada exitosamente'))
         return redirect('multi_measurement_list')
     
     context = {
         'measurement': measurement,
-        'page_title': 'Eliminar Medición',
+        'page_title': gettext('Eliminar Medición'),
     }
     return render(request, 'tickets/multi_measurement_delete.html', context)
 
@@ -46880,7 +46901,7 @@ def multi_measurement_public(request, token):
         record.notes = request.POST.get('notes', '')
         record.save()
         
-        messages.success(request, 'Mediciones guardadas exitosamente')
+        messages.success(request, gettext('Mediciones guardadas exitosamente'))
         return redirect('multi_measurement_public', token=token)
     
     # Obtener el último registro para mostrar como referencia
@@ -46904,7 +46925,7 @@ def multi_measurement_record_delete(request, measurement_pk, record_pk):
     
     if request.method == 'POST':
         record.delete()
-        messages.success(request, 'Registro eliminado exitosamente')
+        messages.success(request, gettext('Registro eliminado exitosamente'))
     
     return redirect('multi_measurement_detail', pk=measurement_pk)
 
@@ -46978,7 +46999,7 @@ def budget_list(request):
     
     context = {
         'budgets': budgets,
-        'page_title': 'Presupuestos Personales',
+        'page_title': gettext('Presupuestos Personales'),
     }
     return render(request, 'tickets/budget_list.html', context)
 
@@ -46999,7 +47020,7 @@ def budget_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Crear Presupuesto',
+        'page_title': gettext('Crear Presupuesto'),
     }
     return render(request, 'tickets/budget_form.html', context)
 
@@ -47012,7 +47033,7 @@ def budget_detail(request, pk):
     # Verificar permisos: si es privado, solo el creador puede verlo
     if budget.is_private and budget.user != request.user:
         from django.contrib import messages
-        messages.error(request, 'No tienes permisos para ver este presupuesto.')
+        messages.error(request, gettext('No tienes permisos para ver este presupuesto.'))
         return redirect('budget_list')
     
     # Obtener mes seleccionado (por defecto el mes actual)
@@ -48711,7 +48732,7 @@ def frd_list_view(request):
     
     context = {
         'documents': documents,
-        'page_title': 'Documentos de Requerimientos Funcionales',
+        'page_title': gettext('Documentos de Requerimientos Funcionales'),
         'submenu': get_crm_submenu(request, 'frd')
     }
     
@@ -48739,7 +48760,7 @@ def frd_create_view(request):
     
     context = {
         'form': form,
-        'page_title': 'Crear Documento de Requerimientos Funcionales',
+        'page_title': gettext('Crear Documento de Requerimientos Funcionales'),
         'submenu': get_crm_submenu(request, 'frd')
     }
     
@@ -48765,7 +48786,7 @@ def frd_detail_view(request, pk):
             last_number = document.requirements.aggregate(models.Max('number'))['number__max'] or 0
             requirement.number = last_number + 1
             requirement.save()
-            messages.success(request, 'Requerimiento agregado exitosamente.')
+            messages.success(request, gettext('Requerimiento agregado exitosamente.'))
             return redirect('frd_detail', pk=document.pk)
     
     # Manejar edición inline de requerimiento
@@ -48782,7 +48803,7 @@ def frd_detail_view(request, pk):
     elif request.method == 'POST' and 'edit_description' in request.POST:
         document.description = request.POST.get('description', document.description)
         document.save()
-        messages.success(request, 'Descripción general actualizada.')
+        messages.success(request, gettext('Descripción general actualizada.'))
         return redirect('frd_detail', pk=document.pk)
     
     # Manejar cambio de estado de aprobación
@@ -48836,13 +48857,13 @@ def frd_requirement_delete_view(request, pk):
             if req.number != idx:
                 req.number = idx
                 req.save()
-        messages.success(request, 'Requerimiento eliminado exitosamente.')
+        messages.success(request, gettext('Requerimiento eliminado exitosamente.'))
         return redirect('frd_detail', pk=document.pk)
     
     context = {
         'requirement': requirement,
         'document': document,
-        'page_title': 'Eliminar Requerimiento'
+        'page_title': gettext('Eliminar Requerimiento')
     }
     
     return render(request, 'tickets/frd_requirement_delete.html', context)
@@ -48882,7 +48903,7 @@ def public_frd_view(request, token):
                     email=review_form.cleaned_data['reviewer_email'],
                     comments=review_form.cleaned_data['comments']
                 )
-                messages.success(request, '✓ Documento aceptado exitosamente.')
+                messages.success(request, gettext('✓ Documento aceptado exitosamente.'))
                 return redirect('public_frd', token=token)
         
         # Rechazar documento completo
@@ -48894,7 +48915,7 @@ def public_frd_view(request, token):
                     email=review_form.cleaned_data['reviewer_email'],
                     comments=review_form.cleaned_data['comments']
                 )
-                messages.warning(request, '✗ Documento rechazado.')
+                messages.warning(request, gettext('✗ Documento rechazado.'))
                 return redirect('public_frd', token=token)
         
         elif 'approve_requirement' in request.POST:
@@ -48914,7 +48935,7 @@ def public_frd_view(request, token):
         elif 'edit_description' in request.POST:
             document.description = request.POST.get('description', document.description)
             document.save()
-            messages.success(request, 'Descripción general actualizada.')
+            messages.success(request, gettext('Descripción general actualizada.'))
             return redirect('public_frd', token=token)
         
         # Manejar edición
@@ -49120,7 +49141,7 @@ def access_group_list(request):
     
     context = {
         'groups': groups,
-        'page_title': 'Grupos de Accesos'
+        'page_title': gettext('Grupos de Accesos')
     }
     return render(request, 'tickets/access_group_list.html', context)
 
@@ -49142,7 +49163,7 @@ def access_group_create(request):
         return redirect('access_group_detail', pk=group.id)
     
     context = {
-        'page_title': 'Crear Grupo de Accesos'
+        'page_title': gettext('Crear Grupo de Accesos')
     }
     return render(request, 'tickets/access_group_form.html', context)
 
@@ -49283,7 +49304,7 @@ def access_link_delete(request, pk):
     
     context = {
         'link': link,
-        'page_title': 'Eliminar Enlace'
+        'page_title': gettext('Eliminar Enlace')
     }
     return render(request, 'tickets/access_link_delete.html', context)
 
@@ -49311,7 +49332,7 @@ def task_plan_list(request):
     
     context = {
         'plans': plans,
-        'page_title': 'Planes de Tareas'
+        'page_title': gettext('Planes de Tareas')
     }
     return render(request, 'tickets/task_plan_list.html', context)
 
@@ -49332,7 +49353,7 @@ def task_plan_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Crear Plan de Tareas'
+        'page_title': gettext('Crear Plan de Tareas')
     }
     return render(request, 'tickets/task_plan_form.html', context)
 
@@ -49384,7 +49405,7 @@ def task_plan_delete(request, pk):
     
     context = {
         'plan': plan,
-        'page_title': 'Eliminar Plan'
+        'page_title': gettext('Eliminar Plan')
     }
     return render(request, 'tickets/task_plan_delete.html', context)
 
@@ -49480,7 +49501,7 @@ def task_plan_day_delete(request, pk):
     
     context = {
         'day': day,
-        'page_title': 'Eliminar Día'
+        'page_title': gettext('Eliminar Día')
     }
     return render(request, 'tickets/task_plan_day_delete.html', context)
 
@@ -49551,7 +49572,7 @@ def task_plan_item_delete(request, pk):
     
     context = {
         'task': task,
-        'page_title': 'Eliminar Tarea'
+        'page_title': gettext('Eliminar Tarea')
     }
     return render(request, 'tickets/task_plan_item_delete.html', context)
 
@@ -49619,7 +49640,7 @@ def checklist_list(request):
     
     context = {
         'checklists_data': checklists_data,
-        'page_title': 'Mis Checklists'
+        'page_title': gettext('Mis Checklists')
     }
     return render(request, 'tickets/checklist_list.html', context)
 
@@ -49640,7 +49661,7 @@ def checklist_create(request):
     
     context = {
         'form': form,
-        'page_title': 'Crear Checklist'
+        'page_title': gettext('Crear Checklist')
     }
     return render(request, 'tickets/checklist_form.html', context)
 
@@ -49717,7 +49738,7 @@ def checklist_delete(request, pk):
     
     context = {
         'checklist': checklist,
-        'page_title': 'Eliminar Checklist'
+        'page_title': gettext('Eliminar Checklist')
     }
     return render(request, 'tickets/checklist_delete.html', context)
 
@@ -49834,7 +49855,7 @@ def checklist_item_delete(request, pk):
     
     context = {
         'item': item,
-        'page_title': 'Eliminar Tarea'
+        'page_title': gettext('Eliminar Tarea')
     }
     return render(request, 'tickets/checklist_item_delete.html', context)
 
@@ -49949,7 +49970,7 @@ def transaction_list(request):
     from .models import Transaction
     
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        messages.error(request, gettext('No tienes permisos para acceder a esta sección.'))
         return redirect('home')
     
     transactions = Transaction.objects.all().order_by('code')
@@ -49967,7 +49988,7 @@ def transaction_create(request):
     from .models import Transaction
     
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para crear transacciones.')
+        messages.error(request, gettext('No tienes permisos para crear transacciones.'))
         return redirect('home')
     
     if request.method == 'POST':
@@ -49979,7 +50000,7 @@ def transaction_create(request):
         icon = request.POST.get('icon', 'bi-link-45deg').strip()
         
         if not all([code, name, url]):
-            messages.error(request, 'Los campos Código, Nombre y URL son obligatorios.')
+            messages.error(request, gettext('Los campos Código, Nombre y URL son obligatorios.'))
             return redirect('transaction_create')
         
         # Verificar que el código no exista
@@ -50009,7 +50030,7 @@ def transaction_edit(request, pk):
     from .models import Transaction
     
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para editar transacciones.')
+        messages.error(request, gettext('No tienes permisos para editar transacciones.'))
         return redirect('home')
     
     transaction = get_object_or_404(Transaction, id=pk)
@@ -50024,7 +50045,7 @@ def transaction_edit(request, pk):
         is_active = request.POST.get('is_active') == 'on'
         
         if not all([code, name, url]):
-            messages.error(request, 'Los campos Código, Nombre y URL son obligatorios.')
+            messages.error(request, gettext('Los campos Código, Nombre y URL son obligatorios.'))
             return redirect('transaction_edit', pk=pk)
         
         # Verificar que el código no exista en otra transacción
@@ -50058,7 +50079,7 @@ def transaction_delete(request, pk):
     from .models import Transaction
     
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para eliminar transacciones.')
+        messages.error(request, gettext('No tienes permisos para eliminar transacciones.'))
         return redirect('home')
     
     transaction = get_object_or_404(Transaction, id=pk)
@@ -50121,7 +50142,7 @@ def knowledge_base_list(request):
     from .models import KnowledgeBase
     
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para acceder a la base de conocimientos.')
+        messages.error(request, gettext('No tienes permisos para acceder a la base de conocimientos.'))
         return redirect('home')
     
     knowledge_bases = KnowledgeBase.objects.filter(is_active=True).order_by('-created_at')
@@ -50139,7 +50160,7 @@ def knowledge_base_detail(request, pk):
     from .models import KnowledgeBase
     
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para acceder a la base de conocimientos.')
+        messages.error(request, gettext('No tienes permisos para acceder a la base de conocimientos.'))
         return redirect('home')
     
     knowledge_base = get_object_or_404(KnowledgeBase, id=pk)
@@ -50163,7 +50184,7 @@ def knowledge_base_create(request):
     from .models import KnowledgeBase
     
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para crear bases de conocimiento.')
+        messages.error(request, gettext('No tienes permisos para crear bases de conocimiento.'))
         return redirect('home')
     
     if request.method == 'POST':
@@ -50174,7 +50195,7 @@ def knowledge_base_create(request):
         category = request.POST.get('category', '').strip()
         
         if not title:
-            messages.error(request, 'El título es obligatorio.')
+            messages.error(request, gettext('El título es obligatorio.'))
             return redirect('knowledge_base_create')
         
         knowledge_base = KnowledgeBase.objects.create(
@@ -50202,7 +50223,7 @@ def knowledge_base_edit(request, pk):
     from .models import KnowledgeBase
     
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para editar bases de conocimiento.')
+        messages.error(request, gettext('No tienes permisos para editar bases de conocimiento.'))
         return redirect('home')
     
     knowledge_base = get_object_or_404(KnowledgeBase, id=pk)
@@ -50216,11 +50237,11 @@ def knowledge_base_edit(request, pk):
         knowledge_base.is_active = request.POST.get('is_active') == 'on'
         
         if not knowledge_base.title:
-            messages.error(request, 'El título es obligatorio.')
+            messages.error(request, gettext('El título es obligatorio.'))
             return redirect('knowledge_base_edit', pk=pk)
         
         knowledge_base.save()
-        messages.success(request, 'Base de conocimiento actualizada exitosamente.')
+        messages.success(request, gettext('Base de conocimiento actualizada exitosamente.'))
         return redirect('knowledge_base_detail', pk=knowledge_base.id)
     
     context = {
@@ -50237,7 +50258,7 @@ def knowledge_base_delete(request, pk):
     from .models import KnowledgeBase
     
     if not is_agent(request.user):
-        messages.error(request, 'No tienes permisos para eliminar bases de conocimiento.')
+        messages.error(request, gettext('No tienes permisos para eliminar bases de conocimiento.'))
         return redirect('home')
     
     knowledge_base = get_object_or_404(KnowledgeBase, id=pk)
@@ -50310,7 +50331,7 @@ def translation_tool(request):
                 config = SystemConfiguration.get_config()
                 
                 if not config.openai_api_key:
-                    messages.error(request, 'API key de OpenAI no configurada')
+                    messages.error(request, gettext('API key de OpenAI no configurada'))
                     return render(request, 'tickets/translation_tool.html', {
                         'recent_translations': Translation.objects.filter(created_by=request.user).order_by('-created_at')[:10],
                         'languages': Translation.LANGUAGES
@@ -50344,7 +50365,7 @@ def translation_tool(request):
                     created_by=request.user
                 )
                 
-                messages.success(request, 'Traducción realizada exitosamente')
+                messages.success(request, gettext('Traducción realizada exitosamente'))
                 return render(request, 'tickets/translation_tool.html', {
                     'translation': translation,
                     'recent_translations': Translation.objects.filter(created_by=request.user).order_by('-created_at')[:10],
@@ -50384,7 +50405,7 @@ def translation_delete(request, pk):
     
     if request.method == 'POST':
         translation.delete()
-        messages.success(request, 'Traducción eliminada exitosamente')
+        messages.success(request, gettext('Traducción eliminada exitosamente'))
         return redirect('translation_list')
     
     return render(request, 'tickets/translation_delete.html', {
@@ -50595,7 +50616,7 @@ def sql_query_tool(request):
                 # Guardar la consulta si el usuario lo solicitó
                 if save_query:
                     if not name:
-                        messages.warning(request, 'Debes proporcionar un nombre para guardar la consulta')
+                        messages.warning(request, gettext('Debes proporcionar un nombre para guardar la consulta'))
                     else:
                         sql_query = SQLQuery.objects.create(
                             name=name,
@@ -50695,7 +50716,7 @@ def sql_query_detail(request, pk):
             query_obj.last_executed_at = timezone.now()
             query_obj.save()
             
-            messages.success(request, 'Consulta ejecutada exitosamente')
+            messages.success(request, gettext('Consulta ejecutada exitosamente'))
             
         except Exception as e:
             error = str(e)
@@ -50725,7 +50746,7 @@ def sql_query_delete(request, pk):
     
     if request.method == 'POST':
         query_obj.delete()
-        messages.success(request, 'Consulta eliminada exitosamente')
+        messages.success(request, gettext('Consulta eliminada exitosamente'))
         return redirect('sql_query_list')
     
     context = {
@@ -50783,7 +50804,7 @@ def odoo_connection_create(request):
         password = request.POST.get('password')
         
         if not all([name, url, database, username, password]):
-            messages.error(request, 'Todos los campos son obligatorios')
+            messages.error(request, gettext('Todos los campos son obligatorios'))
             return redirect('odoo_connection_create')
         
         is_private = request.POST.get('is_private') == 'on'
@@ -50903,7 +50924,7 @@ def odoo_rpc_table_create(request, connection_id):
         description = request.POST.get('description', '')
         
         if not all([name, odoo_model]):
-            messages.error(request, 'El nombre y el modelo de Odoo son obligatorios')
+            messages.error(request, gettext('El nombre y el modelo de Odoo son obligatorios'))
             return redirect('odoo_rpc_table_create', connection_id=connection.id)
         
         # Verificar que no exista ya
@@ -51503,7 +51524,7 @@ def odoo_rpc_field_create(request, table_id):
         help_text = request.POST.get('help_text', '')
         
         if not all([name, odoo_field_name, field_type]):
-            messages.error(request, 'El nombre, campo de Odoo y tipo son obligatorios')
+            messages.error(request, gettext('El nombre, campo de Odoo y tipo son obligatorios'))
             return redirect('odoo_rpc_field_create', table_id=table.id)
         
         # Verificar que no exista ya
@@ -51607,7 +51628,7 @@ def odoo_rpc_table_export_template(request, table_id):
     
     if not fields.exists():
         if request.user.is_authenticated:
-            messages.error(request, 'Debes agregar al menos un campo antes de exportar la plantilla')
+            messages.error(request, gettext('Debes agregar al menos un campo antes de exportar la plantilla'))
             return redirect('odoo_rpc_table_detail', pk=table.id)
         else:
             from django.http import HttpResponse
@@ -52002,7 +52023,7 @@ def odoo_rpc_data_execute(request, table_id):
     pending_data = OdooRPCData.objects.filter(table=table, status='pending')
     
     if not pending_data.exists():
-        messages.info(request, 'No hay datos pendientes para procesar')
+        messages.info(request, gettext('No hay datos pendientes para procesar'))
         return redirect('odoo_rpc_table_detail', pk=table.id)
     
     success_count = 0
@@ -52101,7 +52122,7 @@ def odoo_rpc_search_odoo(request, table_id):
             logger.info(f'[Odoo Search] Se encontraron {len(ids) if ids else 0} IDs')
             
             if not ids:
-                messages.info(request, 'No se encontraron registros en Odoo')
+                messages.info(request, gettext('No se encontraron registros en Odoo'))
                 return redirect('odoo_rpc_table_detail', pk=table.id)
             
             # Obtener campos a leer
@@ -52109,7 +52130,7 @@ def odoo_rpc_search_odoo(request, table_id):
             logger.info(f'[Odoo Search] Campos a leer: {field_names}')
             
             if not field_names:
-                messages.error(request, 'Debes definir campos antes de buscar en Odoo')
+                messages.error(request, gettext('Debes definir campos antes de buscar en Odoo'))
                 return redirect('odoo_rpc_table_detail', pk=table.id)
             
             # Leer registros
@@ -52118,7 +52139,7 @@ def odoo_rpc_search_odoo(request, table_id):
             logger.info(f'[Odoo Search] Se leyeron {len(records) if records else 0} registros')
             
             if not records:
-                messages.error(request, 'No se pudieron leer los registros de Odoo')
+                messages.error(request, gettext('No se pudieron leer los registros de Odoo'))
                 return redirect('odoo_rpc_table_detail', pk=table.id)
             
             # Guardar en base de datos si está habilitado
@@ -52229,7 +52250,7 @@ def odoo_rpc_data_export_all(request, table_id):
     ).order_by('-created_at')
     
     if not data_list.exists():
-        messages.error(request, 'No hay datos guardados para exportar')
+        messages.error(request, gettext('No hay datos guardados para exportar'))
         return redirect('odoo_rpc_table_detail', pk=table.id)
     
     # Crear workbook
@@ -52333,18 +52354,18 @@ def odoo_rpc_manage_public_url(request, table_id):
                 table.public_url_expires_at = None
             
             table.save()
-            messages.success(request, 'URL pública habilitada correctamente')
+            messages.success(request, gettext('URL pública habilitada correctamente'))
             
         elif action == 'disable':
             # Deshabilitar URL pública
             table.public_url_enabled = False
             table.save()
-            messages.success(request, 'URL pública deshabilitada')
+            messages.success(request, gettext('URL pública deshabilitada'))
             
         elif action == 'regenerate':
             # Regenerar token
             table.generate_public_token()
-            messages.success(request, 'Token regenerado correctamente')
+            messages.success(request, gettext('Token regenerado correctamente'))
         
         return redirect('odoo_rpc_manage_public_url', table_id=table.id)
     
@@ -52693,24 +52714,24 @@ def odoo_connection_manage_portal(request, connection_id):
             connection.save()
             
             if was_enabled:
-                messages.success(request, 'Configuración del portal actualizada correctamente')
+                messages.success(request, gettext('Configuración del portal actualizada correctamente'))
             else:
-                messages.success(request, 'Portal público habilitado correctamente')
+                messages.success(request, gettext('Portal público habilitado correctamente'))
             
         elif action == 'disable':
             connection.public_portal_enabled = False
             connection.save()
-            messages.success(request, 'Portal público deshabilitado')
+            messages.success(request, gettext('Portal público deshabilitado'))
             
         elif action == 'regenerate':
             connection.generate_portal_token()
-            messages.success(request, 'Token del portal regenerado correctamente')
+            messages.success(request, gettext('Token del portal regenerado correctamente'))
         
         elif action == 'remove_password':
             # Quitar contraseña del portal
             connection.public_portal_password = ''
             connection.save()
-            messages.success(request, 'Contraseña eliminada. El portal es ahora totalmente abierto.')
+            messages.success(request, gettext('Contraseña eliminada. El portal es ahora totalmente abierto.'))
         
         return redirect('odoo_connection_manage_portal', connection_id=connection.id)
     
@@ -53455,7 +53476,7 @@ def odoo_rpc_search_results(request, table_id):
     search_data = request.session.get(session_key, {})
     
     if not search_data:
-        messages.warning(request, 'No hay resultados de búsqueda. Realiza una búsqueda primero.')
+        messages.warning(request, gettext('No hay resultados de búsqueda. Realiza una búsqueda primero.'))
         return redirect('odoo_rpc_search_odoo', table_id=table.id)
     
     records = search_data.get('records', [])
@@ -53483,7 +53504,7 @@ def odoo_connection_backup(request, pk):
         backup_format = request.POST.get('backup_format', 'zip')
         
         if not master_password:
-            messages.error(request, 'Debes proporcionar el master password de Odoo')
+            messages.error(request, gettext('Debes proporcionar el master password de Odoo'))
             return render(request, 'tickets/odoo_connection_backup.html', {'connection': connection})
         
         # Importar la función de backup
@@ -53540,14 +53561,14 @@ def odoo_rpc_export_odoo_data(request, table_id):
     search_data = request.session.get(session_key, {})
     
     if not search_data:
-        messages.warning(request, 'No hay datos para exportar. Realiza una búsqueda primero.')
+        messages.warning(request, gettext('No hay datos para exportar. Realiza una búsqueda primero.'))
         return redirect('odoo_rpc_search_odoo', table_id=table.id)
     
     records = search_data.get('records', [])
     fields = table.rpc_fields.all().order_by('order', 'name')
     
     if not records or not fields:
-        messages.error(request, 'No hay datos o campos para exportar')
+        messages.error(request, gettext('No hay datos o campos para exportar'))
         return redirect('odoo_rpc_search_results', table_id=table.id)
     
     # Crear libro de Excel
@@ -53720,7 +53741,7 @@ def chatbot_list(request):
     
     context = {
         'chatbots': chatbots,
-        'page_title': 'Chatbots',
+        'page_title': gettext('Chatbots'),
         'module': 'GT',
         'submenu_active': 'chatbots'
     }
@@ -53743,13 +53764,13 @@ def chatbot_create(request):
             messages.success(request, f'Chatbot "{chatbot.title}" creado exitosamente.')
             return redirect('chatbot_list')
         else:
-            messages.error(request, 'Por favor corrige los errores en el formulario.')
+            messages.error(request, gettext('Por favor corrige los errores en el formulario.'))
     else:
         form = ChatbotForm()
     
     context = {
         'form': form,
-        'page_title': 'Crear Chatbot',
+        'page_title': gettext('Crear Chatbot'),
         'module': 'GT',
         'submenu_active': 'chatbots'
     }
@@ -54172,7 +54193,7 @@ def chatbot_question_create(request, pk):
             question = form.save(commit=False)
             question.chatbot = chatbot
             question.save()
-            messages.success(request, 'Pregunta agregada exitosamente.')
+            messages.success(request, gettext('Pregunta agregada exitosamente.'))
             return redirect('chatbot_detail', pk=chatbot.pk)
     else:
         form = ChatbotQuestionForm()
@@ -54201,7 +54222,7 @@ def chatbot_question_edit(request, pk, question_id):
         form = ChatbotQuestionForm(request.POST, instance=question)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Pregunta actualizada exitosamente.')
+            messages.success(request, gettext('Pregunta actualizada exitosamente.'))
             return redirect('chatbot_detail', pk=chatbot.pk)
     else:
         form = ChatbotQuestionForm(instance=question)
@@ -54228,7 +54249,7 @@ def chatbot_question_delete(request, pk, question_id):
     
     if request.method == 'POST':
         question.delete()
-        messages.success(request, 'Pregunta eliminada exitosamente.')
+        messages.success(request, gettext('Pregunta eliminada exitosamente.'))
         return redirect('chatbot_detail', pk=chatbot.pk)
     
     return redirect('chatbot_detail', pk=chatbot.pk)
@@ -54631,7 +54652,7 @@ def email_template_list(request):
     categories = EmailTemplate.CATEGORY_CHOICES
     
     context = {
-        'page_title': 'Plantillas de Correo',
+        'page_title': gettext('Plantillas de Correo'),
         'page_obj': page_obj,
         'categories': categories,
         'category_filter': category_filter,
@@ -54660,7 +54681,7 @@ def email_template_create(request):
         form = EmailTemplateForm()
     
     context = {
-        'page_title': 'Nueva Plantilla de Correo',
+        'page_title': gettext('Nueva Plantilla de Correo'),
         'form': form,
     }
     return render(request, 'tickets/email_template_form.html', context)
@@ -54787,7 +54808,7 @@ def counter_list(request):
     users = User.objects.filter(counters__isnull=False).distinct()
     
     context = {
-        'page_title': 'Contadores',
+        'page_title': gettext('Contadores'),
         'page_obj': page_obj,
         'date_from': date_from,
         'date_to': date_to,
@@ -54818,7 +54839,7 @@ def counter_create(request):
         form = CounterForm()
     
     context = {
-        'page_title': 'Nuevo Contador',
+        'page_title': gettext('Nuevo Contador'),
         'form': form,
     }
     return render(request, 'tickets/counter_form.html', context)
@@ -54855,9 +54876,9 @@ def counter_detail(request, pk):
                 messages.success(request, f'Valor {value} agregado exitosamente al historial.')
                 return redirect('counter_detail', pk=counter.pk)
             except ValueError:
-                messages.error(request, 'El valor debe ser un número válido.')
+                messages.error(request, gettext('El valor debe ser un número válido.'))
         else:
-            messages.error(request, 'Debes ingresar un valor.')
+            messages.error(request, gettext('Debes ingresar un valor.'))
     
     # Obtener historial
     history = counter.history.all()
@@ -54887,7 +54908,7 @@ def counter_edit(request, pk):
     
     # Solo el usuario creador puede editar
     if counter.user != request.user and not request.user.is_superuser:
-        messages.error(request, 'No tienes permiso para editar este contador.')
+        messages.error(request, gettext('No tienes permiso para editar este contador.'))
         return redirect('counter_list')
     
     if request.method == 'POST':
@@ -54917,7 +54938,7 @@ def counter_delete(request, pk):
     
     # Solo el usuario creador puede eliminar
     if counter.user != request.user and not request.user.is_superuser:
-        messages.error(request, 'No tienes permiso para eliminar este contador.')
+        messages.error(request, gettext('No tienes permiso para eliminar este contador.'))
         return redirect('counter_list')
     
     if request.method == 'POST':
@@ -54969,7 +54990,7 @@ def ocr_invoice_list(request):
     statuses = OCRInvoice.STATUS_CHOICES
     
     context = {
-        'page_title': 'Facturas OCR',
+        'page_title': gettext('Facturas OCR'),
         'page_obj': page_obj,
         'statuses': statuses,
         'status_filter': status_filter,
@@ -55000,7 +55021,7 @@ def ocr_invoice_create(request):
         form = OCRInvoiceForm()
     
     context = {
-        'page_title': 'Nueva Factura OCR',
+        'page_title': gettext('Nueva Factura OCR'),
         'form': form,
     }
     return render(request, 'tickets/ocr_invoice_form.html', context)
@@ -55017,7 +55038,7 @@ def ocr_invoice_generate_api_token(request):
         config = SystemConfiguration.get_config()
         config.ocr_public_upload_token = secrets.token_urlsafe(32)
         config.save()
-        messages.success(request, 'Token de API generado exitosamente.')
+        messages.success(request, gettext('Token de API generado exitosamente.'))
     
     return redirect('ocr_invoice_list')
 
@@ -55058,7 +55079,7 @@ def ocr_invoice_delete(request, pk):
         return redirect('ocr_invoice_list')
     
     context = {
-        'page_title': 'Eliminar Factura',
+        'page_title': gettext('Eliminar Factura'),
         'invoice': invoice,
     }
     return render(request, 'tickets/ocr_invoice_delete.html', context)
@@ -55127,7 +55148,7 @@ def ocr_invoice_process(request, pk):
         config = SystemConfiguration.get_config()
         
         if not config.openai_api_key:
-            messages.error(request, 'API key de OpenAI no configurada')
+            messages.error(request, gettext('API key de OpenAI no configurada'))
             return redirect('ocr_invoice_detail', pk=invoice.pk)
         
         # Leer la imagen y codificar en base64
@@ -55251,7 +55272,7 @@ Responde SOLO con el JSON válido, sin bloques de código ni texto adicional."""
         invoice.status = 'scanned'
         invoice.save()
         
-        messages.success(request, 'Factura procesada exitosamente con OCR!')
+        messages.success(request, gettext('Factura procesada exitosamente con OCR!'))
         return redirect('ocr_invoice_detail', pk=invoice.pk)
         
     except Exception as e:
@@ -55272,13 +55293,13 @@ def ocr_invoice_public_upload(request, token):
         form = OCRInvoicePublicForm(request.POST, request.FILES, instance=invoice)
         if form.is_valid():
             form.save()
-            messages.success(request, '¡Factura actualizada exitosamente!')
+            messages.success(request, gettext('¡Factura actualizada exitosamente!'))
             return redirect('ocr_invoice_public_upload', token=token)
     else:
         form = OCRInvoicePublicForm(instance=invoice)
     
     context = {
-        'page_title': 'Actualizar Factura',
+        'page_title': gettext('Actualizar Factura'),
         'form': form,
         'invoice': invoice,
     }
@@ -55295,13 +55316,13 @@ def ocr_invoice_public_new(request, token=None):
     
     # Si no está habilitado el enlace público, denegar acceso
     if not config.ocr_public_upload_enabled:
-        messages.error(request, 'El enlace público para subir facturas está desactivado.')
+        messages.error(request, gettext('El enlace público para subir facturas está desactivado.'))
         return redirect('/')
     
     # Si se proporciona token, validarlo
     if token:
         if not config.ocr_public_upload_token or config.ocr_public_upload_token != token:
-            messages.error(request, 'Token inválido.')
+            messages.error(request, gettext('Token inválido.'))
             return redirect('/')
     
     if request.method == 'POST':
@@ -55430,10 +55451,10 @@ Responde SOLO con el JSON válido, sin bloques de código ni texto adicional."""
                     invoice.status = 'scanned'
                     invoice.save()
                     
-                    messages.success(request, '¡Factura procesada exitosamente con OCR!')
+                    messages.success(request, gettext('¡Factura procesada exitosamente con OCR!'))
                 else:
                     invoice.save()
-                    messages.success(request, '¡Factura creada exitosamente!')
+                    messages.success(request, gettext('¡Factura creada exitosamente!'))
             except Exception as e:
                 invoice.save()
                 messages.warning(request, f'Factura creada pero no se pudo procesar con OCR: {str(e)}')
@@ -55446,7 +55467,7 @@ Responde SOLO con el JSON válido, sin bloques de código ni texto adicional."""
         form = OCRInvoicePublicForm()
     
     context = {
-        'page_title': 'Subir Nueva Factura',
+        'page_title': gettext('Subir Nueva Factura'),
         'form': form,
         'token': token,
     }
@@ -55467,7 +55488,7 @@ def user_public_workorder_token(request, pk):
     )
     
     context = {
-        'page_title': 'Token Público Órdenes de Trabajo',
+        'page_title': gettext('Token Público Órdenes de Trabajo'),
         'object': user,
         'public_url': public_url,
     }
@@ -56163,15 +56184,15 @@ def invoice_sequence_config(request):
         try:
             next_number = int(next_number)
             if next_number < 1:
-                messages.error(request, 'El próximo número debe ser mayor o igual a 1.')
+                messages.error(request, gettext('El próximo número debe ser mayor o igual a 1.'))
             else:
                 profile.invoice_sequence_prefix = prefix
                 profile.invoice_next_number = next_number
                 profile.save()
-                messages.success(request, 'Configuración de secuencia actualizada exitosamente.')
+                messages.success(request, gettext('Configuración de secuencia actualizada exitosamente.'))
                 return redirect('invoice_sequence_config')
         except ValueError:
-            messages.error(request, 'El próximo número debe ser un número válido.')
+            messages.error(request, gettext('El próximo número debe ser un número válido.'))
     
     context = {
         'profile': profile,
@@ -56195,9 +56216,9 @@ def invoice_add_message(request, pk):
                 user=request.user,
                 message=message_text
             )
-            messages.success(request, 'Mensaje agregado exitosamente.')
+            messages.success(request, gettext('Mensaje agregado exitosamente.'))
         else:
-            messages.error(request, 'El mensaje no puede estar vacío.')
+            messages.error(request, gettext('El mensaje no puede estar vacío.'))
     
     return redirect('invoice_detail', pk=pk)
 
@@ -56258,11 +56279,11 @@ def user_change_password(request, user_id):
         confirm_password = request.POST.get('confirm_password', '').strip()
         
         if not new_password:
-            messages.error(request, 'La contraseña no puede estar vacía.')
+            messages.error(request, gettext('La contraseña no puede estar vacía.'))
         elif len(new_password) < 4:
-            messages.error(request, 'La contraseña debe tener al menos 4 caracteres.')
+            messages.error(request, gettext('La contraseña debe tener al menos 4 caracteres.'))
         elif new_password != confirm_password:
-            messages.error(request, 'Las contraseñas no coinciden.')
+            messages.error(request, gettext('Las contraseñas no coinciden.'))
         else:
             user_to_edit.set_password(new_password)
             user_to_edit.save()
@@ -56327,7 +56348,7 @@ def manual_create(request):
     from .utils import is_agent
 
     if not (request.user.is_staff or request.user.is_superuser or is_agent(request.user)):
-        messages.error(request, 'No tienes permisos para crear manuales')
+        messages.error(request, gettext('No tienes permisos para crear manuales'))
         return redirect('manual_list')
 
     if request.method == 'POST':
@@ -56336,7 +56357,7 @@ def manual_create(request):
         description = request.POST.get('description', '').strip()
 
         if not title or not url:
-            messages.error(request, 'El título y la URL son obligatorios')
+            messages.error(request, gettext('El título y la URL son obligatorios'))
         else:
             Manual.objects.create(
                 title=title,
@@ -56359,7 +56380,7 @@ def manual_edit(request, pk):
     manual = get_object_or_404(Manual, pk=pk)
 
     if not (request.user.is_staff or request.user.is_superuser or is_agent(request.user)):
-        messages.error(request, 'No tienes permisos para editar manuales')
+        messages.error(request, gettext('No tienes permisos para editar manuales'))
         return redirect('manual_list')
 
     if request.method == 'POST':
@@ -56368,13 +56389,13 @@ def manual_edit(request, pk):
         description = request.POST.get('description', '').strip()
 
         if not title or not url:
-            messages.error(request, 'El título y la URL son obligatorios')
+            messages.error(request, gettext('El título y la URL son obligatorios'))
         else:
             manual.title = title
             manual.url = url
             manual.description = description
             manual.save()
-            messages.success(request, 'Manual actualizado exitosamente')
+            messages.success(request, gettext('Manual actualizado exitosamente'))
             return redirect('manual_list')
 
     context = {'manual': manual, 'accesses': manual.accesses.select_related('accessed_by').order_by('-accessed_at')}
@@ -56390,7 +56411,7 @@ def manual_delete(request, pk):
     manual = get_object_or_404(Manual, pk=pk)
 
     if not (request.user.is_staff or request.user.is_superuser or is_agent(request.user)):
-        messages.error(request, 'No tienes permisos para eliminar manuales')
+        messages.error(request, gettext('No tienes permisos para eliminar manuales'))
         return redirect('manual_list')
 
     if request.method == 'POST':
@@ -56487,7 +56508,7 @@ def rfi_create(request):
         assigned_user_id = request.POST.get('assigned_user', '').strip()
 
         if not title or not text:
-            messages.error(request, 'El título y el texto son obligatorios')
+            messages.error(request, gettext('El título y el texto son obligatorios'))
         else:
             company = Company.objects.filter(pk=company_id).first() if company_id else None
             assigned_user = User.objects.filter(pk=assigned_user_id).first() if assigned_user_id else None
@@ -56521,7 +56542,7 @@ def rfi_detail(request, pk):
         user_company = getattr(request.user, 'profile', None)
         user_company = user_company.company if user_company else None
         if rfi.created_by != request.user and rfi.company != user_company and rfi.assigned_user != request.user:
-            messages.error(request, 'No tienes acceso a este RFI')
+            messages.error(request, gettext('No tienes acceso a este RFI'))
             return redirect('rfi_list')
 
     can_manage = is_agent(request.user) or request.user.is_staff or request.user.is_superuser or rfi.created_by == request.user
@@ -56530,7 +56551,7 @@ def rfi_detail(request, pk):
         comment_text = request.POST.get('comment', '').strip()
         if comment_text:
             RFIComment.objects.create(rfi=rfi, author=request.user, text=comment_text)
-            messages.success(request, 'Comentario agregado')
+            messages.success(request, gettext('Comentario agregado'))
         return redirect('rfi_detail', pk=pk)
 
     comments = rfi.comments.select_related('author').order_by('created_at')
@@ -56552,7 +56573,7 @@ def rfi_delete(request, pk):
     rfi = get_object_or_404(RFI, pk=pk)
 
     if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser or rfi.created_by == request.user):
-        messages.error(request, 'No tienes permisos para eliminar este RFI')
+        messages.error(request, gettext('No tienes permisos para eliminar este RFI'))
         return redirect('rfi_list')
 
     if request.method == 'POST':
@@ -56575,7 +56596,7 @@ def rfi_edit(request, pk):
     rfi = get_object_or_404(RFI, pk=pk)
 
     if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser or rfi.created_by == request.user):
-        messages.error(request, 'No tienes permisos para editar este RFI')
+        messages.error(request, gettext('No tienes permisos para editar este RFI'))
         return redirect('rfi_detail', pk=pk)
 
     companies = Company.objects.filter(is_active=True).order_by('name') if hasattr(Company, 'is_active') else Company.objects.order_by('name')
@@ -56588,14 +56609,14 @@ def rfi_edit(request, pk):
         assigned_user_id = request.POST.get('assigned_user', '').strip()
 
         if not title or not text:
-            messages.error(request, 'El título y el texto son obligatorios')
+            messages.error(request, gettext('El título y el texto son obligatorios'))
         else:
             rfi.title = title
             rfi.text = text
             rfi.company = Company.objects.filter(pk=company_id).first() if company_id else None
             rfi.assigned_user = User.objects.filter(pk=assigned_user_id).first() if assigned_user_id else None
             rfi.save()
-            messages.success(request, 'RFI actualizado exitosamente')
+            messages.success(request, gettext('RFI actualizado exitosamente'))
             return redirect('rfi_detail', pk=pk)
 
     context = {
@@ -56673,7 +56694,7 @@ def ticket_update_commit(request, pk):
     if request.method == 'POST':
         ticket.commit = request.POST.get('commit', '').strip()
         ticket.save(update_fields=['commit'])
-        messages.success(request, 'Commit actualizado.')
+        messages.success(request, gettext('Commit actualizado.'))
     return redirect('ticket_detail', pk=pk)
 
 
@@ -56891,7 +56912,7 @@ def project_book_create(request):
     from .utils import is_agent
 
     if not (request.user.is_staff or request.user.is_superuser or is_agent(request.user)):
-        messages.error(request, 'No tienes permisos para crear libros de proyecto.')
+        messages.error(request, gettext('No tienes permisos para crear libros de proyecto.'))
         return redirect('project_book_list')
 
     companies = Company.objects.filter(is_active=True).order_by('name')
@@ -56908,7 +56929,7 @@ def project_book_create(request):
         tags = request.POST.get('tags', '').strip()
 
         if not title:
-            messages.error(request, 'El título es obligatorio.')
+            messages.error(request, gettext('El título es obligatorio.'))
         else:
             book = ProjectBook.objects.create(
                 title=title,
@@ -56948,7 +56969,7 @@ def project_book_detail(request, pk):
         is_assigned = book.assigned_user == user
         company_match = user_company and book.company == user_company
         if not (is_assigned or company_match):
-            messages.error(request, 'No tienes acceso a este libro de proyecto.')
+            messages.error(request, gettext('No tienes acceso a este libro de proyecto.'))
             return redirect('project_book_list')
 
     entries = book.entries.select_related('author').order_by('created_at')
@@ -56965,10 +56986,10 @@ def project_book_detail(request, pk):
                 attachment=attachment,
             )
             book.save()  # actualiza updated_at
-            messages.success(request, 'Entrada agregada.')
+            messages.success(request, gettext('Entrada agregada.'))
             return redirect('project_book_detail', pk=pk)
         else:
-            messages.error(request, 'El contenido no puede estar vacío.')
+            messages.error(request, gettext('El contenido no puede estar vacío.'))
 
     context = {
         'book': book,
@@ -56987,7 +57008,7 @@ def project_book_edit(request, pk):
     book = get_object_or_404(ProjectBook, pk=pk, is_active=True)
 
     if not (request.user.is_staff or request.user.is_superuser or is_agent(request.user)):
-        messages.error(request, 'No tienes permisos para editar libros de proyecto.')
+        messages.error(request, gettext('No tienes permisos para editar libros de proyecto.'))
         return redirect('project_book_detail', pk=pk)
 
     companies = Company.objects.filter(is_active=True).order_by('name')
@@ -57004,10 +57025,10 @@ def project_book_edit(request, pk):
         book.tags = request.POST.get('tags', '').strip()
 
         if not book.title:
-            messages.error(request, 'El título es obligatorio.')
+            messages.error(request, gettext('El título es obligatorio.'))
         else:
             book.save()
-            messages.success(request, 'Libro actualizado exitosamente.')
+            messages.success(request, gettext('Libro actualizado exitosamente.'))
             return redirect('project_book_detail', pk=pk)
 
     context = {
@@ -57029,7 +57050,7 @@ def project_book_delete(request, pk):
     book = get_object_or_404(ProjectBook, pk=pk)
 
     if not (request.user.is_staff or request.user.is_superuser or is_agent(request.user)):
-        messages.error(request, 'No tienes permisos para eliminar libros de proyecto.')
+        messages.error(request, gettext('No tienes permisos para eliminar libros de proyecto.'))
         return redirect('project_book_list')
 
     if request.method == 'POST':
@@ -57052,12 +57073,12 @@ def project_book_entry_delete(request, pk, entry_pk):
     agent = request.user.is_staff or request.user.is_superuser or is_agent(request.user)
 
     if not (agent or entry.author == request.user):
-        messages.error(request, 'No puedes eliminar esta entrada.')
+        messages.error(request, gettext('No puedes eliminar esta entrada.'))
         return redirect('project_book_detail', pk=pk)
 
     if request.method == 'POST':
         entry.delete()
-        messages.success(request, 'Entrada eliminada.')
+        messages.success(request, gettext('Entrada eliminada.'))
         return redirect('project_book_detail', pk=pk)
 
     return render(request, 'tickets/project_book_entry_delete.html', {'book': book, 'entry': entry})
@@ -57085,7 +57106,7 @@ def project_book_pdf(request, pk):
     if not agent:
         user_company = getattr(getattr(user, 'profile', None), 'company', None)
         if not (book.assigned_user == user or (user_company and book.company == user_company)):
-            messages.error(request, 'No tienes acceso a este libro.')
+            messages.error(request, gettext('No tienes acceso a este libro.'))
             return redirect('project_book_list')
 
     entries = book.entries.select_related('author').order_by('created_at')
@@ -57120,7 +57141,7 @@ def capacitacion_create(request):
     """Crear nueva capacitación (solo agentes)"""
     from .models import Capacitacion
     if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
-        messages.error(request, "No tienes permiso para crear capacitaciones.")
+        messages.error(request, gettext("No tienes permiso para crear capacitaciones."))
         return redirect("capacitacion_list")
     from .models import Company
     companies = Company.objects.filter(is_active=True).order_by("name")
@@ -57131,7 +57152,7 @@ def capacitacion_create(request):
         user_ids = request.POST.getlist("assigned_users")
         company_ids = request.POST.getlist("assigned_companies")
         if not titulo:
-            messages.error(request, "El título es obligatorio.")
+            messages.error(request, gettext("El título es obligatorio."))
         else:
             cap = Capacitacion.objects.create(
                 titulo=titulo,
@@ -57157,7 +57178,7 @@ def capacitacion_detail(request, pk):
     from .models import Capacitacion, CapacitacionLinea, CapacitacionRespuesta, CapacitacionClase, CapacitacionAsistencia, CapacitacionEnlace
     cap = get_object_or_404(Capacitacion, pk=pk)
     if not cap.user_can_view(request.user):
-        messages.error(request, "No tienes acceso a esta capacitación.")
+        messages.error(request, gettext("No tienes acceso a esta capacitación."))
         return redirect("capacitacion_list")
     can_manage = is_agent(request.user) or request.user.is_staff or request.user.is_superuser
     lineas = cap.lineas.select_related("clase").prefetch_related("respuestas__submitted_by").order_by("orden", "created_at")
@@ -57186,7 +57207,7 @@ def capacitacion_detail(request, pk):
                     orden=orden or 0,
                     clase=clase,
                 )
-                messages.success(request, "Tarea agregada.")
+                messages.success(request, gettext("Tarea agregada."))
         elif action == "edit_linea" and can_manage:
             linea_id = request.POST.get("linea_id")
             linea = lineas.filter(pk=linea_id).first()
@@ -57203,9 +57224,9 @@ def capacitacion_detail(request, pk):
                 linea.orden = orden or 0
                 linea.clase = clase
                 linea.save(update_fields=["tarea", "descripcion", "fecha", "orden", "clase"])
-                messages.success(request, "Tarea actualizada.")
+                messages.success(request, gettext("Tarea actualizada."))
             else:
-                messages.error(request, "El título de la tarea es obligatorio.")
+                messages.error(request, gettext("El título de la tarea es obligatorio."))
         elif action == "add_clase" and can_manage:
             titulo = request.POST.get("titulo", "").strip()
             fecha = request.POST.get("fecha", "").strip()
@@ -57221,9 +57242,9 @@ def capacitacion_detail(request, pk):
                     descripcion=descripcion,
                     orden=orden or 0,
                 )
-                messages.success(request, "Clase agregada.")
+                messages.success(request, gettext("Clase agregada."))
             else:
-                messages.error(request, "El título de la clase es obligatorio.")
+                messages.error(request, gettext("El título de la clase es obligatorio."))
         elif action == "edit_clase" and can_manage:
             clase_id = request.POST.get("clase_id")
             clase = clases.filter(pk=clase_id).first()
@@ -57239,9 +57260,9 @@ def capacitacion_detail(request, pk):
                 clase.descripcion = descripcion
                 clase.orden = orden or 0
                 clase.save(update_fields=["titulo", "fecha", "enlace", "descripcion", "orden"])
-                messages.success(request, "Clase actualizada.")
+                messages.success(request, gettext("Clase actualizada."))
             else:
-                messages.error(request, "El título de la clase es obligatorio.")
+                messages.error(request, gettext("El título de la clase es obligatorio."))
         elif action == "edit_resumen" and can_manage:
             clase_id = request.POST.get("clase_id")
             resumen = request.POST.get("resumen", "").strip()
@@ -57249,7 +57270,7 @@ def capacitacion_detail(request, pk):
             if clase:
                 clase.resumen = resumen
                 clase.save(update_fields=["resumen"])
-                messages.success(request, "Resumen guardado.")
+                messages.success(request, gettext("Resumen guardado."))
         elif action == "add_enlace" and can_manage:
             titulo = request.POST.get("titulo", "").strip()
             url = request.POST.get("url", "").strip()
@@ -57265,9 +57286,9 @@ def capacitacion_detail(request, pk):
                     contrasena=contrasena,
                     orden=orden or 0,
                 )
-                messages.success(request, "Enlace agregado.")
+                messages.success(request, gettext("Enlace agregado."))
             else:
-                messages.error(request, "Título y URL son obligatorios.")
+                messages.error(request, gettext("Título y URL son obligatorios."))
         elif action == "edit_enlace" and can_manage:
             enlace_id = request.POST.get("enlace_id")
             enlace_obj = enlaces.filter(pk=enlace_id).first()
@@ -57283,9 +57304,9 @@ def capacitacion_detail(request, pk):
                 enlace_obj.contrasena = contrasena
                 enlace_obj.orden = orden or 0
                 enlace_obj.save(update_fields=["titulo", "url", "usuario", "contrasena", "orden"])
-                messages.success(request, "Enlace actualizado.")
+                messages.success(request, gettext("Enlace actualizado."))
             else:
-                messages.error(request, "Título y URL son obligatorios.")
+                messages.error(request, gettext("Título y URL son obligatorios."))
         elif action == "add_asistencia" and can_manage:
             clase_id = request.POST.get("clase_id")
             nombre = request.POST.get("nombre", "").strip()
@@ -57301,9 +57322,9 @@ def capacitacion_detail(request, pk):
                     telefono=telefono,
                     cargo=cargo,
                 )
-                messages.success(request, "Asistencia registrada.")
+                messages.success(request, gettext("Asistencia registrada."))
             else:
-                messages.error(request, "El nombre es obligatorio.")
+                messages.error(request, gettext("El nombre es obligatorio."))
         elif action == "add_respuesta":
             linea_id = request.POST.get("linea_id")
             nombre = request.POST.get("nombre", "").strip()
@@ -57316,9 +57337,9 @@ def capacitacion_detail(request, pk):
                     enlace=enlace,
                     submitted_by=request.user,
                 )
-                messages.success(request, "Respuesta enviada.")
+                messages.success(request, gettext("Respuesta enviada."))
             else:
-                messages.error(request, "Nombre y enlace son obligatorios.")
+                messages.error(request, gettext("Nombre y enlace son obligatorios."))
         return redirect("capacitacion_detail", pk=pk)
 
     return render(request, "tickets/capacitacion_detail.html", {
@@ -57337,7 +57358,7 @@ def capacitacion_edit(request, pk):
     from .models import Company
     cap = get_object_or_404(Capacitacion, pk=pk)
     if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
-        messages.error(request, "No tienes permiso para editar esta capacitación.")
+        messages.error(request, gettext("No tienes permiso para editar esta capacitación."))
         return redirect("capacitacion_detail", pk=pk)
     companies = Company.objects.filter(is_active=True).order_by("name")
     users = User.objects.filter(is_active=True).order_by("first_name", "last_name", "username")
@@ -57348,7 +57369,7 @@ def capacitacion_edit(request, pk):
         company_ids = request.POST.getlist("assigned_companies")
         is_active = request.POST.get("is_active") == "on"
         if not titulo:
-            messages.error(request, "El título es obligatorio.")
+            messages.error(request, gettext("El título es obligatorio."))
         else:
             cap.titulo = titulo
             cap.temas = temas
@@ -57356,7 +57377,7 @@ def capacitacion_edit(request, pk):
             cap.save()
             cap.assigned_users.set(User.objects.filter(pk__in=user_ids))
             cap.assigned_companies.set(companies.filter(pk__in=company_ids))
-            messages.success(request, "Capacitación actualizada.")
+            messages.success(request, gettext("Capacitación actualizada."))
             return redirect("capacitacion_detail", pk=pk)
     return render(request, "tickets/capacitacion_form.html", {
         "cap": cap,
@@ -57371,7 +57392,7 @@ def capacitacion_duplicate(request, pk):
     from .models import Capacitacion, CapacitacionClase, CapacitacionLinea, CapacitacionEnlace
     cap = get_object_or_404(Capacitacion, pk=pk)
     if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
-        messages.error(request, "No tienes permiso para duplicar esta capacitación.")
+        messages.error(request, gettext("No tienes permiso para duplicar esta capacitación."))
         return redirect("capacitacion_detail", pk=pk)
     if request.method == "POST":
         new_cap = Capacitacion.objects.create(
@@ -57425,7 +57446,7 @@ def capacitacion_delete(request, pk):
     from .models import Capacitacion
     cap = get_object_or_404(Capacitacion, pk=pk)
     if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
-        messages.error(request, "No tienes permiso para eliminar esta capacitación.")
+        messages.error(request, gettext("No tienes permiso para eliminar esta capacitación."))
         return redirect("capacitacion_detail", pk=pk)
     if request.method == "POST":
         titulo = cap.titulo
@@ -57442,11 +57463,11 @@ def capacitacion_linea_delete(request, pk, linea_id):
     cap = get_object_or_404(Capacitacion, pk=pk)
     linea = get_object_or_404(CapacitacionLinea, pk=linea_id, capacitacion=cap)
     if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
-        messages.error(request, "No tienes permiso.")
+        messages.error(request, gettext("No tienes permiso."))
         return redirect("capacitacion_detail", pk=pk)
     if request.method == "POST":
         linea.delete()
-        messages.success(request, "Línea eliminada.")
+        messages.success(request, gettext("Línea eliminada."))
     return redirect("capacitacion_detail", pk=pk)
 
 
@@ -57457,11 +57478,11 @@ def capacitacion_clase_delete(request, pk, clase_id):
     cap = get_object_or_404(Capacitacion, pk=pk)
     clase = get_object_or_404(CapacitacionClase, pk=clase_id, capacitacion=cap)
     if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
-        messages.error(request, "No tienes permiso.")
+        messages.error(request, gettext("No tienes permiso."))
         return redirect("capacitacion_detail", pk=pk)
     if request.method == "POST":
         clase.delete()
-        messages.success(request, "Clase eliminada.")
+        messages.success(request, gettext("Clase eliminada."))
     return redirect("capacitacion_detail", pk=pk)
 
 
@@ -57472,11 +57493,11 @@ def capacitacion_enlace_delete(request, pk, enlace_id):
     cap = get_object_or_404(Capacitacion, pk=pk)
     enlace = get_object_or_404(CapacitacionEnlace, pk=enlace_id, capacitacion=cap)
     if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
-        messages.error(request, "No tienes permiso.")
+        messages.error(request, gettext("No tienes permiso."))
         return redirect("capacitacion_detail", pk=pk)
     if request.method == "POST":
         enlace.delete()
-        messages.success(request, "Enlace eliminado.")
+        messages.success(request, gettext("Enlace eliminado."))
     return redirect("capacitacion_detail", pk=pk)
 
 
@@ -57487,11 +57508,11 @@ def capacitacion_comentario_delete(request, pk, comentario_id):
     cap = get_object_or_404(Capacitacion, pk=pk)
     comentario = get_object_or_404(CapacitacionClaseComentario, pk=comentario_id, clase__capacitacion=cap)
     if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
-        messages.error(request, "No tienes permiso.")
+        messages.error(request, gettext("No tienes permiso."))
         return redirect("capacitacion_detail", pk=pk)
     if request.method == "POST":
         comentario.delete()
-        messages.success(request, "Comentario eliminado.")
+        messages.success(request, gettext("Comentario eliminado."))
     return redirect("capacitacion_detail", pk=pk)
 
 
@@ -57502,11 +57523,11 @@ def capacitacion_asistencia_delete(request, pk, asistencia_id):
     cap = get_object_or_404(Capacitacion, pk=pk)
     asistencia = get_object_or_404(CapacitacionAsistencia, pk=asistencia_id, clase__capacitacion=cap)
     if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
-        messages.error(request, "No tienes permiso.")
+        messages.error(request, gettext("No tienes permiso."))
         return redirect("capacitacion_detail", pk=pk)
     if request.method == "POST":
         asistencia.delete()
-        messages.success(request, "Asistencia eliminada.")
+        messages.success(request, gettext("Asistencia eliminada."))
     return redirect("capacitacion_detail", pk=pk)
 
 
@@ -57517,7 +57538,7 @@ def capacitacion_solicitud_toggle(request, pk, solicitud_id):
     cap = get_object_or_404(Capacitacion, pk=pk)
     solicitud = get_object_or_404(CapacitacionSolicitudCambio, pk=solicitud_id, clase__capacitacion=cap)
     if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
-        messages.error(request, "No tienes permiso.")
+        messages.error(request, gettext("No tienes permiso."))
         return redirect("capacitacion_detail", pk=pk)
     if request.method == "POST":
         solicitud.atendida = not solicitud.atendida
@@ -57532,11 +57553,11 @@ def capacitacion_solicitud_delete(request, pk, solicitud_id):
     cap = get_object_or_404(Capacitacion, pk=pk)
     solicitud = get_object_or_404(CapacitacionSolicitudCambio, pk=solicitud_id, clase__capacitacion=cap)
     if not (is_agent(request.user) or request.user.is_staff or request.user.is_superuser):
-        messages.error(request, "No tienes permiso.")
+        messages.error(request, gettext("No tienes permiso."))
         return redirect("capacitacion_detail", pk=pk)
     if request.method == "POST":
         solicitud.delete()
-        messages.success(request, "Solicitud eliminada.")
+        messages.success(request, gettext("Solicitud eliminada."))
     return redirect("capacitacion_detail", pk=pk)
 
 
@@ -57553,11 +57574,11 @@ def capacitacion_respuesta_delete(request, pk, respuesta_id):
         or respuesta.submitted_by == request.user
     )
     if not can_delete:
-        messages.error(request, "No tienes permiso.")
+        messages.error(request, gettext("No tienes permiso."))
         return redirect("capacitacion_detail", pk=pk)
     if request.method == "POST":
         respuesta.delete()
-        messages.success(request, "Respuesta eliminada.")
+        messages.success(request, gettext("Respuesta eliminada."))
     return redirect("capacitacion_detail", pk=pk)
 
 
@@ -57847,7 +57868,7 @@ def process_survey_list(request):
     page_obj = paginator.get_page(request.GET.get('page'))
 
     context = {
-        'page_title': 'Levantamiento de Procesos',
+        'page_title': gettext('Levantamiento de Procesos'),
         'page_obj': page_obj,
         'search': search,
         'submenu': get_crm_submenu(request, active_item='process_surveys'),
@@ -57906,7 +57927,7 @@ def process_survey_create(request):
         company_id = request.POST.get('company', '').strip()
 
         if not name or not date:
-            messages.error(request, 'El nombre y la fecha son obligatorios.')
+            messages.error(request, gettext('El nombre y la fecha son obligatorios.'))
         else:
             company = None
             if company_id:
@@ -57947,7 +57968,7 @@ def process_survey_create(request):
     users = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
     from .models import ProcessSurveyLineCategory
     context = {
-        'page_title': 'Nuevo Levantamiento de Procesos',
+        'page_title': gettext('Nuevo Levantamiento de Procesos'),
         'action': 'create',
         'companies': companies,
         'users': users,
@@ -58101,7 +58122,7 @@ def process_survey_line_comment_delete(request, comment_pk):
     if request.method == 'POST':
         comment.delete()
         from django.contrib import messages
-        messages.success(request, 'Comentario eliminado.')
+        messages.success(request, gettext('Comentario eliminado.'))
     return redirect('public_process_survey', token=survey.public_share_token)
 
 
@@ -58181,7 +58202,7 @@ def process_survey_new_version(request, pk):
     max_version = survey.lines.aggregate(v=Max('version'))['v'] or 1
 
     if max_version >= 10:
-        messages.error(request, 'Se ha alcanzado el límite máximo de 10 versiones.')
+        messages.error(request, gettext('Se ha alcanzado el límite máximo de 10 versiones.'))
         return redirect('process_survey_detail', pk=pk)
 
     new_version = max_version + 1
@@ -58237,7 +58258,7 @@ def process_survey_lines_to_tickets(request, pk):
             pass
 
     if not line_ids:
-        messages.warning(request, 'No seleccionaste ninguna línea.')
+        messages.warning(request, gettext('No seleccionaste ninguna línea.'))
         return redirect('process_survey_detail', pk=pk)
 
     created_count = 0
@@ -58348,7 +58369,7 @@ def process_survey_edit(request, pk):
         company_id = request.POST.get('company', '').strip()
 
         if not name or not date:
-            messages.error(request, 'El nombre y la fecha son obligatorios.')
+            messages.error(request, gettext('El nombre y la fecha son obligatorios.'))
         else:
             survey.name = name
             survey.date = date
@@ -58454,7 +58475,7 @@ def process_survey_contract_save(request, pk):
         survey.save(update_fields=['contract_title', 'contract_date', 'contract_expiration_date', 'is_public_contract'])
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'ok': True})
-        messages.success(request, 'Encabezado del contrato guardado.')
+        messages.success(request, gettext('Encabezado del contrato guardado.'))
         return redirect('process_survey_detail', pk=pk)
     return redirect('process_survey_detail', pk=pk)
 
@@ -58472,7 +58493,7 @@ def process_survey_client_signature_delete(request, pk):
         survey.client_signed_name = ''
         survey.client_signed_email = ''
         survey.save(update_fields=['client_signature_image', 'client_signed_at', 'client_signed_name', 'client_signed_email'])
-        messages.success(request, 'Firma del cliente eliminada.')
+        messages.success(request, gettext('Firma del cliente eliminada.'))
     return redirect('process_survey_detail', pk=pk)
 
 
@@ -58490,7 +58511,7 @@ def process_survey_parties_save(request, pk):
         for f in fields:
             setattr(survey, f, request.POST.get(f, '').strip())
         survey.save(update_fields=fields)
-        messages.success(request, 'Datos de las partes guardados.')
+        messages.success(request, gettext('Datos de las partes guardados.'))
     return redirect('process_survey_detail', pk=pk)
 
 
@@ -58507,7 +58528,7 @@ def process_survey_clause_add(request, pk):
         if not body:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'ok': False, 'error': 'El texto de la cláusula es obligatorio.'}, status=400)
-            messages.error(request, 'El texto de la cláusula es obligatorio.')
+            messages.error(request, gettext('El texto de la cláusula es obligatorio.'))
             return redirect('process_survey_detail', pk=pk)
         last_order = survey.clauses.aggregate(m=models.Max('order'))['m'] or 0
         clause = ProcessSurveyClause.objects.create(
@@ -58534,7 +58555,7 @@ def process_survey_clause_edit(request, clause_pk):
         if not body:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'ok': False, 'error': 'El texto es obligatorio.'}, status=400)
-            messages.error(request, 'El texto de la cláusula es obligatorio.')
+            messages.error(request, gettext('El texto de la cláusula es obligatorio.'))
             return redirect('process_survey_detail', pk=survey.pk)
         clause.title = title
         clause.body = body
@@ -58881,12 +58902,12 @@ def public_process_survey_view(request, token):
             elif new_status == 'rechazado':
                 reason = request.POST.get('rejection_reason', '').strip()
                 if not reason:
-                    messages.error(request, 'Debes indicar el motivo del rechazo.')
+                    messages.error(request, gettext('Debes indicar el motivo del rechazo.'))
                 else:
                     survey.status = 'rechazado'
                     survey.rejection_reason = reason
                     survey.save(update_fields=['status', 'rejection_reason'])
-                    messages.success(request, 'El levantamiento fue marcado como Rechazado.')
+                    messages.success(request, gettext('El levantamiento fue marcado como Rechazado.'))
             return redirect('public_process_survey', token=token)
 
         # ── Firma de acuerdo ──────────────────────────────────────────────
@@ -58897,10 +58918,10 @@ def public_process_survey_view(request, token):
             signature_data = request.POST.get('signature_data', '').strip()
 
             if not signer_name:
-                messages.error(request, 'El nombre del firmante es obligatorio.')
+                messages.error(request, gettext('El nombre del firmante es obligatorio.'))
                 return redirect('public_process_survey', token=token)
             if not signature_data or not signature_data.startswith('data:image/'):
-                messages.error(request, 'Debes dibujar tu firma antes de enviar.')
+                messages.error(request, gettext('Debes dibujar tu firma antes de enviar.'))
                 return redirect('public_process_survey', token=token)
 
             # Obtener IP del cliente
@@ -58927,7 +58948,7 @@ def public_process_survey_view(request, token):
             proposer_email = request.POST.get('proposer_email', '').strip()
 
             if not new_title:
-                messages.error(request, 'El título del proceso es obligatorio.')
+                messages.error(request, gettext('El título del proceso es obligatorio.'))
                 return redirect('public_process_survey', token=token)
 
             max_order = survey.lines.aggregate(m=models.Max('order'))['m'] or 0
@@ -58951,7 +58972,7 @@ def public_process_survey_view(request, token):
         # ── Aceptar / Rechazar línea ──────────────────────────────────────
         line_id = request.POST.get('line_id', '').strip()
         if not line_id:
-            messages.error(request, 'Petición inválida.')
+            messages.error(request, gettext('Petición inválida.'))
             return redirect('public_process_survey', token=token)
 
         line = get_object_or_404(ProcessSurveyLine, pk=line_id, survey=survey)
@@ -58971,10 +58992,10 @@ def public_process_survey_view(request, token):
             new_description = request.POST.get('new_description', '').strip()
 
             if not author_name:
-                messages.error(request, 'El nombre es obligatorio para editar.')
+                messages.error(request, gettext('El nombre es obligatorio para editar.'))
                 return redirect('public_process_survey', token=token)
             if not new_title:
-                messages.error(request, 'El título no puede estar vacío.')
+                messages.error(request, gettext('El título no puede estar vacío.'))
                 return redirect('public_process_survey', token=token)
 
             old_title = line.title
@@ -58997,7 +59018,7 @@ def public_process_survey_view(request, token):
                 line.save(update_fields=['title', 'description'])
                 messages.success(request, f'Línea actualizada. Los valores anteriores quedaron guardados como comentario.')
             else:
-                messages.info(request, 'No se detectaron cambios.')
+                messages.info(request, gettext('No se detectaron cambios.'))
             return redirect('public_process_survey', token=token)
 
         # ── Comentario / adjunto ──────────────────────────────────────────
@@ -59007,7 +59028,7 @@ def public_process_survey_view(request, token):
         attachment = request.FILES.get('attachment')
 
         if not author_name:
-            messages.error(request, 'El nombre es obligatorio.')
+            messages.error(request, gettext('El nombre es obligatorio.'))
             return redirect('public_process_survey', token=token)
 
         if attachment:
@@ -59015,7 +59036,7 @@ def public_process_survey_view(request, token):
             allowed = ['.pdf', '.doc', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.gif', '.zip', '.xlsx', '.xls']
             ext = os.path.splitext(attachment.name.lower())[1]
             if attachment.size > max_size:
-                messages.error(request, 'El archivo supera el tamaño máximo de 10 MB.')
+                messages.error(request, gettext('El archivo supera el tamaño máximo de 10 MB.'))
                 return redirect('public_process_survey', token=token)
             if ext not in allowed:
                 messages.error(request, f'Tipo de archivo no permitido ({ext}).')
@@ -59028,7 +59049,7 @@ def public_process_survey_view(request, token):
             body=body,
             attachment=attachment or None,
         )
-        messages.success(request, 'Comentario enviado correctamente.')
+        messages.success(request, gettext('Comentario enviado correctamente.'))
         return redirect('public_process_survey', token=token)
 
     signatures = survey.signatures.all()
@@ -59337,7 +59358,7 @@ def process_survey_contract_views_reset(request, pk):
     survey = get_object_or_404(ProcessSurvey, pk=pk)
     if request.method == 'POST':
         survey.contract_views.all().delete()
-        messages.success(request, 'Contador de visitas reiniciado.')
+        messages.success(request, gettext('Contador de visitas reiniciado.'))
     return redirect('process_survey_contract_stats', pk=pk)
 
 
@@ -59939,7 +59960,7 @@ def project_info_list(request):
     paginator = Paginator(qs, 20)
     page_obj = paginator.get_page(request.GET.get('page'))
     context = {
-        'page_title': 'Información de Proyectos',
+        'page_title': gettext('Información de Proyectos'),
         'page_obj': page_obj,
         'search': search,
         'submenu': get_crm_submenu(request, active_item='project_info'),
@@ -59959,7 +59980,7 @@ def project_info_create(request):
         description = request.POST.get('description', '').strip()
         pin = request.POST.get('pin', '').strip()
         if not name:
-            messages.error(request, 'El nombre es obligatorio.')
+            messages.error(request, gettext('El nombre es obligatorio.'))
         else:
             company = get_object_or_404(Company, pk=company_id) if company_id else None
             project = ProjectInfo.objects.create(
@@ -59975,7 +59996,7 @@ def project_info_create(request):
 
     companies = Company.objects.filter(is_active=True).order_by('name')
     context = {
-        'page_title': 'Nuevo Proyecto',
+        'page_title': gettext('Nuevo Proyecto'),
         'action': 'create',
         'companies': companies,
         'line_categories': _get_line_categories(),
@@ -60038,7 +60059,7 @@ def project_info_edit(request, pk):
         description = request.POST.get('description', '').strip()
         pin = request.POST.get('pin', '').strip()
         if not name:
-            messages.error(request, 'El nombre es obligatorio.')
+            messages.error(request, gettext('El nombre es obligatorio.'))
         else:
             project.name = name
             project.company = get_object_or_404(Company, pk=company_id) if company_id else None
@@ -60467,7 +60488,7 @@ def project_info_link_list(request):
     paginator = Paginator(qs, 20)
     page_obj = paginator.get_page(request.GET.get('page'))
     context = {
-        'page_title': 'Enlaces de Proyectos',
+        'page_title': gettext('Enlaces de Proyectos'),
         'page_obj': page_obj,
         'search': search,
         'submenu': get_crm_submenu(request, active_item='project_info_links'),

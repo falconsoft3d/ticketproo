@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 {% load static %}
 <html lang="es">
@@ -24,9 +25,9 @@
             <h4 class="text-white-50 mb-1">{{ config.site_name }}</h4>
         {% endif %}
         <h2 class="fw-bold text-white">
-            {% if step == 1 %}¿Quién eres?
-            {% elif step == 2 %}¿De qué quieres hablar?
-            {% else %}¡Muchas gracias!
+            {% if step == 1 %}{% translate "¿Quién eres?" %}
+            {% elif step == 2 %}{% translate "¿De qué quieres hablar?" %}
+            {% else %}{% translate "¡Muchas gracias!" %}
             {% endif %}
         </h2>
         <!-- Barra de progreso -->
@@ -52,14 +53,14 @@
                 <input type="hidden" name="action" value="step1">
 
                 <div class="mb-4">
-                    <label class="form-label fw-semibold">¿Cuál es tu nombre? <span class="text-danger">*</span></label>
+                    <label class="form-label fw-semibold">{% translate "¿Cuál es tu nombre?" %} <span class="text-danger">*</span></label>
                     <input type="text" name="nombre" class="form-control form-control-lg"
-                        placeholder="Tu nombre completo"
+                        placeholder="{% translate 'Tu nombre completo' %}"
                         value="{{ data.nombre|default:'' }}" required autofocus>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-semibold">¿Cuál es tu email? <span class="text-danger">*</span></label>
+                    <label class="form-label fw-semibold">{% translate "¿Cuál es tu email?" %} <span class="text-danger">*</span></label>
                     <input type="email" name="email" class="form-control form-control-lg"
                         placeholder="tu@correo.com"
                         value="{{ data.email|default:'' }}" required>
@@ -67,34 +68,34 @@
 
                 <div class="row g-3 mb-4">
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Teléfono <span class="text-muted small fw-normal">(opcional)</span></label>
+                        <label class="form-label fw-semibold">{% translate "Teléfono" %} <span class="text-muted small fw-normal">{% translate "(opcional)" %}</span></label>
                         <input type="tel" name="telefono" class="form-control form-control-lg"
                             placeholder="+34 600 000 000"
                             value="{{ data.telefono|default:'' }}">
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Empresa <span class="text-muted small fw-normal">(opcional)</span></label>
+                        <label class="form-label fw-semibold">{% translate "Empresa" %} <span class="text-muted small fw-normal">{% translate "(opcional)" %}</span></label>
                         <input type="text" name="empresa" class="form-control form-control-lg"
-                            placeholder="Tu empresa"
+                            placeholder="{% translate 'Tu empresa' %}"
                             value="{{ data.empresa|default:'' }}">
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">País <span class="text-muted small fw-normal">(opcional)</span></label>
+                        <label class="form-label fw-semibold">{% translate "País" %} <span class="text-muted small fw-normal">{% translate "(opcional)" %}</span></label>
                         <input type="text" name="pais" class="form-control form-control-lg"
-                            placeholder="España, México..."
+                            placeholder="{% translate 'España, México...' %}"
                             value="{{ data.pais|default:'' }}">
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Ciudad <span class="text-muted small fw-normal">(opcional)</span></label>
+                        <label class="form-label fw-semibold">{% translate "Ciudad" %} <span class="text-muted small fw-normal">{% translate "(opcional)" %}</span></label>
                         <input type="text" name="ciudad" class="form-control form-control-lg"
-                            placeholder="Madrid, CDMX..."
+                            placeholder="{% translate 'Madrid, CDMX...' %}"
                             value="{{ data.ciudad|default:'' }}">
                     </div>
                 </div>
 
                 <div class="d-grid">
                     <button type="submit" class="btn btn-primary btn-lg fw-bold">
-                        Continuar <i class="bi bi-arrow-right ms-1"></i>
+                        {% translate "Continuar" %} <i class="bi bi-arrow-right ms-1"></i>
                     </button>
                 </div>
             </form>
@@ -107,7 +108,7 @@
         <div class="card-body p-4 p-md-5">
 
             {% if data.nombre %}
-            <p class="text-muted mb-4">Hola <strong>{{ data.nombre }}</strong>, cuéntame...</p>
+            <p class="text-muted mb-4">{% translate "Hola" %} <strong>{{ data.nombre }}</strong>{% translate ", cuéntame..." %}</p>
             {% endif %}
 
             <form method="post" novalidate>
@@ -115,7 +116,7 @@
                 <input type="hidden" name="action" value="step2">
 
                 <div class="mb-4">
-                    <label class="form-label fw-semibold">¿De qué deseas hablar conmigo? <span class="text-danger">*</span></label>
+                    <label class="form-label fw-semibold">{% translate "¿De qué deseas hablar conmigo?" %} <span class="text-danger">*</span></label>
                     <textarea name="mensaje" class="form-control" rows="7"
                         placeholder="Cuéntame tu proyecto, consulta o idea... estoy aquí para escucharte."
                         required autofocus>{{ data.mensaje|default:'' }}</textarea>
@@ -129,10 +130,10 @@
                             {% if data.acepto_forma_trabajo %}checked{% endif %}
                             required>
                         <label class="form-check-label" for="acepto_forma_trabajo">
-                            He revisado la
+                            {% translate "He revisado la" %}
                             <a href="{{ forma_trabajo_url }}" target="_blank" rel="noopener noreferrer"
-                                class="text-primary fw-semibold">forma de trabajo</a>
-                            y estoy de acuerdo <span class="text-danger">*</span>
+                                class="text-primary fw-semibold">{% translate "forma de trabajo" %}</a>
+                            {% translate "y estoy de acuerdo" %} <span class="text-danger">*</span>
                         </label>
                     </div>
                 </div>
@@ -140,10 +141,10 @@
 
                 <div class="d-flex gap-2">
                     <button type="submit" name="action" value="restart" class="btn btn-outline-secondary btn-lg">
-                        <i class="bi bi-arrow-left me-1"></i> Atrás
+                        <i class="bi bi-arrow-left me-1"></i> {% translate "Atrás" %}
                     </button>
                     <button type="submit" class="btn btn-primary btn-lg fw-bold flex-grow-1">
-                        Enviar <i class="bi bi-send ms-1"></i>
+                        {% translate "Enviar" %} <i class="bi bi-send ms-1"></i>
                     </button>
                 </div>
             </form>
@@ -155,17 +156,17 @@
     <div class="text-center">
         {% if ya_registrado %}
         <div class="display-1 mb-4" style="color: #ffd700;"><i class="bi bi-person-check-fill"></i></div>
-        <h2 class="fw-bold text-white mb-3">¡Ya te tenemos en nuestros registros!</h2>
+        <h2 class="fw-bold text-white mb-3">{% translate "¡Ya te tenemos en nuestros registros!" %}</h2>
         <p class="lead text-white-50 mb-4">
-            Tu email ya está registrado en nuestra base de datos.<br>
-            Nos pondremos en contacto contigo muy pronto, ¡gracias por escribirnos de nuevo!
+            {% translate "Tu email ya está registrado en nuestra base de datos." %}<br>
+            {% translate "Nos pondremos en contacto contigo muy pronto, ¡gracias por escribirnos de nuevo!" %}
         </p>
         {% else %}
         <div class="display-1 mb-4" style="color: #a8f0c6;"><i class="bi bi-check-circle-fill"></i></div>
-        <h2 class="fw-bold text-white mb-3">¡Muchas gracias!</h2>
+        <h2 class="fw-bold text-white mb-3">{% translate "¡Muchas gracias!" %}</h2>
         <p class="lead text-white-50 mb-4">
-            Me pondré en contacto contigo de inmediato.<br>
-            Cuida ese entusiasmo, ¡grandes cosas están por venir!
+            {% translate "Me pondré en contacto contigo de inmediato." %}<br>
+            {% translate "Cuida ese entusiasmo, ¡grandes cosas están por venir!" %}
         </p>
         {% endif %}
 
@@ -174,11 +175,11 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="restart">
                 <button type="submit" class="btn btn-outline-light btn-lg">
-                    <i class="bi bi-person-plus me-1"></i> Enviar otro mensaje
+                    <i class="bi bi-person-plus me-1"></i> {% translate "Enviar otro mensaje" %}
                 </button>
             </form>
             <a href="{% url 'home' %}" class="btn btn-light btn-lg fw-bold">
-                <i class="bi bi-house me-1"></i> Ir al inicio
+                <i class="bi bi-house me-1"></i> {% translate "Ir al inicio" %}
             </a>
         </div>
     </div>

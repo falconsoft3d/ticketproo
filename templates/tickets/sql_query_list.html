@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Consultas SQL Guardadas{% endblock %}
+{% block title %}{% translate "Consultas SQL Guardadas" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -9,11 +10,11 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2><i class="bi bi-database"></i> Consultas SQL Guardadas</h2>
-                    <p class="text-muted">Tus consultas SQL guardadas</p>
+                    <h2><i class="bi bi-database"></i> {% translate "Consultas SQL Guardadas" %}</h2>
+                    <p class="text-muted">{% translate "Tus consultas SQL guardadas" %}</p>
                 </div>
                 <a href="{% url 'sql_query_tool' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Nueva Consulta
+                    <i class="bi bi-plus-circle"></i> {% translate "Nueva Consulta" %}
                 </a>
             </div>
 
@@ -38,22 +39,22 @@
                                     <ul class="dropdown-menu dropdown-menu-end">
                                         <li>
                                             <a class="dropdown-item" href="{% url 'sql_query_detail' query.pk %}">
-                                                <i class="bi bi-eye"></i> Ver Detalle
+                                                <i class="bi bi-eye"></i> {% translate "Ver Detalle" %}
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item" href="{% url 'sql_query_toggle_favorite' query.pk %}">
                                                 {% if query.is_favorite %}
-                                                <i class="bi bi-star"></i> Quitar de Favoritos
+                                                <i class="bi bi-star"></i> {% translate "Quitar de Favoritos" %}
                                                 {% else %}
-                                                <i class="bi bi-star-fill"></i> Agregar a Favoritos
+                                                <i class="bi bi-star-fill"></i> {% translate "Agregar a Favoritos" %}
                                                 {% endif %}
                                             </a>
                                         </li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li>
                                             <a class="dropdown-item text-danger" href="{% url 'sql_query_delete' query.pk %}">
-                                                <i class="bi bi-trash"></i> Eliminar
+                                                <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                                             </a>
                                         </li>
                                     </ul>
@@ -89,7 +90,7 @@
                         </div>
                         <div class="card-footer bg-transparent">
                             <a href="{% url 'sql_query_detail' query.pk %}" class="btn btn-sm btn-primary w-100">
-                                <i class="bi bi-play-fill"></i> Ver y Ejecutar
+                                <i class="bi bi-play-fill"></i> {% translate "Ver y Ejecutar" %}
                             </a>
                         </div>
                     </div>
@@ -99,9 +100,9 @@
             {% else %}
             <div class="text-center py-5">
                 <i class="bi bi-inbox display-1 text-muted"></i>
-                <p class="text-muted mt-3">No tienes consultas guardadas</p>
+                <p class="text-muted mt-3">{% translate "No tienes consultas guardadas" %}</p>
                 <a href="{% url 'sql_query_tool' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Crear Primera Consulta
+                    <i class="bi bi-plus-circle"></i> {% translate "Crear Primera Consulta" %}
                 </a>
             </div>
             {% endif %}

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -11,10 +12,10 @@
                 <h2><i class="bi bi-list text-primary"></i> {{ page_title }}</h2>
                 <div class="btn-group" role="group">
                     <a href="#" onclick="exportToExcel()" class="btn btn-success">
-                        <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+                        <i class="bi bi-file-earmark-excel"></i> {% translate "Exportar a Excel" %}
                     </a>
                     <a href="{% url 'time_clock' %}" class="btn btn-primary">
-                        <i class="bi bi-clock"></i> Control de Horario
+                        <i class="bi bi-clock"></i> {% translate "Control de Horario" %}
                     </a>
                 </div>
             </div>
@@ -28,7 +29,7 @@
             <div class="card border-primary">
                 <div class="card-body text-center">
                     <h4 class="text-primary">{{ total_horas }}h</h4>
-                    <small class="text-muted">Total de Horas</small>
+                    <small class="text-muted">{% translate "Total de Horas" %}</small>
                 </div>
             </div>
         </div>
@@ -36,7 +37,7 @@
             <div class="card border-info">
                 <div class="card-body text-center">
                     <h4 class="text-info">{{ total_dias }}</h4>
-                    <small class="text-muted">Días Trabajados</small>
+                    <small class="text-muted">{% translate "Días Trabajados" %}</small>
                 </div>
             </div>
         </div>
@@ -48,19 +49,19 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h6>
+                    <h6 class="mb-0"><i class="bi bi-funnel"></i> {% translate "Filtros" %}</h6>
                 </div>
                 <div class="card-body">
                     <form method="get" class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label">Fecha Desde:</label>
+                            <label class="form-label">{% translate "Fecha Desde:" %}</label>
                             <input type="date" 
                                    name="fecha_desde" 
                                    class="form-control" 
                                    value="{{ fecha_desde }}">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Fecha Hasta:</label>
+                            <label class="form-label">{% translate "Fecha Hasta:" %}</label>
                             <input type="date" 
                                    name="fecha_hasta" 
                                    class="form-control" 
@@ -68,10 +69,10 @@
                         </div>
                         <div class="col-md-4 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary me-2">
-                                <i class="bi bi-search"></i> Filtrar
+                                <i class="bi bi-search"></i> {% translate "Filtrar" %}
                             </button>
                             <a href="{% url 'time_entries_list' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x"></i> Limpiar
+                                <i class="bi bi-x"></i> {% translate "Limpiar" %}
                             </a>
                         </div>
                     </form>
@@ -86,7 +87,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-table"></i> Registros de Horario
+                        <i class="bi bi-table"></i> {% translate "Registros de Horario" %}
                         {% if page_obj.paginator.count %}
                             <span class="badge bg-primary">{{ page_obj.paginator.count }}</span>
                         {% endif %}
@@ -98,16 +99,16 @@
                             <table class="table table-hover">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Fecha</th>
-                                        <th>Trabajando en</th>
-                                        <th>Hora Entrada</th>
-                                        <th>Hora Salida</th>
-                                        <th>Duración</th>
-                                        <th>Horas</th>
-                                        <th>Estado</th>
-                                        <th>Motivo de Salida</th>
-                                        <th>Notas</th>
-                                        <th>Acciones</th>
+                                        <th>{% translate "Fecha" %}</th>
+                                        <th>{% translate "Trabajando en" %}</th>
+                                        <th>{% translate "Hora Entrada" %}</th>
+                                        <th>{% translate "Hora Salida" %}</th>
+                                        <th>{% translate "Duración" %}</th>
+                                        <th>{% translate "Horas" %}</th>
+                                        <th>{% translate "Estado" %}</th>
+                                        <th>{% translate "Motivo de Salida" %}</th>
+                                        <th>{% translate "Notas" %}</th>
+                                        <th>{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -137,7 +138,7 @@
                                                 {% endif %}
                                                 {% if not entry.project and not entry.ticket and not entry.work_order %}
                                                     <span class="text-muted">
-                                                        <i class="bi bi-dash-circle"></i> Sin asignación específica
+                                                        <i class="bi bi-dash-circle"></i> {% translate "Sin asignación específica" %}
                                                     </span>
                                                 {% endif %}
                                             </div>
@@ -147,7 +148,7 @@
                                             {% if entry.fecha_salida %}
                                                 {{ entry.fecha_salida|date:"H:i" }}
                                             {% else %}
-                                                <span class="badge bg-success">Activo</span>
+                                                <span class="badge bg-success">{% translate "Activo" %}</span>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -166,24 +167,24 @@
                                         </td>
                                         <td>
                                             {% if entry.fecha_salida %}
-                                                <span class="badge bg-secondary">Completado</span>
+                                                <span class="badge bg-secondary">{% translate "Completado" %}</span>
                                             {% else %}
-                                                <span class="badge bg-success">En Progreso</span>
+                                                <span class="badge bg-success">{% translate "En Progreso" %}</span>
                                             {% endif %}
                                         </td>
                                         <td>
                                             {% if entry.end_reason %}
                                                 {% if entry.end_reason == 'comer' %}
                                                     <span class="badge bg-warning text-dark">
-                                                        <i class="bi bi-cup-hot"></i> Comer
+                                                        <i class="bi bi-cup-hot"></i> {% translate "Comer" %}
                                                     </span>
                                                 {% elif entry.end_reason == 'fin_jornada' %}
                                                     <span class="badge bg-primary">
-                                                        <i class="bi bi-house"></i> Fin de Jornada
+                                                        <i class="bi bi-house"></i> {% translate "Fin de Jornada" %}
                                                     </span>
                                                 {% elif entry.end_reason == 'otro' %}
                                                     <span class="badge bg-info">
-                                                        <i class="bi bi-three-dots"></i> Otro
+                                                        <i class="bi bi-three-dots"></i> {% translate "Otro" %}
                                                     </span>
                                                 {% endif %}
                                             {% else %}
@@ -209,12 +210,12 @@
                                             <div class="btn-group btn-group-sm" role="group">
                                                 <a href="{% url 'time_entry_detail' entry.id %}" 
                                                    class="btn btn-outline-primary"
-                                                   title="Ver detalles">
+                                                   title="{% translate 'Ver detalles' %}">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
                                                 <a href="{% url 'time_entry_edit' entry.id %}" 
                                                    class="btn btn-outline-secondary"
-                                                   title="Editar notas">
+                                                   title="{% translate 'Editar notas' %}">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
                                             </div>
@@ -227,12 +228,12 @@
 
                         <!-- Paginación -->
                         {% if page_obj.has_other_pages %}
-                        <nav aria-label="Paginación">
+                        <nav aria-label="{% translate 'Paginación' %}">
                             <ul class="pagination justify-content-center">
                                 {% if page_obj.has_previous %}
                                     <li class="page-item">
                                         <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}">
-                                            <i class="bi bi-chevron-left"></i> Anterior
+                                            <i class="bi bi-chevron-left"></i> {% translate "Anterior" %}
                                         </a>
                                     </li>
                                 {% endif %}
@@ -246,7 +247,7 @@
                                 {% if page_obj.has_next %}
                                     <li class="page-item">
                                         <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}">
-                                            Siguiente <i class="bi bi-chevron-right"></i>
+                                            {% translate "Siguiente" %} <i class="bi bi-chevron-right"></i>
                                         </a>
                                     </li>
                                 {% endif %}
@@ -257,10 +258,10 @@
                         <div class="text-center py-5">
                             <div class="text-muted">
                                 <i class="bi bi-clock fa-3x mb-3"></i>
-                                <h5>No hay registros de horario</h5>
-                                <p>Aún no tienes registros en el rango de fechas seleccionado.</p>
+                                <h5>{% translate "No hay registros de horario" %}</h5>
+                                <p>{% translate "Aún no tienes registros en el rango de fechas seleccionado." %}</p>
                                 <a href="{% url 'time_clock' %}" class="btn btn-primary">
-                                    <i class="bi bi-plus"></i> Iniciar Primera Jornada
+                                    <i class="bi bi-plus"></i> {% translate "Iniciar Primera Jornada" %}
                                 </a>
                             </div>
                         </div>

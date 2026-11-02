@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ query.name }}{% endblock %}
@@ -25,16 +26,16 @@
                 <div>
                     <a href="{% url 'sql_query_toggle_favorite' query.pk %}" class="btn btn-outline-warning">
                         {% if query.is_favorite %}
-                        <i class="bi bi-star"></i> Quitar Favorito
+                        <i class="bi bi-star"></i> {% translate "Quitar Favorito" %}
                         {% else %}
-                        <i class="bi bi-star-fill"></i> Agregar Favorito
+                        <i class="bi bi-star-fill"></i> {% translate "Agregar Favorito" %}
                         {% endif %}
                     </a>
                     <a href="{% url 'sql_query_delete' query.pk %}" class="btn btn-outline-danger">
-                        <i class="bi bi-trash"></i> Eliminar
+                        <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                     </a>
                     <a href="{% url 'sql_query_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                 </div>
             </div>
@@ -42,7 +43,7 @@
             <!-- Consulta -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
-                    <i class="bi bi-code-square"></i> Consulta SQL
+                    <i class="bi bi-code-square"></i> {% translate "Consulta SQL" %}
                 </div>
                 <div class="card-body">
                     <pre class="font-monospace bg-light p-3 rounded mb-3">{{ query.query }}</pre>
@@ -50,7 +51,7 @@
                     <form method="post">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-arrow-repeat"></i> Re-ejecutar Consulta
+                            <i class="bi bi-arrow-repeat"></i> {% translate "Re-ejecutar Consulta" %}
                         </button>
                     </form>
                 </div>
@@ -60,7 +61,7 @@
             {% if result %}
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-success text-white">
-                    <i class="bi bi-check-circle"></i> Resultado
+                    <i class="bi bi-check-circle"></i> {% translate "Resultado" %}
                     <span class="badge bg-light text-dark ms-2">{{ result.row_count }} filas</span>
                     <span class="badge bg-light text-dark">{{ result.execution_time }}s</span>
                 </div>
@@ -93,7 +94,7 @@
             {% if error %}
             <div class="alert alert-danger">
                 <i class="bi bi-exclamation-triangle"></i>
-                <strong>Error:</strong> {{ error }}
+                <strong>{% translate "Error:" %}</strong> {{ error }}
             </div>
             {% endif %}
         </div>

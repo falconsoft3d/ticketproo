@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -165,21 +166,21 @@
         <div class="upload-container">
             <!-- Header -->
             <div class="upload-header">
-                <h1><i class="bi bi-cloud-upload-fill"></i> Subir Archivos</h1>
-                <p class="mb-0">Adjunta archivos al ticket para proporcionar más información</p>
+                <h1><i class="bi bi-cloud-upload-fill"></i> {% translate "Subir Archivos" %}</h1>
+                <p class="mb-0">{% translate "Adjunta archivos al ticket para proporcionar más información" %}</p>
             </div>
             
             <!-- Body -->
             <div class="upload-body">
                 <!-- Información del Ticket -->
                 <div class="ticket-info">
-                    <h6><i class="bi bi-ticket-detailed"></i> Información del Ticket</h6>
+                    <h6><i class="bi bi-ticket-detailed"></i> {% translate "Información del Ticket" %}</h6>
                     <div class="row">
                         <div class="col-md-6">
-                            <strong>Número:</strong> {{ ticket.ticket_number }}
+                            <strong>{% translate "Número:" %}</strong> {{ ticket.ticket_number }}
                         </div>
                         <div class="col-md-6">
-                            <strong>Título:</strong> {{ ticket.title }}
+                            <strong>{% translate "Título:" %}</strong> {{ ticket.title }}
                         </div>
                     </div>
                 </div>
@@ -196,15 +197,15 @@
                 
                 <!-- Restricciones de archivos -->
                 <div class="file-restrictions">
-                    <h6><i class="bi bi-info-circle"></i> Restricciones de Archivos</h6>
+                    <h6><i class="bi bi-info-circle"></i> {% translate "Restricciones de Archivos" %}</h6>
                     <ul class="mb-0">
-                        <li><strong>Tamaño máximo:</strong> {{ max_file_size_mb }}MB por archivo</li>
-                        <li><strong>Tipos permitidos:</strong> 
+                        <li><strong>{% translate "Tamaño máximo:" %}</strong> {{ max_file_size_mb }}MB por archivo</li>
+                        <li><strong>{% translate "Tipos permitidos:" %}</strong> 
                             {% for ext in allowed_extensions %}
                                 <code>{{ ext }}</code>{% if not forloop.last %}, {% endif %}
                             {% endfor %}
                         </li>
-                        <li><strong>Múltiples archivos:</strong> Puedes subir varios archivos a la vez</li>
+                        <li><strong>{% translate "Múltiples archivos:" %}</strong> {% translate "Puedes subir varios archivos a la vez" %}</li>
                     </ul>
                 </div>
                 
@@ -217,15 +218,15 @@
                         <div class="col-md-6">
                             <div class="form-floating">
                                 <input type="text" class="form-control" id="client_name" name="client_name" 
-                                       placeholder="Tu nombre completo" required>
-                                <label for="client_name">Nombre Completo <span class="required">*</span></label>
+                                       placeholder="{% translate 'Tu nombre completo' %}" required>
+                                <label for="client_name">{% translate "Nombre Completo" %} <span class="required">*</span></label>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-floating">
                                 <input type="email" class="form-control" id="client_email" name="client_email" 
                                        placeholder="tu@email.com" required>
-                                <label for="client_email">Correo Electrónico <span class="required">*</span></label>
+                                <label for="client_email">{% translate "Correo Electrónico" %} <span class="required">*</span></label>
                             </div>
                         </div>
                     </div>
@@ -234,8 +235,8 @@
                     <div class="file-drop-area" id="fileDropArea">
                         <input type="file" name="attachments" id="fileInput" class="file-input" multiple accept="{{ allowed_extensions|join:',' }}">
                         <i class="bi bi-cloud-upload" style="font-size: 3rem; color: #17a2b8;"></i>
-                        <h5 class="mt-2">Arrastra archivos aquí o haz clic para seleccionar</h5>
-                        <p class="text-muted">Puedes subir múltiples archivos a la vez</p>
+                        <h5 class="mt-2">{% translate "Arrastra archivos aquí o haz clic para seleccionar" %}</h5>
+                        <p class="text-muted">{% translate "Puedes subir múltiples archivos a la vez" %}</p>
                     </div>
                     
                     <!-- Lista de Archivos Seleccionados -->
@@ -247,23 +248,23 @@
                             <div class="progress-bar progress-bar-striped progress-bar-animated" 
                                  role="progressbar" style="width: 0%"></div>
                         </div>
-                        <small class="text-muted mt-1">Subiendo archivos...</small>
+                        <small class="text-muted mt-1">{% translate "Subiendo archivos..." %}</small>
                     </div>
                     
                     <!-- Descripción Opcional -->
                     <div class="form-floating mb-4">
                         <textarea class="form-control" id="description" name="description" 
                                 placeholder="Información adicional sobre los archivos..." style="height: 100px"></textarea>
-                        <label for="description">Descripción de los archivos (Opcional)</label>
+                        <label for="description">{% translate "Descripción de los archivos (Opcional)" %}</label>
                     </div>
                     
                     <!-- Botones -->
                     <div class="text-center">
                         <button type="submit" class="btn btn-info btn-upload btn-lg" id="submitBtn" disabled>
-                            <i class="bi bi-cloud-upload"></i> Subir Archivos
+                            <i class="bi bi-cloud-upload"></i> {% translate "Subir Archivos" %}
                         </button>
                         <a href="{% url 'public_ticket' token %}" class="btn btn-outline-secondary btn-lg ms-3">
-                            <i class="bi bi-arrow-left"></i> Volver al Ticket
+                            <i class="bi bi-arrow-left"></i> {% translate "Volver al Ticket" %}
                         </a>
                     </div>
                 </form>

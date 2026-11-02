@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -8,10 +9,10 @@
         <h1><i class="bi bi-envelope-paper me-2"></i>{{ template.title }}</h1>
         <div>
             <a href="{% url 'email_template_edit' template.pk %}" class="btn btn-primary">
-                <i class="bi bi-pencil"></i> Editar
+                <i class="bi bi-pencil"></i> {% translate "Editar" %}
             </a>
             <a href="{% url 'email_template_list' %}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+                <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
             </a>
         </div>
     </div>
@@ -21,25 +22,25 @@
         <div class="col-lg-8">
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-file-text"></i> Contenido</h5>
+                    <h5 class="mb-0"><i class="bi bi-file-text"></i> {% translate "Contenido" %}</h5>
                     <button class="btn btn-sm btn-outline-primary" onclick="copyTemplate()">
-                        <i class="bi bi-clipboard"></i> Copiar Texto
+                        <i class="bi bi-clipboard"></i> {% translate "Copiar Texto" %}
                     </button>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <strong>Categoría:</strong>
+                        <strong>{% translate "Categoría:" %}</strong>
                         <span class="badge bg-primary">{{ template.get_category_display }}</span>
                     </div>
                     <div class="mb-3">
-                        <strong>Orden:</strong> {{ template.order }}
+                        <strong>{% translate "Orden:" %}</strong> {{ template.order }}
                     </div>
                     <div class="mb-3">
-                        <strong>Estado:</strong>
+                        <strong>{% translate "Estado:" %}</strong>
                         {% if template.is_active %}
-                            <span class="badge bg-success">Activo</span>
+                            <span class="badge bg-success">{% translate "Activo" %}</span>
                         {% else %}
-                            <span class="badge bg-secondary">Inactivo</span>
+                            <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                         {% endif %}
                     </div>
                     <hr>
@@ -60,7 +61,7 @@
         <div class="col-lg-4">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Historial de Cambios</h5>
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> {% translate "Historial de Cambios" %}</h5>
                 </div>
                 <div class="card-body" style="max-height: 600px; overflow-y: auto;">
                     {% if history %}
@@ -82,17 +83,17 @@
                                                 </div>
                                                 {% if change.change_reason %}
                                                     <div class="mb-1">
-                                                        <strong>Motivo:</strong> {{ change.change_reason }}
+                                                        <strong>{% translate "Motivo:" %}</strong> {{ change.change_reason }}
                                                     </div>
                                                 {% endif %}
                                                 <div class="small">
-                                                    <strong>Título:</strong> {{ change.title }}<br>
-                                                    <strong>Categoría:</strong> {{ change.category }}<br>
-                                                    <strong>Orden:</strong> {{ change.order }}
+                                                    <strong>{% translate "Título:" %}</strong> {{ change.title }}<br>
+                                                    <strong>{% translate "Categoría:" %}</strong> {{ change.category }}<br>
+                                                    <strong>{% translate "Orden:" %}</strong> {{ change.order }}
                                                 </div>
                                                 <button class="btn btn-sm btn-outline-secondary mt-2" type="button" 
                                                         data-bs-toggle="collapse" data-bs-target="#history{{ change.id }}">
-                                                    <i class="bi bi-eye"></i> Ver contenido
+                                                    <i class="bi bi-eye"></i> {% translate "Ver contenido" %}
                                                 </button>
                                                 <div class="collapse mt-2" id="history{{ change.id }}">
                                                     <div class="border rounded p-2 bg-light small" style="max-height: 200px; overflow-y: auto;">
@@ -107,7 +108,7 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-muted">No hay cambios registrados aún.</p>
+                        <p class="text-muted">{% translate "No hay cambios registrados aún." %}</p>
                     {% endif %}
                 </div>
             </div>

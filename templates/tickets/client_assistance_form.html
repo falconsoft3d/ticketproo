@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -115,14 +116,14 @@
 
                         {% if access %}
                             <div class="alert alert-info">
-                                <h6><i class="fas fa-link me-2"></i>Enlace Público Actual:</h6>
+                                <h6><i class="fas fa-link me-2"></i>{% translate "Enlace Público Actual:" %}</h6>
                                 <div class="input-group">
                                     <input type="text" class="form-control" 
                                            value="{{ request.scheme }}://{{ request.get_host }}{% url 'client_time_entry_form' access.public_token %}"
                                            readonly id="current-url">
                                     <button class="btn btn-outline-secondary" type="button"
                                             onclick="copyToClipboard('current-url')"
-                                            title="Copiar enlace">
+                                            title="{% translate 'Copiar enlace' %}">
                                         <i class="fas fa-copy"></i>
                                     </button>
                                 </div>
@@ -131,10 +132,10 @@
 
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'client_assistance_list' %}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left me-2"></i>Volver a Lista
+                                <i class="fas fa-arrow-left me-2"></i>{% translate "Volver a Lista" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>Guardar Configuración
+                                <i class="fas fa-save me-2"></i>{% translate "Guardar Configuración" %}
                             </button>
                         </div>
                     </form>
@@ -144,24 +145,24 @@
             <!-- Información de ayuda -->
             <div class="card mt-4">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="fas fa-question-circle me-2"></i>Ayuda</h6>
+                    <h6 class="mb-0"><i class="fas fa-question-circle me-2"></i>{% translate "Ayuda" %}</h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Configuración recomendada:</h6>
+                            <h6>{% translate "Configuración recomendada:" %}</h6>
                             <ul class="small">
-                                <li><strong>Límite diario:</strong> Entre 20-50 entradas por día</li>
-                                <li><strong>Teléfono obligatorio:</strong> Activar para mejor identificación</li>
-                                <li><strong>Todas las categorías:</strong> Dar flexibilidad al cliente</li>
+                                <li><strong>{% translate "Límite diario:" %}</strong> {% translate "Entre 20-50 entradas por día" %}</li>
+                                <li><strong>{% translate "Teléfono obligatorio:" %}</strong> {% translate "Activar para mejor identificación" %}</li>
+                                <li><strong>{% translate "Todas las categorías:" %}</strong> {% translate "Dar flexibilidad al cliente" %}</li>
                             </ul>
                         </div>
                         <div class="col-md-6">
-                            <h6>Seguridad:</h6>
+                            <h6>{% translate "Seguridad:" %}</h6>
                             <ul class="small">
-                                <li>El enlace es único y difícil de adivinar</li>
-                                <li>Se registra la IP y navegador del cliente</li>
-                                <li>Puedes desactivar el acceso en cualquier momento</li>
+                                <li>{% translate "El enlace es único y difícil de adivinar" %}</li>
+                                <li>{% translate "Se registra la IP y navegador del cliente" %}</li>
+                                <li>{% translate "Puedes desactivar el acceso en cualquier momento" %}</li>
                             </ul>
                         </div>
                     </div>

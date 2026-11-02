@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -8,21 +9,21 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <i class="bi bi-book"></i> Capacitación
+                        <i class="bi bi-book"></i> {% translate "Capacitación" %}
                     </li>
-                    <li class="breadcrumb-item"><a href="{% url 'qr_generator' %}">Generador QR</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'qr_generator' %}">{% translate "Generador QR" %}</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'qr_detail' qr_code.pk %}">{{ qr_code.title }}</a></li>
-                    <li class="breadcrumb-item active">Eliminar</li>
+                    <li class="breadcrumb-item active">{% translate "Eliminar" %}</li>
                 </ol>
             </nav>
             <h2 class="mb-0">
                 <i class="bi bi-trash text-danger"></i>
-                Eliminar Código QR
+                {% translate "Eliminar Código QR" %}
             </h2>
-            <p class="text-muted mb-0">¿Estás seguro de que deseas eliminar este código QR?</p>
+            <p class="text-muted mb-0">{% translate "¿Estás seguro de que deseas eliminar este código QR?" %}</p>
         </div>
     </div>
 
@@ -31,7 +32,7 @@
             <div class="card border-danger">
                 <div class="card-header bg-danger text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                        <i class="bi bi-exclamation-triangle"></i> {% translate "Confirmar Eliminación" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -40,18 +41,18 @@
                         <div class="col-md-8">
                             <div class="alert alert-warning" role="alert">
                                 <i class="bi bi-exclamation-triangle"></i>
-                                <strong>¡Atención!</strong> Esta acción no se puede deshacer. El código QR y toda su información serán eliminados permanentemente.
+                                <strong>{% translate "¡Atención!" %}</strong> {% translate "Esta acción no se puede deshacer. El código QR y toda su información serán eliminados permanentemente." %}
                             </div>
                             
-                            <h6>Código QR a eliminar:</h6>
+                            <h6>{% translate "Código QR a eliminar:" %}</h6>
                             <div class="border rounded p-3 mb-3">
                                 <div class="mb-2">
-                                    <strong><i class="bi bi-tag text-primary"></i> Título:</strong>
+                                    <strong><i class="bi bi-tag text-primary"></i> {% translate "Título:" %}</strong>
                                     <span>{{ qr_code.title }}</span>
                                 </div>
                                 
                                 <div class="mb-2">
-                                    <strong><i class="bi bi-list-ul text-success"></i> Tipo:</strong>
+                                    <strong><i class="bi bi-list-ul text-success"></i> {% translate "Tipo:" %}</strong>
                                     <span class="badge 
                                         {% if qr_code.qr_type == 'url' %}bg-primary
                                         {% elif qr_code.qr_type == 'email' %}bg-success
@@ -65,18 +66,18 @@
                                 
                                 {% if qr_code.description %}
                                 <div class="mb-2">
-                                    <strong><i class="bi bi-chat-text text-muted"></i> Descripción:</strong>
+                                    <strong><i class="bi bi-chat-text text-muted"></i> {% translate "Descripción:" %}</strong>
                                     <span>{{ qr_code.description }}</span>
                                 </div>
                                 {% endif %}
                                 
                                 <div class="mb-2">
-                                    <strong><i class="bi bi-file-text text-info"></i> Contenido:</strong>
+                                    <strong><i class="bi bi-file-text text-info"></i> {% translate "Contenido:" %}</strong>
                                     <code class="text-break">{{ qr_code.content|truncatechars:60 }}</code>
                                 </div>
                                 
                                 <div class="mb-0">
-                                    <strong><i class="bi bi-calendar text-muted"></i> Creado:</strong>
+                                    <strong><i class="bi bi-calendar text-muted"></i> {% translate "Creado:" %}</strong>
                                     <span>{{ qr_code.created_at|date:"d/m/Y H:i" }}</span>
                                 </div>
                             </div>
@@ -85,11 +86,11 @@
                         <!-- Preview del QR -->
                         <div class="col-md-4">
                             <div class="text-center">
-                                <h6>Vista previa:</h6>
+                                <h6>{% translate "Vista previa:" %}</h6>
                                 <div id="qr-preview" class="border rounded p-2 mb-3" style="min-height: 150px;">
                                     <!-- QR se genera con JavaScript -->
                                 </div>
-                                <small class="text-muted">Este código QR será eliminado</small>
+                                <small class="text-muted">{% translate "Este código QR será eliminado" %}</small>
                             </div>
                         </div>
                     </div>
@@ -103,16 +104,16 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="confirmDelete" required>
                                 <label class="form-check-label" for="confirmDelete">
-                                    Confirmo que deseo eliminar este código QR permanentemente
+                                    {% translate "Confirmo que deseo eliminar este código QR permanentemente" %}
                                 </label>
                             </div>
                             
                             <div class="d-flex gap-2">
                                 <a href="{% url 'qr_detail' qr_code.pk %}" class="btn btn-outline-secondary">
-                                    <i class="bi bi-x-circle"></i> Cancelar
+                                    <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                                 </a>
                                 <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
-                                    <i class="bi bi-trash"></i> Eliminar QR
+                                    <i class="bi bi-trash"></i> {% translate "Eliminar QR" %}
                                 </button>
                             </div>
                         </div>

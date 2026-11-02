@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block extra_css %}
@@ -102,7 +103,7 @@
                 <div class="form-header">
                     <h2>
                         <i class="bi bi-receipt-cutoff"></i>
-                        {% if payroll %}Editar Nómina{% else %}Nueva Nómina{% endif %}
+                        {% if payroll %}{% translate "Editar Nómina" %}{% else %}{% translate "Nueva Nómina" %}{% endif %}
                     </h2>
                     <p class="mb-0">{{ employee.get_full_name }} - {{ employee.position }}</p>
                 </div>
@@ -111,12 +112,12 @@
                 <div class="employee-info">
                     <div class="row">
                         <div class="col-md-6">
-                            <strong>Empleado:</strong> {{ employee.get_full_name }}<br>
-                            <strong>Empresa:</strong> {{ employee.company.name }}
+                            <strong>{% translate "Empleado:" %}</strong> {{ employee.get_full_name }}<br>
+                            <strong>{% translate "Empresa:" %}</strong> {{ employee.company.name }}
                         </div>
                         <div class="col-md-6">
-                            <strong>Posición:</strong> {{ employee.position }}<br>
-                            <strong>Estado:</strong> <span class="badge bg-{{ employee.get_status_color }}">{{ employee.get_status_display }}</span>
+                            <strong>{% translate "Posición:" %}</strong> {{ employee.position }}<br>
+                            <strong>{% translate "Estado:" %}</strong> <span class="badge bg-{{ employee.get_status_color }}">{{ employee.get_status_display }}</span>
                         </div>
                     </div>
                 </div>
@@ -127,7 +128,7 @@
                     
                     {% if form.errors %}
                         <div class="alert alert-danger">
-                            <h6><i class="bi bi-exclamation-triangle"></i> Errores en el formulario:</h6>
+                            <h6><i class="bi bi-exclamation-triangle"></i> {% translate "Errores en el formulario:" %}</h6>
                             {{ form.errors }}
                         </div>
                     {% endif %}
@@ -161,8 +162,8 @@
                         </label>
                         <div class="file-upload-area" onclick="document.getElementById('{{ form.payroll_pdf.id_for_label }}').click()">
                             <i class="bi bi-cloud-upload fs-1 text-muted mb-3 d-block"></i>
-                            <h5>Seleccionar archivo PDF de nómina</h5>
-                            <p class="text-muted">Haz clic aquí o arrastra el archivo</p>
+                            <h5>{% translate "Seleccionar archivo PDF de nómina" %}</h5>
+                            <p class="text-muted">{% translate "Haz clic aquí o arrastra el archivo" %}</p>
                             {{ form.payroll_pdf }}
                         </div>
                         <div class="file-info">
@@ -171,9 +172,9 @@
                         {% if payroll and payroll.payroll_pdf %}
                             <div class="current-file">
                                 <i class="bi bi-file-earmark-pdf text-danger"></i>
-                                <strong>Archivo actual:</strong> {{ payroll.payroll_pdf.name|cut:"payrolls/" }}
+                                <strong>{% translate "Archivo actual:" %}</strong> {{ payroll.payroll_pdf.name|cut:"payrolls/" }}
                                 <a href="{{ payroll.payroll_pdf.url }}" target="_blank" class="btn btn-sm btn-outline-danger ms-2">
-                                    <i class="bi bi-download"></i> Descargar
+                                    <i class="bi bi-download"></i> {% translate "Descargar" %}
                                 </a>
                             </div>
                         {% endif %}
@@ -186,8 +187,8 @@
                         </label>
                         <div class="file-upload-area" onclick="document.getElementById('{{ form.payment_receipt.id_for_label }}').click()">
                             <i class="bi bi-receipt fs-1 text-muted mb-3 d-block"></i>
-                            <h5>Seleccionar comprobante de pago</h5>
-                            <p class="text-muted">Opcional - PDF, JPG o PNG</p>
+                            <h5>{% translate "Seleccionar comprobante de pago" %}</h5>
+                            <p class="text-muted">{% translate "Opcional - PDF, JPG o PNG" %}</p>
                             {{ form.payment_receipt }}
                         </div>
                         <div class="file-info">
@@ -196,9 +197,9 @@
                         {% if payroll and payroll.payment_receipt %}
                             <div class="current-file">
                                 <i class="bi bi-receipt text-success"></i>
-                                <strong>Archivo actual:</strong> {{ payroll.payment_receipt.name|cut:"payment_receipts/" }}
+                                <strong>{% translate "Archivo actual:" %}</strong> {{ payroll.payment_receipt.name|cut:"payment_receipts/" }}
                                 <a href="{{ payroll.payment_receipt.url }}" target="_blank" class="btn btn-sm btn-outline-success ms-2">
-                                    <i class="bi bi-eye"></i> Ver
+                                    <i class="bi bi-eye"></i> {% translate "Ver" %}
                                 </a>
                             </div>
                         {% endif %}
@@ -206,7 +207,7 @@
 
                     <!-- Información salarial -->
                     <div class="salary-inputs">
-                        <h5><i class="bi bi-currency-euro"></i> Información Salarial (Opcional)</h5>
+                        <h5><i class="bi bi-currency-euro"></i> {% translate "Información Salarial (Opcional)" %}</h5>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -242,16 +243,16 @@
                     <div class="d-flex gap-3 mt-4">
                         <button type="submit" class="btn btn-success btn-submit">
                             <i class="bi bi-check-lg"></i> 
-                            {% if payroll %}Actualizar Nómina{% else %}Guardar Nómina{% endif %}
+                            {% if payroll %}{% translate "Actualizar Nómina" %}{% else %}{% translate "Guardar Nómina" %}{% endif %}
                         </button>
                         
                         <a href="{% url 'employee_payroll_list' employee.pk %}" class="btn btn-outline-secondary btn-lg">
-                            <i class="bi bi-arrow-left"></i> Cancelar
+                            <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                         </a>
                         
                         {% if payroll %}
                             <a href="{% url 'employee_payroll_detail' employee.pk payroll.pk %}" class="btn btn-outline-info btn-lg">
-                                <i class="bi bi-eye"></i> Ver Detalles
+                                <i class="bi bi-eye"></i> {% translate "Ver Detalles" %}
                             </a>
                         {% endif %}
                     </div>

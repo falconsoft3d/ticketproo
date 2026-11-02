@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Contador de Ejercicios{% endblock %}
+{% block title %}{% translate "Contador de Ejercicios" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-heart-pulse text-danger"></i> Contador de Ejercicios</h2>
+                <h2><i class="bi bi-heart-pulse text-danger"></i> {% translate "Contador de Ejercicios" %}</h2>
                 <a href="{% url 'exercise_counter_create' %}" class="btn btn-danger">
-                    <i class="bi bi-plus-circle"></i> Nuevo Ejercicio
+                    <i class="bi bi-plus-circle"></i> {% translate "Nuevo Ejercicio" %}
                 </a>
             </div>
 
@@ -19,18 +20,18 @@
                 <div class="card-body">
                     <form method="get" class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label">Estado</label>
+                            <label class="form-label">{% translate "Estado" %}</label>
                             <select name="status" class="form-select" onchange="this.form.submit()">
-                                <option value="">Todos</option>
-                                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pendiente</option>
-                                <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>En Progreso</option>
-                                <option value="paused" {% if status_filter == 'paused' %}selected{% endif %}>Pausado</option>
-                                <option value="finished" {% if status_filter == 'finished' %}selected{% endif %}>Finalizado</option>
+                                <option value="">{% translate "Todos" %}</option>
+                                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>{% translate "Pendiente" %}</option>
+                                <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>{% translate "En Progreso" %}</option>
+                                <option value="paused" {% if status_filter == 'paused' %}selected{% endif %}>{% translate "Pausado" %}</option>
+                                <option value="finished" {% if status_filter == 'finished' %}selected{% endif %}>{% translate "Finalizado" %}</option>
                             </select>
                         </div>
                         <div class="col-md-4 d-flex align-items-end">
                             <a href="{% url 'exercise_counter_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Limpiar
+                                <i class="bi bi-x-circle"></i> {% translate "Limpiar" %}
                             </a>
                         </div>
                     </form>
@@ -45,13 +46,13 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Título</th>
-                                        <th>Tandas</th>
-                                        <th>Repeticiones</th>
-                                        <th>Progreso</th>
-                                        <th>Estado</th>
-                                        <th>Creado</th>
-                                        <th>Acciones</th>
+                                        <th>{% translate "Título" %}</th>
+                                        <th>{% translate "Tandas" %}</th>
+                                        <th>{% translate "Repeticiones" %}</th>
+                                        <th>{% translate "Progreso" %}</th>
+                                        <th>{% translate "Estado" %}</th>
+                                        <th>{% translate "Creado" %}</th>
+                                        <th>{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -84,25 +85,25 @@
                                         </td>
                                         <td>
                                             {% if exercise.status == 'pending' %}
-                                                <span class="badge bg-secondary">⏸️ Pendiente</span>
+                                                <span class="badge bg-secondary">{% translate "⏸️ Pendiente" %}</span>
                                             {% elif exercise.status == 'in_progress' %}
-                                                <span class="badge bg-success">▶️ En Progreso</span>
+                                                <span class="badge bg-success">{% translate "▶️ En Progreso" %}</span>
                                             {% elif exercise.status == 'paused' %}
-                                                <span class="badge bg-warning">⏸️ Pausado</span>
+                                                <span class="badge bg-warning">{% translate "⏸️ Pausado" %}</span>
                                             {% else %}
-                                                <span class="badge bg-dark">⏹️ Finalizado</span>
+                                                <span class="badge bg-dark">{% translate "⏹️ Finalizado" %}</span>
                                             {% endif %}
                                         </td>
                                         <td>{{ exercise.created_at|date:"d/m/Y H:i" }}</td>
                                         <td>
                                             <a href="{% url 'exercise_counter_detail' exercise.pk %}" 
                                                class="btn btn-sm btn-outline-primary" 
-                                               title="Ver Detalle">
+                                               title="{% translate 'Ver Detalle' %}">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             <a href="{% url 'exercise_counter_delete' exercise.pk %}" 
                                                class="btn btn-sm btn-outline-danger" 
-                                               title="Eliminar">
+                                               title="{% translate 'Eliminar' %}">
                                                 <i class="bi bi-trash"></i>
                                             </a>
                                         </td>
@@ -114,14 +115,14 @@
 
                         <!-- Paginación -->
                         {% if exercises.has_other_pages %}
-                        <nav aria-label="Paginación">
+                        <nav aria-label="{% translate 'Paginación' %}">
                             <ul class="pagination justify-content-center">
                                 {% if exercises.has_previous %}
                                     <li class="page-item">
-                                        <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}">Primera</a>
+                                        <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}">{% translate "Primera" %}</a>
                                     </li>
                                     <li class="page-item">
-                                        <a class="page-link" href="?page={{ exercises.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Anterior</a>
+                                        <a class="page-link" href="?page={{ exercises.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">{% translate "Anterior" %}</a>
                                     </li>
                                 {% endif %}
 
@@ -133,10 +134,10 @@
 
                                 {% if exercises.has_next %}
                                     <li class="page-item">
-                                        <a class="page-link" href="?page={{ exercises.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Siguiente</a>
+                                        <a class="page-link" href="?page={{ exercises.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">{% translate "Siguiente" %}</a>
                                     </li>
                                     <li class="page-item">
-                                        <a class="page-link" href="?page={{ exercises.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Última</a>
+                                        <a class="page-link" href="?page={{ exercises.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}">{% translate "Última" %}</a>
                                     </li>
                                 {% endif %}
                             </ul>
@@ -147,8 +148,8 @@
             {% else %}
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle"></i>
-                    No hay ejercicios creados todavía.
-                    <a href="{% url 'exercise_counter_create' %}" class="alert-link">Crear Primer Ejercicio</a>
+                    {% translate "No hay ejercicios creados todavía." %}
+                    <a href="{% url 'exercise_counter_create' %}" class="alert-link">{% translate "Crear Primer Ejercicio" %}</a>
                 </div>
             {% endif %}
         </div>

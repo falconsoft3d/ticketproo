@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ rfi.title }}{% endblock %}
 
@@ -25,9 +26,9 @@
             <div>
                 <span class="badge bg-secondary font-monospace me-2">{{ rfi.code }}</span>
                 {% if rfi.is_closed %}
-                <span class="badge bg-danger me-2"><i class="bi bi-lock"></i> Cerrado</span>
+                <span class="badge bg-danger me-2"><i class="bi bi-lock"></i> {% translate "Cerrado" %}</span>
                 {% else %}
-                <span class="badge bg-success me-2"><i class="bi bi-unlock"></i> Abierto</span>
+                <span class="badge bg-success me-2"><i class="bi bi-unlock"></i> {% translate "Abierto" %}</span>
                 {% endif %}
                 <h4 class="d-inline mb-0">{{ rfi.title }}</h4>
             </div>
@@ -35,32 +36,32 @@
                 {% if can_manage %}
                 {% if not rfi.is_closed %}
                 <a href="{% url 'rfi_edit' rfi.pk %}" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-pencil"></i> Editar
+                    <i class="bi bi-pencil"></i> {% translate "Editar" %}
                 </a>
                 {% endif %}
                 <a href="{% url 'rfi_delete' rfi.pk %}" class="btn btn-outline-danger btn-sm">
-                    <i class="bi bi-trash"></i> Eliminar
+                    <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                 </a>
                 {% endif %}
-                <a href="{% url 'rfi_pdf' rfi.pk %}" class="btn btn-outline-dark btn-sm" target="_blank" title="Descargar PDF">
+                <a href="{% url 'rfi_pdf' rfi.pk %}" class="btn btn-outline-dark btn-sm" target="_blank" title="{% translate 'Descargar PDF' %}">
                     <i class="bi bi-file-earmark-pdf"></i> PDF
                 </a>
-                <button type="button" class="btn btn-outline-info btn-sm" title="Copiar enlace público"
+                <button type="button" class="btn btn-outline-info btn-sm" title="{% translate 'Copiar enlace público' %}"
                     onclick="copyPublicLink('{% url 'rfi_public' rfi.public_token %}')">
-                    <i class="bi bi-share"></i> Compartir
+                    <i class="bi bi-share"></i> {% translate "Compartir" %}
                 </button>
                 {% if not rfi.is_closed %}
                 <form method="post" action="{% url 'rfi_close' rfi.pk %}" class="d-inline">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-check-circle"></i> Cerrar
+                        <i class="bi bi-check-circle"></i> {% translate "Cerrar" %}
                     </button>
                 </form>
                 {% else %}
                 <form method="post" action="{% url 'rfi_reopen' rfi.pk %}" class="d-inline">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-outline-success btn-sm">
-                        <i class="bi bi-arrow-counterclockwise"></i> Reabrir
+                        <i class="bi bi-arrow-counterclockwise"></i> {% translate "Reabrir" %}
                     </button>
                 </form>
                 {% endif %}
@@ -70,34 +71,34 @@
             <div class="row mb-3 text-muted small">
                 <div class="col-auto">
                     <i class="bi bi-person-circle"></i>
-                    <strong>Creado por:</strong>
+                    <strong>{% translate "Creado por:" %}</strong>
                     {{ rfi.created_by.get_full_name|default:rfi.created_by.username }}
                 </div>
                 {% if rfi.assigned_user %}
                 <div class="col-auto">
                     <i class="bi bi-person-check"></i>
-                    <strong>Asignado a:</strong> {{ rfi.assigned_user.get_full_name|default:rfi.assigned_user.username }}
+                    <strong>{% translate "Asignado a:" %}</strong> {{ rfi.assigned_user.get_full_name|default:rfi.assigned_user.username }}
                 </div>
                 {% endif %}
                 {% if rfi.company %}
                 <div class="col-auto">
                     <i class="bi bi-building"></i>
-                    <strong>Empresa:</strong> {{ rfi.company.name }}
+                    <strong>{% translate "Empresa:" %}</strong> {{ rfi.company.name }}
                 </div>
                 {% endif %}
                 <div class="col-auto">
                     <i class="bi bi-calendar3"></i>
-                    <strong>Fecha:</strong> {{ rfi.created_at|date:"d/m/Y H:i" }}
+                    <strong>{% translate "Fecha:" %}</strong> {{ rfi.created_at|date:"d/m/Y H:i" }}
                 </div>
                 {% if rfi.is_closed %}
                 <div class="col-auto text-danger">
                     <i class="bi bi-lock-fill"></i>
-                    <strong>Cerrado el:</strong> {{ rfi.closed_at|date:"d/m/Y H:i" }}
+                    <strong>{% translate "Cerrado el:" %}</strong> {{ rfi.closed_at|date:"d/m/Y H:i" }}
                 </div>
                 {% endif %}
                 <div class="col-auto">
                     <i class="bi bi-clock-history"></i>
-                    <strong>Días desde la solicitud:</strong>
+                    <strong>{% translate "Días desde la solicitud:" %}</strong>
                     <span class="badge {% if rfi.days_since_request >= 7 %}bg-danger{% elif rfi.days_since_request >= 3 %}bg-warning text-dark{% else %}bg-success{% endif %}">
                         {{ rfi.days_since_request }} día{{ rfi.days_since_request|pluralize }}
                     </span>
@@ -111,7 +112,7 @@
     <!-- Comentarios -->
     <div class="card shadow-sm">
         <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-chat-left-text"></i> Comentarios
+            <h5 class="mb-0"><i class="bi bi-chat-left-text"></i> {% translate "Comentarios" %}
                 {% if comments %}<span class="badge bg-secondary ms-2">{{ comments|length }}</span>{% endif %}
             </h5>
         </div>
@@ -138,7 +139,7 @@
                 {% endfor %}
             </div>
             {% else %}
-            <p class="text-muted small mb-3">No hay comentarios aún.</p>
+            <p class="text-muted small mb-3">{% translate "No hay comentarios aún." %}</p>
             {% endif %}
 
             <!-- Formulario nuevo comentario -->
@@ -149,7 +150,7 @@
                 </div>
                 <div class="d-flex justify-content-end">
                     <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-send"></i> Comentar
+                        <i class="bi bi-send"></i> {% translate "Comentar" %}
                     </button>
                 </div>
             </form>
@@ -162,7 +163,7 @@
     <div id="copyToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
             <div class="toast-body">
-                <i class="bi bi-check-circle me-2"></i> Enlace público copiado al portapapeles
+                <i class="bi bi-check-circle me-2"></i> {% translate "Enlace público copiado al portapapeles" %}
             </div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>

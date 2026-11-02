@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load project_extras %}
 
 {% block title %}{{ contact.name }} - TicketProo{% endblock %}
@@ -36,15 +37,15 @@
                 <div class="d-flex gap-2 align-items-center">
                     <!-- Botón Regresar -->
                     <a href="{% url 'contact_list' %}" class="btn btn-outline-primary">
-                        <i class="bi bi-arrow-left"></i> Regresar
+                        <i class="bi bi-arrow-left"></i> {% translate "Regresar" %}
                     </a>
                     
                     <!-- Botón Pipeline de Empresa -->
                     {% if contact.status == 'positive' %}
                     <a href="{% url 'contact_individual_stage_tracking' contact.pk %}" 
                        class="btn btn-outline-info"
-                       title="Ver pipeline individual de este contacto">
-                        <i class="bi bi-diagram-3"></i> Pipeline Etapas
+                       title="{% translate 'Ver pipeline individual de este contacto' %}">
+                        <i class="bi bi-diagram-3"></i> {% translate "Pipeline Etapas" %}
                     </a>
                     {% endif %}
                     
@@ -76,20 +77,20 @@
                     </div>
                     
                     <a href="{% url 'contact_edit' contact.pk %}" class="btn btn-primary">
-                        <i class="bi bi-pencil"></i> Editar
+                        <i class="bi bi-pencil"></i> {% translate "Editar" %}
                     </a>
                     
                     {% if not contact.linked_company %}
                     <a href="{% url 'convert_contact_to_company' contact.pk %}" class="btn btn-warning">
-                        <i class="bi bi-building"></i> Convertir en Empresa
+                        <i class="bi bi-building"></i> {% translate "Convertir en Empresa" %}
                     </a>
                     {% endif %}
                     
                     <a href="{% url 'contact_create' %}" class="btn btn-success">
-                        <i class="bi bi-plus-circle"></i> Nuevo
+                        <i class="bi bi-plus-circle"></i> {% translate "Nuevo" %}
                     </a>
                     <a href="{% url 'contact_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                 </div>
             </div>
@@ -103,50 +104,50 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-info-circle"></i> Información del Contacto
+                        <i class="bi bi-info-circle"></i> {% translate "Información del Contacto" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6><i class="bi bi-person"></i> Nombre Completo</h6>
+                            <h6><i class="bi bi-person"></i> {% translate "Nombre Completo" %}</h6>
                             <p>{{ contact.name }}</p>
                             
                             {% if contact.position %}
-                            <h6><i class="bi bi-briefcase"></i> Cargo</h6>
+                            <h6><i class="bi bi-briefcase"></i> {% translate "Cargo" %}</h6>
                             <p>{{ contact.position }}</p>
                             {% endif %}
                             
                             {% if contact.email %}
-                            <h6><i class="bi bi-envelope"></i> Email</h6>
+                            <h6><i class="bi bi-envelope"></i> {% translate "Email" %}</h6>
                             <p><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></p>
                             {% endif %}
                             
                             {% if contact.phone %}
-                            <h6><i class="bi bi-telephone"></i> Teléfono</h6>
+                            <h6><i class="bi bi-telephone"></i> {% translate "Teléfono" %}</h6>
                             <p>
                                 <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a>
                                 <a href="https://wa.me/{{ contact.phone|clean_phone_for_whatsapp }}" 
-                                   target="_blank" class="btn btn-success btn-sm ms-2" title="Abrir WhatsApp">
+                                   target="_blank" class="btn btn-success btn-sm ms-2" title="{% translate 'Abrir WhatsApp' %}">
                                     <i class="bi bi-whatsapp"></i>
                                 </a>
                             </p>
                             {% endif %}
 
-                            <h6><i class="bi bi-person-plus"></i> Creado por</h6>
+                            <h6><i class="bi bi-person-plus"></i> {% translate "Creado por" %}</h6>
                             <p>{{ contact.created_by.get_full_name|default:contact.created_by.username }}</p>
                             
-                            <h6><i class="bi bi-calendar-event"></i> Fecha de Contacto</h6>
+                            <h6><i class="bi bi-calendar-event"></i> {% translate "Fecha de Contacto" %}</h6>
                             <p>{{ contact.contact_date|date:"d/m/Y H:i" }}</p>
                         </div>
                         <div class="col-md-6">
                             {% if contact.company %}
-                            <h6><i class="bi bi-building"></i> Empresa</h6>
+                            <h6><i class="bi bi-building"></i> {% translate "Empresa" %}</h6>
                             <p>{{ contact.company }}</p>
                             {% endif %}
                             
                             {% if contact.linked_company %}
-                            <h6><i class="bi bi-building-check"></i> Empresa Vinculada</h6>
+                            <h6><i class="bi bi-building-check"></i> {% translate "Empresa Vinculada" %}</h6>
                             <div class="alert alert-success p-2">
                                 <a href="{% url 'company_detail' contact.linked_company.pk %}" class="text-decoration-none">
                                     <strong>{{ contact.linked_company.name }}</strong>
@@ -164,11 +165,11 @@
                             {% endif %}
                             
                             {% if contact.country %}
-                            <h6><i class="bi bi-globe"></i> País</h6>
+                            <h6><i class="bi bi-globe"></i> {% translate "País" %}</h6>
                             <p>{{ contact.country }}</p>
                             {% endif %}
                             
-                            <h6><i class="bi bi-flag"></i> Estado</h6>
+                            <h6><i class="bi bi-flag"></i> {% translate "Estado" %}</h6>
                             <p>
                                 {% if contact.status == 'positive' %}
                                     <span class="badge fs-6 p-2" style="background-color: #5cb85c; color: white;">
@@ -189,12 +190,12 @@
                             </p>
                             
                             {% if contact.source %}
-                            <h6><i class="bi bi-arrow-down-circle"></i> Fuente</h6>
+                            <h6><i class="bi bi-arrow-down-circle"></i> {% translate "Fuente" %}</h6>
                             <p>{{ contact.source }}</p>
                             {% endif %}
                             
                             {% if contact.tags.all %}
-                            <h6><i class="bi bi-tags"></i> Etiquetas</h6>
+                            <h6><i class="bi bi-tags"></i> {% translate "Etiquetas" %}</h6>
                             <div class="d-flex flex-wrap gap-2">
                                 {% for tag in contact.tags.all %}
                                     <span class="badge" style="background-color: {{ tag.color }}; font-size: 0.9rem; padding: 6px 12px;">
@@ -205,7 +206,7 @@
                             {% endif %}
                             
                             {% if contact.status == 'positive' %}
-                            <h6><i class="bi bi-diagram-3"></i> Etapa del Pipeline</h6>
+                            <h6><i class="bi bi-diagram-3"></i> {% translate "Etapa del Pipeline" %}</h6>
                             <p>
                                 {% if contact.stage %}
                                     <span class="badge bg-primary fs-6 p-2">
@@ -213,7 +214,7 @@
                                     </span>
                                 {% else %}
                                     <span class="badge bg-secondary fs-6 p-2">
-                                        Sin etapa asignada
+                                        {% translate "Sin etapa asignada" %}
                                     </span>
                                 {% endif %}
                             </p>
@@ -224,7 +225,7 @@
                     {% if contact.notes %}
                     <div class="row mt-3">
                         <div class="col-12">
-                            <h6><i class="bi bi-sticky"></i> Notas</h6>
+                            <h6><i class="bi bi-sticky"></i> {% translate "Notas" %}</h6>
                             <div class="bg-light p-3 rounded">
                                 {{ contact.notes|linebreaks }}
                             </div>
@@ -236,11 +237,11 @@
                     {% if contact.website or contact.linkedin_url or contact.facebook_url or contact.twitter_url or contact.instagram_url or contact.youtube_url or contact.tiktok_url %}
                     <div class="row mt-3">
                         <div class="col-12">
-                            <h6><i class="bi bi-globe text-primary"></i> Redes Sociales y Web</h6>
+                            <h6><i class="bi bi-globe text-primary"></i> {% translate "Redes Sociales y Web" %}</h6>
                             <div class="d-flex flex-wrap gap-2">
                                 {% if contact.website %}
-                                <a href="{{ contact.website }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Sitio Web">
-                                    <i class="bi bi-globe2"></i> Sitio Web
+                                <a href="{{ contact.website }}" target="_blank" class="btn btn-sm btn-outline-primary" title="{% translate 'Sitio Web' %}">
+                                    <i class="bi bi-globe2"></i> {% translate "Sitio Web" %}
                                 </a>
                                 {% endif %}
                                 
@@ -257,26 +258,26 @@
                                 {% endif %}
                                 
                                 {% if contact.twitter_url %}
-                                <a href="{{ contact.twitter_url }}" target="_blank" class="btn btn-sm btn-outline-info" title="Twitter/X">
-                                    <i class="bi bi-twitter"></i> Twitter/X
+                                <a href="{{ contact.twitter_url }}" target="_blank" class="btn btn-sm btn-outline-info" title="{% translate 'Twitter/X' %}">
+                                    <i class="bi bi-twitter"></i> {% translate "Twitter/X" %}
                                 </a>
                                 {% endif %}
                                 
                                 {% if contact.instagram_url %}
-                                <a href="{{ contact.instagram_url }}" target="_blank" class="btn btn-sm btn-outline-danger" title="Instagram">
-                                    <i class="bi bi-instagram"></i> Instagram
+                                <a href="{{ contact.instagram_url }}" target="_blank" class="btn btn-sm btn-outline-danger" title="{% translate 'Instagram' %}">
+                                    <i class="bi bi-instagram"></i> {% translate "Instagram" %}
                                 </a>
                                 {% endif %}
                                 
                                 {% if contact.youtube_url %}
-                                <a href="{{ contact.youtube_url }}" target="_blank" class="btn btn-sm btn-outline-danger" title="YouTube">
-                                    <i class="bi bi-youtube"></i> YouTube
+                                <a href="{{ contact.youtube_url }}" target="_blank" class="btn btn-sm btn-outline-danger" title="{% translate 'YouTube' %}">
+                                    <i class="bi bi-youtube"></i> {% translate "YouTube" %}
                                 </a>
                                 {% endif %}
                                 
                                 {% if contact.tiktok_url %}
-                                <a href="{{ contact.tiktok_url }}" target="_blank" class="btn btn-sm btn-outline-dark" title="TikTok">
-                                    <i class="bi bi-tiktok"></i> TikTok
+                                <a href="{{ contact.tiktok_url }}" target="_blank" class="btn btn-sm btn-outline-dark" title="{% translate 'TikTok' %}">
+                                    <i class="bi bi-tiktok"></i> {% translate "TikTok" %}
                                 </a>
                                 {% endif %}
                             </div>
@@ -290,32 +291,32 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-telephone-forward text-success"></i> Seguimiento de Contacto
+                        <i class="bi bi-telephone-forward text-success"></i> {% translate "Seguimiento de Contacto" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <h6><i class="bi bi-telephone"></i> Contacto telefónico</h6>
+                            <h6><i class="bi bi-telephone"></i> {% translate "Contacto telefónico" %}</h6>
                             {% if contact.contacted_by_phone %}
                                 <span class="badge bg-success fs-6 p-2">
-                                    <i class="bi bi-check-circle"></i> Contactado por teléfono
+                                    <i class="bi bi-check-circle"></i> {% translate "Contactado por teléfono" %}
                                 </span>
                             {% else %}
                                 <span class="badge bg-secondary fs-6 p-2">
-                                    <i class="bi bi-x-circle"></i> No contactado por teléfono
+                                    <i class="bi bi-x-circle"></i> {% translate "No contactado por teléfono" %}
                                 </span>
                             {% endif %}
                         </div>
                         <div class="col-md-6">
-                            <h6><i class="bi bi-envelope"></i> Contacto web/email</h6>
+                            <h6><i class="bi bi-envelope"></i> {% translate "Contacto web/email" %}</h6>
                             {% if contact.contacted_by_web %}
                                 <span class="badge bg-primary fs-6 p-2">
-                                    <i class="bi bi-check-circle"></i> Contactado por web/email
+                                    <i class="bi bi-check-circle"></i> {% translate "Contactado por web/email" %}
                                 </span>
                             {% else %}
                                 <span class="badge bg-secondary fs-6 p-2">
-                                    <i class="bi bi-x-circle"></i> No contactado por web/email
+                                    <i class="bi bi-x-circle"></i> {% translate "No contactado por web/email" %}
                                 </span>
                             {% endif %}
                         </div>
@@ -324,7 +325,7 @@
                     {% if contact.last_contact_date %}
                     <div class="row mb-3">
                         <div class="col-12">
-                            <h6><i class="bi bi-calendar-check"></i> Último contacto</h6>
+                            <h6><i class="bi bi-calendar-check"></i> {% translate "Último contacto" %}</h6>
                             <p class="text-muted">{{ contact.last_contact_date|date:"d/m/Y H:i" }}</p>
                         </div>
                     </div>
@@ -333,7 +334,7 @@
                     {% if contact.contact_tracking_notes %}
                     <div class="row">
                         <div class="col-12">
-                            <h6><i class="bi bi-chat-dots"></i> Notas de seguimiento</h6>
+                            <h6><i class="bi bi-chat-dots"></i> {% translate "Notas de seguimiento" %}</h6>
                             <div class="bg-light p-3 rounded">
                                 {{ contact.contact_tracking_notes|linebreaks }}
                             </div>
@@ -344,19 +345,19 @@
                     <!-- Estado visual del seguimiento -->
                     <div class="row mt-3">
                         <div class="col-12">
-                            <small class="text-muted">Estado del seguimiento:</small>
+                            <small class="text-muted">{% translate "Estado del seguimiento:" %}</small>
                             <div class="d-flex gap-2 flex-wrap mt-1">
                                 {% if contact.contacted_by_phone and contact.contacted_by_web %}
                                     <span class="badge bg-success">
-                                        <i class="bi bi-check-all"></i> Contacto completo
+                                        <i class="bi bi-check-all"></i> {% translate "Contacto completo" %}
                                     </span>
                                 {% elif contact.contacted_by_phone or contact.contacted_by_web %}
                                     <span class="badge bg-warning">
-                                        <i class="bi bi-hourglass-split"></i> Contacto parcial
+                                        <i class="bi bi-hourglass-split"></i> {% translate "Contacto parcial" %}
                                     </span>
                                 {% else %}
                                     <span class="badge bg-danger">
-                                        <i class="bi bi-exclamation-triangle"></i> Sin contacto registrado
+                                        <i class="bi bi-exclamation-triangle"></i> {% translate "Sin contacto registrado" %}
                                     </span>
                                 {% endif %}
                             </div>
@@ -387,39 +388,39 @@
                         <div class="mb-3">
                             <div class="btn-group" role="group">
                                 <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-robot"></i> Asistente IA
+                                    <i class="bi bi-robot"></i> {% translate "Asistente IA" %}
                                 </button>
                                 <ul class="dropdown-menu">
-                                    <li><h6 class="dropdown-header">Sugerencias automáticas</h6></li>
+                                    <li><h6 class="dropdown-header">{% translate "Sugerencias automáticas" %}</h6></li>
                                     <li>
                                         <a class="dropdown-item" href="#" onclick="generateAIComment('company_info'); return false;">
-                                            <i class="bi bi-building me-2"></i>Info de la empresa
+                                            <i class="bi bi-building me-2"></i>{% translate "Info de la empresa" %}
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="#" onclick="generateAIComment('contact_info'); return false;">
-                                            <i class="bi bi-person me-2"></i>Info del contacto
+                                            <i class="bi bi-person me-2"></i>{% translate "Info del contacto" %}
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="#" onclick="generateAIComment('sales_estimate'); return false;">
-                                            <i class="bi bi-currency-dollar me-2"></i>Estimar ventas anuales
+                                            <i class="bi bi-currency-dollar me-2"></i>{% translate "Estimar ventas anuales" %}
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="#" onclick="generateAIComment('employees_estimate'); return false;">
-                                            <i class="bi bi-people me-2"></i>Estimar empleados
+                                            <i class="bi bi-people me-2"></i>{% translate "Estimar empleados" %}
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="#" onclick="generateAIComment('next_steps'); return false;">
-                                            <i class="bi bi-arrow-right-circle me-2"></i>Próximos pasos
+                                            <i class="bi bi-arrow-right-circle me-2"></i>{% translate "Próximos pasos" %}
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#customPromptModal">
-                                            <i class="bi bi-chat-dots me-2"></i>Pregunta personalizada
+                                            <i class="bi bi-chat-dots me-2"></i>{% translate "Pregunta personalizada" %}
                                         </a>
                                     </li>
                                 </ul>
@@ -428,12 +429,12 @@
                             <!-- Indicador de carga -->
                             <span id="aiLoadingIndicator" class="ms-2" style="display: none;">
                                 <span class="spinner-border spinner-border-sm" role="status"></span>
-                                <small class="text-muted ms-1">Generando con IA...</small>
+                                <small class="text-muted ms-1">{% translate "Generando con IA..." %}</small>
                             </span>
                         </div>
                         
                         <button type="submit" name="comment_submit" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Agregar Comentario
+                            <i class="bi bi-plus-circle"></i> {% translate "Agregar Comentario" %}
                         </button>
                     </form>
 
@@ -466,7 +467,7 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-muted">No hay comentarios aún.</p>
+                        <p class="text-muted">{% translate "No hay comentarios aún." %}</p>
                     {% endif %}
                 </div>
             </div>
@@ -484,7 +485,7 @@
                         {% csrf_token %}
                         <div class="row">
                             <div class="col-md-8 mb-3">
-                                <label for="{{ attachment_form.file.id_for_label }}" class="form-label">Archivo</label>
+                                <label for="{{ attachment_form.file.id_for_label }}" class="form-label">{% translate "Archivo" %}</label>
                                 {{ attachment_form.file }}
                                 {% if attachment_form.file.errors %}
                                     <div class="text-danger small mt-1">{{ attachment_form.file.errors.0 }}</div>
@@ -494,7 +495,7 @@
                                 {% endif %}
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label for="{{ attachment_form.description.id_for_label }}" class="form-label">Descripción</label>
+                                <label for="{{ attachment_form.description.id_for_label }}" class="form-label">{% translate "Descripción" %}</label>
                                 {{ attachment_form.description }}
                                 {% if attachment_form.description.errors %}
                                     <div class="text-danger small mt-1">{{ attachment_form.description.errors.0 }}</div>
@@ -502,7 +503,7 @@
                             </div>
                         </div>
                         <button type="submit" name="attachment_submit" class="btn btn-primary">
-                            <i class="bi bi-upload"></i> Subir Archivo
+                            <i class="bi bi-upload"></i> {% translate "Subir Archivo" %}
                         </button>
                     </form>
 
@@ -532,13 +533,13 @@
                                     <div class="col-md-4 text-end">
                                         <div class="btn-group" role="group">
                                             <a href="{% url 'contact_attachment_download' attachment.pk %}" 
-                                               class="btn btn-sm btn-outline-primary" title="Descargar">
+                                               class="btn btn-sm btn-outline-primary" title="{% translate 'Descargar' %}">
                                                 <i class="bi bi-download"></i>
                                             </a>
                                             <form method="POST" action="{% url 'contact_attachment_delete' attachment.pk %}" class="d-inline">
                                                 {% csrf_token %}
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" 
-                                                        title="Eliminar"
+                                                        title="{% translate 'Eliminar' %}"
                                                         onclick="return confirm('¿Estás seguro de que quieres eliminar este archivo?')">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
@@ -550,7 +551,7 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-muted">No hay archivos adjuntos aún.</p>
+                        <p class="text-muted">{% translate "No hay archivos adjuntos aún." %}</p>
                     {% endif %}
                 </div>
             </div>
@@ -572,27 +573,27 @@
                     <div class="row mb-3">
                         <div class="col-4 text-center">
                             <a href="{% url 'my_activities_dashboard' %}?status=pending&contact={{ contact.pk }}" 
-                               class="text-decoration-none" title="Ver actividades pendientes">
+                               class="text-decoration-none" title="{% translate 'Ver actividades pendientes' %}">
                                 <div class="bg-warning text-dark rounded p-2" style="cursor: pointer; transition: all 0.2s;">
-                                    <small class="d-block">Pendientes</small>
+                                    <small class="d-block">{% translate "Pendientes" %}</small>
                                     <strong>{{ pending_activities }}</strong>
                                 </div>
                             </a>
                         </div>
                         <div class="col-4 text-center">
                             <a href="{% url 'my_activities_dashboard' %}?status=completed&contact={{ contact.pk }}" 
-                               class="text-decoration-none" title="Ver actividades completadas">
+                               class="text-decoration-none" title="{% translate 'Ver actividades completadas' %}">
                                 <div class="bg-success text-white rounded p-2" style="cursor: pointer; transition: all 0.2s;">
-                                    <small class="d-block">Completadas</small>
+                                    <small class="d-block">{% translate "Completadas" %}</small>
                                     <strong>{{ completed_activities }}</strong>
                                 </div>
                             </a>
                         </div>
                         <div class="col-4 text-center">
                             <a href="{% url 'my_activities_dashboard' %}?contact={{ contact.pk }}" 
-                               class="text-decoration-none" title="Ver todas las actividades">
+                               class="text-decoration-none" title="{% translate 'Ver todas las actividades' %}">
                                 <div class="bg-info text-white rounded p-2" style="cursor: pointer; transition: all 0.2s;">
-                                    <small class="d-block">Total</small>
+                                    <small class="d-block">{% translate "Total" %}</small>
                                     <strong>{{ total_activities }}</strong>
                                 </div>
                             </a>
@@ -602,59 +603,59 @@
                     <!-- Botón para crear nueva actividad -->
                     <div class="d-grid mb-3">
                         <a href="{% url 'activity_create_from_contact' contact.pk %}" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Nueva Actividad
+                            <i class="bi bi-plus-circle"></i> {% translate "Nueva Actividad" %}
                         </a>
                     </div>
 
                     <!-- Botones rápidos para actividades -->
                     <div class="mb-3">
                         <h6 class="text-muted mb-2">
-                            <i class="bi bi-lightning"></i> Acciones Rápidas
+                            <i class="bi bi-lightning"></i> {% translate "Acciones Rápidas" %}
                         </h6>
                         <div class="row g-2">
                             <div class="col-6">
                                 <button type="button" class="btn btn-outline-success btn-sm w-100" 
                                         onclick="crearActividadRapida('call', '{{ contact.pk }}')"
-                                        title="Programar llamada para dentro de 1 semana">
+                                        title="{% translate 'Programar llamada para dentro de 1 semana' %}">
                                     <i class="bi bi-telephone"></i>
-                                    <small class="d-block">Llamar en</small>
-                                    <small class="d-block">1 semana</small>
+                                    <small class="d-block">{% translate "Llamar en" %}</small>
+                                    <small class="d-block">{% translate "1 semana" %}</small>
                                 </button>
                             </div>
                             <div class="col-6">
                                 <button type="button" class="btn btn-outline-info btn-sm w-100" 
                                         onclick="crearActividadRapida('meeting', '{{ contact.pk }}')"
-                                        title="Programar reunión para dentro de 1 semana">
+                                        title="{% translate 'Programar reunión para dentro de 1 semana' %}">
                                     <i class="bi bi-people"></i>
-                                    <small class="d-block">Reunirnos en</small>
-                                    <small class="d-block">1 semana</small>
+                                    <small class="d-block">{% translate "Reunirnos en" %}</small>
+                                    <small class="d-block">{% translate "1 semana" %}</small>
                                 </button>
                             </div>
                             <div class="col-6">
                                 <button type="button" class="btn btn-outline-success btn-sm w-100" 
                                         onclick="crearActividadRapidaMes('call', '{{ contact.pk }}')"
-                                        title="Programar llamada para dentro de 1 mes">
+                                        title="{% translate 'Programar llamada para dentro de 1 mes' %}">
                                     <i class="bi bi-telephone"></i>
-                                    <small class="d-block">Llamar en</small>
-                                    <small class="d-block">1 mes</small>
+                                    <small class="d-block">{% translate "Llamar en" %}</small>
+                                    <small class="d-block">{% translate "1 mes" %}</small>
                                 </button>
                             </div>
                             <div class="col-6">
                                 <button type="button" class="btn btn-outline-info btn-sm w-100" 
                                         onclick="crearActividadRapidaMes('meeting', '{{ contact.pk }}')"
-                                        title="Programar reunión para dentro de 1 mes">
+                                        title="{% translate 'Programar reunión para dentro de 1 mes' %}">
                                     <i class="bi bi-people"></i>
-                                    <small class="d-block">Reunirnos en</small>
-                                    <small class="d-block">1 mes</small>
+                                    <small class="d-block">{% translate "Reunirnos en" %}</small>
+                                    <small class="d-block">{% translate "1 mes" %}</small>
                                 </button>
                             </div>
                             <div class="col-12">
                                 <button type="button" class="btn btn-outline-primary btn-sm w-100" 
                                         data-bs-toggle="modal" 
                                         data-bs-target="#aiQuickActionModal"
-                                        title="Crear actividad con asistencia de IA">
+                                        title="{% translate 'Crear actividad con asistencia de IA' %}">
                                     <i class="bi bi-stars"></i>
-                                    <small class="d-block">Acción Rápida con IA</small>
+                                    <small class="d-block">{% translate "Acción Rápida con IA" %}</small>
                                 </button>
                             </div>
                         </div>
@@ -662,7 +663,7 @@
 
                     <!-- Lista de actividades recientes -->
                     {% if activities %}
-                        <h6 class="text-muted mb-2">Actividades Recientes:</h6>
+                        <h6 class="text-muted mb-2">{% translate "Actividades Recientes:" %}</h6>
                         <div class="list-group list-group-flush">
                             {% for activity in activities|slice:":5" %}
                             <div class="list-group-item px-0 py-2 border-bottom">
@@ -701,15 +702,15 @@
                         {% if total_activities > 5 %}
                         <div class="text-center mt-2">
                             <a href="{% url 'my_activities_dashboard' %}?contact={{ contact.pk }}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-arrow-right"></i> Ver todas las actividades
+                                <i class="bi bi-arrow-right"></i> {% translate "Ver todas las actividades" %}
                             </a>
                         </div>
                         {% endif %}
                     {% else %}
                         <div class="text-center text-muted py-3">
                             <i class="bi bi-list-task" style="font-size: 2rem;"></i>
-                            <p class="mb-0 small">No hay actividades registradas</p>
-                            <small>Crea la primera actividad para este contacto</small>
+                            <p class="mb-0 small">{% translate "No hay actividades registradas" %}</p>
+                            <small>{% translate "Crea la primera actividad para este contacto" %}</small>
                         </div>
                     {% endif %}
                 </div>
@@ -721,30 +722,30 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-lightning"></i> Acciones Rápidas
+                        <i class="bi bi-lightning"></i> {% translate "Acciones Rápidas" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         {% if contact.status == 'positive' %}
                         <a href="{% url 'opportunity_create' %}?contact_id={{ contact.pk }}" class="btn btn-success">
-                            <i class="bi bi-plus-circle"></i> Crear Oportunidad
+                            <i class="bi bi-plus-circle"></i> {% translate "Crear Oportunidad" %}
                         </a>
                         {% endif %}
                         
                         <a href="{% url 'activity_create_from_contact' contact.pk %}" class="btn btn-primary">
-                            <i class="bi bi-list-task"></i> Nueva Actividad
+                            <i class="bi bi-list-task"></i> {% translate "Nueva Actividad" %}
                         </a>
                         
                         {% if contact.email %}
                         <a href="mailto:{{ contact.email }}" class="btn btn-outline-primary">
-                            <i class="bi bi-envelope"></i> Enviar Email
+                            <i class="bi bi-envelope"></i> {% translate "Enviar Email" %}
                         </a>
                         {% endif %}
                         
                         {% if contact.phone %}
                         <a href="tel:{{ contact.phone }}" class="btn btn-outline-success">
-                            <i class="bi bi-telephone"></i> Llamar
+                            <i class="bi bi-telephone"></i> {% translate "Llamar" %}
                         </a>
                         <a href="https://wa.me/{{ contact.phone|clean_phone_for_whatsapp }}" 
                            target="_blank" class="btn btn-outline-success">
@@ -753,11 +754,11 @@
                         {% endif %}
                         
                         <a href="{% url 'contact_edit' contact.pk %}" class="btn btn-outline-warning">
-                            <i class="bi bi-pencil"></i> Editar Contacto
+                            <i class="bi bi-pencil"></i> {% translate "Editar Contacto" %}
                         </a>
                         
                         <a href="{% url 'contact_delete' contact.pk %}" class="btn btn-outline-danger">
-                            <i class="bi bi-trash"></i> Eliminar Contacto
+                            <i class="bi bi-trash"></i> {% translate "Eliminar Contacto" %}
                         </a>
                     </div>
                 </div>
@@ -768,20 +769,20 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-calendar"></i> Fechas Importantes
+                        <i class="bi bi-calendar"></i> {% translate "Fechas Importantes" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <h6>Fecha de Contacto</h6>
+                        <h6>{% translate "Fecha de Contacto" %}</h6>
                         <p class="text-muted">{{ contact.contact_date|date:"d/m/Y H:i" }}</p>
                     </div>
                     <div class="mb-3">
-                        <h6>Creado</h6>
+                        <h6>{% translate "Creado" %}</h6>
                         <p class="text-muted">{{ contact.created_at|date:"d/m/Y H:i" }}</p>
                     </div>
                     <div class="mb-3">
-                        <h6>Última Actualización</h6>
+                        <h6>{% translate "Última Actualización" %}</h6>
                         <p class="text-muted">{{ contact.updated_at|date:"d/m/Y H:i" }}</p>
                     </div>
                 </div>
@@ -791,7 +792,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-clock-history"></i> Línea de Tiempo
+                        <i class="bi bi-clock-history"></i> {% translate "Línea de Tiempo" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -811,12 +812,12 @@
                                     <div>
                                         <h6 class="mb-1">
                                             <i class="bi bi-plus-circle text-primary me-1"></i>
-                                            Contacto Creado
+                                            {% translate "Contacto Creado" %}
                                         </h6>
                                         <p class="text-muted small mb-0">
                                             {{ contact.created_at|date:"d/m/Y H:i" }}
                                             {% if contact.created_by %}
-                                                por <strong>{{ contact.created_by.get_full_name|default:contact.created_by.username }}</strong>
+                                                {% translate "por" %} <strong>{{ contact.created_by.get_full_name|default:contact.created_by.username }}</strong>
                                             {% endif %}
                                         </p>
                                     </div>
@@ -856,7 +857,7 @@
                                         <p class="text-muted small mb-0">
                                             {{ activity.created_at|date:"d/m/Y H:i" }}
                                             {% if activity.created_by %}
-                                                por <strong>{{ activity.created_by.get_full_name|default:activity.created_by.username }}</strong>
+                                                {% translate "por" %} <strong>{{ activity.created_by.get_full_name|default:activity.created_by.username }}</strong>
                                             {% endif %}
                                         </p>
                                     </div>
@@ -874,13 +875,13 @@
                                     <div class="flex-grow-1">
                                         <h6 class="mb-1">
                                             <i class="bi bi-chat-left-text text-info me-1"></i>
-                                            Comentario Agregado
+                                            {% translate "Comentario Agregado" %}
                                         </h6>
                                         <p class="mb-1 small">{{ comment.comment|truncatewords:20 }}</p>
                                         <p class="text-muted small mb-0">
                                             {{ comment.created_at|date:"d/m/Y H:i" }}
                                             {% if comment.created_by %}
-                                                por <strong>{{ comment.created_by.get_full_name|default:comment.created_by.username }}</strong>
+                                                {% translate "por" %} <strong>{{ comment.created_by.get_full_name|default:comment.created_by.username }}</strong>
                                             {% endif %}
                                         </p>
                                     </div>
@@ -898,12 +899,12 @@
                                     <div>
                                         <h6 class="mb-1">
                                             <i class="bi bi-pencil text-warning me-1"></i>
-                                            Contacto Modificado
+                                            {% translate "Contacto Modificado" %}
                                         </h6>
                                         <p class="text-muted small mb-0">
                                             {{ contact.updated_at|date:"d/m/Y H:i" }}
                                             {% if contact.assigned_to %}
-                                                por <strong>{{ contact.assigned_to.get_full_name|default:contact.assigned_to.username }}</strong>
+                                                {% translate "por" %} <strong>{{ contact.assigned_to.get_full_name|default:contact.assigned_to.username }}</strong>
                                             {% endif %}
                                         </p>
                                     </div>
@@ -921,7 +922,7 @@
                                     <div class="flex-grow-1">
                                         <h6 class="mb-1">
                                             <i class="bi bi-paperclip" style="color: #6f42c1;" class="me-1"></i>
-                                            Archivo Adjuntado
+                                            {% translate "Archivo Adjuntado" %}
                                         </h6>
                                         <p class="mb-1 small">
                                             <a href="{{ attachment.file.url }}" target="_blank">{{ attachment.file.name|truncatewords:10 }}</a>
@@ -929,7 +930,7 @@
                                         <p class="text-muted small mb-0">
                                             {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
                                             {% if attachment.uploaded_by %}
-                                                por <strong>{{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}</strong>
+                                                {% translate "por" %} <strong>{{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}</strong>
                                             {% endif %}
                                         </p>
                                     </div>
@@ -941,7 +942,7 @@
                         {% if not activities and not comments and not attachments %}
                         <div class="text-center text-muted py-3">
                             <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
-                            <p class="mb-0 mt-2">No hay eventos adicionales registrados</p>
+                            <p class="mb-0 mt-2">{% translate "No hay eventos adicionales registrados" %}</p>
                         </div>
                         {% endif %}
                     </div>
@@ -1371,38 +1372,38 @@ function crearActividadesConIA() {
         <div class="modal-content">
             <div class="modal-header bg-info text-white">
                 <h5 class="modal-title" id="customPromptModalLabel">
-                    <i class="bi bi-robot me-2"></i>Pregunta Personalizada a la IA
+                    <i class="bi bi-robot me-2"></i>{% translate "Pregunta Personalizada a la IA" %}
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
             </div>
             <div class="modal-body">
                 <p class="text-muted">
-                    Escribe tu pregunta o solicitud personalizada sobre este contacto. La IA utilizará toda la información disponible para generar un comentario útil.
+                    {% translate "Escribe tu pregunta o solicitud personalizada sobre este contacto. La IA utilizará toda la información disponible para generar un comentario útil." %}
                 </p>
                 <div class="mb-3">
-                    <label for="customPromptInput" class="form-label">Tu pregunta:</label>
+                    <label for="customPromptInput" class="form-label">{% translate "Tu pregunta:" %}</label>
                     <textarea class="form-control" id="customPromptInput" rows="4" 
                               placeholder="Ejemplo: ¿Qué estrategia de contacto recomiendas para este cliente? o ¿Cuál es el mejor momento para hacer seguimiento?"></textarea>
                 </div>
                 <div class="alert alert-light d-flex align-items-start" role="alert">
                     <i class="bi bi-lightbulb text-warning me-2 mt-1"></i>
                     <div>
-                        <strong>Ejemplos de preguntas:</strong>
+                        <strong>{% translate "Ejemplos de preguntas:" %}</strong>
                         <ul class="mb-0 mt-1 small">
-                            <li>¿Qué productos o servicios podrían interesarle a esta empresa?</li>
-                            <li>¿Cuál es el perfil de decisión de este contacto?</li>
-                            <li>¿Qué competidores tiene probablemente esta empresa?</li>
-                            <li>¿Qué desafíos enfrenta esta industria?</li>
+                            <li>{% translate "¿Qué productos o servicios podrían interesarle a esta empresa?" %}</li>
+                            <li>{% translate "¿Cuál es el perfil de decisión de este contacto?" %}</li>
+                            <li>{% translate "¿Qué competidores tiene probablemente esta empresa?" %}</li>
+                            <li>{% translate "¿Qué desafíos enfrenta esta industria?" %}</li>
                         </ul>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle"></i> Cancelar
+                    <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                 </button>
                 <button type="button" class="btn btn-info" onclick="generateCustomAIComment()">
-                    <i class="bi bi-robot"></i> Generar con IA
+                    <i class="bi bi-robot"></i> {% translate "Generar con IA" %}
                 </button>
             </div>
         </div>
@@ -1415,19 +1416,19 @@ function crearActividadesConIA() {
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="aiQuickActionModalLabel">
-                    <i class="bi bi-stars me-2"></i>Planificar Actividades con IA
+                    <i class="bi bi-stars me-2"></i>{% translate "Planificar Actividades con IA" %}
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
             </div>
             <div class="modal-body">
                 <p class="text-muted">
                     <i class="bi bi-lightbulb me-1"></i>
-                    Edita el prompt para indicarle a la IA qué actividades crear. Por defecto sugiere 3 actividades escalonadas.
+                    {% translate "Edita el prompt para indicarle a la IA qué actividades crear. Por defecto sugiere 3 actividades escalonadas." %}
                 </p>
                 
                 <div class="mb-3">
                     <label for="aiActivitiesPrompt" class="form-label fw-bold">
-                        <i class="bi bi-chat-left-text"></i> Instrucciones para la IA:
+                        <i class="bi bi-chat-left-text"></i> {% translate "Instrucciones para la IA:" %}
                     </label>
                     <textarea class="form-control" id="aiActivitiesPrompt" rows="6" 
                               placeholder="Escribe tu solicitud aquí...">Crea 3 actividades de seguimiento para este contacto:
@@ -1441,12 +1442,12 @@ Para cada actividad genera un título profesional y una descripción detallada c
                 <div class="alert alert-success d-flex align-items-start" role="alert">
                     <i class="bi bi-magic me-2 mt-1"></i>
                     <div>
-                        <strong>Ideas de prompts:</strong>
+                        <strong>{% translate "Ideas de prompts:" %}</strong>
                         <ul class="mb-0 mt-1 small">
-                            <li><strong>4 actividades:</strong> "Crea llamada en 7 días, reunión en 15, seguimiento en 30 y cierre en 60"</li>
-                            <li><strong>Frecuentes:</strong> "Crea llamadas de seguimiento cada 15 días durante 2 meses"</li>
-                            <li><strong>Específico:</strong> "Crea reunión de presentación en 10 días y demo técnica en 20 días"</li>
-                            <li><strong>Personalizado:</strong> Describe libremente qué actividades necesitas</li>
+                            <li><strong>{% translate "4 actividades:" %}</strong> {% translate '"Crea llamada en 7 días, reunión en 15, seguimiento en 30 y cierre en 60"' %}</li>
+                            <li><strong>{% translate "Frecuentes:" %}</strong> {% translate '"Crea llamadas de seguimiento cada 15 días durante 2 meses"' %}</li>
+                            <li><strong>{% translate "Específico:" %}</strong> {% translate '"Crea reunión de presentación en 10 días y demo técnica en 20 días"' %}</li>
+                            <li><strong>{% translate "Personalizado:" %}</strong> {% translate "Describe libremente qué actividades necesitas" %}</li>
                         </ul>
                     </div>
                 </div>
@@ -1454,16 +1455,16 @@ Para cada actividad genera un título profesional y una descripción detallada c
                 <div class="alert alert-info d-flex align-items-start mb-0" role="alert">
                     <i class="bi bi-info-circle me-2 mt-1"></i>
                     <div class="small">
-                        <strong>¿Qué hará la IA?</strong> Analizará el contacto (empresa, cargo, ERP, notas, estado) y creará automáticamente todas las actividades solicitadas con títulos y descripciones inteligentes.
+                        <strong>{% translate "¿Qué hará la IA?" %}</strong> {% translate "Analizará el contacto (empresa, cargo, ERP, notas, estado) y creará automáticamente todas las actividades solicitadas con títulos y descripciones inteligentes." %}
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle"></i> Cancelar
+                    <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                 </button>
                 <button type="button" class="btn btn-primary" onclick="crearActividadesConIA()">
-                    <i class="bi bi-stars"></i> Crear Actividades con IA
+                    <i class="bi bi-stars"></i> {% translate "Crear Actividades con IA" %}
                 </button>
             </div>
         </div>

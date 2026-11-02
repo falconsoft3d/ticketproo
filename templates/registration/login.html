@@ -1,99 +1,186 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}Iniciar Sesión - TicketProo{% endblock %}
+{% block title %}{% translate "Iniciar Sesión - TicketProo" %}{% endblock %}
 
-{% block hero_icon %}{% endblock %}
-{% block hero_title %}{% endblock %}
-{% block hero_description %}{% endblock %}
+{% block extra_css %}
+    .ap-auth {
+        min-height: calc(100vh - 60px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 56px 16px 72px;
+    }
+    .ap-auth-card {
+        width: 100%;
+        max-width: 440px;
+        background: var(--ap-surface);
+        border-radius: 28px;
+        padding: 48px 40px 36px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 30px 80px -30px rgba(0, 0, 0, .18);
+    }
+    .ap-auth-logo {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        margin: 0 auto 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.9rem;
+        color: #fff;
+        background: linear-gradient(160deg, #0a84ff 0%, #5e5ce6 100%);
+        box-shadow: 0 10px 24px -10px rgba(10, 132, 255, .6);
+    }
+    .ap-auth h1 {
+        font-size: 1.85rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        text-align: center;
+        margin-bottom: .35rem;
+    }
+    .ap-auth-sub {
+        text-align: center;
+        color: var(--ap-ink-2);
+        margin-bottom: 2rem;
+    }
+    .ap-field { position: relative; margin-bottom: .85rem; }
+    .ap-field input {
+        width: 100%;
+        height: 56px;
+        border: 1px solid var(--ap-line-strong);
+        border-radius: 14px;
+        padding: 22px 16px 6px;
+        font-size: 1rem;
+        color: var(--ap-ink);
+        background: var(--ap-surface);
+        outline: none;
+        transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .ap-field input:focus {
+        border-color: #0071e3;
+        box-shadow: 0 0 0 4px rgba(0, 113, 227, .15);
+    }
+    .ap-field label {
+        position: absolute;
+        left: 17px;
+        top: 17px;
+        font-size: 1rem;
+        color: var(--ap-ink-3);
+        pointer-events: none;
+        transition: all .15s ease;
+    }
+    .ap-field input:focus + label,
+    .ap-field input:not(:placeholder-shown) + label {
+        top: 8px;
+        font-size: .72rem;
+    }
+    .ap-field-error { color: #e0352b; font-size: .82rem; margin-top: .35rem; }
+    .ap-auth .form-check { margin: 1rem 0 1.5rem; }
+    .ap-auth .form-check-label { color: var(--ap-ink); font-size: .92rem; }
+    .ap-auth-btn {
+        width: 100%;
+        height: 50px;
+        border: none;
+        border-radius: 980px;
+        background: #0071e3;
+        color: #fff;
+        font-size: 1.02rem;
+        font-weight: 500;
+        transition: background .15s ease, transform .1s ease;
+    }
+    .ap-auth-btn:hover { background: #0077ed; }
+    .ap-auth-btn:active { transform: scale(.98); }
+    .ap-auth-foot {
+        text-align: center;
+        font-size: .92rem;
+        color: var(--ap-ink-2);
+        margin-top: 1.75rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--ap-line-soft);
+    }
+    .ap-auth-foot a { color: var(--ap-link); text-decoration: none; }
+    .ap-auth-foot a:hover { text-decoration: underline; }
+    .ap-auth-back {
+        display: block;
+        text-align: center;
+        margin-top: 1.5rem;
+        font-size: .88rem;
+        color: var(--ap-ink-2);
+        text-decoration: none;
+    }
+    .ap-auth-back:hover { color: var(--ap-ink); }
+    @media (max-width: 480px) {
+        .ap-auth-card { padding: 36px 24px 28px; border-radius: 22px; }
+    }
+{% endblock %}
+
 {% block hero_section %}{% endblock %}
 
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-lg">
-            <div class="card-body p-5">
-                <div class="text-center mb-4">
-                    <i class="bi bi-ticket-perforated display-4 text-primary"></i>
-                    <h3 class="mt-3 mb-1">Bienvenido de nuevo</h3>
-                    <p class="text-muted">Ingresa tus credenciales para continuar</p>
+{% block content_wrapper %}
+<section class="ap-auth">
+    <div class="w-100" style="max-width:440px">
+        <div class="ap-auth-card">
+            <div class="ap-auth-logo"><i class="bi bi-ticket-perforated"></i></div>
+            <h1>{% translate "Inicia sesión" %}</h1>
+            <p class="ap-auth-sub">{% translate "Bienvenido de nuevo a TicketProo" %}</p>
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="ap-field">
+                    <input type="text"
+                           id="{{ form.username.id_for_label }}"
+                           name="{{ form.username.name }}"
+                           placeholder=" "
+                           value="{{ form.username.value|default:'' }}"
+                           autocomplete="username"
+                           autofocus
+                           required>
+                    <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                    {% if form.username.errors %}
+                        <div class="ap-field-error">
+                            {% for error in form.username.errors %}<div>{{ error }}</div>{% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
 
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {{ form.non_field_errors }}
-                    </div>
-                {% endif %}
-
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    <div class="mb-3">
-                        <label for="{{ form.username.id_for_label }}" class="form-label">
-                            <i class="bi bi-person me-1"></i>{{ form.username.label }}
-                        </label>
-                        <input type="text" class="form-control form-control-lg" 
-                               id="{{ form.username.id_for_label }}" 
-                               name="{{ form.username.name }}" 
-                               placeholder="Introduce tu usuario"
-                               value="{{ form.username.value|default:'' }}"
-                               required>
-                        {% if form.username.errors %}
-                            <div class="text-danger small mt-1">
-                                {% for error in form.username.errors %}
-                                    <div>{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="{{ form.password.id_for_label }}" class="form-label">
-                            <i class="bi bi-lock me-1"></i>{{ form.password.label }}
-                        </label>
-                        <input type="password" class="form-control form-control-lg" 
-                               id="{{ form.password.id_for_label }}" 
-                               name="{{ form.password.name }}" 
-                               placeholder="Introduce tu contraseña"
-                               required>
-                        {% if form.password.errors %}
-                            <div class="text-danger small mt-1">
-                                {% for error in form.password.errors %}
-                                    <div>{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me"
-                               {% if request.COOKIES.remembered_username %}checked{% endif %}>
-                        <label class="form-check-label" for="remember_me">Recordar usuario</label>
-                    </div>
-
-                    <div class="d-grid mb-3">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
-                        </button>
-                    </div>
-                </form>
-
-                <div class="text-center">
-                    <p class="mb-0 text-muted">¿No tienes cuenta?</p>
-                    <a href="{% url 'register' %}" class="btn btn-outline-primary mt-2">
-                        <i class="bi bi-person-plus me-1"></i>Crear cuenta nueva
-                    </a>
+                <div class="ap-field">
+                    <input type="password"
+                           id="{{ form.password.id_for_label }}"
+                           name="{{ form.password.name }}"
+                           placeholder=" "
+                           autocomplete="current-password"
+                           required>
+                    <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                    {% if form.password.errors %}
+                        <div class="ap-field-error">
+                            {% for error in form.password.errors %}<div>{{ error }}</div>{% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
-                
-                <hr class="my-4">
-                
-                <div class="text-center">
-                    <a href="{% url 'home' %}" class="btn btn-link text-decoration-none">
-                        <i class="bi bi-arrow-left me-1"></i>Volver al inicio
-                    </a>
+
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me"
+                           {% if request.COOKIES.remembered_username %}checked{% endif %}>
+                    <label class="form-check-label" for="remember_me">{% translate "Recordar usuario" %}</label>
                 </div>
+
+                <button type="submit" class="ap-auth-btn">{% translate "Iniciar sesión" %}</button>
+            </form>
+
+            <div class="ap-auth-foot">
+                {% translate "¿No tienes cuenta?" %} <a href="{% url 'register' %}">{% translate "Crear cuenta nueva" %}</a>
             </div>
         </div>
+        <a href="{% url 'home' %}" class="ap-auth-back"><i class="bi bi-chevron-left me-1"></i>{% translate "Volver al inicio" %}</a>
     </div>
-</div>
+</section>
 {% endblock %}

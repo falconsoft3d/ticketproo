@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Estadísticas - {{ product_set.title }}{% endblock %}
@@ -14,7 +15,7 @@
                     </h5>
                     <div>
                         <a href="{% url 'product_set_detail' product_set.pk %}" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-arrow-left"></i> Volver
+                            <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                         </a>
                     </div>
                 </div>
@@ -25,7 +26,7 @@
                             <div class="card text-center bg-primary text-white">
                                 <div class="card-body">
                                     <h2 class="card-title mb-0">{{ product_set.view_count }}</h2>
-                                    <small>Total de Vistas</small>
+                                    <small>{% translate "Total de Vistas" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -33,7 +34,7 @@
                             <div class="card text-center bg-info text-white">
                                 <div class="card-body">
                                     <h2 class="card-title mb-0">{{ days_active }}</h2>
-                                    <small>Días Activo</small>
+                                    <small>{% translate "Días Activo" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -41,7 +42,7 @@
                             <div class="card text-center bg-success text-white">
                                 <div class="card-body">
                                     <h2 class="card-title mb-0">{{ views_per_day|floatformat:1 }}</h2>
-                                    <small>Vistas/Día</small>
+                                    <small>{% translate "Vistas/Día" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -49,7 +50,7 @@
                             <div class="card text-center bg-warning text-white">
                                 <div class="card-body">
                                     <h2 class="card-title mb-0">{{ product_set.product_count }}</h2>
-                                    <small>Productos</small>
+                                    <small>{% translate "Productos" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -61,31 +62,31 @@
                             <div class="card">
                                 <div class="card-header">
                                     <h6 class="mb-0">
-                                        <i class="bi bi-info-circle"></i> Información del Conjunto
+                                        <i class="bi bi-info-circle"></i> {% translate "Información del Conjunto" %}
                                     </h6>
                                 </div>
                                 <div class="card-body">
                                     <table class="table table-sm table-borderless mb-0">
                                         <tr>
-                                            <td style="width: 150px;"><strong>Título:</strong></td>
+                                            <td style="width: 150px;"><strong>{% translate "Título:" %}</strong></td>
                                             <td>{{ product_set.title }}</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Estado:</strong></td>
+                                            <td><strong>{% translate "Estado:" %}</strong></td>
                                             <td>
                                                 {% if product_set.is_public %}
                                                     <span class="badge bg-success">
-                                                        <i class="bi bi-globe"></i> Público
+                                                        <i class="bi bi-globe"></i> {% translate "Público" %}
                                                     </span>
                                                 {% else %}
                                                     <span class="badge bg-secondary">
-                                                        <i class="bi bi-lock"></i> Privado
+                                                        <i class="bi bi-lock"></i> {% translate "Privado" %}
                                                     </span>
                                                 {% endif %}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><strong>URL Pública:</strong></td>
+                                            <td><strong>{% translate "URL Pública:" %}</strong></td>
                                             <td>
                                                 {% if product_set.is_public %}
                                                     <div class="input-group input-group-sm">
@@ -97,25 +98,25 @@
                                                         <button class="btn btn-outline-secondary" 
                                                                 type="button" 
                                                                 onclick="copyToClipboard('publicUrl')"
-                                                                title="Copiar URL">
+                                                                title="{% translate 'Copiar URL' %}">
                                                             <i class="bi bi-clipboard"></i>
                                                         </button>
                                                     </div>
                                                 {% else %}
-                                                    <span class="text-muted">No disponible (conjunto privado)</span>
+                                                    <span class="text-muted">{% translate "No disponible (conjunto privado)" %}</span>
                                                 {% endif %}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Creado:</strong></td>
+                                            <td><strong>{% translate "Creado:" %}</strong></td>
                                             <td>{{ product_set.created_at|date:"d/m/Y H:i" }}</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Última actualización:</strong></td>
+                                            <td><strong>{% translate "Última actualización:" %}</strong></td>
                                             <td>{{ product_set.updated_at|date:"d/m/Y H:i" }}</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Última vista:</strong></td>
+                                            <td><strong>{% translate "Última vista:" %}</strong></td>
                                             <td>
                                                 {% if product_set.last_viewed_at %}
                                                     {{ product_set.last_viewed_at|date:"d/m/Y H:i" }}
@@ -124,7 +125,7 @@
                                                         ({{ product_set.last_viewed_at|timesince }} atrás)
                                                     </small>
                                                 {% else %}
-                                                    <span class="text-muted">Nunca visto</span>
+                                                    <span class="text-muted">{% translate "Nunca visto" %}</span>
                                                 {% endif %}
                                             </td>
                                         </tr>
@@ -138,13 +139,13 @@
                             <div class="card">
                                 <div class="card-header">
                                     <h6 class="mb-0">
-                                        <i class="bi bi-bar-chart"></i> Resumen de Rendimiento
+                                        <i class="bi bi-bar-chart"></i> {% translate "Resumen de Rendimiento" %}
                                     </h6>
                                 </div>
                                 <div class="card-body">
                                     <div class="mb-3">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <span>Vistas Totales</span>
+                                            <span>{% translate "Vistas Totales" %}</span>
                                             <strong class="text-primary">{{ product_set.view_count }}</strong>
                                         </div>
                                         <div class="progress mt-1" style="height: 5px;">
@@ -155,7 +156,7 @@
                                     
                                     <div class="mb-3">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <span>Promedio Diario</span>
+                                            <span>{% translate "Promedio Diario" %}</span>
                                             <strong class="text-success">{{ views_per_day|floatformat:1 }}</strong>
                                         </div>
                                         <div class="progress mt-1" style="height: 5px;">
@@ -166,7 +167,7 @@
                                     
                                     <div class="mb-3">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <span>Días Activo</span>
+                                            <span>{% translate "Días Activo" %}</span>
                                             <strong class="text-info">{{ days_active }}</strong>
                                         </div>
                                         <div class="progress mt-1" style="height: 5px;">
@@ -177,7 +178,7 @@
                                     
                                     <div class="mb-0">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <span>Productos</span>
+                                            <span>{% translate "Productos" %}</span>
                                             <strong class="text-warning">{{ product_set.product_count }}</strong>
                                         </div>
                                         <div class="progress mt-1" style="height: 5px;">
@@ -192,7 +193,7 @@
                             <div class="card mt-3">
                                 <div class="card-header">
                                     <h6 class="mb-0">
-                                        <i class="bi bi-gear"></i> Acciones
+                                        <i class="bi bi-gear"></i> {% translate "Acciones" %}
                                     </h6>
                                 </div>
                                 <div class="card-body">
@@ -201,19 +202,19 @@
                                         <a href="{{ product_set.get_public_url }}" 
                                            target="_blank" 
                                            class="btn btn-outline-primary btn-sm">
-                                            <i class="bi bi-box-arrow-up-right"></i> Ver Vista Pública
+                                            <i class="bi bi-box-arrow-up-right"></i> {% translate "Ver Vista Pública" %}
                                         </a>
                                         {% endif %}
                                         
                                         <a href="{% url 'product_set_edit' product_set.pk %}" 
                                            class="btn btn-outline-secondary btn-sm">
-                                            <i class="bi bi-pencil"></i> Editar Conjunto
+                                            <i class="bi bi-pencil"></i> {% translate "Editar Conjunto" %}
                                         </a>
                                         
                                         <a href="{% url 'product_set_toggle_public' product_set.pk %}" 
                                            class="btn btn-outline-{% if product_set.is_public %}warning{% else %}success{% endif %} btn-sm">
                                             <i class="bi bi-{% if product_set.is_public %}eye-slash{% else %}globe{% endif %}"></i>
-                                            {% if product_set.is_public %}Hacer Privado{% else %}Hacer Público{% endif %}
+                                            {% if product_set.is_public %}{% translate "Hacer Privado" %}{% else %}{% translate "Hacer Público" %}{% endif %}
                                         </a>
                                     </div>
                                 </div>

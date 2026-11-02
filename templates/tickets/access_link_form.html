@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ link.title|default:"Nuevo Enlace" }} - {{ block.super }}{% endblock %}
@@ -11,7 +12,7 @@
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">
                         <i class="bi bi-{% if link %}pencil{% else %}plus-circle{% endif %}"></i>
-                        {% if link %}Editar Enlace{% else %}Agregar Nuevo Enlace{% endif %}
+                        {% if link %}{% translate "Editar Enlace" %}{% else %}{% translate "Agregar Nuevo Enlace" %}{% endif %}
                     </h4>
                     <small>Grupo: {{ group.title }}</small>
                 </div>
@@ -21,10 +22,10 @@
                         {% csrf_token %}
 
                         <div class="mb-3">
-                            <label for="title" class="form-label">Título del Enlace <span class="text-danger">*</span></label>
+                            <label for="title" class="form-label">{% translate "Título del Enlace" %} <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="title" name="title" 
                                    value="{{ link.title|default:'' }}" required maxlength="200"
-                                   placeholder="Ej: Panel de Control, Documentación, Soporte">
+                                   placeholder="{% translate 'Ej: Panel de Control, Documentación, Soporte' %}">
                         </div>
 
                         <div class="mb-3">
@@ -32,57 +33,57 @@
                             <input type="url" class="form-control" id="url" name="url" 
                                    value="{{ link.url|default:'' }}" required maxlength="500"
                                    placeholder="https://ejemplo.com">
-                            <small class="text-muted">URL completa incluyendo https://</small>
+                            <small class="text-muted">{% translate "URL completa incluyendo https://" %}</small>
                         </div>
 
                         <div class="mb-3">
-                            <label for="description" class="form-label">Descripción</label>
+                            <label for="description" class="form-label">{% translate "Descripción" %}</label>
                             <textarea class="form-control" id="description" name="description" 
                                       rows="2" placeholder="Descripción breve (opcional)">{{ link.description|default:'' }}</textarea>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="icon" class="form-label">Icono Bootstrap</label>
+                                <label for="icon" class="form-label">{% translate "Icono Bootstrap" %}</label>
                                 <select class="form-select" id="icon" name="icon">
-                                    <option value="bi-link-45deg" {% if link.icon == 'bi-link-45deg' or not link %}selected{% endif %}>🔗 Enlace</option>
-                                    <option value="bi-house-door" {% if link.icon == 'bi-house-door' %}selected{% endif %}>🏠 Casa</option>
-                                    <option value="bi-gear" {% if link.icon == 'bi-gear' %}selected{% endif %}>⚙️ Configuración</option>
-                                    <option value="bi-book" {% if link.icon == 'bi-book' %}selected{% endif %}>📖 Documentación</option>
-                                    <option value="bi-headset" {% if link.icon == 'bi-headset' %}selected{% endif %}>🎧 Soporte</option>
-                                    <option value="bi-graph-up" {% if link.icon == 'bi-graph-up' %}selected{% endif %}>📈 Estadísticas</option>
-                                    <option value="bi-cloud" {% if link.icon == 'bi-cloud' %}selected{% endif %}>☁️ Nube</option>
-                                    <option value="bi-folder2-open" {% if link.icon == 'bi-folder2-open' %}selected{% endif %}>📂 Carpeta</option>
-                                    <option value="bi-terminal" {% if link.icon == 'bi-terminal' %}selected{% endif %}>💻 Terminal</option>
-                                    <option value="bi-tools" {% if link.icon == 'bi-tools' %}selected{% endif %}>🔧 Herramientas</option>
-                                    <option value="bi-shield-check" {% if link.icon == 'bi-shield-check' %}selected{% endif %}>🛡️ Seguridad</option>
-                                    <option value="bi-people" {% if link.icon == 'bi-people' %}selected{% endif %}>👥 Usuarios</option>
-                                    <option value="bi-envelope" {% if link.icon == 'bi-envelope' %}selected{% endif %}>✉️ Email</option>
-                                    <option value="bi-calendar" {% if link.icon == 'bi-calendar' %}selected{% endif %}>📅 Calendario</option>
-                                    <option value="bi-chat-dots" {% if link.icon == 'bi-chat-dots' %}selected{% endif %}>💬 Chat</option>
-                                    <option value="bi-camera-video" {% if link.icon == 'bi-camera-video' %}selected{% endif %}>📹 Video</option>
-                                    <option value="bi-bell" {% if link.icon == 'bi-bell' %}selected{% endif %}>🔔 Notificaciones</option>
-                                    <option value="bi-star" {% if link.icon == 'bi-star' %}selected{% endif %}>⭐ Favorito</option>
+                                    <option value="bi-link-45deg" {% if link.icon == 'bi-link-45deg' or not link %}selected{% endif %}>{% translate "🔗 Enlace" %}</option>
+                                    <option value="bi-house-door" {% if link.icon == 'bi-house-door' %}selected{% endif %}>{% translate "🏠 Casa" %}</option>
+                                    <option value="bi-gear" {% if link.icon == 'bi-gear' %}selected{% endif %}>{% translate "⚙️ Configuración" %}</option>
+                                    <option value="bi-book" {% if link.icon == 'bi-book' %}selected{% endif %}>{% translate "📖 Documentación" %}</option>
+                                    <option value="bi-headset" {% if link.icon == 'bi-headset' %}selected{% endif %}>{% translate "🎧 Soporte" %}</option>
+                                    <option value="bi-graph-up" {% if link.icon == 'bi-graph-up' %}selected{% endif %}>{% translate "📈 Estadísticas" %}</option>
+                                    <option value="bi-cloud" {% if link.icon == 'bi-cloud' %}selected{% endif %}>{% translate "☁️ Nube" %}</option>
+                                    <option value="bi-folder2-open" {% if link.icon == 'bi-folder2-open' %}selected{% endif %}>{% translate "📂 Carpeta" %}</option>
+                                    <option value="bi-terminal" {% if link.icon == 'bi-terminal' %}selected{% endif %}>{% translate "💻 Terminal" %}</option>
+                                    <option value="bi-tools" {% if link.icon == 'bi-tools' %}selected{% endif %}>{% translate "🔧 Herramientas" %}</option>
+                                    <option value="bi-shield-check" {% if link.icon == 'bi-shield-check' %}selected{% endif %}>{% translate "🛡️ Seguridad" %}</option>
+                                    <option value="bi-people" {% if link.icon == 'bi-people' %}selected{% endif %}>{% translate "👥 Usuarios" %}</option>
+                                    <option value="bi-envelope" {% if link.icon == 'bi-envelope' %}selected{% endif %}>{% translate "✉️ Email" %}</option>
+                                    <option value="bi-calendar" {% if link.icon == 'bi-calendar' %}selected{% endif %}>{% translate "📅 Calendario" %}</option>
+                                    <option value="bi-chat-dots" {% if link.icon == 'bi-chat-dots' %}selected{% endif %}>{% translate "💬 Chat" %}</option>
+                                    <option value="bi-camera-video" {% if link.icon == 'bi-camera-video' %}selected{% endif %}>{% translate "📹 Video" %}</option>
+                                    <option value="bi-bell" {% if link.icon == 'bi-bell' %}selected{% endif %}>{% translate "🔔 Notificaciones" %}</option>
+                                    <option value="bi-star" {% if link.icon == 'bi-star' %}selected{% endif %}>{% translate "⭐ Favorito" %}</option>
                                 </select>
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label for="color" class="form-label">Color del Botón</label>
+                                <label for="color" class="form-label">{% translate "Color del Botón" %}</label>
                                 <select class="form-select" id="color" name="color">
-                                    <option value="primary" {% if link.color == 'primary' or not link %}selected{% endif %}>Azul (Primary)</option>
-                                    <option value="success" {% if link.color == 'success' %}selected{% endif %}>Verde (Success)</option>
-                                    <option value="danger" {% if link.color == 'danger' %}selected{% endif %}>Rojo (Danger)</option>
-                                    <option value="warning" {% if link.color == 'warning' %}selected{% endif %}>Amarillo (Warning)</option>
-                                    <option value="info" {% if link.color == 'info' %}selected{% endif %}>Celeste (Info)</option>
-                                    <option value="secondary" {% if link.color == 'secondary' %}selected{% endif %}>Gris (Secondary)</option>
-                                    <option value="dark" {% if link.color == 'dark' %}selected{% endif %}>Negro (Dark)</option>
+                                    <option value="primary" {% if link.color == 'primary' or not link %}selected{% endif %}>{% translate "Azul (Primary)" %}</option>
+                                    <option value="success" {% if link.color == 'success' %}selected{% endif %}>{% translate "Verde (Success)" %}</option>
+                                    <option value="danger" {% if link.color == 'danger' %}selected{% endif %}>{% translate "Rojo (Danger)" %}</option>
+                                    <option value="warning" {% if link.color == 'warning' %}selected{% endif %}>{% translate "Amarillo (Warning)" %}</option>
+                                    <option value="info" {% if link.color == 'info' %}selected{% endif %}>{% translate "Celeste (Info)" %}</option>
+                                    <option value="secondary" {% if link.color == 'secondary' %}selected{% endif %}>{% translate "Gris (Secondary)" %}</option>
+                                    <option value="dark" {% if link.color == 'dark' %}selected{% endif %}>{% translate "Negro (Dark)" %}</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i>
-                            <strong>Vista Previa:</strong>
+                            <strong>{% translate "Vista Previa:" %}</strong>
                             <div class="mt-2">
                                 <button type="button" class="btn btn-{{ link.color|default:'primary' }} disabled">
                                     <i class="bi bi-{{ link.icon|default:'bi-link-45deg' }}"></i>
@@ -94,10 +95,10 @@
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save"></i>
-                                {% if link %}Actualizar{% else %}Agregar{% endif %} Enlace
+                                {% if link %}{% translate "Actualizar" %}{% else %}{% translate "Agregar" %}{% endif %} {% translate "Enlace" %}
                             </button>
                             <a href="{% url 'access_group_detail' group.id %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>

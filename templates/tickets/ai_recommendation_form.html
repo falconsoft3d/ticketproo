@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -6,11 +7,11 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
                     <a href="{% url 'ai_recommendation_list' %}">
-                        <i class="bi bi-lightbulb"></i> Recomendaciones IA
+                        <i class="bi bi-lightbulb"></i> {% translate "Recomendaciones IA" %}
                     </a>
                 </li>
                 <li class="breadcrumb-item active">{{ page_title }}</li>
@@ -28,7 +29,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-gear"></i> Configuración de Recomendación
+                    <i class="bi bi-gear"></i> {% translate "Configuración de Recomendación" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -37,21 +38,21 @@
                     
                     <div class="mb-3">
                         <label for="title" class="form-label">
-                            <i class="bi bi-tag"></i> Título <span class="text-danger">*</span>
+                            <i class="bi bi-tag"></i> {% translate "Título" %} <span class="text-danger">*</span>
                         </label>
                         <input type="text" 
                                class="form-control" 
                                id="title" 
                                name="title" 
                                value="{{ recommendation.title|default:'' }}"
-                               placeholder="Ej: Manejo de Quejas de Clientes"
+                               placeholder="{% translate 'Ej: Manejo de Quejas de Clientes' %}"
                                required>
-                        <div class="form-text">Un título descriptivo para identificar fácilmente esta recomendación.</div>
+                        <div class="form-text">{% translate "Un título descriptivo para identificar fácilmente esta recomendación." %}</div>
                     </div>
                     
                     <div class="mb-4">
                         <label for="context_text" class="form-label">
-                            <i class="bi bi-file-text"></i> Texto de Contexto <span class="text-danger">*</span>
+                            <i class="bi bi-file-text"></i> {% translate "Texto de Contexto" %} <span class="text-danger">*</span>
                         </label>
                         <textarea class="form-control" 
                                   id="context_text" 
@@ -60,18 +61,17 @@
                                   placeholder="Describe el contexto, políticas, tono de comunicación y directrices que la IA debe seguir..."
                                   required>{{ recommendation.context_text|default:'' }}</textarea>
                         <div class="form-text">
-                            Define el contexto base que la IA usará para generar respuestas. Incluye políticas de la empresa, 
-                            tono de comunicación, y directrices específicas.
+                            {% translate "Define el contexto base que la IA usará para generar respuestas. Incluye políticas de la empresa, tono de comunicación, y directrices específicas." %}
                         </div>
                     </div>
                     
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-circle"></i> 
-                            {% if recommendation %}Actualizar{% else %}Crear{% endif %} Recomendación
+                            {% if recommendation %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Recomendación" %}
                         </button>
                         <a href="{% url 'ai_recommendation_list' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Volver
+                            <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                         </a>
                     </div>
                 </form>
@@ -83,24 +83,22 @@
         <div class="card">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-question-circle"></i> Consejos para el Contexto
+                    <i class="bi bi-question-circle"></i> {% translate "Consejos para el Contexto" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="small">
-                    <h6 class="text-primary">Incluye información sobre:</h6>
+                    <h6 class="text-primary">{% translate "Incluye información sobre:" %}</h6>
                     <ul class="mb-3">
-                        <li><strong>Tono:</strong> Formal, amigable, profesional</li>
-                        <li><strong>Políticas:</strong> Reglas específicas de la empresa</li>
-                        <li><strong>Valores:</strong> Principios que debe reflejar</li>
-                        <li><strong>Restricciones:</strong> Qué evitar o no hacer</li>
+                        <li><strong>{% translate "Tono:" %}</strong> {% translate "Formal, amigable, profesional" %}</li>
+                        <li><strong>{% translate "Políticas:" %}</strong> {% translate "Reglas específicas de la empresa" %}</li>
+                        <li><strong>{% translate "Valores:" %}</strong> {% translate "Principios que debe reflejar" %}</li>
+                        <li><strong>{% translate "Restricciones:" %}</strong> {% translate "Qué evitar o no hacer" %}</li>
                     </ul>
                     
-                    <h6 class="text-success">Ejemplo de contexto:</h6>
+                    <h6 class="text-success">{% translate "Ejemplo de contexto:" %}</h6>
                     <div class="bg-light p-2 rounded small">
-                        "Nuestra empresa prioriza la satisfacción del cliente. Las respuestas deben ser empáticas, 
-                        profesionales y orientadas a soluciones. Siempre ofrecer disculpas cuando sea apropiado 
-                        y proporcionar alternativas viables. Evitar culpar al cliente y mantener un tono respetuoso."
+                        {% translate '"Nuestra empresa prioriza la satisfacción del cliente. Las respuestas deben ser empáticas, profesionales y orientadas a soluciones. Siempre ofrecer disculpas cuando sea apropiado y proporcionar alternativas viables. Evitar culpar al cliente y mantener un tono respetuoso."' %}
                     </div>
                 </div>
             </div>
@@ -109,17 +107,17 @@
         <div class="card mt-3">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-lightbulb"></i> ¿Cómo usar la recomendación?
+                    <i class="bi bi-lightbulb"></i> {% translate "¿Cómo usar la recomendación?" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="small">
                     <ol>
-                        <li>Crea la recomendación con contexto específico</li>
-                        <li>Ve al detalle de la recomendación</li>
-                        <li>Ingresa el caso específico del cliente</li>
-                        <li>La IA generará una respuesta basada en tu contexto</li>
-                        <li>Usa la respuesta como base para tu email</li>
+                        <li>{% translate "Crea la recomendación con contexto específico" %}</li>
+                        <li>{% translate "Ve al detalle de la recomendación" %}</li>
+                        <li>{% translate "Ingresa el caso específico del cliente" %}</li>
+                        <li>{% translate "La IA generará una respuesta basada en tu contexto" %}</li>
+                        <li>{% translate "Usa la respuesta como base para tu email" %}</li>
                     </ol>
                 </div>
             </div>

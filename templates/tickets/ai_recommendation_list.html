@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -6,25 +7,25 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
                     <a href="{% url 'dashboard' %}">
-                        <i class="bi bi-house"></i> Dashboard
+                        <i class="bi bi-house"></i> {% translate "Dashboard" %}
                     </a>
                 </li>
                 <li class="breadcrumb-item active">{{ page_title }}</li>
             </ol>
         </nav>
         <h2><i class="bi bi-lightbulb"></i> {{ page_title }}</h2>
-        <p class="text-muted">Asistente inteligente para respuestas profesionales y políticamente correctas</p>
+        <p class="text-muted">{% translate "Asistente inteligente para respuestas profesionales y políticamente correctas" %}</p>
     </div>
     
     <!-- Solo mostrar botón de crear para usuarios autenticados -->
     {% if user.is_authenticated %}
     <div>
         <a href="{% url 'ai_recommendation_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Nueva Recomendación
+            <i class="bi bi-plus-circle"></i> {% translate "Nueva Recomendación" %}
         </a>
     </div>
     {% endif %}
@@ -38,7 +39,7 @@
             <div class="card-header bg-light">
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="mb-0 text-primary">
-                        <i class="bi bi-lightbulb-fill"></i> Recomendación
+                        <i class="bi bi-lightbulb-fill"></i> {% translate "Recomendación" %}
                     </h6>
                     <small class="text-muted">
                         {{ recommendation.created_at|date:"d/m/Y" }}
@@ -65,19 +66,19 @@
                     <div class="col">
                         <a href="{% url 'ai_recommendation_detail' recommendation.pk %}" 
                            class="btn btn-primary w-100">
-                            <i class="bi bi-robot"></i> Usar IA
+                            <i class="bi bi-robot"></i> {% translate "Usar IA" %}
                         </a>
                     </div>
                     <div class="col-auto">
                         <div class="btn-group" role="group">
                             <a href="{% url 'ai_recommendation_edit' recommendation.pk %}" 
                                class="btn btn-outline-secondary btn-sm" 
-                               title="Editar">
+                               title="{% translate 'Editar' %}">
                                 <i class="bi bi-pencil"></i>
                             </a>
                             <a href="{% url 'ai_recommendation_delete' recommendation.pk %}" 
                                class="btn btn-outline-danger btn-sm" 
-                               title="Eliminar">
+                               title="{% translate 'Eliminar' %}">
                                 <i class="bi bi-trash"></i>
                             </a>
                         </div>
@@ -94,14 +95,14 @@
     <div class="col-12">
         <div class="alert alert-info" role="alert">
             <h6 class="alert-heading">
-                <i class="bi bi-info-circle"></i> ¿Cómo funciona?
+                <i class="bi bi-info-circle"></i> {% translate "¿Cómo funciona?" %}
             </h6>
-            <p class="mb-2">Las recomendaciones IA te ayudan a generar respuestas profesionales para casos específicos de clientes:</p>
+            <p class="mb-2">{% translate "Las recomendaciones IA te ayudan a generar respuestas profesionales para casos específicos de clientes:" %}</p>
             <ul class="mb-0">
-                <li>Crea recomendaciones con contexto específico (ej: políticas de la empresa, tono de comunicación)</li>
-                <li>Ingresa el caso del cliente y obtén una respuesta sugerida</li>
-                <li>La IA genera respuestas políticamente correctas y profesionales</li>
-                <li>Úsalo como asistente para emails y comunicación con clientes</li>
+                <li>{% translate "Crea recomendaciones con contexto específico (ej: políticas de la empresa, tono de comunicación)" %}</li>
+                <li>{% translate "Ingresa el caso del cliente y obtén una respuesta sugerida" %}</li>
+                <li>{% translate "La IA genera respuestas políticamente correctas y profesionales" %}</li>
+                <li>{% translate "Úsalo como asistente para emails y comunicación con clientes" %}</li>
             </ul>
         </div>
     </div>
@@ -110,12 +111,12 @@
 {% else %}
 <div class="text-center py-5">
     <i class="bi bi-lightbulb" style="font-size: 4rem; color: #dee2e6;"></i>
-    <h4 class="text-muted mt-3">No hay recomendaciones IA disponibles</h4>
-    <p class="text-muted">Crea tu primera recomendación para empezar a usar el asistente inteligente.</p>
+    <h4 class="text-muted mt-3">{% translate "No hay recomendaciones IA disponibles" %}</h4>
+    <p class="text-muted">{% translate "Crea tu primera recomendación para empezar a usar el asistente inteligente." %}</p>
     
     {% if user.is_authenticated %}
     <a href="{% url 'ai_recommendation_create' %}" class="btn btn-primary mt-3">
-        <i class="bi bi-plus-circle"></i> Crear la primera recomendación
+        <i class="bi bi-plus-circle"></i> {% translate "Crear la primera recomendación" %}
     </a>
     {% endif %}
 </div>

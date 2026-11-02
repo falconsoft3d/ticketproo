@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -14,13 +15,13 @@
                 </h1>
                 <div class="btn-group" role="group">
                     <a href="{% url 'landing_page_list' %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left"></i> Volver
+                        <i class="fas fa-arrow-left"></i> {% translate "Volver" %}
                     </a>
                     <a href="{% url 'landing_page_public' landing_page.slug %}" class="btn btn-success" target="_blank">
-                        <i class="fas fa-globe"></i> Ver Landing Pública
+                        <i class="fas fa-globe"></i> {% translate "Ver Landing Pública" %}
                     </a>
                     <a href="{% url 'landing_page_edit' landing_page.pk %}" class="btn btn-outline-primary">
-                        <i class="fas fa-edit"></i> Editar
+                        <i class="fas fa-edit"></i> {% translate "Editar" %}
                     </a>
                 </div>
             </div>
@@ -46,11 +47,11 @@
 
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <strong>Estado:</strong>
+                                        <strong>{% translate "Estado:" %}</strong>
                                         {% if landing_page.is_active %}
-                                            <span class="badge bg-success ms-2">Activa</span>
+                                            <span class="badge bg-success ms-2">{% translate "Activa" %}</span>
                                         {% else %}
-                                            <span class="badge bg-secondary ms-2">Inactiva</span>
+                                            <span class="badge bg-secondary ms-2">{% translate "Inactiva" %}</span>
                                         {% endif %}
                                     </div>
 
@@ -74,7 +75,7 @@
                                                 <div class="card-body text-center py-3">
                                                     <i class="fas fa-eye fa-2x text-primary mb-2"></i>
                                                     <div class="fw-bold text-primary h4 mb-0">{{ landing_page.total_views }}</div>
-                                                    <small class="text-muted">Vistas Totales</small>
+                                                    <small class="text-muted">{% translate "Vistas Totales" %}</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -83,7 +84,7 @@
                                                 <div class="card-body text-center py-3">
                                                     <i class="fas fa-paper-plane fa-2x text-success mb-2"></i>
                                                     <div class="fw-bold text-success h4 mb-0">{{ landing_page.total_submissions }}</div>
-                                                    <small class="text-muted">Envíos Totales</small>
+                                                    <small class="text-muted">{% translate "Envíos Totales" %}</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -92,7 +93,7 @@
                                                 <div class="card-body text-center py-3">
                                                     <i class="fas fa-calendar-plus fa-2x text-warning mb-2"></i>
                                                     <div class="fw-bold text-warning h4 mb-0">{{ landing_page.meeting_button_clicks }}</div>
-                                                    <small class="text-muted">Clics Reunión</small>
+                                                    <small class="text-muted">{% translate "Clics Reunión" %}</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -101,37 +102,37 @@
                                                 <div class="card-body text-center py-3">
                                                     <i class="fas fa-mouse-pointer fa-2x text-secondary mb-2"></i>
                                                     <div class="fw-bold text-secondary h4 mb-0">{{ landing_page.contact_button_clicks }}</div>
-                                                    <small class="text-muted">Clics Contactar</small>
+                                                    <small class="text-muted">{% translate "Clics Contactar" %}</small>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                     
                                     <!-- Tasas de Conversión -->
-                                    <h6 class="mb-3 text-center"><i class="fas fa-chart-line me-2"></i>Tasas de Conversión</h6>
+                                    <h6 class="mb-3 text-center"><i class="fas fa-chart-line me-2"></i>{% translate "Tasas de Conversión" %}</h6>
                                     <div class="row text-center">
                                         <div class="col-4">
                                             <div class="fw-bold text-info h5">{{ landing_page.conversion_rate|floatformat:1 }}%</div>
-                                            <small class="text-muted">Tasa de Envío</small>
+                                            <small class="text-muted">{% translate "Tasa de Envío" %}</small>
                                         </div>
                                         <div class="col-4">
                                             {% if landing_page.total_views > 0 %}
                                                 {% widthratio landing_page.meeting_button_clicks landing_page.total_views 100 as meeting_click_rate %}
                                                 <div class="fw-bold text-success h5">{{ meeting_click_rate|floatformat:1 }}%</div>
-                                                <small class="text-muted">Tasa de Interés</small>
+                                                <small class="text-muted">{% translate "Tasa de Interés" %}</small>
                                             {% else %}
                                                 <div class="fw-bold text-muted h5">0%</div>
-                                                <small class="text-muted">Tasa de Interés</small>
+                                                <small class="text-muted">{% translate "Tasa de Interés" %}</small>
                                             {% endif %}
                                         </div>
                                         <div class="col-4">
                                             {% if landing_page.total_views > 0 %}
                                                 {% widthratio landing_page.contact_button_clicks landing_page.total_views 100 as contact_click_rate %}
                                                 <div class="fw-bold text-info h5">{{ contact_click_rate|floatformat:1 }}%</div>
-                                                <small class="text-muted">Tasa de Contacto</small>
+                                                <small class="text-muted">{% translate "Tasa de Contacto" %}</small>
                                             {% else %}
                                                 <div class="fw-bold text-muted h5">0%</div>
-                                                <small class="text-muted">Tasa de Contacto</small>
+                                                <small class="text-muted">{% translate "Tasa de Contacto" %}</small>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -146,11 +147,11 @@
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <div>
-                                <h5><i class="fas fa-clock text-warning"></i> Contactos Pendientes</h5>
-                                <small class="text-muted">Solo se muestran los contactos que aún no han sido contactados</small>
+                                <h5><i class="fas fa-clock text-warning"></i> {% translate "Contactos Pendientes" %}</h5>
+                                <small class="text-muted">{% translate "Solo se muestran los contactos que aún no han sido contactados" %}</small>
                             </div>
                             <a href="{% url 'landing_page_submissions' landing_page.pk %}" class="btn btn-sm btn-outline-primary">
-                                Ver Todos
+                                {% translate "Ver Todos" %}
                             </a>
                         </div>
                         <div class="card-body">
@@ -159,13 +160,13 @@
                                     <table class="table table-hover">
                                         <thead>
                                             <tr>
-                                                <th>Contactado</th>
-                                                <th>Nombre</th>
-                                                <th>Email</th>
-                                                <th>Teléfono</th>
-                                                <th>Empresa</th>
-                                                <th>Fecha</th>
-                                                <th>Acciones</th>
+                                                <th>{% translate "Contactado" %}</th>
+                                                <th>{% translate "Nombre" %}</th>
+                                                <th>{% translate "Email" %}</th>
+                                                <th>{% translate "Teléfono" %}</th>
+                                                <th>{% translate "Empresa" %}</th>
+                                                <th>{% translate "Fecha" %}</th>
+                                                <th>{% translate "Acciones" %}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -197,7 +198,7 @@
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <a href="{% url 'landing_page_submission_detail' submission.id %}" class="btn btn-outline-primary btn-sm" title="Ver detalle">
+                                                        <a href="{% url 'landing_page_submission_detail' submission.id %}" class="btn btn-outline-primary btn-sm" title="{% translate 'Ver detalle' %}">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
                                                     </td>
@@ -209,10 +210,10 @@
                             {% else %}
                                 <div class="text-center py-4">
                                     <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                                    <h5 class="text-success">¡Todos los contactos han sido contactados!</h5>
-                                    <p class="text-muted">No hay contactos pendientes por contactar en este momento.</p>
+                                    <h5 class="text-success">{% translate "¡Todos los contactos han sido contactados!" %}</h5>
+                                    <p class="text-muted">{% translate "No hay contactos pendientes por contactar en este momento." %}</p>
                                     <a href="{% url 'landing_page_submissions' landing_page.pk %}" class="btn btn-outline-primary">
-                                        Ver Todos los Contactos
+                                        {% translate "Ver Todos los Contactos" %}
                                     </a>
                                 </div>
                             {% endif %}
@@ -225,21 +226,21 @@
                     <!-- Acciones Rápidas -->
                     <div class="card mb-4">
                         <div class="card-header">
-                            <h5><i class="fas fa-tools"></i> Acciones Rápidas</h5>
+                            <h5><i class="fas fa-tools"></i> {% translate "Acciones Rápidas" %}</h5>
                         </div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
                                 <a href="{% url 'landing_page_public' landing_page.slug %}" class="btn btn-success" target="_blank">
-                                    <i class="fas fa-globe"></i> Ver Landing Pública
+                                    <i class="fas fa-globe"></i> {% translate "Ver Landing Pública" %}
                                 </a>
                                 <a href="{% url 'landing_page_edit' landing_page.pk %}" class="btn btn-outline-primary">
-                                    <i class="fas fa-edit"></i> Editar Landing Page
+                                    <i class="fas fa-edit"></i> {% translate "Editar Landing Page" %}
                                 </a>
                                 <a href="{% url 'landing_page_submissions' landing_page.pk %}" class="btn btn-outline-info">
-                                    <i class="fas fa-list"></i> Ver Todos los Envíos
+                                    <i class="fas fa-list"></i> {% translate "Ver Todos los Envíos" %}
                                 </a>
                                 <button class="btn btn-outline-warning" onclick="copyToClipboard('{{ request.build_absolute_uri }}{% url 'landing_page_public' landing_page.slug %}')">
-                                    <i class="fas fa-copy"></i> Copiar URL
+                                    <i class="fas fa-copy"></i> {% translate "Copiar URL" %}
                                 </button>
                             </div>
                         </div>
@@ -248,61 +249,61 @@
                     <!-- Información Técnica -->
                     <div class="card">
                         <div class="card-header">
-                            <h5><i class="fas fa-info-circle"></i> Información</h5>
+                            <h5><i class="fas fa-info-circle"></i> {% translate "Información" %}</h5>
                         </div>
                         <div class="card-body">
                             <div class="mb-3">
-                                <strong>Creado por:</strong><br>
+                                <strong>{% translate "Creado por:" %}</strong><br>
                                 <span class="text-muted">{{ landing_page.created_by.get_full_name|default:landing_page.created_by.username }}</span>
                             </div>
                             
                             <div class="mb-3">
-                                <strong>Fecha de creación:</strong><br>
+                                <strong>{% translate "Fecha de creación:" %}</strong><br>
                                 <span class="text-muted">{{ landing_page.created_at }}</span>
                             </div>
                             
                             <div class="mb-3">
-                                <strong>Última actualización:</strong><br>
+                                <strong>{% translate "Última actualización:" %}</strong><br>
                                 <span class="text-muted">{{ landing_page.updated_at }}</span>
                             </div>
                             
                             <div class="mb-3">
-                                <strong>Slug:</strong><br>
+                                <strong>{% translate "Slug:" %}</strong><br>
                                 <code>{{ landing_page.slug }}</code>
                             </div>
                             
                             <!-- Documentación de API para integraciones -->
                             <div class="card mb-3">
                                 <div class="card-header">
-                                    <h6 class="mb-0"><i class="fas fa-code"></i> API: Envío via JSON</h6>
+                                    <h6 class="mb-0"><i class="fas fa-code"></i> {% translate "API: Envío via JSON" %}</h6>
                                 </div>
                                 <div class="card-body small">
-                                    <p class="mb-2">Puedes enviar envíos (submissions) a esta landing mediante una petición <strong>POST</strong> en JSON.</p>
-                                    <p class="mb-1"><strong>Endpoint:</strong></p>
+                                    <p class="mb-2">{% translate "Puedes enviar envíos (submissions) a esta landing mediante una petición" %} <strong>POST</strong> {% translate "en JSON." %}</p>
+                                    <p class="mb-1"><strong>{% translate "Endpoint:" %}</strong></p>
                                     <pre class="p-2 bg-light rounded">{{ request.scheme }}://{{ request.get_host }}{% url 'landing_page_api_submit' landing_page.pk %}</pre>
 
                                     <div class="alert alert-warning py-2 px-3 mb-2">
-                                        <strong><i class="fas fa-key"></i> Token de API:</strong>
+                                        <strong><i class="fas fa-key"></i> {% translate "Token de API:" %}</strong>
                                         <code class="text-dark">{{ landing_page.api_token }}</code>
                                         <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('{{ landing_page.api_token }}')">
                                             <i class="fas fa-copy"></i>
                                         </button>
                                     </div>
 
-                                    <p class="mb-1"><strong>Headers:</strong></p>
+                                    <p class="mb-1"><strong>{% translate "Headers:" %}</strong></p>
                                     <ul>
                                         <li><code>Content-Type: application/json</code></li>
                                         <li><code>Authorization: Bearer {{ landing_page.api_token }}</code></li>
                                     </ul>
 
-                                    <p class="mb-1"><strong>Ejemplo (curl):</strong></p>
+                                    <p class="mb-1"><strong>{% translate "Ejemplo (curl):" %}</strong></p>
                                     <pre class="p-2 bg-dark text-white rounded">curl -X POST \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer {{ landing_page.api_token }}" \
   -d '{"nombre":"Juan","apellido":"Pérez","email":"juan@example.com","telefono":"+34123456789","empresa":"Mi Empresa","mensaje":"Interesado"}' \
   {{ request.scheme }}://{{ request.get_host }}{% url 'landing_page_api_submit' landing_page.pk %}</pre>
 
-                                                <p class="mb-1"><strong>Ejemplo (Python - httpx):</strong></p>
+                                                <p class="mb-1"><strong>{% translate "Ejemplo (Python - httpx):" %}</strong></p>
                                     <pre class="p-2 bg-dark text-white rounded"># Requiere instalar: pip install httpx
 import httpx
 
@@ -330,7 +331,7 @@ headers = {
 with httpx.Client() as client:
     resp = client.post(url, json=payload, headers=headers)
     print(resp.status_code)
-    print(resp.json())</pre>                                                                        <p class="mb-1"><strong>Ejemplo (Next.js - cliente):</strong></p>
+    print(resp.json())</pre>                                                                        <p class="mb-1"><strong>{% translate "Ejemplo (Next.js - cliente):" %}</strong></p>
                                     <pre class="p-2 bg-dark text-white rounded">// Ejemplo de componente React en Next.js (client-side)
 import { useState } from 'react'
 
@@ -371,14 +372,14 @@ export default function SubmitExample() {
     </div>
   )
 }
-</pre>                                                                        <p class="mb-0 text-muted"><i class="fas fa-shield-alt text-warning me-1"></i> <strong>Seguridad:</strong> El endpoint requiere el token de API para autenticar las peticiones. Guarda el token de forma segura y nunca lo expongas en el código del cliente (frontend público). Úsalo solo en llamadas server-side o servicios backend seguros.</p>
+</pre>                                                                        <p class="mb-0 text-muted"><i class="fas fa-shield-alt text-warning me-1"></i> <strong>{% translate "Seguridad:" %}</strong> {% translate "El endpoint requiere el token de API para autenticar las peticiones. Guarda el token de forma segura y nunca lo expongas en el código del cliente (frontend público). Úsalo solo en llamadas server-side o servicios backend seguros." %}</p>
                                             </div>
                                         </div>
 
                             {% if landing_page.total_views > 0 %}
                                 <div class="mb-3">
-                                    <strong>Mejor día:</strong><br>
-                                    <span class="text-muted">Próximamente estadísticas avanzadas</span>
+                                    <strong>{% translate "Mejor día:" %}</strong><br>
+                                    <span class="text-muted">{% translate "Próximamente estadísticas avanzadas" %}</span>
                                 </div>
                             {% endif %}
                         </div>

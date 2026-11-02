@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -18,7 +19,7 @@
                         <div class="display-4 text-success">
                             <i class="bi bi-clock"></i>
                         </div>
-                        <p class="text-muted">Hora actual: <strong id="current-time"></strong></p>
+                        <p class="text-muted">{% translate "Hora actual:" %} <strong id="current-time"></strong></p>
                     </div>
                     
                     <form method="post">
@@ -46,10 +47,10 @@
                         
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success btn-lg">
-                                <i class="bi bi-play-fill"></i> Iniciar Jornada Laboral
+                                <i class="bi bi-play-fill"></i> {% translate "Iniciar Jornada Laboral" %}
                             </button>
                             <a href="{% url 'time_clock' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>
@@ -57,10 +58,7 @@
                     <div class="alert alert-info mt-3">
                         <small>
                             <i class="bi bi-info-circle"></i>
-                            Al hacer clic en "Iniciar Jornada" se registrará tu hora de entrada. 
-                            Todos los campos son opcionales: proyecto, ticket, orden de trabajo y tarea.
-                            Puedes modificar estos valores posteriormente.
-                            Asegúrate de finalizar tu jornada cuando termines de trabajar.
+                            {% translate 'Al hacer clic en "Iniciar Jornada" se registrará tu hora de entrada. Todos los campos son opcionales: proyecto, ticket, orden de trabajo y tarea. Puedes modificar estos valores posteriormente. Asegúrate de finalizar tu jornada cuando termines de trabajar.' %}
                         </small>
                     </div>
                 </div>

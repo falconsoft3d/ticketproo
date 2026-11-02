@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 {% load project_extras %}
 
@@ -17,25 +18,25 @@
             <small class="text-muted">
                 <i class="bi bi-calendar3"></i> Creado el {{ manual.created_at|date:"d/m/Y" }}
                 {% if manual.created_by %}
-                 por <strong>{{ manual.created_by.get_full_name|default:manual.created_by.username }}</strong>
+                 {% translate "por" %} <strong>{{ manual.created_by.get_full_name|default:manual.created_by.username }}</strong>
                 {% endif %}
                 &mdash; <i class="bi bi-eye"></i> {{ manual.get_access_count }} acceso(s)
             </small>
         </div>
         <div class="d-flex gap-2 flex-shrink-0">
             <a href="{% url 'manual_access' manual.pk %}" target="_blank" rel="noopener noreferrer" class="btn btn-success">
-                <i class="bi bi-box-arrow-up-right"></i> Abrir Manual
+                <i class="bi bi-box-arrow-up-right"></i> {% translate "Abrir Manual" %}
             </a>
             {% if can_manage %}
             <a href="{% url 'manual_edit' manual.pk %}" class="btn btn-outline-secondary">
-                <i class="bi bi-pencil"></i> Editar
+                <i class="bi bi-pencil"></i> {% translate "Editar" %}
             </a>
             <a href="{% url 'manual_delete' manual.pk %}" class="btn btn-outline-danger">
                 <i class="bi bi-trash"></i>
             </a>
             {% endif %}
             <a href="{% url 'manual_list' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+                <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
             </a>
         </div>
     </div>
@@ -52,7 +53,7 @@
     <!-- Historial de accesos (solo agentes/staff) -->
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="bi bi-clock-history"></i> Historial de Accesos</h5>
+            <h5 class="mb-0"><i class="bi bi-clock-history"></i> {% translate "Historial de Accesos" %}</h5>
             <span class="badge bg-secondary">{{ manual.get_access_count }} total</span>
         </div>
         <div class="card-body p-0">
@@ -62,10 +63,10 @@
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
-                            <th>Usuario</th>
-                            <th>Fecha y Hora</th>
+                            <th>{% translate "Usuario" %}</th>
+                            <th>{% translate "Fecha y Hora" %}</th>
                             <th>IP</th>
-                            <th>Navegador</th>
+                            <th>{% translate "Navegador" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -78,7 +79,7 @@
                                     <strong>{{ access.accessed_by.get_full_name|default:access.accessed_by.username }}</strong>
                                     <br><small class="text-muted">{{ access.accessed_by.email }}</small>
                                 {% else %}
-                                    <span class="text-muted"><i class="bi bi-person-dash"></i> Anónimo</span>
+                                    <span class="text-muted"><i class="bi bi-person-dash"></i> {% translate "Anónimo" %}</span>
                                 {% endif %}
                             </td>
                             <td>
@@ -99,7 +100,7 @@
             {% else %}
             <div class="text-center py-4 text-muted">
                 <i class="bi bi-clock-history display-4"></i>
-                <p class="mt-2">Aún no hay accesos registrados para este manual.</p>
+                <p class="mt-2">{% translate "Aún no hay accesos registrados para este manual." %}</p>
             </div>
             {% endif %}
         </div>

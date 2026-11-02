@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ qr_code.title }} - QR Público{% endblock %}
@@ -28,49 +29,49 @@
                     
                     <!-- Content Information -->
                     <div class="mb-4">
-                        <h5 class="text-muted mb-3">Contenido del QR:</h5>
+                        <h5 class="text-muted mb-3">{% translate "Contenido del QR:" %}</h5>
                         <div class="bg-light p-3 rounded">
                             {% if qr_code.qr_type == 'url' %}
                                 <a href="{{ qr_code.get_formatted_content }}" target="_blank" class="btn btn-primary">
-                                    <i class="bi bi-link-45deg"></i> Abrir Enlace
+                                    <i class="bi bi-link-45deg"></i> {% translate "Abrir Enlace" %}
                                 </a>
                                 <div class="mt-2">
                                     <small class="text-muted">{{ qr_code.get_formatted_content|truncatechars:60 }}</small>
                                 </div>
                             {% elif qr_code.qr_type == 'email' %}
                                 <a href="mailto:{{ qr_code.get_formatted_content }}" class="btn btn-success">
-                                    <i class="bi bi-envelope"></i> Enviar Email
+                                    <i class="bi bi-envelope"></i> {% translate "Enviar Email" %}
                                 </a>
                                 <div class="mt-2">
                                     <small class="text-muted">{{ qr_code.get_formatted_content }}</small>
                                 </div>
                             {% elif qr_code.qr_type == 'phone' %}
                                 <a href="tel:{{ qr_code.get_formatted_content }}" class="btn btn-info">
-                                    <i class="bi bi-telephone"></i> Llamar
+                                    <i class="bi bi-telephone"></i> {% translate "Llamar" %}
                                 </a>
                                 <div class="mt-2">
                                     <small class="text-muted">{{ qr_code.get_formatted_content }}</small>
                                 </div>
                             {% elif qr_code.qr_type == 'sms' %}
                                 <a href="sms:{{ qr_code.get_formatted_content }}" class="btn btn-warning">
-                                    <i class="bi bi-chat-text"></i> Enviar SMS
+                                    <i class="bi bi-chat-text"></i> {% translate "Enviar SMS" %}
                                 </a>
                                 <div class="mt-2">
                                     <small class="text-muted">{{ qr_code.get_formatted_content|truncatechars:40 }}</small>
                                 </div>
                             {% elif qr_code.qr_type == 'wifi' %}
                                 <div class="btn btn-dark disabled">
-                                    <i class="bi bi-wifi"></i> Configuración WiFi
+                                    <i class="bi bi-wifi"></i> {% translate "Configuración WiFi" %}
                                 </div>
                                 <div class="mt-2">
-                                    <small class="text-muted">Conectar automáticamente a la red WiFi</small>
+                                    <small class="text-muted">{% translate "Conectar automáticamente a la red WiFi" %}</small>
                                 </div>
                             {% elif qr_code.qr_type == 'vcard' %}
                                 <div class="btn btn-secondary disabled">
-                                    <i class="bi bi-person-vcard"></i> Tarjeta de Contacto
+                                    <i class="bi bi-person-vcard"></i> {% translate "Tarjeta de Contacto" %}
                                 </div>
                                 <div class="mt-2">
-                                    <small class="text-muted">Información de contacto</small>
+                                    <small class="text-muted">{% translate "Información de contacto" %}</small>
                                 </div>
                             {% else %}
                                 <div class="text-break">
@@ -82,7 +83,7 @@
                     
                     {% if qr_code.description %}
                     <div class="mb-4">
-                        <h6 class="text-muted">Descripción:</h6>
+                        <h6 class="text-muted">{% translate "Descripción:" %}</h6>
                         <p class="text-muted">{{ qr_code.description }}</p>
                     </div>
                     {% endif %}
@@ -90,10 +91,10 @@
                     <!-- Actions -->
                     <div class="mb-3">
                         <button class="btn btn-outline-primary me-2" onclick="downloadQR()">
-                            <i class="bi bi-download"></i> Descargar
+                            <i class="bi bi-download"></i> {% translate "Descargar" %}
                         </button>
                         <button class="btn btn-outline-secondary" onclick="shareQR()">
-                            <i class="bi bi-share"></i> Compartir
+                            <i class="bi bi-share"></i> {% translate "Compartir" %}
                         </button>
                     </div>
                     

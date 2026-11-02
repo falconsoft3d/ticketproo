@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -85,7 +86,7 @@
                         </h5>
                         {% if url.has_credentials %}
                             <span class="badge bg-warning text-dark">
-                                <i class="bi bi-shield-lock"></i> Con acceso
+                                <i class="bi bi-shield-lock"></i> {% translate "Con acceso" %}
                             </span>
                         {% endif %}
                     </div>
@@ -101,7 +102,7 @@
                            target="_blank" 
                            class="btn btn-primary w-100">
                             <span class="badge bg-white text-primary me-2">{{ forloop.counter }}</span>
-                            <i class="bi bi-box-arrow-up-right"></i> Acceder al sitio
+                            <i class="bi bi-box-arrow-up-right"></i> {% translate "Acceder al sitio" %}
                         </a>
                     </div>
                     
@@ -113,17 +114,17 @@
                     {% if url.username or url.password %}
                     <div class="credentials-section">
                         <h6 class="text-primary mb-2">
-                            <i class="bi bi-key"></i> Datos de acceso
+                            <i class="bi bi-key"></i> {% translate "Datos de acceso" %}
                         </h6>
                         
                         {% if url.username %}
                         <div class="mb-2">
-                            <strong>Usuario:</strong><br>
+                            <strong>{% translate "Usuario:" %}</strong><br>
                             <span class="password-field">{{ url.username }}</span>
                             <button type="button" 
                                     class="btn btn-sm btn-outline-secondary ms-1 copy-btn" 
                                     data-copy="{{ url.username }}"
-                                    title="Copiar usuario">
+                                    title="{% translate 'Copiar usuario' %}">
                                 <i class="bi bi-clipboard"></i>
                             </button>
                         </div>
@@ -131,19 +132,19 @@
                         
                         {% if url.password %}
                         <div class="mb-2">
-                            <strong>Contraseña:</strong><br>
+                            <strong>{% translate "Contraseña:" %}</strong><br>
                             <span class="password-field toggle-password-field" data-password="{{ url.password }}">
                                 ••••••••
                             </span>
                             <button type="button" 
                                     class="btn btn-sm btn-outline-secondary ms-1 toggle-password" 
-                                    title="Mostrar/Ocultar contraseña">
+                                    title="{% translate 'Mostrar/Ocultar contraseña' %}">
                                 <i class="bi bi-eye"></i>
                             </button>
                             <button type="button" 
                                     class="btn btn-sm btn-outline-secondary copy-btn" 
                                     data-copy="{{ url.password }}"
-                                    title="Copiar contraseña">
+                                    title="{% translate 'Copiar contraseña' %}">
                                 <i class="bi bi-clipboard"></i>
                             </button>
                         </div>
@@ -155,7 +156,7 @@
                     {% if url.notes %}
                     <div class="mt-3 p-2 bg-light rounded">
                         <small>
-                            <strong><i class="bi bi-info-circle"></i> Notas:</strong><br>
+                            <strong><i class="bi bi-info-circle"></i> {% translate "Notas:" %}</strong><br>
                             {{ url.notes|linebreaks }}
                         </small>
                     </div>
@@ -172,7 +173,7 @@
             <div class="card bg-light">
                 <div class="card-body text-center">
                     <h5 class="text-muted">
-                        <i class="bi bi-info-circle"></i> Información
+                        <i class="bi bi-info-circle"></i> {% translate "Información" %}
                     </h5>
                     <p class="text-muted mb-0">
                         Esta documentación contiene {{ urls.count }} enlace{{ urls.count|pluralize }} 
@@ -193,9 +194,9 @@
             <div class="card">
                 <div class="card-body text-center py-5">
                     <i class="bi bi-link-45deg display-1 text-muted"></i>
-                    <h4 class="mt-3 text-muted">No hay enlaces disponibles</h4>
+                    <h4 class="mt-3 text-muted">{% translate "No hay enlaces disponibles" %}</h4>
                     <p class="text-muted">
-                        Esta documentación está en proceso de configuración.<br>
+                        {% translate "Esta documentación está en proceso de configuración." %}<br>
                         Por favor, contacta con {{ documentation.company.name }} para más información.
                     </p>
                 </div>
@@ -210,11 +211,11 @@
     <div id="copyToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="toast-header">
             <i class="bi bi-check-circle text-success me-2"></i>
-            <strong class="me-auto">Copiado</strong>
+            <strong class="me-auto">{% translate "Copiado" %}</strong>
             <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
         </div>
         <div class="toast-body">
-            Texto copiado al portapapeles
+            {% translate "Texto copiado al portapapeles" %}
         </div>
     </div>
 </div>

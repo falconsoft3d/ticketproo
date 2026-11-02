@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -6,13 +7,13 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
-                <h2><i class="bi bi-paypal text-primary"></i> Enlaces de Pago PayPal</h2>
+                <h2><i class="bi bi-paypal text-primary"></i> {% translate "Enlaces de Pago PayPal" %}</h2>
                 <div>
                     <button type="button" class="btn btn-success me-2" id="btnGenerateCatalog">
-                        <i class="bi bi-globe"></i> Generar Catálogo Público
+                        <i class="bi bi-globe"></i> {% translate "Generar Catálogo Público" %}
                     </button>
                     <a href="{% url 'paypal_link_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Nuevo Enlace de Pago
+                        <i class="bi bi-plus-circle"></i> {% translate "Nuevo Enlace de Pago" %}
                     </a>
                 </div>
             </div>
@@ -25,20 +26,20 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="bi bi-globe text-success"></i> Catálogo Público Generado
+                        <i class="bi bi-globe text-success"></i> {% translate "Catálogo Público Generado" %}
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Comparte esta URL para que los clientes vean tu catálogo de productos:</p>
+                    <p>{% translate "Comparte esta URL para que los clientes vean tu catálogo de productos:" %}</p>
                     <div class="input-group">
                         <input type="text" class="form-control" id="catalogUrl" readonly>
                         <button class="btn btn-outline-secondary" type="button" onclick="copyUrl()">
-                            <i class="bi bi-clipboard"></i> Copiar
+                            <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                         </button>
                     </div>
                     <a href="#" id="catalogLink" target="_blank" class="btn btn-sm btn-outline-primary mt-3">
-                        <i class="bi bi-box-arrow-up-right"></i> Abrir catálogo
+                        <i class="bi bi-box-arrow-up-right"></i> {% translate "Abrir catálogo" %}
                     </a>
                 </div>
             </div>
@@ -50,13 +51,13 @@
         <div class="card-body">
             <form method="get" class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label">Buscar</label>
-                    <input type="text" name="search" class="form-control" placeholder="Producto, descripción..." value="{{ request.GET.search }}">
+                    <label class="form-label">{% translate "Buscar" %}</label>
+                    <input type="text" name="search" class="form-control" placeholder="{% translate 'Producto, descripción...' %}" value="{{ request.GET.search }}">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Empresa</label>
+                    <label class="form-label">{% translate "Empresa" %}</label>
                     <select name="company" class="form-select">
-                        <option value="">Todas</option>
+                        <option value="">{% translate "Todas" %}</option>
                         {% for company in companies %}
                         <option value="{{ company.id }}" {% if request.GET.company == company.id|stringformat:"s" %}selected{% endif %}>
                             {{ company.name }}
@@ -65,18 +66,18 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Estado</label>
+                    <label class="form-label">{% translate "Estado" %}</label>
                     <select name="status" class="form-select">
-                        <option value="">Todos</option>
-                        <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Activo</option>
-                        <option value="paid" {% if request.GET.status == 'paid' %}selected{% endif %}>Pagado</option>
-                        <option value="expired" {% if request.GET.status == 'expired' %}selected{% endif %}>Expirado</option>
-                        <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Cancelado</option>
+                        <option value="">{% translate "Todos" %}</option>
+                        <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>{% translate "Activo" %}</option>
+                        <option value="paid" {% if request.GET.status == 'paid' %}selected{% endif %}>{% translate "Pagado" %}</option>
+                        <option value="expired" {% if request.GET.status == 'expired' %}selected{% endif %}>{% translate "Expirado" %}</option>
+                        <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>{% translate "Cancelado" %}</option>
                     </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-search"></i> Filtrar
+                        <i class="bi bi-search"></i> {% translate "Filtrar" %}
                     </button>
                 </div>
             </form>
@@ -91,7 +92,7 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <h5 class="card-title mb-0">{{ link.product_name }}</h5>
-                        <small class="text-muted">Producto Reutilizable</small>
+                        <small class="text-muted">{% translate "Producto Reutilizable" %}</small>
                     </div>
                     
                     {% if link.description %}
@@ -109,11 +110,11 @@
                         <div class="row text-center small">
                             <div class="col-6">
                                 <strong class="text-success d-block">{{ link.get_total_orders_count }}</strong>
-                                <small class="text-muted">Órdenes</small>
+                                <small class="text-muted">{% translate "Órdenes" %}</small>
                             </div>
                             <div class="col-6">
                                 <strong class="text-primary d-block">${{ link.get_total_revenue|floatformat:2 }}</strong>
-                                <small class="text-muted">Revenue</small>
+                                <small class="text-muted">{% translate "Revenue" %}</small>
                             </div>
                         </div>
                     </div>
@@ -125,7 +126,7 @@
                         </small>
                         {% else %}
                         <small class="text-muted">
-                            <i class="bi bi-x-circle"></i> Sin archivo adjunto
+                            <i class="bi bi-x-circle"></i> {% translate "Sin archivo adjunto" %}
                         </small>
                         {% endif %}
                     </div>
@@ -170,7 +171,7 @@
                     
                     <div class="d-flex gap-2">
                         <a href="{% url 'paypal_link_detail' link.pk %}" class="btn btn-sm btn-outline-primary flex-grow-1">
-                            <i class="bi bi-eye"></i> Detalle
+                            <i class="bi bi-eye"></i> {% translate "Detalle" %}
                         </a>
                         <a href="{% url 'paypal_link_edit' link.pk %}" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-pencil"></i>
@@ -185,8 +186,8 @@
         {% empty %}
         <div class="col-12">
             <div class="alert alert-info text-center">
-                <i class="bi bi-info-circle"></i> No hay enlaces de pago creados aún.
-                <a href="{% url 'paypal_link_create' %}" class="alert-link">Crear el primero</a>
+                <i class="bi bi-info-circle"></i> {% translate "No hay enlaces de pago creados aún." %}
+                <a href="{% url 'paypal_link_create' %}" class="alert-link">{% translate "Crear el primero" %}</a>
             </div>
         </div>
         {% endfor %}
@@ -196,12 +197,12 @@
     {% if links.has_other_pages %}
     <div class="row mt-4">
         <div class="col-12">
-            <nav aria-label="Page navigation">
+            <nav aria-label="{% translate 'Page navigation' %}">
                 <ul class="pagination justify-content-center">
                     {% if links.has_previous %}
                     <li class="page-item">
                         <a class="page-link" href="?page={{ links.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
-                            Anterior
+                            {% translate "Anterior" %}
                         </a>
                     </li>
                     {% endif %}
@@ -215,7 +216,7 @@
                     {% if links.has_next %}
                     <li class="page-item">
                         <a class="page-link" href="?page={{ links.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
-                            Siguiente
+                            {% translate "Siguiente" %}
                         </a>
                     </li>
                     {% endif %}

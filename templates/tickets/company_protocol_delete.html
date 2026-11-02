@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -6,11 +7,11 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
                     <a href="{% url 'company_protocol_list' %}">
-                        <i class="bi bi-file-text"></i> Protocolos
+                        <i class="bi bi-file-text"></i> {% translate "Protocolos" %}
                     </a>
                 </li>
                 <li class="breadcrumb-item">
@@ -18,7 +19,7 @@
                         {{ protocol.title|truncatechars:30 }}
                     </a>
                 </li>
-                <li class="breadcrumb-item active">Eliminar</li>
+                <li class="breadcrumb-item active">{% translate "Eliminar" %}</li>
             </ol>
         </nav>
         <h2>
@@ -32,54 +33,53 @@
         <div class="card border-danger">
             <div class="card-header bg-danger text-white">
                 <h5 class="mb-0">
-                    <i class="bi bi-trash"></i> Confirmar Eliminación
+                    <i class="bi bi-trash"></i> {% translate "Confirmar Eliminación" %}
                 </h5>
             </div>
             <div class="card-body">
                 <div class="alert alert-danger d-flex align-items-center" role="alert">
                     <i class="bi bi-exclamation-triangle-fill me-2" style="font-size: 1.5rem;"></i>
                     <div>
-                        <strong>¡Atención!</strong> Esta acción no se puede deshacer. 
-                        El protocolo será eliminado permanentemente del sistema.
+                        <strong>{% translate "¡Atención!" %}</strong> {% translate "Esta acción no se puede deshacer. El protocolo será eliminado permanentemente del sistema." %}
                     </div>
                 </div>
                 
                 <!-- Información del protocolo a eliminar -->
                 <div class="row mb-4">
                     <div class="col-md-6">
-                        <h6 class="text-primary">Información del Protocolo:</h6>
+                        <h6 class="text-primary">{% translate "Información del Protocolo:" %}</h6>
                         <div class="bg-light p-3 rounded">
                             {% if protocol.company %}
                             <div class="mb-2">
-                                <strong>Empresa:</strong> {{ protocol.company.name }}
+                                <strong>{% translate "Empresa:" %}</strong> {{ protocol.company.name }}
                             </div>
                             {% endif %}
                             <div class="mb-2">
-                                <strong>Título:</strong> {{ protocol.title }}
+                                <strong>{% translate "Título:" %}</strong> {{ protocol.title }}
                             </div>
                             <div class="mb-2">
-                                <strong>Versión:</strong> {{ protocol.version }}
+                                <strong>{% translate "Versión:" %}</strong> {{ protocol.version }}
                             </div>
                             <div class="mb-2">
-                                <strong>Estado:</strong> 
+                                <strong>{% translate "Estado:" %}</strong> 
                                 <span class="badge {% if protocol.is_active %}bg-success{% else %}bg-secondary{% endif %}">
-                                    {% if protocol.is_active %}Activo{% else %}Inactivo{% endif %}
+                                    {% if protocol.is_active %}{% translate "Activo" %}{% else %}{% translate "Inactivo" %}{% endif %}
                                 </span>
                             </div>
                             <div class="mb-2">
-                                <strong>Creado por:</strong> {{ protocol.created_by.get_full_name|default:protocol.created_by.username }}
+                                <strong>{% translate "Creado por:" %}</strong> {{ protocol.created_by.get_full_name|default:protocol.created_by.username }}
                             </div>
                             <div class="mb-2">
-                                <strong>Fecha:</strong> {{ protocol.created_at|date:"d/m/Y H:i" }}
+                                <strong>{% translate "Fecha:" %}</strong> {{ protocol.created_at|date:"d/m/Y H:i" }}
                             </div>
                             <div>
-                                <strong>Palabras:</strong> {{ protocol.get_word_count }}
+                                <strong>{% translate "Palabras:" %}</strong> {{ protocol.get_word_count }}
                             </div>
                         </div>
                     </div>
                     
                     <div class="col-md-6">
-                        <h6 class="text-primary">Vista Previa del Contenido:</h6>
+                        <h6 class="text-primary">{% translate "Vista Previa del Contenido:" %}</h6>
                         <div class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto;">
                             <small>{{ protocol.content|truncatechars:300 }}</small>
                         </div>
@@ -90,36 +90,36 @@
                 <div class="form-check mb-4">
                     <input class="form-check-input" type="checkbox" id="confirmDelete" required>
                     <label class="form-check-label" for="confirmDelete">
-                        <strong>Confirmo que deseo eliminar este protocolo permanentemente</strong>
+                        <strong>{% translate "Confirmo que deseo eliminar este protocolo permanentemente" %}</strong>
                     </label>
                 </div>
                 
                 <!-- Sugerencias antes de eliminar -->
                 <div class="alert alert-info">
-                    <h6><i class="bi bi-lightbulb"></i> Antes de eliminar, considera:</h6>
+                    <h6><i class="bi bi-lightbulb"></i> {% translate "Antes de eliminar, considera:" %}</h6>
                     <ul class="mb-0">
-                        <li>¿Es realmente necesario eliminar el protocolo o podrías marcarlo como inactivo?</li>
-                        <li>¿Hay otros empleados que podrían necesitar consultar este protocolo?</li>
-                        <li>¿Has guardado una copia de respaldo si fuera necesaria?</li>
-                        <li>¿Este protocolo forma parte de procesos de certificación o auditoría?</li>
+                        <li>{% translate "¿Es realmente necesario eliminar el protocolo o podrías marcarlo como inactivo?" %}</li>
+                        <li>{% translate "¿Hay otros empleados que podrían necesitar consultar este protocolo?" %}</li>
+                        <li>{% translate "¿Has guardado una copia de respaldo si fuera necesaria?" %}</li>
+                        <li>{% translate "¿Este protocolo forma parte de procesos de certificación o auditoría?" %}</li>
                     </ul>
                 </div>
                 
                 <!-- Botones de acción -->
                 <div class="d-flex gap-2 justify-content-end">
                     <a href="{% url 'company_protocol_detail' protocol.pk %}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Cancelar
+                        <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                     </a>
                     <a href="{% url 'company_protocol_edit' protocol.pk %}" class="btn btn-outline-warning">
-                        <i class="bi bi-toggle-off"></i> Mejor Desactivar
+                        <i class="bi bi-toggle-off"></i> {% translate "Mejor Desactivar" %}
                     </a>
                     <a href="{% url 'company_protocol_print_pdf' protocol.pk %}" class="btn btn-outline-primary">
-                        <i class="bi bi-download"></i> Descargar Copia
+                        <i class="bi bi-download"></i> {% translate "Descargar Copia" %}
                     </a>
                     <form method="post" class="d-inline">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
-                            <i class="bi bi-trash"></i> Eliminar Definitivamente
+                            <i class="bi bi-trash"></i> {% translate "Eliminar Definitivamente" %}
                         </button>
                     </form>
                 </div>

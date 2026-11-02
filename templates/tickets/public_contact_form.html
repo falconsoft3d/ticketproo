@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -232,9 +233,9 @@
             <div class="contact-header">
                 <h1>
                     <i class="bi bi-envelope-heart"></i>
-                    Formulario de Contacto
+                    {% translate "Formulario de Contacto" %}
                 </h1>
-                <p>Conectemos y hagamos crecer tu negocio juntos</p>
+                <p>{% translate "Conectemos y hagamos crecer tu negocio juntos" %}</p>
                 
                 <div class="owner-info">
                     <div class="d-flex align-items-center justify-content-center">
@@ -256,8 +257,8 @@
                     <div class="d-flex align-items-center">
                         <i class="bi bi-info-circle me-2" style="font-size: 1.5rem;"></i>
                         <div>
-                            <strong>¿Por qué solicitar contacto?</strong><br>
-                            <small>Este formulario nos permite conocer mejor tu empresa y ofrecerte servicios personalizados. Tu información será tratada con total confidencialidad.</small>
+                            <strong>{% translate "¿Por qué solicitar contacto?" %}</strong><br>
+                            <small>{% translate "Este formulario nos permite conocer mejor tu empresa y ofrecerte servicios personalizados. Tu información será tratada con total confidencialidad." %}</small>
                         </div>
                     </div>
                 </div>
@@ -270,7 +271,7 @@
                     <div class="form-section">
                         <h4>
                             <i class="bi bi-building text-primary"></i>
-                            Información de la Empresa
+                            {% translate "Información de la Empresa" %}
                         </h4>
                         
                         <div class="row">
@@ -321,7 +322,7 @@
                     <div class="form-section">
                         <h4>
                             <i class="bi bi-person-lines-fill text-primary"></i>
-                            Información de Contacto
+                            {% translate "Información de Contacto" %}
                         </h4>
                         
                         <div class="row">
@@ -373,7 +374,7 @@
                     <div class="form-section">
                         <h4>
                             <i class="bi bi-chat-text text-primary"></i>
-                            Cuéntanos más sobre tu proyecto
+                            {% translate "Cuéntanos más sobre tu proyecto" %}
                         </h4>
                         
                         <div class="mb-3">
@@ -394,7 +395,7 @@
                     <div class="text-center">
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="bi bi-send me-2"></i>
-                            Enviar Solicitud
+                            {% translate "Enviar Solicitud" %}
                         </button>
                     </div>
                 </form>
@@ -403,24 +404,24 @@
                 <div class="contact-info">
                     <h3>
                         <i class="bi bi-shield-check text-success"></i>
-                        ¿Qué pasa después?
+                        {% translate "¿Qué pasa después?" %}
                     </h3>
                     <ul class="feature-list">
                         <li>
                             <i class="bi bi-check-circle"></i>
-                            <strong>Revisión:</strong> Analizaremos tu solicitud en menos de 24 horas
+                            <strong>{% translate "Revisión:" %}</strong> {% translate "Analizaremos tu solicitud en menos de 24 horas" %}
                         </li>
                         <li>
                             <i class="bi bi-check-circle"></i>
-                            <strong>Contacto:</strong> Te contactaremos para conocer mejor tus necesidades
+                            <strong>{% translate "Contacto:" %}</strong> {% translate "Te contactaremos para conocer mejor tus necesidades" %}
                         </li>
                         <li>
                             <i class="bi bi-check-circle"></i>
-                            <strong>Propuesta:</strong> Te enviaremos una propuesta personalizada
+                            <strong>{% translate "Propuesta:" %}</strong> {% translate "Te enviaremos una propuesta personalizada" %}
                         </li>
                         <li>
                             <i class="bi bi-check-circle"></i>
-                            <strong>Inicio:</strong> Comenzamos a trabajar juntos en tu proyecto
+                            <strong>{% translate "Inicio:" %}</strong> {% translate "Comenzamos a trabajar juntos en tu proyecto" %}
                         </li>
                     </ul>
                 </div>

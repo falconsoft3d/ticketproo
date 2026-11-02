@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load form_filters %}<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -42,7 +43,7 @@
     <div class="public-banner text-white py-3 px-4 d-flex align-items-center gap-3">
         <i class="bi bi-calendar3 fs-4"></i>
         <div>
-            <div class="fw-bold">Calendario de Clases</div>
+            <div class="fw-bold">{% translate "Calendario de Clases" %}</div>
             <div class="small opacity-75">{{ cap.titulo }}</div>
         </div>
     </div>
@@ -51,7 +52,7 @@
 
         <div class="d-flex justify-content-between align-items-center mb-3">
             <a href="{% url 'capacitacion_public' cap.public_token %}" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-arrow-left"></i> Volver a la capacitación
+                <i class="bi bi-arrow-left"></i> {% translate "Volver a la capacitación" %}
             </a>
             <div class="btn-group btn-group-sm">
                 <a href="?year={{ prev_year }}&month={{ prev_month }}" class="btn btn-outline-primary">
@@ -70,7 +71,7 @@
                     <table class="table table-bordered cal-table mb-0">
                         <thead>
                             <tr>
-                                <th>Lun</th><th>Mar</th><th>Mié</th><th>Jue</th><th>Vie</th><th>Sáb</th><th>Dom</th>
+                                <th>{% translate "Lun" %}</th><th>{% translate "Mar" %}</th><th>{% translate "Mié" %}</th><th>{% translate "Jue" %}</th><th>{% translate "Vie" %}</th><th>{% translate "Sáb" %}</th><th>{% translate "Dom" %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -112,7 +113,7 @@
                                 <strong>{{ clase.fecha|date:"d/m/Y" }}</strong> — {{ clase.titulo }}
                             </span>
                             <a href="{% url 'capacitacion_clase_public' clase.public_token %}" class="btn btn-sm btn-outline-primary">
-                                Ver clase <i class="bi bi-arrow-right"></i>
+                                {% translate "Ver clase" %} <i class="bi bi-arrow-right"></i>
                             </a>
                         </li>
                         {% endfor %}
@@ -128,7 +129,7 @@
         {% endif %}
 
         <div class="text-center text-muted small mt-4 pb-4">
-            Powered by <strong>TicketProo</strong>
+            {% translate "Powered by" %} <strong>TicketProo</strong>
         </div>
     </div>
 

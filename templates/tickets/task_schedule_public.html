@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -19,7 +20,7 @@
         <!-- Botón para Vista Gantt -->
         <div class="mt-3">
             <a href="{% url 'task_schedule_public_gantt' schedule.public_token %}" class="btn btn-primary btn-lg">
-                <i class="fas fa-chart-gantt"></i> Ver Diagrama Gantt
+                <i class="fas fa-chart-gantt"></i> {% translate "Ver Diagrama Gantt" %}
             </a>
         </div>
     </div>
@@ -27,7 +28,7 @@
     <!-- Descripción -->
     {% if schedule.description %}
     <div class="alert alert-info mb-4">
-        <strong>Descripción:</strong> {{ schedule.description }}
+        <strong>{% translate "Descripción:" %}</strong> {{ schedule.description }}
     </div>
     {% endif %}
 
@@ -37,7 +38,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h3 class="text-primary mb-0">{{ kpis.total_tasks }}</h3>
-                    <small class="text-muted">Total Tareas</small>
+                    <small class="text-muted">{% translate "Total Tareas" %}</small>
                 </div>
             </div>
         </div>
@@ -45,7 +46,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h3 class="text-success mb-0">{{ kpis.completed_tasks }}</h3>
-                    <small class="text-muted">Completadas</small>
+                    <small class="text-muted">{% translate "Completadas" %}</small>
                 </div>
             </div>
         </div>
@@ -53,7 +54,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h3 class="text-warning mb-0">{{ kpis.pending_tasks }}</h3>
-                    <small class="text-muted">Pendientes</small>
+                    <small class="text-muted">{% translate "Pendientes" %}</small>
                 </div>
             </div>
         </div>
@@ -61,7 +62,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h3 class="text-danger mb-0">{{ kpis.overdue_tasks }}</h3>
-                    <small class="text-muted">Vencidas</small>
+                    <small class="text-muted">{% translate "Vencidas" %}</small>
                 </div>
             </div>
         </div>
@@ -69,7 +70,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h3 class="text-info mb-0">{{ kpis.progress_percentage|floatformat:0 }}%</h3>
-                    <small class="text-muted">Progreso</small>
+                    <small class="text-muted">{% translate "Progreso" %}</small>
                 </div>
             </div>
         </div>
@@ -77,7 +78,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h3 class="text-primary mb-0">{{ kpis.on_time_rate|floatformat:0 }}%</h3>
-                    <small class="text-muted">A Tiempo</small>
+                    <small class="text-muted">{% translate "A Tiempo" %}</small>
                 </div>
             </div>
         </div>
@@ -90,7 +91,7 @@
     <!-- Lista de Tareas -->
     <div class="card shadow">
         <div class="card-header bg-primary text-white">
-            <h4 class="mb-0"><i class="fas fa-list"></i> Tareas del Cronograma</h4>
+            <h4 class="mb-0"><i class="fas fa-list"></i> {% translate "Tareas del Cronograma" %}</h4>
         </div>
         <div class="card-body">
             {% if tasks %}
@@ -98,14 +99,14 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>Título</th>
-                            <th>Asignado</th>
-                            <th>Prioridad</th>
-                            <th>Inicio</th>
-                            <th>Fin</th>
-                            <th>Días</th>
-                            <th>Estado</th>
-                            <th width="100">Acción</th>
+                            <th>{% translate "Título" %}</th>
+                            <th>{% translate "Asignado" %}</th>
+                            <th>{% translate "Prioridad" %}</th>
+                            <th>{% translate "Inicio" %}</th>
+                            <th>{% translate "Fin" %}</th>
+                            <th>{% translate "Días" %}</th>
+                            <th>{% translate "Estado" %}</th>
+                            <th width="100">{% translate "Acción" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -122,18 +123,18 @@
                                 {% if task.assigned_to %}
                                     <i class="fas fa-user"></i> {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
                                 {% else %}
-                                    <span class="text-muted">Sin asignar</span>
+                                    <span class="text-muted">{% translate "Sin asignar" %}</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if task.priority == 'critical' %}
-                                    <span class="badge bg-danger">Crítica</span>
+                                    <span class="badge bg-danger">{% translate "Crítica" %}</span>
                                 {% elif task.priority == 'high' %}
-                                    <span class="badge bg-warning">Alta</span>
+                                    <span class="badge bg-warning">{% translate "Alta" %}</span>
                                 {% elif task.priority == 'medium' %}
-                                    <span class="badge bg-info">Media</span>
+                                    <span class="badge bg-info">{% translate "Media" %}</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Baja</span>
+                                    <span class="badge bg-secondary">{% translate "Baja" %}</span>
                                 {% endif %}
                             </td>
                             <td>{{ task.start_date|date:"d/m/Y" }}</td>
@@ -144,15 +145,15 @@
                             <td>
                                 {% if task.is_completed %}
                                     <span class="badge bg-success">
-                                        <i class="fas fa-check"></i> Completada
+                                        <i class="fas fa-check"></i> {% translate "Completada" %}
                                     </span>
                                 {% elif task.is_overdue %}
                                     <span class="badge bg-danger">
-                                        <i class="fas fa-exclamation-triangle"></i> Vencida
+                                        <i class="fas fa-exclamation-triangle"></i> {% translate "Vencida" %}
                                     </span>
                                 {% else %}
                                     <span class="badge bg-warning">
-                                        <i class="fas fa-clock"></i> Pendiente
+                                        <i class="fas fa-clock"></i> {% translate "Pendiente" %}
                                     </span>
                                 {% endif %}
                             </td>
@@ -169,7 +170,7 @@
                     </tbody>
                     <tfoot>
                         <tr class="table-info">
-                            <th colspan="5" class="text-end">Total:</th>
+                            <th colspan="5" class="text-end">{% translate "Total:" %}</th>
                             <th class="text-center">
                                 <span class="badge bg-primary">{{ total_days }} días</span>
                             </th>
@@ -180,7 +181,7 @@
             </div>
             {% else %}
             <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> No hay tareas en este cronograma.
+                <i class="fas fa-info-circle"></i> {% translate "No hay tareas en este cronograma." %}
             </div>
             {% endif %}
         </div>

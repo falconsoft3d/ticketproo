@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -8,11 +9,11 @@
             <div class="d-flex justify-content-between align-items-center">
                 <h2>
                     <i class="bi bi-files me-2"></i>
-                    {% if template %}Editar Plantilla{% else %}Nueva Plantilla{% endif %}
+                    {% if template %}{% translate "Editar Plantilla" %}{% else %}{% translate "Nueva Plantilla" %}{% endif %}
                 </h2>
                 <a href="{% if template %}{% url 'client_request_template_detail' template.pk %}{% else %}{% url 'client_request_template_list' %}{% endif %}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-2"></i>
-                    Volver
+                    {% translate "Volver" %}
                 </a>
             </div>
         </div>
@@ -33,7 +34,7 @@
                             {% if form.name.errors %}
                                 <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">Nombre identificativo de la plantilla</div>
+                            <div class="form-text">{% translate "Nombre identificativo de la plantilla" %}</div>
                         </div>
 
                         <div class="mb-3">
@@ -44,7 +45,7 @@
                             {% if form.description.errors %}
                                 <div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">Describe para qué sirve esta plantilla</div>
+                            <div class="form-text">{% translate "Describe para qué sirve esta plantilla" %}</div>
                         </div>
 
                         <div class="mb-3 form-check">
@@ -55,16 +56,16 @@
                             {% if form.is_active.errors %}
                                 <div class="text-danger small mt-1">{{ form.is_active.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">Las plantillas inactivas no se pueden ejecutar</div>
+                            <div class="form-text">{% translate "Las plantillas inactivas no se pueden ejecutar" %}</div>
                         </div>
 
                         <div class="d-flex justify-content-between">
                             <a href="{% if template %}{% url 'client_request_template_detail' template.pk %}{% else %}{% url 'client_request_template_list' %}{% endif %}" class="btn btn-secondary">
-                                Cancelar
+                                {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save me-2"></i>
-                                {% if template %}Actualizar{% else %}Crear{% endif %} Plantilla
+                                {% if template %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Plantilla" %}
                             </button>
                         </div>
                     </form>
@@ -77,16 +78,16 @@
                 <div class="card-body">
                     <h5 class="card-title">
                         <i class="bi bi-lightbulb me-2"></i>
-                        Acerca de las Plantillas
+                        {% translate "Acerca de las Plantillas" %}
                     </h5>
                     <p class="card-text small">
-                        Las plantillas te permiten crear conjuntos de solicitudes reutilizables.
+                        {% translate "Las plantillas te permiten crear conjuntos de solicitudes reutilizables." %}
                     </p>
                     <ul class="small">
-                        <li>Define una vez, usa muchas veces</li>
-                        <li>Agrega múltiples items a cada plantilla</li>
-                        <li>Ejecuta la plantilla para cualquier empresa</li>
-                        <li>Crea todas las solicitudes automáticamente</li>
+                        <li>{% translate "Define una vez, usa muchas veces" %}</li>
+                        <li>{% translate "Agrega múltiples items a cada plantilla" %}</li>
+                        <li>{% translate "Ejecuta la plantilla para cualquier empresa" %}</li>
+                        <li>{% translate "Crea todas las solicitudes automáticamente" %}</li>
                     </ul>
                 </div>
             </div>

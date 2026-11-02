@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -14,10 +15,10 @@
                 </h2>
                 <div class="btn-group">
                     <a href="{% url 'task_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-list me-1"></i>Todas las Tareas
+                        <i class="bi bi-list me-1"></i>{% translate "Todas las Tareas" %}
                     </a>
                     <a href="{% url 'task_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle me-1"></i>Nueva Tarea
+                        <i class="bi bi-plus-circle me-1"></i>{% translate "Nueva Tarea" %}
                     </a>
                 </div>
             </div>
@@ -28,7 +29,7 @@
                     <div class="card border-primary">
                         <div class="card-body text-center">
                             <h5 class="card-title text-primary">{{ stats.total }}</h5>
-                            <p class="card-text small">Total Asignadas</p>
+                            <p class="card-text small">{% translate "Total Asignadas" %}</p>
                         </div>
                     </div>
                 </div>
@@ -36,7 +37,7 @@
                     <div class="card border-warning">
                         <div class="card-body text-center">
                             <h5 class="card-title text-warning">{{ stats.pending }}</h5>
-                            <p class="card-text small">Pendientes</p>
+                            <p class="card-text small">{% translate "Pendientes" %}</p>
                         </div>
                     </div>
                 </div>
@@ -44,7 +45,7 @@
                     <div class="card border-info">
                         <div class="card-body text-center">
                             <h5 class="card-title text-info">{{ stats.in_progress }}</h5>
-                            <p class="card-text small">En Progreso</p>
+                            <p class="card-text small">{% translate "En Progreso" %}</p>
                         </div>
                     </div>
                 </div>
@@ -52,7 +53,7 @@
                     <div class="card border-success">
                         <div class="card-body text-center">
                             <h5 class="card-title text-success">{{ stats.completed }}</h5>
-                            <p class="card-text small">Completadas</p>
+                            <p class="card-text small">{% translate "Completadas" %}</p>
                         </div>
                     </div>
                 </div>
@@ -60,7 +61,7 @@
                     <div class="card border-danger">
                         <div class="card-body text-center">
                             <h5 class="card-title text-danger">{{ stats.overdue }}</h5>
-                            <p class="card-text small">Vencidas</p>
+                            <p class="card-text small">{% translate "Vencidas" %}</p>
                         </div>
                     </div>
                 </div>
@@ -70,7 +71,7 @@
                             <h5 class="card-title text-secondary">
                                 {% widthratio stats.completed stats.total 100 %}%
                             </h5>
-                            <p class="card-text small">Completado</p>
+                            <p class="card-text small">{% translate "Completado" %}</p>
                         </div>
                     </div>
                 </div>
@@ -84,34 +85,34 @@
             <div class="card">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="bi bi-funnel me-1"></i>Filtros Rápidos
+                        <i class="bi bi-funnel me-1"></i>{% translate "Filtros Rápidos" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="btn-group flex-wrap" role="group">
                         <a href="{% url 'task_my_tasks' %}" 
                            class="btn {% if not current_status and not current_priority %}btn-primary{% else %}btn-outline-primary{% endif %}">
-                            Todas
+                            {% translate "Todas" %}
                         </a>
                         <a href="{% url 'task_my_tasks' %}?status=pending" 
                            class="btn {% if current_status == 'pending' %}btn-warning{% else %}btn-outline-warning{% endif %}">
-                            Pendientes
+                            {% translate "Pendientes" %}
                         </a>
                         <a href="{% url 'task_my_tasks' %}?status=in_progress" 
                            class="btn {% if current_status == 'in_progress' %}btn-info{% else %}btn-outline-info{% endif %}">
-                            En Progreso
+                            {% translate "En Progreso" %}
                         </a>
                         <a href="{% url 'task_my_tasks' %}?status=completed" 
                            class="btn {% if current_status == 'completed' %}btn-success{% else %}btn-outline-success{% endif %}">
-                            Completadas
+                            {% translate "Completadas" %}
                         </a>
                         <a href="{% url 'task_my_tasks' %}?priority=urgent" 
                            class="btn {% if current_priority == 'urgent' %}btn-danger{% else %}btn-outline-danger{% endif %}">
-                            Urgentes
+                            {% translate "Urgentes" %}
                         </a>
                         <a href="{% url 'task_my_tasks' %}?priority=high" 
                            class="btn {% if current_priority == 'high' %}btn-warning{% else %}btn-outline-warning{% endif %}">
-                            Alta Prioridad
+                            {% translate "Alta Prioridad" %}
                         </a>
                     </div>
                 </div>
@@ -128,9 +129,9 @@
                     {% if task.is_overdue and forloop.first %}
                         <div class="alert alert-danger mb-3">
                             <h6 class="alert-heading">
-                                <i class="bi bi-exclamation-triangle me-1"></i>Tareas Vencidas
+                                <i class="bi bi-exclamation-triangle me-1"></i>{% translate "Tareas Vencidas" %}
                             </h6>
-                            <p class="mb-0">Tienes tareas que han pasado su fecha de vencimiento. Revísalas y actualiza su estado.</p>
+                            <p class="mb-0">{% translate "Tienes tareas que han pasado su fecha de vencimiento. Revísalas y actualiza su estado." %}</p>
                         </div>
                     {% endif %}
                 {% endfor %}
@@ -169,7 +170,7 @@
                                 {% if task.status == 'completed' %}
                                     <div class="progress mb-2" style="height: 20px;">
                                         <div class="progress-bar bg-success" style="width: 100%">
-                                            <small><strong>Completada</strong></small>
+                                            <small><strong>{% translate "Completada" %}</strong></small>
                                         </div>
                                     </div>
                                 {% elif task.estimated_hours and task.actual_hours %}
@@ -189,13 +190,13 @@
                                         <i class="bi bi-calendar-event me-1"></i>
                                         {{ task.due_date|date:"d/m/Y H:i" }}
                                         {% if task.is_overdue %}
-                                            <span class="badge bg-danger ms-2">Vencida</span>
+                                            <span class="badge bg-danger ms-2">{% translate "Vencida" %}</span>
                                         {% elif task.days_until_due <= 1 and task.status != 'completed' %}
-                                            <span class="badge bg-warning ms-2">Próxima</span>
+                                            <span class="badge bg-warning ms-2">{% translate "Próxima" %}</span>
                                         {% endif %}
                                     {% else %}
                                         <i class="bi bi-calendar-x me-1"></i>
-                                        <span class="text-muted">Sin fecha límite</span>
+                                        <span class="text-muted">{% translate "Sin fecha límite" %}</span>
                                     {% endif %}
                                 </div>
 
@@ -214,16 +215,16 @@
                             <div class="card-footer">
                                 <div class="btn-group w-100">
                                     <a href="{% url 'task_detail' task.pk %}" class="btn btn-outline-primary btn-sm">
-                                        <i class="bi bi-eye"></i> Ver
+                                        <i class="bi bi-eye"></i> {% translate "Ver" %}
                                     </a>
                                     {% if task.status != 'completed' %}
                                     <button type="button" class="btn btn-outline-success btn-sm" 
                                             onclick="quickStatusChange('{{ task.pk }}', 'in_progress')">
-                                        <i class="bi bi-play"></i> Iniciar
+                                        <i class="bi bi-play"></i> {% translate "Iniciar" %}
                                     </button>
                                     <button type="button" class="btn btn-outline-warning btn-sm" 
                                             onclick="quickStatusChange('{{ task.pk }}', 'completed')">
-                                        <i class="bi bi-check"></i> Completar
+                                        <i class="bi bi-check"></i> {% translate "Completar" %}
                                     </button>
                                     {% endif %}
                                 </div>
@@ -235,14 +236,14 @@
 
                 <!-- Paginación -->
                 {% if tasks.has_other_pages %}
-                <nav aria-label="Paginación de mis tareas" class="mt-4">
+                <nav aria-label="{% translate 'Paginación de mis tareas' %}" class="mt-4">
                     <ul class="pagination justify-content-center">
                         {% if tasks.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Primera</a>
+                                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{% translate "Primera" %}</a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ tasks.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
+                                <a class="page-link" href="?page={{ tasks.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{% translate "Anterior" %}</a>
                             </li>
                         {% endif %}
                         
@@ -254,10 +255,10 @@
                         
                         {% if tasks.has_next %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ tasks.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Siguiente</a>
+                                <a class="page-link" href="?page={{ tasks.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{% translate "Siguiente" %}</a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ tasks.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Última</a>
+                                <a class="page-link" href="?page={{ tasks.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{% translate "Última" %}</a>
                             </li>
                         {% endif %}
                     </ul>
@@ -267,22 +268,22 @@
                 <div class="card">
                     <div class="card-body text-center py-5">
                         <i class="bi bi-person-check display-1 text-muted"></i>
-                        <h4 class="mt-3">No hay tareas asignadas</h4>
+                        <h4 class="mt-3">{% translate "No hay tareas asignadas" %}</h4>
                         <p class="text-muted">
                             {% if current_status or current_priority %}
-                                No tienes tareas con los filtros seleccionados.
+                                {% translate "No tienes tareas con los filtros seleccionados." %}
                             {% else %}
-                                Actualmente no tienes tareas asignadas.
+                                {% translate "Actualmente no tienes tareas asignadas." %}
                             {% endif %}
                         </p>
                         <div class="mt-4">
                             {% if current_status or current_priority %}
                                 <a href="{% url 'task_my_tasks' %}" class="btn btn-outline-primary me-2">
-                                    <i class="bi bi-arrow-clockwise me-1"></i>Ver Todas Mis Tareas
+                                    <i class="bi bi-arrow-clockwise me-1"></i>{% translate "Ver Todas Mis Tareas" %}
                                 </a>
                             {% endif %}
                             <a href="{% url 'task_list' %}" class="btn btn-primary">
-                                <i class="bi bi-list me-1"></i>Ver Todas las Tareas
+                                <i class="bi bi-list me-1"></i>{% translate "Ver Todas las Tareas" %}
                             </a>
                         </div>
                     </div>

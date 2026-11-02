@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -24,16 +25,16 @@
                 <div class="card-body border-bottom">
                     <div class="btn-group" role="group">
                         <a href="{% url 'support_contract_list' %}" class="btn btn-secondary btn-sm">
-                            <i class="bi bi-arrow-left"></i> Volver
+                            <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                         </a>
                         <a href="{% url 'support_contract_edit' contract.pk %}" class="btn btn-warning btn-sm">
-                            <i class="bi bi-pencil"></i> Editar
+                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                         </a>
                         <a href="{% url 'support_contract_pdf' contract.pk %}" class="btn btn-success btn-sm" target="_blank">
-                            <i class="bi bi-file-pdf"></i> Descargar PDF
+                            <i class="bi bi-file-pdf"></i> {% translate "Descargar PDF" %}
                         </a>
                         <a href="{% url 'support_contract_delete' contract.pk %}" class="btn btn-danger btn-sm">
-                            <i class="bi bi-trash"></i> Eliminar
+                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                         </a>
                     </div>
                 </div>
@@ -41,7 +42,7 @@
                 <div class="card-body">
                     <!-- Información de la Empresa -->
                     <div class="mb-4">
-                        <h5><i class="bi bi-building"></i> Empresa</h5>
+                        <h5><i class="bi bi-building"></i> {% translate "Empresa" %}</h5>
                         <p class="mb-1"><strong>{{ contract.company.name }}</strong></p>
                         {% if contract.company.email %}
                             <p class="mb-0 text-muted">{{ contract.company.email }}</p>
@@ -50,30 +51,30 @@
                     
                     <!-- Fechas -->
                     <div class="mb-4">
-                        <h5><i class="bi bi-calendar"></i> Fechas</h5>
+                        <h5><i class="bi bi-calendar"></i> {% translate "Fechas" %}</h5>
                         <ul class="list-unstyled">
                             <li class="mb-2">
-                                <i class="bi bi-calendar-plus"></i> <strong>Fecha de Inicio:</strong> {{ contract.start_date|date:"d/m/Y" }}
+                                <i class="bi bi-calendar-plus"></i> <strong>{% translate "Fecha de Inicio:" %}</strong> {{ contract.start_date|date:"d/m/Y" }}
                             </li>
                             {% if contract.end_date %}
                             <li class="mb-2">
-                                <i class="bi bi-calendar-x"></i> <strong>Fecha de Fin:</strong> {{ contract.end_date|date:"d/m/Y" }}
+                                <i class="bi bi-calendar-x"></i> <strong>{% translate "Fecha de Fin:" %}</strong> {{ contract.end_date|date:"d/m/Y" }}
                             </li>
                             {% endif %}
                             <li class="mb-2">
-                                <i class="bi bi-clock-history"></i> <strong>Creado:</strong> {{ contract.created_at|date:"d/m/Y H:i" }}
+                                <i class="bi bi-clock-history"></i> <strong>{% translate "Creado:" %}</strong> {{ contract.created_at|date:"d/m/Y H:i" }}
                             </li>
                         </ul>
                     </div>
                     
                     <!-- Información del Contrato -->
                     <div class="mb-4">
-                        <h5><i class="bi bi-info-circle"></i> Detalles del Contrato</h5>
+                        <h5><i class="bi bi-info-circle"></i> {% translate "Detalles del Contrato" %}</h5>
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <div class="card bg-light">
                                     <div class="card-body text-center">
-                                        <small class="text-muted">Monto Total</small>
+                                        <small class="text-muted">{% translate "Monto Total" %}</small>
                                         <h3 class="mb-0">€{{ contract.total_amount|floatformat:2 }}</h3>
                                     </div>
                                 </div>
@@ -81,7 +82,7 @@
                             <div class="col-md-4 mb-3">
                                 <div class="card bg-light">
                                     <div class="card-body text-center">
-                                        <small class="text-muted">Frecuencia</small>
+                                        <small class="text-muted">{% translate "Frecuencia" %}</small>
                                         <h4 class="mb-0">{{ contract.get_payment_frequency_display }}</h4>
                                     </div>
                                 </div>
@@ -89,7 +90,7 @@
                             <div class="col-md-4 mb-3">
                                 <div class="card bg-light">
                                     <div class="card-body text-center">
-                                        <small class="text-muted">Número de Cuotas</small>
+                                        <small class="text-muted">{% translate "Número de Cuotas" %}</small>
                                         <h3 class="mb-0">{{ contract.number_of_payments }}</h3>
                                     </div>
                                 </div>
@@ -99,7 +100,7 @@
                     
                     <!-- Descripción -->
                     <div class="mb-4">
-                        <h5><i class="bi bi-file-text"></i> Descripción</h5>
+                        <h5><i class="bi bi-file-text"></i> {% translate "Descripción" %}</h5>
                         <div class="card bg-light">
                             <div class="card-body">
                                 {{ contract.description|linebreaks }}
@@ -110,12 +111,12 @@
                     <!-- Información de Firma -->
                     {% if contract.is_signed %}
                     <div class="mb-4">
-                        <h5><i class="bi bi-pen"></i> Información de Firma</h5>
+                        <h5><i class="bi bi-pen"></i> {% translate "Información de Firma" %}</h5>
                         <div class="card border-success">
                             <div class="card-body">
-                                <p class="mb-1"><strong>Firmado por:</strong> {{ contract.signed_by_name }}</p>
-                                <p class="mb-1"><strong>Email:</strong> {{ contract.signed_by_email }}</p>
-                                <p class="mb-0"><strong>Fecha de Firma:</strong> {{ contract.signed_at|date:"d/m/Y H:i" }}</p>
+                                <p class="mb-1"><strong>{% translate "Firmado por:" %}</strong> {{ contract.signed_by_name }}</p>
+                                <p class="mb-1"><strong>{% translate "Email:" %}</strong> {{ contract.signed_by_email }}</p>
+                                <p class="mb-0"><strong>{% translate "Fecha de Firma:" %}</strong> {{ contract.signed_at|date:"d/m/Y H:i" }}</p>
                             </div>
                         </div>
                     </div>
@@ -123,16 +124,16 @@
                     
                     <!-- Cuotas de Pago -->
                     <div class="mb-4">
-                        <h5><i class="bi bi-cash-stack"></i> Cuotas de Pago</h5>
+                        <h5><i class="bi bi-cash-stack"></i> {% translate "Cuotas de Pago" %}</h5>
                         <div class="table-responsive">
                             <table class="table table-sm table-hover">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Cuota</th>
-                                        <th>Fecha Vencimiento</th>
-                                        <th>Monto</th>
-                                        <th>Estado</th>
-                                        <th class="text-center">Acción</th>
+                                        <th>{% translate "Cuota" %}</th>
+                                        <th>{% translate "Fecha Vencimiento" %}</th>
+                                        <th>{% translate "Monto" %}</th>
+                                        <th>{% translate "Estado" %}</th>
+                                        <th class="text-center">{% translate "Acción" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -153,7 +154,7 @@
                                         <td class="text-center">
                                             <a href="{% url 'support_contract_payment_update' contract.pk payment.id %}" 
                                                class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-pencil"></i> Actualizar
+                                                <i class="bi bi-pencil"></i> {% translate "Actualizar" %}
                                             </a>
                                         </td>
                                     </tr>
@@ -171,10 +172,10 @@
             <!-- Enlace Público -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Enlace Público</h5>
+                    <h5 class="mb-0"><i class="bi bi-link-45deg"></i> {% translate "Enlace Público" %}</h5>
                 </div>
                 <div class="card-body">
-                    <p class="small text-muted">Comparte este enlace con el cliente para que pueda firmar el contrato:</p>
+                    <p class="small text-muted">{% translate "Comparte este enlace con el cliente para que pueda firmar el contrato:" %}</p>
                     <div class="input-group mb-3">
                         <input type="text" class="form-control form-control-sm" id="public-url" value="{{ public_url }}" readonly>
                         <button class="btn btn-outline-secondary btn-sm" type="button" onclick="copyToClipboard()">
@@ -182,7 +183,7 @@
                         </button>
                     </div>
                     <a href="{{ public_url }}" target="_blank" class="btn btn-sm btn-primary w-100">
-                        <i class="bi bi-box-arrow-up-right"></i> Abrir Vista Pública
+                        <i class="bi bi-box-arrow-up-right"></i> {% translate "Abrir Vista Pública" %}
                     </a>
                 </div>
             </div>
@@ -190,32 +191,32 @@
             <!-- Estadísticas de Pagos -->
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Estadísticas de Pagos</h5>
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> {% translate "Estadísticas de Pagos" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="row text-center mb-3">
                         <div class="col-6 mb-3">
                             <div class="border rounded p-2 bg-light">
                                 <h4 class="text-primary mb-0">{{ total_payments }}</h4>
-                                <small class="text-muted">Total Cuotas</small>
+                                <small class="text-muted">{% translate "Total Cuotas" %}</small>
                             </div>
                         </div>
                         <div class="col-6 mb-3">
                             <div class="border rounded p-2 bg-success text-white">
                                 <h4 class="mb-0">{{ paid_payments }}</h4>
-                                <small>Pagadas</small>
+                                <small>{% translate "Pagadas" %}</small>
                             </div>
                         </div>
                         <div class="col-6 mb-3">
                             <div class="border rounded p-2 bg-warning">
                                 <h4 class="mb-0">{{ pending_payments }}</h4>
-                                <small>Pendientes</small>
+                                <small>{% translate "Pendientes" %}</small>
                             </div>
                         </div>
                         <div class="col-6 mb-3">
                             <div class="border rounded p-2 bg-danger text-white">
                                 <h4 class="mb-0">{{ overdue_payments }}</h4>
-                                <small>Vencidas</small>
+                                <small>{% translate "Vencidas" %}</small>
                             </div>
                         </div>
                     </div>
@@ -223,12 +224,12 @@
                     <hr>
                     
                     <div class="mb-2">
-                        <strong class="small">Total Pagado:</strong>
+                        <strong class="small">{% translate "Total Pagado:" %}</strong>
                         <h4 class="text-success">€{{ total_paid|floatformat:2 }}</h4>
                     </div>
                     
                     <div>
-                        <strong class="small">Total Pendiente:</strong>
+                        <strong class="small">{% translate "Total Pendiente:" %}</strong>
                         <h4 class="text-warning">€{{ total_pending|floatformat:2 }}</h4>
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -124,10 +125,10 @@
                         <!-- Botones -->
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'event_calendar' %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Guardar Evento
+                                <i class="bi bi-save"></i> {% translate "Guardar Evento" %}
                             </button>
                         </div>
                     </form>

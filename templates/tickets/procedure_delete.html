@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -12,21 +13,21 @@
                 <i class="bi bi-exclamation-triangle"></i> 
                 {{ page_title }}
             </h1>
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{% url 'procedure_list' %}" class="text-decoration-none">Procedimientos</a>
+                        <a href="{% url 'procedure_list' %}" class="text-decoration-none">{% translate "Procedimientos" %}</a>
                     </li>
                     <li class="breadcrumb-item">
                         <a href="{% url 'procedure_detail' procedure.pk %}" class="text-decoration-none">{{ procedure.title }}</a>
                     </li>
-                    <li class="breadcrumb-item active">Eliminar</li>
+                    <li class="breadcrumb-item active">{% translate "Eliminar" %}</li>
                 </ol>
             </nav>
         </div>
         <div class="col-md-4 text-end">
             <a href="{% url 'procedure_detail' procedure.pk %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+                <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
             </a>
         </div>
     </div>
@@ -38,24 +39,23 @@
                 <div class="card-header bg-danger text-white">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-exclamation-triangle"></i>
-                        Confirmar Eliminación
+                        {% translate "Confirmar Eliminación" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-danger">
                         <h5 class="alert-heading">
-                            <i class="bi bi-exclamation-triangle"></i> ¡Atención!
+                            <i class="bi bi-exclamation-triangle"></i> {% translate "¡Atención!" %}
                         </h5>
                         <p class="mb-0">
-                            Esta acción eliminará permanentemente el procedimiento y no se puede deshacer.
-                            El archivo adjunto también será eliminado del sistema.
+                            {% translate "Esta acción eliminará permanentemente el procedimiento y no se puede deshacer. El archivo adjunto también será eliminado del sistema." %}
                         </p>
                     </div>
 
                     <!-- Información del procedimiento -->
                     <div class="row mb-4">
                         <div class="col-md-8">
-                            <h6>Procedimiento a eliminar:</h6>
+                            <h6>{% translate "Procedimiento a eliminar:" %}</h6>
                             <div class="border rounded p-3 bg-light">
                                 <div class="d-flex align-items-center mb-2">
                                     <span class="badge bg-primary me-2">{{ procedure.sequence }}</span>
@@ -81,7 +81,7 @@
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <h6>Archivo adjunto:</h6>
+                            <h6>{% translate "Archivo adjunto:" %}</h6>
                             <div class="text-center border rounded p-3 bg-light">
                                 <i class="{{ procedure.get_file_icon }} display-6 text-primary mb-2"></i>
                                 <div class="small">
@@ -98,10 +98,10 @@
                         {% csrf_token %}
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'procedure_detail' procedure.pk %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Sí, Eliminar Procedimiento
+                                <i class="bi bi-trash"></i> {% translate "Sí, Eliminar Procedimiento" %}
                             </button>
                         </div>
                     </form>

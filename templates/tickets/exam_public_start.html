@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ exam.title }} - Examen Público{% endblock %}
@@ -107,7 +108,7 @@
         <div class="col-lg-8">
             <div class="card exam-info-card mb-4">
                 <div class="card-header">
-                    <h4 class="mb-0"><i class="bi bi-info-circle"></i> Información del Examen</h4>
+                    <h4 class="mb-0"><i class="bi bi-info-circle"></i> {% translate "Información del Examen" %}</h4>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -116,7 +117,7 @@
                                 <div class="d-flex align-items-center">
                                     <i class="bi bi-question-circle fs-4 text-primary me-3"></i>
                                     <div>
-                                        <strong>Total de Preguntas</strong>
+                                        <strong>{% translate "Total de Preguntas" %}</strong>
                                         <div class="text-muted">{{ exam.questions.count }} preguntas</div>
                                     </div>
                                 </div>
@@ -127,7 +128,7 @@
                                 <div class="d-flex align-items-center">
                                     <i class="bi bi-trophy fs-4 text-success me-3"></i>
                                     <div>
-                                        <strong>Puntuación Mínima</strong>
+                                        <strong>{% translate "Puntuación Mínima" %}</strong>
                                         <div class="text-muted">{{ exam.passing_score }}% para aprobar</div>
                                     </div>
                                 </div>
@@ -142,7 +143,7 @@
                                 <div class="d-flex align-items-center">
                                     <i class="bi bi-clock fs-4 text-warning me-3"></i>
                                     <div>
-                                        <strong>Tiempo Límite</strong>
+                                        <strong>{% translate "Tiempo Límite" %}</strong>
                                         <div class="text-muted">{{ exam.time_limit }} minutos</div>
                                     </div>
                                 </div>
@@ -153,8 +154,8 @@
                                 <div class="d-flex align-items-center">
                                     <i class="bi bi-list-check fs-4 text-info me-3"></i>
                                     <div>
-                                        <strong>Formato</strong>
-                                        <div class="text-muted">3 opciones por pregunta</div>
+                                        <strong>{% translate "Formato" %}</strong>
+                                        <div class="text-muted">{% translate "3 opciones por pregunta" %}</div>
                                     </div>
                                 </div>
                             </div>
@@ -167,17 +168,17 @@
             <!-- Instrucciones -->
             <div class="card exam-info-card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> Instrucciones</h5>
+                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> {% translate "Instrucciones" %}</h5>
                 </div>
                 <div class="card-body">
                     <ul class="list-unstyled">
-                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i> Lee cada pregunta cuidadosamente</li>
-                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i> Selecciona una opción por pregunta (A, B o C)</li>
-                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i> Puedes navegar entre preguntas usando los botones</li>
+                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i> {% translate "Lee cada pregunta cuidadosamente" %}</li>
+                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i> {% translate "Selecciona una opción por pregunta (A, B o C)" %}</li>
+                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i> {% translate "Puedes navegar entre preguntas usando los botones" %}</li>
                         {% if exam.time_limit %}
                         <li class="mb-2"><i class="bi bi-clock text-warning me-2"></i> Tienes {{ exam.time_limit }} minutos para completar el examen</li>
                         {% endif %}
-                        <li class="mb-2"><i class="bi bi-exclamation-triangle text-warning me-2"></i> Una vez enviado, no podrás modificar tus respuestas</li>
+                        <li class="mb-2"><i class="bi bi-exclamation-triangle text-warning me-2"></i> {% translate "Una vez enviado, no podrás modificar tus respuestas" %}</li>
                         <li class="mb-0"><i class="bi bi-award text-info me-2"></i> Necesitas {{ exam.passing_score }}% para aprobar</li>
                     </ul>
                 </div>
@@ -187,8 +188,8 @@
             {% if show_preview %}
             <div class="card exam-info-card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-eye"></i> Vista Previa</h5>
-                    <small class="text-muted">Primeras preguntas del examen</small>
+                    <h5 class="mb-0"><i class="bi bi-eye"></i> {% translate "Vista Previa" %}</h5>
+                    <small class="text-muted">{% translate "Primeras preguntas del examen" %}</small>
                 </div>
                 <div class="card-body exam-preview">
                     {% for question in preview_questions %}
@@ -215,7 +216,7 @@
         <div class="col-lg-4">
             <div class="participant-form p-4">
                 <h4 class="text-center mb-4">
-                    <i class="bi bi-person-plus"></i> Comenzar Examen
+                    <i class="bi bi-person-plus"></i> {% translate "Comenzar Examen" %}
                 </h4>
                 
                 <form method="post" action="{% url 'exam_take_public' exam.public_token %}" id="participantForm">
@@ -226,11 +227,11 @@
                                class="form-control" 
                                id="participant_name" 
                                name="participant_name" 
-                               placeholder="Tu nombre completo"
+                               placeholder="{% translate 'Tu nombre completo' %}"
                                required
                                maxlength="100">
                         <label for="participant_name">
-                            <i class="bi bi-person"></i> Nombre Completo *
+                            <i class="bi bi-person"></i> {% translate "Nombre Completo *" %}
                         </label>
                     </div>
                     
@@ -242,7 +243,7 @@
                                placeholder="tu@email.com"
                                required>
                         <label for="participant_email">
-                            <i class="bi bi-envelope"></i> Correo Electrónico *
+                            <i class="bi bi-envelope"></i> {% translate "Correo Electrónico *" %}
                         </label>
                     </div>
                     
@@ -254,33 +255,33 @@
                                id="acceptTerms"
                                required>
                         <label class="form-check-label" for="acceptTerms">
-                            Acepto que mis datos sean utilizados únicamente para este examen
+                            {% translate "Acepto que mis datos sean utilizados únicamente para este examen" %}
                         </label>
                     </div>
                     
                     <button type="submit" class="btn btn-start-exam w-100">
-                        <i class="bi bi-play-circle"></i> Comenzar Examen
+                        <i class="bi bi-play-circle"></i> {% translate "Comenzar Examen" %}
                     </button>
                 </form>
                 
                 <div class="privacy-notice mt-4">
                     <small>
                         <i class="bi bi-shield-check"></i>
-                        <strong>Privacidad:</strong> Tus datos solo se usan para identificarte en este examen y no serán compartidos con terceros.
+                        <strong>{% translate "Privacidad:" %}</strong> {% translate "Tus datos solo se usan para identificarte en este examen y no serán compartidos con terceros." %}
                     </small>
                 </div>
                 
                 <!-- Estadísticas del examen -->
                 <div class="mt-4 pt-4 border-top">
-                    <h6 class="text-muted mb-3">Estadísticas</h6>
+                    <h6 class="text-muted mb-3">{% translate "Estadísticas" %}</h6>
                     <div class="row text-center">
                         <div class="col-6">
                             <div class="fs-5 fw-bold text-primary">{{ exam.attempts_count|default:0 }}</div>
-                            <small class="text-muted">Intentos</small>
+                            <small class="text-muted">{% translate "Intentos" %}</small>
                         </div>
                         <div class="col-6">
                             <div class="fs-5 fw-bold text-success">{{ exam.pass_rate|floatformat:0|default:0 }}%</div>
-                            <small class="text-muted">Aprobación</small>
+                            <small class="text-muted">{% translate "Aprobación" %}</small>
                         </div>
                     </div>
                 </div>

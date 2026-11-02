@@ -1,29 +1,30 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Reuniones de Video - TicketProo{% endblock %}
+{% block title %}{% translate "Reuniones de Video - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
                         <a href="{% url 'employee_dashboard' %}">
-                            <i class="bi bi-speedometer2"></i> Dashboard
+                            <i class="bi bi-speedometer2"></i> {% translate "Dashboard" %}
                         </a>
                     </li>
-                    <li class="breadcrumb-item active">Reuniones de Video</li>
+                    <li class="breadcrumb-item active">{% translate "Reuniones de Video" %}</li>
                 </ol>
             </nav>
-            <h2><i class="bi bi-camera-video text-purple"></i> Reuniones de Video</h2>
-            <p class="text-muted">Gestiona reuniones, grabaciones y transcripciones automáticas</p>
+            <h2><i class="bi bi-camera-video text-purple"></i> {% translate "Reuniones de Video" %}</h2>
+            <p class="text-muted">{% translate "Gestiona reuniones, grabaciones y transcripciones automáticas" %}</p>
         </div>
         
         <div class="btn-group" role="group">
             <a href="{% url 'video_meeting_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Nueva Reunión
+                <i class="bi bi-plus-circle"></i> {% translate "Nueva Reunión" %}
             </a>
         </div>
     </div>
@@ -31,7 +32,7 @@
     <!-- Filtros -->
     <div class="card mb-4">
         <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+            <h5 class="mb-0"><i class="bi bi-funnel"></i> {% translate "Filtros" %}</h5>
         </div>
         <div class="card-body">
             <form method="get" class="row g-3">
@@ -65,7 +66,7 @@
             <div class="card bg-primary text-white">
                 <div class="card-body text-center">
                     <h3>{{ total_meetings }}</h3>
-                    <p class="mb-0">Total Reuniones</p>
+                    <p class="mb-0">{% translate "Total Reuniones" %}</p>
                 </div>
             </div>
         </div>
@@ -73,7 +74,7 @@
             <div class="card bg-success text-white">
                 <div class="card-body text-center">
                     <h3>{{ page_obj.object_list|length }}</h3>
-                    <p class="mb-0">En Esta Página</p>
+                    <p class="mb-0">{% translate "En Esta Página" %}</p>
                 </div>
             </div>
         </div>
@@ -85,7 +86,7 @@
                             {% if meeting.transcription_status == 'processing' %}1{% endif %}
                         {% empty %}0{% endfor %}
                     </h3>
-                    <p class="mb-0">Transcribiendo</p>
+                    <p class="mb-0">{% translate "Transcribiendo" %}</p>
                 </div>
             </div>
         </div>
@@ -97,7 +98,7 @@
                             {% if meeting.transcription_status == 'completed' %}1{% endif %}
                         {% empty %}0{% endfor %}
                     </h3>
-                    <p class="mb-0">Transcritas</p>
+                    <p class="mb-0">{% translate "Transcritas" %}</p>
                 </div>
             </div>
         </div>
@@ -152,7 +153,7 @@
                     {% if meeting.recording_file %}
                     <div class="mb-2">
                         <small class="text-success">
-                            <i class="bi bi-file-play"></i> Grabación disponible
+                            <i class="bi bi-file-play"></i> {% translate "Grabación disponible" %}
                         </small>
                     </div>
                     {% endif %}
@@ -177,12 +178,12 @@
                         </small>
                         <div class="btn-group btn-group-sm">
                             <a href="{% url 'video_meeting_detail' meeting.pk %}" 
-                               class="btn btn-outline-primary btn-sm" title="Ver detalles">
+                               class="btn btn-outline-primary btn-sm" title="{% translate 'Ver detalles' %}">
                                 <i class="bi bi-eye"></i>
                             </a>
                             {% if meeting.can_edit and user == meeting.organizer or is_agent %}
                             <a href="{% url 'video_meeting_edit' meeting.pk %}" 
-                               class="btn btn-outline-warning btn-sm" title="Editar">
+                               class="btn btn-outline-warning btn-sm" title="{% translate 'Editar' %}">
                                 <i class="bi bi-pencil"></i>
                             </a>
                             {% endif %}
@@ -196,10 +197,10 @@
             <div class="card">
                 <div class="card-body text-center py-5">
                     <i class="bi bi-camera-video display-1 text-muted mb-3"></i>
-                    <h4 class="text-muted">No hay reuniones</h4>
-                    <p class="text-muted">Aún no has creado ninguna reunión de video.</p>
+                    <h4 class="text-muted">{% translate "No hay reuniones" %}</h4>
+                    <p class="text-muted">{% translate "Aún no has creado ninguna reunión de video." %}</p>
                     <a href="{% url 'video_meeting_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear Primera Reunión
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Primera Reunión" %}
                     </a>
                 </div>
             </div>
@@ -211,7 +212,7 @@
     {% if page_obj.has_other_pages %}
     <div class="row">
         <div class="col-12">
-            <nav aria-label="Navegación de reuniones">
+            <nav aria-label="{% translate 'Navegación de reuniones' %}">
                 <ul class="pagination justify-content-center">
                     {% if page_obj.has_previous %}
                         <li class="page-item">

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -13,7 +14,7 @@
                         <i class="fas fa-list"></i> {{ page_title }}
                     </h4>
                     <a href="{% url 'work_order_task_list' work_order.pk %}" class="btn btn-secondary btn-sm">
-                        <i class="fas fa-arrow-left"></i> Volver a Tareas
+                        <i class="fas fa-arrow-left"></i> {% translate "Volver a Tareas" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -25,12 +26,12 @@
 
                     <!-- Instrucciones -->
                     <div class="alert alert-warning">
-                        <h6><i class="fas fa-lightbulb"></i> Instrucciones:</h6>
+                        <h6><i class="fas fa-lightbulb"></i> {% translate "Instrucciones:" %}</h6>
                         <ul class="mb-0">
-                            <li>Escriba cada tarea en una línea separada</li>
-                            <li>Las tareas se crearán en el orden especificado</li>
-                            <li>Las líneas vacías serán ignoradas</li>
-                            <li>Todas las tareas se crearán con estado "Pendiente"</li>
+                            <li>{% translate "Escriba cada tarea en una línea separada" %}</li>
+                            <li>{% translate "Las tareas se crearán en el orden especificado" %}</li>
+                            <li>{% translate "Las líneas vacías serán ignoradas" %}</li>
+                            <li>{% translate 'Todas las tareas se crearán con estado "Pendiente"' %}</li>
                         </ul>
                     </div>
 
@@ -51,12 +52,12 @@
                                 </div>
                             {% endif %}
                             <small class="form-text text-muted">
-                                Ejemplo:<br>
-                                Analizar requerimientos<br>
-                                Diseñar base de datos<br>
-                                Implementar funcionalidad<br>
-                                Realizar pruebas<br>
-                                Documentar código
+                                {% translate "Ejemplo:" %}<br>
+                                {% translate "Analizar requerimientos" %}<br>
+                                {% translate "Diseñar base de datos" %}<br>
+                                {% translate "Implementar funcionalidad" %}<br>
+                                {% translate "Realizar pruebas" %}<br>
+                                {% translate "Documentar código" %}
                             </small>
                         </div>
 
@@ -72,10 +73,10 @@
                         <!-- Botones -->
                         <div class="form-group">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Crear Tareas
+                                <i class="fas fa-save"></i> {% translate "Crear Tareas" %}
                             </button>
                             <a href="{% url 'work_order_task_list' work_order.pk %}" class="btn btn-secondary ml-2">
-                                <i class="fas fa-times"></i> Cancelar
+                                <i class="fas fa-times"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>

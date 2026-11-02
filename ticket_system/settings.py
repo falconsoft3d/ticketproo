@@ -51,6 +51,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Para archivos estáticos en producción
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'tickets.middleware.UserLanguageMiddleware',  # Idioma elegido por el usuario (por defecto español)
     'tickets.middleware.PageVisitTrackingMiddleware',  # Tracking de visitas a páginas públicas
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -129,7 +130,18 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'es-es'
+LANGUAGE_CODE = 'es'
+
+# Idiomas de la interfaz (landing y dashboard). El idioma lo elige el usuario
+# con el selector (cookie de set_language); por defecto, español.
+LANGUAGES = [
+    ('es', 'Español'),
+    ('en', 'English'),
+    ('ru', 'Русский'),
+    ('pt', 'Português'),
+]
+
+LOCALE_PATHS = [BASE_DIR / 'locale']
 
 TIME_ZONE = 'Europe/Madrid'
 

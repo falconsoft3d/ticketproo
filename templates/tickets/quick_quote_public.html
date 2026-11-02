@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -97,7 +98,7 @@
         <div class="quote-card">
             <!-- Header -->
             <div class="quote-header">
-                <h1><i class="bi bi-file-earmark-text"></i> Cotización</h1>
+                <h1><i class="bi bi-file-earmark-text"></i> {% translate "Cotización" %}</h1>
                 <p class="mb-2"><strong>{{ quote.sequence_number }}</strong></p>
                 <h2>{{ quote.title }}</h2>
                 {% if quote.client_name %}
@@ -115,11 +116,11 @@
                         {% elif quote.status == 'expired' %}alert-secondary{% endif %}">
                         <h4>
                             {% if quote.status == 'accepted' %}
-                                <i class="bi bi-check-circle"></i> Esta cotización ha sido aceptada
+                                <i class="bi bi-check-circle"></i> {% translate "Esta cotización ha sido aceptada" %}
                             {% elif quote.status == 'rejected' %}
-                                <i class="bi bi-x-circle"></i> Esta cotización ha sido rechazada
+                                <i class="bi bi-x-circle"></i> {% translate "Esta cotización ha sido rechazada" %}
                             {% elif quote.status == 'expired' %}
-                                <i class="bi bi-clock-history"></i> Esta cotización ha expirado
+                                <i class="bi bi-clock-history"></i> {% translate "Esta cotización ha expirado" %}
                             {% endif %}
                         </h4>
                         {% if quote.response_date %}
@@ -130,7 +131,7 @@
                     {% if quote.response_notes %}
                         <div class="card mb-3">
                             <div class="card-header">
-                                <strong>Notas de respuesta:</strong>
+                                <strong>{% translate "Notas de respuesta:" %}</strong>
                             </div>
                             <div class="card-body">
                                 {{ quote.response_notes|linebreaks }}
@@ -153,15 +154,15 @@
                 <!-- Detalles -->
                 <div class="card mb-4">
                     <div class="card-body">
-                        <h5 class="card-title"><i class="bi bi-list-ul"></i> Detalle</h5>
+                        <h5 class="card-title"><i class="bi bi-list-ul"></i> {% translate "Detalle" %}</h5>
                         
                         <div class="detail-row">
-                            <span><strong>Cantidad de Horas:</strong></span>
+                            <span><strong>{% translate "Cantidad de Horas:" %}</strong></span>
                             <span>{{ quote.hours }} hrs</span>
                         </div>
                         
                         <div class="detail-row">
-                            <span><strong>Costo por Hora:</strong></span>
+                            <span><strong>{% translate "Costo por Hora:" %}</strong></span>
                             <span>€{{ quote.hourly_rate }}</span>
                         </div>
                     </div>
@@ -169,7 +170,7 @@
 
                 <!-- Precio Total -->
                 <div class="price-box">
-                    <p class="mb-2">Total a Pagar</p>
+                    <p class="mb-2">{% translate "Total a Pagar" %}</p>
                     <h2>€{{ quote.total_amount }}</h2>
                 </div>
 
@@ -177,7 +178,7 @@
                 {% if quote.notes %}
                     <div class="card mb-4">
                         <div class="card-header">
-                            <strong><i class="bi bi-sticky"></i> Notas</strong>
+                            <strong><i class="bi bi-sticky"></i> {% translate "Notas" %}</strong>
                         </div>
                         <div class="card-body">
                             {{ quote.notes|linebreaks }}
@@ -192,7 +193,7 @@
                         
                         <div class="mb-4">
                             <label for="response_notes" class="form-label">
-                                <strong>Comentarios (opcional):</strong>
+                                <strong>{% translate "Comentarios (opcional):" %}</strong>
                             </label>
                             <textarea class="form-control" id="response_notes" name="response_notes" rows="4" 
                                       placeholder="Agregue cualquier comentario o pregunta..."></textarea>
@@ -201,12 +202,12 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <button type="submit" name="action" value="reject" class="btn btn-reject w-100">
-                                    <i class="bi bi-x-circle"></i> Rechazar Cotización
+                                    <i class="bi bi-x-circle"></i> {% translate "Rechazar Cotización" %}
                                 </button>
                             </div>
                             <div class="col-md-6">
                                 <button type="submit" name="action" value="accept" class="btn btn-accept w-100">
-                                    <i class="bi bi-check-circle"></i> Aceptar Cotización
+                                    <i class="bi bi-check-circle"></i> {% translate "Aceptar Cotización" %}
                                 </button>
                             </div>
                         </div>
@@ -217,7 +218,7 @@
                 {% if other_quotes %}
                     <div class="card mt-4">
                         <div class="card-header">
-                            <strong><i class="bi bi-file-earmark-text-fill"></i> Otras Cotizaciones{% if quote.company %} de {{ quote.company.name }}{% elif quote.client_name %} de {{ quote.client_name }}{% endif %}</strong>
+                            <strong><i class="bi bi-file-earmark-text-fill"></i> {% translate "Otras Cotizaciones" %}{% if quote.company %} de {{ quote.company.name }}{% elif quote.client_name %} de {{ quote.client_name }}{% endif %}</strong>
                         </div>
                         <div class="list-group list-group-flush">
                             {% for other in other_quotes %}
@@ -251,7 +252,7 @@
                 {% if quote.user.profile.quote_terms_conditions %}
                     <div class="card mt-4">
                         <div class="card-header">
-                            <strong><i class="bi bi-file-text"></i> Términos y Condiciones</strong>
+                            <strong><i class="bi bi-file-text"></i> {% translate "Términos y Condiciones" %}</strong>
                         </div>
                         <div class="card-body">
                             <small>{{ quote.user.profile.quote_terms_conditions|linebreaks }}</small>
@@ -262,18 +263,18 @@
                 <!-- Información del Comercial -->
                 <div class="card mt-4 border-primary">
                     <div class="card-header">
-                        <strong><i class="bi bi-person-badge"></i> Información del Comercial</strong>
+                        <strong><i class="bi bi-person-badge"></i> {% translate "Información del Comercial" %}</strong>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
                                 <p class="mb-2">
-                                    <i class="bi bi-person"></i> <strong>Nombre:</strong> {{ quote.user.first_name }} {{ quote.user.last_name }}
+                                    <i class="bi bi-person"></i> <strong>{% translate "Nombre:" %}</strong> {{ quote.user.first_name }} {{ quote.user.last_name }}
                                 </p>
                             </div>
                             <div class="col-md-6">
                                 <p class="mb-2">
-                                    <i class="bi bi-envelope"></i> <strong>Email:</strong> 
+                                    <i class="bi bi-envelope"></i> <strong>{% translate "Email:" %}</strong> 
                                     <a href="mailto:{{ quote.user.email }}">{{ quote.user.email }}</a>
                                 </p>
                             </div>
@@ -309,37 +310,37 @@
                             </div>
                         {% else %}
                             <p class="text-muted text-center py-3">
-                                <i class="bi bi-chat-left-text"></i> Aún no hay comentarios. ¡Sé el primero en comentar!
+                                <i class="bi bi-chat-left-text"></i> {% translate "Aún no hay comentarios. ¡Sé el primero en comentar!" %}
                             </p>
                         {% endif %}
 
                         <!-- Formulario para agregar comentario -->
                         <div class="card bg-light">
                             <div class="card-body">
-                                <h6 class="card-title"><i class="bi bi-plus-circle"></i> Agregar un comentario</h6>
+                                <h6 class="card-title"><i class="bi bi-plus-circle"></i> {% translate "Agregar un comentario" %}</h6>
                                 <form method="post">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="comment">
                                     
                                     <div class="row g-3 mb-3">
                                         <div class="col-md-6">
-                                            <label for="author_name" class="form-label">Nombre *</label>
+                                            <label for="author_name" class="form-label">{% translate "Nombre *" %}</label>
                                             <input type="text" class="form-control" id="author_name" name="author_name" required>
                                         </div>
                                         <div class="col-md-6">
-                                            <label for="author_email" class="form-label">Email *</label>
+                                            <label for="author_email" class="form-label">{% translate "Email *" %}</label>
                                             <input type="email" class="form-control" id="author_email" name="author_email" required>
                                         </div>
                                     </div>
                                     
                                     <div class="mb-3">
-                                        <label for="comment" class="form-label">Comentario *</label>
+                                        <label for="comment" class="form-label">{% translate "Comentario *" %}</label>
                                         <textarea class="form-control" id="comment" name="comment" rows="3" required 
                                                   placeholder="Escribe tu comentario o pregunta aquí..."></textarea>
                                     </div>
                                     
                                     <button type="submit" class="btn btn-info text-white">
-                                        <i class="bi bi-send"></i> Enviar Comentario
+                                        <i class="bi bi-send"></i> {% translate "Enviar Comentario" %}
                                     </button>
                                 </form>
                             </div>

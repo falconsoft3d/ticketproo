@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Verificación de Certificado{% endblock %}
+{% block title %}{% translate "Verificación de Certificado" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -61,9 +62,9 @@
             <div class="card border-0">
                 <div class="card-header verification-header text-center py-4">
                     <h1 class="mb-2">
-                        <i class="bi bi-shield-check"></i> Verificación de Certificado
+                        <i class="bi bi-shield-check"></i> {% translate "Verificación de Certificado" %}
                     </h1>
-                    <p class="lead mb-0">Sistema de Validación de Certificados TicketPro</p>
+                    <p class="lead mb-0">{% translate "Sistema de Validación de Certificados TicketPro" %}</p>
                 </div>
             </div>
         </div>
@@ -78,8 +79,8 @@
                     <div class="verification-badge text-success">
                         <i class="bi bi-patch-check-fill"></i>
                     </div>
-                    <h2 class="text-success mb-4">✓ CERTIFICADO VÁLIDO</h2>
-                    <p class="lead">Este certificado es auténtico y ha sido verificado correctamente.</p>
+                    <h2 class="text-success mb-4">{% translate "✓ CERTIFICADO VÁLIDO" %}</h2>
+                    <p class="lead">{% translate "Este certificado es auténtico y ha sido verificado correctamente." %}</p>
                 </div>
             </div>
         </div>
@@ -90,19 +91,19 @@
         <div class="col-lg-8">
             <div class="card verification-details">
                 <div class="card-header">
-                    <h4 class="mb-0"><i class="bi bi-info-circle"></i> Detalles del Certificado</h4>
+                    <h4 class="mb-0"><i class="bi bi-info-circle"></i> {% translate "Detalles del Certificado" %}</h4>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="detail-item">
-                                <strong><i class="bi bi-person"></i> Participante</strong>
+                                <strong><i class="bi bi-person"></i> {% translate "Participante" %}</strong>
                                 <div class="mt-2 fs-5">{{ cert_data.participant_name }}</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="detail-item">
-                                <strong><i class="bi bi-envelope"></i> Email</strong>
+                                <strong><i class="bi bi-envelope"></i> {% translate "Email" %}</strong>
                                 <div class="mt-2">{{ cert_data.participant_email }}</div>
                             </div>
                         </div>
@@ -111,7 +112,7 @@
                     <div class="row mt-3">
                         <div class="col-12">
                             <div class="detail-item">
-                                <strong><i class="bi bi-award"></i> Examen Completado</strong>
+                                <strong><i class="bi bi-award"></i> {% translate "Examen Completado" %}</strong>
                                 <div class="mt-2 fs-5">{{ cert_data.exam_title }}</div>
                             </div>
                         </div>
@@ -120,19 +121,19 @@
                     <div class="row mt-3">
                         <div class="col-md-4">
                             <div class="detail-item">
-                                <strong><i class="bi bi-graph-up"></i> Puntuación</strong>
+                                <strong><i class="bi bi-graph-up"></i> {% translate "Puntuación" %}</strong>
                                 <div class="mt-2 fs-4 text-success">{{ cert_data.score|floatformat:1 }}%</div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="detail-item">
-                                <strong><i class="bi bi-check-circle"></i> Respuestas Correctas</strong>
+                                <strong><i class="bi bi-check-circle"></i> {% translate "Respuestas Correctas" %}</strong>
                                 <div class="mt-2">{{ cert_data.correct_answers }} de {{ cert_data.total_questions }}</div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="detail-item">
-                                <strong><i class="bi bi-calendar-check"></i> Fecha de Completado</strong>
+                                <strong><i class="bi bi-calendar-check"></i> {% translate "Fecha de Completado" %}</strong>
                                 <div class="mt-2">{{ cert_data.completed_at|date:"d/m/Y H:i" }}</div>
                             </div>
                         </div>
@@ -141,13 +142,13 @@
                     <div class="row mt-3">
                         <div class="col-md-6">
                             <div class="detail-item">
-                                <strong><i class="bi bi-file-earmark-text"></i> Certificado Generado</strong>
+                                <strong><i class="bi bi-file-earmark-text"></i> {% translate "Certificado Generado" %}</strong>
                                 <div class="mt-2">{{ cert_data.certificate_generated_at|date:"d/m/Y H:i" }}</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="detail-item">
-                                <strong><i class="bi bi-key"></i> ID del Certificado</strong>
+                                <strong><i class="bi bi-key"></i> {% translate "ID del Certificado" %}</strong>
                                 <div class="mt-2">
                                     <code>{{ token|slice:":8" }}...{{ token|slice:"-8:" }}</code>
                                 </div>
@@ -162,20 +163,20 @@
         <div class="col-lg-4">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-qr-code"></i> Código de Verificación</h5>
+                    <h5 class="mb-0"><i class="bi bi-qr-code"></i> {% translate "Código de Verificación" %}</h5>
                 </div>
                 <div class="card-body text-center">
                     <div class="qr-container mb-3">
                         <div id="qrcode"></div>
                     </div>
-                    <small class="text-muted">Escanea este código para verificar el certificado</small>
+                    <small class="text-muted">{% translate "Escanea este código para verificar el certificado" %}</small>
                     
                     <div class="mt-4 no-print">
                         <button onclick="window.print()" class="btn btn-outline-primary w-100 mb-2">
-                            <i class="bi bi-printer"></i> Imprimir Verificación
+                            <i class="bi bi-printer"></i> {% translate "Imprimir Verificación" %}
                         </button>
                         <button onclick="copyLink()" class="btn btn-outline-secondary w-100" id="copyBtn">
-                            <i class="bi bi-link"></i> Copiar Enlace
+                            <i class="bi bi-link"></i> {% translate "Copiar Enlace" %}
                         </button>
                     </div>
                 </div>
@@ -187,9 +188,9 @@
                     <div class="text-success mb-2">
                         <i class="bi bi-shield-fill-check" style="font-size: 2rem;"></i>
                     </div>
-                    <h6 class="text-success mb-2">CERTIFICADO AUTÉNTICO</h6>
+                    <h6 class="text-success mb-2">{% translate "CERTIFICADO AUTÉNTICO" %}</h6>
                     <small class="text-muted">
-                        Verificado por el Sistema TicketPro<br>
+                        {% translate "Verificado por el Sistema TicketPro" %}<br>
                         {{ "now"|date:"d/m/Y H:i" }}
                     </small>
                 </div>
@@ -206,16 +207,16 @@
                     <div class="verification-badge text-danger">
                         <i class="bi bi-x-circle-fill"></i>
                     </div>
-                    <h2 class="text-danger mb-4">✗ CERTIFICADO NO VÁLIDO</h2>
+                    <h2 class="text-danger mb-4">{% translate "✗ CERTIFICADO NO VÁLIDO" %}</h2>
                     <p class="lead">{{ cert_data.error|default:"El certificado no pudo ser verificado." }}</p>
                     
                     <div class="mt-4">
-                        <h5>Posibles razones:</h5>
+                        <h5>{% translate "Posibles razones:" %}</h5>
                         <ul class="list-unstyled">
-                            <li><i class="bi bi-exclamation-triangle text-warning"></i> El código QR o enlace está dañado</li>
-                            <li><i class="bi bi-exclamation-triangle text-warning"></i> El certificado ha sido revocado</li>
-                            <li><i class="bi bi-exclamation-triangle text-warning"></i> El certificado no existe en nuestro sistema</li>
-                            <li><i class="bi bi-exclamation-triangle text-warning"></i> El enlace ha expirado o es incorrecto</li>
+                            <li><i class="bi bi-exclamation-triangle text-warning"></i> {% translate "El código QR o enlace está dañado" %}</li>
+                            <li><i class="bi bi-exclamation-triangle text-warning"></i> {% translate "El certificado ha sido revocado" %}</li>
+                            <li><i class="bi bi-exclamation-triangle text-warning"></i> {% translate "El certificado no existe en nuestro sistema" %}</li>
+                            <li><i class="bi bi-exclamation-triangle text-warning"></i> {% translate "El enlace ha expirado o es incorrecto" %}</li>
                         </ul>
                     </div>
                 </div>
@@ -228,12 +229,12 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body text-center">
-                    <h5>¿Necesitas ayuda?</h5>
+                    <h5>{% translate "¿Necesitas ayuda?" %}</h5>
                     <p class="text-muted mb-3">
-                        Si crees que esto es un error, contacta al administrador del sistema.
+                        {% translate "Si crees que esto es un error, contacta al administrador del sistema." %}
                     </p>
                     <a href="{% url 'contact_form' %}" class="btn btn-primary">
-                        <i class="bi bi-envelope"></i> Contactar Soporte
+                        <i class="bi bi-envelope"></i> {% translate "Contactar Soporte" %}
                     </a>
                 </div>
             </div>

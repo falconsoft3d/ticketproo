@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -9,7 +10,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="fas fa-clock me-2"></i>{{ title }}</h2>
                 <a href="{% url 'client_assistance_list' %}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Volver a Configuración
+                    <i class="fas fa-arrow-left me-2"></i>{% translate "Volver a Configuración" %}
                 </a>
             </div>
 
@@ -27,9 +28,9 @@
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-md-6">
-                            <label for="projectFilter" class="form-label">Filtrar por proyecto:</label>
+                            <label for="projectFilter" class="form-label">{% translate "Filtrar por proyecto:" %}</label>
                             <select class="form-select" id="projectFilter" onchange="filterByProject()">
-                                <option value="">Todos los proyectos</option>
+                                <option value="">{% translate "Todos los proyectos" %}</option>
                                 {% for project in projects %}
                                     <option value="{{ project.pk }}" {% if selected_project and project.pk == selected_project.pk %}selected{% endif %}>
                                         {{ project.name }}
@@ -41,7 +42,7 @@
                             {% if selected_project %}
                                 <div class="mt-3">
                                     <span class="badge bg-primary">Mostrando entradas para: {{ selected_project.name }}</span>
-                                    <a href="{% url 'client_time_entries_list' %}" class="btn btn-sm btn-outline-secondary ms-2">Ver todos</a>
+                                    <a href="{% url 'client_time_entries_list' %}" class="btn btn-sm btn-outline-secondary ms-2">{% translate "Ver todos" %}</a>
                                 </div>
                             {% endif %}
                         </div>
@@ -51,7 +52,7 @@
 
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Entradas de Tiempo Registradas</h5>
+                    <h5 class="mb-0">{% translate "Entradas de Tiempo Registradas" %}</h5>
                 </div>
                 <div class="card-body">
                     {% if entries %}
@@ -59,14 +60,14 @@
                             <table class="table table-striped table-hover">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>Cliente</th>
-                                        <th>Proyecto</th>
-                                        <th>Horas</th>
-                                        <th>Categoría</th>
-                                        <th>Fecha del Trabajo</th>
-                                        <th>Descripción</th>
-                                        <th>Registrado</th>
-                                        <th>IP/Navegador</th>
+                                        <th>{% translate "Cliente" %}</th>
+                                        <th>{% translate "Proyecto" %}</th>
+                                        <th>{% translate "Horas" %}</th>
+                                        <th>{% translate "Categoría" %}</th>
+                                        <th>{% translate "Fecha del Trabajo" %}</th>
+                                        <th>{% translate "Descripción" %}</th>
+                                        <th>{% translate "Registrado" %}</th>
+                                        <th>{% translate "IP/Navegador" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -105,12 +106,12 @@
                                                             <button class="btn btn-sm btn-link p-0" 
                                                                     data-bs-toggle="modal" 
                                                                     data-bs-target="#descriptionModal{{ entry.id }}">
-                                                                Ver más
+                                                                {% translate "Ver más" %}
                                                             </button>
                                                         {% endif %}
                                                     </div>
                                                 {% else %}
-                                                    <span class="text-muted">Sin descripción</span>
+                                                    <span class="text-muted">{% translate "Sin descripción" %}</span>
                                                 {% endif %}
                                             </td>
                                             <td>
@@ -124,15 +125,15 @@
                                                     {% if entry.user_agent %}
                                                         <div title="{{ entry.user_agent }}">
                                                             {% if 'Mobile' in entry.user_agent %}
-                                                                <i class="fas fa-mobile-alt"></i> Móvil
+                                                                <i class="fas fa-mobile-alt"></i> {% translate "Móvil" %}
                                                             {% elif 'Chrome' in entry.user_agent %}
-                                                                <i class="fab fa-chrome"></i> Chrome
+                                                                <i class="fab fa-chrome"></i> {% translate "Chrome" %}
                                                             {% elif 'Firefox' in entry.user_agent %}
-                                                                <i class="fab fa-firefox"></i> Firefox
+                                                                <i class="fab fa-firefox"></i> {% translate "Firefox" %}
                                                             {% elif 'Safari' in entry.user_agent %}
-                                                                <i class="fab fa-safari"></i> Safari
+                                                                <i class="fab fa-safari"></i> {% translate "Safari" %}
                                                             {% else %}
-                                                                <i class="fas fa-browser"></i> Navegador
+                                                                <i class="fas fa-browser"></i> {% translate "Navegador" %}
                                                             {% endif %}
                                                         </div>
                                                     {% endif %}
@@ -146,20 +147,20 @@
                                                 <div class="modal-dialog">
                                                     <div class="modal-content">
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title">Descripción completa</h5>
+                                                            <h5 class="modal-title">{% translate "Descripción completa" %}</h5>
                                                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                         </div>
                                                         <div class="modal-body">
-                                                            <strong>Cliente:</strong> {{ entry.client_name }}<br>
-                                                            <strong>Email:</strong> {{ entry.client_email }}<br>
-                                                            <strong>Proyecto:</strong> {{ entry.project.name }}<br>
-                                                            <strong>Horas:</strong> {{ entry.get_formatted_hours }}<br>
-                                                            <strong>Categoría:</strong> {{ entry.get_category_display }}<br><br>
-                                                            <strong>Descripción:</strong><br>
+                                                            <strong>{% translate "Cliente:" %}</strong> {{ entry.client_name }}<br>
+                                                            <strong>{% translate "Email:" %}</strong> {{ entry.client_email }}<br>
+                                                            <strong>{% translate "Proyecto:" %}</strong> {{ entry.project.name }}<br>
+                                                            <strong>{% translate "Horas:" %}</strong> {{ entry.get_formatted_hours }}<br>
+                                                            <strong>{% translate "Categoría:" %}</strong> {{ entry.get_category_display }}<br><br>
+                                                            <strong>{% translate "Descripción:" %}</strong><br>
                                                             {{ entry.description|linebreaks }}
                                                         </div>
                                                         <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cerrar" %}</button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -172,11 +173,11 @@
 
                         <!-- Paginación -->
                         {% if entries.has_other_pages %}
-                            <nav aria-label="Navegación de páginas">
+                            <nav aria-label="{% translate 'Navegación de páginas' %}">
                                 <ul class="pagination justify-content-center">
                                     {% if entries.has_previous %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ entries.previous_page_number }}">Anterior</a>
+                                            <a class="page-link" href="?page={{ entries.previous_page_number }}">{% translate "Anterior" %}</a>
                                         </li>
                                     {% endif %}
                                     
@@ -194,7 +195,7 @@
                                     
                                     {% if entries.has_next %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ entries.next_page_number }}">Siguiente</a>
+                                            <a class="page-link" href="?page={{ entries.next_page_number }}">{% translate "Siguiente" %}</a>
                                         </li>
                                     {% endif %}
                                 </ul>
@@ -204,11 +205,11 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="fas fa-clock fa-3x text-muted mb-3"></i>
-                            <h5 class="text-muted">No hay entradas de tiempo registradas</h5>
+                            <h5 class="text-muted">{% translate "No hay entradas de tiempo registradas" %}</h5>
                             {% if selected_project %}
                                 <p class="text-muted">No se encontraron entradas para el proyecto "{{ selected_project.name }}".</p>
                             {% else %}
-                                <p class="text-muted">Los clientes aún no han registrado horas en ningún proyecto.</p>
+                                <p class="text-muted">{% translate "Los clientes aún no han registrado horas en ningún proyecto." %}</p>
                             {% endif %}
                         </div>
                     {% endif %}
@@ -219,32 +220,32 @@
             {% if entries %}
                 <div class="card mt-4">
                     <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Estadísticas</h6>
+                        <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>{% translate "Estadísticas" %}</h6>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-3">
                                 <div class="text-center">
                                     <h4 class="text-primary">{{ entries.paginator.count }}</h4>
-                                    <small class="text-muted">Total Entradas</small>
+                                    <small class="text-muted">{% translate "Total Entradas" %}</small>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="text-center">
                                     <h4 class="text-success">{{ entries|length }}+</h4>
-                                    <small class="text-muted">Horas Registradas</small>
+                                    <small class="text-muted">{% translate "Horas Registradas" %}</small>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="text-center">
                                     <h4 class="text-info">{{ projects.count }}</h4>
-                                    <small class="text-muted">Proyectos Activos</small>
+                                    <small class="text-muted">{% translate "Proyectos Activos" %}</small>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="text-center">
                                     <h4 class="text-warning">{{ entries|slice:":10"|length }}</h4>
-                                    <small class="text-muted">Clientes Únicos</small>
+                                    <small class="text-muted">{% translate "Clientes Únicos" %}</small>
                                 </div>
                             </div>
                         </div>

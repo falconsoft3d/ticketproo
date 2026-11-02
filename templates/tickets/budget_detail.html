@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -13,12 +14,12 @@
                     <h2>
                         <i class="bi bi-calculator me-2"></i>{{ budget.name }}
                         {% if budget.is_private %}
-                        <span class="badge bg-warning text-dark ms-2" title="Presupuesto Privado">
-                            <i class="bi bi-lock-fill"></i> Privado
+                        <span class="badge bg-warning text-dark ms-2" title="{% translate 'Presupuesto Privado' %}">
+                            <i class="bi bi-lock-fill"></i> {% translate "Privado" %}
                         </span>
                         {% else %}
-                        <span class="badge bg-success ms-2" title="Presupuesto Público">
-                            <i class="bi bi-unlock-fill"></i> Público
+                        <span class="badge bg-success ms-2" title="{% translate 'Presupuesto Público' %}">
+                            <i class="bi bi-unlock-fill"></i> {% translate "Público" %}
                         </span>
                         {% endif %}
                     </h2>
@@ -34,14 +35,14 @@
                 <div>
                     {% if budget.user == request.user %}
                     <a href="{% url 'budget_transaction_create' budget.pk %}" class="btn btn-success me-2">
-                        <i class="bi bi-plus-circle me-1"></i>Registrar Transacción
+                        <i class="bi bi-plus-circle me-1"></i>{% translate "Registrar Transacción" %}
                     </a>
                     <a href="{% url 'budget_edit' budget.pk %}" class="btn btn-outline-primary me-2">
-                        <i class="bi bi-pencil me-1"></i>Editar
+                        <i class="bi bi-pencil me-1"></i>{% translate "Editar" %}
                     </a>
                     {% endif %}
                     <a href="{% url 'budget_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left me-1"></i>Volver
+                        <i class="bi bi-arrow-left me-1"></i>{% translate "Volver" %}
                     </a>
                 </div>
             </div>
@@ -55,25 +56,25 @@
                 <div class="card-body">
                     <form method="get" id="viewForm" class="row g-3 align-items-end">
                         <div class="col-md-3">
-                            <label class="form-label fw-bold">Tipo de Vista</label>
+                            <label class="form-label fw-bold">{% translate "Tipo de Vista" %}</label>
                             <div class="btn-group w-100" role="group">
                                 <input type="radio" class="btn-check" name="view" id="viewMonthly" value="monthly" 
                                        {% if view_type == 'monthly' %}checked{% endif %} onchange="this.form.submit()">
                                 <label class="btn btn-outline-primary" for="viewMonthly">
-                                    <i class="bi bi-calendar-month me-1"></i>Mensual
+                                    <i class="bi bi-calendar-month me-1"></i>{% translate "Mensual" %}
                                 </label>
                                 
                                 <input type="radio" class="btn-check" name="view" id="viewAnnual" value="annual" 
                                        {% if view_type == 'annual' %}checked{% endif %} onchange="this.form.submit()">
                                 <label class="btn btn-outline-primary" for="viewAnnual">
-                                    <i class="bi bi-calendar-year me-1"></i>Anual
+                                    <i class="bi bi-calendar-year me-1"></i>{% translate "Anual" %}
                                 </label>
                             </div>
                         </div>
                         
                         {% if view_type == 'monthly' %}
                         <div class="col-md-3">
-                            <label for="monthSelect" class="form-label fw-bold">Seleccionar Mes</label>
+                            <label for="monthSelect" class="form-label fw-bold">{% translate "Seleccionar Mes" %}</label>
                             <select name="month" id="monthSelect" class="form-select" onchange="this.form.submit()">
                                 {% for month_num, month_name in months %}
                                 <option value="{{ month_num }}" {% if selected_month == month_num %}selected{% endif %}>
@@ -88,9 +89,9 @@
                             <div class="alert alert-info mb-0" role="alert">
                                 <i class="bi bi-info-circle me-2"></i>
                                 {% if view_type == 'monthly' %}
-                                <strong>Vista Mensual:</strong> Muestra el presupuesto mensual definido en cada partida vs. los gastos reales del mes seleccionado. Montos en euros (€).
+                                <strong>{% translate "Vista Mensual:" %}</strong> {% translate "Muestra el presupuesto mensual definido en cada partida vs. los gastos reales del mes seleccionado. Montos en euros (€)." %}
                                 {% else %}
-                                <strong>Vista Anual:</strong> Muestra el presupuesto anual (mensual × 12) vs. todos los gastos registrados durante el año. Montos en euros (€).
+                                <strong>{% translate "Vista Anual:" %}</strong> {% translate "Muestra el presupuesto anual (mensual × 12) vs. todos los gastos registrados durante el año. Montos en euros (€)." %}
                                 {% endif %}
                             </div>
                         </div>
@@ -105,7 +106,7 @@
         <div class="col-md-6 mb-4">
             <div class="card shadow-sm">
                 <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-arrow-up-circle me-2"></i>INGRESOS</h5>
+                    <h5 class="mb-0"><i class="bi bi-arrow-up-circle me-2"></i>{% translate "INGRESOS" %}</h5>
                     {% if budget.user == request.user %}
                     <a href="{% url 'budget_income_item_create' budget.pk %}" class="btn btn-sm btn-light">
                         <i class="bi bi-plus"></i>
@@ -116,11 +117,11 @@
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Partida</th>
-                                <th class="text-end">Presupuestado</th>
-                                <th class="text-end">Real</th>
+                                <th>{% translate "Partida" %}</th>
+                                <th class="text-end">{% translate "Presupuestado" %}</th>
+                                <th class="text-end">{% translate "Real" %}</th>
                                 <th class="text-center">%</th>
-                                <th class="text-center">Acciones</th>
+                                <th class="text-center">{% translate "Acciones" %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -139,14 +140,14 @@
                                 <td class="text-center">
                                     {% if budget.user == request.user %}
                                     <a href="{% url 'budget_income_item_edit' budget.pk data.item.pk %}" 
-                                       class="btn btn-sm btn-outline-primary" title="Editar">
+                                       class="btn btn-sm btn-outline-primary" title="{% translate 'Editar' %}">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <form method="post" action="{% url 'budget_income_item_delete' budget.pk data.item.pk %}" 
                                           style="display: inline;" 
                                           onsubmit="return confirm('¿Eliminar esta partida de ingreso?');">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="{% translate 'Eliminar' %}">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
@@ -158,8 +159,8 @@
                             {% empty %}
                             <tr>
                                 <td colspan="5" class="text-center text-muted py-4">
-                                    <i class="bi bi-inbox me-2"></i>No hay partidas de ingreso.
-                                    <a href="{% url 'budget_income_item_create' budget.pk %}">Agrega una</a>
+                                    <i class="bi bi-inbox me-2"></i>{% translate "No hay partidas de ingreso." %}
+                                    <a href="{% url 'budget_income_item_create' budget.pk %}">{% translate "Agrega una" %}</a>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -199,7 +200,7 @@
         <div class="col-md-6 mb-4">
             <div class="card shadow-sm">
                 <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-arrow-down-circle me-2"></i>EGRESOS</h5>
+                    <h5 class="mb-0"><i class="bi bi-arrow-down-circle me-2"></i>{% translate "EGRESOS" %}</h5>
                     {% if budget.user == request.user %}
                     <a href="{% url 'budget_expense_item_create' budget.pk %}" class="btn btn-sm btn-light">
                         <i class="bi bi-plus"></i>
@@ -210,11 +211,11 @@
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Partida</th>
-                                <th class="text-end">Presupuestado</th>
-                                <th class="text-end">Real</th>
+                                <th>{% translate "Partida" %}</th>
+                                <th class="text-end">{% translate "Presupuestado" %}</th>
+                                <th class="text-end">{% translate "Real" %}</th>
                                 <th class="text-center">%</th>
-                                <th class="text-center">Acciones</th>
+                                <th class="text-center">{% translate "Acciones" %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -233,14 +234,14 @@
                                 <td class="text-center">
                                     {% if budget.user == request.user %}
                                     <a href="{% url 'budget_expense_item_edit' budget.pk data.item.pk %}" 
-                                       class="btn btn-sm btn-outline-primary" title="Editar">
+                                       class="btn btn-sm btn-outline-primary" title="{% translate 'Editar' %}">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <form method="post" action="{% url 'budget_expense_item_delete' budget.pk data.item.pk %}" 
                                           style="display: inline;" 
                                           onsubmit="return confirm('¿Eliminar esta partida de egreso?');">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="{% translate 'Eliminar' %}">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
@@ -252,8 +253,8 @@
                             {% empty %}
                             <tr>
                                 <td colspan="5" class="text-center text-muted py-4">
-                                    <i class="bi bi-inbox me-2"></i>No hay partidas de egreso.
-                                    <a href="{% url 'budget_expense_item_create' budget.pk %}">Agrega una</a>
+                                    <i class="bi bi-inbox me-2"></i>{% translate "No hay partidas de egreso." %}
+                                    <a href="{% url 'budget_expense_item_create' budget.pk %}">{% translate "Agrega una" %}</a>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -295,30 +296,30 @@
         <div class="col-12">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-wallet2 me-2"></i>RESUMEN</h5>
+                    <h5 class="mb-0"><i class="bi bi-wallet2 me-2"></i>{% translate "RESUMEN" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="row text-center">
                         <div class="col-md-3">
-                            <h6 class="text-muted">Balance Presupuestado</h6>
+                            <h6 class="text-muted">{% translate "Balance Presupuestado" %}</h6>
                             <h3 class="{% if net_budget >= 0 %}text-success{% else %}text-danger{% endif %}">
                                 €{{ net_budget|floatformat:2 }}
                             </h3>
                         </div>
                         <div class="col-md-3">
-                            <h6 class="text-muted">Balance Real</h6>
+                            <h6 class="text-muted">{% translate "Balance Real" %}</h6>
                             <h3 class="{% if net_actual >= 0 %}text-success{% else %}text-danger{% endif %}">
                                 €{{ net_actual|floatformat:2 }}
                             </h3>
                         </div>
                         <div class="col-md-3">
-                            <h6 class="text-muted">Diferencia Ingresos</h6>
+                            <h6 class="text-muted">{% translate "Diferencia Ingresos" %}</h6>
                             <h3 class="{% if income_difference >= 0 %}text-success{% else %}text-warning{% endif %}">
                                 €{{ income_difference|floatformat:2 }}
                             </h3>
                         </div>
                         <div class="col-md-3">
-                            <h6 class="text-muted">Diferencia Egresos</h6>
+                            <h6 class="text-muted">{% translate "Diferencia Egresos" %}</h6>
                             <h3 class="{% if expense_difference <= 0 %}text-success{% else %}text-danger{% endif %}">
                                 €{{ expense_difference|floatformat:2 }}
                             </h3>
@@ -334,9 +335,9 @@
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Transacciones Recientes</h5>
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>{% translate "Transacciones Recientes" %}</h5>
                     <a href="{% url 'budget_transaction_create' budget.pk %}" class="btn btn-sm btn-light">
-                        <i class="bi bi-plus-circle me-1"></i>Nueva Transacción
+                        <i class="bi bi-plus-circle me-1"></i>{% translate "Nueva Transacción" %}
                     </a>
                 </div>
                 <div class="card-body p-0">
@@ -344,12 +345,12 @@
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Fecha</th>
-                                    <th>Tipo</th>
-                                    <th>Partida</th>
-                                    <th>Descripción</th>
-                                    <th class="text-end">Monto</th>
-                                    <th class="text-center">Acciones</th>
+                                    <th>{% translate "Fecha" %}</th>
+                                    <th>{% translate "Tipo" %}</th>
+                                    <th>{% translate "Partida" %}</th>
+                                    <th>{% translate "Descripción" %}</th>
+                                    <th class="text-end">{% translate "Monto" %}</th>
+                                    <th class="text-center">{% translate "Acciones" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -359,11 +360,11 @@
                                     <td>
                                         {% if transaction.transaction_type == 'income' %}
                                         <span class="badge bg-success">
-                                            <i class="bi bi-arrow-up-circle me-1"></i>Ingreso
+                                            <i class="bi bi-arrow-up-circle me-1"></i>{% translate "Ingreso" %}
                                         </span>
                                         {% else %}
                                         <span class="badge bg-danger">
-                                            <i class="bi bi-arrow-down-circle me-1"></i>Egreso
+                                            <i class="bi bi-arrow-down-circle me-1"></i>{% translate "Egreso" %}
                                         </span>
                                         {% endif %}
                                     </td>
@@ -373,7 +374,7 @@
                                         {% elif transaction.expense_item %}
                                         {{ transaction.expense_item.name }}
                                         {% else %}
-                                        <em class="text-muted">Sin partida</em>
+                                        <em class="text-muted">{% translate "Sin partida" %}</em>
                                         {% endif %}
                                     </td>
                                     <td>{{ transaction.description|truncatewords:10 }}</td>
@@ -388,7 +389,7 @@
                                               style="display: inline;" 
                                               onsubmit="return confirm('¿Eliminar esta transacción?');">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="{% translate 'Eliminar' %}">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
@@ -400,8 +401,8 @@
                                 {% empty %}
                                 <tr>
                                     <td colspan="6" class="text-center text-muted py-4">
-                                        <i class="bi bi-inbox me-2"></i>No hay transacciones registradas.
-                                        <a href="{% url 'budget_transaction_create' budget.pk %}">Registra la primera</a>
+                                        <i class="bi bi-inbox me-2"></i>{% translate "No hay transacciones registradas." %}
+                                        <a href="{% url 'budget_transaction_create' budget.pk %}">{% translate "Registra la primera" %}</a>
                                     </td>
                                 </tr>
                                 {% endfor %}

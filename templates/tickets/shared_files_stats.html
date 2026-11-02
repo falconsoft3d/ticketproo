@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}Estadísticas de Archivos - TicketProo{% endblock %}
+{% block title %}{% translate "Estadísticas de Archivos - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-bar-chart"></i> Estadísticas de Archivos Compartidos</h2>
+                <h2><i class="bi bi-bar-chart"></i> {% translate "Estadísticas de Archivos Compartidos" %}</h2>
                 <a href="{% url 'shared_files_list' %}" class="btn btn-outline-primary">
-                    <i class="bi bi-arrow-left"></i> Volver a archivos
+                    <i class="bi bi-arrow-left"></i> {% translate "Volver a archivos" %}
                 </a>
             </div>
 
@@ -21,7 +22,7 @@
                         <div class="card-body">
                             <i class="bi bi-files display-4 text-primary"></i>
                             <h3 class="mt-2">{{ total_files }}</h3>
-                            <p class="text-muted">Total de archivos</p>
+                            <p class="text-muted">{% translate "Total de archivos" %}</p>
                         </div>
                     </div>
                 </div>
@@ -30,7 +31,7 @@
                         <div class="card-body">
                             <i class="bi bi-download display-4 text-success"></i>
                             <h3 class="mt-2">{{ total_downloads }}</h3>
-                            <p class="text-muted">Total de descargas</p>
+                            <p class="text-muted">{% translate "Total de descargas" %}</p>
                         </div>
                     </div>
                 </div>
@@ -42,10 +43,10 @@
                                 {% if total_size %}
                                     {{ total_size|filesizeformat }}
                                 {% else %}
-                                    0 bytes
+                                    {% translate "0 bytes" %}
                                 {% endif %}
                             </h3>
-                            <p class="text-muted">Espacio utilizado</p>
+                            <p class="text-muted">{% translate "Espacio utilizado" %}</p>
                         </div>
                     </div>
                 </div>
@@ -54,7 +55,7 @@
                         <div class="card-body">
                             <i class="bi bi-graph-up display-4 text-warning"></i>
                             <h3 class="mt-2">{{ avg_downloads_per_file }}</h3>
-                            <p class="text-muted">Promedio descargas/archivo</p>
+                            <p class="text-muted">{% translate "Promedio descargas/archivo" %}</p>
                         </div>
                     </div>
                 </div>
@@ -65,7 +66,7 @@
                 <div class="col-md-6">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="mb-0"><i class="bi bi-trophy"></i> Archivos más descargados</h5>
+                            <h5 class="mb-0"><i class="bi bi-trophy"></i> {% translate "Archivos más descargados" %}</h5>
                         </div>
                         <div class="card-body">
                             {% if top_files %}
@@ -73,9 +74,9 @@
                                 <table class="table table-sm">
                                     <thead>
                                         <tr>
-                                            <th>Archivo</th>
-                                            <th>Empresa</th>
-                                            <th class="text-center">Descargas</th>
+                                            <th>{% translate "Archivo" %}</th>
+                                            <th>{% translate "Empresa" %}</th>
+                                            <th class="text-center">{% translate "Descargas" %}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -97,7 +98,7 @@
                                 </table>
                             </div>
                             {% else %}
-                            <p class="text-muted text-center">No hay archivos con descargas.</p>
+                            <p class="text-muted text-center">{% translate "No hay archivos con descargas." %}</p>
                             {% endif %}
                         </div>
                     </div>
@@ -107,7 +108,7 @@
                 <div class="col-md-6">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="mb-0"><i class="bi bi-building"></i> Archivos por empresa</h5>
+                            <h5 class="mb-0"><i class="bi bi-building"></i> {% translate "Archivos por empresa" %}</h5>
                         </div>
                         <div class="card-body">
                             {% if files_by_company %}
@@ -115,8 +116,8 @@
                                 <table class="table table-sm">
                                     <thead>
                                         <tr>
-                                            <th>Empresa</th>
-                                            <th class="text-center">Archivos</th>
+                                            <th>{% translate "Empresa" %}</th>
+                                            <th class="text-center">{% translate "Archivos" %}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -132,7 +133,7 @@
                                 </table>
                             </div>
                             {% else %}
-                            <p class="text-muted text-center">No hay datos disponibles.</p>
+                            <p class="text-muted text-center">{% translate "No hay datos disponibles." %}</p>
                             {% endif %}
                         </div>
                     </div>
@@ -144,7 +145,7 @@
                 <div class="col-md-6">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Archivos por tipo</h5>
+                            <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> {% translate "Archivos por tipo" %}</h5>
                         </div>
                         <div class="card-body">
                             {% if files_by_type %}
@@ -152,8 +153,8 @@
                                 <table class="table table-sm">
                                     <thead>
                                         <tr>
-                                            <th>Tipo de archivo</th>
-                                            <th class="text-center">Cantidad</th>
+                                            <th>{% translate "Tipo de archivo" %}</th>
+                                            <th class="text-center">{% translate "Cantidad" %}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -172,7 +173,7 @@
                                 </table>
                             </div>
                             {% else %}
-                            <p class="text-muted text-center">No hay datos disponibles.</p>
+                            <p class="text-muted text-center">{% translate "No hay datos disponibles." %}</p>
                             {% endif %}
                         </div>
                     </div>
@@ -182,12 +183,12 @@
                 <div class="col-md-6">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="mb-0"><i class="bi bi-clock"></i> Actividad reciente</h5>
+                            <h5 class="mb-0"><i class="bi bi-clock"></i> {% translate "Actividad reciente" %}</h5>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-12">
-                                    <h6 class="text-muted">Subidas recientes</h6>
+                                    <h6 class="text-muted">{% translate "Subidas recientes" %}</h6>
                                     {% if recent_uploads %}
                                     <div class="small">
                                         {% for file in recent_uploads|slice:":5" %}
@@ -202,14 +203,14 @@
                                         {% endfor %}
                                     </div>
                                     {% else %}
-                                    <p class="text-muted small">No hay subidas recientes.</p>
+                                    <p class="text-muted small">{% translate "No hay subidas recientes." %}</p>
                                     {% endif %}
                                 </div>
                             </div>
 
                             <div class="row mt-3">
                                 <div class="col-12">
-                                    <h6 class="text-muted">Descargas recientes</h6>
+                                    <h6 class="text-muted">{% translate "Descargas recientes" %}</h6>
                                     {% if recent_downloads %}
                                     <div class="small">
                                         {% for download in recent_downloads|slice:":5" %}
@@ -225,7 +226,7 @@
                                         {% endfor %}
                                     </div>
                                     {% else %}
-                                    <p class="text-muted small">No hay descargas recientes.</p>
+                                    <p class="text-muted small">{% translate "No hay descargas recientes." %}</p>
                                     {% endif %}
                                 </div>
                             </div>

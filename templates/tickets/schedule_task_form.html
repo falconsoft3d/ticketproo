@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -100,7 +101,7 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label fw-bold d-block">Estado</label>
+                            <label class="form-label fw-bold d-block">{% translate "Estado" %}</label>
                             <div class="form-check mt-2">
                                 {{ form.is_completed }}
                                 <label class="form-check-label" for="{{ form.is_completed.id_for_label }}">
@@ -108,7 +109,7 @@
                                 </label>
                             </div>
                             <small class="text-muted">
-                                Si está marcado como completada, el progreso será 100%. Si no está marcado, será 0%.
+                                {% translate "Si está marcado como completada, el progreso será 100%. Si no está marcado, será 0%." %}
                             </small>
                         </div>
                         
@@ -118,7 +119,7 @@
                             </label>
                             {{ form.dependencies }}
                             <small class="text-muted d-block">
-                                Selecciona las tareas que deben completarse antes de esta (mantén Ctrl/Cmd para seleccionar múltiples)
+                                {% translate "Selecciona las tareas que deben completarse antes de esta (mantén Ctrl/Cmd para seleccionar múltiples)" %}
                             </small>
                             {% if form.dependencies.errors %}
                                 <div class="invalid-feedback d-block">
@@ -129,11 +130,11 @@
                         
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-success">
-                                <i class="fas fa-save"></i> Guardar
+                                <i class="fas fa-save"></i> {% translate "Guardar" %}
                             </button>
                             <a href="{% url 'task_schedule_detail' schedule.pk %}" 
                                class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancelar
+                                <i class="fas fa-times"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>

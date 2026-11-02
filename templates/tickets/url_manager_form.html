@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -16,14 +17,14 @@
                     </h2>
                     <p class="text-muted mb-0">
                         {% if url_manager %}
-                            Actualizar información de la URL y credenciales
+                            {% translate "Actualizar información de la URL y credenciales" %}
                         {% else %}
-                            Registrar nueva URL con credenciales seguras
+                            {% translate "Registrar nueva URL con credenciales seguras" %}
                         {% endif %}
                     </p>
                 </div>
                 <a href="{% url 'url_manager_list' %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Volver a Lista
+                    <i class="bi bi-arrow-left"></i> {% translate "Volver a Lista" %}
                 </a>
             </div>
 
@@ -38,7 +39,7 @@
                             <div class="col-12">
                                 <h5 class="border-bottom pb-2 mb-3">
                                     <i class="bi bi-info-circle text-primary"></i>
-                                    Información Básica
+                                    {% translate "Información Básica" %}
                                 </h5>
                             </div>
                             <div class="col-md-6">
@@ -96,7 +97,7 @@
                             <div class="col-12">
                                 <h5 class="border-bottom pb-2 mb-3">
                                     <i class="bi bi-shield-lock text-warning"></i>
-                                    Credenciales de Acceso
+                                    {% translate "Credenciales de Acceso" %}
                                 </h5>
                             </div>
                             <div class="col-md-6">
@@ -135,7 +136,7 @@
                             <div class="col-12">
                                 <h5 class="border-bottom pb-2 mb-3">
                                     <i class="bi bi-gear text-secondary"></i>
-                                    Configuración
+                                    {% translate "Configuración" %}
                                 </h5>
                             </div>
                             <div class="col-md-6">
@@ -175,7 +176,7 @@
                         <!-- Botones -->
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'url_manager_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save"></i> {{ action }}
@@ -190,13 +191,13 @@
                 <div class="card-body">
                     <h6 class="card-title">
                         <i class="bi bi-shield-check text-success"></i>
-                        Información de Seguridad
+                        {% translate "Información de Seguridad" %}
                     </h6>
                     <ul class="list-unstyled mb-0 small text-muted">
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Las contraseñas se almacenan encriptadas en la base de datos</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Solo los agentes pueden acceder a esta información</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Se registra el último acceso a cada URL</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Todas las acciones quedan registradas en el sistema</li>
+                        <li><i class="bi bi-check-circle text-success me-2"></i>{% translate "Las contraseñas se almacenan encriptadas en la base de datos" %}</li>
+                        <li><i class="bi bi-check-circle text-success me-2"></i>{% translate "Solo los agentes pueden acceder a esta información" %}</li>
+                        <li><i class="bi bi-check-circle text-success me-2"></i>{% translate "Se registra el último acceso a cada URL" %}</li>
+                        <li><i class="bi bi-check-circle text-success me-2"></i>{% translate "Todas las acciones quedan registradas en el sistema" %}</li>
                     </ul>
                 </div>
             </div>

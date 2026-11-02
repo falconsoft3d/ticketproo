@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -148,8 +149,8 @@
         <!-- Estado vacío -->
         <div class="empty-state">
             <i class="bi bi-inbox"></i>
-            <h3>Sin Enlaces</h3>
-            <p class="text-muted">Este grupo aún no tiene enlaces disponibles.</p>
+            <h3>{% translate "Sin Enlaces" %}</h3>
+            <p class="text-muted">{% translate "Este grupo aún no tiene enlaces disponibles." %}</p>
         </div>
         {% endif %}
 

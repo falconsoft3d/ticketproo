@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -70,13 +71,13 @@
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h3 class="mb-2">
-                    <i class="fas fa-robot"></i> Dashboard de Evaluación IA
+                    <i class="fas fa-robot"></i> {% translate "Dashboard de Evaluación IA" %}
                 </h3>
-                <p class="mb-0">Análisis inteligente de leads de Landing Pages</p>
+                <p class="mb-0">{% translate "Análisis inteligente de leads de Landing Pages" %}</p>
             </div>
             <div class="col-md-4 text-end">
                 <a href="{% url 'landing_submissions_list' %}" class="btn btn-light btn-lg">
-                    <i class="fas fa-list"></i> Ver Todos los Envíos
+                    <i class="fas fa-list"></i> {% translate "Ver Todos los Envíos" %}
                 </a>
             </div>
         </div>
@@ -87,19 +88,19 @@
         <div class="col-md-3">
             <div class="metric-card">
                 <div class="metric-number text-primary">{{ stats.total_submissions|default:0 }}</div>
-                <div class="metric-label">Total Envíos</div>
+                <div class="metric-label">{% translate "Total Envíos" %}</div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="metric-card">
                 <div class="metric-number text-success">{{ stats.evaluated_submissions|default:0 }}</div>
-                <div class="metric-label">Evaluados</div>
+                <div class="metric-label">{% translate "Evaluados" %}</div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="metric-card">
                 <div class="metric-number text-warning">{{ stats.pending_evaluation|default:0 }}</div>
-                <div class="metric-label">Pendientes</div>
+                <div class="metric-label">{% translate "Pendientes" %}</div>
             </div>
         </div>
         <div class="col-md-3">
@@ -111,7 +112,7 @@
                         N/A
                     {% endif %}
                 </div>
-                <div class="metric-label">Puntuación Promedio</div>
+                <div class="metric-label">{% translate "Puntuación Promedio" %}</div>
             </div>
         </div>
     </div>
@@ -122,7 +123,7 @@
             <div class="card h-100">
                 <div class="card-header bg-success text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-trophy"></i> Top Submissions
+                        <i class="fas fa-trophy"></i> {% translate "Top Submissions" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -142,13 +143,13 @@
                         
                         <div class="text-center mt-3">
                             <a href="{% url 'landing_submissions_list' %}?score=high" class="btn btn-outline-success">
-                                Ver Todos los de Alta Puntuación
+                                {% translate "Ver Todos los de Alta Puntuación" %}
                             </a>
                         </div>
                     {% else %}
                         <div class="text-center py-4">
                             <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">No hay submissions evaluados aún</p>
+                            <p class="text-muted">{% translate "No hay submissions evaluados aún" %}</p>
                         </div>
                     {% endif %}
                 </div>
@@ -160,7 +161,7 @@
             <div class="card h-100">
                 <div class="card-header bg-danger text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-exclamation-triangle"></i> Prioridad Urgente
+                        <i class="fas fa-exclamation-triangle"></i> {% translate "Prioridad Urgente" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -175,7 +176,7 @@
                                 <div class="text-end">
                                     <span class="badge bg-danger">{{ submission.ai_overall_score|floatformat:1 }}/10</span><br>
                                     <a href="{% url 'landing_submission_detail' submission.id %}" class="btn btn-sm btn-outline-danger">
-                                        Ver Detalles
+                                        {% translate "Ver Detalles" %}
                                     </a>
                                 </div>
                             </div>
@@ -184,7 +185,7 @@
                     {% else %}
                         <div class="text-center py-4">
                             <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                            <p class="text-muted">No hay submissions urgentes</p>
+                            <p class="text-muted">{% translate "No hay submissions urgentes" %}</p>
                         </div>
                     {% endif %}
                 </div>
@@ -198,7 +199,7 @@
             <div class="card">
                 <div class="card-header bg-warning text-dark">
                     <h5 class="mb-0">
-                        <i class="fas fa-clock"></i> Pendientes de Evaluación
+                        <i class="fas fa-clock"></i> {% translate "Pendientes de Evaluación" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -207,10 +208,10 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Contacto</th>
-                                        <th>Empresa</th>
-                                        <th>Fecha</th>
-                                        <th>Acción</th>
+                                        <th>{% translate "Contacto" %}</th>
+                                        <th>{% translate "Empresa" %}</th>
+                                        <th>{% translate "Fecha" %}</th>
+                                        <th>{% translate "Acción" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -226,7 +227,7 @@
                                             <form method="post" action="{% url 'evaluate_submission_ai' submission.id %}" style="display: inline;">
                                                 {% csrf_token %}
                                                 <button type="submit" class="btn btn-sm btn-success">
-                                                    <i class="fas fa-robot"></i> Evaluar
+                                                    <i class="fas fa-robot"></i> {% translate "Evaluar" %}
                                                 </button>
                                             </form>
                                         </td>
@@ -238,13 +239,13 @@
                         
                         <div class="text-center mt-3">
                             <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#batchEvaluateModal">
-                                <i class="fas fa-cogs"></i> Evaluar Todos en Lote
+                                <i class="fas fa-cogs"></i> {% translate "Evaluar Todos en Lote" %}
                             </button>
                         </div>
                     {% else %}
                         <div class="text-center py-4">
                             <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                            <p class="text-muted">¡Todos los envíos están evaluados!</p>
+                            <p class="text-muted">{% translate "¡Todos los envíos están evaluados!" %}</p>
                         </div>
                     {% endif %}
                 </div>
@@ -256,7 +257,7 @@
             <div class="card h-100">
                 <div class="card-header bg-info text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-chart-pie"></i> Distribución por Prioridad
+                        <i class="fas fa-chart-pie"></i> {% translate "Distribución por Prioridad" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -272,7 +273,7 @@
                     {% else %}
                         <div class="text-center py-4">
                             <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">Sin datos de prioridad</p>
+                            <p class="text-muted">{% translate "Sin datos de prioridad" %}</p>
                         </div>
                     {% endif %}
                 </div>
@@ -287,7 +288,7 @@
             <div class="card">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-calendar-alt"></i> Estadísticas de los Últimos 30 Días
+                        <i class="fas fa-calendar-alt"></i> {% translate "Estadísticas de los Últimos 30 Días" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -295,10 +296,10 @@
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>Fecha</th>
-                                    <th>Total Envíos</th>
-                                    <th>Evaluados</th>
-                                    <th>% Evaluado</th>
+                                    <th>{% translate "Fecha" %}</th>
+                                    <th>{% translate "Total Envíos" %}</th>
+                                    <th>{% translate "Evaluados" %}</th>
+                                    <th>{% translate "% Evaluado" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -329,29 +330,29 @@
             <form method="post" action="{% url 'batch_evaluate_submissions' %}">
                 {% csrf_token %}
                 <div class="modal-header">
-                    <h5 class="modal-title">Evaluación en Lote con IA</h5>
+                    <h5 class="modal-title">{% translate "Evaluación en Lote con IA" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>¿Cuántos envíos sin evaluar deseas procesar?</p>
+                    <p>{% translate "¿Cuántos envíos sin evaluar deseas procesar?" %}</p>
                     <div class="mb-3">
-                        <label for="limit" class="form-label">Límite de envíos:</label>
+                        <label for="limit" class="form-label">{% translate "Límite de envíos:" %}</label>
                         <select name="limit" id="limit" class="form-select">
-                            <option value="5">5 envíos</option>
-                            <option value="10" selected>10 envíos</option>
-                            <option value="20">20 envíos</option>
-                            <option value="50">50 envíos</option>
+                            <option value="5">{% translate "5 envíos" %}</option>
+                            <option value="10" selected>{% translate "10 envíos" %}</option>
+                            <option value="20">{% translate "20 envíos" %}</option>
+                            <option value="50">{% translate "50 envíos" %}</option>
                         </select>
                     </div>
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
-                        La evaluación puede tomar algunos segundos por envío.
+                        {% translate "La evaluación puede tomar algunos segundos por envío." %}
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                     <button type="submit" class="btn btn-success">
-                        <i class="fas fa-robot"></i> Evaluar
+                        <i class="fas fa-robot"></i> {% translate "Evaluar" %}
                     </button>
                 </div>
             </form>

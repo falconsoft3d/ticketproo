@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -6,11 +7,11 @@
 {% block content %}
 <div class="container mt-4">
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb">
+    <nav aria-label="{% translate 'breadcrumb' %}">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'supplier_contract_review_list' %}">Revisión de Contratos</a></li>
-            <li class="breadcrumb-item active">{% if review %}Editar{% else %}Nueva Revisión{% endif %}</li>
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'supplier_contract_review_list' %}">{% translate "Revisión de Contratos" %}</a></li>
+            <li class="breadcrumb-item active">{% if review %}{% translate "Editar" %}{% else %}{% translate "Nueva Revisión" %}{% endif %}</li>
         </ol>
     </nav>
 
@@ -18,7 +19,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>
             <i class="bi bi-shield-check"></i> 
-            {% if review %}Editar Revisión{% else %}Nueva Revisión de Contrato{% endif %}
+            {% if review %}{% translate "Editar Revisión" %}{% else %}{% translate "Nueva Revisión de Contrato" %}{% endif %}
         </h2>
     </div>
 
@@ -32,19 +33,19 @@
                     <!-- Información Básica -->
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="name" class="form-label">Nombre del Contrato <span class="text-danger">*</span></label>
+                            <label for="name" class="form-label">{% translate "Nombre del Contrato" %} <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="name" name="name" 
                                    value="{% if review %}{{ review.name }}{% endif %}" required>
-                            <small class="text-muted">Ej: Contrato de Servicios IT 2025</small>
+                            <small class="text-muted">{% translate "Ej: Contrato de Servicios IT 2025" %}</small>
                         </div>
                     </div>
 
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="supplier_name" class="form-label">Nombre del Proveedor <span class="text-danger">*</span></label>
+                            <label for="supplier_name" class="form-label">{% translate "Nombre del Proveedor" %} <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="supplier_name" name="supplier_name" 
                                    value="{% if review %}{{ review.supplier_name }}{% endif %}" required>
-                            <small class="text-muted">Nombre de la empresa proveedora</small>
+                            <small class="text-muted">{% translate "Nombre de la empresa proveedora" %}</small>
                         </div>
                     </div>
                 </div>
@@ -52,9 +53,9 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div class="mb-3">
-                            <label for="company" class="form-label">Empresa Revisora <span class="text-danger">*</span></label>
+                            <label for="company" class="form-label">{% translate "Empresa Revisora" %} <span class="text-danger">*</span></label>
                             <select class="form-select" id="company" name="company" required>
-                                <option value="">Seleccione una empresa...</option>
+                                <option value="">{% translate "Seleccione una empresa..." %}</option>
                                 {% for company in companies %}
                                 <option value="{{ company.id }}" 
                                         {% if review and review.company.id == company.id %}selected{% endif %}>
@@ -62,25 +63,25 @@
                                 </option>
                                 {% endfor %}
                             </select>
-                            <small class="text-muted">La empresa que está revisando el contrato</small>
+                            <small class="text-muted">{% translate "La empresa que está revisando el contrato" %}</small>
                         </div>
                     </div>
                 </div>
 
                 <!-- Separador -->
                 <hr class="my-4">
-                <h5 class="mb-3"><i class="bi bi-file-text"></i> Contenido del Contrato</h5>
-                <p class="text-muted">Puede proporcionar el contrato de dos formas: pegando el texto o subiendo un archivo (PDF, DOCX o TXT)</p>
+                <h5 class="mb-3"><i class="bi bi-file-text"></i> {% translate "Contenido del Contrato" %}</h5>
+                <p class="text-muted">{% translate "Puede proporcionar el contrato de dos formas: pegando el texto o subiendo un archivo (PDF, DOCX o TXT)" %}</p>
 
                 <div class="row">
                     <div class="col-md-12">
                         <div class="mb-3">
-                            <label for="contract_text" class="form-label">Texto del Contrato</label>
+                            <label for="contract_text" class="form-label">{% translate "Texto del Contrato" %}</label>
                             <textarea class="form-control" id="contract_text" name="contract_text" 
                                       rows="15" 
                                       placeholder="Pegue aquí el texto completo del contrato...">{% if review %}{{ review.contract_text }}{% endif %}</textarea>
                             <small class="text-muted">
-                                Pegue el texto completo del contrato aquí. Si prefiere subir un archivo, déjelo en blanco.
+                                {% translate "Pegue el texto completo del contrato aquí. Si prefiere subir un archivo, déjelo en blanco." %}
                             </small>
                         </div>
                     </div>
@@ -89,13 +90,13 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div class="mb-3">
-                            <label for="contract_file" class="form-label">O Suba un Archivo</label>
+                            <label for="contract_file" class="form-label">{% translate "O Suba un Archivo" %}</label>
                             <input type="file" class="form-control" id="contract_file" name="contract_file" 
                                    accept=".pdf,.doc,.docx,.txt">
                             <small class="text-muted">
-                                Formatos aceptados: PDF, DOCX, TXT. 
+                                {% translate "Formatos aceptados: PDF, DOCX, TXT." %} 
                                 {% if review and review.contract_file %}
-                                <br><strong>Archivo actual:</strong> {{ review.contract_file.name }}
+                                <br><strong>{% translate "Archivo actual:" %}</strong> {{ review.contract_file.name }}
                                 {% endif %}
                             </small>
                         </div>
@@ -104,16 +105,16 @@
 
                 <!-- Notas Internas -->
                 <hr class="my-4">
-                <h5 class="mb-3"><i class="bi bi-journal-text"></i> Notas Internas</h5>
+                <h5 class="mb-3"><i class="bi bi-journal-text"></i> {% translate "Notas Internas" %}</h5>
                 
                 <div class="row">
                     <div class="col-md-12">
                         <div class="mb-3">
-                            <label for="internal_notes" class="form-label">Notas Internas</label>
+                            <label for="internal_notes" class="form-label">{% translate "Notas Internas" %}</label>
                             <textarea class="form-control" id="internal_notes" name="internal_notes" 
                                       rows="4" 
                                       placeholder="Notas privadas sobre este contrato...">{% if review %}{{ review.internal_notes }}{% endif %}</textarea>
-                            <small class="text-muted">Estas notas son privadas y no se incluyen en el PDF</small>
+                            <small class="text-muted">{% translate "Estas notas son privadas y no se incluyen en el PDF" %}</small>
                         </div>
                     </div>
                 </div>
@@ -121,18 +122,18 @@
                 <!-- Alert -->
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle"></i> 
-                    <strong>Nota:</strong> Después de guardar, podrá generar la revisión con IA desde la vista de detalle.
+                    <strong>{% translate "Nota:" %}</strong> {% translate "Después de guardar, podrá generar la revisión con IA desde la vista de detalle." %}
                 </div>
 
                 <!-- Botones -->
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-circle"></i> 
-                        {% if review %}Actualizar{% else %}Guardar{% endif %}
+                        {% if review %}{% translate "Actualizar" %}{% else %}{% translate "Guardar" %}{% endif %}
                     </button>
                     <a href="{% if review %}{% url 'supplier_contract_review_detail' review.pk %}{% else %}{% url 'supplier_contract_review_list' %}{% endif %}" 
                        class="btn btn-secondary">
-                        <i class="bi bi-x-circle"></i> Cancelar
+                        <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                     </a>
                 </div>
             </form>

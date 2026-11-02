@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -30,37 +31,37 @@
                         <form method="post">
                             {% csrf_token %}
                             
-                            <h5>Información de Contacto</h5>
+                            <h5>{% translate "Información de Contacto" %}</h5>
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Nombre *</label>
+                                    <label class="form-label">{% translate "Nombre *" %}</label>
                                     {{ form.customer_name }}
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">Email *</label>
+                                    <label class="form-label">{% translate "Email *" %}</label>
                                     {{ form.customer_email }}
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Teléfono</label>
+                                <label class="form-label">{% translate "Teléfono" %}</label>
                                 {{ form.customer_phone }}
                             </div>
 
-                            <h5>Detalles del Ticket</h5>
+                            <h5>{% translate "Detalles del Ticket" %}</h5>
                             <div class="mb-3">
-                                <label class="form-label">Título *</label>
+                                <label class="form-label">{% translate "Título *" %}</label>
                                 {{ form.title }}
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Descripción *</label>
+                                <label class="form-label">{% translate "Descripción *" %}</label>
                                 {{ form.description }}
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Prioridad *</label>
+                                <label class="form-label">{% translate "Prioridad *" %}</label>
                                 {{ form.priority }}
                             </div>
 
-                            <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
+                            <button type="submit" class="btn btn-primary">{% translate "Enviar Solicitud" %}</button>
                         </form>
                     </div>
                 </div>

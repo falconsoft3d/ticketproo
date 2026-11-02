@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Tablas RPC - {{ connection.name }} - Ticket System{% endblock %}
@@ -7,9 +8,9 @@
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">Conexiones</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">{% translate "Conexiones" %}</a></li>
                     <li class="breadcrumb-item active">{{ connection.name }}</li>
                 </ol>
             </nav>
@@ -17,7 +18,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="bi bi-table"></i> Tablas RPC - {{ connection.name }}</h2>
                 <a href="{% url 'odoo_rpc_table_create' connection.id %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Nueva Tabla
+                    <i class="bi bi-plus-circle"></i> {% translate "Nueva Tabla" %}
                 </a>
             </div>
 
@@ -44,18 +45,18 @@
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
                                         <a class="dropdown-item" href="{% url 'odoo_rpc_table_detail' table.id %}">
-                                            <i class="bi bi-eye"></i> Ver Detalle
+                                            <i class="bi bi-eye"></i> {% translate "Ver Detalle" %}
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="{% url 'odoo_rpc_table_edit' table.id %}">
-                                            <i class="bi bi-pencil"></i> Editar
+                                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item text-danger" href="{% url 'odoo_rpc_table_delete' table.id %}">
-                                            <i class="bi bi-trash"></i> Eliminar
+                                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                                         </a>
                                     </li>
                                 </ul>
@@ -63,7 +64,7 @@
                         </div>
                         <div class="card-body">
                             <p class="mb-2">
-                                <strong>Modelo Odoo:</strong> <code>{{ table.odoo_model }}</code>
+                                <strong>{% translate "Modelo Odoo:" %}</strong> <code>{{ table.odoo_model }}</code>
                             </p>
                             {% if table.description %}
                             <p class="mb-2">{{ table.description }}</p>
@@ -81,8 +82,8 @@
             </div>
             {% else %}
             <div class="alert alert-info">
-                <i class="bi bi-info-circle"></i> No hay tablas configuradas para esta conexión. 
-                <a href="{% url 'odoo_rpc_table_create' connection.id %}">Crear una ahora</a>
+                <i class="bi bi-info-circle"></i> {% translate "No hay tablas configuradas para esta conexión." %} 
+                <a href="{% url 'odoo_rpc_table_create' connection.id %}">{% translate "Crear una ahora" %}</a>
             </div>
             {% endif %}
         </div>

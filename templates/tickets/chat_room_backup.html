@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ room }}{% endblock %}
@@ -402,7 +403,7 @@
             <div class="col-md-3 chat-sidebar d-none d-md-block">
                 <a href="{% url 'chat_list' %}" class="back-button">
                     <i class="fas fa-arrow-left"></i>
-                    Volver al chat
+                    {% translate "Volver al chat" %}
                 </a>
                 
                 <div class="user-profile">
@@ -430,7 +431,7 @@
                     </h6>
                     <div class="status-online">
                         <i class="fas fa-circle"></i>
-                        En línea
+                        {% translate "En línea" %}
                     </div>
                 </div>
                 
@@ -446,7 +447,7 @@
                             </div>
                             <div class="participant-name">
                                 {{ participant.get_full_name|default:participant.username }}
-                                {% if participant == user %}<small class="text-muted">(Tú)</small>{% endif %}
+                                {% if participant == user %}<small class="text-muted">{% translate "(Tú)" %}</small>{% endif %}
                             </div>
                         </div>
                     {% endfor %}
@@ -514,8 +515,8 @@
                         {% empty %}
                             <div class="empty-chat">
                                 <i class="fas fa-comments"></i>
-                                <h5>¡Comienza la conversación!</h5>
-                                <p>No hay mensajes aún. Sé el primero en escribir algo.</p>
+                                <h5>{% translate "¡Comienza la conversación!" %}</h5>
+                                <p>{% translate "No hay mensajes aún. Sé el primero en escribir algo." %}</p>
                             </div>
                         {% endfor %}
                     </div>
@@ -527,12 +528,12 @@
                             <div class="input-group">
                                 {{ form.message }}
                                 
-                                <label for="{{ form.attachment.id_for_label }}" class="btn btn-outline-primary btn-chat" title="Adjuntar archivo">
+                                <label for="{{ form.attachment.id_for_label }}" class="btn btn-outline-primary btn-chat" title="{% translate 'Adjuntar archivo' %}">
                                     <i class="fas fa-paperclip"></i>
                                 </label>
                                 {{ form.attachment }}
                                 
-                                <button type="submit" class="btn btn-primary btn-chat" title="Enviar mensaje">
+                                <button type="submit" class="btn btn-primary btn-chat" title="{% translate 'Enviar mensaje' %}">
                                     <i class="fas fa-paper-plane"></i>
                                 </button>
                             </div>
@@ -542,7 +543,7 @@
                                     <div class="file-info">
                                         <i class="fas fa-file"></i>
                                         <div class="file-details">
-                                            <div class="fw-medium">Archivo seleccionado</div>
+                                            <div class="fw-medium">{% translate "Archivo seleccionado" %}</div>
                                             <small id="file-name" class="text-muted"></small>
                                         </div>
                                     </div>

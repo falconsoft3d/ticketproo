@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -7,10 +8,10 @@
 <div class="container mt-4">
     <div class="row mb-4">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'user_ai_performance_dashboard' %}">Desempeño de Usuarios</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'user_ai_performance_dashboard' %}">{% translate "Desempeño de Usuarios" %}</a></li>
                     <li class="breadcrumb-item active">{{ evaluated_user.get_full_name }}</li>
                 </ol>
             </nav>
@@ -35,7 +36,7 @@
                         </div>
                         <div>
                             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#generateEvaluationModal">
-                                <i class="bi bi-plus-circle"></i> Generar Nueva Evaluación
+                                <i class="bi bi-plus-circle"></i> {% translate "Generar Nueva Evaluación" %}
                             </button>
                         </div>
                     </div>
@@ -50,7 +51,7 @@
             <div class="card shadow-sm border-0 text-center">
                 <div class="card-body">
                     <h3 class="mb-0 text-primary">{{ stats.total_meetings }}</h3>
-                    <small class="text-muted">Reuniones</small>
+                    <small class="text-muted">{% translate "Reuniones" %}</small>
                 </div>
             </div>
         </div>
@@ -58,7 +59,7 @@
             <div class="card shadow-sm border-0 text-center">
                 <div class="card-body">
                     <h3 class="mb-0 text-info">{{ stats.total_evaluations }}</h3>
-                    <small class="text-muted">Evaluaciones</small>
+                    <small class="text-muted">{% translate "Evaluaciones" %}</small>
                 </div>
             </div>
         </div>
@@ -66,7 +67,7 @@
             <div class="card shadow-sm border-0 text-center">
                 <div class="card-body">
                     <h3 class="mb-0 text-success">{{ stats.avg_score|floatformat:1 }}</h3>
-                    <small class="text-muted">Promedio General</small>
+                    <small class="text-muted">{% translate "Promedio General" %}</small>
                 </div>
             </div>
         </div>
@@ -74,7 +75,7 @@
             <div class="card shadow-sm border-0 text-center">
                 <div class="card-body">
                     <h3 class="mb-0 text-warning">{{ stats.latest_score }}</h3>
-                    <small class="text-muted">Última Puntuación</small>
+                    <small class="text-muted">{% translate "Última Puntuación" %}</small>
                 </div>
             </div>
         </div>
@@ -87,7 +88,7 @@
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-graph-up"></i> Evolución del Desempeño
+                        <i class="bi bi-graph-up"></i> {% translate "Evolución del Desempeño" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -119,7 +120,7 @@
                     
                     <!-- Puntuaciones Detalladas -->
                     <div class="mb-3">
-                        <small class="text-muted">Productividad:</small>
+                        <small class="text-muted">{% translate "Productividad:" %}</small>
                         <div class="progress" style="height: 20px;">
                             <div class="progress-bar bg-primary" style="width: {{ evaluation.productivity_score }}%;">
                                 {{ evaluation.productivity_score }}
@@ -127,7 +128,7 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <small class="text-muted">Comunicación:</small>
+                        <small class="text-muted">{% translate "Comunicación:" %}</small>
                         <div class="progress" style="height: 20px;">
                             <div class="progress-bar bg-info" style="width: {{ evaluation.communication_score }}%;">
                                 {{ evaluation.communication_score }}
@@ -135,7 +136,7 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <small class="text-muted">Logro de Objetivos:</small>
+                        <small class="text-muted">{% translate "Logro de Objetivos:" %}</small>
                         <div class="progress" style="height: 20px;">
                             <div class="progress-bar bg-success" style="width: {{ evaluation.goal_achievement_score }}%;">
                                 {{ evaluation.goal_achievement_score }}
@@ -143,7 +144,7 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <small class="text-muted">Consistencia:</small>
+                        <small class="text-muted">{% translate "Consistencia:" %}</small>
                         <div class="progress" style="height: 20px;">
                             <div class="progress-bar bg-warning" style="width: {{ evaluation.consistency_score }}%;">
                                 {{ evaluation.consistency_score }}
@@ -153,14 +154,14 @@
 
                     <!-- Resumen -->
                     <div class="alert alert-light">
-                        <small><strong>Resumen:</strong></small>
+                        <small><strong>{% translate "Resumen:" %}</strong></small>
                         <div class="small">{{ evaluation.ai_summary|safe|truncatewords_html:30 }}</div>
                     </div>
 
                     <!-- Fortalezas -->
                     <button class="btn btn-sm btn-outline-success w-100 mb-2" type="button" 
                             data-bs-toggle="collapse" data-bs-target="#strengths-{{ evaluation.pk }}">
-                        <i class="bi bi-star"></i> Ver Fortalezas
+                        <i class="bi bi-star"></i> {% translate "Ver Fortalezas" %}
                     </button>
                     <div class="collapse" id="strengths-{{ evaluation.pk }}">
                         <div class="alert alert-success small">
@@ -171,7 +172,7 @@
                     <!-- Áreas de Mejora -->
                     <button class="btn btn-sm btn-outline-warning w-100 mb-2" type="button" 
                             data-bs-toggle="collapse" data-bs-target="#improvements-{{ evaluation.pk }}">
-                        <i class="bi bi-exclamation-triangle"></i> Ver Áreas de Mejora
+                        <i class="bi bi-exclamation-triangle"></i> {% translate "Ver Áreas de Mejora" %}
                     </button>
                     <div class="collapse" id="improvements-{{ evaluation.pk }}">
                         <div class="alert alert-warning small">
@@ -182,7 +183,7 @@
                     <!-- Capacitación -->
                     <button class="btn btn-sm btn-outline-info w-100" type="button" 
                             data-bs-toggle="collapse" data-bs-target="#training-{{ evaluation.pk }}">
-                        <i class="bi bi-book"></i> Ver Recomendaciones de Capacitación
+                        <i class="bi bi-book"></i> {% translate "Ver Recomendaciones de Capacitación" %}
                     </button>
                     <div class="collapse" id="training-{{ evaluation.pk }}">
                         <div class="alert alert-info small">
@@ -203,8 +204,8 @@
     </div>
     {% else %}
     <div class="alert alert-warning">
-        <h5><i class="bi bi-exclamation-triangle"></i> Sin evaluaciones</h5>
-        <p class="mb-0">Este usuario aún no tiene evaluaciones generadas. Haz clic en "Generar Nueva Evaluación" para crear una.</p>
+        <h5><i class="bi bi-exclamation-triangle"></i> {% translate "Sin evaluaciones" %}</h5>
+        <p class="mb-0">{% translate 'Este usuario aún no tiene evaluaciones generadas. Haz clic en "Generar Nueva Evaluación" para crear una.' %}</p>
     </div>
     {% endif %}
 </div>
@@ -217,28 +218,28 @@
                 {% csrf_token %}
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title">
-                        <i class="bi bi-plus-circle"></i> Generar Evaluación
+                        <i class="bi bi-plus-circle"></i> {% translate "Generar Evaluación" %}
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Selecciona el período de tiempo para analizar:</p>
+                    <p>{% translate "Selecciona el período de tiempo para analizar:" %}</p>
                     <div class="mb-3">
-                        <label class="form-label">Fecha de Inicio</label>
+                        <label class="form-label">{% translate "Fecha de Inicio" %}</label>
                         <input type="date" class="form-control" name="period_start" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Fecha de Fin</label>
+                        <label class="form-label">{% translate "Fecha de Fin" %}</label>
                         <input type="date" class="form-control" name="period_end" required>
                     </div>
                     <div class="alert alert-info small">
-                        <i class="bi bi-info-circle"></i> La IA analizará todas las reuniones del usuario en este período para generar la evaluación.
+                        <i class="bi bi-info-circle"></i> {% translate "La IA analizará todas las reuniones del usuario en este período para generar la evaluación." %}
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                     <button type="submit" class="btn btn-success">
-                        <i class="bi bi-magic"></i> Generar con IA
+                        <i class="bi bi-magic"></i> {% translate "Generar con IA" %}
                     </button>
                 </div>
             </form>

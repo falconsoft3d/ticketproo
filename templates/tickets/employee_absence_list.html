@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -6,30 +7,30 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
                     <a href="{% url 'dashboard' %}">
-                        <i class="bi bi-house"></i> Dashboard
+                        <i class="bi bi-house"></i> {% translate "Dashboard" %}
                     </a>
                 </li>
                 <li class="breadcrumb-item active">{{ page_title }}</li>
             </ol>
         </nav>
         <h2><i class="bi bi-calendar-x"></i> {{ page_title }}</h2>
-        <p class="text-muted">Registro y seguimiento de ausencias de empleados</p>
+        <p class="text-muted">{% translate "Registro y seguimiento de ausencias de empleados" %}</p>
     </div>
     
     <div class="btn-group" role="group">
         <a href="{% url 'employee_absence_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Nueva Ausencia
+            <i class="bi bi-plus-circle"></i> {% translate "Nueva Ausencia" %}
         </a>
         <a href="{% url 'employee_absence_calendar' %}" class="btn btn-outline-secondary">
-            <i class="bi bi-calendar3"></i> Calendario
+            <i class="bi bi-calendar3"></i> {% translate "Calendario" %}
         </a>
         {% if is_agent %}
         <a href="{% url 'absence_type_list' %}" class="btn btn-outline-info">
-            <i class="bi bi-gear"></i> Tipos de Ausencias
+            <i class="bi bi-gear"></i> {% translate "Tipos de Ausencias" %}
         </a>
         {% endif %}
     </div>
@@ -43,7 +44,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h4 class="mb-0">{{ current_absences }}</h4>
-                        <small>Empleados ausentes hoy</small>
+                        <small>{% translate "Empleados ausentes hoy" %}</small>
                     </div>
                     <i class="bi bi-person-x" style="font-size: 2rem; opacity: 0.7;"></i>
                 </div>
@@ -56,7 +57,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h4 class="mb-0">{{ pending_approvals }}</h4>
-                        <small>Solicitudes pendientes</small>
+                        <small>{% translate "Solicitudes pendientes" %}</small>
                     </div>
                     <i class="bi bi-clock-history" style="font-size: 2rem; opacity: 0.7;"></i>
                 </div>
@@ -69,20 +70,20 @@
 <div class="card mb-4">
     <div class="card-header">
         <h6 class="mb-0">
-            <i class="bi bi-funnel"></i> Filtros
+            <i class="bi bi-funnel"></i> {% translate "Filtros" %}
         </h6>
     </div>
     <div class="card-body">
         <form method="get" class="row g-3">
             <div class="col-md-3">
-                <label for="employee" class="form-label">Empleado</label>
+                <label for="employee" class="form-label">{% translate "Empleado" %}</label>
                 <input type="text" class="form-control" id="employee" name="employee" 
-                       value="{{ employee_filter }}" placeholder="Nombre del empleado">
+                       value="{{ employee_filter }}" placeholder="{% translate 'Nombre del empleado' %}">
             </div>
             <div class="col-md-2">
-                <label for="type" class="form-label">Tipo</label>
+                <label for="type" class="form-label">{% translate "Tipo" %}</label>
                 <select class="form-select" id="type" name="type">
-                    <option value="">Todos</option>
+                    <option value="">{% translate "Todos" %}</option>
                     {% for absence_type in absence_types %}
                     <option value="{{ absence_type.id }}" {% if type_filter == absence_type.id|stringformat:"s" %}selected{% endif %}>
                         {{ absence_type.name }}
@@ -91,21 +92,21 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label for="status" class="form-label">Estado</label>
+                <label for="status" class="form-label">{% translate "Estado" %}</label>
                 <select class="form-select" id="status" name="status">
-                    <option value="">Todos</option>
-                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pendiente</option>
-                    <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Aprobada</option>
-                    <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rechazada</option>
-                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelada</option>
+                    <option value="">{% translate "Todos" %}</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>{% translate "Pendiente" %}</option>
+                    <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>{% translate "Aprobada" %}</option>
+                    <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>{% translate "Rechazada" %}</option>
+                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>{% translate "Cancelada" %}</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <label for="date_from" class="form-label">Desde</label>
+                <label for="date_from" class="form-label">{% translate "Desde" %}</label>
                 <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
             </div>
             <div class="col-md-2">
-                <label for="date_to" class="form-label">Hasta</label>
+                <label for="date_to" class="form-label">{% translate "Hasta" %}</label>
                 <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
             </div>
             <div class="col-md-1 d-flex align-items-end">
@@ -121,23 +122,23 @@
 <div class="card mb-4">
     <div class="card-header">
         <h6 class="mb-0">
-            <i class="bi bi-file-earmark-pdf"></i> Reportes PDF
+            <i class="bi bi-file-earmark-pdf"></i> {% translate "Reportes PDF" %}
         </h6>
     </div>
     <div class="card-body">
-        <p class="text-muted mb-3">Generar reportes de ausencias por empleado y período</p>
+        <p class="text-muted mb-3">{% translate "Generar reportes de ausencias por empleado y período" %}</p>
         <form method="get" action="{% url 'employee_absence_report_pdf' %}" class="row g-3" id="pdfReportForm">
             <div class="col-md-4">
-                <label for="pdf_employee" class="form-label">Empleado *</label>
+                <label for="pdf_employee" class="form-label">{% translate "Empleado *" %}</label>
                 <select class="form-select" id="pdf_employee" name="employee_id" required>
-                    <option value="">Seleccionar empleado...</option>
+                    <option value="">{% translate "Seleccionar empleado..." %}</option>
                     {% for emp in all_employees %}
                     <option value="{{ emp.id }}">{{ emp.get_full_name|default:emp.username }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-3">
-                <label for="pdf_year" class="form-label">Año *</label>
+                <label for="pdf_year" class="form-label">{% translate "Año *" %}</label>
                 <select class="form-select" id="pdf_year" name="year" required>
                     {% for year in years_range %}
                     <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
@@ -145,25 +146,25 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label for="pdf_month" class="form-label">Mes *</label>
+                <label for="pdf_month" class="form-label">{% translate "Mes *" %}</label>
                 <select class="form-select" id="pdf_month" name="month" required>
-                    <option value="1" {% if current_month == 1 %}selected{% endif %}>Enero</option>
-                    <option value="2" {% if current_month == 2 %}selected{% endif %}>Febrero</option>
-                    <option value="3" {% if current_month == 3 %}selected{% endif %}>Marzo</option>
-                    <option value="4" {% if current_month == 4 %}selected{% endif %}>Abril</option>
-                    <option value="5" {% if current_month == 5 %}selected{% endif %}>Mayo</option>
-                    <option value="6" {% if current_month == 6 %}selected{% endif %}>Junio</option>
-                    <option value="7" {% if current_month == 7 %}selected{% endif %}>Julio</option>
-                    <option value="8" {% if current_month == 8 %}selected{% endif %}>Agosto</option>
-                    <option value="9" {% if current_month == 9 %}selected{% endif %}>Septiembre</option>
-                    <option value="10" {% if current_month == 10 %}selected{% endif %}>Octubre</option>
-                    <option value="11" {% if current_month == 11 %}selected{% endif %}>Noviembre</option>
-                    <option value="12" {% if current_month == 12 %}selected{% endif %}>Diciembre</option>
+                    <option value="1" {% if current_month == 1 %}selected{% endif %}>{% translate "Enero" %}</option>
+                    <option value="2" {% if current_month == 2 %}selected{% endif %}>{% translate "Febrero" %}</option>
+                    <option value="3" {% if current_month == 3 %}selected{% endif %}>{% translate "Marzo" %}</option>
+                    <option value="4" {% if current_month == 4 %}selected{% endif %}>{% translate "Abril" %}</option>
+                    <option value="5" {% if current_month == 5 %}selected{% endif %}>{% translate "Mayo" %}</option>
+                    <option value="6" {% if current_month == 6 %}selected{% endif %}>{% translate "Junio" %}</option>
+                    <option value="7" {% if current_month == 7 %}selected{% endif %}>{% translate "Julio" %}</option>
+                    <option value="8" {% if current_month == 8 %}selected{% endif %}>{% translate "Agosto" %}</option>
+                    <option value="9" {% if current_month == 9 %}selected{% endif %}>{% translate "Septiembre" %}</option>
+                    <option value="10" {% if current_month == 10 %}selected{% endif %}>{% translate "Octubre" %}</option>
+                    <option value="11" {% if current_month == 11 %}selected{% endif %}>{% translate "Noviembre" %}</option>
+                    <option value="12" {% if current_month == 12 %}selected{% endif %}>{% translate "Diciembre" %}</option>
                 </select>
             </div>
             <div class="col-md-2 d-flex align-items-end">
                 <button type="submit" class="btn btn-success w-100">
-                    <i class="bi bi-download"></i> Generar PDF
+                    <i class="bi bi-download"></i> {% translate "Generar PDF" %}
                 </button>
             </div>
         </form>
@@ -175,7 +176,7 @@
 <div class="card">
     <div class="card-header">
         <h6 class="mb-0">
-            <i class="bi bi-list-ul"></i> Ausencias Registradas
+            <i class="bi bi-list-ul"></i> {% translate "Ausencias Registradas" %}
         </h6>
     </div>
     <div class="card-body p-0">
@@ -183,14 +184,14 @@
             <table class="table table-hover mb-0">
                 <thead class="bg-light">
                     <tr>
-                        <th>Empleado</th>
-                        <th>Tipo</th>
-                        <th>Fechas</th>
-                        <th>Días</th>
-                        <th>Horas Perdidas</th>
-                        <th>Estado</th>
-                        <th>Motivo</th>
-                        <th>Acciones</th>
+                        <th>{% translate "Empleado" %}</th>
+                        <th>{% translate "Tipo" %}</th>
+                        <th>{% translate "Fechas" %}</th>
+                        <th>{% translate "Días" %}</th>
+                        <th>{% translate "Horas Perdidas" %}</th>
+                        <th>{% translate "Estado" %}</th>
+                        <th>{% translate "Motivo" %}</th>
+                        <th>{% translate "Acciones" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -225,7 +226,7 @@
                         <td>
                             <div class="text-center">
                                 <strong class="text-danger">{{ absence.lost_hours|floatformat:1 }}</strong>
-                                <br><small class="text-muted">horas</small>
+                                <br><small class="text-muted">{% translate "horas" %}</small>
                             </div>
                         </td>
                         <td>
@@ -233,7 +234,7 @@
                                 {{ absence.get_status_display }}
                             </span>
                             {% if absence.is_current %}
-                                <br><small class="text-warning"><i class="bi bi-exclamation-circle"></i> En curso</small>
+                                <br><small class="text-warning"><i class="bi bi-exclamation-circle"></i> {% translate "En curso" %}</small>
                             {% endif %}
                         </td>
                         <td>
@@ -244,16 +245,16 @@
                         <td>
                             <div class="btn-group btn-group-sm" role="group">
                                 <a href="{% url 'employee_absence_detail' absence.pk %}" 
-                                   class="btn btn-outline-primary" title="Ver detalle">
+                                   class="btn btn-outline-primary" title="{% translate 'Ver detalle' %}">
                                     <i class="bi bi-eye"></i>
                                 </a>
                                 <a href="{% url 'employee_absence_edit' absence.pk %}" 
-                                   class="btn btn-outline-secondary" title="Editar">
+                                   class="btn btn-outline-secondary" title="{% translate 'Editar' %}">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 {% if absence.status == 'pending' %}
                                 <button type="button" class="btn btn-outline-success" 
-                                        onclick="approveAbsence({{ absence.pk }})" title="Aprobar">
+                                        onclick="approveAbsence({{ absence.pk }})" title="{% translate 'Aprobar' %}">
                                     <i class="bi bi-check"></i>
                                 </button>
                                 {% endif %}
@@ -269,11 +270,11 @@
 {% else %}
 <div class="text-center py-5">
     <i class="bi bi-calendar-x" style="font-size: 4rem; color: #dee2e6;"></i>
-    <h4 class="text-muted mt-3">No se encontraron ausencias</h4>
-    <p class="text-muted">No hay ausencias registradas con los filtros seleccionados.</p>
+    <h4 class="text-muted mt-3">{% translate "No se encontraron ausencias" %}</h4>
+    <p class="text-muted">{% translate "No hay ausencias registradas con los filtros seleccionados." %}</p>
     
     <a href="{% url 'employee_absence_create' %}" class="btn btn-primary mt-3">
-        <i class="bi bi-plus-circle"></i> Registrar Primera Ausencia
+        <i class="bi bi-plus-circle"></i> {% translate "Registrar Primera Ausencia" %}
     </a>
 </div>
 {% endif %}
@@ -283,20 +284,20 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Aprobar Ausencia</h5>
+                <h5 class="modal-title">{% translate "Aprobar Ausencia" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>¿Estás seguro de que deseas aprobar esta ausencia?</p>
+                <p>{% translate "¿Estás seguro de que deseas aprobar esta ausencia?" %}</p>
                 <form id="approvalForm" method="post">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="approve">
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                 <button type="button" class="btn btn-success" onclick="document.getElementById('approvalForm').submit();">
-                    <i class="bi bi-check"></i> Aprobar
+                    <i class="bi bi-check"></i> {% translate "Aprobar" %}
                 </button>
             </div>
         </div>

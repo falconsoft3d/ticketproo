@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="container-fluid">
@@ -7,7 +8,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1><i class="bi bi-ui-checks"></i> {{ page_title }}</h1>
                 <a href="{% url 'form_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Crear Nuevo Formulario
+                    <i class="bi bi-plus-circle"></i> {% translate "Crear Nuevo Formulario" %}
                 </a>
             </div>
 
@@ -19,9 +20,9 @@
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h6 class="card-title mb-0">{{ form.title }}</h6>
                                 {% if form.is_active %}
-                                    <span class="badge bg-success">Activo</span>
+                                    <span class="badge bg-success">{% translate "Activo" %}</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Inactivo</span>
+                                    <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                                 {% endif %}
                             </div>
                             <div class="card-body">
@@ -30,11 +31,11 @@
                                 <div class="row text-center mb-3">
                                     <div class="col-6">
                                         <strong>{{ form.questions.count }}</strong>
-                                        <small class="d-block text-muted">Preguntas</small>
+                                        <small class="d-block text-muted">{% translate "Preguntas" %}</small>
                                     </div>
                                     <div class="col-6">
                                         <strong>{{ form.get_total_responses }}</strong>
-                                        <small class="d-block text-muted">Respuestas</small>
+                                        <small class="d-block text-muted">{% translate "Respuestas" %}</small>
                                     </div>
                                 </div>
                                 
@@ -50,15 +51,15 @@
                             <div class="card-footer">
                                 <div class="btn-group w-100" role="group">
                                     <a href="{% url 'form_detail' form.pk %}" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-eye"></i> Ver
+                                        <i class="bi bi-eye"></i> {% translate "Ver" %}
                                     </a>
                                     {% if form.is_active %}
                                         <a href="{{ form.get_public_url }}" target="_blank" class="btn btn-sm btn-success">
-                                            <i class="bi bi-link-45deg"></i> URL Pública
+                                            <i class="bi bi-link-45deg"></i> {% translate "URL Pública" %}
                                         </a>
                                     {% endif %}
                                     <a href="{% url 'form_responses' form.pk %}" class="btn btn-sm btn-info">
-                                        <i class="bi bi-bar-chart"></i> Respuestas
+                                        <i class="bi bi-bar-chart"></i> {% translate "Respuestas" %}
                                     </a>
                                 </div>
                             </div>
@@ -69,10 +70,10 @@
             {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-ui-checks display-1 text-muted"></i>
-                    <h3 class="text-muted mt-3">No hay formularios creados</h3>
-                    <p class="text-muted">Crea tu primer formulario para comenzar a recopilar respuestas.</p>
+                    <h3 class="text-muted mt-3">{% translate "No hay formularios creados" %}</h3>
+                    <p class="text-muted">{% translate "Crea tu primer formulario para comenzar a recopilar respuestas." %}</p>
                     <a href="{% url 'form_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear Primer Formulario
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Primer Formulario" %}
                     </a>
                 </div>
             {% endif %}

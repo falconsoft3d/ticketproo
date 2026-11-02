@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -8,13 +9,13 @@
             <div class="card shadow border-danger">
                 <div class="card-header bg-danger text-white">
                     <h4 class="mb-0">
-                        <i class="bi bi-exclamation-triangle-fill"></i> Eliminar Calificación
+                        <i class="bi bi-exclamation-triangle-fill"></i> {% translate "Eliminar Calificación" %}
                     </h4>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-danger">
                         <i class="bi bi-exclamation-triangle"></i>
-                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                        <strong>{% translate "¡Atención!" %}</strong> {% translate "Esta acción no se puede deshacer." %}
                     </div>
 
                     <!-- Información de la calificación -->
@@ -27,41 +28,41 @@
                                 </h5>
                             </div>
                             
-                            <p><strong>De:</strong> 
+                            <p><strong>{% translate "De:" %}</strong> 
                                 {% if rating.user %}
                                     {{ rating.user.get_full_name|default:rating.user.username }}
                                 {% elif rating.name %}
                                     {{ rating.name }}
                                 {% else %}
-                                    Anónimo
+                                    {% translate "Anónimo" %}
                                 {% endif %}
                             </p>
                             
                             {% if rating.email %}
-                            <p><strong>Email:</strong> {{ rating.email }}</p>
+                            <p><strong>{% translate "Email:" %}</strong> {{ rating.email }}</p>
                             {% endif %}
                             
-                            <p><strong>Fecha:</strong> {{ rating.created_at|date:"d/m/Y H:i" }}</p>
+                            <p><strong>{% translate "Fecha:" %}</strong> {{ rating.created_at|date:"d/m/Y H:i" }}</p>
                             
                             <div class="border-top pt-2 mt-2">
-                                <strong>Opinión:</strong>
+                                <strong>{% translate "Opinión:" %}</strong>
                                 <p class="mb-0">{{ rating.opinion|truncatewords:30 }}</p>
                             </div>
                         </div>
                     </div>
 
                     <p class="text-center mb-4">
-                        ¿Estás seguro de que deseas eliminar esta calificación?
+                        {% translate "¿Estás seguro de que deseas eliminar esta calificación?" %}
                     </p>
 
                     <form method="post">
                         {% csrf_token %}
                         <div class="d-grid gap-2 d-md-flex justify-content-md-center">
                             <a href="{% url 'qa_rating_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash-fill"></i> Sí, eliminar
+                                <i class="bi bi-trash-fill"></i> {% translate "Sí, eliminar" %}
                             </button>
                         </div>
                     </form>

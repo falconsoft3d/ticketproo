@@ -1,4 +1,5 @@
 {% extends "public_base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ policy.title }}{% endblock %}
@@ -30,10 +31,10 @@
             <!-- Botón de copiar -->
             <div class="text-center mt-4">
                 <button class="btn btn-primary btn-lg" onclick="copyContent()">
-                    <i class="bi bi-clipboard"></i> Copiar Contenido
+                    <i class="bi bi-clipboard"></i> {% translate "Copiar Contenido" %}
                 </button>
                 <button class="btn btn-outline-secondary btn-lg ms-2" onclick="window.print()">
-                    <i class="bi bi-printer"></i> Imprimir
+                    <i class="bi bi-printer"></i> {% translate "Imprimir" %}
                 </button>
             </div>
         </div>

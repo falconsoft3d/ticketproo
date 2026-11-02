@@ -1,13 +1,14 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Chatbots{% endblock %}
+{% block title %}{% translate "Chatbots" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-robot me-2"></i>Chatbots</h2>
+        <h2><i class="bi bi-robot me-2"></i>{% translate "Chatbots" %}</h2>
         <a href="{% url 'chatbot_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i>Crear Chatbot
+            <i class="bi bi-plus-circle me-1"></i>{% translate "Crear Chatbot" %}
         </a>
     </div>
 
@@ -22,14 +23,14 @@
                                 <i class="bi bi-robot me-1"></i>{{ chatbot.title }}
                             </h5>
                             {% if chatbot.type == 'internal' %}
-                                <span class="badge bg-info">Interno</span>
+                                <span class="badge bg-info">{% translate "Interno" %}</span>
                             {% else %}
-                                <span class="badge bg-success">Externo</span>
+                                <span class="badge bg-success">{% translate "Externo" %}</span>
                             {% endif %}
                         </div>
                         
                         {% if not chatbot.is_active %}
-                            <span class="badge bg-secondary mb-2">Inactivo</span>
+                            <span class="badge bg-secondary mb-2">{% translate "Inactivo" %}</span>
                         {% endif %}
                         
                         <p class="card-text text-muted small">{{ chatbot.description|truncatewords:20 }}</p>
@@ -45,14 +46,14 @@
                         {% if chatbot.use_ai %}
                             <div class="mb-2">
                                 <span class="badge bg-primary">
-                                    <i class="bi bi-stars me-1"></i>IA Activada
+                                    <i class="bi bi-stars me-1"></i>{% translate "IA Activada" %}
                                 </span>
                             </div>
                         {% endif %}
                         
                         {% if chatbot.type == 'external' and chatbot.script_token %}
                             <div class="mb-3">
-                                <label class="form-label small fw-bold">Código de Integración:</label>
+                                <label class="form-label small fw-bold">{% translate "Código de Integración:" %}</label>
                                 <div class="input-group input-group-sm">
                                     <input type="text" class="form-control font-monospace" 
                                            value='<script src="{{ request.scheme }}://{{ request.get_host }}{% url "chatbot_script" token=chatbot.script_token %}"></script>' 
@@ -68,13 +69,13 @@
                     <div class="card-footer bg-transparent">
                         <div class="btn-group btn-group-sm w-100" role="group">
                             <a href="{% url 'chatbot_detail' chatbot.pk %}" class="btn btn-outline-primary">
-                                <i class="bi bi-eye me-1"></i>Ver
+                                <i class="bi bi-eye me-1"></i>{% translate "Ver" %}
                             </a>
                             <a href="{% url 'chatbot_edit' chatbot.pk %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-pencil me-1"></i>Editar
+                                <i class="bi bi-pencil me-1"></i>{% translate "Editar" %}
                             </a>
                             <a href="{% url 'chatbot_delete' chatbot.pk %}" class="btn btn-outline-danger">
-                                <i class="bi bi-trash me-1"></i>Eliminar
+                                <i class="bi bi-trash me-1"></i>{% translate "Eliminar" %}
                             </a>
                         </div>
                     </div>
@@ -84,8 +85,8 @@
         </div>
     {% else %}
         <div class="alert alert-info">
-            <i class="bi bi-info-circle me-2"></i>No hay chatbots creados aún. 
-            <a href="{% url 'chatbot_create' %}" class="alert-link">Crear el primero</a>
+            <i class="bi bi-info-circle me-2"></i>{% translate "No hay chatbots creados aún." %} 
+            <a href="{% url 'chatbot_create' %}" class="alert-link">{% translate "Crear el primero" %}</a>
         </div>
     {% endif %}
 </div>

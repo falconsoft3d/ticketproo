@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ chapter.title }} - {{ book.title }} - TicketProo{% endblock %}
 
@@ -44,9 +45,9 @@
 
 <div class="container-fluid">
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb" class="mb-4">
+    <nav aria-label="{% translate 'breadcrumb' %}" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'ai_book_list' %}">Libros</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'ai_book_list' %}">{% translate "Libros" %}</a></li>
             <li class="breadcrumb-item"><a href="{% url 'ai_book_detail' book.pk %}">{{ book.title|truncatechars:30 }}</a></li>
             <li class="breadcrumb-item active">Capítulo {{ chapter.order }}</li>
         </ol>
@@ -71,11 +72,11 @@
             <!-- Sección de Resumen -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-card-text"></i> Resumen del Capítulo</h5>
+                    <h5 class="mb-0"><i class="bi bi-card-text"></i> {% translate "Resumen del Capítulo" %}</h5>
                     <button type="button" 
                             id="generateSummaryBtn" 
                             class="btn btn-sm btn-ai-generate">
-                        <i class="bi bi-stars"></i> Generar Resumen con IA
+                        <i class="bi bi-stars"></i> {% translate "Generar Resumen con IA" %}
                     </button>
                 </div>
                 <div class="card-body">
@@ -87,11 +88,11 @@
                                   rows="8"
                                   placeholder="El resumen describe de qué tratará este capítulo. Puedes generarlo con IA o escribirlo manualmente.">{{ chapter.summary }}</textarea>
                         <div class="form-text">
-                            Este resumen se usará como base para generar el contenido completo del capítulo.
+                            {% translate "Este resumen se usará como base para generar el contenido completo del capítulo." %}
                         </div>
                         <div class="mt-3">
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Guardar Resumen
+                                <i class="bi bi-save"></i> {% translate "Guardar Resumen" %}
                             </button>
                         </div>
                     </form>
@@ -101,12 +102,12 @@
             <!-- Sección de Contenido -->
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-book-half"></i> Contenido Completo</h5>
+                    <h5 class="mb-0"><i class="bi bi-book-half"></i> {% translate "Contenido Completo" %}</h5>
                     <button type="button" 
                             id="generateContentBtn" 
                             class="btn btn-sm btn-ai-generate"
                             {% if not chapter.summary %}disabled{% endif %}>
-                        <i class="bi bi-stars"></i> Generar Contenido con IA
+                        <i class="bi bi-stars"></i> {% translate "Generar Contenido con IA" %}
                     </button>
                 </div>
                 <div class="card-body">
@@ -118,7 +119,7 @@
                     
                     <div class="mt-3">
                         <button type="button" class="btn btn-outline-secondary" id="editContentBtn">
-                            <i class="bi bi-pencil"></i> Editar Contenido
+                            <i class="bi bi-pencil"></i> {% translate "Editar Contenido" %}
                         </button>
                     </div>
                     
@@ -129,14 +130,14 @@
                                       id="contentTextarea" 
                                       rows="25">{{ chapter.content }}</textarea>
                             <div class="form-text">
-                                Puedes editar el contenido generado. Texto plano sin formato. Subtítulos en MAYÚSCULAS.
+                                {% translate "Puedes editar el contenido generado. Texto plano sin formato. Subtítulos en MAYÚSCULAS." %}
                             </div>
                             <div class="mt-3">
                                 <button type="button" class="btn btn-primary" id="saveContentBtn">
-                                    <i class="bi bi-save"></i> Guardar Cambios
+                                    <i class="bi bi-save"></i> {% translate "Guardar Cambios" %}
                                 </button>
                                 <button type="button" class="btn btn-secondary" id="cancelEditBtn">
-                                    Cancelar
+                                    {% translate "Cancelar" %}
                                 </button>
                             </div>
                         </form>
@@ -144,11 +145,11 @@
                     {% else %}
                     <div class="text-center text-muted py-5">
                         <i class="bi bi-file-text display-1"></i>
-                        <p class="mt-3">No hay contenido generado aún</p>
+                        <p class="mt-3">{% translate "No hay contenido generado aún" %}</p>
                         {% if not chapter.summary %}
-                        <p class="small">Primero debes crear o generar un resumen del capítulo</p>
+                        <p class="small">{% translate "Primero debes crear o generar un resumen del capítulo" %}</p>
                         {% else %}
-                        <p class="small">Haz clic en "Generar Contenido con IA" para crear el contenido basado en el resumen</p>
+                        <p class="small">{% translate 'Haz clic en "Generar Contenido con IA" para crear el contenido basado en el resumen' %}</p>
                         {% endif %}
                     </div>
                     {% endif %}

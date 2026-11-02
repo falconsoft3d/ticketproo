@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Eliminar Política de Privacidad{% endblock %}
+{% block title %}{% translate "Eliminar Política de Privacidad" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -12,13 +13,13 @@
                 <div class="col-md-8">
                     <h1>
                         <i class="bi bi-trash text-danger"></i> 
-                        Eliminar Política de Privacidad
+                        {% translate "Eliminar Política de Privacidad" %}
                     </h1>
-                    <p class="mb-0">Confirma la eliminación de la política</p>
+                    <p class="mb-0">{% translate "Confirma la eliminación de la política" %}</p>
                 </div>
                 <div class="col-md-4 text-end">
                     <a href="{% url 'privacy_policy_list' %}" class="btn btn-light">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                 </div>
             </div>
@@ -32,33 +33,33 @@
                 <div class="card-header bg-danger text-white">
                     <h5 class="mb-0">
                         <i class="bi bi-exclamation-triangle"></i> 
-                        Confirmación de Eliminación
+                        {% translate "Confirmación de Eliminación" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle-fill"></i>
-                        <strong>Atención:</strong> Esta acción no se puede deshacer.
+                        <strong>{% translate "Atención:" %}</strong> {% translate "Esta acción no se puede deshacer." %}
                     </div>
 
                     <h4>{{ policy.title }}</h4>
                     
                     <div class="mb-3">
-                        <strong>Estado:</strong> 
+                        <strong>{% translate "Estado:" %}</strong> 
                         {% if policy.is_active %}
-                            <span class="badge bg-success">Activa</span>
+                            <span class="badge bg-success">{% translate "Activa" %}</span>
                         {% else %}
-                            <span class="badge bg-secondary">Inactiva</span>
+                            <span class="badge bg-secondary">{% translate "Inactiva" %}</span>
                         {% endif %}
                     </div>
 
                     <div class="mb-3">
-                        <strong>Contenido:</strong>
+                        <strong>{% translate "Contenido:" %}</strong>
                         <p class="text-muted">{{ policy.content|truncatechars:200 }}</p>
                     </div>
 
                     <div class="mb-3">
-                        <strong>Creada:</strong> {{ policy.created_at|date:"d/m/Y H:i" }}
+                        <strong>{% translate "Creada:" %}</strong> {{ policy.created_at|date:"d/m/Y H:i" }}
                         {% if policy.created_by %}
                             por {{ policy.created_by.get_full_name }}
                         {% endif %}
@@ -67,8 +68,7 @@
                     {% if policy.is_active %}
                     <div class="alert alert-danger">
                         <i class="bi bi-exclamation-circle"></i>
-                        Esta política está <strong>activa</strong> y visible públicamente. 
-                        Al eliminarla, la URL pública dejará de funcionar.
+                        {% translate "Esta política está" %} <strong>{% translate "activa" %}</strong> {% translate "y visible públicamente. Al eliminarla, la URL pública dejará de funcionar." %}
                     </div>
                     {% endif %}
 
@@ -77,10 +77,10 @@
                         {% csrf_token %}
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'privacy_policy_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Sí, Eliminar Política
+                                <i class="bi bi-trash"></i> {% translate "Sí, Eliminar Política" %}
                             </button>
                         </div>
                     </form>

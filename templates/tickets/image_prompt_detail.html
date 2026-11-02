@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ image_prompt.title }} - Detalle{% endblock %}
@@ -7,10 +8,10 @@
 <div class="container mt-4">
     <div class="row mb-4">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'image_prompt_list' %}">Mis Prompts</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'image_prompt_list' %}">{% translate "Mis Prompts" %}</a></li>
                     <li class="breadcrumb-item active">{{ image_prompt.title }}</li>
                 </ol>
             </nav>
@@ -30,10 +31,10 @@
         <div class="col-md-6 text-end">
             <div class="btn-group" role="group">
                 <a href="{% url 'image_prompt_edit' image_prompt.pk %}" class="btn btn-warning">
-                    <i class="bi bi-pencil"></i> Editar
+                    <i class="bi bi-pencil"></i> {% translate "Editar" %}
                 </a>
                 <a href="{% url 'image_prompt_delete' image_prompt.pk %}" class="btn btn-danger">
-                    <i class="bi bi-trash"></i> Eliminar
+                    <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                 </a>
             </div>
         </div>
@@ -50,11 +51,11 @@
                     <div class="d-flex justify-content-between align-items-center">
                         {% if image_prompt.is_public %}
                             <span class="badge bg-success">
-                                <i class="bi bi-eye"></i> Público
+                                <i class="bi bi-eye"></i> {% translate "Público" %}
                             </span>
                         {% else %}
                             <span class="badge bg-secondary">
-                                <i class="bi bi-eye-slash"></i> Privado
+                                <i class="bi bi-eye-slash"></i> {% translate "Privado" %}
                             </span>
                         {% endif %}
                         
@@ -70,7 +71,7 @@
             {% if image_prompt.tags %}
             <div class="card shadow-sm border-0 mt-3">
                 <div class="card-body">
-                    <h6 class="card-title"><i class="bi bi-tags"></i> Etiquetas</h6>
+                    <h6 class="card-title"><i class="bi bi-tags"></i> {% translate "Etiquetas" %}</h6>
                     <div class="d-flex flex-wrap gap-2">
                         {{ image_prompt.tags }}
                     </div>
@@ -85,13 +86,13 @@
             <div class="card shadow-sm border-0 mb-3">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-magic"></i> Prompt Generado por IA
+                        <i class="bi bi-magic"></i> {% translate "Prompt Generado por IA" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <p class="card-text" style="white-space: pre-line;">{{ image_prompt.generated_prompt }}</p>
                     <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('generatedPrompt')">
-                        <i class="bi bi-clipboard"></i> Copiar al Portapapeles
+                        <i class="bi bi-clipboard"></i> {% translate "Copiar al Portapapeles" %}
                     </button>
                 </div>
             </div>
@@ -101,13 +102,13 @@
             <div class="card shadow-sm border-0 mb-3">
                 <div class="card-header bg-success text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-pencil-square"></i> Prompt Personalizado
+                        <i class="bi bi-pencil-square"></i> {% translate "Prompt Personalizado" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <p class="card-text" style="white-space: pre-line;">{{ image_prompt.custom_prompt }}</p>
                     <button class="btn btn-sm btn-outline-success" onclick="copyToClipboard('customPrompt')">
-                        <i class="bi bi-clipboard"></i> Copiar al Portapapeles
+                        <i class="bi bi-clipboard"></i> {% translate "Copiar al Portapapeles" %}
                     </button>
                 </div>
             </div>
@@ -116,22 +117,22 @@
             {% if not image_prompt.generated_prompt and not image_prompt.custom_prompt %}
             <div class="alert alert-warning">
                 <i class="bi bi-exclamation-triangle"></i> 
-                No hay prompts generados para esta imagen todavía.
+                {% translate "No hay prompts generados para esta imagen todavía." %}
             </div>
             {% endif %}
 
             <div class="card shadow-sm border-0 bg-light">
                 <div class="card-body">
-                    <h6 class="card-title"><i class="bi bi-info-circle"></i> Información</h6>
+                    <h6 class="card-title"><i class="bi bi-info-circle"></i> {% translate "Información" %}</h6>
                     <ul class="list-unstyled mb-0">
-                        <li><strong>Usuario:</strong> {{ image_prompt.user.username }}</li>
-                        <li><strong>Creado:</strong> {{ image_prompt.created_at|date:"d/m/Y H:i" }}</li>
-                        <li><strong>Actualizado:</strong> {{ image_prompt.updated_at|date:"d/m/Y H:i" }}</li>
-                        <li><strong>Estado:</strong> 
+                        <li><strong>{% translate "Usuario:" %}</strong> {{ image_prompt.user.username }}</li>
+                        <li><strong>{% translate "Creado:" %}</strong> {{ image_prompt.created_at|date:"d/m/Y H:i" }}</li>
+                        <li><strong>{% translate "Actualizado:" %}</strong> {{ image_prompt.updated_at|date:"d/m/Y H:i" }}</li>
+                        <li><strong>{% translate "Estado:" %}</strong> 
                             {% if image_prompt.is_public %}
-                                <span class="badge bg-success">Público</span>
+                                <span class="badge bg-success">{% translate "Público" %}</span>
                             {% else %}
-                                <span class="badge bg-secondary">Privado</span>
+                                <span class="badge bg-secondary">{% translate "Privado" %}</span>
                             {% endif %}
                         </li>
                     </ul>
@@ -143,7 +144,7 @@
     <div class="row mt-4">
         <div class="col-12">
             <a href="{% url 'image_prompt_list' %}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Volver a la Lista
+                <i class="bi bi-arrow-left"></i> {% translate "Volver a la Lista" %}
             </a>
         </div>
     </div>

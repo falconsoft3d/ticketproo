@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}URL Expirada - TicketProo{% endblock %}
+{% block title %}{% translate "URL Expirada - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -8,21 +9,21 @@
         <div class="col-lg-6">
             <div class="text-center py-5">
                 <i class="fas fa-exclamation-triangle fa-4x text-warning mb-4"></i>
-                <h1 class="h3 mb-3">URL Expirada</h1>
+                <h1 class="h3 mb-3">{% translate "URL Expirada" %}</h1>
                 <p class="text-muted mb-4">
-                    Lo sentimos, esta URL corta ha expirado y ya no está disponible.
+                    {% translate "Lo sentimos, esta URL corta ha expirado y ya no está disponible." %}
                 </p>
                 
                 {% if short_url %}
                     <div class="card">
                         <div class="card-body">
-                            <h6 class="card-title">Información de la URL</h6>
+                            <h6 class="card-title">{% translate "Información de la URL" %}</h6>
                             <p class="card-text">
-                                <strong>Código:</strong> {{ short_url.short_code }}<br>
+                                <strong>{% translate "Código:" %}</strong> {{ short_url.short_code }}<br>
                                 {% if short_url.title %}
-                                    <strong>Título:</strong> {{ short_url.title }}<br>
+                                    <strong>{% translate "Título:" %}</strong> {{ short_url.title }}<br>
                                 {% endif %}
-                                <strong>Expiró:</strong> {{ short_url.expires_at|date:"d/m/Y H:i" }}
+                                <strong>{% translate "Expiró:" %}</strong> {{ short_url.expires_at|date:"d/m/Y H:i" }}
                             </p>
                         </div>
                     </div>
@@ -30,7 +31,7 @@
                 
                 <div class="mt-4">
                     <a href="/" class="btn btn-primary">
-                        <i class="fas fa-home"></i> Ir al Inicio
+                        <i class="fas fa-home"></i> {% translate "Ir al Inicio" %}
                     </a>
                 </div>
             </div>

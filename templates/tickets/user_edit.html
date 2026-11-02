@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}Editar Usuario - TicketProo{% endblock %}
+{% block title %}{% translate "Editar Usuario - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -13,13 +14,13 @@
                 </h3>
                 <div class="btn-group" role="group">
                     <a href="{% url 'user_tasks' user_to_edit.id %}" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-clipboard-check"></i> Ver Tareas
+                        <i class="bi bi-clipboard-check"></i> {% translate "Ver Tareas" %}
                     </a>
                     <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#publicTasksModal">
-                        <i class="bi bi-share"></i> Compartir Tareas
+                        <i class="bi bi-share"></i> {% translate "Compartir Tareas" %}
                     </button>
                     <a href="{% url 'user_public_workorder_token' user_to_edit.id %}" class="btn btn-outline-info btn-sm">
-                        <i class="bi bi-tools"></i> Órdenes Públicas
+                        <i class="bi bi-tools"></i> {% translate "Órdenes Públicas" %}
                     </a>
                 </div>
             </div>
@@ -75,7 +76,7 @@
                                     </div>
                                 {% endif %}
                                 <small class="form-text text-muted">
-                                    Empresa a la que pertenece el usuario (opcional)
+                                    {% translate "Empresa a la que pertenece el usuario (opcional)" %}
                                 </small>
                             </div>
                         </div>
@@ -150,7 +151,7 @@
                         <div class="card-header bg-danger text-white">
                             <h6 class="mb-0">
                                 <i class="bi bi-shield-lock-fill me-2"></i>
-                                Control de Acceso — Error 401
+                                {% translate "Control de Acceso — Error 401" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -185,9 +186,9 @@
                                 <table class="table table-sm table-bordered mb-0">
                                     <thead class="table-danger">
                                         <tr>
-                                            <th>Fecha y hora</th>
+                                            <th>{% translate "Fecha y hora" %}</th>
                                             <th>IP</th>
-                                            <th>Agente de usuario</th>
+                                            <th>{% translate "Agente de usuario" %}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -202,7 +203,7 @@
                                 </table>
                             </div>
                             {% else %}
-                                <p class="text-muted mb-0 mt-2 small"><i class="bi bi-check-circle me-1"></i>Sin intentos bloqueados registrados.</p>
+                                <p class="text-muted mb-0 mt-2 small"><i class="bi bi-check-circle me-1"></i>{% translate "Sin intentos bloqueados registrados." %}</p>
                             {% endif %}
                             {% endwith %}
                         </div>
@@ -212,7 +213,7 @@
                     <div class="card mb-3">
                         <div class="card-header">
                             <h6 class="mb-0">
-                                <i class="bi bi-cash-coin"></i> Información de Precios por Hora
+                                <i class="bi bi-cash-coin"></i> {% translate "Información de Precios por Hora" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -232,7 +233,7 @@
                                             </div>
                                         {% endif %}
                                         <small class="form-text text-muted">
-                                            Precio que se cobra por cada hora trabajada
+                                            {% translate "Precio que se cobra por cada hora trabajada" %}
                                         </small>
                                     </div>
                                 </div>
@@ -252,7 +253,7 @@
                                             </div>
                                         {% endif %}
                                         <small class="form-text text-muted">
-                                            Coste interno por cada hora trabajada
+                                            {% translate "Coste interno por cada hora trabajada" %}
                                         </small>
                                     </div>
                                 </div>
@@ -263,7 +264,7 @@
                     <!-- Información de Cargo -->
                     <div class="card bg-light mb-3">
                         <div class="card-body">
-                            <h6 class="card-title">Información del Cargo</h6>
+                            <h6 class="card-title">{% translate "Información del Cargo" %}</h6>
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="mb-3">
@@ -275,7 +276,7 @@
                                             </div>
                                         {% endif %}
                                         <small class="form-text text-muted">
-                                            Posición o título del cargo del usuario
+                                            {% translate "Posición o título del cargo del usuario" %}
                                         </small>
                                     </div>
                                     
@@ -288,7 +289,7 @@
                                             </div>
                                         {% endif %}
                                         <small class="form-text text-muted">
-                                            Descripción detallada de las responsabilidades del cargo
+                                            {% translate "Descripción detallada de las responsabilidades del cargo" %}
                                         </small>
                                     </div>
                                     
@@ -304,7 +305,7 @@
                                             </div>
                                         {% endif %}
                                         <small class="form-text text-muted">
-                                            Fecha de nacimiento del usuario
+                                            {% translate "Fecha de nacimiento del usuario" %}
                                         </small>
                                     </div>
                                 </div>
@@ -317,7 +318,7 @@
                         <div class="card-header bg-success text-white">
                             <h6 class="mb-0">
                                 <i class="bi bi-file-text me-2"></i>
-                                Términos y Condiciones de Cotizaciones
+                                {% translate "Términos y Condiciones de Cotizaciones" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -333,7 +334,7 @@
                                     </div>
                                 {% endif %}
                                 <small class="form-text text-muted">
-                                    <i class="bi bi-info-circle"></i> Estos términos y condiciones se mostrarán automáticamente en todas las cotizaciones rápidas que generes. Incluye condiciones de pago, garantías, políticas de cancelación, etc.
+                                    <i class="bi bi-info-circle"></i> {% translate "Estos términos y condiciones se mostrarán automáticamente en todas las cotizaciones rápidas que generes. Incluye condiciones de pago, garantías, políticas de cancelación, etc." %}
                                 </small>
                             </div>
                         </div>
@@ -344,7 +345,7 @@
                         <div class="card-header bg-primary text-white">
                             <h6 class="mb-0">
                                 <i class="bi bi-clock-history me-2"></i>
-                                Acceso Público al Control de Horario
+                                {% translate "Acceso Público al Control de Horario" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -408,14 +409,14 @@
                                 {% if public_access and public_access.is_active and public_url %}
                                 <div class="alert alert-success">
                                     <i class="bi bi-link-45deg me-2"></i>
-                                    <strong>URL Pública Activa:</strong><br>
+                                    <strong>{% translate "URL Pública Activa:" %}</strong><br>
                                     <code id="public-url">{{ public_url }}</code>
                                     <button type="button" class="btn btn-sm btn-outline-success ms-2" onclick="copyToClipboard('public-url')">
-                                        <i class="bi bi-clipboard"></i> Copiar
+                                        <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                                     </button>
                                     <br>
                                     <small class="text-muted">
-                                        Esta URL permite al usuario registrar entrada/salida sin iniciar sesión
+                                        {% translate "Esta URL permite al usuario registrar entrada/salida sin iniciar sesión" %}
                                     </small>
                                 </div>
                                 {% endif %}
@@ -428,7 +429,7 @@
                         <div class="card-header bg-success text-white">
                             <h6 class="mb-0">
                                 <i class="bi bi-person-lines-fill me-2"></i>
-                                Permisos de Contactos
+                                {% translate "Permisos de Contactos" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -456,31 +457,31 @@
                     <!-- Información adicional -->
                     <div class="card bg-light mb-3">
                         <div class="card-body">
-                            <h6 class="card-title">Información del Usuario</h6>
+                            <h6 class="card-title">{% translate "Información del Usuario" %}</h6>
                             <div class="row">
                                 <div class="col-md-6">
-                                    <p class="mb-1"><strong>Fecha de registro:</strong> {{ user_to_edit.date_joined|date:"d/m/Y H:i" }}</p>
-                                    <p class="mb-1"><strong>Último acceso:</strong> 
+                                    <p class="mb-1"><strong>{% translate "Fecha de registro:" %}</strong> {{ user_to_edit.date_joined|date:"d/m/Y H:i" }}</p>
+                                    <p class="mb-1"><strong>{% translate "Último acceso:" %}</strong> 
                                         {% if user_to_edit.last_login %}
                                             {{ user_to_edit.last_login|date:"d/m/Y H:i" }}
                                         {% else %}
-                                            Nunca
+                                            {% translate "Nunca" %}
                                         {% endif %}
                                     </p>
                                 </div>
                                 <div class="col-md-6">
-                                    <p class="mb-1"><strong>Es superusuario:</strong> 
+                                    <p class="mb-1"><strong>{% translate "Es superusuario:" %}</strong> 
                                         {% if user_to_edit.is_superuser %}
-                                            <span class="badge bg-warning">Sí</span>
+                                            <span class="badge bg-warning">{% translate "Sí" %}</span>
                                         {% else %}
-                                            <span class="badge bg-secondary">No</span>
+                                            <span class="badge bg-secondary">{% translate "No" %}</span>
                                         {% endif %}
                                     </p>
-                                    <p class="mb-1"><strong>Es staff:</strong> 
+                                    <p class="mb-1"><strong>{% translate "Es staff:" %}</strong> 
                                         {% if user_to_edit.is_staff %}
-                                            <span class="badge bg-info">Sí</span>
+                                            <span class="badge bg-info">{% translate "Sí" %}</span>
                                         {% else %}
-                                            <span class="badge bg-secondary">No</span>
+                                            <span class="badge bg-secondary">{% translate "No" %}</span>
                                         {% endif %}
                                     </p>
                                 </div>
@@ -490,21 +491,20 @@
                     
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle"></i>
-                        <strong>Nota:</strong> Cambiar el rol del usuario afectará sus permisos en el sistema. 
-                        Los agentes pueden ver y gestionar todos los tickets, mientras que los usuarios regulares solo pueden gestionar los suyos.
+                        <strong>{% translate "Nota:" %}</strong> {% translate "Cambiar el rol del usuario afectará sus permisos en el sistema. Los agentes pueden ver y gestionar todos los tickets, mientras que los usuarios regulares solo pueden gestionar los suyos." %}
                     </div>
                     
                     <div class="d-flex justify-content-between">
                         <div>
                             <a href="{% url 'user_management' %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
-                                <i class="bi bi-key"></i> Cambiar Contraseña
+                                <i class="bi bi-key"></i> {% translate "Cambiar Contraseña" %}
                             </button>
                         </div>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check"></i> Guardar Cambios
+                            <i class="bi bi-check"></i> {% translate "Guardar Cambios" %}
                         </button>
                     </div>
                 </form>
@@ -521,28 +521,28 @@
                 <h5 class="modal-title" id="changePasswordModalLabel">
                     <i class="bi bi-key"></i> Cambiar Contraseña de {{ user_to_edit.username }}
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
             </div>
             <form method="post" action="{% url 'user_change_password' user_to_edit.id %}">
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="new_password" class="form-label">Nueva Contraseña <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control" id="new_password" name="new_password" required minlength="4" placeholder="Ingrese la nueva contraseña">
-                        <small class="form-text text-muted">Mínimo 4 caracteres</small>
+                        <label for="new_password" class="form-label">{% translate "Nueva Contraseña" %} <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="new_password" name="new_password" required minlength="4" placeholder="{% translate 'Ingrese la nueva contraseña' %}">
+                        <small class="form-text text-muted">{% translate "Mínimo 4 caracteres" %}</small>
                     </div>
                     <div class="mb-3">
-                        <label for="confirm_password" class="form-label">Confirmar Contraseña <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required minlength="4" placeholder="Confirme la contraseña">
+                        <label for="confirm_password" class="form-label">{% translate "Confirmar Contraseña" %} <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required minlength="4" placeholder="{% translate 'Confirme la contraseña' %}">
                     </div>
                     <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i> La contraseña del usuario <strong>{{ user_to_edit.username }}</strong> será cambiada inmediatamente.
+                        <i class="bi bi-info-circle"></i> {% translate "La contraseña del usuario" %} <strong>{{ user_to_edit.username }}</strong> {% translate "será cambiada inmediatamente." %}
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                     <button type="submit" class="btn btn-warning">
-                        <i class="bi bi-key"></i> Cambiar Contraseña
+                        <i class="bi bi-key"></i> {% translate "Cambiar Contraseña" %}
                     </button>
                 </div>
             </form>
@@ -630,46 +630,46 @@ function copyPublicTasksUrl() {
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="publicTasksModalLabel">
-                    <i class="bi bi-share"></i> Compartir Tareas Pendientes
+                    <i class="bi bi-share"></i> {% translate "Compartir Tareas Pendientes" %}
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
             </div>
             <div class="modal-body">
                 {% if user_to_edit.profile.public_token %}
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle"></i>
-                    Esta URL pública permite ver las tareas pendientes de <strong>{{ user_to_edit.get_full_name|default:user_to_edit.username }}</strong> 
-                    con los días que lleva cada tarea asignada. No requiere autenticación.
+                    {% translate "Esta URL pública permite ver las tareas pendientes de" %} <strong>{{ user_to_edit.get_full_name|default:user_to_edit.username }}</strong> 
+                    {% translate "con los días que lleva cada tarea asignada. No requiere autenticación." %}
                 </div>
                 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">URL Pública:</label>
+                    <label class="form-label fw-bold">{% translate "URL Pública:" %}</label>
                     <div class="input-group">
                         <span class="form-control" id="publicTasksUrl">{{ request.scheme }}://{{ request.get_host }}/public/users/{{ user_to_edit.profile.public_token }}/tasks/</span>
                         <button class="btn btn-outline-success" type="button" id="copyPublicTasksBtn" onclick="copyPublicTasksUrl()">
-                            <i class="bi bi-clipboard"></i> Copiar
+                            <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                         </button>
                     </div>
                 </div>
                 {% else %}
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle"></i>
-                    No se pudo generar el token público. Por favor, recarga la página e intenta nuevamente.
+                    {% translate "No se pudo generar el token público. Por favor, recarga la página e intenta nuevamente." %}
                 </div>
                 {% endif %}
 
                 <div class="card border-secondary">
                     <div class="card-body">
                         <h6 class="card-title">
-                            <i class="bi bi-eye"></i> Vista previa del enlace:
+                            <i class="bi bi-eye"></i> {% translate "Vista previa del enlace:" %}
                         </h6>
-                        <p class="mb-2">Al abrir esta URL, cualquier persona podrá ver:</p>
+                        <p class="mb-2">{% translate "Al abrir esta URL, cualquier persona podrá ver:" %}</p>
                         <ul class="mb-0">
-                            <li>Nombre del usuario</li>
-                            <li>Lista de tareas pendientes y en progreso</li>
-                            <li>Días transcurridos desde que se asignó cada tarea</li>
-                            <li>Prioridad y estado de cada tarea</li>
-                            <li>Fechas de creación y vencimiento</li>
+                            <li>{% translate "Nombre del usuario" %}</li>
+                            <li>{% translate "Lista de tareas pendientes y en progreso" %}</li>
+                            <li>{% translate "Días transcurridos desde que se asignó cada tarea" %}</li>
+                            <li>{% translate "Prioridad y estado de cada tarea" %}</li>
+                            <li>{% translate "Fechas de creación y vencimiento" %}</li>
                         </ul>
                     </div>
                 </div>
@@ -678,10 +678,10 @@ function copyPublicTasksUrl() {
                 <a href="/public/users/{{ user_to_edit.profile.public_token }}/tasks/" 
                    target="_blank" 
                    class="btn btn-primary">
-                    <i class="bi bi-box-arrow-up-right"></i> Abrir en nueva pestaña
+                    <i class="bi bi-box-arrow-up-right"></i> {% translate "Abrir en nueva pestaña" %}
                 </a>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle"></i> Cerrar
+                    <i class="bi bi-x-circle"></i> {% translate "Cerrar" %}
                 </button>
             </div>
         </div>

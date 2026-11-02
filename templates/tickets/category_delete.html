@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -16,33 +17,33 @@
                 <div class="card-body">
                     <div class="alert alert-warning" role="alert">
                         <h5 class="alert-heading">
-                            <i class="fas fa-warning me-2"></i>¡Atención!
+                            <i class="fas fa-warning me-2"></i>{% translate "¡Atención!" %}
                         </h5>
                         <p class="mb-0">
-                            Estás a punto de eliminar la categoría <strong>"{{ category.name }}"</strong>.
+                            {% translate "Estás a punto de eliminar la categoría" %} <strong>"{{ category.name }}"</strong>.
                         </p>
                     </div>
 
                     <div class="mb-4">
-                        <h6>Información de la categoría:</h6>
+                        <h6>{% translate "Información de la categoría:" %}</h6>
                         <ul class="list-unstyled">
                             <li>
-                                <strong>Nombre:</strong> 
+                                <strong>{% translate "Nombre:" %}</strong> 
                                 <span class="badge" style="background-color: {{ category.color }}; color: white;">
                                     <i class="fas fa-tag me-1"></i>{{ category.name }}
                                 </span>
                             </li>
                             {% if category.description %}
-                            <li><strong>Descripción:</strong> {{ category.description }}</li>
+                            <li><strong>{% translate "Descripción:" %}</strong> {{ category.description }}</li>
                             {% endif %}
-                            <li><strong>Estado:</strong> 
+                            <li><strong>{% translate "Estado:" %}</strong> 
                                 {% if category.is_active %}
-                                    <span class="badge bg-success">Activa</span>
+                                    <span class="badge bg-success">{% translate "Activa" %}</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Inactiva</span>
+                                    <span class="badge bg-secondary">{% translate "Inactiva" %}</span>
                                 {% endif %}
                             </li>
-                            <li><strong>Tickets asociados:</strong> 
+                            <li><strong>{% translate "Tickets asociados:" %}</strong> 
                                 <span class="badge bg-info">{{ ticket_count }} tickets</span>
                             </li>
                         </ul>
@@ -51,22 +52,20 @@
                     {% if ticket_count > 0 %}
                     <div class="alert alert-info" role="alert">
                         <h6 class="alert-heading">
-                            <i class="fas fa-info-circle me-2"></i>Tickets asociados
+                            <i class="fas fa-info-circle me-2"></i>{% translate "Tickets asociados" %}
                         </h6>
                         <p class="mb-0">
-                            Esta categoría tiene <strong>{{ ticket_count }} tickets</strong> asociados. 
-                            Al eliminar la categoría, estos tickets perderán su categoría asignada.
+                            {% translate "Esta categoría tiene" %} <strong>{{ ticket_count }} tickets</strong> {% translate "asociados. Al eliminar la categoría, estos tickets perderán su categoría asignada." %}
                         </p>
                     </div>
                     {% endif %}
 
                     <div class="alert alert-danger" role="alert">
                         <h6 class="alert-heading">
-                            <i class="fas fa-exclamation-triangle me-2"></i>Esta acción no se puede deshacer
+                            <i class="fas fa-exclamation-triangle me-2"></i>{% translate "Esta acción no se puede deshacer" %}
                         </h6>
                         <p class="mb-0">
-                            Una vez eliminada, no podrás recuperar esta categoría ni restaurar 
-                            las asignaciones a los tickets.
+                            {% translate "Una vez eliminada, no podrás recuperar esta categoría ni restaurar las asignaciones a los tickets." %}
                         </p>
                     </div>
 
@@ -74,10 +73,10 @@
                         {% csrf_token %}
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'category_list' %}" class="btn btn-secondary me-md-2">
-                                <i class="fas fa-arrow-left me-1"></i>Cancelar
+                                <i class="fas fa-arrow-left me-1"></i>{% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="fas fa-trash me-1"></i>Eliminar Categoría
+                                <i class="fas fa-trash me-1"></i>{% translate "Eliminar Categoría" %}
                             </button>
                         </div>
                     </form>

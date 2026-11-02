@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -10,7 +11,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">{{ title }}</h4>
                     <a href="{% url 'expense_report_create' %}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Nueva Rendición
+                        <i class="fas fa-plus"></i> {% translate "Nueva Rendición" %}
                     </a>
                 </div>
                 
@@ -59,18 +60,18 @@
                         <table class="table table-striped table-hover align-middle">
                             <thead class="table-dark">
                                 <tr>
-                                    <th>Título</th>
-                                    <th>Empleado</th>
-                                    <th>Estado</th>
-                                    <th class="text-end">Gastos</th>
-                                    <th class="text-end">Ingresos</th>
-                                    <th class="text-end">Balance</th>
-                                    <th>Fecha Creación</th>
-                                    <th>Fecha Envío</th>
+                                    <th>{% translate "Título" %}</th>
+                                    <th>{% translate "Empleado" %}</th>
+                                    <th>{% translate "Estado" %}</th>
+                                    <th class="text-end">{% translate "Gastos" %}</th>
+                                    <th class="text-end">{% translate "Ingresos" %}</th>
+                                    <th class="text-end">{% translate "Balance" %}</th>
+                                    <th>{% translate "Fecha Creación" %}</th>
+                                    <th>{% translate "Fecha Envío" %}</th>
                                     {% if is_agent %}
-                                    <th>Aprobado por</th>
+                                    <th>{% translate "Aprobado por" %}</th>
                                     {% endif %}
-                                    <th>Acciones</th>
+                                    <th>{% translate "Acciones" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -93,15 +94,15 @@
                                     </td>
                                     <td>
                                         {% if report.status == 'draft' %}
-                                            <span class="badge bg-secondary">Borrador</span>
+                                            <span class="badge bg-secondary">{% translate "Borrador" %}</span>
                                         {% elif report.status == 'submitted' %}
-                                            <span class="badge bg-warning">Enviado</span>
+                                            <span class="badge bg-warning">{% translate "Enviado" %}</span>
                                         {% elif report.status == 'approved' %}
-                                            <span class="badge bg-success">Aprobado</span>
+                                            <span class="badge bg-success">{% translate "Aprobado" %}</span>
                                         {% elif report.status == 'rejected' %}
-                                            <span class="badge bg-danger">Rechazado</span>
+                                            <span class="badge bg-danger">{% translate "Rechazado" %}</span>
                                         {% elif report.status == 'paid' %}
-                                            <span class="badge bg-info">Pagado</span>
+                                            <span class="badge bg-info">{% translate "Pagado" %}</span>
                                         {% endif %}
                                     </td>
                                     <td class="text-end">
@@ -148,13 +149,13 @@
                                         <div class="btn-group" role="group">
                                             <a href="{% url 'expense_report_detail' report.pk %}" 
                                                class="btn btn-sm btn-outline-primary" 
-                                               title="Ver detalle">
+                                               title="{% translate 'Ver detalle' %}">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             {% if report.can_edit and report.employee == user or is_agent %}
                                             <a href="{% url 'expense_report_edit' report.pk %}" 
                                                class="btn btn-sm btn-outline-secondary" 
-                                               title="Editar">
+                                               title="{% translate 'Editar' %}">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             {% endif %}
@@ -181,7 +182,7 @@
                                 {% if expense_reports.has_other_pages %}
                                 <tr class="table-dark fw-bold">
                                     <td colspan="3" class="text-end small">
-                                        <i class="fas fa-sigma me-1"></i>Total global (todas las páginas):
+                                        <i class="fas fa-sigma me-1"></i>{% translate "Total global (todas las páginas):" %}
                                     </td>
                                     <td class="text-end text-warning">${{ grand_total|floatformat:2 }}</td>
                                     <td class="text-end text-success">${{ grand_funds|floatformat:2 }}</td>
@@ -197,7 +198,7 @@
 
                     <!-- Paginación -->
                     {% if expense_reports.has_other_pages %}
-                    <nav aria-label="Paginación">
+                    <nav aria-label="{% translate 'Paginación' %}">
                         <ul class="pagination justify-content-center">
                             {% if expense_reports.has_previous %}
                                 <li class="page-item">
@@ -237,10 +238,10 @@
                     {% else %}
                     <div class="text-center py-5">
                         <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">No hay rendiciones de gastos</h5>
-                        <p class="text-muted">Crea tu primera rendición de gastos para comenzar.</p>
+                        <h5 class="text-muted">{% translate "No hay rendiciones de gastos" %}</h5>
+                        <p class="text-muted">{% translate "Crea tu primera rendición de gastos para comenzar." %}</p>
                         <a href="{% url 'expense_report_create' %}" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Nueva Rendición
+                            <i class="fas fa-plus"></i> {% translate "Nueva Rendición" %}
                         </a>
                     </div>
                     {% endif %}

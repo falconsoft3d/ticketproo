@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -61,10 +62,10 @@
                         {% if auto_dates_info %}
                         <div class="alert alert-info mb-3">
                             <i class="fas fa-info-circle"></i>
-                            <strong>Fechas Automáticas:</strong> Las fechas de inicio y fin del cronograma se calcularán automáticamente basándose en las tareas que agregues:
+                            <strong>{% translate "Fechas Automáticas:" %}</strong> {% translate "Las fechas de inicio y fin del cronograma se calcularán automáticamente basándose en las tareas que agregues:" %}
                             <ul class="mb-0 mt-2">
-                                <li><strong>Fecha de Inicio:</strong> Se toma la fecha más temprana de todas las tareas</li>
-                                <li><strong>Fecha de Fin:</strong> Se toma la fecha más tardía de todas las tareas</li>
+                                <li><strong>{% translate "Fecha de Inicio:" %}</strong> {% translate "Se toma la fecha más temprana de todas las tareas" %}</li>
+                                <li><strong>{% translate "Fecha de Fin:" %}</strong> {% translate "Se toma la fecha más tardía de todas las tareas" %}</li>
                             </ul>
                         </div>
                         {% endif %}
@@ -75,7 +76,7 @@
                                 <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
                                     {{ form.is_public.label }}
                                     <small class="text-muted d-block">
-                                        Si activas esta opción, el cronograma será accesible públicamente mediante un enlace
+                                        {% translate "Si activas esta opción, el cronograma será accesible públicamente mediante un enlace" %}
                                     </small>
                                 </label>
                             </div>
@@ -83,11 +84,11 @@
                         
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Guardar
+                                <i class="fas fa-save"></i> {% translate "Guardar" %}
                             </button>
                             <a href="{% if schedule %}{% url 'task_schedule_detail' schedule.pk %}{% else %}{% url 'task_schedule_list' %}{% endif %}" 
                                class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancelar
+                                <i class="fas fa-times"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>

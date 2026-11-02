@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block extra_css %}
 <style>
@@ -32,7 +33,7 @@
 {% endblock %}
 {% load project_extras %}
 
-{% block title %}Contactos - TicketProo{% endblock %}
+{% block title %}{% translate "Contactos - TicketProo" %}{% endblock %}
 
 {% block extra_js %}
 <script>
@@ -583,20 +584,20 @@
         <div>
             <h2>
                 <i class="bi bi-person-lines-fill text-primary"></i>
-                Contactos
+                {% translate "Contactos" %}
                 <span class="badge" style="background-color: #90ee90; color: #2d8659; font-size: 0.9rem;">
                     <i class="bi bi-trophy-fill"></i> Ganados: {{ won_contacts }}
                 </span>
                 {% if request.GET.status or request.GET.search or request.GET.date_from or request.GET.date_to %}
-                    <span class="badge bg-warning text-dark ms-2">Filtros activos</span>
+                    <span class="badge bg-warning text-dark ms-2">{% translate "Filtros activos" %}</span>
                 {% endif %}
             </h2>
             <p class="text-muted mb-0">
-                Gestión de contactos de ventas
+                {% translate "Gestión de contactos de ventas" %}
                 <span class="ms-3">
                     <small>
                         <i class="bi bi-calendar-minus"></i> {{ comparison_label }}: <strong>{{ comparison_total_contacts }}</strong>
-                        <i class="bi bi-calendar-check ms-2"></i> Hoy: <strong>{{ today_total_contacts }}</strong>
+                        <i class="bi bi-calendar-check ms-2"></i> {% translate "Hoy:" %} <strong>{{ today_total_contacts }}</strong>
                         {% if contact_change_percentage > 0 %}
                             <span class="badge bg-success ms-2">
                                 <i class="bi bi-arrow-up"></i> +{{ contact_change_percentage|floatformat:0 }}%
@@ -628,7 +629,7 @@
                             • Hasta: {{ request.GET.date_to }}
                         {% endif %}
                         <a href="{% url 'contact_list' %}" class="text-decoration-none ms-2">
-                            <small>(Limpiar filtros)</small>
+                            <small>{% translate "(Limpiar filtros)" %}</small>
                         </a>
                     </small>
                 {% endif %}
@@ -638,45 +639,45 @@
             <!-- Botones de toggle para secciones -->
             <div class="btn-group" role="group">
                 {% if user_sales_plan and plan_progress %}
-                <button type="button" class="btn btn-sm btn-outline-warning" id="togglePlanBtn" title="Mostrar/Ocultar Plan de Venta">
-                    <i class="bi bi-trophy"></i> Plan
+                <button type="button" class="btn btn-sm btn-outline-warning" id="togglePlanBtn" title="{% translate 'Mostrar/Ocultar Plan de Venta' %}">
+                    <i class="bi bi-trophy"></i> {% translate "Plan" %}
                 </button>
                 {% endif %}
-                <button type="button" class="btn btn-sm btn-outline-primary" id="toggleKpiBtn" title="Mostrar/Ocultar KPIs">
+                <button type="button" class="btn btn-sm btn-outline-primary" id="toggleKpiBtn" title="{% translate 'Mostrar/Ocultar KPIs' %}">
                     <i class="bi bi-bar-chart"></i> KPI
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-success" id="toggleTableBtn" title="Mostrar/Ocultar Tabla de Estados">
-                    <i class="bi bi-table"></i> Tabla
+                <button type="button" class="btn btn-sm btn-outline-success" id="toggleTableBtn" title="{% translate 'Mostrar/Ocultar Tabla de Estados' %}">
+                    <i class="bi bi-table"></i> {% translate "Tabla" %}
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleFiltersBtn" title="Mostrar/Ocultar Filtros">
-                    <i class="bi bi-funnel"></i> Filtros
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleFiltersBtn" title="{% translate 'Mostrar/Ocultar Filtros' %}">
+                    <i class="bi bi-funnel"></i> {% translate "Filtros" %}
                 </button>
             </div>
             
             <a href="{% url 'contact_chart' %}" class="btn btn-outline-info">
-                <i class="bi bi-bar-chart-line"></i> Gráfico
+                <i class="bi bi-bar-chart-line"></i> {% translate "Gráfico" %}
             </a>
 
             <!-- Botón compartir formulario ¿Quién eres? -->
             <div class="btn-group">
                 <button type="button" class="btn btn-outline-success" id="btn-copiar-quien-eres"
                     onclick="copiarQuienEres()"
-                    title="Copiar URL del formulario público ¿Quién eres?">
-                    <i class="bi bi-link-45deg"></i> ¿Quién eres?
+                    title="{% translate 'Copiar URL del formulario público ¿Quién eres?' %}">
+                    <i class="bi bi-link-45deg"></i> {% translate "¿Quién eres?" %}
                 </button>
-                <a href="{% url 'quien_eres_wizard' %}" target="_blank" class="btn btn-outline-success" title="Abrir formulario">
+                <a href="{% url 'quien_eres_wizard' %}" target="_blank" class="btn btn-outline-success" title="{% translate 'Abrir formulario' %}">
                     <i class="bi bi-box-arrow-up-right"></i>
                 </a>
             </div>
             <input type="hidden" id="quien-eres-url-contacts" value="{{ request.scheme }}://{{ request.get_host }}{% url 'quien_eres_wizard' %}">
 
             <a href="{% url 'contact_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Crear
+                <i class="bi bi-plus-circle"></i> {% translate "Crear" %}
             </a>
             
             {% if user.is_superuser %}
             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAllContactsModal">
-                <i class="bi bi-trash3"></i> Eliminar Todos
+                <i class="bi bi-trash3"></i> {% translate "Eliminar Todos" %}
             </button>
             {% endif %}
         </div>
@@ -689,38 +690,38 @@
             <div class="modal-content border-danger">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title" id="deleteAllContactsModalLabel">
-                        <i class="bi bi-exclamation-triangle-fill"></i> ⚠️ ADVERTENCIA CRÍTICA
+                        <i class="bi bi-exclamation-triangle-fill"></i> {% translate "⚠️ ADVERTENCIA CRÍTICA" %}
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-danger mb-3">
-                        <strong>¡ATENCIÓN!</strong> Esta acción es <strong>IRREVERSIBLE</strong>.
+                        <strong>{% translate "¡ATENCIÓN!" %}</strong> {% translate "Esta acción es" %} <strong>{% translate "IRREVERSIBLE" %}</strong>.
                     </div>
                     <p class="mb-3">
-                        <i class="bi bi-trash3 text-danger"></i> Estás a punto de <strong class="text-danger">ELIMINAR PERMANENTEMENTE TODOS LOS CONTACTOS</strong> del sistema.
+                        <i class="bi bi-trash3 text-danger"></i> {% translate "Estás a punto de" %} <strong class="text-danger">{% translate "ELIMINAR PERMANENTEMENTE TODOS LOS CONTACTOS" %}</strong> {% translate "del sistema." %}
                     </p>
                     <p class="mb-3">
-                        <i class="bi bi-people-fill"></i> Total de contactos a eliminar: <strong class="text-danger">{{ page_obj.paginator.count }}</strong>
+                        <i class="bi bi-people-fill"></i> {% translate "Total de contactos a eliminar:" %} <strong class="text-danger">{{ page_obj.paginator.count }}</strong>
                     </p>
                     <p class="text-muted small">
-                        <i class="bi bi-info-circle"></i> Esto eliminará todos los contactos y sus datos asociados de forma permanente. No se puede deshacer esta acción.
+                        <i class="bi bi-info-circle"></i> {% translate "Esto eliminará todos los contactos y sus datos asociados de forma permanente. No se puede deshacer esta acción." %}
                     </p>
                     <div class="form-check mt-3">
                         <input class="form-check-input" type="checkbox" id="confirmDelete" required>
                         <label class="form-check-label fw-bold text-danger" for="confirmDelete">
-                            Entiendo que esta acción es irreversible y elimina TODOS los contactos
+                            {% translate "Entiendo que esta acción es irreversible y elimina TODOS los contactos" %}
                         </label>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle"></i> Cancelar
+                        <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                     </button>
                     <form method="post" action="{% url 'contact_delete_all' %}" id="deleteAllContactsForm">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger" id="confirmDeleteBtn" disabled>
-                            <i class="bi bi-trash3-fill"></i> Sí, Eliminar Todos
+                            <i class="bi bi-trash3-fill"></i> {% translate "Sí, Eliminar Todos" %}
                         </button>
                     </form>
                 </div>
@@ -751,31 +752,31 @@
                 <h5 class="mb-0">
                     <i class="bi bi-{% if plan_progress.is_consolidated %}building{% else %}trophy{% endif %} text-warning"></i> 
                     {% if plan_progress.is_consolidated %}
-                        Plan de Venta de la Empresa
+                        {% translate "Plan de Venta de la Empresa" %}
                     {% else %}
-                        Mi Plan de Venta
+                        {% translate "Mi Plan de Venta" %}
                     {% endif %}
                 </h5>
                 <small class="text-muted">
                     {% if plan_progress.is_consolidated %}
-                        Consolidado de todos los usuarios - Progreso del mes actual
+                        {% translate "Consolidado de todos los usuarios - Progreso del mes actual" %}
                     {% else %}
-                        Progreso del mes actual
+                        {% translate "Progreso del mes actual" %}
                     {% endif %}
                 </small>
             </div>
             <div class="d-flex align-items-center gap-2">
                 {% if plan_progress.is_consolidated %}
                     <a href="{% url 'contact_list' %}" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-person-fill"></i> Ver Mi Plan
+                        <i class="bi bi-person-fill"></i> {% translate "Ver Mi Plan" %}
                     </a>
                 {% else %}
                     <a href="?all_users=true" class="btn btn-sm btn-outline-info">
-                        <i class="bi bi-building"></i> Ver Plan Empresa
+                        <i class="bi bi-building"></i> {% translate "Ver Plan Empresa" %}
                     </a>
                 {% endif %}
                 <a href="{% url 'sales_plan_list' %}" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-people-fill"></i> Ver Todos los Usuarios
+                    <i class="bi bi-people-fill"></i> {% translate "Ver Todos los Usuarios" %}
                 </a>
                 <h4 class="mb-0">
                     <span class="badge bg-{% if plan_progress.overall_percentage >= 75 %}success{% elif plan_progress.overall_percentage >= 50 %}warning{% else %}danger{% endif %}" 
@@ -788,17 +789,17 @@
         <div class="row g-3">
             <div class="col-md-3">
                 <div class="p-2 bg-light rounded">
-                    <small class="text-muted d-block text-center mb-2"><strong>Contactos</strong></small>
+                    <small class="text-muted d-block text-center mb-2"><strong>{% translate "Contactos" %}</strong></small>
                     <div class="row g-2">
                         <div class="col-6 text-center border-end">
-                            <small class="text-muted d-block">vs Mes Pasado</small>
+                            <small class="text-muted d-block">{% translate "vs Mes Pasado" %}</small>
                             <h6 class="mb-0">{{ plan_progress.contacts_last_month }}</h6>
                             <span class="badge {% if plan_progress.contacts_diff > 0 %}bg-success{% elif plan_progress.contacts_diff < 0 %}bg-danger{% else %}bg-secondary{% endif %} mt-1">
                                 {% if plan_progress.contacts_diff > 0 %}+{% endif %}{{ plan_progress.contacts_diff }}
                             </span>
                         </div>
                         <div class="col-6 text-center">
-                            <small class="text-muted d-block">Objetivo Mes</small>
+                            <small class="text-muted d-block">{% translate "Objetivo Mes" %}</small>
                             <h6 class="mb-0">{{ plan_progress.contacts_created }}/{{ plan_progress.contacts_goal }}</h6>
                             <span class="badge bg-primary mt-1">{{ plan_progress.contact_percentage }}%</span>
                         </div>
@@ -807,17 +808,17 @@
             </div>
             <div class="col-md-3">
                 <div class="p-2 bg-light rounded">
-                    <small class="text-muted d-block text-center mb-2"><strong>Positivos</strong></small>
+                    <small class="text-muted d-block text-center mb-2"><strong>{% translate "Positivos" %}</strong></small>
                     <div class="row g-2">
                         <div class="col-6 text-center border-end">
-                            <small class="text-muted d-block">vs Mes Pasado</small>
+                            <small class="text-muted d-block">{% translate "vs Mes Pasado" %}</small>
                             <h6 class="mb-0">{{ plan_progress.positive_last_month }}</h6>
                             <span class="badge {% if plan_progress.positive_diff > 0 %}bg-success{% elif plan_progress.positive_diff < 0 %}bg-danger{% else %}bg-secondary{% endif %} mt-1">
                                 {% if plan_progress.positive_diff > 0 %}+{% endif %}{{ plan_progress.positive_diff }}
                             </span>
                         </div>
                         <div class="col-6 text-center">
-                            <small class="text-muted d-block">Objetivo Mes</small>
+                            <small class="text-muted d-block">{% translate "Objetivo Mes" %}</small>
                             <h6 class="mb-0">{{ plan_progress.positive_contacts }}/{{ plan_progress.positive_goal }}</h6>
                             <span class="badge mt-1" style="background-color: #5cb85c;">{{ plan_progress.positive_percentage }}%</span>
                         </div>
@@ -826,17 +827,17 @@
             </div>
             <div class="col-md-3">
                 <div class="p-2 bg-light rounded">
-                    <small class="text-muted d-block text-center mb-2"><strong>Reuniones</strong></small>
+                    <small class="text-muted d-block text-center mb-2"><strong>{% translate "Reuniones" %}</strong></small>
                     <div class="row g-2">
                         <div class="col-6 text-center border-end">
-                            <small class="text-muted d-block">vs Mes Pasado</small>
+                            <small class="text-muted d-block">{% translate "vs Mes Pasado" %}</small>
                             <h6 class="mb-0">{{ plan_progress.meetings_last_month }}</h6>
                             <span class="badge {% if plan_progress.meetings_diff > 0 %}bg-success{% elif plan_progress.meetings_diff < 0 %}bg-danger{% else %}bg-secondary{% endif %} mt-1">
                                 {% if plan_progress.meetings_diff > 0 %}+{% endif %}{{ plan_progress.meetings_diff }}
                             </span>
                         </div>
                         <div class="col-6 text-center">
-                            <small class="text-muted d-block">Objetivo Mes</small>
+                            <small class="text-muted d-block">{% translate "Objetivo Mes" %}</small>
                             <h6 class="mb-0">{{ plan_progress.meetings_held }}/{{ plan_progress.meeting_goal }}</h6>
                             <span class="badge bg-info mt-1">{{ plan_progress.meeting_percentage }}%</span>
                         </div>
@@ -845,17 +846,17 @@
             </div>
             <div class="col-md-3">
                 <div class="p-2 bg-light rounded">
-                    <small class="text-muted d-block text-center mb-2"><strong>Ganados</strong></small>
+                    <small class="text-muted d-block text-center mb-2"><strong>{% translate "Ganados" %}</strong></small>
                     <div class="row g-2">
                         <div class="col-6 text-center border-end">
-                            <small class="text-muted d-block">vs Mes Pasado</small>
+                            <small class="text-muted d-block">{% translate "vs Mes Pasado" %}</small>
                             <h6 class="mb-0">{{ plan_progress.won_last_month }}</h6>
                             <span class="badge {% if plan_progress.won_diff > 0 %}bg-success{% elif plan_progress.won_diff < 0 %}bg-danger{% else %}bg-secondary{% endif %} mt-1">
                                 {% if plan_progress.won_diff > 0 %}+{% endif %}{{ plan_progress.won_diff }}
                             </span>
                         </div>
                         <div class="col-6 text-center">
-                            <small class="text-muted d-block">Objetivo Mes</small>
+                            <small class="text-muted d-block">{% translate "Objetivo Mes" %}</small>
                             <h6 class="mb-0">{{ plan_progress.won_contacts }}/{{ plan_progress.won_goal }}</h6>
                             <span class="badge mt-1" style="background-color: #90ee90; color: #2d8659;">{{ plan_progress.won_percentage }}%</span>
                         </div>
@@ -875,7 +876,7 @@
                     <div class="card-body p-1">
                         <i class="bi bi-people-fill text-primary" style="font-size: 1.2rem;"></i>
                         <h6 class="text-primary mb-0 mt-1">{{ total_contacts }}</h6>
-                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Total</p>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">{% translate "Total" %}</p>
                     </div>
                 </div>
             </a>
@@ -886,7 +887,7 @@
                     <div class="card-body p-1">
                         <i class="bi bi-slash-circle-fill text-dark" style="font-size: 1.2rem;"></i>
                         <h6 class="text-dark mb-0 mt-1">{{ do_not_contact_contacts }}</h6>
-                        <p class="text-muted mb-0" style="font-size: 0.7rem;">No Contactar</p>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">{% translate "No Contactar" %}</p>
                     </div>
                 </div>
             </a>
@@ -897,7 +898,7 @@
                     <div class="card-body p-1">
                         <i class="bi bi-emoji-frown-fill text-danger" style="font-size: 1.2rem;"></i>
                         <h6 class="text-danger mb-0 mt-1">{{ negative_contacts }}</h6>
-                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Negativos</p>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">{% translate "Negativos" %}</p>
                     </div>
                 </div>
             </a>
@@ -908,7 +909,7 @@
                     <div class="card-body p-1">
                         <i class="bi bi-clock-fill text-warning" style="font-size: 1.2rem;"></i>
                         <h6 class="text-warning mb-0 mt-1">{{ not_now_contacts }}</h6>
-                        <p class="text-muted mb-0" style="font-size: 0.7rem;">No Ahora</p>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">{% translate "No Ahora" %}</p>
                     </div>
                 </div>
             </a>
@@ -919,7 +920,7 @@
                     <div class="card-body p-1">
                         <i class="bi bi-emoji-neutral-fill text-info" style="font-size: 1.2rem;"></i>
                         <h6 class="text-info mb-0 mt-1">{{ neutral_contacts }}</h6>
-                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Neutros</p>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">{% translate "Neutros" %}</p>
                     </div>
                 </div>
             </a>
@@ -930,7 +931,7 @@
                     <div class="card-body p-1">
                         <i class="bi bi-emoji-smile-fill" style="font-size: 1.2rem; color: #5cb85c;"></i>
                         <h6 class="mb-0 mt-1" style="color: #5cb85c;">{{ positive_contacts }}</h6>
-                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Positivos</p>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">{% translate "Positivos" %}</p>
                     </div>
                 </div>
             </a>
@@ -941,7 +942,7 @@
                     <div class="card-body p-1">
                         <i class="bi bi-trophy-fill" style="font-size: 1.2rem; color: #2d8659;"></i>
                         <h6 class="mb-0 mt-1" style="color: #2d8659;">{{ won_contacts }}</h6>
-                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Ganados</p>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">{% translate "Ganados" %}</p>
                     </div>
                 </div>
             </a>
@@ -951,7 +952,7 @@
                 <div class="card-body p-1">
                     <i class="bi bi-trophy" style="font-size: 1.2rem; color: #2d8659;"></i>
                     <h6 class="mb-0 mt-1" style="color: #2d8659;">{{ monthly_won_contacts }}</h6>
-                    <p class="text-muted mb-0" style="font-size: 0.7rem;">Ganados Mes</p>
+                    <p class="text-muted mb-0" style="font-size: 0.7rem;">{% translate "Ganados Mes" %}</p>
                 </div>
             </div>
         </div>
@@ -961,7 +962,7 @@
                     <div class="card-body p-1">
                         <i class="bi bi-calendar-check-fill" style="font-size: 1.2rem; color: #6f42c1;"></i>
                         <h6 class="mb-0 mt-1" style="color: #6f42c1;">{{ monthly_meetings }}</h6>
-                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Reuniones Mes</p>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">{% translate "Reuniones Mes" %}</p>
                     </div>
                 </div>
             </a>
@@ -972,7 +973,7 @@
                     <div class="card-body p-1">
                         <i class="bi bi-calendar2-event-fill text-dark" style="font-size: 1.2rem;"></i>
                         <h6 class="text-dark mb-0 mt-1">{{ total_meetings }}</h6>
-                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Total Reuniones</p>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">{% translate "Total Reuniones" %}</p>
                     </div>
                 </div>
             </a>
@@ -983,7 +984,7 @@
                     <div class="card-body p-1">
                         <i class="bi bi-telephone-fill text-secondary" style="font-size: 1.2rem;"></i>
                         <h6 class="text-secondary mb-0 mt-1">{{ contacts_with_activities }}</h6>
-                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Con Actividad</p>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">{% translate "Con Actividad" %}</p>
                     </div>
                 </div>
             </a>
@@ -994,7 +995,7 @@
                     <div class="card-body p-1">
                         <i class="bi bi-calendar-day-fill text-secondary" style="font-size: 1.2rem;"></i>
                         <h6 class="text-secondary mb-0 mt-1">{{ today_contacts }}</h6>
-                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Hoy</p>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">{% translate "Hoy" %}</p>
                     </div>
                 </div>
             </a>
@@ -1009,18 +1010,18 @@
                 <div class="d-flex align-items-center gap-3">
                     <div>
                         <h5 class="mb-0">
-                            <i class="bi bi-table"></i> Estados de Contactos por Fecha
+                            <i class="bi bi-table"></i> {% translate "Estados de Contactos por Fecha" %}
                         </h5>
-                        <small class="text-muted">Análisis temporal de contactos</small>
+                        <small class="text-muted">{% translate "Análisis temporal de contactos" %}</small>
                     </div>
                     <div class="btn-group btn-group-sm" role="group">
-                        <button type="button" class="btn btn-outline-primary" id="generateAiReportBtn" title="Generar Informe con IA">
-                            <i class="bi bi-stars"></i> Informe IA
+                        <button type="button" class="btn btn-outline-primary" id="generateAiReportBtn" title="{% translate 'Generar Informe con IA' %}">
+                            <i class="bi bi-stars"></i> {% translate "Informe IA" %}
                         </button>
-                        <button type="button" class="btn btn-outline-danger" id="exportPdfBtn" title="Exportar a PDF">
+                        <button type="button" class="btn btn-outline-danger" id="exportPdfBtn" title="{% translate 'Exportar a PDF' %}">
                             <i class="bi bi-file-pdf"></i> PDF
                         </button>
-                        <button type="button" class="btn btn-outline-success" id="exportExcelBtn" title="Exportar a Excel">
+                        <button type="button" class="btn btn-outline-success" id="exportExcelBtn" title="{% translate 'Exportar a Excel' %}">
                             <i class="bi bi-file-excel"></i> Excel
                         </button>
                     </div>
@@ -1035,52 +1036,52 @@
                     {% endif %}
                     
                     <div>
-                        <label class="form-label mb-0" style="font-size: 0.75rem;">Vista</label>
+                        <label class="form-label mb-0" style="font-size: 0.75rem;">{% translate "Vista" %}</label>
                         <select name="table_view" class="form-select form-select-sm" onchange="this.form.submit()">
-                            <option value="day" {% if request.GET.table_view == 'day' or not request.GET.table_view %}selected{% endif %}>Por Día</option>
-                            <option value="week" {% if request.GET.table_view == 'week' %}selected{% endif %}>Por Semana</option>
-                            <option value="month" {% if request.GET.table_view == 'month' %}selected{% endif %}>Por Mes</option>
-                            <option value="year" {% if request.GET.table_view == 'year' %}selected{% endif %}>Por Año</option>
+                            <option value="day" {% if request.GET.table_view == 'day' or not request.GET.table_view %}selected{% endif %}>{% translate "Por Día" %}</option>
+                            <option value="week" {% if request.GET.table_view == 'week' %}selected{% endif %}>{% translate "Por Semana" %}</option>
+                            <option value="month" {% if request.GET.table_view == 'month' %}selected{% endif %}>{% translate "Por Mes" %}</option>
+                            <option value="year" {% if request.GET.table_view == 'year' %}selected{% endif %}>{% translate "Por Año" %}</option>
                         </select>
                     </div>
                     
                     <div>
-                        <label class="form-label mb-0" style="font-size: 0.75rem;">Usuario</label>
+                        <label class="form-label mb-0" style="font-size: 0.75rem;">{% translate "Usuario" %}</label>
                         <select name="table_user" class="form-select form-select-sm" onchange="this.form.submit()">
-                            <option value="all" {% if request.GET.table_user == 'all' or not request.GET.table_user %}selected{% endif %}>Todos</option>
-                            <option value="me" {% if request.GET.table_user == 'me' %}selected{% endif %}>Mis Contactos</option>
+                            <option value="all" {% if request.GET.table_user == 'all' or not request.GET.table_user %}selected{% endif %}>{% translate "Todos" %}</option>
+                            <option value="me" {% if request.GET.table_user == 'me' %}selected{% endif %}>{% translate "Mis Contactos" %}</option>
                         </select>
                     </div>
                     
                     {% if request.GET.table_view == 'day' or not request.GET.table_view %}
                     <div>
-                        <label class="form-label mb-0" style="font-size: 0.75rem;">Período (días)</label>
+                        <label class="form-label mb-0" style="font-size: 0.75rem;">{% translate "Período (días)" %}</label>
                         <select name="table_days" class="form-select form-select-sm" onchange="this.form.submit()">
-                            <option value="7" {% if request.GET.table_days == '7' %}selected{% endif %}>7 días</option>
-                            <option value="15" {% if request.GET.table_days == '15' %}selected{% endif %}>15 días</option>
-                            <option value="30" {% if request.GET.table_days == '30' or not request.GET.table_days %}selected{% endif %}>30 días</option>
-                            <option value="60" {% if request.GET.table_days == '60' %}selected{% endif %}>60 días</option>
-                            <option value="90" {% if request.GET.table_days == '90' %}selected{% endif %}>90 días</option>
+                            <option value="7" {% if request.GET.table_days == '7' %}selected{% endif %}>{% translate "7 días" %}</option>
+                            <option value="15" {% if request.GET.table_days == '15' %}selected{% endif %}>{% translate "15 días" %}</option>
+                            <option value="30" {% if request.GET.table_days == '30' or not request.GET.table_days %}selected{% endif %}>{% translate "30 días" %}</option>
+                            <option value="60" {% if request.GET.table_days == '60' %}selected{% endif %}>{% translate "60 días" %}</option>
+                            <option value="90" {% if request.GET.table_days == '90' %}selected{% endif %}>{% translate "90 días" %}</option>
                         </select>
                     </div>
                     {% endif %}
                     
                     {% if request.GET.table_view == 'week' %}
                     <div>
-                        <label class="form-label mb-0" style="font-size: 0.75rem;">Período (semanas)</label>
+                        <label class="form-label mb-0" style="font-size: 0.75rem;">{% translate "Período (semanas)" %}</label>
                         <select name="table_weeks" class="form-select form-select-sm" onchange="this.form.submit()">
-                            <option value="4" {% if request.GET.table_weeks == '4' %}selected{% endif %}>4 semanas</option>
-                            <option value="8" {% if request.GET.table_weeks == '8' %}selected{% endif %}>8 semanas</option>
-                            <option value="12" {% if request.GET.table_weeks == '12' or not request.GET.table_weeks %}selected{% endif %}>12 semanas</option>
-                            <option value="26" {% if request.GET.table_weeks == '26' %}selected{% endif %}>26 semanas</option>
-                            <option value="52" {% if request.GET.table_weeks == '52' %}selected{% endif %}>52 semanas</option>
+                            <option value="4" {% if request.GET.table_weeks == '4' %}selected{% endif %}>{% translate "4 semanas" %}</option>
+                            <option value="8" {% if request.GET.table_weeks == '8' %}selected{% endif %}>{% translate "8 semanas" %}</option>
+                            <option value="12" {% if request.GET.table_weeks == '12' or not request.GET.table_weeks %}selected{% endif %}>{% translate "12 semanas" %}</option>
+                            <option value="26" {% if request.GET.table_weeks == '26' %}selected{% endif %}>{% translate "26 semanas" %}</option>
+                            <option value="52" {% if request.GET.table_weeks == '52' %}selected{% endif %}>{% translate "52 semanas" %}</option>
                         </select>
                     </div>
                     {% endif %}
                     
                     {% if request.GET.table_view == 'month' %}
                     <div>
-                        <label class="form-label mb-0" style="font-size: 0.75rem;">Año</label>
+                        <label class="form-label mb-0" style="font-size: 0.75rem;">{% translate "Año" %}</label>
                         <select name="table_year" class="form-select form-select-sm" onchange="this.form.submit()">
                             {% for year in available_years %}
                                 <option value="{{ year }}" {% if request.GET.table_year == year|stringformat:"s" or not request.GET.table_year and year == current_year %}selected{% endif %}>{{ year }}</option>
@@ -1096,38 +1097,38 @@
                 <table class="table table-sm table-hover mb-0">
                     <thead class="table-light sticky-top">
                         <tr>
-                            <th class="text-center" style="min-width: 100px;">Fecha</th>
+                            <th class="text-center" style="min-width: 100px;">{% translate "Fecha" %}</th>
                             <th class="text-center" style="min-width: 80px;">
                                 <i class="bi bi-slash-circle-fill text-dark"></i><br>
-                                <small>No Contactar</small>
+                                <small>{% translate "No Contactar" %}</small>
                             </th>
                             <th class="text-center" style="min-width: 80px;">
                                 <i class="bi bi-emoji-frown-fill text-danger"></i><br>
-                                <small>Negativos</small>
+                                <small>{% translate "Negativos" %}</small>
                             </th>
                             <th class="text-center" style="min-width: 80px;">
                                 <i class="bi bi-clock-fill text-warning"></i><br>
-                                <small>No Ahora</small>
+                                <small>{% translate "No Ahora" %}</small>
                             </th>
                             <th class="text-center" style="min-width: 80px;">
                                 <i class="bi bi-emoji-neutral-fill text-info"></i><br>
-                                <small>Neutros</small>
+                                <small>{% translate "Neutros" %}</small>
                             </th>
                             <th class="text-center" style="min-width: 80px;">
                                 <i class="bi bi-emoji-smile-fill" style="color: #5cb85c;"></i><br>
-                                <small>Positivos</small>
+                                <small>{% translate "Positivos" %}</small>
                             </th>
                             <th class="text-center" style="min-width: 80px;">
                                 <i class="bi bi-trophy-fill" style="color: #2d8659;"></i><br>
-                                <small>Ganados</small>
+                                <small>{% translate "Ganados" %}</small>
                             </th>
                             <th class="text-center" style="min-width: 90px;">
                                 <i class="bi bi-people-fill text-primary"></i><br>
-                                <small>Contactados</small>
+                                <small>{% translate "Contactados" %}</small>
                             </th>
                             <th class="text-center" style="min-width: 90px;">
                                 <i class="bi bi-percent text-success"></i><br>
-                                <small>Tasa Conv.</small>
+                                <small>{% translate "Tasa Conv." %}</small>
                             </th>
                         </tr>
                     </thead>
@@ -1198,14 +1199,14 @@
                         {% empty %}
                         <tr>
                             <td colspan="9" class="text-center text-muted py-3">
-                                <i class="bi bi-inbox"></i> No hay datos para mostrar
+                                <i class="bi bi-inbox"></i> {% translate "No hay datos para mostrar" %}
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                     <tfoot class="table-light">
                         <tr style="font-weight: bold; border-top: 2px solid #dee2e6;">
-                            <td class="text-center">TOTALES</td>
+                            <td class="text-center">{% translate "TOTALES" %}</td>
                             <td class="text-center">
                                 <span class="badge bg-dark">{{ table_totals.do_not_contact }}</span>
                             </td>
@@ -1241,50 +1242,50 @@
     <div class="card mb-4" id="filtersSection">
         <div class="card-header">
             <h5 class="mb-0">
-                <i class="bi bi-funnel"></i> Filtros
+                <i class="bi bi-funnel"></i> {% translate "Filtros" %}
             </h5>
         </div>
         <div class="card-body">
             <form method="GET" class="row">
                 <div class="col-md-2 mb-3">
-                    <label for="search" class="form-label">Buscar</label>
+                    <label for="search" class="form-label">{% translate "Buscar" %}</label>
                     <input type="text" class="form-control" id="search" name="search" 
                            value="{{ request.GET.search }}" 
-                           placeholder="Nombre, email, empresa...">
+                           placeholder="{% translate 'Nombre, email, empresa...' %}">
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label for="status" class="form-label">Estado</label>
+                    <label for="status" class="form-label">{% translate "Estado" %}</label>
                     <select class="form-select" id="status" name="status">
-                        <option value="">Todos</option>
-                        <option value="positive" {% if request.GET.status == 'positive' %}selected{% endif %}>Positivo</option>
-                        <option value="negative" {% if request.GET.status == 'negative' %}selected{% endif %}>Negativo</option>
+                        <option value="">{% translate "Todos" %}</option>
+                        <option value="positive" {% if request.GET.status == 'positive' %}selected{% endif %}>{% translate "Positivo" %}</option>
+                        <option value="negative" {% if request.GET.status == 'negative' %}selected{% endif %}>{% translate "Negativo" %}</option>
                     </select>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label for="has_activity" class="form-label">Actividades</label>
+                    <label for="has_activity" class="form-label">{% translate "Actividades" %}</label>
                     <select class="form-select" id="has_activity" name="has_activity">
-                        <option value="">Todos</option>
-                        <option value="yes" {% if request.GET.has_activity == 'yes' %}selected{% endif %}>Con actividades</option>
-                        <option value="no" {% if request.GET.has_activity == 'no' %}selected{% endif %}>Sin actividades</option>
+                        <option value="">{% translate "Todos" %}</option>
+                        <option value="yes" {% if request.GET.has_activity == 'yes' %}selected{% endif %}>{% translate "Con actividades" %}</option>
+                        <option value="no" {% if request.GET.has_activity == 'no' %}selected{% endif %}>{% translate "Sin actividades" %}</option>
                     </select>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label for="date_from" class="form-label">Desde</label>
+                    <label for="date_from" class="form-label">{% translate "Desde" %}</label>
                     <input type="date" class="form-control" id="date_from" name="date_from" 
                            value="{{ request.GET.date_from }}">
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label for="date_to" class="form-label">Hasta</label>
+                    <label for="date_to" class="form-label">{% translate "Hasta" %}</label>
                     <input type="date" class="form-control" id="date_to" name="date_to" 
                            value="{{ request.GET.date_to }}">
                 </div>
                 <div class="col-md-2 mb-3 d-flex align-items-end">
                     <div class="d-flex gap-1 w-100">
                         <button type="submit" class="btn btn-primary btn-sm">
-                            <i class="bi bi-search"></i> Buscar
+                            <i class="bi bi-search"></i> {% translate "Buscar" %}
                         </button>
                         <a href="{% url 'contact_list' %}" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-arrow-clockwise"></i> Limpiar
+                            <i class="bi bi-arrow-clockwise"></i> {% translate "Limpiar" %}
                         </a>
                     </div>
                 </div>
@@ -1296,11 +1297,11 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <div>
-                <h5 class="mb-0">Contactos</h5>
+                <h5 class="mb-0">{% translate "Contactos" %}</h5>
                 <small class="text-muted">
                     {% if short_url_kpi_stats %}
                         <i class="bi bi-link-45deg text-success"></i>
-                        <strong>URLs KPI:</strong>
+                        <strong>{% translate "URLs KPI:" %}</strong>
                         {% for url_stat in short_url_kpi_stats %}
                             <span class="badge bg-success ms-1" title="{{ url_stat.title }}">
                                 {{ url_stat.short_code }}: {{ url_stat.clicks_today }} / {{ url_stat.clicks_total }}
@@ -1309,7 +1310,7 @@
                         <span class="text-dark ms-2">|</span>
                     {% endif %}
                     <i class="bi bi-person-check text-primary"></i>
-                    <strong>Contactos:</strong>
+                    <strong>{% translate "Contactos:" %}</strong>
                     <span class="badge bg-secondary ms-1">Total: {{ contacts_stats_total }}</span>
                     <span class="badge bg-info ms-1">Año: {{ contacts_stats_year }}</span>
                     <span class="badge bg-primary ms-1">Mes: {{ contacts_stats_month }}</span>
@@ -1318,7 +1319,7 @@
                     <span class="badge bg-warning text-dark ms-1">Última Hora: {{ contacts_stats_hour }}</span>
                     {% if contacts_today_by_user %}
                         <span class="text-dark ms-2">|</span>
-                        <strong class="ms-2">Hoy por usuario:</strong>
+                        <strong class="ms-2">{% translate "Hoy por usuario:" %}</strong>
                         {% for user_contact in contacts_today_by_user %}
                             <span class="text-dark ms-1">{{ user_contact.username }} {{ user_contact.count }}{% if not forloop.last %},{% endif %}</span>
                         {% endfor %}
@@ -1327,7 +1328,7 @@
             </div>
             <div>
                 <a href="{% url 'contact_stage_tracking' %}" class="btn btn-sm btn-primary me-2">
-                    <i class="fas fa-chart-line"></i> Etapas
+                    <i class="fas fa-chart-line"></i> {% translate "Etapas" %}
                 </a>
                 <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#columnConfigModal">
                     <i class="bi bi-gear"></i> CC
@@ -1340,18 +1341,18 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th class="col-contacto">Contacto</th>
-                                <th class="col-estado">Estado</th>
-                                <th class="col-etapa">Etapa</th>
-                                <th class="col-empresa">Empresa</th>
-                                <th class="col-tamano">Tamaño</th>
-                                <th class="col-pais">País</th>
+                                <th class="col-contacto">{% translate "Contacto" %}</th>
+                                <th class="col-estado">{% translate "Estado" %}</th>
+                                <th class="col-etapa">{% translate "Etapa" %}</th>
+                                <th class="col-empresa">{% translate "Empresa" %}</th>
+                                <th class="col-tamano">{% translate "Tamaño" %}</th>
+                                <th class="col-pais">{% translate "País" %}</th>
                                 <th class="col-erp">ERP</th>
-                                <th class="col-actividades">Actividades</th>
-                                <th class="col-reunion">Reunión</th>
-                                <th class="col-fecha">Fecha</th>
-                                <th class="col-fuente">Fuente</th>
-                                <th class="col-creado-por text-center">Asignado</th>
+                                <th class="col-actividades">{% translate "Actividades" %}</th>
+                                <th class="col-reunion">{% translate "Reunión" %}</th>
+                                <th class="col-fecha">{% translate "Fecha" %}</th>
+                                <th class="col-fuente">{% translate "Fuente" %}</th>
+                                <th class="col-creado-por text-center">{% translate "Asignado" %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1409,7 +1410,7 @@
                                     {% if contact.stage %}
                                         <span class="badge bg-primary" title="{{ contact.get_stage_display }}">
                                             <i class="bi bi-ladder"></i>
-                                            {% if contact.stage == 'stage_1' %}1er{% elif contact.stage == 'stage_2' %}2do{% elif contact.stage == 'stage_3' %}3er{% elif contact.stage == 'stage_4' %}4to{% elif contact.stage == 'stage_5' %}5to{% elif contact.stage == 'stage_6' %}6to{% elif contact.stage == 'stage_7' %}7mo{% elif contact.stage == 'stage_8' %}8vo{% endif %}
+                                            {% if contact.stage == 'stage_1' %}{% translate "1er" %}{% elif contact.stage == 'stage_2' %}{% translate "2do" %}{% elif contact.stage == 'stage_3' %}{% translate "3er" %}{% elif contact.stage == 'stage_4' %}{% translate "4to" %}{% elif contact.stage == 'stage_5' %}{% translate "5to" %}{% elif contact.stage == 'stage_6' %}{% translate "6to" %}{% elif contact.stage == 'stage_7' %}{% translate "7mo" %}{% elif contact.stage == 'stage_8' %}{% translate "8vo" %}{% endif %}
                                         </span>
                                     {% else %}
                                         <span class="text-muted">-</span>
@@ -1419,11 +1420,11 @@
                                 <td class="col-tamano">
                                     {% if contact.company_size %}
                                         {% if contact.company_size == 'small' %}
-                                            <span class="badge bg-secondary"><i class="bi bi-building"></i> Pequeña</span>
+                                            <span class="badge bg-secondary"><i class="bi bi-building"></i> {% translate "Pequeña" %}</span>
                                         {% elif contact.company_size == 'medium' %}
-                                            <span class="badge bg-primary"><i class="bi bi-building"></i> Mediana</span>
+                                            <span class="badge bg-primary"><i class="bi bi-building"></i> {% translate "Mediana" %}</span>
                                         {% elif contact.company_size == 'large' %}
-                                            <span class="badge bg-success"><i class="bi bi-buildings"></i> Grande</span>
+                                            <span class="badge bg-success"><i class="bi bi-buildings"></i> {% translate "Grande" %}</span>
                                         {% endif %}
                                     {% else %}
                                         <span class="text-muted">-</span>
@@ -1442,7 +1443,7 @@
                                         <div class="activity-info">
                                             <div class="d-flex align-items-center justify-content-center mb-1">
                                                 <span class="badge bg-success me-1">{{ contact.activity_count }}</span>
-                                                <i class="bi bi-telephone-fill text-success" title="Tiene actividades programadas"></i>
+                                                <i class="bi bi-telephone-fill text-success" title="{% translate 'Tiene actividades programadas' %}"></i>
                                             </div>
                                             {% if contact.next_activity_date %}
                                                 <small class="activity-date text-muted">
@@ -1455,7 +1456,7 @@
                                             {% else %}
                                                 <small class="activity-date text-warning">
                                                     <i class="bi bi-exclamation-circle"></i>
-                                                    Sin fecha futura
+                                                    {% translate "Sin fecha futura" %}
                                                 </small>
                                             {% endif %}
                                         </div>
@@ -1463,10 +1464,10 @@
                                         <div class="activity-info">
                                             <div class="d-flex align-items-center justify-content-center">
                                                 <span class="badge bg-light text-muted me-1">0</span>
-                                                <i class="bi bi-telephone-x text-muted" title="Sin actividades"></i>
+                                                <i class="bi bi-telephone-x text-muted" title="{% translate 'Sin actividades' %}"></i>
                                             </div>
                                             <small class="activity-date text-muted">
-                                                Sin actividades
+                                                {% translate "Sin actividades" %}
                                             </small>
                                         </div>
                                     {% endif %}
@@ -1474,7 +1475,7 @@
                                 <td class="col-reunion text-center">
                                     {% if contact.had_meeting %}
                                         <div>
-                                            <i class="bi bi-calendar-check-fill text-success" style="font-size: 1.2rem;" title="Reunión realizada"></i>
+                                            <i class="bi bi-calendar-check-fill text-success" style="font-size: 1.2rem;" title="{% translate 'Reunión realizada' %}"></i>
                                             {% if contact.meeting_date %}
                                                 <br><small class="text-muted">{{ contact.meeting_date|date:"d/m/Y" }}</small>
                                             {% endif %}
@@ -1511,14 +1512,14 @@
 
                 <!-- Paginación -->
                 {% if page_obj.has_other_pages %}
-                <nav aria-label="Paginación de contactos">
+                <nav aria-label="{% translate 'Paginación de contactos' %}">
                     <ul class="pagination justify-content-center">
                         {% if page_obj.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="?page=1">Primera</a>
+                                <a class="page-link" href="?page=1">{% translate "Primera" %}</a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{% translate "Anterior" %}</a>
                             </li>
                         {% endif %}
 
@@ -1530,10 +1531,10 @@
 
                         {% if page_obj.has_next %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">{% translate "Siguiente" %}</a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">{% translate "Última" %}</a>
                             </li>
                         {% endif %}
                     </ul>
@@ -1542,10 +1543,10 @@
             {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-person-x display-1 text-muted"></i>
-                    <h3 class="mt-3">No hay contactos</h3>
-                    <p class="text-muted">No se encontraron contactos que coincidan con los filtros.</p>
+                    <h3 class="mt-3">{% translate "No hay contactos" %}</h3>
+                    <p class="text-muted">{% translate "No se encontraron contactos que coincidan con los filtros." %}</p>
                     <a href="{% url 'contact_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear Primer Contacto
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Primer Contacto" %}
                     </a>
                 </div>
             {% endif %}
@@ -1559,20 +1560,20 @@
         <div class="modal-content">
             <div class="modal-header bg-secondary text-white">
                 <h5 class="modal-title" id="columnConfigModalLabel">
-                    <i class="bi bi-gear"></i> Configurar Columnas
+                    <i class="bi bi-gear"></i> {% translate "Configurar Columnas" %}
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
             </div>
             <div class="modal-body">
                 <p class="text-muted small mb-3">
-                    <i class="bi bi-info-circle"></i> Selecciona las columnas que deseas mostrar. Tu configuración se guardará automáticamente.
+                    <i class="bi bi-info-circle"></i> {% translate "Selecciona las columnas que deseas mostrar. Tu configuración se guardará automáticamente." %}
                 </p>
                 <div class="d-flex justify-content-between mb-3">
                     <button type="button" class="btn btn-sm btn-success" id="selectAllColumns">
-                        <i class="bi bi-check-all"></i> Seleccionar Todas
+                        <i class="bi bi-check-all"></i> {% translate "Seleccionar Todas" %}
                     </button>
                     <button type="button" class="btn btn-sm btn-warning" id="deselectAllColumns">
-                        <i class="bi bi-x-lg"></i> Deseleccionar Todas
+                        <i class="bi bi-x-lg"></i> {% translate "Deseleccionar Todas" %}
                     </button>
                 </div>
                 <div class="row">
@@ -1581,7 +1582,7 @@
                             <div class="form-check">
                                 <input class="form-check-input column-toggle" type="checkbox" value="contacto" id="col-contacto" checked disabled>
                                 <label class="form-check-label" for="col-contacto">
-                                    <strong>Contacto</strong> <span class="badge bg-primary">Obligatorio</span>
+                                    <strong>{% translate "Contacto" %}</strong> <span class="badge bg-primary">{% translate "Obligatorio" %}</span>
                                 </label>
                             </div>
                         </div>
@@ -1589,7 +1590,7 @@
                             <div class="form-check">
                                 <input class="form-check-input column-toggle" type="checkbox" value="estado" id="col-estado" checked>
                                 <label class="form-check-label" for="col-estado">
-                                    Estado
+                                    {% translate "Estado" %}
                                 </label>
                             </div>
                         </div>
@@ -1597,7 +1598,7 @@
                             <div class="form-check">
                                 <input class="form-check-input column-toggle" type="checkbox" value="etapa" id="col-etapa" checked>
                                 <label class="form-check-label" for="col-etapa">
-                                    Etapa
+                                    {% translate "Etapa" %}
                                 </label>
                             </div>
                         </div>
@@ -1605,7 +1606,7 @@
                             <div class="form-check">
                                 <input class="form-check-input column-toggle" type="checkbox" value="empresa" id="col-empresa" checked>
                                 <label class="form-check-label" for="col-empresa">
-                                    Empresa
+                                    {% translate "Empresa" %}
                                 </label>
                             </div>
                         </div>
@@ -1613,7 +1614,7 @@
                             <div class="form-check">
                                 <input class="form-check-input column-toggle" type="checkbox" value="tamano" id="col-tamano" checked>
                                 <label class="form-check-label" for="col-tamano">
-                                    Tamaño
+                                    {% translate "Tamaño" %}
                                 </label>
                             </div>
                         </div>
@@ -1621,7 +1622,7 @@
                             <div class="form-check">
                                 <input class="form-check-input column-toggle" type="checkbox" value="pais" id="col-pais" checked>
                                 <label class="form-check-label" for="col-pais">
-                                    País
+                                    {% translate "País" %}
                                 </label>
                             </div>
                         </div>
@@ -1637,7 +1638,7 @@
                             <div class="form-check">
                                 <input class="form-check-input column-toggle" type="checkbox" value="actividades" id="col-actividades" checked>
                                 <label class="form-check-label" for="col-actividades">
-                                    Actividades
+                                    {% translate "Actividades" %}
                                 </label>
                             </div>
                         </div>
@@ -1645,7 +1646,7 @@
                             <div class="form-check">
                                 <input class="form-check-input column-toggle" type="checkbox" value="reunion" id="col-reunion" checked>
                                 <label class="form-check-label" for="col-reunion">
-                                    Reunión
+                                    {% translate "Reunión" %}
                                 </label>
                             </div>
                         </div>
@@ -1653,7 +1654,7 @@
                             <div class="form-check">
                                 <input class="form-check-input column-toggle" type="checkbox" value="fecha" id="col-fecha" checked>
                                 <label class="form-check-label" for="col-fecha">
-                                    Fecha
+                                    {% translate "Fecha" %}
                                 </label>
                             </div>
                         </div>
@@ -1661,7 +1662,7 @@
                             <div class="form-check">
                                 <input class="form-check-input column-toggle" type="checkbox" value="fuente" id="col-fuente" checked>
                                 <label class="form-check-label" for="col-fuente">
-                                    Fuente
+                                    {% translate "Fuente" %}
                                 </label>
                             </div>
                         </div>
@@ -1669,7 +1670,7 @@
                             <div class="form-check">
                                 <input class="form-check-input column-toggle" type="checkbox" value="creado-por" id="col-creado-por" checked>
                                 <label class="form-check-label" for="col-creado-por">
-                                    Asignado
+                                    {% translate "Asignado" %}
                                 </label>
                             </div>
                         </div>
@@ -1677,7 +1678,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cerrar" %}</button>
             </div>
         </div>
     </div>

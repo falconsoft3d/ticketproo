@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}{% if invoice %}Editar Factura{% else %}Nueva Factura{% endif %}{% endblock %}
+{% block title %}{% if invoice %}{% translate "Editar Factura" %}{% else %}{% translate "Nueva Factura" %}{% endif %}{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -23,10 +24,10 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>
                     <i class="bi bi-receipt"></i> 
-                    {% if invoice %}Editar Factura: {{ invoice.sequence }}{% else %}Nueva Factura{% endif %}
+                    {% if invoice %}Editar Factura: {{ invoice.sequence }}{% else %}{% translate "Nueva Factura" %}{% endif %}
                 </h2>
                 <a href="{% url 'invoice_list' %}" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> Volver
+                    <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                 </a>
             </div>
 
@@ -36,35 +37,35 @@
                 <!-- Datos de la cabecera -->
                 <div class="card mb-4">
                     <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="bi bi-file-text"></i> Datos de la Factura</h5>
+                        <h5 class="mb-0"><i class="bi bi-file-text"></i> {% translate "Datos de la Factura" %}</h5>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             {% if invoice %}
                             <div class="col-md-4 mb-3">
-                                <label for="sequence" class="form-label">Número de Factura <span class="text-danger">*</span></label>
+                                <label for="sequence" class="form-label">{% translate "Número de Factura" %} <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="sequence" name="sequence" value="{{ invoice.sequence }}" required>
                             </div>
                             <div class="col-md-2 mb-3">
-                                <label for="currency" class="form-label">Moneda <span class="text-danger">*</span></label>
+                                <label for="currency" class="form-label">{% translate "Moneda" %} <span class="text-danger">*</span></label>
                                 <select class="form-select" id="currency" name="currency" required>
-                                    <option value="USD" {% if invoice.currency == 'USD' %}selected{% endif %}>USD ($)</option>
-                                    <option value="EUR" {% if invoice.currency == 'EUR' %}selected{% endif %}>EUR (€)</option>
-                                    <option value="GBP" {% if invoice.currency == 'GBP' %}selected{% endif %}>GBP (£)</option>
-                                    <option value="JPY" {% if invoice.currency == 'JPY' %}selected{% endif %}>JPY (¥)</option>
-                                    <option value="CAD" {% if invoice.currency == 'CAD' %}selected{% endif %}>CAD (C$)</option>
-                                    <option value="AUD" {% if invoice.currency == 'AUD' %}selected{% endif %}>AUD (A$)</option>
+                                    <option value="USD" {% if invoice.currency == 'USD' %}selected{% endif %}>{% translate "USD ($)" %}</option>
+                                    <option value="EUR" {% if invoice.currency == 'EUR' %}selected{% endif %}>{% translate "EUR (€)" %}</option>
+                                    <option value="GBP" {% if invoice.currency == 'GBP' %}selected{% endif %}>{% translate "GBP (£)" %}</option>
+                                    <option value="JPY" {% if invoice.currency == 'JPY' %}selected{% endif %}>{% translate "JPY (¥)" %}</option>
+                                    <option value="CAD" {% if invoice.currency == 'CAD' %}selected{% endif %}>{% translate "CAD (C$)" %}</option>
+                                    <option value="AUD" {% if invoice.currency == 'AUD' %}selected{% endif %}>{% translate "AUD (A$)" %}</option>
                                     <option value="CHF" {% if invoice.currency == 'CHF' %}selected{% endif %}>CHF</option>
-                                    <option value="CNY" {% if invoice.currency == 'CNY' %}selected{% endif %}>CNY (¥)</option>
-                                    <option value="MXN" {% if invoice.currency == 'MXN' %}selected{% endif %}>MXN ($)</option>
-                                    <option value="COP" {% if invoice.currency == 'COP' %}selected{% endif %}>COP ($)</option>
+                                    <option value="CNY" {% if invoice.currency == 'CNY' %}selected{% endif %}>{% translate "CNY (¥)" %}</option>
+                                    <option value="MXN" {% if invoice.currency == 'MXN' %}selected{% endif %}>{% translate "MXN ($)" %}</option>
+                                    <option value="COP" {% if invoice.currency == 'COP' %}selected{% endif %}>{% translate "COP ($)" %}</option>
                                 </select>
                             </div>
                             {% endif %}
                             <div class="{% if invoice %}col-md-6{% else %}col-md-6{% endif %} mb-3">
-                                <label for="company" class="form-label">Cliente/Empresa <span class="text-danger">*</span></label>
+                                <label for="company" class="form-label">{% translate "Cliente/Empresa" %} <span class="text-danger">*</span></label>
                                 <select class="form-select" id="company" name="company" required>
-                                    <option value="">Seleccione una empresa</option>
+                                    <option value="">{% translate "Seleccione una empresa" %}</option>
                                     {% for company in companies %}
                                         <option value="{{ company.id }}" 
                                             {% if invoice and invoice.company.id == company.id %}selected{% endif %}>
@@ -75,56 +76,56 @@
                             </div>
                             
                             <div class="col-md-3 mb-3">
-                                <label for="invoice_date" class="form-label">Fecha de Factura <span class="text-danger">*</span></label>
+                                <label for="invoice_date" class="form-label">{% translate "Fecha de Factura" %} <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="invoice_date" name="invoice_date" 
                                        value="{% if invoice %}{{ invoice.invoice_date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}" required>
                             </div>
                             
                             <div class="col-md-3 mb-3">
-                                <label for="due_date" class="form-label">Fecha de Vencimiento</label>
+                                <label for="due_date" class="form-label">{% translate "Fecha de Vencimiento" %}</label>
                                 <input type="date" class="form-control" id="due_date" name="due_date" 
                                        value="{% if invoice and invoice.due_date %}{{ invoice.due_date|date:'Y-m-d' }}{% endif %}">
                             </div>
                             
                             {% if not invoice %}
                             <div class="col-md-6 mb-3">
-                                <label for="currency" class="form-label">Moneda <span class="text-danger">*</span></label>
+                                <label for="currency" class="form-label">{% translate "Moneda" %} <span class="text-danger">*</span></label>
                                 <select class="form-select" id="currency" name="currency" required>
-                                    <option value="USD" selected>Dólar Americano ($)</option>
-                                    <option value="EUR">Euro (€)</option>
-                                    <option value="GBP">Libra Esterlina (£)</option>
-                                    <option value="JPY">Yen Japonés (¥)</option>
-                                    <option value="CAD">Dólar Canadiense (C$)</option>
-                                    <option value="AUD">Dólar Australiano (A$)</option>
-                                    <option value="CHF">Franco Suizo (CHF)</option>
-                                    <option value="CNY">Yuan Chino (¥)</option>
-                                    <option value="MXN">Peso Mexicano ($)</option>
-                                    <option value="COP">Peso Colombiano ($)</option>
+                                    <option value="USD" selected>{% translate "Dólar Americano ($)" %}</option>
+                                    <option value="EUR">{% translate "Euro (€)" %}</option>
+                                    <option value="GBP">{% translate "Libra Esterlina (£)" %}</option>
+                                    <option value="JPY">{% translate "Yen Japonés (¥)" %}</option>
+                                    <option value="CAD">{% translate "Dólar Canadiense (C$)" %}</option>
+                                    <option value="AUD">{% translate "Dólar Australiano (A$)" %}</option>
+                                    <option value="CHF">{% translate "Franco Suizo (CHF)" %}</option>
+                                    <option value="CNY">{% translate "Yuan Chino (¥)" %}</option>
+                                    <option value="MXN">{% translate "Peso Mexicano ($)" %}</option>
+                                    <option value="COP">{% translate "Peso Colombiano ($)" %}</option>
                                 </select>
                             </div>
                             {% endif %}
                             
                             {% if invoice %}
                             <div class="col-md-12 mb-3">
-                                <label for="status" class="form-label">Estado</label>
+                                <label for="status" class="form-label">{% translate "Estado" %}</label>
                                 <select class="form-select" id="status" name="status">
-                                    <option value="draft" {% if invoice.status == 'draft' %}selected{% endif %}>Borrador</option>
-                                    <option value="sent" {% if invoice.status == 'sent' %}selected{% endif %}>Enviada</option>
-                                    <option value="paid" {% if invoice.status == 'paid' %}selected{% endif %}>Pagada</option>
-                                    <option value="cancelled" {% if invoice.status == 'cancelled' %}selected{% endif %}>Cancelada</option>
+                                    <option value="draft" {% if invoice.status == 'draft' %}selected{% endif %}>{% translate "Borrador" %}</option>
+                                    <option value="sent" {% if invoice.status == 'sent' %}selected{% endif %}>{% translate "Enviada" %}</option>
+                                    <option value="paid" {% if invoice.status == 'paid' %}selected{% endif %}>{% translate "Pagada" %}</option>
+                                    <option value="cancelled" {% if invoice.status == 'cancelled' %}selected{% endif %}>{% translate "Cancelada" %}</option>
                                 </select>
                             </div>
                             {% endif %}
                             
                             <div class="col-md-12 mb-3">
-                                <label for="notes" class="form-label">Notas</label>
+                                <label for="notes" class="form-label">{% translate "Notas" %}</label>
                                 <textarea class="form-control" id="notes" name="notes" rows="3">{% if invoice %}{{ invoice.notes }}{% endif %}</textarea>
                             </div>
                             
                             <div class="col-md-12 mb-3">
-                                <label for="footer_message" class="form-label">Mensaje al pie de la factura</label>
+                                <label for="footer_message" class="form-label">{% translate "Mensaje al pie de la factura" %}</label>
                                 <textarea class="form-control" id="footer_message" name="footer_message" rows="3" placeholder="Ej: Condiciones de pago, términos y condiciones, información bancaria...">{% if invoice %}{{ invoice.footer_message }}{% endif %}</textarea>
-                                <small class="text-muted">Este mensaje aparecerá al final del PDF de la factura</small>
+                                <small class="text-muted">{% translate "Este mensaje aparecerá al final del PDF de la factura" %}</small>
                             </div>
                         </div>
                     </div>
@@ -133,9 +134,9 @@
                 <!-- Líneas de la factura -->
                 <div class="card mb-4">
                     <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Líneas de Factura</h5>
+                        <h5 class="mb-0"><i class="bi bi-list-ul"></i> {% translate "Líneas de Factura" %}</h5>
                         <button type="button" class="btn btn-sm btn-light" id="addLine">
-                            <i class="bi bi-plus-circle"></i> Agregar Línea
+                            <i class="bi bi-plus-circle"></i> {% translate "Agregar Línea" %}
                         </button>
                     </div>
                     <div class="card-body">
@@ -145,9 +146,9 @@
                                 <div class="line-row">
                                     <div class="row">
                                         <div class="col-md-4 mb-2">
-                                            <label class="form-label">Producto <span class="text-danger">*</span></label>
+                                            <label class="form-label">{% translate "Producto" %} <span class="text-danger">*</span></label>
                                             <select class="form-select product-select" name="product_id[]" required>
-                                                <option value="">Seleccione un producto</option>
+                                                <option value="">{% translate "Seleccione un producto" %}</option>
                                                 {% for product in products %}
                                                     <option value="{{ product.id }}" 
                                                         data-price="{{ product.price }}"
@@ -158,29 +159,29 @@
                                             </select>
                                         </div>
                                         <div class="col-md-2 mb-2">
-                                            <label class="form-label">Cantidad</label>
+                                            <label class="form-label">{% translate "Cantidad" %}</label>
                                             <input type="number" class="form-control quantity-input" name="quantity[]" 
                                                    value="{{ line.quantity|stringformat:'s' }}" step="0.01" min="0.01" required>
                                         </div>
                                         <div class="col-md-2 mb-2">
-                                            <label class="form-label">Precio Unit.</label>
+                                            <label class="form-label">{% translate "Precio Unit." %}</label>
                                             <input type="number" class="form-control price-input" name="unit_price[]" 
                                                    value="{{ line.unit_price|stringformat:'s' }}" step="0.01" min="0" required>
                                         </div>
                                         <div class="col-md-2 mb-2">
-                                            <label class="form-label">% Impuesto</label>
+                                            <label class="form-label">{% translate "% Impuesto" %}</label>
                                             <input type="number" class="form-control tax-input" name="tax_rate[]" 
                                                    value="{{ line.tax_rate|stringformat:'s' }}" step="0.01" min="0" max="100">
                                         </div>
                                         <div class="col-md-2 mb-2">
                                             <button type="button" class="btn btn-danger btn-sm btn-remove-line w-100">
-                                                <i class="bi bi-trash"></i> Eliminar
+                                                <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                                             </button>
                                         </div>
                                         <div class="col-md-12 mb-2">
-                                            <label class="form-label">Descripción adicional</label>
+                                            <label class="form-label">{% translate "Descripción adicional" %}</label>
                                             <input type="text" class="form-control" name="description[]" 
-                                                   value="{{ line.description }}" placeholder="Descripción opcional">
+                                                   value="{{ line.description }}" placeholder="{% translate 'Descripción opcional' %}">
                                         </div>
                                     </div>
                                 </div>
@@ -194,15 +195,15 @@
                             <div class="col-md-4">
                                 <table class="table table-sm">
                                     <tr>
-                                        <th>Subtotal:</th>
+                                        <th>{% translate "Subtotal:" %}</th>
                                         <td class="text-end" id="subtotalDisplay">$0.00</td>
                                     </tr>
                                     <tr>
-                                        <th>Impuestos:</th>
+                                        <th>{% translate "Impuestos:" %}</th>
                                         <td class="text-end" id="taxDisplay">$0.00</td>
                                     </tr>
                                     <tr class="table-primary">
-                                        <th>Total:</th>
+                                        <th>{% translate "Total:" %}</th>
                                         <th class="text-end" id="totalDisplay">$0.00</th>
                                     </tr>
                                 </table>
@@ -214,10 +215,10 @@
                 <!-- Botones de acción -->
                 <div class="d-flex justify-content-between">
                     <a href="{% url 'invoice_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-x-circle"></i> Cancelar
+                        <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                     </a>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save"></i> {% if invoice %}Actualizar{% else %}Crear{% endif %} Factura
+                        <i class="bi bi-save"></i> {% if invoice %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Factura" %}
                     </button>
                 </div>
             </form>

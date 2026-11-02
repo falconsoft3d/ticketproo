@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
 
@@ -11,7 +12,7 @@
                     <i class="bi bi-stopwatch"></i> {{ page_title }}
                 </h1>
                 <a href="{% url 'countdown_timer_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Nueva Cuenta Regresiva
+                    <i class="bi bi-plus-circle"></i> {% translate "Nueva Cuenta Regresiva" %}
                 </a>
             </div>
         </div>
@@ -27,7 +28,7 @@
                         <i class="bi bi-{% if countdown.is_expired %}exclamation-triangle{% else %}calendar-event{% endif %}"></i>
                         {{ countdown.title }}
                         {% if countdown.is_private %}
-                            <i class="bi bi-lock-fill ms-2" title="Cuenta regresiva privada"></i>
+                            <i class="bi bi-lock-fill ms-2" title="{% translate 'Cuenta regresiva privada' %}"></i>
                         {% endif %}
                     </h5>
                 </div>
@@ -37,7 +38,7 @@
                     {% endif %}
                     
                     <div class="mb-3">
-                        <strong>Fecha objetivo:</strong><br>
+                        <strong>{% translate "Fecha objetivo:" %}</strong><br>
                         <span class="text-muted">
                             <i class="bi bi-calendar3"></i> 
                             {{ countdown.target_date|date:"d/m/Y" }} a las {{ countdown.target_date|date:"H:i" }}
@@ -50,19 +51,19 @@
                             <div class="row">
                                 <div class="col-3">
                                     <div class="countdown-number days">0</div>
-                                    <small class="text-muted">días</small>
+                                    <small class="text-muted">{% translate "días" %}</small>
                                 </div>
                                 <div class="col-3">
                                     <div class="countdown-number hours">0</div>
-                                    <small class="text-muted">horas</small>
+                                    <small class="text-muted">{% translate "horas" %}</small>
                                 </div>
                                 <div class="col-3">
                                     <div class="countdown-number minutes">0</div>
-                                    <small class="text-muted">min</small>
+                                    <small class="text-muted">{% translate "min" %}</small>
                                 </div>
                                 <div class="col-3">
                                     <div class="countdown-number seconds">0</div>
-                                    <small class="text-muted">seg</small>
+                                    <small class="text-muted">{% translate "seg" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -71,7 +72,7 @@
                     <div class="text-center mb-3">
                         <div class="alert alert-danger">
                             <i class="bi bi-exclamation-triangle"></i>
-                            ¡Evento finalizado!
+                            {% translate "¡Evento finalizado!" %}
                         </div>
                     </div>
                     {% endif %}
@@ -86,14 +87,14 @@
                 <div class="card-footer">
                     <div class="btn-group w-100" role="group">
                         <a href="{% url 'countdown_timer_detail' countdown.pk %}" class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-eye"></i> Ver
+                            <i class="bi bi-eye"></i> {% translate "Ver" %}
                         </a>
                         {% if countdown.created_by == user or user.is_superuser %}
                         <a href="{% url 'countdown_timer_edit' countdown.pk %}" class="btn btn-outline-warning btn-sm">
-                            <i class="bi bi-pencil"></i> Editar
+                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                         </a>
                         <a href="{% url 'countdown_timer_delete' countdown.pk %}" class="btn btn-outline-danger btn-sm">
-                            <i class="bi bi-trash"></i> Eliminar
+                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                         </a>
                         {% endif %}
                     </div>
@@ -108,10 +109,10 @@
             <div class="card">
                 <div class="card-body text-center py-5">
                     <i class="bi bi-stopwatch display-4 text-muted mb-3"></i>
-                    <h5 class="text-muted">No hay cuentas regresivas</h5>
-                    <p class="text-muted">Comienza creando tu primera cuenta regresiva.</p>
+                    <h5 class="text-muted">{% translate "No hay cuentas regresivas" %}</h5>
+                    <p class="text-muted">{% translate "Comienza creando tu primera cuenta regresiva." %}</p>
                     <a href="{% url 'countdown_timer_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear Primera Cuenta Regresiva
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Primera Cuenta Regresiva" %}
                     </a>
                 </div>
             </div>

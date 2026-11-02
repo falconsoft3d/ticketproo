@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -16,11 +17,11 @@
                 <div class="card-body">
                     <div class="alert alert-danger">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>¿Está seguro de que desea eliminar este requerimiento?</strong>
+                        <strong>{% translate "¿Está seguro de que desea eliminar este requerimiento?" %}</strong>
                     </div>
 
                     <div class="mb-3">
-                        <h6>Documento:</h6>
+                        <h6>{% translate "Documento:" %}</h6>
                         <p><strong>{{ document.sequence }}</strong> - {{ document.title }}</p>
                     </div>
 
@@ -34,23 +35,23 @@
                     {% if requirement.is_approved %}
                     <div class="alert alert-warning">
                         <i class="bi bi-info-circle me-2"></i>
-                        Este requerimiento ya fue aprobado por <strong>{{ requirement.approved_by_name }}</strong>
+                        {% translate "Este requerimiento ya fue aprobado por" %} <strong>{{ requirement.approved_by_name }}</strong>
                     </div>
                     {% endif %}
 
                     <p class="text-muted small">
                         <i class="bi bi-info-circle me-1"></i>
-                        Nota: Los requerimientos restantes serán renumerados automáticamente.
+                        {% translate "Nota: Los requerimientos restantes serán renumerados automáticamente." %}
                     </p>
 
                     <form method="post">
                         {% csrf_token %}
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'frd_detail' document.pk %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                                <i class="bi bi-x-circle me-1"></i>{% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash me-1"></i>Eliminar Requerimiento
+                                <i class="bi bi-trash me-1"></i>{% translate "Eliminar Requerimiento" %}
                             </button>
                         </div>
                     </form>

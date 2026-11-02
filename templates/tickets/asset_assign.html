@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -28,32 +29,32 @@
     <!-- Header -->
     <div class="text-center mb-4">
         <h2><i class="bi bi-person-plus text-primary"></i> {{ title }}</h2>
-        <p class="text-muted">Asignar o reasignar activo a un empleado</p>
+        <p class="text-muted">{% translate "Asignar o reasignar activo a un empleado" %}</p>
     </div>
 
     <div class="assign-container">
         <!-- Información del Activo -->
         <div class="asset-info">
             <h5 class="mb-3">
-                <i class="bi bi-box"></i> Información del Activo
+                <i class="bi bi-box"></i> {% translate "Información del Activo" %}
             </h5>
             <div class="row">
                 <div class="col-md-6">
-                    <strong>Nombre:</strong><br>
+                    <strong>{% translate "Nombre:" %}</strong><br>
                     <span class="text-primary">{{ asset.name }}</span>
                 </div>
                 <div class="col-md-6">
-                    <strong>Fabricante:</strong><br>
+                    <strong>{% translate "Fabricante:" %}</strong><br>
                     {{ asset.manufacturer }}
                 </div>
             </div>
             <div class="row mt-2">
                 <div class="col-md-6">
-                    <strong>Número de Serie:</strong><br>
+                    <strong>{% translate "Número de Serie:" %}</strong><br>
                     <code>{{ asset.serial_number }}</code>
                 </div>
                 <div class="col-md-6">
-                    <strong>Estado Actual:</strong><br>
+                    <strong>{% translate "Estado Actual:" %}</strong><br>
                     <span class="badge bg-{{ asset.get_status_display_color }}">
                         {{ asset.get_status_display }}
                     </span>
@@ -62,13 +63,13 @@
             
             {% if asset.assigned_to %}
                 <div class="mt-3 p-2 bg-warning bg-opacity-10 rounded">
-                    <strong>Asignado actualmente a:</strong>
+                    <strong>{% translate "Asignado actualmente a:" %}</strong>
                     <i class="bi bi-person-circle"></i> {{ asset.assigned_to.name }}
                     <small class="text-muted d-block">{{ asset.assigned_to.position }}</small>
                 </div>
             {% else %}
                 <div class="mt-3 p-2 bg-info bg-opacity-10 rounded">
-                    <i class="bi bi-info-circle"></i> Este activo no está asignado a ningún empleado
+                    <i class="bi bi-info-circle"></i> {% translate "Este activo no está asignado a ningún empleado" %}
                 </div>
             {% endif %}
         </div>
@@ -86,7 +87,7 @@
                     <div class="text-danger small mt-1">{{ form.assigned_to.errors }}</div>
                 {% endif %}
                 <div class="form-text">
-                    Seleccione un empleado para asignar el activo o deje vacío para desasignar
+                    {% translate "Seleccione un empleado para asignar el activo o deje vacío para desasignar" %}
                 </div>
             </div>
 
@@ -99,7 +100,7 @@
                     <div class="text-danger small mt-1">{{ form.reason.errors }}</div>
                 {% endif %}
                 <div class="form-text">
-                    Explique brevemente el motivo de esta asignación (opcional)
+                    {% translate "Explique brevemente el motivo de esta asignación (opcional)" %}
                 </div>
             </div>
 
@@ -115,9 +116,9 @@
                 <i class="bi bi-info-circle"></i>
                 <span id="action-text">
                     {% if asset.assigned_to %}
-                        Seleccione un nuevo empleado para transferir el activo o deje vacío para desasignarlo.
+                        {% translate "Seleccione un nuevo empleado para transferir el activo o deje vacío para desasignarlo." %}
                     {% else %}
-                        Seleccione un empleado para asignar este activo.
+                        {% translate "Seleccione un empleado para asignar este activo." %}
                     {% endif %}
                 </span>
             </div>
@@ -125,14 +126,14 @@
             <!-- Botones -->
             <div class="d-flex justify-content-between">
                 <a href="{% url 'asset_detail' asset.pk %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Volver
+                    <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                 </a>
                 <div class="gap-2 d-flex">
                     <button type="button" class="btn btn-outline-warning" onclick="clearAssignment()">
-                        <i class="bi bi-person-x"></i> Desasignar
+                        <i class="bi bi-person-x"></i> {% translate "Desasignar" %}
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-circle"></i> Confirmar Asignación
+                        <i class="bi bi-check-circle"></i> {% translate "Confirmar Asignación" %}
                     </button>
                 </div>
             </div>

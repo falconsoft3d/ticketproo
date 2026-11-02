@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 
 {% block page_title %}{{ page_title }}{% endblock %}
 
@@ -9,10 +10,10 @@
     </h1>
     <div>
         <a href="{% url 'blog_post_create' %}" class="btn btn-success">
-            <i class="fas fa-plus"></i> Nuevo Artículo
+            <i class="fas fa-plus"></i> {% translate "Nuevo Artículo" %}
         </a>
         <a href="{% url 'blog_category_list' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-tags"></i> Categorías
+            <i class="fas fa-tags"></i> {% translate "Categorías" %}
         </a>
     </div>
 </div>
@@ -22,26 +23,26 @@
     <div class="card-body">
         <form method="GET" class="row g-3">
             <div class="col-md-3">
-                <label for="search" class="form-label">Buscar</label>
+                <label for="search" class="form-label">{% translate "Buscar" %}</label>
                 <input type="text" 
                        class="form-control" 
                        id="search" 
                        name="search" 
                        value="{{ request.GET.search }}" 
-                       placeholder="Título o contenido...">
+                       placeholder="{% translate 'Título o contenido...' %}">
             </div>
             <div class="col-md-3">
-                <label for="status" class="form-label">Estado</label>
+                <label for="status" class="form-label">{% translate "Estado" %}</label>
                 <select class="form-select" id="status" name="status">
-                    <option value="">Todos los estados</option>
-                    <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>Borrador</option>
-                    <option value="published" {% if request.GET.status == 'published' %}selected{% endif %}>Publicado</option>
+                    <option value="">{% translate "Todos los estados" %}</option>
+                    <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>{% translate "Borrador" %}</option>
+                    <option value="published" {% if request.GET.status == 'published' %}selected{% endif %}>{% translate "Publicado" %}</option>
                 </select>
             </div>
             <div class="col-md-3">
-                <label for="category" class="form-label">Categoría</label>
+                <label for="category" class="form-label">{% translate "Categoría" %}</label>
                 <select class="form-select" id="category" name="category">
-                    <option value="">Todas las categorías</option>
+                    <option value="">{% translate "Todas las categorías" %}</option>
                     {% for category in categories %}
                     <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
                         {{ category.name }}
@@ -51,10 +52,10 @@
             </div>
             <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2">
-                    <i class="fas fa-filter"></i> Filtrar
+                    <i class="fas fa-filter"></i> {% translate "Filtrar" %}
                 </button>
                 <a href="{% url 'blog_post_list_admin' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-times"></i> Limpiar
+                    <i class="fas fa-times"></i> {% translate "Limpiar" %}
                 </a>
             </div>
         </form>
@@ -69,14 +70,14 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Artículo</th>
-                        <th>Categoría</th>
-                        <th>Estado</th>
-                        <th>Autor</th>
-                        <th>Fecha</th>
-                        <th>Vistas</th>
-                        <th>Comentarios</th>
-                        <th width="120">Acciones</th>
+                        <th>{% translate "Artículo" %}</th>
+                        <th>{% translate "Categoría" %}</th>
+                        <th>{% translate "Estado" %}</th>
+                        <th>{% translate "Autor" %}</th>
+                        <th>{% translate "Fecha" %}</th>
+                        <th>{% translate "Vistas" %}</th>
+                        <th>{% translate "Comentarios" %}</th>
+                        <th width="120">{% translate "Acciones" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -97,7 +98,7 @@
                                             {{ post.title }}
                                         </a>
                                         {% if post.is_featured %}
-                                        <span class="badge bg-warning text-dark">Destacado</span>
+                                        <span class="badge bg-warning text-dark">{% translate "Destacado" %}</span>
                                         {% endif %}
                                     </h6>
                                     {% if post.excerpt %}
@@ -111,9 +112,9 @@
                         </td>
                         <td>
                             {% if post.status == 'published' %}
-                            <span class="badge bg-success">Publicado</span>
+                            <span class="badge bg-success">{% translate "Publicado" %}</span>
                             {% else %}
-                            <span class="badge bg-warning text-dark">Borrador</span>
+                            <span class="badge bg-warning text-dark">{% translate "Borrador" %}</span>
                             {% endif %}
                         </td>
                         <td>
@@ -139,13 +140,13 @@
                             <div class="btn-group btn-group-sm" role="group">
                                 <a href="{% url 'blog_post_detail_admin' post.pk %}" 
                                    class="btn btn-outline-primary"
-                                   title="Ver detalles">
+                                   title="{% translate 'Ver detalles' %}">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 {% if post.status == 'published' %}
                                 <a href="{% url 'blog_post_detail' post.slug %}" 
                                    class="btn btn-outline-info"
-                                   title="Ver público"
+                                   title="{% translate 'Ver público' %}"
                                    target="_blank">
                                     <i class="fas fa-external-link-alt"></i>
                                 </a>
@@ -160,11 +161,11 @@
         
         <!-- Paginación -->
         {% if page_obj.has_other_pages %}
-        <nav aria-label="Paginación" class="mt-4">
+        <nav aria-label="{% translate 'Paginación' %}" class="mt-4">
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{% translate "Anterior" %}</a>
                 </li>
                 {% endif %}
                 
@@ -182,7 +183,7 @@
                 
                 {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Siguiente</a>
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{% translate "Siguiente" %}</a>
                 </li>
                 {% endif %}
             </ul>
@@ -192,16 +193,16 @@
         {% else %}
         <div class="text-center py-5">
             <i class="fas fa-newspaper fa-3x text-muted mb-3"></i>
-            <h4 class="text-muted">No hay artículos</h4>
+            <h4 class="text-muted">{% translate "No hay artículos" %}</h4>
             <p class="text-muted">
                 {% if request.GET.search or request.GET.status or request.GET.category %}
-                    No se encontraron artículos que coincidan con los filtros aplicados.
+                    {% translate "No se encontraron artículos que coincidan con los filtros aplicados." %}
                 {% else %}
-                    Comienza creando tu primer artículo de blog.
+                    {% translate "Comienza creando tu primer artículo de blog." %}
                 {% endif %}
             </p>
             <a href="{% url 'blog_post_create' %}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Crear Primer Artículo
+                <i class="fas fa-plus"></i> {% translate "Crear Primer Artículo" %}
             </a>
         </div>
         {% endif %}

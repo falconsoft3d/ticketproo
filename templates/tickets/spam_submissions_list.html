@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load project_extras %}
 
-{% block title %}Spam - TicketProo{% endblock %}
+{% block title %}{% translate "Spam - TicketProo" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -30,7 +31,7 @@
     <!-- Cabecera -->
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
-            <h4 class="mb-0"><i class="bi bi-shield-exclamation text-danger me-2"></i>Spam — Envíos de Landing Pages</h4>
+            <h4 class="mb-0"><i class="bi bi-shield-exclamation text-danger me-2"></i>{% translate "Spam — Envíos de Landing Pages" %}</h4>
             <small class="text-muted">{{ total }} envío{{ total|pluralize }} marcado{{ total|pluralize }} como spam</small>
         </div>
     </div>
@@ -40,14 +41,14 @@
         <div class="card-body py-2">
             <form method="get" class="row g-2 align-items-end">
                 <div class="col-md-5">
-                    <label class="form-label mb-1 small">Buscar</label>
+                    <label class="form-label mb-1 small">{% translate "Buscar" %}</label>
                     <input type="text" name="search" class="form-control form-control-sm"
-                           placeholder="Nombre, email, empresa, IP…" value="{{ search }}">
+                           placeholder="{% translate 'Nombre, email, empresa, IP…' %}" value="{{ search }}">
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label mb-1 small">Landing Page</label>
+                    <label class="form-label mb-1 small">{% translate "Landing Page" %}</label>
                     <select name="landing" class="form-select form-select-sm">
-                        <option value="">Todas</option>
+                        <option value="">{% translate "Todas" %}</option>
                         {% for lp in landing_pages %}
                         <option value="{{ lp.pk }}" {% if landing_filter == lp.pk|stringformat:"s" %}selected{% endif %}>
                             {{ lp.nombre_producto }}
@@ -57,10 +58,10 @@
                 </div>
                 <div class="col-md-3 d-flex gap-2">
                     <button type="submit" class="btn btn-sm btn-primary w-100">
-                        <i class="bi bi-search"></i> Filtrar
+                        <i class="bi bi-search"></i> {% translate "Filtrar" %}
                     </button>
                     <a href="{% url 'spam_submissions_list' %}" class="btn btn-sm btn-outline-secondary w-100">
-                        <i class="bi bi-x-circle"></i> Limpiar
+                        <i class="bi bi-x-circle"></i> {% translate "Limpiar" %}
                     </a>
                 </div>
             </form>
@@ -76,15 +77,15 @@
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
-                            <th>Fecha</th>
-                            <th>Nombre</th>
-                            <th>Email</th>
-                            <th>Empresa</th>
-                            <th>Teléfono</th>
-                            <th>Landing</th>
-                            <th>Motivo Spam</th>
+                            <th>{% translate "Fecha" %}</th>
+                            <th>{% translate "Nombre" %}</th>
+                            <th>{% translate "Email" %}</th>
+                            <th>{% translate "Empresa" %}</th>
+                            <th>{% translate "Teléfono" %}</th>
+                            <th>{% translate "Landing" %}</th>
+                            <th>{% translate "Motivo Spam" %}</th>
                             <th>IP</th>
-                            <th class="text-end">Acciones</th>
+                            <th class="text-end">{% translate "Acciones" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -110,21 +111,21 @@
                             <td class="text-end text-nowrap">
                                 <button type="button" class="btn btn-sm btn-outline-secondary"
                                         data-bs-toggle="collapse" data-bs-target="#msg-{{ sub.pk }}"
-                                        title="Leer mensaje">
-                                    <i class="bi bi-envelope-open"></i> Mensaje
+                                        title="{% translate 'Leer mensaje' %}">
+                                    <i class="bi bi-envelope-open"></i> {% translate "Mensaje" %}
                                 </button>
                                 <form method="post" action="{% url 'spam_submission_mark_valid' sub.pk %}" class="d-inline"
                                       onsubmit="return confirm('¿Marcar este envío como correcto? Se creará el contacto y se enviarán las notificaciones.');">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-success" title="Marcar como correcto">
-                                        <i class="bi bi-check-circle"></i> No es spam
+                                    <button type="submit" class="btn btn-sm btn-success" title="{% translate 'Marcar como correcto' %}">
+                                        <i class="bi bi-check-circle"></i> {% translate "No es spam" %}
                                     </button>
                                 </form>
                             </td>
                         </tr>
                         <tr class="collapse" id="msg-{{ sub.pk }}">
                             <td colspan="10" class="bg-light">
-                                <div class="small text-muted mb-1">Mensaje:</div>
+                                <div class="small text-muted mb-1">{% translate "Mensaje:" %}</div>
                                 <div style="white-space: pre-wrap;">{{ sub.mensaje|default:"(sin mensaje)" }}</div>
                             </td>
                         </tr>
@@ -135,7 +136,7 @@
             {% else %}
             <div class="text-center py-5 text-muted">
                 <i class="bi bi-shield-check fs-1"></i>
-                <p class="mt-2 mb-0">No hay envíos de spam{% if search or landing_filter %} con los filtros seleccionados{% endif %}.</p>
+                <p class="mt-2 mb-0">{% translate "No hay envíos de spam" %}{% if search or landing_filter %} {% translate "con los filtros seleccionados" %}{% endif %}.</p>
             </div>
             {% endif %}
         </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -8,15 +9,15 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <nav aria-label="breadcrumb">
+                <nav aria-label="{% translate 'breadcrumb' %}">
                     <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'course_list' %}">Cursos</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'course_list' %}">{% translate "Cursos" %}</a></li>
                         {% if course %}
                         <li class="breadcrumb-item"><a href="{% url 'course_detail' course.pk %}">{{ course.title }}</a></li>
-                        <li class="breadcrumb-item active">Editar</li>
+                        <li class="breadcrumb-item active">{% translate "Editar" %}</li>
                         {% else %}
-                        <li class="breadcrumb-item active">Nuevo Curso</li>
+                        <li class="breadcrumb-item active">{% translate "Nuevo Curso" %}</li>
                         {% endif %}
                     </ol>
                 </nav>
@@ -34,7 +35,7 @@
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">
                     <i class="bi bi-info-circle"></i> 
-                    {% if course %}Actualizar Información{% else %}Información del Curso{% endif %}
+                    {% if course %}{% translate "Actualizar Información" %}{% else %}{% translate "Información del Curso" %}{% endif %}
                 </h5>
             </div>
             <div class="card-body">
@@ -59,7 +60,7 @@
                         {% if form.description.errors %}
                             <div class="text-danger">{{ form.description.errors }}</div>
                         {% endif %}
-                        <div class="form-text">Proporciona una descripción detallada del curso y sus objetivos.</div>
+                        <div class="form-text">{% translate "Proporciona una descripción detallada del curso y sus objetivos." %}</div>
                     </div>
 
                     <div class="mb-3">
@@ -71,16 +72,15 @@
                             <div class="text-danger">{{ form.company.errors }}</div>
                         {% endif %}
                         <div class="form-text">
-                            Si seleccionas una empresa, solo los usuarios de esa empresa podrán ver este curso. 
-                            Si no seleccionas ninguna, será visible para todos los usuarios.
+                            {% translate "Si seleccionas una empresa, solo los usuarios de esa empresa podrán ver este curso. Si no seleccionas ninguna, será visible para todos los usuarios." %}
                         </div>
                     </div>
 
                     <hr>
                     <h6 class="text-primary mb-3">
-                        <i class="bi bi-key"></i> Datos de Acceso (Opcional)
+                        <i class="bi bi-key"></i> {% translate "Datos de Acceso (Opcional)" %}
                     </h6>
-                    <p class="text-muted small">Estos datos se mostrarán en la vista pública del curso para que los usuarios puedan acceder.</p>
+                    <p class="text-muted small">{% translate "Estos datos se mostrarán en la vista pública del curso para que los usuarios puedan acceder." %}</p>
 
                     <div class="mb-3">
                         <label for="{{ form.access_url.id_for_label }}" class="form-label">
@@ -90,7 +90,7 @@
                         {% if form.access_url.errors %}
                             <div class="text-danger">{{ form.access_url.errors }}</div>
                         {% endif %}
-                        <div class="form-text">URL donde se accede al curso (ej: https://plataforma.com/curso)</div>
+                        <div class="form-text">{% translate "URL donde se accede al curso (ej: https://plataforma.com/curso)" %}</div>
                     </div>
 
                     <div class="mb-3">
@@ -101,7 +101,7 @@
                         {% if form.access_username.errors %}
                             <div class="text-danger">{{ form.access_username.errors }}</div>
                         {% endif %}
-                        <div class="form-text">Usuario para acceder al curso</div>
+                        <div class="form-text">{% translate "Usuario para acceder al curso" %}</div>
                     </div>
 
                     <div class="mb-3">
@@ -112,7 +112,7 @@
                         {% if form.access_password.errors %}
                             <div class="text-danger">{{ form.access_password.errors }}</div>
                         {% endif %}
-                        <div class="form-text">Contraseña para acceder al curso</div>
+                        <div class="form-text">{% translate "Contraseña para acceder al curso" %}</div>
                     </div>
                     <hr>
 
@@ -126,17 +126,17 @@
                         {% if form.is_active.errors %}
                             <div class="text-danger">{{ form.is_active.errors }}</div>
                         {% endif %}
-                        <div class="form-text">Los cursos inactivos no son visibles para los usuarios.</div>
+                        <div class="form-text">{% translate "Los cursos inactivos no son visibles para los usuarios." %}</div>
                     </div>
 
                     <div class="d-flex justify-content-between">
                         <a href="{% if course %}{% url 'course_detail' course.pk %}{% else %}{% url 'course_list' %}{% endif %}" 
                            class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Cancelar
+                            <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                         </a>
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-circle"></i> 
-                            {% if course %}Actualizar Curso{% else %}Crear Curso{% endif %}
+                            {% if course %}{% translate "Actualizar Curso" %}{% else %}{% translate "Crear Curso" %}{% endif %}
                         </button>
                     </div>
                 </form>
@@ -149,24 +149,24 @@
         <div class="card shadow-sm">
             <div class="card-header bg-info text-white">
                 <h6 class="mb-0">
-                    <i class="bi bi-question-circle"></i> Ayuda
+                    <i class="bi bi-question-circle"></i> {% translate "Ayuda" %}
                 </h6>
             </div>
             <div class="card-body">
-                <h6>Consejos para crear un curso:</h6>
+                <h6>{% translate "Consejos para crear un curso:" %}</h6>
                 <ul class="small">
-                    <li><strong>Título:</strong> Usa un nombre claro y descriptivo</li>
-                    <li><strong>Descripción:</strong> Explica qué aprenderán los usuarios</li>
-                    <li><strong>Estado:</strong> Puedes crear el curso inactivo y activarlo cuando esté listo</li>
+                    <li><strong>{% translate "Título:" %}</strong> {% translate "Usa un nombre claro y descriptivo" %}</li>
+                    <li><strong>{% translate "Descripción:" %}</strong> {% translate "Explica qué aprenderán los usuarios" %}</li>
+                    <li><strong>{% translate "Estado:" %}</strong> {% translate "Puedes crear el curso inactivo y activarlo cuando esté listo" %}</li>
                 </ul>
                 
                 {% if course %}
                 <hr>
-                <h6>Información del curso:</h6>
+                <h6>{% translate "Información del curso:" %}</h6>
                 <ul class="small">
-                    <li><strong>Creado:</strong> {{ course.created_at|date:"d/m/Y H:i" }}</li>
-                    <li><strong>Clases:</strong> {{ course.get_classes_count }}</li>
-                    <li><strong>Última actualización:</strong> {{ course.updated_at|date:"d/m/Y H:i" }}</li>
+                    <li><strong>{% translate "Creado:" %}</strong> {{ course.created_at|date:"d/m/Y H:i" }}</li>
+                    <li><strong>{% translate "Clases:" %}</strong> {{ course.get_classes_count }}</li>
+                    <li><strong>{% translate "Última actualización:" %}</strong> {{ course.updated_at|date:"d/m/Y H:i" }}</li>
                 </ul>
                 {% endif %}
             </div>
@@ -177,19 +177,19 @@
         <div class="card shadow-sm mt-4">
             <div class="card-header bg-warning text-dark">
                 <h6 class="mb-0">
-                    <i class="bi bi-tools"></i> Acciones
+                    <i class="bi bi-tools"></i> {% translate "Acciones" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <a href="{% url 'course_class_create' course.pk %}" class="btn btn-success btn-sm">
-                        <i class="bi bi-plus-circle"></i> Agregar Clase
+                        <i class="bi bi-plus-circle"></i> {% translate "Agregar Clase" %}
                     </a>
                     <a href="{% url 'course_detail' course.pk %}" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-eye"></i> Ver Curso
+                        <i class="bi bi-eye"></i> {% translate "Ver Curso" %}
                     </a>
                     <a href="{% url 'course_delete' course.pk %}" class="btn btn-outline-danger btn-sm">
-                        <i class="bi bi-trash"></i> Eliminar Curso
+                        <i class="bi bi-trash"></i> {% translate "Eliminar Curso" %}
                     </a>
                 </div>
             </div>

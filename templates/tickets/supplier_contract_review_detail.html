@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -6,10 +7,10 @@
 {% block content %}
 <div class="container-fluid mt-4">
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb">
+    <nav aria-label="{% translate 'breadcrumb' %}">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'supplier_contract_review_list' %}">Revisión de Contratos</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'supplier_contract_review_list' %}">{% translate "Revisión de Contratos" %}</a></li>
             <li class="breadcrumb-item active">{{ review.name }}</li>
         </ol>
     </nav>
@@ -22,19 +23,19 @@
             <form method="POST" action="{% url 'supplier_contract_review_generate' review.pk %}" class="d-inline">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-success">
-                    <i class="bi bi-magic"></i> Generar Revisión con IA
+                    <i class="bi bi-magic"></i> {% translate "Generar Revisión con IA" %}
                 </button>
             </form>
             {% else %}
             <a href="{% url 'supplier_contract_review_download_pdf' review.pk %}" class="btn btn-primary">
-                <i class="bi bi-file-pdf"></i> Descargar PDF
+                <i class="bi bi-file-pdf"></i> {% translate "Descargar PDF" %}
             </a>
             {% endif %}
             <a href="{% url 'supplier_contract_review_edit' review.pk %}" class="btn btn-warning">
-                <i class="bi bi-pencil"></i> Editar
+                <i class="bi bi-pencil"></i> {% translate "Editar" %}
             </a>
             <a href="{% url 'supplier_contract_review_delete' review.pk %}" class="btn btn-danger">
-                <i class="bi bi-trash"></i> Eliminar
+                <i class="bi bi-trash"></i> {% translate "Eliminar" %}
             </a>
         </div>
     </div>
@@ -45,37 +46,37 @@
             <!-- Información Básica -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información del Contrato</h5>
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> {% translate "Información del Contrato" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <h6 class="text-muted mb-2">Proveedor</h6>
+                            <h6 class="text-muted mb-2">{% translate "Proveedor" %}</h6>
                             <p class="mb-0"><strong>{{ review.supplier_name }}</strong></p>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <h6 class="text-muted mb-2">Empresa Revisora</h6>
+                            <h6 class="text-muted mb-2">{% translate "Empresa Revisora" %}</h6>
                             <p class="mb-0"><strong>{{ review.company.name }}</strong></p>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <h6 class="text-muted mb-2">Estado</h6>
+                            <h6 class="text-muted mb-2">{% translate "Estado" %}</h6>
                             <div>
                                 {{ review.get_status_badge|safe }}
                                 <button type="button" class="btn btn-sm btn-outline-secondary ms-2" data-bs-toggle="modal" data-bs-target="#statusModal">
-                                    <i class="bi bi-pencil"></i> Cambiar
+                                    <i class="bi bi-pencil"></i> {% translate "Cambiar" %}
                                 </button>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <h6 class="text-muted mb-2">Nivel de Riesgo</h6>
+                            <h6 class="text-muted mb-2">{% translate "Nivel de Riesgo" %}</h6>
                             {{ review.get_risk_badge|safe }}
                         </div>
                         <div class="col-md-6 mb-3">
-                            <h6 class="text-muted mb-2">Creado por</h6>
+                            <h6 class="text-muted mb-2">{% translate "Creado por" %}</h6>
                             <p class="mb-0">{{ review.user.get_full_name|default:review.user.username }}</p>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <h6 class="text-muted mb-2">Fecha de Creación</h6>
+                            <h6 class="text-muted mb-2">{% translate "Fecha de Creación" %}</h6>
                             <p class="mb-0">{{ review.created_at|date:"d/m/Y H:i" }}</p>
                         </div>
                     </div>
@@ -85,9 +86,9 @@
             <!-- Contenido del Contrato Original -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-file-text"></i> Contrato Original</h5>
+                    <h5 class="mb-0"><i class="bi bi-file-text"></i> {% translate "Contrato Original" %}</h5>
                     <button class="btn btn-sm btn-light" type="button" data-bs-toggle="collapse" data-bs-target="#contractContent">
-                        <i class="bi bi-eye"></i> Ver/Ocultar
+                        <i class="bi bi-eye"></i> {% translate "Ver/Ocultar" %}
                     </button>
                 </div>
                 <div class="collapse" id="contractContent">
@@ -99,12 +100,12 @@
                                 <div class="alert alert-info">
                                     <i class="bi bi-file-earmark"></i> Archivo: {{ review.contract_file.name }}
                                     <a href="{{ review.contract_file.url }}" class="btn btn-sm btn-primary ms-2" target="_blank">
-                                        <i class="bi bi-download"></i> Descargar
+                                        <i class="bi bi-download"></i> {% translate "Descargar" %}
                                     </a>
                                 </div>
-                                <p class="text-muted">El contenido se extraerá automáticamente al generar la revisión.</p>
+                                <p class="text-muted">{% translate "El contenido se extraerá automáticamente al generar la revisión." %}</p>
                             {% else %}
-                                <p class="text-muted">No hay contenido disponible</p>
+                                <p class="text-muted">{% translate "No hay contenido disponible" %}</p>
                             {% endif %}
                         </div>
                     </div>
@@ -115,7 +116,7 @@
             {% if review.ai_review %}
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="bi bi-magic"></i> Análisis Completo con IA</h5>
+                    <h5 class="mb-0"><i class="bi bi-magic"></i> {% translate "Análisis Completo con IA" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="ai-review-content" id="aiReviewContent"></div>
@@ -132,7 +133,7 @@
             {% if review.key_clauses %}
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0"><i class="bi bi-list-check"></i> Cláusulas Clave</h5>
+                    <h5 class="mb-0"><i class="bi bi-list-check"></i> {% translate "Cláusulas Clave" %}</h5>
                 </div>
                 <div class="card-body">
                     <div id="keyClausesContent"></div>
@@ -144,7 +145,7 @@
             {% if review.risk_assessment %}
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Evaluación de Riesgos</h5>
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> {% translate "Evaluación de Riesgos" %}</h5>
                 </div>
                 <div class="card-body">
                     <div id="riskAssessmentContent"></div>
@@ -156,7 +157,7 @@
             {% if review.recommendations %}
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-lightbulb"></i> Recomendaciones</h5>
+                    <h5 class="mb-0"><i class="bi bi-lightbulb"></i> {% translate "Recomendaciones" %}</h5>
                 </div>
                 <div class="card-body">
                     <div id="recommendationsContent"></div>
@@ -167,12 +168,12 @@
             {% else %}
             <!-- Alert si no hay revisión -->
             <div class="alert alert-info">
-                <h5><i class="bi bi-info-circle"></i> Revisión Pendiente</h5>
-                <p>Este contrato aún no ha sido revisado con IA. Haga clic en el botón "Generar Revisión con IA" para obtener un análisis completo del contrato.</p>
+                <h5><i class="bi bi-info-circle"></i> {% translate "Revisión Pendiente" %}</h5>
+                <p>{% translate 'Este contrato aún no ha sido revisado con IA. Haga clic en el botón "Generar Revisión con IA" para obtener un análisis completo del contrato.' %}</p>
                 <form method="POST" action="{% url 'supplier_contract_review_generate' review.pk %}">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-success">
-                        <i class="bi bi-magic"></i> Generar Revisión Ahora
+                        <i class="bi bi-magic"></i> {% translate "Generar Revisión Ahora" %}
                     </button>
                 </form>
             </div>
@@ -185,7 +186,7 @@
             {% if review.internal_notes %}
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-light">
-                    <h6 class="mb-0"><i class="bi bi-journal-text"></i> Notas Internas</h6>
+                    <h6 class="mb-0"><i class="bi bi-journal-text"></i> {% translate "Notas Internas" %}</h6>
                 </div>
                 <div class="card-body">
                     {{ review.internal_notes|linebreaks }}
@@ -196,14 +197,14 @@
             <!-- Historial -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-light">
-                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> Historial</h6>
+                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> {% translate "Historial" %}</h6>
                 </div>
                 <div class="card-body">
                     <div class="timeline">
                         <div class="timeline-item">
                             <i class="bi bi-circle-fill text-primary"></i>
                             <div class="ms-3">
-                                <strong>Creado</strong><br>
+                                <strong>{% translate "Creado" %}</strong><br>
                                 <small class="text-muted">{{ review.created_at|date:"d/m/Y H:i" }}</small>
                             </div>
                         </div>
@@ -211,7 +212,7 @@
                         <div class="timeline-item">
                             <i class="bi bi-circle-fill text-warning"></i>
                             <div class="ms-3">
-                                <strong>Última actualización</strong><br>
+                                <strong>{% translate "Última actualización" %}</strong><br>
                                 <small class="text-muted">{{ review.updated_at|date:"d/m/Y H:i" }}</small>
                             </div>
                         </div>
@@ -220,7 +221,7 @@
                         <div class="timeline-item">
                             <i class="bi bi-circle-fill text-success"></i>
                             <div class="ms-3">
-                                <strong>Revisado con IA</strong><br>
+                                <strong>{% translate "Revisado con IA" %}</strong><br>
                                 <small class="text-muted">{{ review.reviewed_at|date:"d/m/Y H:i" }}</small>
                             </div>
                         </div>
@@ -232,23 +233,23 @@
             <!-- Acciones Rápidas -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-light">
-                    <h6 class="mb-0"><i class="bi bi-lightning"></i> Acciones Rápidas</h6>
+                    <h6 class="mb-0"><i class="bi bi-lightning"></i> {% translate "Acciones Rápidas" %}</h6>
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         {% if review.ai_review %}
                         <a href="{% url 'supplier_contract_review_download_pdf' review.pk %}" class="btn btn-sm btn-primary">
-                            <i class="bi bi-file-pdf"></i> Descargar Revisión (PDF)
+                            <i class="bi bi-file-pdf"></i> {% translate "Descargar Revisión (PDF)" %}
                         </a>
                         {% endif %}
                         <a href="{% url 'supplier_contract_review_edit' review.pk %}" class="btn btn-sm btn-warning">
-                            <i class="bi bi-pencil"></i> Editar Contrato
+                            <i class="bi bi-pencil"></i> {% translate "Editar Contrato" %}
                         </a>
                         {% if not review.ai_review %}
                         <form method="POST" action="{% url 'supplier_contract_review_generate' review.pk %}">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-success w-100">
-                                <i class="bi bi-magic"></i> Generar Revisión
+                                <i class="bi bi-magic"></i> {% translate "Generar Revisión" %}
                             </button>
                         </form>
                         {% endif %}
@@ -264,25 +265,25 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Cambiar Estado</h5>
+                <h5 class="modal-title">{% translate "Cambiar Estado" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{% url 'supplier_contract_review_update_status' review.pk %}">
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Nuevo Estado</label>
+                        <label class="form-label">{% translate "Nuevo Estado" %}</label>
                         <select name="status" class="form-select" required>
-                            <option value="pending" {% if review.status == 'pending' %}selected{% endif %}>Pendiente</option>
-                            <option value="reviewed" {% if review.status == 'reviewed' %}selected{% endif %}>Revisado</option>
-                            <option value="approved" {% if review.status == 'approved' %}selected{% endif %}>Aprobado</option>
-                            <option value="rejected" {% if review.status == 'rejected' %}selected{% endif %}>Rechazado</option>
+                            <option value="pending" {% if review.status == 'pending' %}selected{% endif %}>{% translate "Pendiente" %}</option>
+                            <option value="reviewed" {% if review.status == 'reviewed' %}selected{% endif %}>{% translate "Revisado" %}</option>
+                            <option value="approved" {% if review.status == 'approved' %}selected{% endif %}>{% translate "Aprobado" %}</option>
+                            <option value="rejected" {% if review.status == 'rejected' %}selected{% endif %}>{% translate "Rechazado" %}</option>
                         </select>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% translate "Guardar" %}</button>
                 </div>
             </form>
         </div>

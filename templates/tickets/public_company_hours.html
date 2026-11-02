@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -35,7 +36,7 @@
                             <i class="bi bi-building"></i> {{ company.name }}
                         </h1>
                         <p class="lead mb-0">
-                            <i class="bi bi-clock-history"></i> Detalle de horas consumidas
+                            <i class="bi bi-clock-history"></i> {% translate "Detalle de horas consumidas" %}
                         </p>
                     </div>
                     <div class="col-md-4 text-md-end mt-3 mt-md-0">
@@ -52,7 +53,7 @@
 
         <div class="container py-4">
             <a href="{% url 'public_company_stats' token %}" class="btn btn-outline-secondary mb-4">
-                <i class="bi bi-arrow-left"></i> Volver a estadísticas
+                <i class="bi bi-arrow-left"></i> {% translate "Volver a estadísticas" %}
             </a>
 
             <!-- Resumen -->
@@ -61,7 +62,7 @@
                     <div class="card h-100 border-0 shadow">
                         <div class="card-body">
                             <h6 class="text-muted mb-1">
-                                Horas consumidas{% if status_label %} ({{ status_label }}){% endif %}
+                                {% translate "Horas consumidas" %}{% if status_label %} ({{ status_label }}){% endif %}
                             </h6>
                             <h2 class="text-info mb-0">{{ total_hours }} h</h2>
                             <small class="text-muted">{{ tickets|length }} ticket{{ tickets|length|pluralize }} con horas</small>
@@ -71,19 +72,19 @@
                 <div class="col-md-3 mb-3">
                     <div class="card h-100 border-0 shadow">
                         <div class="card-body">
-                            <h6 class="text-muted mb-1">Horas estimadas</h6>
+                            <h6 class="text-muted mb-1">{% translate "Horas estimadas" %}</h6>
                             <h2 class="text-secondary mb-0">{{ total_estimated }} h</h2>
-                            <small class="text-muted">Presupuesto de esos tickets</small>
+                            <small class="text-muted">{% translate "Presupuesto de esos tickets" %}</small>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 mb-3">
                     <div class="card h-100 border-0 shadow">
                         <div class="card-body">
-                            <h6 class="text-muted mb-3">Horas consumidas por estado</h6>
+                            <h6 class="text-muted mb-3">{% translate "Horas consumidas por estado" %}</h6>
                             <div class="d-flex flex-wrap gap-2">
                                 <a href="?" class="status-chip btn btn-sm btn-light border {% if not status_filter %}active{% endif %}">
-                                    Todos
+                                    {% translate "Todos" %}
                                 </a>
                                 {% for row in hours_by_status %}
                                     <a href="?status={{ row.status }}"
@@ -93,7 +94,7 @@
                                         <small class="text-muted ms-1">({{ row.count }})</small>
                                     </a>
                                 {% empty %}
-                                    <span class="text-muted">Sin horas registradas</span>
+                                    <span class="text-muted">{% translate "Sin horas registradas" %}</span>
                                 {% endfor %}
                             </div>
                         </div>
@@ -104,7 +105,7 @@
             <!-- Tabla de tickets -->
             <div class="card border-0 shadow mb-4">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> Horas por ticket</h5>
+                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> {% translate "Horas por ticket" %}</h5>
                 </div>
                 <div class="card-body p-0">
                     {% if tickets %}
@@ -112,12 +113,12 @@
                         <table class="table table-hover mb-0 align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Número</th>
-                                    <th>Título</th>
-                                    <th>Estado</th>
-                                    <th>Categoría</th>
-                                    <th class="text-end">Estimadas</th>
-                                    <th class="text-end">Consumidas</th>
+                                    <th>{% translate "Número" %}</th>
+                                    <th>{% translate "Título" %}</th>
+                                    <th>{% translate "Estado" %}</th>
+                                    <th>{% translate "Categoría" %}</th>
+                                    <th class="text-end">{% translate "Estimadas" %}</th>
+                                    <th class="text-end">{% translate "Consumidas" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -134,14 +135,14 @@
                                         {% if ticket.category %}
                                             <span class="badge" style="background-color: {{ ticket.category.color }}; color: white;">{{ ticket.category.name }}</span>
                                         {% else %}
-                                            <span class="text-muted">Sin categoría</span>
+                                            <span class="text-muted">{% translate "Sin categoría" %}</span>
                                         {% endif %}
                                     </td>
                                     <td class="text-end text-muted text-nowrap">
                                         {% if ticket.hours %}{{ ticket.hours }} h{% else %}-{% endif %}
                                     </td>
                                     <td class="text-end fw-bold text-nowrap {% if ticket.hours and ticket.consumed > ticket.hours %}text-danger{% endif %}"
-                                        {% if ticket.hours and ticket.consumed > ticket.hours %}title="Supera las horas estimadas"{% endif %}>
+                                        {% if ticket.hours and ticket.consumed > ticket.hours %}title="{% translate 'Supera las horas estimadas' %}"{% endif %}>
                                         {{ ticket.consumed }} h
                                     </td>
                                 </tr>
@@ -149,7 +150,7 @@
                             </tbody>
                             <tfoot class="table-light">
                                 <tr>
-                                    <th colspan="4" class="text-end">Total</th>
+                                    <th colspan="4" class="text-end">{% translate "Total" %}</th>
                                     <th class="text-end text-nowrap text-muted">{{ total_estimated }} h</th>
                                     <th class="text-end text-nowrap">{{ total_hours }} h</th>
                                 </tr>
@@ -159,7 +160,7 @@
                     {% else %}
                     <div class="text-center text-muted py-5">
                         <i class="bi bi-clock" style="font-size: 2rem;"></i>
-                        <p class="mt-2 mb-0">No hay horas registradas{% if status_filter %} en tickets con este estado{% endif %}.</p>
+                        <p class="mt-2 mb-0">{% translate "No hay horas registradas" %}{% if status_filter %} {% translate "en tickets con este estado" %}{% endif %}.</p>
                     </div>
                     {% endif %}
                 </div>
@@ -169,17 +170,17 @@
             {% if hour_lines %}
             <div class="card border-0 shadow">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="bi bi-journal-text"></i> Detalle de líneas de horas</h5>
+                    <h5 class="mb-0"><i class="bi bi-journal-text"></i> {% translate "Detalle de líneas de horas" %}</h5>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover table-sm mb-0 align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="ps-3">Fecha</th>
-                                    <th>Ticket</th>
-                                    <th>Descripción</th>
-                                    <th class="text-end pe-3">Horas</th>
+                                    <th class="ps-3">{% translate "Fecha" %}</th>
+                                    <th>{% translate "Ticket" %}</th>
+                                    <th>{% translate "Descripción" %}</th>
+                                    <th class="text-end pe-3">{% translate "Horas" %}</th>
                                 </tr>
                             </thead>
                             <tbody>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -7,9 +8,9 @@
 <div class="container-fluid">
     <div class="row mb-4">
         <div class="col-md-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'frd_list' %}">Documentos DRF</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'frd_list' %}">{% translate "Documentos DRF" %}</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'frd_detail' document.pk %}">{{ document.sequence }}</a></li>
                     <li class="breadcrumb-item active">Crear Ticket desde Req #{{ requirement.number }}</li>
                 </ol>
@@ -22,21 +23,21 @@
             <div class="card">
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">
-                        <i class="bi bi-ticket-detailed me-2"></i>Crear Ticket de Soporte
+                        <i class="bi bi-ticket-detailed me-2"></i>{% translate "Crear Ticket de Soporte" %}
                     </h4>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-info mb-4">
                         <h6 class="alert-heading">
-                            <i class="bi bi-info-circle me-2"></i>Información del Requerimiento
+                            <i class="bi bi-info-circle me-2"></i>{% translate "Información del Requerimiento" %}
                         </h6>
                         <hr>
-                        <p class="mb-1"><strong>Documento:</strong> {{ document.sequence }} - {{ document.title }}</p>
-                        <p class="mb-1"><strong>Requerimiento:</strong> #{{ requirement.number }}</p>
+                        <p class="mb-1"><strong>{% translate "Documento:" %}</strong> {{ document.sequence }} - {{ document.title }}</p>
+                        <p class="mb-1"><strong>{% translate "Requerimiento:" %}</strong> #{{ requirement.number }}</p>
                         {% if requirement.title %}
-                            <p class="mb-1"><strong>Título:</strong> {{ requirement.title }}</p>
+                            <p class="mb-1"><strong>{% translate "Título:" %}</strong> {{ requirement.title }}</p>
                         {% endif %}
-                        <p class="mb-1"><strong>Descripción:</strong></p>
+                        <p class="mb-1"><strong>{% translate "Descripción:" %}</strong></p>
                         <p class="mb-0" style="white-space: pre-wrap;">{{ requirement.description }}</p>
                     </div>
 
@@ -44,7 +45,7 @@
                         {% csrf_token %}
                         
                         <div class="mb-3">
-                            <label for="title" class="form-label">Título del Ticket <span class="text-danger">*</span></label>
+                            <label for="title" class="form-label">{% translate "Título del Ticket" %} <span class="text-danger">*</span></label>
                             <input type="text" 
                                    class="form-control" 
                                    id="title" 
@@ -53,40 +54,40 @@
                                    placeholder="{% if requirement.title %}{{ requirement.title }}{% else %}Req #{{ requirement.number }} - {{ document.sequence }}{% endif %}"
                                    required>
                             <small class="form-text text-muted">
-                                El título por defecto se basa en el requerimiento.
+                                {% translate "El título por defecto se basa en el requerimiento." %}
                             </small>
                         </div>
 
                         <div class="mb-3">
-                            <label for="description" class="form-label">Descripción del Ticket <span class="text-danger">*</span></label>
+                            <label for="description" class="form-label">{% translate "Descripción del Ticket" %} <span class="text-danger">*</span></label>
                             <textarea class="form-control" 
                                       id="description" 
                                       name="description" 
                                       rows="6" 
                                       required>{{ requirement.description }}</textarea>
                             <small class="form-text text-muted">
-                                Puedes modificar la descripción según sea necesario.
+                                {% translate "Puedes modificar la descripción según sea necesario." %}
                             </small>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="priority" class="form-label">Prioridad</label>
+                                    <label for="priority" class="form-label">{% translate "Prioridad" %}</label>
                                     <select class="form-select" id="priority" name="priority">
-                                        <option value="low">Baja</option>
-                                        <option value="medium" selected>Media</option>
-                                        <option value="high">Alta</option>
-                                        <option value="urgent">Urgente</option>
+                                        <option value="low">{% translate "Baja" %}</option>
+                                        <option value="medium" selected>{% translate "Media" %}</option>
+                                        <option value="high">{% translate "Alta" %}</option>
+                                        <option value="urgent">{% translate "Urgente" %}</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="ticket_type" class="form-label">Tipo de Ticket</label>
+                                    <label for="ticket_type" class="form-label">{% translate "Tipo de Ticket" %}</label>
                                     <select class="form-select" id="ticket_type" name="ticket_type">
-                                        <option value="desarrollo" selected>Desarrollo</option>
-                                        <option value="error">Error</option>
+                                        <option value="desarrollo" selected>{% translate "Desarrollo" %}</option>
+                                        <option value="error">{% translate "Error" %}</option>
                                     </select>
                                 </div>
                             </div>
@@ -95,7 +96,7 @@
                         {% if document.company %}
                         <div class="alert alert-secondary">
                             <i class="bi bi-building me-2"></i>
-                            <strong>Empresa asociada:</strong> {{ document.company.name }}
+                            <strong>{% translate "Empresa asociada:" %}</strong> {{ document.company.name }}
                         </div>
                         {% endif %}
 
@@ -103,10 +104,10 @@
 
                         <div class="d-flex gap-2 justify-content-end">
                             <a href="{% url 'frd_detail' document.pk %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                                <i class="bi bi-x-circle me-1"></i>{% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-ticket-detailed me-1"></i>Crear Ticket
+                                <i class="bi bi-ticket-detailed me-1"></i>{% translate "Crear Ticket" %}
                             </button>
                         </div>
                     </form>

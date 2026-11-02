@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb" class="mb-3">
+    <nav aria-label="{% translate 'breadcrumb' %}" class="mb-3">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'whatsapp_dashboard' %}">WhatsApp</a></li>
             <li class="breadcrumb-item active">{{ page_title }}</li>
@@ -15,15 +16,15 @@
     <div class="card shadow-sm">
         <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
             <h4 class="mb-0">
-                <i class="fas fa-comments"></i> Historial de Mensajes
+                <i class="fas fa-comments"></i> {% translate "Historial de Mensajes" %}
             </h4>
             <div>
                 <span class="badge bg-light text-dark">
-                    Estado: 
+                    {% translate "Estado:" %} 
                     {% if connection.status == 'connected' %}
-                        <i class="fas fa-circle text-success"></i> Conectado
+                        <i class="fas fa-circle text-success"></i> {% translate "Conectado" %}
                     {% else %}
-                        <i class="fas fa-circle text-secondary"></i> Desconectado
+                        <i class="fas fa-circle text-secondary"></i> {% translate "Desconectado" %}
                     {% endif %}
                 </span>
             </div>
@@ -34,11 +35,11 @@
                     <table class="table table-hover">
                         <thead class="table-light">
                             <tr>
-                                <th style="width: 150px;">Fecha/Hora</th>
-                                <th style="width: 150px;">Número</th>
-                                <th>Mensaje</th>
-                                <th style="width: 120px;">Tipo</th>
-                                <th style="width: 200px;">Palabra Clave</th>
+                                <th style="width: 150px;">{% translate "Fecha/Hora" %}</th>
+                                <th style="width: 150px;">{% translate "Número" %}</th>
+                                <th>{% translate "Mensaje" %}</th>
+                                <th style="width: 120px;">{% translate "Tipo" %}</th>
+                                <th style="width: 200px;">{% translate "Palabra Clave" %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -59,15 +60,15 @@
                                 <td>
                                     {% if message.message_type == 'received' %}
                                         <span class="badge bg-primary">
-                                            <i class="fas fa-inbox"></i> Recibido
+                                            <i class="fas fa-inbox"></i> {% translate "Recibido" %}
                                         </span>
                                     {% elif message.message_type == 'auto_reply' %}
                                         <span class="badge bg-success">
-                                            <i class="fas fa-robot"></i> Auto-respuesta
+                                            <i class="fas fa-robot"></i> {% translate "Auto-respuesta" %}
                                         </span>
                                     {% elif message.message_type == 'sent' %}
                                         <span class="badge bg-info">
-                                            <i class="fas fa-paper-plane"></i> Enviado
+                                            <i class="fas fa-paper-plane"></i> {% translate "Enviado" %}
                                         </span>
                                     {% else %}
                                         <span class="badge bg-secondary">
@@ -92,7 +93,7 @@
 
                 <!-- Paginación -->
                 {% if page_obj.has_other_pages %}
-                <nav aria-label="Paginación de mensajes" class="mt-4">
+                <nav aria-label="{% translate 'Paginación de mensajes' %}" class="mt-4">
                     <ul class="pagination justify-content-center">
                         {% if page_obj.has_previous %}
                             <li class="page-item">
@@ -138,8 +139,8 @@
             {% else %}
                 <div class="text-center py-5">
                     <i class="fas fa-inbox text-muted" style="font-size: 4rem;"></i>
-                    <p class="text-muted mt-3 lead">No hay mensajes en el historial</p>
-                    <p class="text-muted">Los mensajes aparecerán aquí cuando tu WhatsApp esté conectado y reciba mensajes</p>
+                    <p class="text-muted mt-3 lead">{% translate "No hay mensajes en el historial" %}</p>
+                    <p class="text-muted">{% translate "Los mensajes aparecerán aquí cuando tu WhatsApp esté conectado y reciba mensajes" %}</p>
                 </div>
             {% endif %}
         </div>
@@ -148,19 +149,19 @@
     <!-- Leyenda -->
     <div class="card mt-3 border-info">
         <div class="card-body">
-            <h6 class="card-title"><i class="fas fa-info-circle"></i> Tipos de Mensaje</h6>
+            <h6 class="card-title"><i class="fas fa-info-circle"></i> {% translate "Tipos de Mensaje" %}</h6>
             <div class="row">
                 <div class="col-md-4">
-                    <span class="badge bg-primary me-2">Recibido</span>
-                    Mensajes que te enviaron
+                    <span class="badge bg-primary me-2">{% translate "Recibido" %}</span>
+                    {% translate "Mensajes que te enviaron" %}
                 </div>
                 <div class="col-md-4">
-                    <span class="badge bg-success me-2">Auto-respuesta</span>
-                    Respuestas automáticas enviadas
+                    <span class="badge bg-success me-2">{% translate "Auto-respuesta" %}</span>
+                    {% translate "Respuestas automáticas enviadas" %}
                 </div>
                 <div class="col-md-4">
-                    <span class="badge bg-info me-2">Enviado</span>
-                    Mensajes enviados manualmente
+                    <span class="badge bg-info me-2">{% translate "Enviado" %}</span>
+                    {% translate "Mensajes enviados manualmente" %}
                 </div>
             </div>
         </div>

@@ -1,12 +1,13 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
 
 {% block hero_icon %}<i class="bi bi-envelope-heart"></i>{% endblock %}
-{% block hero_title %}Contáctanos{% endblock %}
-{% block hero_description %}Estamos aquí para ayudarte. Envíanos tu consulta y te responderemos pronto.{% endblock %}
+{% block hero_title %}{% translate "Contáctanos" %}{% endblock %}
+{% block hero_description %}{% translate "Estamos aquí para ayudarte. Envíanos tu consulta y te responderemos pronto." %}{% endblock %}
 
-{% block content_section_class %}contact-container{% endblock %}
+{% block content_section_class %}{% translate "contact-container" %}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -20,7 +21,7 @@
                             <i class="bi bi-telephone"></i>
                         </div>
                         <div>
-                            <strong>Teléfono</strong><br>
+                            <strong>{% translate "Teléfono" %}</strong><br>
                             <small class="text-muted">+34 662 47 0645</small>
                         </div>
                     </div>
@@ -29,7 +30,7 @@
                             <i class="bi bi-envelope"></i>
                         </div>
                         <div>
-                            <strong>Email</strong><br>
+                            <strong>{% translate "Email" %}</strong><br>
                             <small class="text-muted">mfalconsoft@gmail.com</small>
                         </div>
                     </div>
@@ -38,8 +39,8 @@
                             <i class="bi bi-clock"></i>
                         </div>
                         <div>
-                            <strong>Horario</strong><br>
-                            <small class="text-muted">Lun - Vie: 9:00 - 18:00</small>
+                            <strong>{% translate "Horario" %}</strong><br>
+                            <small class="text-muted">{% translate "Lun - Vie: 9:00 - 18:00" %}</small>
                         </div>
                     </div>
                 </div>
@@ -59,9 +60,8 @@
             {% if rate_limited %}
                 <div class="alert alert-warning alert-dismissible fade show" role="alert">
                     <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>Límite alcanzado:</strong> Has enviado demasiados mensajes recientemente. 
-                    Para prevenir spam, permite un máximo de 3 contactos por hora. 
-                    <br><small class="text-muted">Puedes volver a intentarlo en unos minutos.</small>
+                    <strong>{% translate "Límite alcanzado:" %}</strong> {% translate "Has enviado demasiados mensajes recientemente. Para prevenir spam, permite un máximo de 3 contactos por hora." %} 
+                    <br><small class="text-muted">{% translate "Puedes volver a intentarlo en unos minutos." %}</small>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             {% endif %}
@@ -175,10 +175,10 @@
                     <div class="card border-warning bg-light">
                         <div class="card-body">
                             <h6 class="card-title text-warning">
-                                <i class="bi bi-shield-check me-1"></i>Verificación de Seguridad
+                                <i class="bi bi-shield-check me-1"></i>{% translate "Verificación de Seguridad" %}
                             </h6>
                             <p class="card-text text-muted small mb-3">
-                                Para prevenir spam, por favor resuelve esta operación matemática:
+                                {% translate "Para prevenir spam, por favor resuelve esta operación matemática:" %}
                             </p>
                             
                             <div class="row">
@@ -188,7 +188,7 @@
                                     </label>
                                     <div class="input-group">
                                         {{ form.captcha_question }}
-                                        <button type="button" class="btn btn-outline-secondary" onclick="refreshCaptcha()" title="Nueva pregunta">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="refreshCaptcha()" title="{% translate 'Nueva pregunta' %}">
                                             <i class="bi bi-arrow-clockwise"></i>
                                         </button>
                                     </div>
@@ -223,15 +223,15 @@
                     <button type="submit" class="btn btn-primary btn-lg" {% if rate_limited %}disabled{% endif %}>
                         <i class="bi bi-send me-2"></i>
                         {% if rate_limited %}
-                            <i class="bi bi-clock me-1"></i>Espera para enviar
+                            <i class="bi bi-clock me-1"></i>{% translate "Espera para enviar" %}
                         {% else %}
-                            Enviar Mensaje
+                            {% translate "Enviar Mensaje" %}
                         {% endif %}
                     </button>
                     {% if rate_limited %}
                         <div class="text-muted small mt-2">
                             <i class="bi bi-info-circle me-1"></i>
-                            El formulario está temporalmente deshabilitado debido al límite de envíos
+                            {% translate "El formulario está temporalmente deshabilitado debido al límite de envíos" %}
                         </div>
                     {% endif %}
                 </div>
@@ -241,7 +241,7 @@
             <div class="text-center mt-4">
                 <small class="text-muted">
                     <i class="bi bi-shield-check me-1"></i>
-                    Tus datos están seguros. No compartimos información personal.
+                    {% translate "Tus datos están seguros. No compartimos información personal." %}
                 </small>
             </div>
         </div>
@@ -251,13 +251,13 @@
 {% block extra_css %}
 <style>
     .company-info {
-        background: #f8f9fa;
+        background: var(--ap-fill-2);
         border-radius: 10px;
         padding: 20px;
     }
     
     .contact-icon {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(160deg, #0a84ff 0%, #5e5ce6 100%);
         color: white;
         width: 40px;
         height: 40px;
@@ -269,9 +269,9 @@
     }
     
     .captcha-section {
-        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
-        border: 2px solid #f39c12;
-        border-radius: 10px;
+        background: var(--ap-soft-orange);
+        border: 1px solid rgba(255, 159, 10, .45);
+        border-radius: 16px;
         padding: 20px;
     }
     

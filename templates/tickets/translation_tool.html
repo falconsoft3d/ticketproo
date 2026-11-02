@@ -1,14 +1,15 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Traductor con IA - Ticket System{% endblock %}
+{% block title %}{% translate "Traductor con IA - Ticket System" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
-    <nav aria-label="breadcrumb">
+    <nav aria-label="{% translate 'breadcrumb' %}">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
-            <li class="breadcrumb-item active">Traductor con IA</li>
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">{% translate "Inicio" %}</a></li>
+            <li class="breadcrumb-item active">{% translate "Traductor con IA" %}</li>
         </ol>
     </nav>
 
@@ -18,7 +19,7 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-translate"></i> Traductor con IA
+                        <i class="bi bi-translate"></i> {% translate "Traductor con IA" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -28,7 +29,7 @@
                         <div class="row mb-3">
                             <div class="col-md-5">
                                 <label class="form-label">
-                                    <i class="bi bi-flag"></i> Idioma Origen
+                                    <i class="bi bi-flag"></i> {% translate "Idioma Origen" %}
                                 </label>
                                 <select name="source_language" class="form-select" required>
                                     {% for code, name in languages %}
@@ -41,7 +42,7 @@
                             </div>
                             <div class="col-md-5">
                                 <label class="form-label">
-                                    <i class="bi bi-flag-fill"></i> Idioma Destino
+                                    <i class="bi bi-flag-fill"></i> {% translate "Idioma Destino" %}
                                 </label>
                                 <select name="target_language" class="form-select" required>
                                     {% for code, name in languages %}
@@ -53,15 +54,15 @@
 
                         <div class="mb-3">
                             <label class="form-label">
-                                <i class="bi bi-file-text"></i> Texto a Traducir
+                                <i class="bi bi-file-text"></i> {% translate "Texto a Traducir" %}
                             </label>
                             <textarea name="source_text" class="form-control" rows="8" required placeholder="Escribe o pega el texto que deseas traducir..."></textarea>
-                            <small class="text-muted">Escribe el texto que deseas traducir</small>
+                            <small class="text-muted">{% translate "Escribe el texto que deseas traducir" %}</small>
                         </div>
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-cpu"></i> Traducir con IA
+                                <i class="bi bi-cpu"></i> {% translate "Traducir con IA" %}
                             </button>
                         </div>
                     </form>
@@ -73,7 +74,7 @@
             <div class="card shadow-sm mb-4 border-success">
                 <div class="card-header bg-success text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-check-circle"></i> Resultado de la Traducción
+                        <i class="bi bi-check-circle"></i> {% translate "Resultado de la Traducción" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -90,7 +91,7 @@
                                     <i class="bi bi-file-check"></i> Traducción ({{ translation.get_target_language_display }})
                                 </h6>
                                 <button class="btn btn-sm btn-outline-primary" onclick="copyTranslation()">
-                                    <i class="bi bi-clipboard"></i> Copiar
+                                    <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                                 </button>
                             </div>
                             <div id="translatedText" class="p-3 bg-success bg-opacity-10 rounded border border-success" style="white-space: pre-wrap;">{{ translation.translated_text }}</div>
@@ -110,10 +111,10 @@
             <div class="card shadow-sm">
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-clock-history"></i> Traducciones Recientes
+                        <i class="bi bi-clock-history"></i> {% translate "Traducciones Recientes" %}
                     </h5>
                     <a href="{% url 'translation_list' %}" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-list-ul"></i> Ver Todas
+                        <i class="bi bi-list-ul"></i> {% translate "Ver Todas" %}
                     </a>
                 </div>
                 <div class="list-group list-group-flush">
@@ -128,10 +129,10 @@
                                     <small class="text-muted">{{ trans.created_at|date:"d/m/Y H:i" }}</small>
                                 </div>
                                 <p class="mb-1 text-truncate" style="max-width: 600px;">
-                                    <strong>Original:</strong> {{ trans.source_text|truncatewords:15 }}
+                                    <strong>{% translate "Original:" %}</strong> {{ trans.source_text|truncatewords:15 }}
                                 </p>
                                 <p class="mb-0 text-muted text-truncate" style="max-width: 600px;">
-                                    <strong>Traducción:</strong> {{ trans.translated_text|truncatewords:15 }}
+                                    <strong>{% translate "Traducción:" %}</strong> {{ trans.translated_text|truncatewords:15 }}
                                 </p>
                             </div>
                             <a href="{% url 'translation_delete' trans.pk %}" class="btn btn-sm btn-outline-danger">

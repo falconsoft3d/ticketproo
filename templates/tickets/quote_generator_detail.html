@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
 
@@ -13,18 +14,18 @@
                 <div>
                     {% if generator.created_by == user or user.is_superuser %}
                     <a href="{% url 'quote_generator_edit' generator.pk %}" class="btn btn-primary">
-                        <i class="bi bi-pencil-square"></i> Editar
+                        <i class="bi bi-pencil-square"></i> {% translate "Editar" %}
                     </a>
                     <form method="post" action="{% url 'quote_generator_regenerate' generator.pk %}" style="display: inline;">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-warning" 
                                 onclick="return confirm('¿Regenerar todas las citas? Esta acción no se puede deshacer.')">
-                            <i class="bi bi-arrow-clockwise"></i> Regenerar Citas
+                            <i class="bi bi-arrow-clockwise"></i> {% translate "Regenerar Citas" %}
                         </button>
                     </form>
                     {% endif %}
                     <a href="{% url 'quote_generator_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                 </div>
             </div>
@@ -36,26 +37,26 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-info-circle"></i> Información del Generador
+                        <i class="bi bi-info-circle"></i> {% translate "Información del Generador" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>Tema:</strong></p>
+                            <p><strong>{% translate "Tema:" %}</strong></p>
                             <p class="text-muted">{{ generator.topic }}</p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Creado por:</strong> {{ generator.created_by.get_full_name|default:generator.created_by.username }}</p>
-                            <p><strong>Fecha:</strong> {{ generator.created_at|date:"d/m/Y H:i" }}</p>
+                            <p><strong>{% translate "Creado por:" %}</strong> {{ generator.created_by.get_full_name|default:generator.created_by.username }}</p>
+                            <p><strong>{% translate "Fecha:" %}</strong> {{ generator.created_at|date:"d/m/Y H:i" }}</p>
                             {% if generator.company %}
-                            <p><strong>Empresa:</strong> {{ generator.company.name }}</p>
+                            <p><strong>{% translate "Empresa:" %}</strong> {{ generator.company.name }}</p>
                             {% endif %}
-                            <p><strong>Estado:</strong> 
+                            <p><strong>{% translate "Estado:" %}</strong> 
                                 {% if generator.is_active %}
-                                    <span class="badge bg-success">Activo</span>
+                                    <span class="badge bg-success">{% translate "Activo" %}</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Inactivo</span>
+                                    <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                                 {% endif %}
                             </p>
                         </div>
@@ -68,13 +69,13 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-bar-chart"></i> Estadísticas
+                        <i class="bi bi-bar-chart"></i> {% translate "Estadísticas" %}
                     </h5>
                 </div>
                 <div class="card-body text-center">
                     <div class="mb-3">
                         <h2 class="text-primary">{{ quotes_list|length }}</h2>
-                        <p class="text-muted mb-0">Citas generadas</p>
+                        <p class="text-muted mb-0">{% translate "Citas generadas" %}</p>
                     </div>
                     {% if generator.updated_at != generator.created_at %}
                     <small class="text-muted">
@@ -105,7 +106,7 @@
                                     <blockquote class="blockquote mb-2">
                                         <p class="mb-2">"{{ quote.quote }}"</p>
                                         <footer class="blockquote-footer">
-                                            <cite title="Source Title">{{ quote.author|default:"Anónimo" }}</cite>
+                                            <cite title="{% translate 'Source Title' %}">{{ quote.author|default:"Anónimo" }}</cite>
                                         </footer>
                                     </blockquote>
                                 </div>
@@ -123,13 +124,13 @@
             <div class="card">
                 <div class="card-body text-center py-5">
                     <i class="bi bi-exclamation-triangle display-4 text-warning mb-3"></i>
-                    <h5 class="text-muted">No se han generado citas aún</h5>
-                    <p class="text-muted">Hubo un problema al generar las citas automáticamente.</p>
+                    <h5 class="text-muted">{% translate "No se han generado citas aún" %}</h5>
+                    <p class="text-muted">{% translate "Hubo un problema al generar las citas automáticamente." %}</p>
                     {% if generator.created_by == user or user.is_superuser %}
                     <form method="post" action="{% url 'quote_generator_regenerate' generator.pk %}" style="display: inline;">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-arrow-clockwise"></i> Generar Citas Ahora
+                            <i class="bi bi-arrow-clockwise"></i> {% translate "Generar Citas Ahora" %}
                         </button>
                     </form>
                     {% endif %}

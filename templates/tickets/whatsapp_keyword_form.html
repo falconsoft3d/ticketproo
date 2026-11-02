@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -7,7 +8,7 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <!-- Breadcrumb -->
-            <nav aria-label="breadcrumb" class="mb-3">
+            <nav aria-label="{% translate 'breadcrumb' %}" class="mb-3">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{% url 'whatsapp_dashboard' %}">WhatsApp</a></li>
                     <li class="breadcrumb-item active">{{ page_title }}</li>
@@ -27,7 +28,7 @@
                         <!-- Palabra Clave -->
                         <div class="mb-3">
                             <label for="keyword" class="form-label">
-                                Palabra Clave <span class="text-danger">*</span>
+                                {% translate "Palabra Clave" %} <span class="text-danger">*</span>
                             </label>
                             <input 
                                 type="text" 
@@ -35,18 +36,18 @@
                                 id="keyword" 
                                 name="keyword" 
                                 value="{{ keyword.keyword|default:'' }}"
-                                placeholder="Ej: Hola, Precio, Horario"
+                                placeholder="{% translate 'Ej: Hola, Precio, Horario' %}"
                                 required
                             >
                             <small class="form-text text-muted">
-                                La palabra o frase que activará la respuesta automática
+                                {% translate "La palabra o frase que activará la respuesta automática" %}
                             </small>
                         </div>
 
                         <!-- Respuesta -->
                         <div class="mb-3">
                             <label for="response" class="form-label">
-                                Respuesta <span class="text-danger">*</span>
+                                {% translate "Respuesta" %} <span class="text-danger">*</span>
                             </label>
                             <textarea 
                                 class="form-control" 
@@ -57,7 +58,7 @@
                                 required
                             >{{ keyword.response|default:'' }}</textarea>
                             <small class="form-text text-muted">
-                                El mensaje que se enviará automáticamente cuando se detecte la palabra clave
+                                {% translate "El mensaje que se enviará automáticamente cuando se detecte la palabra clave" %}
                             </small>
                         </div>
 
@@ -73,8 +74,8 @@
                                         {% if keyword.is_exact_match %}checked{% endif %}
                                     >
                                     <label class="form-check-label" for="is_exact_match">
-                                        <strong>Coincidencia Exacta</strong>
-                                        <br><small class="text-muted">Debe ser exactamente la palabra, no parte de otra</small>
+                                        <strong>{% translate "Coincidencia Exacta" %}</strong>
+                                        <br><small class="text-muted">{% translate "Debe ser exactamente la palabra, no parte de otra" %}</small>
                                     </label>
                                 </div>
                             </div>
@@ -88,8 +89,8 @@
                                         {% if keyword.is_case_sensitive %}checked{% endif %}
                                     >
                                     <label class="form-check-label" for="is_case_sensitive">
-                                        <strong>Sensible a Mayúsculas</strong>
-                                        <br><small class="text-muted">"Hola" será diferente a "hola"</small>
+                                        <strong>{% translate "Sensible a Mayúsculas" %}</strong>
+                                        <br><small class="text-muted">{% translate '"Hola" será diferente a "hola"' %}</small>
                                     </label>
                                 </div>
                             </div>
@@ -98,7 +99,7 @@
                         <!-- Prioridad -->
                         <div class="mb-3">
                             <label for="priority" class="form-label">
-                                Prioridad
+                                {% translate "Prioridad" %}
                             </label>
                             <input 
                                 type="number" 
@@ -110,7 +111,7 @@
                                 max="100"
                             >
                             <small class="form-text text-muted">
-                                Mayor prioridad = se evalúa primero. 0 = prioridad normal
+                                {% translate "Mayor prioridad = se evalúa primero. 0 = prioridad normal" %}
                             </small>
                         </div>
 
@@ -126,8 +127,8 @@
                                     {% if keyword.is_active %}checked{% endif %}
                                 >
                                 <label class="form-check-label" for="is_active">
-                                    <strong>Palabra Clave Activa</strong>
-                                    <br><small class="text-muted">Si está desactivada, no se procesará</small>
+                                    <strong>{% translate "Palabra Clave Activa" %}</strong>
+                                    <br><small class="text-muted">{% translate "Si está desactivada, no se procesará" %}</small>
                                 </label>
                             </div>
                         </div>
@@ -136,10 +137,10 @@
                         <!-- Botones -->
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'whatsapp_dashboard' %}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancelar
+                                <i class="fas fa-times"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Guardar
+                                <i class="fas fa-save"></i> {% translate "Guardar" %}
                             </button>
                         </div>
                     </form>
@@ -149,30 +150,30 @@
             <!-- Ejemplos de Uso -->
             <div class="card mt-4 border-info">
                 <div class="card-header bg-info text-white">
-                    <h6 class="mb-0"><i class="fas fa-lightbulb"></i> Ejemplos de Configuración</h6>
+                    <h6 class="mb-0"><i class="fas fa-lightbulb"></i> {% translate "Ejemplos de Configuración" %}</h6>
                 </div>
                 <div class="card-body">
-                    <h6>Ejemplo 1: Saludo Simple</h6>
+                    <h6>{% translate "Ejemplo 1: Saludo Simple" %}</h6>
                     <ul>
-                        <li><strong>Palabra Clave:</strong> Hola</li>
-                        <li><strong>Respuesta:</strong> ¡Hola! ¿En qué puedo ayudarte?</li>
-                        <li><strong>Coincidencia Exacta:</strong> No</li>
-                        <li><strong>Sensible a Mayúsculas:</strong> No</li>
+                        <li><strong>{% translate "Palabra Clave:" %}</strong> {% translate "Hola" %}</li>
+                        <li><strong>{% translate "Respuesta:" %}</strong> {% translate "¡Hola! ¿En qué puedo ayudarte?" %}</li>
+                        <li><strong>{% translate "Coincidencia Exacta:" %}</strong> {% translate "No" %}</li>
+                        <li><strong>{% translate "Sensible a Mayúsculas:" %}</strong> {% translate "No" %}</li>
                     </ul>
 
-                    <h6 class="mt-3">Ejemplo 2: Información de Horarios</h6>
+                    <h6 class="mt-3">{% translate "Ejemplo 2: Información de Horarios" %}</h6>
                     <ul>
-                        <li><strong>Palabra Clave:</strong> horario</li>
-                        <li><strong>Respuesta:</strong> Nuestro horario de atención es de Lunes a Viernes de 9:00 AM a 6:00 PM</li>
-                        <li><strong>Coincidencia Exacta:</strong> No</li>
-                        <li><strong>Prioridad:</strong> 10</li>
+                        <li><strong>{% translate "Palabra Clave:" %}</strong> {% translate "horario" %}</li>
+                        <li><strong>{% translate "Respuesta:" %}</strong> {% translate "Nuestro horario de atención es de Lunes a Viernes de 9:00 AM a 6:00 PM" %}</li>
+                        <li><strong>{% translate "Coincidencia Exacta:" %}</strong> {% translate "No" %}</li>
+                        <li><strong>{% translate "Prioridad:" %}</strong> 10</li>
                     </ul>
 
-                    <h6 class="mt-3">Ejemplo 3: Precio de Producto Específico</h6>
+                    <h6 class="mt-3">{% translate "Ejemplo 3: Precio de Producto Específico" %}</h6>
                     <ul>
-                        <li><strong>Palabra Clave:</strong> precio</li>
-                        <li><strong>Respuesta:</strong> Tenemos diferentes productos. ¿Sobre cuál te gustaría saber el precio?</li>
-                        <li><strong>Coincidencia Exacta:</strong> No</li>
+                        <li><strong>{% translate "Palabra Clave:" %}</strong> {% translate "precio" %}</li>
+                        <li><strong>{% translate "Respuesta:" %}</strong> {% translate "Tenemos diferentes productos. ¿Sobre cuál te gustaría saber el precio?" %}</li>
+                        <li><strong>{% translate "Coincidencia Exacta:" %}</strong> {% translate "No" %}</li>
                     </ul>
                 </div>
             </div>

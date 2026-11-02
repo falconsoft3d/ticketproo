@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}{% if form.instance.pk %}Editar Día{% else %}Agregar Día{% endif %} - {{ block.super }}{% endblock %}
+{% block title %}{% if form.instance.pk %}{% translate "Editar Día" %}{% else %}{% translate "Agregar Día" %}{% endif %} - {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -13,7 +14,7 @@
                         {% if form.instance.pk %}
                             Editar Día: {{ form.instance.title }}
                         {% else %}
-                            Agregar Nuevo Día
+                            {% translate "Agregar Nuevo Día" %}
                         {% endif %}
                     </h4>
                 </div>
@@ -23,24 +24,24 @@
                         
                         <div class="mb-3">
                             <label for="{{ form.title.id_for_label }}" class="form-label fw-bold">
-                                Título del Día <span class="text-danger">*</span>
+                                {% translate "Título del Día" %} <span class="text-danger">*</span>
                             </label>
                             {{ form.title }}
                             {% if form.title.errors %}
                                 <div class="text-danger small mt-1">{{ form.title.errors }}</div>
                             {% endif %}
-                            <small class="text-muted">Ejemplo: Día 1, Lunes, Semana 1, etc.</small>
+                            <small class="text-muted">{% translate "Ejemplo: Día 1, Lunes, Semana 1, etc." %}</small>
                         </div>
 
                         <div class="mb-3">
                             <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">
-                                Descripción
+                                {% translate "Descripción" %}
                             </label>
                             {{ form.description }}
                             {% if form.description.errors %}
                                 <div class="text-danger small mt-1">{{ form.description.errors }}</div>
                             {% endif %}
-                            <small class="text-muted">Información adicional sobre este día (opcional)</small>
+                            <small class="text-muted">{% translate "Información adicional sobre este día (opcional)" %}</small>
                         </div>
 
                         {% if form.non_field_errors %}
@@ -52,11 +53,11 @@
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save"></i>
-                                {% if form.instance.pk %}Guardar Cambios{% else %}Crear Día{% endif %}
+                                {% if form.instance.pk %}{% translate "Guardar Cambios" %}{% else %}{% translate "Crear Día" %}{% endif %}
                             </button>
                             <a href="{% url 'task_plan_detail' form.instance.plan.id|default:plan.id %}" 
                                class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>

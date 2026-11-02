@@ -1,9 +1,10 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Levantamiento de Procesos — Ingresa tus datos</title>
+  <title>{% translate "Levantamiento de Procesos — Ingresa tus datos" %}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <style>
@@ -172,8 +173,8 @@
   <!-- Cabecera -->
   <div class="intake-header">
     <div class="logo-circle"><i class="bi bi-clipboard-check-fill"></i></div>
-    <h1>Levantamiento de Procesos</h1>
-    <p>Comparte cómo funciona tu empresa y te ayudaremos a documentar y mejorar tus procesos.</p>
+    <h1>{% translate "Levantamiento de Procesos" %}</h1>
+    <p>{% translate "Comparte cómo funciona tu empresa y te ayudaremos a documentar y mejorar tus procesos." %}</p>
   </div>
 
   <!-- Formulario -->
@@ -188,7 +189,7 @@
 
     <div class="step-badge">
       <span>&nbsp;</span>
-      <span><i class="bi bi-person-fill me-1"></i>Tus datos de contacto</span>
+      <span><i class="bi bi-person-fill me-1"></i>{% translate "Tus datos de contacto" %}</span>
       <span>&nbsp;</span>
     </div>
 
@@ -199,12 +200,12 @@
         <!-- Nombre completo -->
         <div class="col-12">
           <label for="requester_name" class="form-label">
-            Nombre completo <span class="text-danger">*</span>
+            {% translate "Nombre completo" %} <span class="text-danger">*</span>
           </label>
           <div class="input-icon-wrap">
             <i class="bi bi-person"></i>
             <input type="text" class="form-control" id="requester_name" name="requester_name"
-                   placeholder="Ej. María González"
+                   placeholder="{% translate 'Ej. María González' %}"
                    value="{{ form_data.requester_name|default:'' }}" required>
           </div>
         </div>
@@ -212,7 +213,7 @@
         <!-- Email -->
         <div class="col-12">
           <label for="requester_email" class="form-label">
-            Correo electrónico <span class="text-danger">*</span>
+            {% translate "Correo electrónico" %} <span class="text-danger">*</span>
           </label>
           <div class="input-icon-wrap">
             <i class="bi bi-envelope"></i>
@@ -224,7 +225,7 @@
 
         <!-- Teléfono -->
         <div class="col-sm-6">
-          <label for="requester_phone" class="form-label">Teléfono</label>
+          <label for="requester_phone" class="form-label">{% translate "Teléfono" %}</label>
           <div class="input-icon-wrap">
             <i class="bi bi-telephone"></i>
             <input type="tel" class="form-control" id="requester_phone" name="requester_phone"
@@ -235,22 +236,22 @@
 
         <!-- País -->
         <div class="col-sm-6">
-          <label for="requester_country" class="form-label">País</label>
+          <label for="requester_country" class="form-label">{% translate "País" %}</label>
           <div class="input-icon-wrap">
             <i class="bi bi-globe2"></i>
             <input type="text" class="form-control" id="requester_country" name="requester_country"
-                   placeholder="México"
+                   placeholder="{% translate 'México' %}"
                    value="{{ form_data.requester_country|default:'' }}">
           </div>
         </div>
 
         <!-- Empresa -->
         <div class="col-12">
-          <label for="requester_company_name" class="form-label">Empresa / Organización</label>
+          <label for="requester_company_name" class="form-label">{% translate "Empresa / Organización" %}</label>
           <div class="input-icon-wrap">
             <i class="bi bi-building"></i>
             <input type="text" class="form-control" id="requester_company_name" name="requester_company_name"
-                   placeholder="Nombre de tu empresa"
+                   placeholder="{% translate 'Nombre de tu empresa' %}"
                    value="{{ form_data.requester_company_name|default:'' }}">
           </div>
         </div>
@@ -258,7 +259,7 @@
         <!-- Botón -->
         <div class="col-12 mt-2">
           <button type="submit" class="btn btn-submit" id="submit-btn">
-            <i class="bi bi-arrow-right-circle me-2"></i>Comenzar levantamiento
+            <i class="bi bi-arrow-right-circle me-2"></i>{% translate "Comenzar levantamiento" %}
           </button>
         </div>
       </div>
@@ -266,26 +267,26 @@
 
     <p class="privacy-note">
       <i class="bi bi-shield-lock me-1"></i>
-      Tus datos se usan únicamente para identificar este levantamiento y no se comparten con terceros.
+      {% translate "Tus datos se usan únicamente para identificar este levantamiento y no se comparten con terceros." %}
     </p>
   </div>
 
   <!-- Cómo funciona -->
   <div class="how-it-works">
     <p class="fw-bold mb-3" style="font-size:.82rem;color:var(--c2);text-transform:uppercase;letter-spacing:.06em;">
-      <i class="bi bi-info-circle me-1"></i>¿Cómo funciona?
+      <i class="bi bi-info-circle me-1"></i>{% translate "¿Cómo funciona?" %}
     </p>
     <div class="step-item">
       <div class="step-num">1</div>
-      <div class="step-txt"><strong>Ingresa tus datos</strong> de contacto en este formulario.</div>
+      <div class="step-txt"><strong>{% translate "Ingresa tus datos" %}</strong> {% translate "de contacto en este formulario." %}</div>
     </div>
     <div class="step-item">
       <div class="step-num">2</div>
-      <div class="step-txt"><strong>Agrega los procesos</strong> de tu empresa: ventas, logística, atención al cliente, etc.</div>
+      <div class="step-txt"><strong>{% translate "Agrega los procesos" %}</strong> {% translate "de tu empresa: ventas, logística, atención al cliente, etc." %}</div>
     </div>
     <div class="step-item">
       <div class="step-num">3</div>
-      <div class="step-txt"><strong>Nuestro equipo revisará</strong> el levantamiento y se pondrá en contacto contigo.</div>
+      <div class="step-txt"><strong>{% translate "Nuestro equipo revisará" %}</strong> {% translate "el levantamiento y se pondrá en contacto contigo." %}</div>
     </div>
   </div>
 </div>

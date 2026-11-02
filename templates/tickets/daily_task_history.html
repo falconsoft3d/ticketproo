@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Historial de Gestión Diaria - TicketProo{% endblock %}
+{% block title %}{% translate "Historial de Gestión Diaria - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>
-                <i class="bi bi-clock-history"></i> Historial de Gestión Diaria
+                <i class="bi bi-clock-history"></i> {% translate "Historial de Gestión Diaria" %}
             </h2>
             <a href="{% url 'daily_task_management' %}" class="btn btn-primary">
-                <i class="bi bi-arrow-left"></i> Volver a la gestión del día
+                <i class="bi bi-arrow-left"></i> {% translate "Volver a la gestión del día" %}
             </a>
         </div>
     </div>
@@ -23,7 +24,7 @@
             <div class="card-body">
                 <i class="bi bi-calendar-check display-6 text-primary"></i>
                 <h5 class="mt-2">{{ total_sessions }}</h5>
-                <small class="text-muted">Días trabajados</small>
+                <small class="text-muted">{% translate "Días trabajados" %}</small>
             </div>
         </div>
     </div>
@@ -32,7 +33,7 @@
             <div class="card-body">
                 <i class="bi bi-check-circle display-6 text-success"></i>
                 <h5 class="mt-2">{{ total_completed_tasks }}</h5>
-                <small class="text-muted">Tareas completadas</small>
+                <small class="text-muted">{% translate "Tareas completadas" %}</small>
             </div>
         </div>
     </div>
@@ -41,7 +42,7 @@
             <div class="card-body">
                 <i class="bi bi-list-task display-6 text-info"></i>
                 <h5 class="mt-2">{{ total_tasks }}</h5>
-                <small class="text-muted">Tareas planificadas</small>
+                <small class="text-muted">{% translate "Tareas planificadas" %}</small>
             </div>
         </div>
     </div>
@@ -50,7 +51,7 @@
             <div class="card-body">
                 <i class="bi bi-percent display-6 text-warning"></i>
                 <h5 class="mt-2">{{ average_completion }}%</h5>
-                <small class="text-muted">Promedio de finalización</small>
+                <small class="text-muted">{% translate "Promedio de finalización" %}</small>
             </div>
         </div>
     </div>
@@ -63,19 +64,19 @@
             <div class="card-body">
                 <form method="get" class="row g-3">
                     <div class="col-md-3">
-                        <label for="date_from" class="form-label">Desde</label>
+                        <label for="date_from" class="form-label">{% translate "Desde" %}</label>
                         <input type="date" class="form-control" id="date_from" name="date_from" 
                                value="{{ request.GET.date_from }}">
                     </div>
                     <div class="col-md-3">
-                        <label for="date_to" class="form-label">Hasta</label>
+                        <label for="date_to" class="form-label">{% translate "Hasta" %}</label>
                         <input type="date" class="form-control" id="date_to" name="date_to" 
                                value="{{ request.GET.date_to }}">
                     </div>
                     <div class="col-md-3">
-                        <label for="min_completion" class="form-label">% Mínimo de finalización</label>
+                        <label for="min_completion" class="form-label">{% translate "% Mínimo de finalización" %}</label>
                         <select class="form-select" id="min_completion" name="min_completion">
-                            <option value="">Todos</option>
+                            <option value="">{% translate "Todos" %}</option>
                             <option value="0" {% if request.GET.min_completion == "0" %}selected{% endif %}>0%</option>
                             <option value="25" {% if request.GET.min_completion == "25" %}selected{% endif %}>25%</option>
                             <option value="50" {% if request.GET.min_completion == "50" %}selected{% endif %}>50%</option>
@@ -85,10 +86,10 @@
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary me-2">
-                            <i class="bi bi-funnel"></i> Filtrar
+                            <i class="bi bi-funnel"></i> {% translate "Filtrar" %}
                         </button>
                         <a href="{% url 'daily_task_history' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-x"></i> Limpiar
+                            <i class="bi bi-x"></i> {% translate "Limpiar" %}
                         </a>
                     </div>
                 </form>
@@ -144,7 +145,7 @@
                     {% if session.dailytaskitem_set.all %}
                     <div class="row">
                         <div class="col-md-8">
-                            <h6 class="text-muted mb-2">Tareas planificadas:</h6>
+                            <h6 class="text-muted mb-2">{% translate "Tareas planificadas:" %}</h6>
                             <div class="row g-2">
                                 {% for item in session.dailytaskitem_set.all %}
                                 <div class="col-md-6">
@@ -169,7 +170,7 @@
                         </div>
                         <div class="col-md-4">
                             {% if session.notes %}
-                            <h6 class="text-muted mb-2">Notas del día:</h6>
+                            <h6 class="text-muted mb-2">{% translate "Notas del día:" %}</h6>
                             <div class="bg-light p-2 rounded">
                                 <small>{{ session.notes|truncatechars:150 }}</small>
                             </div>
@@ -179,7 +180,7 @@
                     {% else %}
                     <div class="text-center text-muted py-3">
                         <i class="bi bi-calendar-x"></i>
-                        <span class="ms-2">No se planificaron tareas este día</span>
+                        <span class="ms-2">{% translate "No se planificaron tareas este día" %}</span>
                     </div>
                     {% endif %}
                 </div>
@@ -188,14 +189,14 @@
             
             <!-- Paginación -->
             {% if is_paginated %}
-            <nav aria-label="Navegación de páginas">
+            <nav aria-label="{% translate 'Navegación de páginas' %}">
                 <ul class="pagination justify-content-center">
                     {% if page_obj.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page=1{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.min_completion %}&min_completion={{ request.GET.min_completion }}{% endif %}">Primera</a>
+                            <a class="page-link" href="?page=1{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.min_completion %}&min_completion={{ request.GET.min_completion }}{% endif %}">{% translate "Primera" %}</a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.min_completion %}&min_completion={{ request.GET.min_completion }}{% endif %}">Anterior</a>
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.min_completion %}&min_completion={{ request.GET.min_completion }}{% endif %}">{% translate "Anterior" %}</a>
                         </li>
                     {% endif %}
                     
@@ -207,10 +208,10 @@
                     
                     {% if page_obj.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.min_completion %}&min_completion={{ request.GET.min_completion }}{% endif %}">Siguiente</a>
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.min_completion %}&min_completion={{ request.GET.min_completion }}{% endif %}">{% translate "Siguiente" %}</a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.min_completion %}&min_completion={{ request.GET.min_completion }}{% endif %}">Última</a>
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.min_completion %}&min_completion={{ request.GET.min_completion }}{% endif %}">{% translate "Última" %}</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -220,16 +221,16 @@
             <div class="card">
                 <div class="card-body text-center py-5">
                     <i class="bi bi-calendar-x display-1 text-muted"></i>
-                    <h4 class="mt-3">No hay sesiones registradas</h4>
+                    <h4 class="mt-3">{% translate "No hay sesiones registradas" %}</h4>
                     <p class="text-muted">
                         {% if request.GET.date_from or request.GET.date_to or request.GET.min_completion %}
-                            No se encontraron sesiones que coincidan con los filtros aplicados.
+                            {% translate "No se encontraron sesiones que coincidan con los filtros aplicados." %}
                         {% else %}
-                            Aún no has creado ninguna sesión de gestión diaria de tareas.
+                            {% translate "Aún no has creado ninguna sesión de gestión diaria de tareas." %}
                         {% endif %}
                     </p>
                     <a href="{% url 'daily_task_management' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear mi primera sesión
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear mi primera sesión" %}
                     </a>
                 </div>
             </div>

@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ course.title }} - TicketProo{% endblock %}
@@ -33,21 +34,21 @@
     <div id="copyToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="toast-header bg-success text-white">
             <i class="bi bi-check-circle me-2"></i>
-            <strong class="me-auto">¡Éxito!</strong>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            <strong class="me-auto">{% translate "¡Éxito!" %}</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="{% translate 'Close' %}"></button>
         </div>
         <div class="toast-body">
-            Link copiado al portapapeles
+            {% translate "Link copiado al portapapeles" %}
         </div>
     </div>
     <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="toast-header bg-danger text-white">
             <i class="bi bi-exclamation-circle me-2"></i>
-            <strong class="me-auto">Error</strong>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            <strong class="me-auto">{% translate "Error" %}</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="{% translate 'Close' %}"></button>
         </div>
         <div class="toast-body" id="errorToastMessage">
-            No se pudo copiar el link
+            {% translate "No se pudo copiar el link" %}
         </div>
     </div>
 </div>
@@ -65,12 +66,12 @@
                         <span class="badge bg-info">
                             <i class="bi bi-building"></i> {{ course.company.name }}
                         </span>
-                        <small class="text-muted ms-2">Curso empresarial</small>
+                        <small class="text-muted ms-2">{% translate "Curso empresarial" %}</small>
                     {% else %}
                         <span class="badge bg-success">
-                            <i class="bi bi-globe"></i> Público
+                            <i class="bi bi-globe"></i> {% translate "Público" %}
                         </span>
-                        <small class="text-muted ms-2">Disponible para todos los usuarios</small>
+                        <small class="text-muted ms-2">{% translate "Disponible para todos los usuarios" %}</small>
                     {% endif %}
                 </div>
             </div>
@@ -85,7 +86,7 @@
         <div class="card mb-4">
             <div class="card-header bg-secondary text-white">
                 <h5 class="mb-0">
-                    <i class="bi bi-info-circle"></i> Descripción del Curso
+                    <i class="bi bi-info-circle"></i> {% translate "Descripción del Curso" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -118,7 +119,7 @@
                     <!-- Botón de copiar link -->
                     {% if class.video_url %}
                     <div class="mb-3">
-                        <label class="form-label small text-muted"><i class="bi bi-link-45deg"></i> Enlace del video</label>
+                        <label class="form-label small text-muted"><i class="bi bi-link-45deg"></i> {% translate "Enlace del video" %}</label>
                         <div class="input-group input-group-sm">
                             <input type="text" 
                                    class="form-control text-truncate" 
@@ -129,11 +130,11 @@
                             <button class="btn btn-outline-primary" 
                                     type="button" 
                                     onclick="copyClassLink('{{ class.pk }}', '{{ course.public_token }}')">
-                                <i class="bi bi-clipboard"></i> Copiar
+                                <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                             </button>
                         </div>
                         <small class="text-muted">
-                            <i class="bi bi-copy"></i> Copiado <span id="copy-count-{{ class.pk }}">{{ class.link_copy_count }}</span> {% if class.link_copy_count == 1 %}vez{% else %}veces{% endif %}
+                            <i class="bi bi-copy"></i> {% translate "Copiado" %} <span id="copy-count-{{ class.pk }}">{{ class.link_copy_count }}</span> {% if class.link_copy_count == 1 %}{% translate "vez" %}{% else %}{% translate "veces" %}{% endif %}
                         </small>
                     </div>
                     {% endif %}
@@ -155,16 +156,16 @@
                             <div class="card card-body bg-light">
                                 <form class="comment-form" data-class-id="{{ class.pk }}">
                                     <div class="mb-2">
-                                        <input type="text" class="form-control form-control-sm" placeholder="Nombre" name="name" required>
+                                        <input type="text" class="form-control form-control-sm" placeholder="{% translate 'Nombre' %}" name="name" required>
                                     </div>
                                     <div class="mb-2">
-                                        <input type="email" class="form-control form-control-sm" placeholder="Email" name="email" required>
+                                        <input type="email" class="form-control form-control-sm" placeholder="{% translate 'Email' %}" name="email" required>
                                     </div>
                                     <div class="mb-2">
                                         <textarea class="form-control form-control-sm" placeholder="Tu comentario" name="comment" rows="3" required></textarea>
                                     </div>
                                     <button type="submit" class="btn btn-primary btn-sm">
-                                        <i class="bi bi-send"></i> Enviar
+                                        <i class="bi bi-send"></i> {% translate "Enviar" %}
                                     </button>
                                 </form>
                             </div>
@@ -191,11 +192,11 @@
                                 
                                 {% if comment.status == 'resuelto' and comment.solution_link or comment.solution_note %}
                                     <div class="alert alert-success mt-2 mb-0">
-                                        <strong><i class="bi bi-check-circle-fill"></i> Solución:</strong>
+                                        <strong><i class="bi bi-check-circle-fill"></i> {% translate "Solución:" %}</strong>
                                         {% if comment.solution_link %}
                                             <div class="mt-1">
                                                 <i class="bi bi-link-45deg"></i> 
-                                                <a href="{{ comment.solution_link }}" target="_blank" class="text-decoration-none">Ver solución</a>
+                                                <a href="{{ comment.solution_link }}" target="_blank" class="text-decoration-none">{% translate "Ver solución" %}</a>
                                             </div>
                                         {% endif %}
                                         {% if comment.solution_note %}
@@ -218,8 +219,8 @@
             <div class="card">
                 <div class="card-body text-center py-5">
                     <i class="bi bi-play-circle display-4 text-muted mb-3"></i>
-                    <h5 class="text-muted">No hay clases disponibles</h5>
-                    <p class="text-muted">Este curso aún no tiene clases.</p>
+                    <h5 class="text-muted">{% translate "No hay clases disponibles" %}</h5>
+                    <p class="text-muted">{% translate "Este curso aún no tiene clases." %}</p>
                 </div>
             </div>
         {% endif %}
@@ -230,28 +231,28 @@
         <div class="card mb-4">
             <div class="card-header bg-primary text-white">
                 <h6 class="mb-0">
-                    <i class="bi bi-check-circle"></i> Aprobación del Curso
+                    <i class="bi bi-check-circle"></i> {% translate "Aprobación del Curso" %}
                 </h6>
             </div>
             <div class="card-body">
                 <!-- Formulario para aprobar/desaprobar -->
-                <p class="text-muted small mb-3">Registra tu aprobación o desaprobación</p>
+                <p class="text-muted small mb-3">{% translate "Registra tu aprobación o desaprobación" %}</p>
                 
                 <div class="mb-3">
-                    <label for="approvalName" class="form-label small">Tu nombre <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control form-control-sm" id="approvalName" placeholder="Ingresa tu nombre" required>
+                    <label for="approvalName" class="form-label small">{% translate "Tu nombre" %} <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-sm" id="approvalName" placeholder="{% translate 'Ingresa tu nombre' %}" required>
                 </div>
                 <div class="mb-3">
-                    <label for="approvalEmail" class="form-label small">Tu correo <span class="text-danger">*</span></label>
+                    <label for="approvalEmail" class="form-label small">{% translate "Tu correo" %} <span class="text-danger">*</span></label>
                     <input type="email" class="form-control form-control-sm" id="approvalEmail" placeholder="correo@ejemplo.com" required>
                 </div>
                 
                 <div class="d-grid gap-2 mb-3">
                     <button class="btn btn-success btn-sm" onclick="handleApproval('aprobar')">
-                        <i class="bi bi-check-circle"></i> Aprobar
+                        <i class="bi bi-check-circle"></i> {% translate "Aprobar" %}
                     </button>
                     <button class="btn btn-danger btn-sm" onclick="handleApproval('desaprobar')">
-                        <i class="bi bi-x-circle"></i> Desaprobar
+                        <i class="bi bi-x-circle"></i> {% translate "Desaprobar" %}
                     </button>
                 </div>
                 
@@ -259,27 +260,27 @@
                 {% if approval_stats.total > 0 %}
                 <hr>
                 <div id="approval-stats" class="text-center">
-                    <h6 class="text-muted mb-2">Estadísticas</h6>
+                    <h6 class="text-muted mb-2">{% translate "Estadísticas" %}</h6>
                     <div class="row">
                         <div class="col-4">
                             <div class="text-success">
                                 <i class="bi bi-check-circle-fill"></i>
                                 <div class="fw-bold">{{ approval_stats.aprobado }}</div>
-                                <small class="text-muted">Aprobado</small>
+                                <small class="text-muted">{% translate "Aprobado" %}</small>
                             </div>
                         </div>
                         <div class="col-4">
                             <div class="text-danger">
                                 <i class="bi bi-x-circle-fill"></i>
                                 <div class="fw-bold">{{ approval_stats.desaprobado }}</div>
-                                <small class="text-muted">Desaprobado</small>
+                                <small class="text-muted">{% translate "Desaprobado" %}</small>
                             </div>
                         </div>
                         <div class="col-4">
                             <div class="text-primary">
                                 <i class="bi bi-list-check"></i>
                                 <div class="fw-bold">{{ approval_stats.total }}</div>
-                                <small class="text-muted">Total</small>
+                                <small class="text-muted">{% translate "Total" %}</small>
                             </div>
                         </div>
                     </div>
@@ -291,7 +292,7 @@
                 <hr>
                 <div class="approval-list" style="max-height: 300px; overflow-y: auto;">
                     <h6 class="text-muted mb-2">
-                        <i class="bi bi-clock-history"></i> Registros recientes
+                        <i class="bi bi-clock-history"></i> {% translate "Registros recientes" %}
                     </h6>
                     <div id="approvals-container">
                         {% for approval in approvals %}
@@ -328,25 +329,25 @@
         <div class="card mb-4">
             <div class="card-header bg-secondary text-white">
                 <h6 class="mb-0">
-                    <i class="bi bi-star-fill"></i> Califica este curso
+                    <i class="bi bi-star-fill"></i> {% translate "Califica este curso" %}
                 </h6>
             </div>
             <div class="card-body text-center">
-                <p class="text-muted small mb-3">¿Qué te pareció este curso?</p>
+                <p class="text-muted small mb-3">{% translate "¿Qué te pareció este curso?" %}</p>
                 <div class="d-flex justify-content-center gap-3 mb-3">
-                    <button class="btn btn-outline-danger btn-lg rating-btn" data-rating="sad" title="No me gustó" style="font-size: 2.5rem; border-radius: 50%; width: 80px; height: 80px;">
+                    <button class="btn btn-outline-danger btn-lg rating-btn" data-rating="sad" title="{% translate 'No me gustó' %}" style="font-size: 2.5rem; border-radius: 50%; width: 80px; height: 80px;">
                         😞
                     </button>
-                    <button class="btn btn-outline-secondary btn-lg rating-btn" data-rating="neutral" title="Regular" style="font-size: 2.5rem; border-radius: 50%; width: 80px; height: 80px;">
+                    <button class="btn btn-outline-secondary btn-lg rating-btn" data-rating="neutral" title="{% translate 'Regular' %}" style="font-size: 2.5rem; border-radius: 50%; width: 80px; height: 80px;">
                         😐
                     </button>
-                    <button class="btn btn-outline-success btn-lg rating-btn" data-rating="happy" title="Me gustó" style="font-size: 2.5rem; border-radius: 50%; width: 80px; height: 80px;">
+                    <button class="btn btn-outline-success btn-lg rating-btn" data-rating="happy" title="{% translate 'Me gustó' %}" style="font-size: 2.5rem; border-radius: 50%; width: 80px; height: 80px;">
                         😊
                     </button>
                 </div>
                 <div id="rating-stats" class="mt-3">
                     <small class="text-muted">
-                        <strong>{{ rating_stats.total }}</strong> {% if rating_stats.total == 1 %}calificación{% else %}calificaciones{% endif %}
+                        <strong>{{ rating_stats.total }}</strong> {% if rating_stats.total == 1 %}{% translate "calificación" %}{% else %}{% translate "calificaciones" %}{% endif %}
                     </small>
                     {% if rating_stats.total > 0 %}
                     <div class="mt-2">
@@ -365,7 +366,7 @@
         <div class="card mb-4">
             <div class="card-header bg-secondary text-white">
                 <h6 class="mb-0">
-                    <i class="bi bi-info-circle"></i> Información del Curso
+                    <i class="bi bi-info-circle"></i> {% translate "Información del Curso" %}
                 </h6>
             </div>
             <div class="card-body">
@@ -373,29 +374,29 @@
                     <div class="col-6">
                         <div class="border-end">
                             <h4 class="text-primary mb-0">{{ classes_with_views|length }}</h4>
-                            <small class="text-muted">{% if classes_with_views|length == 1 %}Clase{% else %}Clases{% endif %}</small>
+                            <small class="text-muted">{% if classes_with_views|length == 1 %}{% translate "Clase" %}{% else %}{% translate "Clases" %}{% endif %}</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <h4 class="text-success mb-0">{{ classes_with_views|length }}</h4>
-                        <small class="text-muted">Activas</small>
+                        <small class="text-muted">{% translate "Activas" %}</small>
                     </div>
                 </div>
                 
                 <hr>
                 
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <small class="text-muted">Instructor:</small>
+                    <small class="text-muted">{% translate "Instructor:" %}</small>
                     <span class="badge bg-primary">{{ course.created_by.get_full_name|default:course.created_by.username }}</span>
                 </div>
                 
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <small class="text-muted">Creado:</small>
+                    <small class="text-muted">{% translate "Creado:" %}</small>
                     <span>{{ course.created_at|date:"d/m/Y" }}</span>
                 </div>
                 
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <small class="text-muted">Última actualización:</small>
+                    <small class="text-muted">{% translate "Última actualización:" %}</small>
                     <span>{{ course.updated_at|date:"d/m/Y" }}</span>
                 </div>
                 
@@ -403,14 +404,14 @@
                 <hr>
                 <div class="mt-3">
                     <h6 class="text-primary mb-3">
-                        <i class="bi bi-key"></i> Datos de Acceso
+                        <i class="bi bi-key"></i> {% translate "Datos de Acceso" %}
                     </h6>
                     
                     {% if course.access_url %}
                     <div class="mb-3">
-                        <small class="text-muted d-block mb-1"><i class="bi bi-link-45deg"></i> URL:</small>
+                        <small class="text-muted d-block mb-1"><i class="bi bi-link-45deg"></i> {% translate "URL:" %}</small>
                         <a href="{{ course.access_url }}" target="_blank" class="btn btn-sm btn-outline-primary w-100">
-                            <i class="bi bi-box-arrow-up-right"></i> Acceder al sitio
+                            <i class="bi bi-box-arrow-up-right"></i> {% translate "Acceder al sitio" %}
                         </a>
                         <div class="input-group input-group-sm mt-2">
                             <input type="text" class="form-control" value="{{ course.access_url }}" readonly id="accessUrl">
@@ -423,7 +424,7 @@
                     
                     {% if course.access_username %}
                     <div class="mb-3">
-                        <small class="text-muted d-block mb-1"><i class="bi bi-person"></i> Usuario:</small>
+                        <small class="text-muted d-block mb-1"><i class="bi bi-person"></i> {% translate "Usuario:" %}</small>
                         <div class="input-group input-group-sm">
                             <input type="text" class="form-control" value="{{ course.access_username }}" readonly id="accessUsername">
                             <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('accessUsername')">
@@ -435,7 +436,7 @@
                     
                     {% if course.access_password %}
                     <div class="mb-3">
-                        <small class="text-muted d-block mb-1"><i class="bi bi-lock"></i> Contraseña:</small>
+                        <small class="text-muted d-block mb-1"><i class="bi bi-lock"></i> {% translate "Contraseña:" %}</small>
                         <div class="input-group input-group-sm">
                             <input type="password" class="form-control" value="{{ course.access_password }}" readonly id="accessPassword">
                             <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('accessPassword')">
@@ -455,11 +456,11 @@
                 <div class="alert alert-warning p-2">
                     <div class="d-flex justify-content-between align-items-center">
                         <small class="text-warning fw-bold">
-                            <i class="bi bi-share"></i> Vista Pública
+                            <i class="bi bi-share"></i> {% translate "Vista Pública" %}
                         </small>
-                        <span class="badge bg-warning text-dark">Activa</span>
+                        <span class="badge bg-warning text-dark">{% translate "Activa" %}</span>
                     </div>
-                    <p class="small mb-0 mt-1">Este curso es accesible públicamente mediante este enlace.</p>
+                    <p class="small mb-0 mt-1">{% translate "Este curso es accesible públicamente mediante este enlace." %}</p>
                 </div>
             </div>
         </div>
@@ -473,15 +474,15 @@
                             <i class="bi bi-eye"></i>
                         </div>
                         <h2 class="text-primary mb-1">{{ course.view_count }}</h2>
-                        <p class="text-muted mb-0">{% if course.view_count == 1 %}Visita{% else %}Visitas{% endif %}</p>
+                        <p class="text-muted mb-0">{% if course.view_count == 1 %}{% translate "Visita" %}{% else %}{% translate "Visitas" %}{% endif %}</p>
                     </div>
                     <div class="col-6">
                         <div class="display-4 text-success mb-2">
                             <i class="bi bi-calendar-check"></i>
                         </div>
                         <h2 class="text-success mb-1">{{ days_since_creation }}</h2>
-                        <p class="text-muted mb-0">{% if days_since_creation == 1 %}Día{% else %}Días{% endif %}</p>
-                        <small class="text-muted">desde su creación</small>
+                        <p class="text-muted mb-0">{% if days_since_creation == 1 %}{% translate "Día" %}{% else %}{% translate "Días" %}{% endif %}</p>
+                        <small class="text-muted">{% translate "desde su creación" %}</small>
                     </div>
                 </div>
             </div>
@@ -496,14 +497,14 @@
                             <i class="bi bi-chat-dots"></i>
                         </div>
                         <h2 class="text-info mb-1">{{ total_comments }}</h2>
-                        <p class="text-muted mb-0">{% if total_comments == 1 %}Comentario{% else %}Comentarios{% endif %}</p>
+                        <p class="text-muted mb-0">{% if total_comments == 1 %}{% translate "Comentario" %}{% else %}{% translate "Comentarios" %}{% endif %}</p>
                     </div>
                     <div class="col-6">
                         <div class="display-4 text-success mb-2">
                             <i class="bi bi-check-circle"></i>
                         </div>
                         <h2 class="text-success mb-1">{{ resolved_comments }}</h2>
-                        <p class="text-muted mb-0">{% if resolved_comments == 1 %}Resuelto{% else %}Resueltos{% endif %}</p>
+                        <p class="text-muted mb-0">{% if resolved_comments == 1 %}{% translate "Resuelto" %}{% else %}{% translate "Resueltos" %}{% endif %}</p>
                     </div>
                 </div>
             </div>

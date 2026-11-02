@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -10,10 +11,10 @@
                 <h2><i class="fas fa-users me-2"></i>{{ title }}</h2>
                 <div>
                     <a href="{% url 'client_assistance_dashboard' %}" class="btn btn-info me-2">
-                        <i class="fas fa-chart-line me-2"></i>Dashboard
+                        <i class="fas fa-chart-line me-2"></i>{% translate "Dashboard" %}
                     </a>
                     <a href="{% url 'client_assistance_create' %}" class="btn btn-primary">
-                        <i class="fas fa-plus me-2"></i>Crear Nuevo Acceso
+                        <i class="fas fa-plus me-2"></i>{% translate "Crear Nuevo Acceso" %}
                     </a>
                 </div>
             </div>
@@ -29,7 +30,7 @@
 
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Proyectos con Acceso Público</h5>
+                    <h5 class="mb-0">{% translate "Proyectos con Acceso Público" %}</h5>
                 </div>
                 <div class="card-body">
                     {% if accesses %}
@@ -37,15 +38,15 @@
                             <table class="table table-striped table-hover">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>Proyecto</th>
-                                        <th>Estado</th>
-                                        <th>Enlace Público</th>
-                                        <th>Dashboard Público</th>
-                                        <th>Límite Diario</th>
-                                        <th>Categorías</th>
-                                        <th>Entradas Hoy</th>
-                                        <th>Creado</th>
-                                        <th>Acciones</th>
+                                        <th>{% translate "Proyecto" %}</th>
+                                        <th>{% translate "Estado" %}</th>
+                                        <th>{% translate "Enlace Público" %}</th>
+                                        <th>{% translate "Dashboard Público" %}</th>
+                                        <th>{% translate "Límite Diario" %}</th>
+                                        <th>{% translate "Categorías" %}</th>
+                                        <th>{% translate "Entradas Hoy" %}</th>
+                                        <th>{% translate "Creado" %}</th>
+                                        <th>{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -59,9 +60,9 @@
                                             </td>
                                             <td>
                                                 {% if access.is_active %}
-                                                    <span class="badge bg-success">Activo</span>
+                                                    <span class="badge bg-success">{% translate "Activo" %}</span>
                                                 {% else %}
-                                                    <span class="badge bg-danger">Inactivo</span>
+                                                    <span class="badge bg-danger">{% translate "Inactivo" %}</span>
                                                 {% endif %}
                                             </td>
                                             <td>
@@ -72,12 +73,12 @@
                                                                readonly id="url-{{ access.id }}">
                                                         <button class="btn btn-outline-secondary btn-sm" type="button"
                                                                 onclick="copyToClipboard('url-{{ access.id }}')"
-                                                                title="Copiar enlace">
+                                                                title="{% translate 'Copiar enlace' %}">
                                                             <i class="fas fa-copy"></i>
                                                         </button>
                                                     </div>
                                                 {% else %}
-                                                    <span class="text-muted">Enlace desactivado</span>
+                                                    <span class="text-muted">{% translate "Enlace desactivado" %}</span>
                                                 {% endif %}
                                             </td>
                                             <td>
@@ -88,16 +89,16 @@
                                                                readonly id="dashboard-url-{{ access.id }}">
                                                         <button class="btn btn-outline-secondary btn-sm" type="button"
                                                                 onclick="copyToClipboard('dashboard-url-{{ access.id }}')"
-                                                                title="Copiar enlace del dashboard">
+                                                                title="{% translate 'Copiar enlace del dashboard' %}">
                                                             <i class="fas fa-copy"></i>
                                                         </button>
                                                         <a href="{% url 'client_dashboard_public' access.dashboard_token %}" 
-                                                           class="btn btn-outline-success btn-sm" title="Abrir Dashboard" target="_blank">
+                                                           class="btn btn-outline-success btn-sm" title="{% translate 'Abrir Dashboard' %}" target="_blank">
                                                             <i class="fas fa-external-link-alt"></i>
                                                         </a>
                                                     </div>
                                                 {% else %}
-                                                    <span class="text-muted">Dashboard no disponible</span>
+                                                    <span class="text-muted">{% translate "Dashboard no disponible" %}</span>
                                                 {% endif %}
                                             </td>
                                             <td>
@@ -121,11 +122,11 @@
                                             <td>
                                                 <div class="btn-group btn-group-sm" role="group">
                                                     <a href="{% url 'client_assistance_edit' access.pk %}" 
-                                                       class="btn btn-outline-primary btn-sm" title="Editar">
+                                                       class="btn btn-outline-primary btn-sm" title="{% translate 'Editar' %}">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                     <a href="{% url 'client_time_entries_list' access.project.pk %}" 
-                                                       class="btn btn-outline-info btn-sm" title="Ver Entradas">
+                                                       class="btn btn-outline-info btn-sm" title="{% translate 'Ver Entradas' %}">
                                                         <i class="fas fa-clock"></i>
                                                     </a>
                                                     <a href="{% url 'client_assistance_toggle' access.pk %}" 
@@ -134,7 +135,7 @@
                                                         <i class="fas fa-{% if access.is_active %}pause{% else %}play{% endif %}"></i>
                                                     </a>
                                                     <a href="{% url 'client_assistance_delete' access.pk %}" 
-                                                       class="btn btn-outline-danger btn-sm" title="Eliminar">
+                                                       class="btn btn-outline-danger btn-sm" title="{% translate 'Eliminar' %}">
                                                         <i class="fas fa-trash"></i>
                                                     </a>
                                                 </div>
@@ -147,10 +148,10 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                            <h5 class="text-muted">No hay proyectos con acceso público configurado</h5>
-                            <p class="text-muted">Crea un nuevo acceso público para permitir que los clientes registren sus horas.</p>
+                            <h5 class="text-muted">{% translate "No hay proyectos con acceso público configurado" %}</h5>
+                            <p class="text-muted">{% translate "Crea un nuevo acceso público para permitir que los clientes registren sus horas." %}</p>
                             <a href="{% url 'client_assistance_create' %}" class="btn btn-primary">
-                                <i class="fas fa-plus me-2"></i>Crear Primer Acceso
+                                <i class="fas fa-plus me-2"></i>{% translate "Crear Primer Acceso" %}
                             </a>
                         </div>
                     {% endif %}
@@ -160,34 +161,34 @@
             <!-- Información adicional -->
             <div class="card mt-4">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información sobre Asistencia de Cliente</h6>
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>{% translate "Información sobre Asistencia de Cliente" %}</h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4">
-                            <h6>¿Cómo funciona?</h6>
+                            <h6>{% translate "¿Cómo funciona?" %}</h6>
                             <ul class="small">
-                                <li>Cada proyecto puede tener un enlace público único</li>
-                                <li>Los clientes pueden registrar horas usando solo su email</li>
-                                <li>Se pueden configurar límites diarios de entradas</li>
-                                <li>Las categorías disponibles son configurables</li>
+                                <li>{% translate "Cada proyecto puede tener un enlace público único" %}</li>
+                                <li>{% translate "Los clientes pueden registrar horas usando solo su email" %}</li>
+                                <li>{% translate "Se pueden configurar límites diarios de entradas" %}</li>
+                                <li>{% translate "Las categorías disponibles son configurables" %}</li>
                             </ul>
                         </div>
                         <div class="col-md-4">
-                            <h6>Dashboard Público:</h6>
+                            <h6>{% translate "Dashboard Público:" %}</h6>
                             <ul class="small">
-                                <li><strong>KPIs en tiempo real:</strong> Horas del mes, proyecto y equipo</li>
-                                <li><strong>Gráficos interactivos:</strong> Tendencias y distribución</li>
-                                <li><strong>Acceso sin login:</strong> Solo con enlace del token</li>
-                                <li><strong>Datos personalizados:</strong> Filtros por cliente específico</li>
+                                <li><strong>{% translate "KPIs en tiempo real:" %}</strong> {% translate "Horas del mes, proyecto y equipo" %}</li>
+                                <li><strong>{% translate "Gráficos interactivos:" %}</strong> {% translate "Tendencias y distribución" %}</li>
+                                <li><strong>{% translate "Acceso sin login:" %}</strong> {% translate "Solo con enlace del token" %}</li>
+                                <li><strong>{% translate "Datos personalizados:" %}</strong> {% translate "Filtros por cliente específico" %}</li>
                             </ul>
                         </div>
                         <div class="col-md-4">
-                            <h6>Categorías disponibles:</h6>
+                            <h6>{% translate "Categorías disponibles:" %}</h6>
                             <ul class="small">
-                                <li><strong>Capacitación:</strong> Tiempo invertido en entrenamiento o aprendizaje</li>
-                                <li><strong>Pruebas:</strong> Tiempo dedicado a testing o verificación</li>
-                                <li><strong>Uso:</strong> Tiempo de uso directo del sistema o producto</li>
+                                <li><strong>{% translate "Capacitación:" %}</strong> {% translate "Tiempo invertido en entrenamiento o aprendizaje" %}</li>
+                                <li><strong>{% translate "Pruebas:" %}</strong> {% translate "Tiempo dedicado a testing o verificación" %}</li>
+                                <li><strong>{% translate "Uso:" %}</strong> {% translate "Tiempo de uso directo del sistema o producto" %}</li>
                             </ul>
                         </div>
                     </div>

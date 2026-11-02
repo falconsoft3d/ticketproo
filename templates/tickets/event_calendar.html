@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -51,13 +52,13 @@
                 </h2>
                 <div>
                     <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#aiEventModal">
-                        <i class="bi bi-stars"></i> Generar con IA
+                        <i class="bi bi-stars"></i> {% translate "Generar con IA" %}
                     </button>
                     <a href="{% url 'event_list' %}" class="btn btn-outline-primary">
-                        <i class="bi bi-list-ul"></i> Ver Lista
+                        <i class="bi bi-list-ul"></i> {% translate "Ver Lista" %}
                     </a>
                     <a href="{% url 'event_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Nuevo Evento
+                        <i class="bi bi-plus-circle"></i> {% translate "Nuevo Evento" %}
                     </a>
                 </div>
             </div>
@@ -81,16 +82,16 @@
         <div class="modal-content">
             <div class="modal-header bg-info text-white">
                 <h5 class="modal-title" id="aiEventModalLabel">
-                    <i class="bi bi-stars"></i> Generar Eventos con IA
+                    <i class="bi bi-stars"></i> {% translate "Generar Eventos con IA" %}
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
             </div>
             <div class="modal-body">
                 <form id="aiEventForm">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="aiPrompt" class="form-label">
-                            <i class="bi bi-chat-left-text"></i> Describe los eventos que deseas generar
+                            <i class="bi bi-chat-left-text"></i> {% translate "Describe los eventos que deseas generar" %}
                         </label>
                         <textarea 
                             class="form-control" 
@@ -101,12 +102,12 @@
                             required
                         ></textarea>
                         <div class="form-text">
-                            Puedes pedir feriados, eventos culturales, deportivos, etc. La IA generará los eventos automáticamente.
+                            {% translate "Puedes pedir feriados, eventos culturales, deportivos, etc. La IA generará los eventos automáticamente." %}
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="aiYear" class="form-label">
-                            <i class="bi bi-calendar"></i> Año (opcional)
+                            <i class="bi bi-calendar"></i> {% translate "Año (opcional)" %}
                         </label>
                         <input 
                             type="number" 
@@ -122,18 +123,18 @@
                     <div id="aiProgress" class="alert alert-info d-none" role="alert">
                         <div class="d-flex align-items-center">
                             <div class="spinner-border spinner-border-sm me-2" role="status">
-                                <span class="visually-hidden">Generando...</span>
+                                <span class="visually-hidden">{% translate "Generando..." %}</span>
                             </div>
-                            <span id="aiProgressText">Generando eventos con IA...</span>
+                            <span id="aiProgressText">{% translate "Generando eventos con IA..." %}</span>
                         </div>
                     </div>
                     <div id="aiResult" class="alert d-none" role="alert"></div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                 <button type="button" class="btn btn-info" onclick="generateEventsWithAI()">
-                    <i class="bi bi-stars"></i> Generar Eventos
+                    <i class="bi bi-stars"></i> {% translate "Generar Eventos" %}
                 </button>
             </div>
         </div>
@@ -145,16 +146,16 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="eventModalLabel">Detalles del Evento</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title" id="eventModalLabel">{% translate "Detalles del Evento" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
             </div>
             <div class="modal-body" id="eventModalBody">
                 <!-- Contenido dinámico -->
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cerrar" %}</button>
                 <a href="#" id="editEventBtn" class="btn btn-primary">
-                    <i class="bi bi-pencil"></i> Editar
+                    <i class="bi bi-pencil"></i> {% translate "Editar" %}
                 </a>
             </div>
         </div>

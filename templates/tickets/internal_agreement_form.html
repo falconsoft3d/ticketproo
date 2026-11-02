@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -19,11 +20,11 @@
                 </div>
                 <div>
                     <a href="{% url 'internal_agreement_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver a la lista
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver a la lista" %}
                     </a>
                     {% if not is_create and agreement %}
                         <a href="{% url 'internal_agreement_detail' agreement.pk %}" class="btn btn-outline-info">
-                            <i class="bi bi-eye"></i> Ver detalle
+                            <i class="bi bi-eye"></i> {% translate "Ver detalle" %}
                         </a>
                     {% endif %}
                 </div>
@@ -46,7 +47,7 @@
                             <!-- Información básica -->
                             <div class="col-md-8">
                                 <h5 class="card-title mb-3">
-                                    <i class="bi bi-info-circle text-primary"></i> Información Básica
+                                    <i class="bi bi-info-circle text-primary"></i> {% translate "Información Básica" %}
                                 </h5>
                                 
                                 <div class="mb-3">
@@ -113,7 +114,7 @@
                             <!-- Configuración -->
                             <div class="col-md-4">
                                 <h5 class="card-title mb-3">
-                                    <i class="bi bi-gear text-warning"></i> Configuración
+                                    <i class="bi bi-gear text-warning"></i> {% translate "Configuración" %}
                                 </h5>
 
                                 <div class="mb-3">
@@ -170,7 +171,7 @@
                                 <hr>
 
                                 <h6 class="text-muted mb-3">
-                                    <i class="bi bi-calendar text-info"></i> Fechas de Vigencia
+                                    <i class="bi bi-calendar text-info"></i> {% translate "Fechas de Vigencia" %}
                                 </h6>
 
                                 <div class="mb-3">
@@ -206,7 +207,7 @@
                                 <hr>
 
                                 <h6 class="text-muted mb-3">
-                                    <i class="bi bi-pen text-primary"></i> Firmantes Requeridos
+                                    <i class="bi bi-pen text-primary"></i> {% translate "Firmantes Requeridos" %}
                                 </h6>
 
                                 <div class="mb-3">
@@ -242,7 +243,7 @@
                                 <hr>
 
                                 <h6 class="text-muted mb-3">
-                                    <i class="bi bi-people text-success"></i> Aplicación
+                                    <i class="bi bi-people text-success"></i> {% translate "Aplicación" %}
                                 </h6>
 
                                 <div class="mb-3">
@@ -281,11 +282,11 @@
 
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'internal_agreement_list' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i> 
-                                {% if is_create %}Crear Acuerdo{% else %}Actualizar Acuerdo{% endif %}
+                                {% if is_create %}{% translate "Crear Acuerdo" %}{% else %}{% translate "Actualizar Acuerdo" %}{% endif %}
                             </button>
                         </div>
                     </form>

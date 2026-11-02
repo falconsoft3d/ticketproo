@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -13,14 +14,14 @@
                     <h4><i class="bi bi-person-badge text-primary"></i> {{ page_title }}</h4>
                     <p class="text-muted mb-0">
                         {% if is_create %}
-                            Crea una nueva solicitud de empleado
+                            {% translate "Crea una nueva solicitud de empleado" %}
                         {% else %}
-                            Edita los detalles de la solicitud
+                            {% translate "Edita los detalles de la solicitud" %}
                         {% endif %}
                     </p>
                 </div>
                 <a href="{% url 'employee_request_list' %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Volver
+                    <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                 </a>
             </div>
 
@@ -30,7 +31,7 @@
                         <div class="card-header">
                             <h5 class="mb-0">
                                 <i class="bi bi-file-earmark-text text-info"></i>
-                                {% if is_create %}Nueva Solicitud{% else %}Editar Solicitud{% endif %}
+                                {% if is_create %}{% translate "Nueva Solicitud" %}{% else %}{% translate "Editar Solicitud" %}{% endif %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -94,11 +95,11 @@
                                 
                                 <div class="d-flex justify-content-between">
                                     <a href="{% url 'employee_request_list' %}" class="btn btn-outline-secondary">
-                                        <i class="bi bi-x-circle"></i> Cancelar
+                                        <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                                     </a>
                                     <button type="submit" class="btn btn-primary">
                                         <i class="bi bi-check-circle"></i> 
-                                        {% if is_create %}Crear Solicitud{% else %}Actualizar Solicitud{% endif %}
+                                        {% if is_create %}{% translate "Crear Solicitud" %}{% else %}{% translate "Actualizar Solicitud" %}{% endif %}
                                     </button>
                                 </div>
                             </form>
@@ -111,31 +112,31 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="bi bi-info-circle text-info"></i>
-                                Información
+                                {% translate "Información" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <div class="alert alert-info">
-                                <h6><i class="bi bi-lightbulb"></i> Estados de Solicitud</h6>
+                                <h6><i class="bi bi-lightbulb"></i> {% translate "Estados de Solicitud" %}</h6>
                                 <ul class="mb-0">
-                                    <li><strong>Borrador:</strong> Solicitud en progreso, puede editarse</li>
-                                    <li><strong>Aprobada:</strong> Solicitud aprobada por administración</li>
-                                    <li><strong>Rechazada:</strong> Solicitud no aprobada</li>
+                                    <li><strong>{% translate "Borrador:" %}</strong> {% translate "Solicitud en progreso, puede editarse" %}</li>
+                                    <li><strong>{% translate "Aprobada:" %}</strong> {% translate "Solicitud aprobada por administración" %}</li>
+                                    <li><strong>{% translate "Rechazada:" %}</strong> {% translate "Solicitud no aprobada" %}</li>
                                 </ul>
                             </div>
                             
                             {% if not is_create and request_instance %}
                             <div class="alert alert-secondary">
-                                <h6><i class="bi bi-file-earmark-text"></i> Detalles de la Solicitud</h6>
-                                <p class="mb-1"><strong>Secuencia:</strong> #{{ request_instance.sequence }}</p>
-                                <p class="mb-1"><strong>Creada:</strong> {{ request_instance.created_at|date:"d/m/Y H:i" }}</p>
-                                <p class="mb-0"><strong>Actualizada:</strong> {{ request_instance.updated_at|date:"d/m/Y H:i" }}</p>
+                                <h6><i class="bi bi-file-earmark-text"></i> {% translate "Detalles de la Solicitud" %}</h6>
+                                <p class="mb-1"><strong>{% translate "Secuencia:" %}</strong> #{{ request_instance.sequence }}</p>
+                                <p class="mb-1"><strong>{% translate "Creada:" %}</strong> {{ request_instance.created_at|date:"d/m/Y H:i" }}</p>
+                                <p class="mb-0"><strong>{% translate "Actualizada:" %}</strong> {{ request_instance.updated_at|date:"d/m/Y H:i" }}</p>
                             </div>
                             {% endif %}
                             
                             <div class="alert alert-warning">
-                                <h6><i class="bi bi-exclamation-triangle"></i> Importante</h6>
-                                <p class="mb-0">Una vez que una solicitud sea aprobada o rechazada, solo los administradores podrán modificarla.</p>
+                                <h6><i class="bi bi-exclamation-triangle"></i> {% translate "Importante" %}</h6>
+                                <p class="mb-0">{% translate "Una vez que una solicitud sea aprobada o rechazada, solo los administradores podrán modificarla." %}</p>
                             </div>
                         </div>
                     </div>

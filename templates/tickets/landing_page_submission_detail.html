@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -15,26 +16,26 @@
                         {{ page_title }}
                     </h2>
                     <p class="text-muted mb-0">
-                        Envío desde: <strong>{{ landing_page.nombre_producto }}</strong>
+                        {% translate "Envío desde:" %} <strong>{{ landing_page.nombre_producto }}</strong>
                     </p>
                 </div>
                 <div>
                     <a href="{% url 'landing_page_submissions' pk=landing_page.pk %}" 
                        class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-1"></i>
-                        Volver a la Lista
+                        {% translate "Volver a la Lista" %}
                     </a>
                     {% if not existing_contact %}
                     <button onclick="createContact({{ submission.id }})" 
                             class="btn btn-success ms-2">
                         <i class="fas fa-user-plus me-1"></i>
-                        Crear Contacto
+                        {% translate "Crear Contacto" %}
                     </button>
                     {% endif %}
                     <button onclick="deleteSubmission({{ submission.id }})" 
                             class="btn btn-danger ms-2">
                         <i class="fas fa-trash me-1"></i>
-                        Eliminar Envío
+                        {% translate "Eliminar Envío" %}
                     </button>
                 </div>
             </div>
@@ -47,18 +48,18 @@
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0">
                                 <i class="fas fa-user me-2"></i>
-                                Información del Contacto
+                                {% translate "Información del Contacto" %}
                             </h5>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label text-muted">Nombre:</label>
+                                        <label class="form-label text-muted">{% translate "Nombre:" %}</label>
                                         <p class="fw-bold">{{ submission.nombre }}</p>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label text-muted">Email:</label>
+                                        <label class="form-label text-muted">{% translate "Email:" %}</label>
                                         <p class="fw-bold">
                                             <a href="mailto:{{ submission.email }}" class="text-decoration-none">
                                                 {{ submission.email }}
@@ -67,21 +68,21 @@
                                         </p>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label text-muted">Empresa:</label>
+                                        <label class="form-label text-muted">{% translate "Empresa:" %}</label>
                                         <p class="fw-bold">{{ submission.empresa|default:"No especificada" }}</p>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label text-muted">Cargo:</label>
+                                        <label class="form-label text-muted">{% translate "Cargo:" %}</label>
                                         <p class="fw-bold">{{ submission.cargo|default:"No especificado" }}</p>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label text-muted">Apellido:</label>
+                                        <label class="form-label text-muted">{% translate "Apellido:" %}</label>
                                         <p class="fw-bold">{{ submission.apellido }}</p>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label text-muted">Teléfono:</label>
+                                        <label class="form-label text-muted">{% translate "Teléfono:" %}</label>
                                         <p class="fw-bold">
                                             {% if submission.telefono %}
                                                 <a href="tel:{{ submission.telefono }}" class="text-decoration-none">
@@ -89,17 +90,17 @@
                                                     <i class="fas fa-phone ms-1 text-muted"></i>
                                                 </a>
                                             {% else %}
-                                                No especificado
+                                                {% translate "No especificado" %}
                                             {% endif %}
                                         </p>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label text-muted">Cuándo contactar:</label>
+                                        <label class="form-label text-muted">{% translate "Cuándo contactar:" %}</label>
                                         <p class="fw-bold">
                                             {% if submission.preferred_contact_time %}
                                                 <span class="badge bg-info">{{ submission.get_preferred_contact_time_display }}</span>
                                             {% else %}
-                                                No especificado
+                                                {% translate "No especificado" %}
                                             {% endif %}
                                         </p>
                                     </div>
@@ -108,7 +109,7 @@
                             
                             {% if submission.mensaje %}
                             <div class="mt-3">
-                                <label class="form-label text-muted">Mensaje:</label>
+                                <label class="form-label text-muted">{% translate "Mensaje:" %}</label>
                                 <div class="bg-light p-3 rounded">
                                     <p class="mb-0">{{ submission.mensaje|linebreaks }}</p>
                                 </div>
@@ -122,26 +123,26 @@
                         <div class="card-header bg-info text-white">
                             <h5 class="mb-0">
                                 <i class="fas fa-chart-line me-2"></i>
-                                Información de Marketing
+                                {% translate "Información de Marketing" %}
                             </h5>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label class="form-label text-muted">Fuente UTM:</label>
+                                        <label class="form-label text-muted">{% translate "Fuente UTM:" %}</label>
                                         <p class="fw-bold">{{ submission.utm_source|default:"No disponible" }}</p>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label class="form-label text-muted">Medio UTM:</label>
+                                        <label class="form-label text-muted">{% translate "Medio UTM:" %}</label>
                                         <p class="fw-bold">{{ submission.utm_medium|default:"No disponible" }}</p>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label class="form-label text-muted">Campaña UTM:</label>
+                                        <label class="form-label text-muted">{% translate "Campaña UTM:" %}</label>
                                         <p class="fw-bold">{{ submission.utm_campaign|default:"No disponible" }}</p>
                                     </div>
                                 </div>
@@ -149,13 +150,13 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label text-muted">IP Address:</label>
+                                        <label class="form-label text-muted">{% translate "IP Address:" %}</label>
                                         <p class="fw-bold">{{ submission.ip_address|default:"No disponible" }}</p>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label text-muted">User Agent:</label>
+                                        <label class="form-label text-muted">{% translate "User Agent:" %}</label>
                                         <p class="fw-bold text-truncate" title="{{ submission.user_agent }}">
                                             {{ submission.user_agent|default:"No disponible" }}
                                         </p>
@@ -173,29 +174,29 @@
                         <div class="card-header">
                             <h5 class="mb-0">
                                 <i class="fas fa-info-circle me-2"></i>
-                                Estado del Contacto
+                                {% translate "Estado del Contacto" %}
                             </h5>
                         </div>
                         <div class="card-body">
                             {% if existing_contact %}
                                 <div class="alert alert-success">
                                     <i class="fas fa-check-circle me-2"></i>
-                                    <strong>Contacto ya existe</strong>
-                                    <p class="mb-2 mt-2">Este envío ya fue convertido en contacto.</p>
+                                    <strong>{% translate "Contacto ya existe" %}</strong>
+                                    <p class="mb-2 mt-2">{% translate "Este envío ya fue convertido en contacto." %}</p>
                                     <a href="{% url 'contact_detail' pk=existing_contact.id %}" class="btn btn-outline-success btn-sm">
                                         <i class="fas fa-user me-1"></i>
-                                        Ver Contacto
+                                        {% translate "Ver Contacto" %}
                                     </a>
                                 </div>
                             {% else %}
                                 <div class="alert alert-warning">
                                     <i class="fas fa-exclamation-triangle me-2"></i>
-                                    <strong>Pendiente de conversión</strong>
-                                    <p class="mb-2 mt-2">Este envío aún no ha sido convertido en contacto.</p>
+                                    <strong>{% translate "Pendiente de conversión" %}</strong>
+                                    <p class="mb-2 mt-2">{% translate "Este envío aún no ha sido convertido en contacto." %}</p>
                                     <button onclick="createContact({{ submission.id }})" 
                                             class="btn btn-warning btn-sm">
                                         <i class="fas fa-user-plus me-1"></i>
-                                        Crear Contacto Ahora
+                                        {% translate "Crear Contacto Ahora" %}
                                     </button>
                                 </div>
                             {% endif %}
@@ -207,7 +208,7 @@
                         <div class="card-header">
                             <h5 class="mb-0">
                                 <i class="fas fa-phone-alt me-2"></i>
-                                Seguimiento de Contacto
+                                {% translate "Seguimiento de Contacto" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -226,7 +227,7 @@
                                                    onchange="updateContactStatus()">
                                             <label class="form-check-label" for="contacted_by_phone">
                                                 <i class="fas fa-phone text-success me-1"></i>
-                                                Contactado por teléfono
+                                                {% translate "Contactado por teléfono" %}
                                             </label>
                                         </div>
                                     </div>
@@ -240,7 +241,7 @@
                                                    onchange="updateContactStatus()">
                                             <label class="form-check-label" for="contacted_by_web">
                                                 <i class="fas fa-envelope text-primary me-1"></i>
-                                                Contactado por web/email
+                                                {% translate "Contactado por web/email" %}
                                             </label>
                                         </div>
                                     </div>
@@ -248,7 +249,7 @@
 
                                 <!-- Fecha de contacto -->
                                 <div class="mb-3">
-                                    <label for="contact_date" class="form-label">Fecha de contacto:</label>
+                                    <label for="contact_date" class="form-label">{% translate "Fecha de contacto:" %}</label>
                                     <input type="datetime-local" 
                                            class="form-control" 
                                            id="contact_date"
@@ -258,7 +259,7 @@
 
                                 <!-- Notas de contacto -->
                                 <div class="mb-3">
-                                    <label for="contact_notes" class="form-label">Notas de contacto:</label>
+                                    <label for="contact_notes" class="form-label">{% translate "Notas de contacto:" %}</label>
                                     <textarea class="form-control" 
                                               id="contact_notes"
                                               name="contact_notes"
@@ -270,28 +271,28 @@
                                 <div class="d-grid">
                                     <button type="submit" class="btn btn-success">
                                         <i class="fas fa-save me-1"></i>
-                                        Guardar Seguimiento
+                                        {% translate "Guardar Seguimiento" %}
                                     </button>
                                 </div>
                             </form>
 
                             <!-- Estado visual del seguimiento -->
                             <div class="mt-3 pt-3 border-top">
-                                <h6 class="text-muted mb-2">Estado del seguimiento:</h6>
+                                <h6 class="text-muted mb-2">{% translate "Estado del seguimiento:" %}</h6>
                                 <div class="d-flex gap-2 flex-wrap">
                                     {% if submission.contacted_by_phone %}
                                         <span class="badge bg-success">
-                                            <i class="fas fa-phone me-1"></i>Contactado por teléfono
+                                            <i class="fas fa-phone me-1"></i>{% translate "Contactado por teléfono" %}
                                         </span>
                                     {% endif %}
                                     {% if submission.contacted_by_web %}
                                         <span class="badge bg-primary">
-                                            <i class="fas fa-envelope me-1"></i>Contactado por web
+                                            <i class="fas fa-envelope me-1"></i>{% translate "Contactado por web" %}
                                         </span>
                                     {% endif %}
                                     {% if not submission.contacted_by_phone and not submission.contacted_by_web %}
                                         <span class="badge bg-warning">
-                                            <i class="fas fa-clock me-1"></i>Sin contacto registrado
+                                            <i class="fas fa-clock me-1"></i>{% translate "Sin contacto registrado" %}
                                         </span>
                                     {% endif %}
                                 </div>
@@ -310,20 +311,20 @@
                         <div class="card-header">
                             <h5 class="mb-0">
                                 <i class="fas fa-clock me-2"></i>
-                                Información del Envío
+                                {% translate "Información del Envío" %}
                             </h5>
                         </div>
                         <div class="card-body">
                             <div class="mb-3">
-                                <label class="form-label text-muted">ID del Envío:</label>
+                                <label class="form-label text-muted">{% translate "ID del Envío:" %}</label>
                                 <p class="fw-bold">#{{ submission.id }}</p>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label text-muted">Fecha de Envío:</label>
+                                <label class="form-label text-muted">{% translate "Fecha de Envío:" %}</label>
                                 <p class="fw-bold">{{ submission.created_at|date:"d/m/Y H:i" }}</p>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label text-muted">Landing Page:</label>
+                                <label class="form-label text-muted">{% translate "Landing Page:" %}</label>
                                 <p class="fw-bold">
                                     <a href="{% url 'landing_page_detail' pk=landing_page.pk %}" 
                                        class="text-decoration-none">
@@ -333,12 +334,12 @@
                                 </p>
                             </div>
                             <div class="mb-0">
-                                <label class="form-label text-muted">URL de Origen:</label>
+                                <label class="form-label text-muted">{% translate "URL de Origen:" %}</label>
                                 <p class="fw-bold">
                                     <a href="{% url 'landing_page_public' slug=landing_page.slug %}" 
                                        target="_blank" 
                                        class="text-decoration-none">
-                                        Ver Landing Page
+                                        {% translate "Ver Landing Page" %}
                                         <i class="fas fa-external-link-alt ms-1 text-muted"></i>
                                     </a>
                                 </p>

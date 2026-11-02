@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% block content %}
 <div class="container">
   <h1>{{ page_title }}</h1>
-  <a class="btn btn-primary mb-3" href="{% url 'company_request_generator_create' %}">Crear Generador</a>
+  <a class="btn btn-primary mb-3" href="{% url 'company_request_generator_create' %}">{% translate "Crear Generador" %}</a>
   <table class="table table-striped">
     <thead>
       <tr>
-        <th>Título</th>
-        <th>Empresa</th>
-        <th>Activo</th>
-        <th>Solicitudes</th>
-        <th>Acciones</th>
+        <th>{% translate "Título" %}</th>
+        <th>{% translate "Empresa" %}</th>
+        <th>{% translate "Activo" %}</th>
+        <th>{% translate "Solicitudes" %}</th>
+        <th>{% translate "Acciones" %}</th>
       </tr>
     </thead>
     <tbody>
@@ -21,13 +22,13 @@
         <td>{{ g.is_active }}</td>
         <td>{{ g.get_requests_count }}</td>
         <td>
-          <a href="{% url 'company_request_generator_detail' g.pk %}">Ver</a> |
-          <a href="{% url 'company_request_generator_edit' g.pk %}">Editar</a> |
-          <a href="{% url 'company_request_generator_delete' g.pk %}">Eliminar</a>
+          <a href="{% url 'company_request_generator_detail' g.pk %}">{% translate "Ver" %}</a> |
+          <a href="{% url 'company_request_generator_edit' g.pk %}">{% translate "Editar" %}</a> |
+          <a href="{% url 'company_request_generator_delete' g.pk %}">{% translate "Eliminar" %}</a>
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="5">No hay generadores aún.</td></tr>
+      <tr><td colspan="5">{% translate "No hay generadores aún." %}</td></tr>
       {% endfor %}
     </tbody>
   </table>

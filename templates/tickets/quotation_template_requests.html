@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -11,12 +12,12 @@
                         <i class="bi bi-clock-history text-primary"></i>
                         {{ page_title }}
                     </h1>
-                    <p class="text-muted mb-0">Historial de solicitudes generadas a través de plantillas públicas</p>
+                    <p class="text-muted mb-0">{% translate "Historial de solicitudes generadas a través de plantillas públicas" %}</p>
                 </div>
                 <div>
                     <a href="{% url 'quotation_template_list' %}" class="btn btn-outline-primary">
                         <i class="bi bi-arrow-left"></i>
-                        Volver a Plantillas
+                        {% translate "Volver a Plantillas" %}
                     </a>
                 </div>
             </div>
@@ -26,9 +27,9 @@
                 <div class="card-body">
                     <form method="get" class="row g-3">
                         <div class="col-md-3">
-                            <label for="template_filter" class="form-label">Plantilla:</label>
+                            <label for="template_filter" class="form-label">{% translate "Plantilla:" %}</label>
                             <select name="template" id="template_filter" class="form-select">
-                                <option value="">Todas las plantillas</option>
+                                <option value="">{% translate "Todas las plantillas" %}</option>
                                 {% for template in templates_for_filter %}
                                     <option value="{{ template.id }}" {% if request.GET.template == template.id|stringformat:"s" %}selected{% endif %}>
                                         {{ template.title }}
@@ -37,29 +38,29 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="status_filter" class="form-label">Estado:</label>
+                            <label for="status_filter" class="form-label">{% translate "Estado:" %}</label>
                             <select name="status" id="status_filter" class="form-select">
-                                <option value="">Todos los estados</option>
-                                <option value="processed" {% if request.GET.status == "processed" %}selected{% endif %}>Procesadas</option>
-                                <option value="pending" {% if request.GET.status == "pending" %}selected{% endif %}>Pendientes</option>
+                                <option value="">{% translate "Todos los estados" %}</option>
+                                <option value="processed" {% if request.GET.status == "processed" %}selected{% endif %}>{% translate "Procesadas" %}</option>
+                                <option value="pending" {% if request.GET.status == "pending" %}selected{% endif %}>{% translate "Pendientes" %}</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="date_from" class="form-label">Desde:</label>
+                            <label for="date_from" class="form-label">{% translate "Desde:" %}</label>
                             <input type="date" name="date_from" id="date_from" class="form-control" value="{{ request.GET.date_from }}">
                         </div>
                         <div class="col-md-3">
-                            <label for="date_to" class="form-label">Hasta:</label>
+                            <label for="date_to" class="form-label">{% translate "Hasta:" %}</label>
                             <input type="date" name="date_to" id="date_to" class="form-control" value="{{ request.GET.date_to }}">
                         </div>
                         <div class="col-12">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-funnel"></i>
-                                Filtrar
+                                {% translate "Filtrar" %}
                             </button>
                             <a href="{% url 'quotation_template_requests' %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-x"></i>
-                                Limpiar
+                                {% translate "Limpiar" %}
                             </a>
                         </div>
                     </form>
@@ -74,12 +75,12 @@
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Cliente</th>
-                                        <th>Plantilla</th>
-                                        <th>Estado</th>
-                                        <th>Fecha Solicitud</th>
-                                        <th>Cotización Generada</th>
-                                        <th width="150">Acciones</th>
+                                        <th>{% translate "Cliente" %}</th>
+                                        <th>{% translate "Plantilla" %}</th>
+                                        <th>{% translate "Estado" %}</th>
+                                        <th>{% translate "Fecha Solicitud" %}</th>
+                                        <th>{% translate "Cotización Generada" %}</th>
+                                        <th width="150">{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -107,12 +108,12 @@
                                             {% if request.status == 'processed' or request.status == 'quoted' %}
                                                 <span class="badge bg-success">
                                                     <i class="bi bi-check-circle"></i>
-                                                    {% if request.status == 'quoted' %}Cotizada{% else %}Procesada{% endif %}
+                                                    {% if request.status == 'quoted' %}{% translate "Cotizada" %}{% else %}{% translate "Procesada" %}{% endif %}
                                                 </span>
                                             {% else %}
                                                 <span class="badge bg-warning">
                                                     <i class="bi bi-clock"></i>
-                                                    Pendiente
+                                                    {% translate "Pendiente" %}
                                                 </span>
                                             {% endif %}
                                         </td>
@@ -128,22 +129,22 @@
                                                 </a>
                                                 <br><small class="text-muted">{{ request.generated_quotation.company.name }}</small>
                                             {% else %}
-                                                <span class="text-muted">No generada</span>
+                                                <span class="text-muted">{% translate "No generada" %}</span>
                                             {% endif %}
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
                                                 {% if request.generated_quotation %}
                                                     <a href="{% url 'quotation_detail' request.generated_quotation.id %}" 
-                                                       class="btn btn-outline-primary" title="Ver Cotización">
+                                                       class="btn btn-outline-primary" title="{% translate 'Ver Cotización' %}">
                                                         <i class="bi bi-file-earmark-text"></i>
                                                     </a>
                                                     <a href="{% url 'quotation_pdf' request.generated_quotation.id %}" 
-                                                       class="btn btn-outline-danger" title="Descargar PDF">
+                                                       class="btn btn-outline-danger" title="{% translate 'Descargar PDF' %}">
                                                         <i class="bi bi-file-pdf"></i>
                                                     </a>
                                                 {% else %}
-                                                    <button class="btn btn-outline-secondary" disabled title="Sin cotización">
+                                                    <button class="btn btn-outline-secondary" disabled title="{% translate 'Sin cotización' %}">
                                                         <i class="bi bi-dash"></i>
                                                     </button>
                                                 {% endif %}
@@ -158,7 +159,7 @@
                         <!-- Paginación -->
                         {% if is_paginated %}
                         <div class="card-footer">
-                            <nav aria-label="Navegación de solicitudes">
+                            <nav aria-label="{% translate 'Navegación de solicitudes' %}">
                                 <ul class="pagination pagination-sm justify-content-center mb-0">
                                     {% if page_obj.has_previous %}
                                         <li class="page-item">
@@ -205,24 +206,24 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="bi bi-inbox fs-1 text-muted"></i>
-                            <h5 class="mt-3 text-muted">No hay solicitudes</h5>
+                            <h5 class="mt-3 text-muted">{% translate "No hay solicitudes" %}</h5>
                             <p class="text-muted">
                                 {% if request.GET.template or request.GET.status or request.GET.date_from or request.GET.date_to %}
-                                    No se encontraron solicitudes que coincidan con los filtros aplicados.
+                                    {% translate "No se encontraron solicitudes que coincidan con los filtros aplicados." %}
                                 {% else %}
-                                    Aún no se han recibido solicitudes a través de plantillas públicas.
+                                    {% translate "Aún no se han recibido solicitudes a través de plantillas públicas." %}
                                 {% endif %}
                             </p>
                             <div>
                                 {% if request.GET.template or request.GET.status or request.GET.date_from or request.GET.date_to %}
                                     <a href="{% url 'quotation_template_requests' %}" class="btn btn-outline-primary">
                                         <i class="bi bi-x"></i>
-                                        Limpiar Filtros
+                                        {% translate "Limpiar Filtros" %}
                                     </a>
                                 {% endif %}
                                 <a href="{% url 'quotation_template_list' %}" class="btn btn-primary">
                                     <i class="bi bi-share"></i>
-                                    Ver Plantillas
+                                    {% translate "Ver Plantillas" %}
                                 </a>
                             </div>
                         </div>
@@ -237,7 +238,7 @@
                     <div class="card text-center">
                         <div class="card-body">
                             <h5 class="card-title text-primary">{{ total_requests }}</h5>
-                            <p class="card-text text-muted">Total Solicitudes</p>
+                            <p class="card-text text-muted">{% translate "Total Solicitudes" %}</p>
                         </div>
                     </div>
                 </div>
@@ -245,7 +246,7 @@
                     <div class="card text-center">
                         <div class="card-body">
                             <h5 class="card-title text-success">{{ processed_requests }}</h5>
-                            <p class="card-text text-muted">Procesadas</p>
+                            <p class="card-text text-muted">{% translate "Procesadas" %}</p>
                         </div>
                     </div>
                 </div>
@@ -253,7 +254,7 @@
                     <div class="card text-center">
                         <div class="card-body">
                             <h5 class="card-title text-warning">{{ pending_requests }}</h5>
-                            <p class="card-text text-muted">Pendientes</p>
+                            <p class="card-text text-muted">{% translate "Pendientes" %}</p>
                         </div>
                     </div>
                 </div>
@@ -261,7 +262,7 @@
                     <div class="card text-center">
                         <div class="card-body">
                             <h5 class="card-title text-info">{{ conversion_rate }}%</h5>
-                            <p class="card-text text-muted">Tasa Conversión</p>
+                            <p class="card-text text-muted">{% translate "Tasa Conversión" %}</p>
                         </div>
                     </div>
                 </div>

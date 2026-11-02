@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
 
@@ -9,7 +10,7 @@
             <h1>
                 <i class="bi bi-chat-quote"></i> {{ page_title }}
             </h1>
-            <p class="text-muted">Define el tema y genera 10 citas personalizadas con inteligencia artificial</p>
+            <p class="text-muted">{% translate "Define el tema y genera 10 citas personalizadas con inteligencia artificial" %}</p>
         </div>
     </div>
 
@@ -18,7 +19,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-gear"></i> Configuración del Generador
+                        <i class="bi bi-gear"></i> {% translate "Configuración del Generador" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -57,7 +58,7 @@
 
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'quote_generator_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Volver
+                                <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-magic"></i> {{ submit_text }}
@@ -72,30 +73,30 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-info-circle"></i> Ejemplos de Temas
+                        <i class="bi bi-info-circle"></i> {% translate "Ejemplos de Temas" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <ul class="list-unstyled">
                         <li class="mb-2">
-                            <strong>Personas famosas:</strong><br>
-                            <small class="text-muted">"Dame citas que ha dicho Einstein sobre el amor"</small>
+                            <strong>{% translate "Personas famosas:" %}</strong><br>
+                            <small class="text-muted">{% translate '"Dame citas que ha dicho Einstein sobre el amor"' %}</small>
                         </li>
                         <li class="mb-2">
-                            <strong>Motivación:</strong><br>
-                            <small class="text-muted">"Frases motivacionales sobre el éxito empresarial"</small>
+                            <strong>{% translate "Motivación:" %}</strong><br>
+                            <small class="text-muted">{% translate '"Frases motivacionales sobre el éxito empresarial"' %}</small>
                         </li>
                         <li class="mb-2">
-                            <strong>Liderazgo:</strong><br>
-                            <small class="text-muted">"Citas de grandes líderes sobre el trabajo en equipo"</small>
+                            <strong>{% translate "Liderazgo:" %}</strong><br>
+                            <small class="text-muted">{% translate '"Citas de grandes líderes sobre el trabajo en equipo"' %}</small>
                         </li>
                         <li class="mb-2">
-                            <strong>Filosofía:</strong><br>
-                            <small class="text-muted">"Reflexiones filosóficas sobre la vida y la felicidad"</small>
+                            <strong>{% translate "Filosofía:" %}</strong><br>
+                            <small class="text-muted">{% translate '"Reflexiones filosóficas sobre la vida y la felicidad"' %}</small>
                         </li>
                         <li class="mb-2">
-                            <strong>Tecnología:</strong><br>
-                            <small class="text-muted">"Citas sobre innovación y tecnología de Steve Jobs"</small>
+                            <strong>{% translate "Tecnología:" %}</strong><br>
+                            <small class="text-muted">{% translate '"Citas sobre innovación y tecnología de Steve Jobs"' %}</small>
                         </li>
                     </ul>
                 </div>
@@ -104,15 +105,15 @@
             <div class="card mt-3">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-gear-wide-connected"></i> Funcionamiento
+                        <i class="bi bi-gear-wide-connected"></i> {% translate "Funcionamiento" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <ol class="mb-0">
-                        <li class="mb-2">La IA genera <strong>10 citas</strong> basadas en tu tema</li>
-                        <li class="mb-2">Las citas se muestran en el <strong>dashboard</strong> con rotación automática</li>
-                        <li class="mb-2">Puedes <strong>regenerar</strong> citas cuando quieras</li>
-                        <li>Solo se muestran citas de tu empresa o las que creaste</li>
+                        <li class="mb-2">{% translate "La IA genera" %} <strong>{% translate "10 citas" %}</strong> {% translate "basadas en tu tema" %}</li>
+                        <li class="mb-2">{% translate "Las citas se muestran en el" %} <strong>{% translate "dashboard" %}</strong> {% translate "con rotación automática" %}</li>
+                        <li class="mb-2">{% translate "Puedes" %} <strong>{% translate "regenerar" %}</strong> {% translate "citas cuando quieras" %}</li>
+                        <li>{% translate "Solo se muestran citas de tu empresa o las que creaste" %}</li>
                     </ol>
                 </div>
             </div>

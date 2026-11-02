@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -11,13 +12,13 @@
                 <h2><i class="bi bi-clock text-primary"></i> {{ page_title }}</h2>
                 <div class="btn-group" role="group">
                     <a href="{% url 'time_entry_edit' entry.id %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-edit"></i> Editar Registro
+                        <i class="bi bi-edit"></i> {% translate "Editar Registro" %}
                     </a>
                     <a href="{% url 'time_entry_audit_log' entry.id %}" class="btn btn-outline-info">
-                        <i class="bi bi-clock-history"></i> Ver Historial
+                        <i class="bi bi-clock-history"></i> {% translate "Ver Historial" %}
                     </a>
                     <a href="{% url 'time_entries_list' %}" class="btn btn-outline-primary">
-                        <i class="bi bi-list"></i> Volver a Lista
+                        <i class="bi bi-list"></i> {% translate "Volver a Lista" %}
                     </a>
                 </div>
             </div>
@@ -29,35 +30,35 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-info-circle"></i> Detalles del Registro
+                        <i class="bi bi-info-circle"></i> {% translate "Detalles del Registro" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
                             <dl class="row">
-                                <dt class="col-sm-5">Fecha:</dt>
+                                <dt class="col-sm-5">{% translate "Fecha:" %}</dt>
                                 <dd class="col-sm-7">
                                     <strong>{{ entry.fecha_entrada|date:"d/m/Y" }}</strong>
                                     <br>
                                     <small class="text-muted">{{ entry.fecha_entrada|date:"l" }}</small>
                                 </dd>
 
-                                <dt class="col-sm-5">Hora de Entrada:</dt>
+                                <dt class="col-sm-5">{% translate "Hora de Entrada:" %}</dt>
                                 <dd class="col-sm-7">
                                     <span class="badge bg-success fs-6">
                                         {{ entry.fecha_entrada|date:"H:i:s" }}
                                     </span>
                                 </dd>
 
-                                <dt class="col-sm-5">Hora de Salida:</dt>
+                                <dt class="col-sm-5">{% translate "Hora de Salida:" %}</dt>
                                 <dd class="col-sm-7">
                                     {% if entry.fecha_salida %}
                                         <span class="badge bg-danger fs-6">
                                             {{ entry.fecha_salida|date:"H:i:s" }}
                                         </span>
                                     {% else %}
-                                        <span class="badge bg-warning">En Progreso</span>
+                                        <span class="badge bg-warning">{% translate "En Progreso" %}</span>
                                     {% endif %}
                                 </dd>
                             </dl>
@@ -65,22 +66,22 @@
                         
                         <div class="col-md-6">
                             <dl class="row">
-                                <dt class="col-sm-5">Duración:</dt>
+                                <dt class="col-sm-5">{% translate "Duración:" %}</dt>
                                 <dd class="col-sm-7">
                                     <h4 class="text-primary">{{ entry.duracion_formateada }}</h4>
                                 </dd>
 
-                                <dt class="col-sm-5">Horas Trabajadas:</dt>
+                                <dt class="col-sm-5">{% translate "Horas Trabajadas:" %}</dt>
                                 <dd class="col-sm-7">
                                     <strong>{{ entry.horas_trabajadas }} horas</strong>
                                 </dd>
 
-                                <dt class="col-sm-5">Estado:</dt>
+                                <dt class="col-sm-5">{% translate "Estado:" %}</dt>
                                 <dd class="col-sm-7">
                                     {% if entry.fecha_salida %}
-                                        <span class="badge bg-secondary">Completado</span>
+                                        <span class="badge bg-secondary">{% translate "Completado" %}</span>
                                     {% else %}
-                                        <span class="badge bg-success">Activo</span>
+                                        <span class="badge bg-success">{% translate "Activo" %}</span>
                                     {% endif %}
                                 </dd>
                             </dl>
@@ -92,14 +93,14 @@
                     <!-- Información de trabajo realizado -->
                     <div class="row">
                         <div class="col-12">
-                            <dt>Trabajando en:</dt>
+                            <dt>{% translate "Trabajando en:" %}</dt>
                             <dd>
                                 <div class="d-flex flex-wrap gap-2">
                                     {% if entry.project %}
                                         <div class="card border-0 bg-light">
                                             <div class="card-body p-2">
                                                 <span class="badge" style="background-color: {{ entry.project.color }}; color: white;">
-                                                    <i class="bi bi-folder"></i> Proyecto
+                                                    <i class="bi bi-folder"></i> {% translate "Proyecto" %}
                                                 </span>
                                                 <div class="mt-1">
                                                     <strong>{{ entry.project.name }}</strong>
@@ -115,7 +116,7 @@
                                         <div class="card border-0 bg-light">
                                             <div class="card-body p-2">
                                                 <span class="badge bg-primary">
-                                                    <i class="bi bi-ticket-perforated"></i> Ticket
+                                                    <i class="bi bi-ticket-perforated"></i> {% translate "Ticket" %}
                                                 </span>
                                                 <div class="mt-1">
                                                     <strong>{{ entry.ticket.ticket_number }}</strong>
@@ -132,7 +133,7 @@
                                         <div class="card border-0 bg-light">
                                             <div class="card-body p-2">
                                                 <span class="badge bg-success">
-                                                    <i class="bi bi-clipboard-check"></i> Orden de Trabajo
+                                                    <i class="bi bi-clipboard-check"></i> {% translate "Orden de Trabajo" %}
                                                 </span>
                                                 <div class="mt-1">
                                                     <strong>{{ entry.work_order.order_number }}</strong>
@@ -149,7 +150,7 @@
                                         <div class="card border-0 bg-light">
                                             <div class="card-body p-2">
                                                 <span class="badge bg-info">
-                                                    <i class="bi bi-list-task"></i> Tarea
+                                                    <i class="bi bi-list-task"></i> {% translate "Tarea" %}
                                                 </span>
                                                 <div class="mt-1">
                                                     <strong>{{ entry.task.title }}</strong>
@@ -179,7 +180,7 @@
                                     {% if not entry.project and not entry.ticket and not entry.work_order and not entry.task %}
                                         <div class="alert alert-light border">
                                             <i class="bi bi-info-circle"></i> 
-                                            Sin asignación específica - Trabajo general
+                                            {% translate "Sin asignación específica - Trabajo general" %}
                                         </div>
                                     {% endif %}
                                 </div>
@@ -191,7 +192,7 @@
                     <hr>
                     <div class="row">
                         <div class="col-12">
-                            <dt>Notas de la Jornada:</dt>
+                            <dt>{% translate "Notas de la Jornada:" %}</dt>
                             <dd>
                                 <div class="alert alert-light border">
                                     {{ entry.notas|linebreaks }}
@@ -208,29 +209,29 @@
             <!-- Información Adicional -->
             <div class="card border-info mb-3">
                 <div class="card-header bg-info text-white">
-                    <h6 class="mb-0"><i class="bi bi-chart-line"></i> Estadísticas</h6>
+                    <h6 class="mb-0"><i class="bi bi-chart-line"></i> {% translate "Estadísticas" %}</h6>
                 </div>
                 <div class="card-body">
                     <div class="text-center">
                         {% if entry.fecha_salida %}
                             <div class="mb-3">
-                                <small class="text-muted">Tiempo Total</small>
+                                <small class="text-muted">{% translate "Tiempo Total" %}</small>
                                 <h3 class="text-info">{{ entry.duracion_formateada }}</h3>
                             </div>
                         {% else %}
                             <div class="mb-3">
-                                <small class="text-muted">Tiempo Transcurrido</small>
+                                <small class="text-muted">{% translate "Tiempo Transcurrido" %}</small>
                                 <h3 class="text-success" id="tiempo-actual">{{ entry.duracion_formateada }}</h3>
                             </div>
                         {% endif %}
                         
                         <small class="text-muted">
                             {% if entry.duracion_trabajada >= 480 %}
-                                <i class="bi bi-check-circle text-success"></i> Jornada completa
+                                <i class="bi bi-check-circle text-success"></i> {% translate "Jornada completa" %}
                             {% elif entry.duracion_trabajada >= 240 %}
-                                <i class="bi bi-clock text-warning"></i> Jornada parcial
+                                <i class="bi bi-clock text-warning"></i> {% translate "Jornada parcial" %}
                             {% else %}
-                                <i class="bi bi-hourglass-start text-info"></i> Jornada corta
+                                <i class="bi bi-hourglass-start text-info"></i> {% translate "Jornada corta" %}
                             {% endif %}
                         </small>
                     </div>
@@ -240,16 +241,16 @@
             <!-- Metadatos -->
             <div class="card border-secondary">
                 <div class="card-header bg-secondary text-white">
-                    <h6 class="mb-0"><i class="bi bi-cog"></i> Información del Sistema</h6>
+                    <h6 class="mb-0"><i class="bi bi-cog"></i> {% translate "Información del Sistema" %}</h6>
                 </div>
                 <div class="card-body">
                     <small class="text-muted">
                         <dl class="row mb-0">
-                            <dt class="col-6">Registrado:</dt>
+                            <dt class="col-6">{% translate "Registrado:" %}</dt>
                             <dd class="col-6">{{ entry.created_at|date:"d/m/Y H:i" }}</dd>
                             
                             {% if entry.updated_at != entry.created_at %}
-                            <dt class="col-6">Actualizado:</dt>
+                            <dt class="col-6">{% translate "Actualizado:" %}</dt>
                             <dd class="col-6">{{ entry.updated_at|date:"d/m/Y H:i" }}</dd>
                             {% endif %}
                         </dl>

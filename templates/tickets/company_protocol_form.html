@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -6,11 +7,11 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
                     <a href="{% url 'company_protocol_list' %}">
-                        <i class="bi bi-file-text"></i> Protocolos
+                        <i class="bi bi-file-text"></i> {% translate "Protocolos" %}
                     </a>
                 </li>
                 <li class="breadcrumb-item active">{{ page_title }}</li>
@@ -28,7 +29,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-form"></i> Información del Protocolo
+                    <i class="bi bi-form"></i> {% translate "Información del Protocolo" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -38,24 +39,24 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="title" class="form-label">
-                                <i class="bi bi-type"></i> Título del Protocolo <span class="text-danger">*</span>
+                                <i class="bi bi-type"></i> {% translate "Título del Protocolo" %} <span class="text-danger">*</span>
                             </label>
                             <input type="text" 
                                    class="form-control" 
                                    id="title" 
                                    name="title" 
                                    value="{% if protocol %}{{ protocol.title }}{% endif %}"
-                                   placeholder="Ej: Protocolo de Seguridad en el Trabajo"
+                                   placeholder="{% translate 'Ej: Protocolo de Seguridad en el Trabajo' %}"
                                    required>
-                            <div class="form-text">Título descriptivo y claro del protocolo empresarial</div>
+                            <div class="form-text">{% translate "Título descriptivo y claro del protocolo empresarial" %}</div>
                         </div>
                         
                         <div class="col-md-3 mb-3">
                             <label for="company" class="form-label">
-                                <i class="bi bi-building"></i> Empresa <span class="text-danger">*</span>
+                                <i class="bi bi-building"></i> {% translate "Empresa" %} <span class="text-danger">*</span>
                             </label>
                             <select class="form-select" id="company" name="company" required>
-                                <option value="">Seleccionar empresa...</option>
+                                <option value="">{% translate "Seleccionar empresa..." %}</option>
                                 {% for company in companies %}
                                     <option value="{{ company.id }}" 
                                             {% if protocol and protocol.company_id == company.id %}selected{% endif %}>
@@ -63,12 +64,12 @@
                                     </option>
                                 {% endfor %}
                             </select>
-                            <div class="form-text">Empresa a la que pertenece este protocolo</div>
+                            <div class="form-text">{% translate "Empresa a la que pertenece este protocolo" %}</div>
                         </div>
                         
                         <div class="col-md-3 mb-3">
                             <label for="version" class="form-label">
-                                <i class="bi bi-tag"></i> Versión
+                                <i class="bi bi-tag"></i> {% translate "Versión" %}
                             </label>
                             <input type="text" 
                                    class="form-control" 
@@ -76,29 +77,29 @@
                                    name="version" 
                                    value="{% if protocol %}{{ protocol.version }}{% else %}1.0{% endif %}"
                                    placeholder="1.0">
-                            <div class="form-text">Versión del protocolo (ej: 1.0, 1.1, 2.0)</div>
+                            <div class="form-text">{% translate "Versión del protocolo (ej: 1.0, 1.1, 2.0)" %}</div>
                         </div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="content" class="form-label">
-                            <i class="bi bi-file-text"></i> Contenido del Protocolo <span class="text-danger">*</span>
+                            <i class="bi bi-file-text"></i> {% translate "Contenido del Protocolo" %} <span class="text-danger">*</span>
                         </label>
                         
                         <!-- Botones de IA -->
                         <div class="mb-2">
-                            <div class="btn-group" role="group" aria-label="Herramientas de IA">
+                            <div class="btn-group" role="group" aria-label="{% translate 'Herramientas de IA' %}">
                                 <button type="button" class="btn btn-outline-primary btn-sm" onclick="generateAIContent()">
-                                    <i class="bi bi-magic"></i> Generar con IA
+                                    <i class="bi bi-magic"></i> {% translate "Generar con IA" %}
                                 </button>
                                 <button type="button" class="btn btn-outline-info btn-sm" onclick="analyzeReadability()">
-                                    <i class="bi bi-bar-chart"></i> Analizar Legibilidad
+                                    <i class="bi bi-bar-chart"></i> {% translate "Analizar Legibilidad" %}
                                 </button>
                                 <button type="button" class="btn btn-outline-success btn-sm" onclick="getAISuggestions()">
-                                    <i class="bi bi-lightbulb"></i> Sugerencias IA
+                                    <i class="bi bi-lightbulb"></i> {% translate "Sugerencias IA" %}
                                 </button>
                                 <button type="button" class="btn btn-outline-warning btn-sm" onclick="improveContent()">
-                                    <i class="bi bi-arrow-up-circle"></i> Mejorar Contenido
+                                    <i class="bi bi-arrow-up-circle"></i> {% translate "Mejorar Contenido" %}
                                 </button>
                             </div>
                         </div>
@@ -110,7 +111,7 @@
                                   placeholder="Describe aquí el contenido completo del protocolo empresarial..."
                                   required>{% if protocol %}{{ protocol.content }}{% endif %}</textarea>
                         <div class="form-text">
-                            Contenido completo del protocolo. Usa párrafos separados por líneas vacías.
+                            {% translate "Contenido completo del protocolo. Usa párrafos separados por líneas vacías." %}
                             <span id="word-count" class="fw-bold"></span>
                         </div>
                     </div>
@@ -123,26 +124,26 @@
                                    name="is_active"
                                    {% if not protocol or protocol.is_active %}checked{% endif %}>
                             <label class="form-check-label" for="is_active">
-                                <i class="bi bi-check-circle"></i> Protocolo activo
+                                <i class="bi bi-check-circle"></i> {% translate "Protocolo activo" %}
                             </label>
-                            <div class="form-text">Los protocolos activos están disponibles para consulta y descarga</div>
+                            <div class="form-text">{% translate "Los protocolos activos están disponibles para consulta y descarga" %}</div>
                         </div>
                     </div>
                     
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-circle"></i> 
-                            {% if protocol %}Actualizar Protocolo{% else %}Crear Protocolo{% endif %}
+                            {% if protocol %}{% translate "Actualizar Protocolo" %}{% else %}{% translate "Crear Protocolo" %}{% endif %}
                         </button>
                         <a href="{% url 'company_protocol_list' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Volver
+                            <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                         </a>
                         {% if protocol %}
                         <a href="{% url 'company_protocol_detail' protocol.pk %}" class="btn btn-outline-info">
-                            <i class="bi bi-eye"></i> Ver Detalle
+                            <i class="bi bi-eye"></i> {% translate "Ver Detalle" %}
                         </a>
                         <a href="{% url 'company_protocol_print_pdf' protocol.pk %}" class="btn btn-outline-success">
-                            <i class="bi bi-printer"></i> Imprimir PDF
+                            <i class="bi bi-printer"></i> {% translate "Imprimir PDF" %}
                         </a>
                         {% endif %}
                     </div>
@@ -155,28 +156,28 @@
         <div class="card">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-info-circle"></i> Guía de Contenido
+                    <i class="bi bi-info-circle"></i> {% translate "Guía de Contenido" %}
                 </h6>
             </div>
             <div class="card-body">
-                <h6>Estructura Sugerida:</h6>
+                <h6>{% translate "Estructura Sugerida:" %}</h6>
                 <ol class="small">
-                    <li><strong>Objetivo:</strong> Propósito del protocolo</li>
-                    <li><strong>Alcance:</strong> A quién aplica</li>
-                    <li><strong>Responsabilidades:</strong> Roles y funciones</li>
-                    <li><strong>Procedimientos:</strong> Pasos detallados</li>
-                    <li><strong>Recursos:</strong> Herramientas necesarias</li>
-                    <li><strong>Medidas:</strong> Controles y verificaciones</li>
-                    <li><strong>Revisión:</strong> Frecuencia de actualización</li>
+                    <li><strong>{% translate "Objetivo:" %}</strong> {% translate "Propósito del protocolo" %}</li>
+                    <li><strong>{% translate "Alcance:" %}</strong> {% translate "A quién aplica" %}</li>
+                    <li><strong>{% translate "Responsabilidades:" %}</strong> {% translate "Roles y funciones" %}</li>
+                    <li><strong>{% translate "Procedimientos:" %}</strong> {% translate "Pasos detallados" %}</li>
+                    <li><strong>{% translate "Recursos:" %}</strong> {% translate "Herramientas necesarias" %}</li>
+                    <li><strong>{% translate "Medidas:" %}</strong> {% translate "Controles y verificaciones" %}</li>
+                    <li><strong>{% translate "Revisión:" %}</strong> {% translate "Frecuencia de actualización" %}</li>
                 </ol>
                 
-                <h6>Consejos:</h6>
+                <h6>{% translate "Consejos:" %}</h6>
                 <ul class="small">
-                    <li>Usa lenguaje claro y directo</li>
-                    <li>Incluye ejemplos prácticos</li>
-                    <li>Define términos técnicos</li>
-                    <li>Organiza en secciones numeradas</li>
-                    <li>Mantén coherencia en el formato</li>
+                    <li>{% translate "Usa lenguaje claro y directo" %}</li>
+                    <li>{% translate "Incluye ejemplos prácticos" %}</li>
+                    <li>{% translate "Define términos técnicos" %}</li>
+                    <li>{% translate "Organiza en secciones numeradas" %}</li>
+                    <li>{% translate "Mantén coherencia en el formato" %}</li>
                 </ul>
             </div>
         </div>
@@ -185,28 +186,28 @@
         <div class="card mt-3">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-clock-history"></i> Información del Protocolo
+                    <i class="bi bi-clock-history"></i> {% translate "Información del Protocolo" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="small">
                     <div class="mb-2">
-                        <strong>Creado por:</strong> {{ protocol.created_by.get_full_name|default:protocol.created_by.username }}
+                        <strong>{% translate "Creado por:" %}</strong> {{ protocol.created_by.get_full_name|default:protocol.created_by.username }}
                     </div>
                     <div class="mb-2">
-                        <strong>Fecha de creación:</strong> {{ protocol.created_at|date:"d/m/Y H:i" }}
+                        <strong>{% translate "Fecha de creación:" %}</strong> {{ protocol.created_at|date:"d/m/Y H:i" }}
                     </div>
                     <div class="mb-2">
-                        <strong>Última actualización:</strong> {{ protocol.updated_at|date:"d/m/Y H:i" }}
+                        <strong>{% translate "Última actualización:" %}</strong> {{ protocol.updated_at|date:"d/m/Y H:i" }}
                     </div>
                     <div class="mb-2">
-                        <strong>Estado:</strong> 
+                        <strong>{% translate "Estado:" %}</strong> 
                         <span class="badge {% if protocol.is_active %}bg-success{% else %}bg-secondary{% endif %}">
-                            {% if protocol.is_active %}Activo{% else %}Inactivo{% endif %}
+                            {% if protocol.is_active %}{% translate "Activo" %}{% else %}{% translate "Inactivo" %}{% endif %}
                         </span>
                     </div>
                     <div class="mb-2">
-                        <strong>Palabras:</strong> {{ protocol.get_word_count }}
+                        <strong>{% translate "Palabras:" %}</strong> {{ protocol.get_word_count }}
                     </div>
                 </div>
             </div>
@@ -481,28 +482,27 @@ function createAlertsContainer() {
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="bi bi-magic"></i> Generar Contenido con IA
+                    <i class="bi bi-magic"></i> {% translate "Generar Contenido con IA" %}
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label for="aiContentType" class="form-label">Tipo de contenido a generar:</label>
+                    <label for="aiContentType" class="form-label">{% translate "Tipo de contenido a generar:" %}</label>
                     <select class="form-select" id="aiContentType">
-                        <option value="comprehensive">Protocolo Completo (Detallado)</option>
-                        <option value="summary">Resumen Ejecutivo</option>
-                        <option value="checklist">Lista de Verificación</option>
+                        <option value="comprehensive">{% translate "Protocolo Completo (Detallado)" %}</option>
+                        <option value="summary">{% translate "Resumen Ejecutivo" %}</option>
+                        <option value="checklist">{% translate "Lista de Verificación" %}</option>
                     </select>
                 </div>
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> La IA generará contenido basado en el título y empresa del protocolo. 
-                    Esto reemplazará el contenido actual.
+                    <i class="bi bi-info-circle"></i> {% translate "La IA generará contenido basado en el título y empresa del protocolo. Esto reemplazará el contenido actual." %}
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                 <button type="button" class="btn btn-primary" id="executeGenerateBtn" onclick="executeAIGeneration()">
-                    <i class="bi bi-magic"></i> Generar
+                    <i class="bi bi-magic"></i> {% translate "Generar" %}
                 </button>
             </div>
         </div>
@@ -515,28 +515,28 @@ function createAlertsContainer() {
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="bi bi-arrow-up-circle"></i> Mejorar Contenido con IA
+                    <i class="bi bi-arrow-up-circle"></i> {% translate "Mejorar Contenido con IA" %}
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label for="aiImprovementType" class="form-label">Tipo de mejora:</label>
+                    <label for="aiImprovementType" class="form-label">{% translate "Tipo de mejora:" %}</label>
                     <select class="form-select" id="aiImprovementType">
-                        <option value="general">Mejora General (Claridad + Estructura)</option>
-                        <option value="clarity">Mejorar Claridad del Lenguaje</option>
-                        <option value="structure">Mejorar Estructura y Organización</option>
-                        <option value="professional">Hacer Más Profesional</option>
+                        <option value="general">{% translate "Mejora General (Claridad + Estructura)" %}</option>
+                        <option value="clarity">{% translate "Mejorar Claridad del Lenguaje" %}</option>
+                        <option value="structure">{% translate "Mejorar Estructura y Organización" %}</option>
+                        <option value="professional">{% translate "Hacer Más Profesional" %}</option>
                     </select>
                 </div>
                 <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle"></i> Esta función mejorará el contenido actual manteniéndolo semejante pero más claro y profesional.
+                    <i class="bi bi-exclamation-triangle"></i> {% translate "Esta función mejorará el contenido actual manteniéndolo semejante pero más claro y profesional." %}
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                 <button type="button" class="btn btn-warning" id="executeImproveBtn" onclick="executeAIImprovement()">
-                    <i class="bi bi-arrow-up-circle"></i> Mejorar
+                    <i class="bi bi-arrow-up-circle"></i> {% translate "Mejorar" %}
                 </button>
             </div>
         </div>
@@ -549,18 +549,18 @@ function createAlertsContainer() {
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="bi bi-bar-chart"></i> Análisis de Legibilidad
+                    <i class="bi bi-bar-chart"></i> {% translate "Análisis de Legibilidad" %}
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="text-center mb-4">
-                    <h4>Puntuación de Legibilidad</h4>
+                    <h4>{% translate "Puntuación de Legibilidad" %}</h4>
                     <div id="readabilityScore"></div>
                 </div>
                 <div class="card">
                     <div class="card-header">
-                        <h6 class="mb-0">Métricas Detalladas</h6>
+                        <h6 class="mb-0">{% translate "Métricas Detalladas" %}</h6>
                     </div>
                     <div class="card-body">
                         <div id="readabilityMetrics"></div>
@@ -568,7 +568,7 @@ function createAlertsContainer() {
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cerrar" %}</button>
             </div>
         </div>
     </div>
@@ -580,7 +580,7 @@ function createAlertsContainer() {
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="bi bi-lightbulb"></i> Sugerencias de Mejora con IA
+                    <i class="bi bi-lightbulb"></i> {% translate "Sugerencias de Mejora con IA" %}
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -588,7 +588,7 @@ function createAlertsContainer() {
                 <div id="suggestionsList"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cerrar" %}</button>
             </div>
         </div>
     </div>

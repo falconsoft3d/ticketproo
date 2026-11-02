@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -6,26 +7,26 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
                     <a href="{% url 'employee_absence_list' %}">
-                        <i class="bi bi-calendar-x"></i> Ausencias
+                        <i class="bi bi-calendar-x"></i> {% translate "Ausencias" %}
                     </a>
                 </li>
-                <li class="breadcrumb-item active">Calendario</li>
+                <li class="breadcrumb-item active">{% translate "Calendario" %}</li>
             </ol>
         </nav>
         <h2><i class="bi bi-calendar3"></i> {{ page_title }}</h2>
-        <p class="text-muted">Vista de calendario con ausencias aprobadas</p>
+        <p class="text-muted">{% translate "Vista de calendario con ausencias aprobadas" %}</p>
     </div>
     
     <div class="btn-group" role="group">
         <a href="{% url 'employee_absence_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Nueva Ausencia
+            <i class="bi bi-plus-circle"></i> {% translate "Nueva Ausencia" %}
         </a>
         <a href="{% url 'employee_absence_list' %}" class="btn btn-outline-secondary">
-            <i class="bi bi-list-ul"></i> Vista Lista
+            <i class="bi bi-list-ul"></i> {% translate "Vista Lista" %}
         </a>
     </div>
 </div>
@@ -35,13 +36,13 @@
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center">
             <a href="?year={{ prev_year }}&month={{ prev_month }}" class="btn btn-outline-primary">
-                <i class="bi bi-chevron-left"></i> Anterior
+                <i class="bi bi-chevron-left"></i> {% translate "Anterior" %}
             </a>
             
             <h4 class="mb-0">{{ current_month }} {{ current_year }}</h4>
             
             <a href="?year={{ next_year }}&month={{ next_month }}" class="btn btn-outline-primary">
-                Siguiente <i class="bi bi-chevron-right"></i>
+                {% translate "Siguiente" %} <i class="bi bi-chevron-right"></i>
             </a>
         </div>
     </div>
@@ -51,16 +52,16 @@
 <div class="card">
     <div class="card-header">
         <h5 class="mb-0">
-            <i class="bi bi-calendar-event"></i> Ausencias del Mes
+            <i class="bi bi-calendar-event"></i> {% translate "Ausencias del Mes" %}
         </h5>
     </div>
     <div class="card-body">
         <!-- Nota sobre funcionalidad completa -->
         <div class="alert alert-info" role="alert">
             <h6 class="alert-heading">
-                <i class="bi bi-info-circle"></i> Vista de Calendario
+                <i class="bi bi-info-circle"></i> {% translate "Vista de Calendario" %}
             </h6>
-            <p class="mb-2">Aquí se muestran las ausencias aprobadas para este mes. Para una implementación completa con calendario interactivo, se puede integrar FullCalendar.js.</p>
+            <p class="mb-2">{% translate "Aquí se muestran las ausencias aprobadas para este mes. Para una implementación completa con calendario interactivo, se puede integrar FullCalendar.js." %}</p>
             <p class="mb-0">Los datos del calendario están disponibles en formato JSON: <code>{{ calendar_data }}</code></p>
         </div>
         
@@ -84,7 +85,7 @@
 <div class="card mt-4">
     <div class="card-header">
         <h6 class="mb-0">
-            <i class="bi bi-palette"></i> Leyenda de Tipos
+            <i class="bi bi-palette"></i> {% translate "Leyenda de Tipos" %}
         </h6>
     </div>
     <div class="card-body">

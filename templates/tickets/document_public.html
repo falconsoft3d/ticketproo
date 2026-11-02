@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -72,11 +73,11 @@
                                 <div class="info-card card h-100">
                                     <div class="card-body text-center">
                                         <i class="bi bi-info-circle text-primary fs-2 mb-3"></i>
-                                        <h5>Información del archivo</h5>
+                                        <h5>{% translate "Información del archivo" %}</h5>
                                         <ul class="list-unstyled">
-                                            <li><strong>Tipo:</strong> {{ document.file_type }}</li>
-                                            <li><strong>Tamaño:</strong> {{ document.file_size_formatted }}</li>
-                                            <li><strong>Subido:</strong> {{ document.created_at|date:"d/m/Y" }}</li>
+                                            <li><strong>{% translate "Tipo:" %}</strong> {{ document.file_type }}</li>
+                                            <li><strong>{% translate "Tamaño:" %}</strong> {{ document.file_size_formatted }}</li>
+                                            <li><strong>{% translate "Subido:" %}</strong> {{ document.created_at|date:"d/m/Y" }}</li>
                                         </ul>
                                     </div>
                                 </div>
@@ -86,9 +87,9 @@
                                 <div class="info-card card h-100">
                                     <div class="card-body text-center">
                                         <i class="bi bi-download text-success fs-2 mb-3"></i>
-                                        <h5>Descargas</h5>
+                                        <h5>{% translate "Descargas" %}</h5>
                                         <p class="fs-4 fw-bold text-success mb-2">{{ document.download_count }}</p>
-                                        <small class="text-muted">veces descargado</small>
+                                        <small class="text-muted">{% translate "veces descargado" %}</small>
                                     </div>
                                 </div>
                             </div>
@@ -100,7 +101,7 @@
                             <div class="col-12">
                                 <div class="info-card card">
                                     <div class="card-body">
-                                        <h6><i class="bi bi-building"></i> Empresa/Cliente</h6>
+                                        <h6><i class="bi bi-building"></i> {% translate "Empresa/Cliente" %}</h6>
                                         <p class="mb-0">{{ document.company.name }}</p>
                                         {% if document.company.description %}
                                         <small class="text-muted">{{ document.company.description }}</small>
@@ -116,7 +117,7 @@
                             <div class="col-12">
                                 <div class="info-card card">
                                     <div class="card-body">
-                                        <h6><i class="bi bi-tags"></i> Etiquetas</h6>
+                                        <h6><i class="bi bi-tags"></i> {% translate "Etiquetas" %}</h6>
                                         <div>
                                             {% for tag in document.get_tags_list %}
                                                 <span class="badge bg-primary me-1">{{ tag }}</span>
@@ -141,11 +142,11 @@
                         <!-- Información de seguridad -->
                         <div class="mt-4">
                             <div class="alert alert-info">
-                                <h6><i class="bi bi-shield-check"></i> Información de seguridad</h6>
+                                <h6><i class="bi bi-shield-check"></i> {% translate "Información de seguridad" %}</h6>
                                 <ul class="mb-0 small">
-                                    <li>Este documento ha sido compartido de forma segura</li>
-                                    <li>La descarga es gratuita y no requiere registro</li>
-                                    <li>No se recopila información personal</li>
+                                    <li>{% translate "Este documento ha sido compartido de forma segura" %}</li>
+                                    <li>{% translate "La descarga es gratuita y no requiere registro" %}</li>
+                                    <li>{% translate "No se recopila información personal" %}</li>
                                 </ul>
                             </div>
                         </div>
@@ -156,7 +157,7 @@
                 <div class="text-center mt-4">
                     <p class="text-muted">
                         <small>
-                            Powered by <strong>TicketPro</strong> - Sistema de Gestión de Documentos
+                            {% translate "Powered by" %} <strong>{% translate "TicketPro" %}</strong> {% translate "- Sistema de Gestión de Documentos" %}
                         </small>
                     </p>
                 </div>

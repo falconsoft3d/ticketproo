@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block extra_css %}
@@ -159,7 +160,7 @@
                     Estadísticas de {{ short_url.title|default:short_url.short_code }}
                 </h2>
                 <a href="{% url 'short_url_list' %}" class="btn btn-outline-primary">
-                    <i class="fas fa-arrow-left me-2"></i>Volver
+                    <i class="fas fa-arrow-left me-2"></i>{% translate "Volver" %}
                 </a>
             </div>
         </div>
@@ -171,7 +172,7 @@
             <div class="card stats-card bg-primary text-white">
                 <div class="card-body text-center">
                     <div class="stat-number">{{ total_clicks }}</div>
-                    <div class="stat-label text-white">Total de Clicks</div>
+                    <div class="stat-label text-white">{% translate "Total de Clicks" %}</div>
                 </div>
             </div>
         </div>
@@ -179,7 +180,7 @@
             <div class="card stats-card bg-success text-white">
                 <div class="card-body text-center">
                     <div class="stat-number">{{ unique_ips }}</div>
-                    <div class="stat-label text-white">IPs Únicas (Tracking Detallado)</div>
+                    <div class="stat-label text-white">{% translate "IPs Únicas (Tracking Detallado)" %}</div>
                 </div>
             </div>
         </div>
@@ -187,7 +188,7 @@
             <div class="card stats-card bg-info text-white">
                 <div class="card-body text-center">
                     <div class="stat-number">{{ unique_countries }}</div>
-                    <div class="stat-label text-white">Países (Tracking Detallado)</div>
+                    <div class="stat-label text-white">{% translate "Países (Tracking Detallado)" %}</div>
                 </div>
             </div>
         </div>
@@ -199,8 +200,7 @@
         <div class="col-12">
             <div class="alert alert-info">
                 <i class="fas fa-info-circle me-2"></i>
-                <strong>Nota:</strong> Los gráficos y estadísticas detalladas solo muestran clicks con tracking detallado. 
-                Los clicks anteriores están contabilizados en el total pero no tienen información geográfica detallada.
+                <strong>{% translate "Nota:" %}</strong> {% translate "Los gráficos y estadísticas detalladas solo muestran clicks con tracking detallado. Los clicks anteriores están contabilizados en el total pero no tienen información geográfica detallada." %}
             </div>
         </div>
     </div>
@@ -210,8 +210,7 @@
         <div class="col-12">
             <div class="alert alert-info">
                 <i class="fas fa-info-circle me-2"></i>
-                <strong>Tracking detallado activo:</strong> Se están registrando clicks con información geográfica. 
-                Total de clicks con datos detallados: <strong>{{ unique_ips }}</strong> de {{ total_clicks }}.
+                <strong>{% translate "Tracking detallado activo:" %}</strong> {% translate "Se están registrando clicks con información geográfica. Total de clicks con datos detallados:" %} <strong>{{ unique_ips }}</strong> de {{ total_clicks }}.
             </div>
         </div>
     </div>
@@ -222,19 +221,19 @@
         <div class="col-12">
             <div class="card stats-card">
                 <div class="card-body">
-                    <h5 class="section-title">Información de la URL</h5>
+                    <h5 class="section-title">{% translate "Información de la URL" %}</h5>
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>URL Corta:</strong> <code>{{ short_url.get_short_url }}</code></p>
-                            <p><strong>URL Destino:</strong> <a href="{{ short_url.original_url }}" target="_blank">{{ short_url.original_url }}</a></p>
+                            <p><strong>{% translate "URL Corta:" %}</strong> <code>{{ short_url.get_short_url }}</code></p>
+                            <p><strong>{% translate "URL Destino:" %}</strong> <a href="{{ short_url.original_url }}" target="_blank">{{ short_url.original_url }}</a></p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Creada:</strong> {{ short_url.created_at|date:"d/m/Y H:i" }}</p>
-                            <p><strong>Estado:</strong> 
+                            <p><strong>{% translate "Creada:" %}</strong> {{ short_url.created_at|date:"d/m/Y H:i" }}</p>
+                            <p><strong>{% translate "Estado:" %}</strong> 
                                 {% if short_url.is_active %}
-                                    <span class="badge bg-success">Activa</span>
+                                    <span class="badge bg-success">{% translate "Activa" %}</span>
                                 {% else %}
-                                    <span class="badge bg-danger">Inactiva</span>
+                                    <span class="badge bg-danger">{% translate "Inactiva" %}</span>
                                 {% endif %}
                             </p>
                         </div>
@@ -250,7 +249,7 @@
         <div class="col-lg-6 mb-3">
             <div class="card stats-card">
                 <div class="card-body">
-                    <h5 class="section-title">Clicks por Día (Últimos 30 días)</h5>
+                    <h5 class="section-title">{% translate "Clicks por Día (Últimos 30 días)" %}</h5>
                     <div class="chart-container">
                         <canvas id="dailyClicksChart"></canvas>
                     </div>
@@ -262,7 +261,7 @@
         <div class="col-lg-6 mb-3">
             <div class="card stats-card">
                 <div class="card-body">
-                    <h5 class="section-title">Clicks por Mes (Últimos 12 meses)</h5>
+                    <h5 class="section-title">{% translate "Clicks por Mes (Últimos 12 meses)" %}</h5>
                     <div class="chart-container">
                         <canvas id="monthlyClicksChart"></canvas>
                     </div>
@@ -276,7 +275,7 @@
         <div class="col-lg-6 mb-3">
             <div class="card stats-card">
                 <div class="card-body">
-                    <h5 class="section-title">Clicks por País</h5>
+                    <h5 class="section-title">{% translate "Clicks por País" %}</h5>
                     <div class="chart-container">
                         <canvas id="countryClicksChart"></canvas>
                     </div>
@@ -288,14 +287,14 @@
         <div class="col-lg-6 mb-3">
             <div class="card stats-card">
                 <div class="card-body">
-                    <h5 class="section-title">Top 10 Ciudades</h5>
+                    <h5 class="section-title">{% translate "Top 10 Ciudades" %}</h5>
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Ciudad</th>
-                                    <th>Clicks</th>
+                                    <th>{% translate "Ciudad" %}</th>
+                                    <th>{% translate "Clicks" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -307,7 +306,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="3" class="text-center text-muted">No hay datos disponibles</td>
+                                    <td colspan="3" class="text-center text-muted">{% translate "No hay datos disponibles" %}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -323,16 +322,16 @@
         <div class="col-12">
             <div class="card stats-card">
                 <div class="card-body">
-                    <h5 class="section-title">Últimos 20 Clicks</h5>
+                    <h5 class="section-title">{% translate "Últimos 20 Clicks" %}</h5>
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Fecha y Hora</th>
-                                    <th>País</th>
-                                    <th>Ciudad</th>
+                                    <th>{% translate "Fecha y Hora" %}</th>
+                                    <th>{% translate "País" %}</th>
+                                    <th>{% translate "Ciudad" %}</th>
                                     <th>IP</th>
-                                    <th>Navegador</th>
+                                    <th>{% translate "Navegador" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -346,7 +345,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">No hay clicks registrados</td>
+                                    <td colspan="5" class="text-center text-muted">{% translate "No hay clicks registrados" %}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

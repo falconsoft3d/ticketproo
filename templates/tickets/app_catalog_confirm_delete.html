@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Eliminar Catálogo - {{ block.super }}{% endblock %}
@@ -9,21 +10,21 @@
         <div class="col-lg-6">
             <div class="card shadow-sm border-danger">
                 <div class="card-header bg-danger text-white">
-                    <h4 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Eliminar Catálogo</h4>
+                    <h4 class="mb-0"><i class="bi bi-exclamation-triangle"></i> {% translate "Eliminar Catálogo" %}</h4>
                 </div>
                 <div class="card-body text-center py-4">
-                    <p class="fs-5">¿Estás seguro de que deseas eliminar el catálogo</p>
+                    <p class="fs-5">{% translate "¿Estás seguro de que deseas eliminar el catálogo" %}</p>
                     <p class="fs-4 fw-bold text-danger">{{ catalog.name }}</p>
                     <p class="text-muted">Se eliminarán también todas sus líneas ({{ catalog.get_total_products }} productos). Esta acción no se puede deshacer.</p>
                     <div class="d-flex justify-content-center gap-3 mt-4">
                         <form method="post">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Sí, eliminar
+                                <i class="bi bi-trash"></i> {% translate "Sí, eliminar" %}
                             </button>
                         </form>
                         <a href="{% url 'app_catalog_detail' catalog.pk %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
+                            <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                         </a>
                     </div>
                 </div>

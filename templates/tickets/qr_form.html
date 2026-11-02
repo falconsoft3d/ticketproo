@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -8,24 +9,24 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <i class="bi bi-book"></i> Capacitación
+                        <i class="bi bi-book"></i> {% translate "Capacitación" %}
                     </li>
-                    <li class="breadcrumb-item"><a href="{% url 'qr_generator' %}">Generador QR</a></li>
-                    <li class="breadcrumb-item active">{% if qr_code %}Editar{% else %}Crear{% endif %}</li>
+                    <li class="breadcrumb-item"><a href="{% url 'qr_generator' %}">{% translate "Generador QR" %}</a></li>
+                    <li class="breadcrumb-item active">{% if qr_code %}{% translate "Editar" %}{% else %}{% translate "Crear" %}{% endif %}</li>
                 </ol>
             </nav>
             <h2 class="mb-0">
                 <i class="bi bi-{% if qr_code %}pencil{% else %}plus-circle{% endif %} text-primary"></i>
-                {% if qr_code %}Editar Código QR{% else %}Crear Nuevo Código QR{% endif %}
+                {% if qr_code %}{% translate "Editar Código QR" %}{% else %}{% translate "Crear Nuevo Código QR" %}{% endif %}
             </h2>
             <p class="text-muted mb-0">
                 {% if qr_code %}
                     Modifica los datos del código QR "{{ qr_code.title }}"
                 {% else %}
-                    Completa la información para generar tu código QR
+                    {% translate "Completa la información para generar tu código QR" %}
                 {% endif %}
             </p>
         </div>
@@ -37,7 +38,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-form-text"></i> Información del Código QR
+                        <i class="bi bi-form-text"></i> {% translate "Información del Código QR" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -69,7 +70,7 @@
                                 </div>
                             {% endif %}
                             <div class="form-text">
-                                Selecciona el tipo de contenido que quieres convertir a QR
+                                {% translate "Selecciona el tipo de contenido que quieres convertir a QR" %}
                             </div>
                         </div>
 
@@ -92,7 +93,7 @@
                             <!-- Ejemplos dinámicos -->
                             <div id="content-examples" class="mt-2">
                                 <small class="text-muted">
-                                    <strong>Ejemplo:</strong> <span id="example-text"></span>
+                                    <strong>{% translate "Ejemplo:" %}</strong> <span id="example-text"></span>
                                 </small>
                             </div>
                         </div>
@@ -128,11 +129,11 @@
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-{% if qr_code %}check{% else %}plus{% endif %}-circle"></i>
-                                {% if qr_code %}Actualizar QR{% else %}Crear QR{% endif %}
+                                {% if qr_code %}{% translate "Actualizar QR" %}{% else %}{% translate "Crear QR" %}{% endif %}
                             </button>
                             <a href="{% if qr_code %}{% url 'qr_detail' qr_code.pk %}{% else %}{% url 'qr_generator' %}{% endif %}" 
                                class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>
@@ -145,7 +146,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-eye"></i> Vista Previa
+                        <i class="bi bi-eye"></i> {% translate "Vista Previa" %}
                     </h5>
                 </div>
                 <div class="card-body text-center">
@@ -153,12 +154,12 @@
                         <div class="d-flex align-items-center justify-content-center h-100 text-muted">
                             <div>
                                 <i class="bi bi-qr-code display-4"></i>
-                                <p class="mt-2">El QR aparecerá aquí</p>
+                                <p class="mt-2">{% translate "El QR aparecerá aquí" %}</p>
                             </div>
                         </div>
                     </div>
                     <button type="button" id="download-qr" class="btn btn-success btn-sm" style="display: none;">
-                        <i class="bi bi-download"></i> Descargar QR
+                        <i class="bi bi-download"></i> {% translate "Descargar QR" %}
                     </button>
                 </div>
             </div>
@@ -167,7 +168,7 @@
             <div class="card mt-3">
                 <div class="card-header">
                     <h6 class="mb-0">
-                        <i class="bi bi-info-circle"></i> Tipos de QR Disponibles
+                        <i class="bi bi-info-circle"></i> {% translate "Tipos de QR Disponibles" %}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -175,36 +176,36 @@
                         <div class="list-group-item d-flex align-items-center">
                             <i class="bi bi-link-45deg text-primary me-2"></i>
                             <div>
-                                <strong>URL/Enlace</strong>
-                                <br><small class="text-muted">Enlaces web completos</small>
+                                <strong>{% translate "URL/Enlace" %}</strong>
+                                <br><small class="text-muted">{% translate "Enlaces web completos" %}</small>
                             </div>
                         </div>
                         <div class="list-group-item d-flex align-items-center">
                             <i class="bi bi-file-text text-success me-2"></i>
                             <div>
-                                <strong>Texto</strong>
-                                <br><small class="text-muted">Texto plano o mensajes</small>
+                                <strong>{% translate "Texto" %}</strong>
+                                <br><small class="text-muted">{% translate "Texto plano o mensajes" %}</small>
                             </div>
                         </div>
                         <div class="list-group-item d-flex align-items-center">
                             <i class="bi bi-envelope text-info me-2"></i>
                             <div>
-                                <strong>Email</strong>
-                                <br><small class="text-muted">Direcciones de correo</small>
+                                <strong>{% translate "Email" %}</strong>
+                                <br><small class="text-muted">{% translate "Direcciones de correo" %}</small>
                             </div>
                         </div>
                         <div class="list-group-item d-flex align-items-center">
                             <i class="bi bi-telephone text-warning me-2"></i>
                             <div>
-                                <strong>Teléfono</strong>
-                                <br><small class="text-muted">Números telefónicos</small>
+                                <strong>{% translate "Teléfono" %}</strong>
+                                <br><small class="text-muted">{% translate "Números telefónicos" %}</small>
                             </div>
                         </div>
                         <div class="list-group-item d-flex align-items-center">
                             <i class="bi bi-wifi text-primary me-2"></i>
                             <div>
-                                <strong>WiFi</strong>
-                                <br><small class="text-muted">Credenciales de red</small>
+                                <strong>{% translate "WiFi" %}</strong>
+                                <br><small class="text-muted">{% translate "Credenciales de red" %}</small>
                             </div>
                         </div>
                     </div>

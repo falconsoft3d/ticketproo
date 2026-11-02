@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -224,7 +225,7 @@
                     <p class="mb-1">👤 {{ cumplimiento.user }}</p>
                     <p class="mb-0 small">
                         {% if cumplimiento.frequency_type == 'daily' %}
-                            🎯 Meta: Todos los días
+                            {% translate "🎯 Meta: Todos los días" %}
                         {% else %}
                             🎯 Meta: {{ cumplimiento.target_days }} días al mes
                         {% endif %}
@@ -237,7 +238,7 @@
                        class="btn menu-btn btn-sm"
                        title="Ver todos los cumplimientos ({{ user_cumplimientos_count }})">
                         <i class="bi bi-list"></i>
-                        <span class="d-none d-sm-inline">Menú</span>
+                        <span class="d-none d-sm-inline">{% translate "Menú" %}</span>
                         <span class="badge bg-primary ms-1">{{ user_cumplimientos_count }}</span>
                     </a>
                 </div>
@@ -270,15 +271,15 @@
             <div class="legend">
                 <div class="legend-item">
                     <div class="legend-circle" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);"></div>
-                    <span>Cumplido</span>
+                    <span>{% translate "Cumplido" %}</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-circle" style="background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);"></div>
-                    <span>No cumplido</span>
+                    <span>{% translate "No cumplido" %}</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-circle" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 2px solid #ffc107;"></div>
-                    <span>Hoy</span>
+                    <span>{% translate "Hoy" %}</span>
                 </div>
             </div>
 
@@ -329,7 +330,7 @@
             <!-- Descripción de la meta -->
             {% if cumplimiento.description %}
             <div class="mt-4 p-3" style="background: rgba(116, 185, 255, 0.1); border-radius: 10px;">
-                <h6><i class="bi bi-info-circle text-primary"></i> Descripción</h6>
+                <h6><i class="bi bi-info-circle text-primary"></i> {% translate "Descripción" %}</h6>
                 <p class="mb-0 small">{{ cumplimiento.description }}</p>
             </div>
             {% endif %}
@@ -337,14 +338,14 @@
             <!-- QR Code Section -->
             <div class="mt-4 p-3 text-center" style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; backdrop-filter: blur(10px);">
                 <h6 class="text-white mb-3">
-                    <i class="bi bi-qr-code"></i> Acceso Rápido
+                    <i class="bi bi-qr-code"></i> {% translate "Acceso Rápido" %}
                 </h6>
                 <div id="qr-container" class="mb-3" style="display: flex; justify-content: center;">
                     <!-- QR se generará aquí -->
                 </div>
                 <p class="text-white-50 small mb-0">
                     <i class="bi bi-phone"></i> 
-                    Escanea este código para acceder desde tu teléfono
+                    {% translate "Escanea este código para acceder desde tu teléfono" %}
                 </p>
             </div>
         </div>
@@ -353,7 +354,7 @@
     <!-- Loading indicator -->
     <div class="loading" id="loading">
         <div class="spinner-border text-light me-2" role="status"></div>
-        Actualizando...
+        {% translate "Actualizando..." %}
     </div>
 
     <!-- Toast container -->

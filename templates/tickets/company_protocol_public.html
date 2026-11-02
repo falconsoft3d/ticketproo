@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -26,10 +27,10 @@
                 <div class="card-header bg-light">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
-                            <i class="bi bi-file-earmark-text text-primary"></i> Contenido del Protocolo
+                            <i class="bi bi-file-earmark-text text-primary"></i> {% translate "Contenido del Protocolo" %}
                         </h5>
                         <div class="d-flex gap-2">
-                            <span class="badge bg-success fs-6">Público</span>
+                            <span class="badge bg-success fs-6">{% translate "Público" %}</span>
                             <span class="badge bg-primary fs-6">v{{ protocol.version }}</span>
                         </div>
                     </div>
@@ -43,7 +44,7 @@
                         {% else %}
                             <div class="text-center text-muted py-5">
                                 <i class="bi bi-file-text fs-1 mb-3"></i>
-                                <p>Este protocolo no tiene contenido disponible.</p>
+                                <p>{% translate "Este protocolo no tiene contenido disponible." %}</p>
                             </div>
                         {% endif %}
                     </div>
@@ -54,34 +55,34 @@
             <div class="card mt-4 shadow-sm">
                 <div class="card-header bg-light">
                     <h6 class="mb-0">
-                        <i class="bi bi-info-circle text-primary"></i> Información del Protocolo
+                        <i class="bi bi-info-circle text-primary"></i> {% translate "Información del Protocolo" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <small class="text-muted d-block">Versión</small>
+                            <small class="text-muted d-block">{% translate "Versión" %}</small>
                             <span class="fw-bold">{{ protocol.version }}</span>
                         </div>
                         <div class="col-md-6">
-                            <small class="text-muted d-block">Palabras</small>
+                            <small class="text-muted d-block">{% translate "Palabras" %}</small>
                             <span class="fw-bold">{{ protocol.get_word_count }} palabras</span>
                         </div>
                         <div class="col-md-6 mt-3">
-                            <small class="text-muted d-block">Creado</small>
+                            <small class="text-muted d-block">{% translate "Creado" %}</small>
                             <span class="fw-bold">{{ protocol.created_at|date:"d/m/Y H:i" }}</span>
                         </div>
                         <div class="col-md-6 mt-3">
-                            <small class="text-muted d-block">Última actualización</small>
+                            <small class="text-muted d-block">{% translate "Última actualización" %}</small>
                             <span class="fw-bold">{{ protocol.updated_at|date:"d/m/Y H:i" }}</span>
                         </div>
                         {% if protocol.public_shared_at %}
                         <div class="col-md-6 mt-3">
-                            <small class="text-muted d-block">Compartido públicamente</small>
+                            <small class="text-muted d-block">{% translate "Compartido públicamente" %}</small>
                             <span class="fw-bold">{{ protocol.public_shared_at|date:"d/m/Y H:i" }}</span>
                         </div>
                         <div class="col-md-6 mt-3">
-                            <small class="text-muted d-block">Vistas públicas</small>
+                            <small class="text-muted d-block">{% translate "Vistas públicas" %}</small>
                             <span class="fw-bold">
                                 <i class="bi bi-eye text-success"></i> {{ protocol.public_views_count }} vista{{ protocol.public_views_count|pluralize }}
                             </span>
@@ -95,14 +96,14 @@
             <div class="text-center mt-5 mb-4">
                 <div class="d-flex justify-content-center gap-3">
                     <button onclick="window.print()" class="btn btn-outline-primary">
-                        <i class="bi bi-printer"></i> Imprimir
+                        <i class="bi bi-printer"></i> {% translate "Imprimir" %}
                     </button>
                     <button onclick="copyUrl()" class="btn btn-outline-secondary" id="copyUrlBtn">
-                        <i class="bi bi-link-45deg"></i> Copiar enlace
+                        <i class="bi bi-link-45deg"></i> {% translate "Copiar enlace" %}
                     </button>
                 </div>
                 <p class="text-muted mt-3 small">
-                    <i class="bi bi-shield-check"></i> Este protocolo se comparte de forma pública y segura
+                    <i class="bi bi-shield-check"></i> {% translate "Este protocolo se comparte de forma pública y segura" %}
                 </p>
             </div>
         </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -6,14 +7,14 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
                     <a href="{% url 'training_plan_list' %}">
-                        <i class="bi bi-mortarboard"></i> Planes de Capacitación
+                        <i class="bi bi-mortarboard"></i> {% translate "Planes de Capacitación" %}
                     </a>
                 </li>
-                <li class="breadcrumb-item active">Mi Progreso</li>
+                <li class="breadcrumb-item active">{% translate "Mi Progreso" %}</li>
             </ol>
         </nav>
         <h2><i class="bi bi-graph-up"></i> {{ page_title }}</h2>
@@ -26,7 +27,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-bar-chart"></i> Resumen General
+                    <i class="bi bi-bar-chart"></i> {% translate "Resumen General" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -34,24 +35,24 @@
                     <div class="col-md-3">
                         <div class="border-end">
                             <h3 class="text-primary">{{ total_plans }}</h3>
-                            <p class="text-muted mb-0">Planes Totales</p>
+                            <p class="text-muted mb-0">{% translate "Planes Totales" %}</p>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="border-end">
                             <h3 class="text-success">{{ completed_plans }}</h3>
-                            <p class="text-muted mb-0">Completados</p>
+                            <p class="text-muted mb-0">{% translate "Completados" %}</p>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="border-end">
                             <h3 class="text-warning">{{ in_progress_plans }}</h3>
-                            <p class="text-muted mb-0">En Progreso</p>
+                            <p class="text-muted mb-0">{% translate "En Progreso" %}</p>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <h3 class="text-info">{{ completion_rate|floatformat:0 }}%</h3>
-                        <p class="text-muted mb-0">Tasa de Finalización</p>
+                        <p class="text-muted mb-0">{% translate "Tasa de Finalización" %}</p>
                     </div>
                 </div>
             </div>
@@ -71,7 +72,7 @@
                 </h6>
                 {% if data.is_completed %}
                     <span class="badge bg-success">
-                        <i class="bi bi-check-circle"></i> Completado
+                        <i class="bi bi-check-circle"></i> {% translate "Completado" %}
                     </span>
                 {% elif data.progress_percent > 0 %}
                     <span class="badge bg-warning">
@@ -79,7 +80,7 @@
                     </span>
                 {% else %}
                     <span class="badge bg-secondary">
-                        <i class="bi bi-circle"></i> Sin Empezar
+                        <i class="bi bi-circle"></i> {% translate "Sin Empezar" %}
                     </span>
                 {% endif %}
             </div>
@@ -91,7 +92,7 @@
                 <!-- Barra de progreso detallada -->
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-1">
-                        <small class="text-muted">Progreso</small>
+                        <small class="text-muted">{% translate "Progreso" %}</small>
                         <small class="text-muted">{{ data.completed_links }}/{{ data.total_links }}</small>
                     </div>
                     <div style="height: 10px; background-color: #e9ecef; border-radius: 0.375rem; overflow: hidden;">
@@ -114,18 +115,18 @@
                     <div class="col">
                         <div class="border-end">
                             <div class="fw-bold text-dark">{{ data.total_links }}</div>
-                            <div>Total</div>
+                            <div>{% translate "Total" %}</div>
                         </div>
                     </div>
                     <div class="col">
                         <div class="border-end">
                             <div class="fw-bold text-success">{{ data.completed_links }}</div>
-                            <div>Completados</div>
+                            <div>{% translate "Completados" %}</div>
                         </div>
                     </div>
                     <div class="col">
                         <div class="fw-bold text-warning">{{ data.pending_links }}</div>
-                        <div>Pendientes</div>
+                        <div>{% translate "Pendientes" %}</div>
                     </div>
                 </div>
             </div>
@@ -135,11 +136,11 @@
                     <a href="{% url 'training_plan_detail' data.plan.pk %}" 
                        class="btn {% if data.is_completed %}btn-outline-success{% elif data.progress_percent > 0 %}btn-outline-warning{% else %}btn-outline-primary{% endif %}">
                         {% if data.is_completed %}
-                            <i class="bi bi-check-circle"></i> Revisar Plan
+                            <i class="bi bi-check-circle"></i> {% translate "Revisar Plan" %}
                         {% elif data.progress_percent > 0 %}
-                            <i class="bi bi-play-circle"></i> Continuar
+                            <i class="bi bi-play-circle"></i> {% translate "Continuar" %}
                         {% else %}
-                            <i class="bi bi-play"></i> Comenzar
+                            <i class="bi bi-play"></i> {% translate "Comenzar" %}
                         {% endif %}
                     </a>
                 </div>
@@ -151,10 +152,10 @@
 {% else %}
 <div class="text-center py-5">
     <i class="bi bi-graph-up" style="font-size: 4rem; color: #dee2e6;"></i>
-    <h4 class="text-muted mt-3">No hay planes de capacitación disponibles</h4>
-    <p class="text-muted">Tu progreso aparecerá aquí cuando haya planes disponibles.</p>
+    <h4 class="text-muted mt-3">{% translate "No hay planes de capacitación disponibles" %}</h4>
+    <p class="text-muted">{% translate "Tu progreso aparecerá aquí cuando haya planes disponibles." %}</p>
     <a href="{% url 'training_plan_list' %}" class="btn btn-primary mt-3">
-        <i class="bi bi-mortarboard"></i> Ver Planes Disponibles
+        <i class="bi bi-mortarboard"></i> {% translate "Ver Planes Disponibles" %}
     </a>
 </div>
 {% endif %}

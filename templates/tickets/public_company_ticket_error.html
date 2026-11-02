@@ -1,9 +1,10 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Error - Ticket Creation</title>
+    <title>{% translate "Error - Ticket Creation" %}</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -28,18 +29,18 @@
         <div class="error-container">
             <div class="text-center">
                 <i class="fas fa-exclamation-triangle error-icon mb-4"></i>
-                <h1 class="h3 text-danger mb-3">Error de Acceso</h1>
+                <h1 class="h3 text-danger mb-3">{% translate "Error de Acceso" %}</h1>
                 <p class="lead text-muted mb-4">{{ error_message }}</p>
                 
                 <div class="alert alert-warning" role="alert">
                     <i class="fas fa-info-circle me-2"></i>
-                    <strong>¿Necesitas ayuda?</strong><br>
-                    Contacta directamente con la empresa para obtener el enlace correcto para crear tickets.
+                    <strong>{% translate "¿Necesitas ayuda?" %}</strong><br>
+                    {% translate "Contacta directamente con la empresa para obtener el enlace correcto para crear tickets." %}
                 </div>
                 
                 <a href="javascript:history.back()" class="btn btn-secondary">
                     <i class="fas fa-arrow-left me-2"></i>
-                    Volver
+                    {% translate "Volver" %}
                 </a>
             </div>
         </div>

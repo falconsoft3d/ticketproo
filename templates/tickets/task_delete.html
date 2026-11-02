@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}Eliminar Tarea: {{ task.title }} - TicketProo{% endblock %}
 
@@ -8,16 +9,16 @@
         <div class="card border-danger">
             <div class="card-header bg-danger text-white">
                 <h4 class="mb-0">
-                    <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                    <i class="bi bi-exclamation-triangle"></i> {% translate "Confirmar Eliminación" %}
                 </h4>
             </div>
             <div class="card-body">
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    <strong>{% translate "¡Atención!" %}</strong> {% translate "Esta acción no se puede deshacer." %}
                 </div>
                 
-                <p>¿Estás seguro de que quieres eliminar la siguiente tarea?</p>
+                <p>{% translate "¿Estás seguro de que quieres eliminar la siguiente tarea?" %}</p>
                 
                 <div class="card border-light">
                     <div class="card-body">
@@ -39,12 +40,12 @@
                 
                 <div class="d-flex justify-content-between mt-4">
                     <a href="{% url 'task_detail' task.pk %}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Cancelar
+                        <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                     </a>
                     <form method="post" class="d-inline">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-trash"></i> Eliminar Tarea
+                            <i class="bi bi-trash"></i> {% translate "Eliminar Tarea" %}
                         </button>
                     </form>
                 </div>

@@ -1,4 +1,5 @@
 {% extends 'mobile_base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Control de Horario - {{ user.get_full_name|default:user.username }}{% endblock %}
@@ -291,7 +292,7 @@
                 {{ user.first_name.0|default:user.username.0|upper }}
             </div>
             <h3 class="user-name">{{ user.get_full_name|default:user.username }}</h3>
-            <p class="user-subtitle">Control de Horario</p>
+            <p class="user-subtitle">{% translate "Control de Horario" %}</p>
         </div>
         
         <!-- Hora Actual -->
@@ -305,7 +306,7 @@
                 <i class="fas fa-play-circle me-2"></i>
                 Trabajando desde las {{ active_entry.fecha_entrada|date:"H:i" }}
                 <div class="elapsed-time">
-                    <small>Tiempo: <strong id="elapsed-time">{{ active_entry.duracion_formateada }}</strong></small>
+                    <small>{% translate "Tiempo:" %} <strong id="elapsed-time">{{ active_entry.duracion_formateada }}</strong></small>
                 </div>
             </div>
         {% endif %}
@@ -314,7 +315,7 @@
         {% if require_location %}
             <div class="location-info">
                 <i class="fas fa-map-marker-alt me-2"></i>
-                <strong>Ubicación requerida:</strong> Se registrará tu ubicación
+                <strong>{% translate "Ubicación requerida:" %}</strong> {% translate "Se registrará tu ubicación" %}
             </div>
         {% endif %}
         
@@ -331,13 +332,13 @@
                     <!-- Solo mostrar botón de entrada si no hay jornada activa -->
                     <button type="submit" data-action="entrada" class="btn btn-entrada btn-time-action" id="btn-entrada">
                         <i class="fas fa-play me-2"></i>
-                        Registrar Entrada
+                        {% translate "Registrar Entrada" %}
                     </button>
                 {% else %}
                     <!-- Solo mostrar botón de salida si hay jornada activa -->
                     <button type="submit" data-action="salida" class="btn btn-salida btn-time-action" id="btn-salida">
                         <i class="fas fa-stop me-2"></i>
-                        Registrar Salida
+                        {% translate "Registrar Salida" %}
                     </button>
                 {% endif %}
             </div>
@@ -345,7 +346,7 @@
             <!-- Notas -->
             <div class="notes-section">
                 <label for="{{ form.notes.id_for_label }}" class="form-label">
-                    <i class="fas fa-sticky-note me-2"></i>Notas (opcional)
+                    <i class="fas fa-sticky-note me-2"></i>{% translate "Notas (opcional)" %}
                 </label>
                 {{ form.notes }}
             </div>
@@ -358,7 +359,7 @@
         <!-- Resumen del Día -->
         {% if today_entries %}
             <div class="today-summary">
-                <h5><i class="fas fa-calendar-day me-2"></i>Resumen de Hoy</h5>
+                <h5><i class="fas fa-calendar-day me-2"></i>{% translate "Resumen de Hoy" %}</h5>
                 {% for entry in today_entries %}
                     <div class="entry-item">
                         <div>
@@ -379,7 +380,7 @@
                                 </span>
                             {% else %}
                                 <span class="entry-status status-active">
-                                    Activo
+                                    {% translate "Activo" %}
                                 </span>
                             {% endif %}
                         </div>

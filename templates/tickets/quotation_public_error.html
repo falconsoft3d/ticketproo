@@ -1,6 +1,7 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 
-{% block title %}Error - Cotización no encontrada{% endblock %}
+{% block title %}{% translate "Error - Cotización no encontrada" %}{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -10,13 +11,13 @@
                 <h1 class="display-1">
                     <i class="bi bi-exclamation-triangle"></i>
                 </h1>
-                <h2 class="h4">Cotización no encontrada</h2>
+                <h2 class="h4">{% translate "Cotización no encontrada" %}</h2>
                 <p class="mb-0">{{ error }}</p>
             </div>
             
             <div class="mt-4">
                 <p class="text-muted">
-                    Si cree que esto es un error, por favor contacte con la empresa que le envió este enlace.
+                    {% translate "Si cree que esto es un error, por favor contacte con la empresa que le envió este enlace." %}
                 </p>
             </div>
         </div>

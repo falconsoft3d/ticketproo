@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -11,7 +12,7 @@
                 <h2><i class="bi bi-clock text-primary"></i> {{ page_title }}</h2>
                 <div class="btn-group" role="group">
                     <a href="{% url 'time_entries_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-list"></i> Mis Registros
+                        <i class="bi bi-list"></i> {% translate "Mis Registros" %}
                     </a>
                 </div>
             </div>
@@ -25,22 +26,22 @@
                 <div class="card-header {% if active_entry %}bg-success text-white{% else %}bg-secondary text-white{% endif %}">
                     <h5 class="mb-0">
                         <i class="bi bi-{% if active_entry %}play-fill{% else %}pause-fill{% endif %}"></i>
-                        Estado Actual: {% if active_entry %}Trabajando{% else %}Fuera de Horario{% endif %}
+                        {% translate "Estado Actual:" %} {% if active_entry %}{% translate "Trabajando" %}{% else %}{% translate "Fuera de Horario" %}{% endif %}
                     </h5>
                 </div>
                 <div class="card-body text-center">
                     {% if active_entry %}
                         <div class="row">
                             <div class="col-md-3">
-                                <p class="mb-1"><strong>Inicio:</strong></p>
+                                <p class="mb-1"><strong>{% translate "Inicio:" %}</strong></p>
                                 <h4 class="text-success">{{ active_entry.fecha_entrada|date:"H:i" }}</h4>
                             </div>
                             <div class="col-md-3">
-                                <p class="mb-1"><strong>Tiempo Trabajado:</strong></p>
+                                <p class="mb-1"><strong>{% translate "Tiempo Trabajado:" %}</strong></p>
                                 <h4 class="text-primary" id="tiempo-actual">{{ active_entry.duracion_formateada }}</h4>
                             </div>
                             <div class="col-md-6">
-                                <p class="mb-1"><strong>Trabajando en:</strong></p>
+                                <p class="mb-1"><strong>{% translate "Trabajando en:" %}</strong></p>
                                 <div class="d-flex flex-wrap gap-2">
                                     {% if active_entry.project %}
                                         <span class="badge fs-6" style="background-color: {{ active_entry.project.color }}; color: white;">
@@ -58,7 +59,7 @@
                                         </span>
                                     {% endif %}
                                     {% if not active_entry.project and not active_entry.ticket and not active_entry.work_order %}
-                                        <span class="text-muted">Sin asignación específica</span>
+                                        <span class="text-muted">{% translate "Sin asignación específica" %}</span>
                                     {% endif %}
                                 </div>
                             </div>
@@ -66,12 +67,12 @@
                         {% if active_entry.notas %}
                             <div class="mt-3">
                                 <small class="text-muted">
-                                    <strong>Notas:</strong> {{ active_entry.notas }}
+                                    <strong>{% translate "Notas:" %}</strong> {{ active_entry.notas }}
                                 </small>
                             </div>
                         {% endif %}
                     {% else %}
-                        <p class="text-muted mb-0">No hay jornada activa</p>
+                        <p class="text-muted mb-0">{% translate "No hay jornada activa" %}</p>
                     {% endif %}
                 </div>
             </div>
@@ -80,11 +81,11 @@
         <div class="col-md-4">
             <div class="card border-info">
                 <div class="card-header bg-info text-white">
-                    <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Esta Semana</h6>
+                    <h6 class="mb-0"><i class="bi bi-bar-chart"></i> {% translate "Esta Semana" %}</h6>
                 </div>
                 <div class="card-body text-center">
                     <h3 class="text-info">{{ total_horas_semana }}h</h3>
-                    <small class="text-muted">Total trabajadas</small>
+                    <small class="text-muted">{% translate "Total trabajadas" %}</small>
                 </div>
             </div>
         </div>
@@ -97,27 +98,27 @@
                 <div class="card border-info">
                     <div class="card-header bg-info text-white">
                         <h5 class="mb-0">
-                            <i class="bi bi-phone"></i> Acceso Móvil
+                            <i class="bi bi-phone"></i> {% translate "Acceso Móvil" %}
                         </h5>
                     </div>
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-md-8">
-                                <h6><i class="bi bi-link-45deg me-2"></i>URL Pública para Móvil:</h6>
+                                <h6><i class="bi bi-link-45deg me-2"></i>{% translate "URL Pública para Móvil:" %}</h6>
                                 <div class="input-group">
                                     <input type="text" class="form-control" 
                                            value="{{ request.scheme }}://{{ request.get_host }}{{ public_access.public_url }}" 
                                            id="public-url" readonly>
                                     <button class="btn btn-outline-secondary" type="button" 
                                             onclick="copyToClipboard('public-url')">
-                                        <i class="bi bi-clipboard"></i> Copiar
+                                        <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                                     </button>
                                 </div>
                                 <small class="text-muted">
                                     <i class="bi bi-info-circle me-1"></i>
-                                    Usa este enlace en tu teléfono para registrar entrada/salida sin necesidad de login.
+                                    {% translate "Usa este enlace en tu teléfono para registrar entrada/salida sin necesidad de login." %}
                                     {% if not public_access.is_active %}
-                                        <span class="text-warning"><strong>¡Acceso desactivado!</strong></span>
+                                        <span class="text-warning"><strong>{% translate "¡Acceso desactivado!" %}</strong></span>
                                     {% endif %}
                                 </small>
                             </div>
@@ -125,7 +126,7 @@
                                 <div class="d-grid gap-2">
                                     <a href="{{ public_access.public_url }}" 
                                        class="btn btn-info" target="_blank">
-                                        <i class="bi bi-phone me-2"></i>Abrir en Móvil
+                                        <i class="bi bi-phone me-2"></i>{% translate "Abrir en Móvil" %}
                                     </a>
                                     {% if public_access.last_used %}
                                         <small class="text-muted">
@@ -143,10 +144,9 @@
         <div class="row mb-4">
             <div class="col-12">
                 <div class="alert alert-info">
-                    <h6><i class="bi bi-info-circle me-2"></i>Acceso Móvil</h6>
+                    <h6><i class="bi bi-info-circle me-2"></i>{% translate "Acceso Móvil" %}</h6>
                     <p class="mb-0">
-                        No tienes configurado un acceso público para móvil. 
-                        Contacta al administrador si necesitas registrar horario desde tu teléfono.
+                        {% translate "No tienes configurado un acceso público para móvil. Contacta al administrador si necesitas registrar horario desde tu teléfono." %}
                     </p>
                 </div>
             </div>
@@ -158,20 +158,20 @@
         <div class="col-12 text-center">
             {% if can_start %}
                 <a href="{% url 'time_start_work' %}" class="btn btn-success btn-lg me-3">
-                    <i class="bi bi-play-fill"></i> Iniciar
+                    <i class="bi bi-play-fill"></i> {% translate "Iniciar" %}
                 </a>
             {% endif %}
             
             {% if can_end %}
                 <a href="{% url 'time_end_work' %}" class="btn btn-danger btn-lg">
-                    <i class="bi bi-stop-fill"></i> Finalizar
+                    <i class="bi bi-stop-fill"></i> {% translate "Finalizar" %}
                 </a>
             {% endif %}
             
             {% if not can_start and not can_end %}
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle"></i>
-                    Estado inconsistente. Contacta al administrador.
+                    {% translate "Estado inconsistente. Contacta al administrador." %}
                 </div>
             {% endif %}
         </div>
@@ -183,20 +183,20 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Registros Recientes (Última Semana)</h5>
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> {% translate "Registros Recientes (Última Semana)" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-sm table-hover">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Fecha</th>
-                                    <th>Proyecto</th>
-                                    <th>Entrada</th>
-                                    <th>Salida</th>
-                                    <th>Duración</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
+                                    <th>{% translate "Fecha" %}</th>
+                                    <th>{% translate "Proyecto" %}</th>
+                                    <th>{% translate "Entrada" %}</th>
+                                    <th>{% translate "Salida" %}</th>
+                                    <th>{% translate "Duración" %}</th>
+                                    <th>{% translate "Estado" %}</th>
+                                    <th>{% translate "Acciones" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -209,7 +209,7 @@
                                                 <i class="bi bi-folder"></i> {{ entry.project.name }}
                                             </span>
                                         {% else %}
-                                            <span class="text-muted">Sin proyecto</span>
+                                            <span class="text-muted">{% translate "Sin proyecto" %}</span>
                                         {% endif %}
                                     </td>
                                     <td>{{ entry.fecha_entrada|date:"H:i" }}</td>
@@ -217,7 +217,7 @@
                                         {% if entry.fecha_salida %}
                                             {{ entry.fecha_salida|date:"H:i" }}
                                         {% else %}
-                                            <span class="badge bg-success">Activo</span>
+                                            <span class="badge bg-success">{% translate "Activo" %}</span>
                                         {% endif %}
                                     </td>
                                     <td>
@@ -229,9 +229,9 @@
                                     </td>
                                     <td>
                                         {% if entry.fecha_salida %}
-                                            <span class="badge bg-secondary">Completado</span>
+                                            <span class="badge bg-secondary">{% translate "Completado" %}</span>
                                         {% else %}
-                                            <span class="badge bg-success">En Progreso</span>
+                                            <span class="badge bg-success">{% translate "En Progreso" %}</span>
                                         {% endif %}
                                     </td>
                                     <td>
@@ -248,7 +248,7 @@
                     
                     <div class="text-center mt-3">
                         <a href="{% url 'time_entries_list' %}" class="btn btn-outline-primary">
-                            <i class="bi bi-list"></i> Ver Todos los Registros
+                            <i class="bi bi-list"></i> {% translate "Ver Todos los Registros" %}
                         </a>
                     </div>
                 </div>

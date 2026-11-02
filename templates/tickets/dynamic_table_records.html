@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 {% load tickets_tags %}
 
@@ -9,17 +10,17 @@
     <div class="row mb-4">
         <div class="col">
             <h2><i class="fas fa-database"></i> Registros de {{ table.name }}</h2>
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'dynamic_table_list' %}">Tablas API</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dynamic_table_list' %}">{% translate "Tablas API" %}</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'dynamic_table_detail' table.pk %}">{{ table.name }}</a></li>
-                    <li class="breadcrumb-item active">Registros</li>
+                    <li class="breadcrumb-item active">{% translate "Registros" %}</li>
                 </ol>
             </nav>
         </div>
         <div class="col-auto">
             <a href="{% url 'dynamic_table_detail' table.pk %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Volver
+                <i class="fas fa-arrow-left"></i> {% translate "Volver" %}
             </a>
         </div>
     </div>
@@ -42,7 +43,7 @@
                         {{ records|length }} registro{{ records|length|pluralize }}
                     </h5>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRecordModal">
-                        <i class="fas fa-plus"></i> Agregar Registro
+                        <i class="fas fa-plus"></i> {% translate "Agregar Registro" %}
                     </button>
                 </div>
                 <div class="card-body">
@@ -70,14 +71,14 @@
                                                         class="btn btn-sm btn-info" 
                                                         data-bs-toggle="modal" 
                                                         data-bs-target="#viewModal{{ record.id }}"
-                                                        title="Ver detalles">
+                                                        title="{% translate 'Ver detalles' %}">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
                                                 <button type="button" 
                                                         class="btn btn-sm btn-warning" 
                                                         data-bs-toggle="modal" 
                                                         data-bs-target="#editModal{{ record.id }}"
-                                                        title="Editar">
+                                                        title="{% translate 'Editar' %}">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <form method="post" 
@@ -85,7 +86,7 @@
                                                       style="display:inline;"
                                                       onsubmit="return confirm('¿Estás seguro de eliminar este registro?');">
                                                     {% csrf_token %}
-                                                    <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
+                                                    <button type="submit" class="btn btn-sm btn-danger" title="{% translate 'Eliminar' %}">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </form>
@@ -101,9 +102,9 @@
                                                 <strong>
                                                     {% if field.field_type == 'boolean' %}
                                                         {% if record.data|get_item:field.name %}
-                                                            <span class="badge bg-success">Sí</span>
+                                                            <span class="badge bg-success">{% translate "Sí" %}</span>
                                                         {% else %}
-                                                            <span class="badge bg-danger">No</span>
+                                                            <span class="badge bg-danger">{% translate "No" %}</span>
                                                         {% endif %}
                                                     {% elif field.field_type == 'json' %}
                                                         <code class="small">{{ record.data|get_item:field.name|truncatechars:50 }}</code>
@@ -145,22 +146,22 @@
                                                         </tr>
                                                         {% endfor %}
                                                         <tr>
-                                                            <th>IP Origen</th>
+                                                            <th>{% translate "IP Origen" %}</th>
                                                             <td>{{ record.created_by_ip|default:"-" }}</td>
                                                         </tr>
                                                         <tr>
-                                                            <th>Fecha Creación</th>
+                                                            <th>{% translate "Fecha Creación" %}</th>
                                                             <td>{{ record.created_at }}</td>
                                                         </tr>
                                                         <tr>
-                                                            <th>Fecha Actualización</th>
+                                                            <th>{% translate "Fecha Actualización" %}</th>
                                                             <td>{{ record.updated_at }}</td>
                                                         </tr>
                                                     </table>
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                                        Cerrar
+                                                        {% translate "Cerrar" %}
                                                     </button>
                                                 </div>
                                             </div>
@@ -188,8 +189,8 @@
                                                                 <textarea name="{{ field.name }}" class="form-control" rows="3" {% if field.is_required %}required{% endif %}>{{ record.data|get_item:field.name|default:field.default_value }}</textarea>
                                                             {% elif field.field_type == 'boolean' %}
                                                                 <select name="{{ field.name }}" class="form-control" {% if field.is_required %}required{% endif %}>
-                                                                    <option value="true" {% if record.data|get_item:field.name %}selected{% endif %}>Sí</option>
-                                                                    <option value="false" {% if not record.data|get_item:field.name %}selected{% endif %}>No</option>
+                                                                    <option value="true" {% if record.data|get_item:field.name %}selected{% endif %}>{% translate "Sí" %}</option>
+                                                                    <option value="false" {% if not record.data|get_item:field.name %}selected{% endif %}>{% translate "No" %}</option>
                                                                 </select>
                                                             {% elif field.field_type == 'date' %}
                                                                 <input type="date" name="{{ field.name }}" class="form-control" value="{{ record.data|get_item:field.name|default:field.default_value }}" {% if field.is_required %}required{% endif %}>
@@ -213,9 +214,9 @@
                                                         {% endfor %}
                                                     </div>
                                                     <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                                                         <button type="submit" class="btn btn-warning">
-                                                            <i class="fas fa-save"></i> Guardar Cambios
+                                                            <i class="fas fa-save"></i> {% translate "Guardar Cambios" %}
                                                         </button>
                                                     </div>
                                                 </form>
@@ -229,8 +230,8 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-                            <p class="text-muted">No hay registros todavía</p>
-                            <p class="small text-muted">Usa el botón "Agregar Registro" o el API REST para crear registros</p>
+                            <p class="text-muted">{% translate "No hay registros todavía" %}</p>
+                            <p class="small text-muted">{% translate 'Usa el botón "Agregar Registro" o el API REST para crear registros' %}</p>
                         </div>
                     {% endif %}
                 </div>
@@ -243,7 +244,7 @@
         <div class="col-12">
             <div class="card bg-light">
                 <div class="card-body">
-                    <h5><i class="fas fa-code"></i> Ejemplo de Creación vía API</h5>
+                    <h5><i class="fas fa-code"></i> {% translate "Ejemplo de Creación vía API" %}</h5>
                     <pre class="bg-dark text-light p-3 rounded mb-0"><code>curl -X POST \
   -H "X-API-Token: {{ table.api_token }}" \
   -H "Content-Type: application/json" \
@@ -265,7 +266,7 @@
             <form method="post" action="{% url 'dynamic_table_record_create' table.pk %}">
                 {% csrf_token %}
                 <div class="modal-header">
-                    <h5 class="modal-title">Crear Nuevo Registro</h5>
+                    <h5 class="modal-title">{% translate "Crear Nuevo Registro" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -279,8 +280,8 @@
                             <textarea name="{{ field.name }}" class="form-control" rows="3" {% if field.is_required %}required{% endif %}>{{ field.default_value }}</textarea>
                         {% elif field.field_type == 'boolean' %}
                             <select name="{{ field.name }}" class="form-control" {% if field.is_required %}required{% endif %}>
-                                <option value="true">Sí</option>
-                                <option value="false" selected>No</option>
+                                <option value="true">{% translate "Sí" %}</option>
+                                <option value="false" selected>{% translate "No" %}</option>
                             </select>
                         {% elif field.field_type == 'date' %}
                             <input type="date" name="{{ field.name }}" class="form-control" value="{{ field.default_value }}" {% if field.is_required %}required{% endif %}>
@@ -304,9 +305,9 @@
                     {% endfor %}
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Crear Registro
+                        <i class="fas fa-plus"></i> {% translate "Crear Registro" %}
                     </button>
                 </div>
             </form>

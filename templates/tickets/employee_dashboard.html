@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -147,9 +148,9 @@
         <div class="row align-items-center">
             <div class="col-md-6">
                 <h1 class="mb-0">
-                    <i class="bi bi-speedometer2"></i> Dashboard de Empleado
+                    <i class="bi bi-speedometer2"></i> {% translate "Dashboard de Empleado" %}
                     {% if selected_employee.id != current_user.id %}
-                        <small class="badge bg-light text-dark ms-2">Viendo otro empleado</small>
+                        <small class="badge bg-light text-dark ms-2">{% translate "Viendo otro empleado" %}</small>
                     {% endif %}
                 </h1>
                 <p class="mb-0 mt-2">
@@ -186,10 +187,10 @@
                                 <div class="weather-icon">
                                     <i class="bi bi-exclamation-triangle"></i>
                                 </div>
-                                <div class="weather-temp">--°C</div>
-                                <div class="weather-desc">Clima no disponible</div>
+                                <div class="weather-temp">{% translate "--°C" %}</div>
+                                <div class="weather-desc">{% translate "Clima no disponible" %}</div>
                                 <div class="weather-details">
-                                    <i class="bi bi-geo-alt"></i> Valencia
+                                    <i class="bi bi-geo-alt"></i> {% translate "Valencia" %}
                                 </div>
                             {% endif %}
                         </div>
@@ -202,21 +203,21 @@
                     <div class="col-md-8">
                         <form method="GET" class="d-flex align-items-end">
                             <div class="me-2 flex-grow-1">
-                                <label for="employee_select" class="form-label text-black mb-1">Seleccionar Empleado:</label>
+                                <label for="employee_select" class="form-label text-black mb-1">{% translate "Seleccionar Empleado:" %}</label>
                                 <select name="employee_id" id="employee_select" class="form-select form-select-sm">
-                                    <option value="">-- Mi Dashboard --</option>
+                                    <option value="">{% translate "-- Mi Dashboard --" %}</option>
                                     {% for employee in available_employees %}
                                         <option value="{{ employee.id }}" 
                                                 {% if employee.id == selected_employee.id %}selected{% endif %}>
                                             {{ employee.get_full_name|default:employee.username }}
-                                            {% if employee.id == current_user.id %} (Tú){% endif %}
+                                            {% if employee.id == current_user.id %} {% translate "(Tú)" %}{% endif %}
                                         </option>
                                     {% endfor %}
                                 </select>
                             </div>
                             <div>
                                 <button type="submit" class="btn btn-light btn-sm">
-                                    <i class="bi bi-search"></i> Ver
+                                    <i class="bi bi-search"></i> {% translate "Ver" %}
                                 </button>
                             </div>
                         </form>
@@ -243,8 +244,8 @@
             <div class="card border-0" style="box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);">
                 <div class="card-header quick-actions-header border-0">
                     <h4 class="mb-0 text-black">
-                        <i class="bi bi-lightning-charge me-2"></i>Acciones Rápidas
-                        <small class="ms-2 opacity-75">- Impulsa tu productividad</small>
+                        <i class="bi bi-lightning-charge me-2"></i>{% translate "Acciones Rápidas" %}
+                        <small class="ms-2 opacity-75">{% translate "- Impulsa tu productividad" %}</small>
                     </h4>
                 </div>
                 <div class="card-body bg-light">
@@ -253,8 +254,8 @@
                             <a href="{% url 'time_start_work' %}" class="btn btn-outline-primary w-100 quick-action-btn d-flex align-items-center justify-content-center" style="height: 65px;">
                                 <i class="bi bi-play-circle me-2" style="font-size: 1.8rem;"></i>
                                 <div class="text-start">
-                                    <div style="font-weight: 600;">Iniciar Jornada</div>
-                                    <small class="text-muted">Registrar entrada</small>
+                                    <div style="font-weight: 600;">{% translate "Iniciar Jornada" %}</div>
+                                    <small class="text-muted">{% translate "Registrar entrada" %}</small>
                                 </div>
                             </a>
                         </div>
@@ -262,8 +263,8 @@
                             <a href="{% url 'contact_create' %}" class="btn btn-outline-success w-100 quick-action-btn d-flex align-items-center justify-content-center" style="height: 65px;">
                                 <i class="bi bi-person-plus me-2" style="font-size: 1.8rem;"></i>
                                 <div class="text-start">
-                                    <div style="font-weight: 600;">Nuevo Contacto</div>
-                                    <small class="text-muted">Agregar cliente</small>
+                                    <div style="font-weight: 600;">{% translate "Nuevo Contacto" %}</div>
+                                    <small class="text-muted">{% translate "Agregar cliente" %}</small>
                                 </div>
                             </a>
                         </div>
@@ -271,8 +272,8 @@
                             <a href="{% url 'opportunity_create' %}" class="btn btn-outline-warning w-100 quick-action-btn d-flex align-items-center justify-content-center" style="height: 65px;">
                                 <i class="bi bi-target me-2" style="font-size: 1.8rem;"></i>
                                 <div class="text-start">
-                                    <div style="font-weight: 600;">Nueva Oportunidad</div>
-                                    <small class="text-muted">Crear venta</small>
+                                    <div style="font-weight: 600;">{% translate "Nueva Oportunidad" %}</div>
+                                    <small class="text-muted">{% translate "Crear venta" %}</small>
                                 </div>
                             </a>
                         </div>
@@ -280,8 +281,8 @@
                             <a href="{% url 'ticket_create' %}" class="btn btn-outline-danger w-100 quick-action-btn d-flex align-items-center justify-content-center" style="height: 65px;">
                                 <i class="bi bi-ticket-perforated me-2" style="font-size: 1.8rem;"></i>
                                 <div class="text-start">
-                                    <div style="font-weight: 600;">Nuevo Ticket</div>
-                                    <small class="text-muted">Registrar tarea</small>
+                                    <div style="font-weight: 600;">{% translate "Nuevo Ticket" %}</div>
+                                    <small class="text-muted">{% translate "Registrar tarea" %}</small>
                                 </div>
                             </a>
                         </div>
@@ -293,8 +294,8 @@
                             <button onclick="showTicketPrintModal()" class="btn btn-outline-info w-100 quick-action-btn d-flex align-items-center justify-content-center" style="height: 65px;">
                                 <i class="bi bi-printer me-2" style="font-size: 1.8rem;"></i>
                                 <div class="text-start">
-                                    <div style="font-weight: 600;">Imprimir Ticket</div>
-                                    <small class="text-muted">Por número</small>
+                                    <div style="font-weight: 600;">{% translate "Imprimir Ticket" %}</div>
+                                    <small class="text-muted">{% translate "Por número" %}</small>
                                 </div>
                             </button>
                         </div>
@@ -302,8 +303,8 @@
                             <a href="{% url 'video_meeting_list' %}" class="btn btn-outline-purple w-100 quick-action-btn d-flex align-items-center justify-content-center" style="height: 65px; border-color: #6f42c1; color: #6f42c1;">
                                 <i class="bi bi-camera-video me-2" style="font-size: 1.8rem;"></i>
                                 <div class="text-start">
-                                    <div style="font-weight: 600;">Reuniones</div>
-                                    <small class="text-muted">Video y transcripción</small>
+                                    <div style="font-weight: 600;">{% translate "Reuniones" %}</div>
+                                    <small class="text-muted">{% translate "Video y transcripción" %}</small>
                                 </div>
                             </a>
                         </div>
@@ -311,8 +312,8 @@
                             <a href="{% url 'expense_report_list' %}" class="btn btn-outline-secondary w-100 quick-action-btn d-flex align-items-center justify-content-center" style="height: 65px;">
                                 <i class="bi bi-receipt me-2" style="font-size: 1.8rem;"></i>
                                 <div class="text-start">
-                                    <div style="font-weight: 600;">Gastos</div>
-                                    <small class="text-muted">Rendición</small>
+                                    <div style="font-weight: 600;">{% translate "Gastos" %}</div>
+                                    <small class="text-muted">{% translate "Rendición" %}</small>
                                 </div>
                             </a>
                         </div>
@@ -339,7 +340,7 @@
     <!-- Métricas de Horas -->
     <div class="row mb-4">
         <div class="col-12">
-            <h3 class="mb-3"><i class="bi bi-clock"></i> Horas Trabajadas</h3>
+            <h3 class="mb-3"><i class="bi bi-clock"></i> {% translate "Horas Trabajadas" %}</h3>
         </div>
         
         <div class="col-lg-4 col-md-6 mb-3">
@@ -349,7 +350,7 @@
                         <i class="bi bi-sun"></i>
                     </div>
                     <div class="metric-value">{{ hours_today }}</div>
-                    <p class="metric-label text-white-50">Horas Hoy</p>
+                    <p class="metric-label text-white-50">{% translate "Horas Hoy" %}</p>
                     <div class="period-info text-white-50">
                         {{ today|date:"d/m/Y" }}
                     </div>
@@ -364,7 +365,7 @@
                         <i class="bi bi-calendar-week"></i>
                     </div>
                     <div class="metric-value">{{ hours_week }}</div>
-                    <p class="metric-label text-white-50">Horas Esta Semana</p>
+                    <p class="metric-label text-white-50">{% translate "Horas Esta Semana" %}</p>
                     <div class="period-info text-white-50">
                         Desde {{ week_start|date:"d/m" }}
                     </div>
@@ -379,7 +380,7 @@
                         <i class="bi bi-calendar-month"></i>
                     </div>
                     <div class="metric-value">{{ hours_month }}</div>
-                    <p class="metric-label text-white-50">Horas Este Mes</p>
+                    <p class="metric-label text-white-50">{% translate "Horas Este Mes" %}</p>
                     <div class="period-info text-white-50">
                         Desde {{ month_start|date:"d/m" }}
                     </div>
@@ -391,7 +392,7 @@
     <!-- Métricas de Ausencias -->
     <div class="row mb-4">
         <div class="col-12">
-            <h3 class="mb-3"><i class="bi bi-calendar-x"></i> Métricas de Ausencias</h3>
+            <h3 class="mb-3"><i class="bi bi-calendar-x"></i> {% translate "Métricas de Ausencias" %}</h3>
         </div>
         
         <div class="col-lg-4 col-md-6 mb-3">
@@ -401,7 +402,7 @@
                         <i class="bi bi-calendar-week"></i>
                     </div>
                     <div class="metric-value">{{ absence_hours_week }}</div>
-                    <p class="metric-label text-white-50">Ausencias de la Semana (Horas)</p>
+                    <p class="metric-label text-white-50">{% translate "Ausencias de la Semana (Horas)" %}</p>
                     <div class="period-info text-white-50">
                         Desde {{ week_start|date:"d/m" }}
                     </div>
@@ -416,7 +417,7 @@
                         <i class="bi bi-calendar-month"></i>
                     </div>
                     <div class="metric-value">{{ absence_hours_month }}</div>
-                    <p class="metric-label text-white-50">Ausencias del Mes (Horas)</p>
+                    <p class="metric-label text-white-50">{% translate "Ausencias del Mes (Horas)" %}</p>
                     <div class="period-info text-white-50">
                         Desde {{ month_start|date:"d/m" }}
                     </div>
@@ -431,9 +432,9 @@
                         <i class="bi bi-calendar-range"></i>
                     </div>
                     <div class="metric-value">{{ absence_hours_total }}</div>
-                    <p class="metric-label text-white-50">Ausencias Totales (Horas)</p>
+                    <p class="metric-label text-white-50">{% translate "Ausencias Totales (Horas)" %}</p>
                     <div class="period-info text-white-50">
-                        Historial completo
+                        {% translate "Historial completo" %}
                     </div>
                 </div>
             </div>
@@ -445,7 +446,7 @@
     <!-- Métricas de Productividad -->
     <div class="row mb-4">
         <div class="col-12">
-            <h3 class="mb-3"><i class="bi bi-graph-up"></i> Métricas de Productividad (Este Mes)</h3>
+            <h3 class="mb-3"><i class="bi bi-graph-up"></i> {% translate "Métricas de Productividad (Este Mes)" %}</h3>
         </div>
         
         <div class="col-lg-3 col-md-6 mb-3">
@@ -455,7 +456,7 @@
                         <i class="bi bi-person-plus"></i>
                     </div>
                     <div class="metric-value text-dark">{{ contacts_month }}</div>
-                    <p class="metric-label">Contactos Creados</p>
+                    <p class="metric-label">{% translate "Contactos Creados" %}</p>
                 </div>
             </div>
         </div>
@@ -467,7 +468,7 @@
                         <i class="bi bi-target"></i>
                     </div>
                     <div class="metric-value text-dark">{{ opportunities_month }}</div>
-                    <p class="metric-label">Oportunidades Creadas</p>
+                    <p class="metric-label">{% translate "Oportunidades Creadas" %}</p>
                 </div>
             </div>
         </div>
@@ -479,7 +480,7 @@
                         <i class="bi bi-ticket-perforated"></i>
                     </div>
                     <div class="metric-value text-dark">{{ tickets_month }}</div>
-                    <p class="metric-label">Tickets Creados</p>
+                    <p class="metric-label">{% translate "Tickets Creados" %}</p>
                 </div>
             </div>
         </div>
@@ -491,7 +492,7 @@
                         <i class="bi bi-robot"></i>
                     </div>
                     <div class="metric-value text-dark">{{ ai_meetings_month }}</div>
-                    <p class="metric-label">Reuniones con Gerente IA</p>
+                    <p class="metric-label">{% translate "Reuniones con Gerente IA" %}</p>
                 </div>
             </div>
         </div>
@@ -502,7 +503,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h4 class="mb-0"><i class="bi bi-bar-chart"></i> Horas Trabajadas - Últimos 7 Días</h4>
+                    <h4 class="mb-0"><i class="bi bi-bar-chart"></i> {% translate "Horas Trabajadas - Últimos 7 Días" %}</h4>
                 </div>
                 <div class="card-body">
                     <div class="chart-container">
@@ -520,19 +521,19 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="ticketPrintModalLabel">
-                    <i class="bi bi-printer"></i> Imprimir Ticket
+                    <i class="bi bi-printer"></i> {% translate "Imprimir Ticket" %}
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label for="ticketNumber" class="form-label">Número de Ticket</label>
-                    <input type="number" class="form-control" id="ticketNumber" placeholder="Ej: 123" min="1">
-                    <div class="form-text">Ingresa el número del ticket que deseas imprimir</div>
+                    <label for="ticketNumber" class="form-label">{% translate "Número de Ticket" %}</label>
+                    <input type="number" class="form-control" id="ticketNumber" placeholder="{% translate 'Ej: 123' %}" min="1">
+                    <div class="form-text">{% translate "Ingresa el número del ticket que deseas imprimir" %}</div>
                 </div>
                 <div id="ticketPreview" class="d-none">
                     <div class="alert alert-info">
-                        <strong>Vista previa del ticket:</strong>
+                        <strong>{% translate "Vista previa del ticket:" %}</strong>
                         <div id="ticketInfo"></div>
                     </div>
                 </div>
@@ -543,12 +544,12 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                 <button type="button" class="btn btn-primary" onclick="loadTicketPreview()" id="previewBtn">
-                    <i class="bi bi-eye"></i> Vista Previa
+                    <i class="bi bi-eye"></i> {% translate "Vista Previa" %}
                 </button>
                 <button type="button" class="btn btn-success d-none" onclick="printTicket()" id="printBtn">
-                    <i class="bi bi-printer"></i> Imprimir
+                    <i class="bi bi-printer"></i> {% translate "Imprimir" %}
                 </button>
             </div>
         </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -8,23 +9,23 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <i class="bi bi-book"></i> Capacitación
+                        <i class="bi bi-book"></i> {% translate "Capacitación" %}
                     </li>
-                    <li class="breadcrumb-item active">Generador QR</li>
+                    <li class="breadcrumb-item active">{% translate "Generador QR" %}</li>
                 </ol>
             </nav>
             <h2 class="mb-0">
                 <i class="bi bi-qr-code text-primary"></i>
-                Generador de Códigos QR
+                {% translate "Generador de Códigos QR" %}
             </h2>
-            <p class="text-muted mb-0">Crea y gestiona códigos QR para URLs, texto, contactos y más</p>
+            <p class="text-muted mb-0">{% translate "Crea y gestiona códigos QR para URLs, texto, contactos y más" %}</p>
         </div>
         <div>
             <a href="{% url 'qr_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Crear Nuevo QR
+                <i class="bi bi-plus-circle"></i> {% translate "Crear Nuevo QR" %}
             </a>
         </div>
     </div>
@@ -37,7 +38,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h3 class="mb-0">{{ total_qrs }}</h3>
-                            <p class="mb-0">Total QRs</p>
+                            <p class="mb-0">{% translate "Total QRs" %}</p>
                         </div>
                         <div class="fs-1">
                             <i class="bi bi-qr-code"></i>
@@ -78,7 +79,7 @@
     <div class="card">
         <div class="card-header">
             <h5 class="mb-0">
-                <i class="bi bi-list-ul"></i> Mis Códigos QR
+                <i class="bi bi-list-ul"></i> {% translate "Mis Códigos QR" %}
             </h5>
         </div>
         <div class="card-body">
@@ -109,20 +110,20 @@
                                     </div>
                                 </div>
                                 <div class="text-muted small mb-2">
-                                    <strong>Contenido:</strong><br>
+                                    <strong>{% translate "Contenido:" %}</strong><br>
                                     <span class="font-monospace">{{ qr_code.content|truncatechars:40 }}</span>
                                 </div>
                             </div>
                             <div class="card-footer">
                                 <div class="btn-group w-100" role="group">
                                     <a href="{% url 'qr_detail' qr_code.pk %}" class="btn btn-outline-primary btn-sm">
-                                        <i class="bi bi-eye"></i> Ver
+                                        <i class="bi bi-eye"></i> {% translate "Ver" %}
                                     </a>
                                     <a href="{% url 'qr_edit' qr_code.pk %}" class="btn btn-outline-secondary btn-sm">
-                                        <i class="bi bi-pencil"></i> Editar
+                                        <i class="bi bi-pencil"></i> {% translate "Editar" %}
                                     </a>
                                     <a href="{% url 'qr_delete' qr_code.pk %}" class="btn btn-outline-danger btn-sm">
-                                        <i class="bi bi-trash"></i> Eliminar
+                                        <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                                     </a>
                                 </div>
                             </div>
@@ -133,10 +134,10 @@
             {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-qr-code display-1 text-muted"></i>
-                    <h4 class="text-muted mt-3">No hay códigos QR creados</h4>
-                    <p class="text-muted">Crea tu primer código QR para empezar</p>
+                    <h4 class="text-muted mt-3">{% translate "No hay códigos QR creados" %}</h4>
+                    <p class="text-muted">{% translate "Crea tu primer código QR para empezar" %}</p>
                     <a href="{% url 'qr_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear Primer QR
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Primer QR" %}
                     </a>
                 </div>
             {% endif %}

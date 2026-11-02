@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}
-    {% if complaint %}Editar Reporte QA{% else %}Nuevo Reporte QA{% endif %}
+    {% if complaint %}{% translate "Editar Reporte QA" %}{% else %}{% translate "Nuevo Reporte QA" %}{% endif %}
 {% endblock %}
 
 {% block extra_css %}
@@ -71,11 +72,11 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>
                     <i class="fas fa-{% if complaint %}edit{% else %}plus{% endif %} text-primary"></i>
-                    {% if complaint %}Editar Reporte QA{% else %}Nuevo Reporte QA{% endif %}
+                    {% if complaint %}{% translate "Editar Reporte QA" %}{% else %}{% translate "Nuevo Reporte QA" %}{% endif %}
                 </h2>
                 <a href="{% if complaint %}{% url 'qa_complaint_detail' complaint.pk %}{% else %}{% url 'qa_complaint_list' %}{% endif %}" 
                    class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver
+                    <i class="fas fa-arrow-left"></i> {% translate "Volver" %}
                 </a>
             </div>
 
@@ -86,21 +87,21 @@
                 <!-- Información Básica -->
                 <div class="form-section">
                     <h5 class="mb-3">
-                        <i class="fas fa-info-circle text-primary"></i> Información Básica
+                        <i class="fas fa-info-circle text-primary"></i> {% translate "Información Básica" %}
                     </h5>
                     
                     <div class="row">
                         <div class="col-md-8">
                             <div class="mb-3">
                                 <label for="title" class="form-label">
-                                    Título <span class="text-danger">*</span>
+                                    {% translate "Título" %} <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" class="form-control" id="title" name="title" 
                                        value="{{ complaint.title|default:'' }}" 
-                                       placeholder="Breve descripción del reporte QA" 
+                                       placeholder="{% translate 'Breve descripción del reporte QA' %}" 
                                        maxlength="200" required>
                                 <div class="character-counter">
-                                    <span id="title-count">{{ complaint.title|length|default:0 }}</span>/200 caracteres
+                                    <span id="title-count">{{ complaint.title|length|default:0 }}</span>{% translate "/200 caracteres" %}
                                 </div>
                             </div>
                         </div>
@@ -108,10 +109,10 @@
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="company" class="form-label">
-                                    Empresa <span class="text-danger">*</span>
+                                    {% translate "Empresa" %} <span class="text-danger">*</span>
                                 </label>
                                 <select class="form-select" id="company" name="company" required>
-                                    <option value="">Seleccionar empresa</option>
+                                    <option value="">{% translate "Seleccionar empresa" %}</option>
                                     {% for company in companies %}
                                         <option value="{{ company.id }}" 
                                                 {% if complaint.company.id == company.id %}selected{% endif %}>
@@ -127,10 +128,10 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="type" class="form-label">
-                                    Tipo de Reporte <span class="text-danger">*</span>
+                                    {% translate "Tipo de Reporte" %} <span class="text-danger">*</span>
                                 </label>
                                 <select class="form-select" id="type" name="type" required>
-                                    <option value="">Seleccionar tipo</option>
+                                    <option value="">{% translate "Seleccionar tipo" %}</option>
                                     {% for type_choice in type_choices %}
                                         <option value="{{ type_choice.0 }}" 
                                                 {% if complaint.type == type_choice.0 %}selected{% endif %}>
@@ -143,7 +144,7 @@
                         
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="priority" class="form-label">Prioridad</label>
+                                <label for="priority" class="form-label">{% translate "Prioridad" %}</label>
                                 <div class="btn-group btn-group-priority w-100" role="group">
                                     {% for priority_choice in priority_choices %}
                                         <input type="radio" class="btn-check" name="priority" 
@@ -162,13 +163,13 @@
 
                     <div class="mb-3">
                         <label for="description" class="form-label">
-                            Descripción <span class="text-danger">*</span>
+                            {% translate "Descripción" %} <span class="text-danger">*</span>
                         </label>
                         <textarea class="form-control" id="description" name="description" 
                                   rows="6" placeholder="Describe detalladamente el reporte QA..." 
                                   maxlength="2000" required>{{ complaint.description|default:'' }}</textarea>
                         <div class="character-counter">
-                            <span id="description-count">{{ complaint.description|length|default:0 }}</span>/2000 caracteres
+                            <span id="description-count">{{ complaint.description|length|default:0 }}</span>{% translate "/2000 caracteres" %}
                         </div>
                     </div>
                 </div>
@@ -176,14 +177,14 @@
                 <!-- Información de Contacto -->
                 <div class="form-section">
                     <h5 class="mb-3">
-                        <i class="fas fa-address-book text-success"></i> Información de Contacto
+                        <i class="fas fa-address-book text-success"></i> {% translate "Información de Contacto" %}
                     </h5>
                     
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="contact_email" class="form-label">
-                                    <i class="fas fa-envelope"></i> Email de Contacto
+                                    <i class="fas fa-envelope"></i> {% translate "Email de Contacto" %}
                                 </label>
                                 <input type="email" class="form-control" id="contact_email" 
                                        name="contact_email" value="{{ complaint.contact_email|default:'' }}" 
@@ -194,7 +195,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="contact_phone" class="form-label">
-                                    <i class="fas fa-phone"></i> Teléfono de Contacto
+                                    <i class="fas fa-phone"></i> {% translate "Teléfono de Contacto" %}
                                 </label>
                                 <input type="tel" class="form-control" id="contact_phone" 
                                        name="contact_phone" value="{{ complaint.contact_phone|default:'' }}" 
@@ -207,14 +208,14 @@
                 <!-- Archivo Adjunto -->
                 <div class="form-section">
                     <h5 class="mb-3">
-                        <i class="fas fa-paperclip text-warning"></i> Archivo Adjunto
+                        <i class="fas fa-paperclip text-warning"></i> {% translate "Archivo Adjunto" %}
                     </h5>
                     
                     {% if complaint.attachment %}
                         <div class="mb-3">
                             <div class="alert alert-info">
                                 <i class="fas fa-file"></i> 
-                                Archivo actual: 
+                                {% translate "Archivo actual:" %} 
                                 <a href="{{ complaint.attachment.url }}" target="_blank" class="alert-link">
                                     {{ complaint.attachment.name }}
                                 </a>
@@ -224,11 +225,11 @@
                     
                     <div class="file-upload-area">
                         <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
-                        <p class="mb-2">Arrastra un archivo aquí o haz clic para seleccionar</p>
+                        <p class="mb-2">{% translate "Arrastra un archivo aquí o haz clic para seleccionar" %}</p>
                         <input type="file" class="form-control" id="attachment" name="attachment" 
                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt">
                         <small class="text-muted">
-                            Formatos permitidos: PDF, DOC, DOCX, JPG, PNG, TXT (Max: 10MB)
+                            {% translate "Formatos permitidos: PDF, DOC, DOCX, JPG, PNG, TXT (Max: 10MB)" %}
                         </small>
                     </div>
                 </div>
@@ -237,13 +238,13 @@
                 {% if complaint and user.is_staff %}
                     <div class="form-section">
                         <h5 class="mb-3">
-                            <i class="fas fa-cogs text-info"></i> Gestión de Estado
+                            <i class="fas fa-cogs text-info"></i> {% translate "Gestión de Estado" %}
                         </h5>
                         
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="status" class="form-label">Estado</label>
+                                    <label for="status" class="form-label">{% translate "Estado" %}</label>
                                     <select class="form-select" id="status" name="status">
                                         {% for status_choice in status_choices %}
                                             <option value="{{ status_choice.0 }}" 
@@ -257,9 +258,9 @@
                             
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="assigned_to" class="form-label">Asignar a</label>
+                                    <label for="assigned_to" class="form-label">{% translate "Asignar a" %}</label>
                                     <select class="form-select" id="assigned_to" name="assigned_to">
-                                        <option value="">Sin asignar</option>
+                                        <option value="">{% translate "Sin asignar" %}</option>
                                         {% for user in users %}
                                             <option value="{{ user.id }}" 
                                                     {% if complaint.assigned_to.id == user.id %}selected{% endif %}>
@@ -277,12 +278,12 @@
                 <div class="d-flex justify-content-between">
                     <a href="{% if complaint %}{% url 'qa_complaint_detail' complaint.pk %}{% else %}{% url 'qa_complaint_list' %}{% endif %}" 
                        class="btn btn-outline-secondary">
-                        <i class="fas fa-times"></i> Cancelar
+                        <i class="fas fa-times"></i> {% translate "Cancelar" %}
                     </a>
                     
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i> 
-                        {% if complaint %}Actualizar Reporte{% else %}Crear Reporte{% endif %}
+                        {% if complaint %}{% translate "Actualizar Reporte" %}{% else %}{% translate "Crear Reporte" %}{% endif %}
                     </button>
                 </div>
             </form>

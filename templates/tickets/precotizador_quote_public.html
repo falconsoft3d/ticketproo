@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ quote.precotizador.title }} - Cotización{% endblock %}
@@ -48,7 +49,7 @@
                             {{ quote.precotizador.title }}
                         </h1>
                         <p class="mb-0 fs-5 opacity-75">
-                            Cotización preparada especialmente para ti
+                            {% translate "Cotización preparada especialmente para ti" %}
                         </p>
                         <small class="opacity-75">
                             Generada el {{ quote.created_at|date:"d/m/Y" }}
@@ -69,11 +70,11 @@
             <div class="text-center mb-4">
                 {% if quote.status == 'pending' %}
                     <span class="badge bg-warning status-badge">
-                        <i class="bi bi-clock"></i> Esperando tu respuesta
+                        <i class="bi bi-clock"></i> {% translate "Esperando tu respuesta" %}
                     </span>
                 {% elif quote.status == 'accepted' %}
                     <span class="badge bg-success status-badge">
-                        <i class="bi bi-check-circle"></i> Cotización Aceptada
+                        <i class="bi bi-check-circle"></i> {% translate "Cotización Aceptada" %}
                     </span>
                     <p class="text-success mt-2">
                         <i class="bi bi-calendar-check"></i>
@@ -81,7 +82,7 @@
                     </p>
                 {% elif quote.status == 'rejected' %}
                     <span class="badge bg-danger status-badge">
-                        <i class="bi bi-x-circle"></i> Cotización Rechazada
+                        <i class="bi bi-x-circle"></i> {% translate "Cotización Rechazada" %}
                     </span>
                     <p class="text-muted mt-2">
                         <i class="bi bi-calendar-x"></i>
@@ -97,7 +98,7 @@
                     <div class="card mb-4">
                         <div class="card-header">
                             <h5 class="mb-0">
-                                <i class="bi bi-chat-dots"></i> Tu Solicitud
+                                <i class="bi bi-chat-dots"></i> {% translate "Tu Solicitud" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -109,7 +110,7 @@
                     <div class="card mb-4">
                         <div class="card-header">
                             <h5 class="mb-0">
-                                <i class="bi bi-gear"></i> Nuestra Propuesta
+                                <i class="bi bi-gear"></i> {% translate "Nuestra Propuesta" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -121,7 +122,7 @@
                             
                             {% if quote.ai_reasoning %}
                                 <hr>
-                                <h6><i class="bi bi-lightbulb"></i> ¿Por qué esta estimación?</h6>
+                                <h6><i class="bi bi-lightbulb"></i> {% translate "¿Por qué esta estimación?" %}</h6>
                                 <p class="text-muted">{{ quote.ai_reasoning|linebreaks }}</p>
                             {% endif %}
                         </div>
@@ -132,7 +133,7 @@
                     <div class="card mb-4">
                         <div class="card-header">
                             <h6 class="mb-0">
-                                <i class="bi bi-chat-square-text"></i> Tus Comentarios
+                                <i class="bi bi-chat-square-text"></i> {% translate "Tus Comentarios" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -148,13 +149,13 @@
                     <div class="card mb-4">
                         <div class="card-header bg-success text-white">
                             <h6 class="mb-0">
-                                <i class="bi bi-calculator"></i> Resumen de Inversión
+                                <i class="bi bi-calculator"></i> {% translate "Resumen de Inversión" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <table class="table table-borderless mb-0">
                                 <tr>
-                                    <td><strong>Horas de Trabajo:</strong></td>
+                                    <td><strong>{% translate "Horas de Trabajo:" %}</strong></td>
                                     <td class="text-end">
                                         <span class="fs-5 fw-bold text-primary">
                                             {{ quote.ai_estimated_hours }}
@@ -162,13 +163,13 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Tarifa por Hora:</strong></td>
+                                    <td><strong>{% translate "Tarifa por Hora:" %}</strong></td>
                                     <td class="text-end">
                                         {{ quote.precotizador.get_formatted_hourly_rate }}
                                     </td>
                                 </tr>
                                 <tr class="border-top">
-                                    <td><strong>Total:</strong></td>
+                                    <td><strong>{% translate "Total:" %}</strong></td>
                                     <td class="text-end">
                                         <span class="fs-4 fw-bold text-success">
                                             {{ quote.get_formatted_cost }}
@@ -184,19 +185,19 @@
                     <div class="card response-section">
                         <div class="card-header">
                             <h6 class="mb-0">
-                                <i class="bi bi-hand-thumbs-up"></i> ¿Qué decides?
+                                <i class="bi bi-hand-thumbs-up"></i> {% translate "¿Qué decides?" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <p class="text-muted mb-3">
-                                Por favor, revisa nuestra propuesta y déjanos saber tu decisión.
+                                {% translate "Por favor, revisa nuestra propuesta y déjanos saber tu decisión." %}
                             </p>
                             
                             <form method="post" id="responseForm">
                                 {% csrf_token %}
                                 <div class="mb-3">
                                     <label for="client_comments" class="form-label">
-                                        Comentarios adicionales (opcional):
+                                        {% translate "Comentarios adicionales (opcional):" %}
                                     </label>
                                     <textarea class="form-control" 
                                               id="client_comments" 
@@ -208,11 +209,11 @@
                                 <div class="d-grid gap-2">
                                     <button type="submit" name="action" value="accept" 
                                             class="btn btn-success btn-lg">
-                                        <i class="bi bi-check-circle"></i> Aceptar Cotización
+                                        <i class="bi bi-check-circle"></i> {% translate "Aceptar Cotización" %}
                                     </button>
                                     <button type="submit" name="action" value="reject" 
                                             class="btn btn-outline-danger">
-                                        <i class="bi bi-x-circle"></i> Rechazar Cotización
+                                        <i class="bi bi-x-circle"></i> {% translate "Rechazar Cotización" %}
                                     </button>
                                 </div>
                             </form>
@@ -223,35 +224,34 @@
                         <div class="card-body text-center">
                             {% if quote.status == 'accepted' %}
                                 <i class="bi bi-check-circle-fill text-success fs-1"></i>
-                                <h5 class="text-success mt-2">¡Gracias por aceptar!</h5>
+                                <h5 class="text-success mt-2">{% translate "¡Gracias por aceptar!" %}</h5>
                                 <p class="text-muted">
                                     Recibimos tu aceptación el {{ quote.client_response_date|date:"d/m/Y" }} a las {{ quote.client_response_date|date:"H:i" }}.
                                     Nos pondremos en contacto contigo pronto para coordinar los próximos pasos.
                                 </p>
                                 {% if quote.client_comments %}
                                     <div class="alert alert-light mt-3">
-                                        <strong>Tus comentarios:</strong><br>
+                                        <strong>{% translate "Tus comentarios:" %}</strong><br>
                                         <em>"{{ quote.client_comments }}"</em>
                                     </div>
                                 {% endif %}
                             {% else %}
                                 <i class="bi bi-x-circle-fill text-danger fs-1"></i>
-                                <h5 class="text-danger mt-2">Cotización Rechazada</h5>
+                                <h5 class="text-danger mt-2">{% translate "Cotización Rechazada" %}</h5>
                                 <p class="text-muted">
                                     Rechazaste esta cotización el {{ quote.client_response_date|date:"d/m/Y" }} a las {{ quote.client_response_date|date:"H:i" }}.
                                     Entendemos que esta propuesta no se ajustaba a tus necesidades. ¡Gracias por tu tiempo!
                                 </p>
                                 {% if quote.client_comments %}
                                     <div class="alert alert-light mt-3">
-                                        <strong>Tus comentarios:</strong><br>
+                                        <strong>{% translate "Tus comentarios:" %}</strong><br>
                                         <em>"{{ quote.client_comments }}"</em>
                                     </div>
                                 {% endif %}
                             {% endif %}
                             <div class="alert alert-info mt-3">
                                 <i class="bi bi-info-circle"></i>
-                                <strong>Nota:</strong> Esta cotización ya fue respondida y no puede ser modificada.
-                                Si necesitas hacer cambios, por favor contacta directamente con nosotros.
+                                <strong>{% translate "Nota:" %}</strong> {% translate "Esta cotización ya fue respondida y no puede ser modificada. Si necesitas hacer cambios, por favor contacta directamente con nosotros." %}
                             </div>
                         </div>
                     </div>
@@ -261,9 +261,9 @@
                     <div class="card mt-4">
                         <div class="card-body text-center">
                             <i class="bi bi-envelope text-primary fs-4"></i>
-                            <h6 class="mt-2">¿Tienes preguntas?</h6>
+                            <h6 class="mt-2">{% translate "¿Tienes preguntas?" %}</h6>
                             <p class="small text-muted mb-0">
-                                Contáctanos para aclarar cualquier duda sobre esta cotización.
+                                {% translate "Contáctanos para aclarar cualquier duda sobre esta cotización." %}
                             </p>
                         </div>
                     </div>

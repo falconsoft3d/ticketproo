@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -11,10 +12,10 @@
                 <h2><i class="bi bi-people-fill text-primary"></i> {{ page_title }}</h2>
                 <div class="btn-group" role="group">
                     <a href="{% url 'time_clock' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-clock"></i> Mi Control
+                        <i class="bi bi-clock"></i> {% translate "Mi Control" %}
                     </a>
                     <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">
-                        <i class="bi bi-house-door"></i> Dashboard
+                        <i class="bi bi-house-door"></i> {% translate "Dashboard" %}
                     </a>
                 </div>
             </div>
@@ -27,7 +28,7 @@
             <div class="card border-primary">
                 <div class="card-body text-center">
                     <h4 class="text-primary">{{ total_entries }}</h4>
-                    <small class="text-muted">Total Registros</small>
+                    <small class="text-muted">{% translate "Total Registros" %}</small>
                 </div>
             </div>
         </div>
@@ -35,7 +36,7 @@
             <div class="card border-success">
                 <div class="card-body text-center">
                     <h4 class="text-success">{{ active_entries }}</h4>
-                    <small class="text-muted">Trabajando Ahora</small>
+                    <small class="text-muted">{% translate "Trabajando Ahora" %}</small>
                 </div>
             </div>
         </div>
@@ -43,7 +44,7 @@
             <div class="card border-info">
                 <div class="card-body text-center">
                     <h4 class="text-info">{{ total_hours }}h</h4>
-                    <small class="text-muted">Total Horas</small>
+                    <small class="text-muted">{% translate "Total Horas" %}</small>
                 </div>
             </div>
         </div>
@@ -54,10 +55,10 @@
                         {% if avg_hours_per_session %}
                             {{ avg_hours_per_session|floatformat:1 }}h
                         {% else %}
-                            0h
+                            {% translate "0h" %}
                         {% endif %}
                     </h4>
-                    <small class="text-muted">Promedio por Jornada</small>
+                    <small class="text-muted">{% translate "Promedio por Jornada" %}</small>
                 </div>
             </div>
         </div>
@@ -68,28 +69,28 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-funnel"></i> Filtros de Búsqueda</h6>
+                    <h6 class="mb-0"><i class="bi bi-funnel"></i> {% translate "Filtros de Búsqueda" %}</h6>
                 </div>
                 <div class="card-body">
                     <form method="get" class="row g-3">
                         <div class="col-md-3">
-                            <label class="form-label">Fecha Desde:</label>
+                            <label class="form-label">{% translate "Fecha Desde:" %}</label>
                             <input type="date" 
                                    name="fecha_desde" 
                                    class="form-control" 
                                    value="{{ fecha_desde }}">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Fecha Hasta:</label>
+                            <label class="form-label">{% translate "Fecha Hasta:" %}</label>
                             <input type="date" 
                                    name="fecha_hasta" 
                                    class="form-control" 
                                    value="{{ fecha_hasta }}">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Proyecto:</label>
+                            <label class="form-label">{% translate "Proyecto:" %}</label>
                             <select name="proyecto" class="form-control">
-                                <option value="">Todos los proyectos</option>
+                                <option value="">{% translate "Todos los proyectos" %}</option>
                                 {% for proyecto in proyectos %}
                                     <option value="{{ proyecto.id }}" 
                                             {% if proyecto.id|stringformat:"s" == proyecto_seleccionado %}selected{% endif %}>
@@ -99,9 +100,9 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Empleado:</label>
+                            <label class="form-label">{% translate "Empleado:" %}</label>
                             <select name="usuario" class="form-control">
-                                <option value="">Todos los empleados</option>
+                                <option value="">{% translate "Todos los empleados" %}</option>
                                 {% for usuario in usuarios %}
                                     <option value="{{ usuario.id }}" 
                                             {% if usuario.id|stringformat:"s" == usuario_seleccionado %}selected{% endif %}>
@@ -112,10 +113,10 @@
                         </div>
                         <div class="col-12">
                             <button type="submit" class="btn btn-primary me-2">
-                                <i class="bi bi-search"></i> Filtrar
+                                <i class="bi bi-search"></i> {% translate "Filtrar" %}
                             </button>
                             <a href="{% url 'attendance_overview' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x"></i> Limpiar Filtros
+                                <i class="bi bi-x"></i> {% translate "Limpiar Filtros" %}
                             </a>
                         </div>
                     </form>
@@ -130,7 +131,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-table"></i> Registros de Asistencia
+                        <i class="bi bi-table"></i> {% translate "Registros de Asistencia" %}
                         {% if page_obj.paginator.count %}
                             <span class="badge bg-primary">{{ page_obj.paginator.count }}</span>
                         {% endif %}
@@ -142,15 +143,15 @@
                             <table class="table table-hover">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>Usuario</th>
-                                        <th>Fecha</th>
-                                        <th>Asignación de Trabajo</th>
-                                        <th>Entrada</th>
-                                        <th>Salida</th>
-                                        <th>Duración</th>
-                                        <th>Estado</th>
-                                        <th>Notas</th>
-                                        <th>Acciones</th>
+                                        <th>{% translate "Usuario" %}</th>
+                                        <th>{% translate "Fecha" %}</th>
+                                        <th>{% translate "Asignación de Trabajo" %}</th>
+                                        <th>{% translate "Entrada" %}</th>
+                                        <th>{% translate "Salida" %}</th>
+                                        <th>{% translate "Duración" %}</th>
+                                        <th>{% translate "Estado" %}</th>
+                                        <th>{% translate "Notas" %}</th>
+                                        <th>{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -160,7 +161,7 @@
                                             <div class="d-flex align-items-center">
                                                 <div class="me-2">
                                                     {% if not entry.fecha_salida %}
-                                                        <i class="bi bi-circle-fill text-success" title="Trabajando ahora"></i>
+                                                        <i class="bi bi-circle-fill text-success" title="{% translate 'Trabajando ahora' %}"></i>
                                                     {% else %}
                                                         <i class="bi bi-circle text-muted"></i>
                                                     {% endif %}
@@ -195,7 +196,7 @@
                                                     </span>
                                                 {% endif %}
                                                 {% if not entry.project and not entry.ticket and not entry.work_order %}
-                                                    <span class="text-muted">Sin asignación específica</span>
+                                                    <span class="text-muted">{% translate "Sin asignación específica" %}</span>
                                                 {% endif %}
                                             </div>
                                         </td>
@@ -204,7 +205,7 @@
                                             {% if entry.fecha_salida %}
                                                 {{ entry.fecha_salida|date:"H:i" }}
                                             {% else %}
-                                                <span class="badge bg-success">Trabajando</span>
+                                                <span class="badge bg-success">{% translate "Trabajando" %}</span>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -218,10 +219,10 @@
                                         </td>
                                         <td>
                                             {% if entry.fecha_salida %}
-                                                <span class="badge bg-secondary">Completado</span>
+                                                <span class="badge bg-secondary">{% translate "Completado" %}</span>
                                             {% else %}
                                                 <span class="badge bg-success">
-                                                    <i class="bi bi-clock"></i> En Progreso
+                                                    <i class="bi bi-clock"></i> {% translate "En Progreso" %}
                                                 </span>
                                             {% endif %}
                                         </td>
@@ -240,7 +241,7 @@
                                             <div class="btn-group btn-group-sm" role="group">
                                                 <a href="{% url 'time_entry_detail' entry.id %}" 
                                                    class="btn btn-outline-primary"
-                                                   title="Ver detalles">
+                                                   title="{% translate 'Ver detalles' %}">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
                                             </div>
@@ -253,12 +254,12 @@
 
                         <!-- Paginación -->
                         {% if page_obj.has_other_pages %}
-                        <nav aria-label="Paginación">
+                        <nav aria-label="{% translate 'Paginación' %}">
                             <ul class="pagination justify-content-center">
                                 {% if page_obj.has_previous %}
                                     <li class="page-item">
                                         <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}{% if proyecto_seleccionado %}&proyecto={{ proyecto_seleccionado }}{% endif %}{% if usuario_seleccionado %}&usuario={{ usuario_seleccionado }}{% endif %}">
-                                            <i class="bi bi-chevron-left"></i> Anterior
+                                            <i class="bi bi-chevron-left"></i> {% translate "Anterior" %}
                                         </a>
                                     </li>
                                 {% endif %}
@@ -272,7 +273,7 @@
                                 {% if page_obj.has_next %}
                                     <li class="page-item">
                                         <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}{% if proyecto_seleccionado %}&proyecto={{ proyecto_seleccionado }}{% endif %}{% if usuario_seleccionado %}&usuario={{ usuario_seleccionado }}{% endif %}">
-                                            Siguiente <i class="bi bi-chevron-right"></i>
+                                            {% translate "Siguiente" %} <i class="bi bi-chevron-right"></i>
                                         </a>
                                     </li>
                                 {% endif %}
@@ -283,10 +284,10 @@
                         <div class="text-center py-5">
                             <div class="text-muted">
                                 <i class="bi bi-people fa-3x mb-3"></i>
-                                <h5>No hay registros de asistencia</h5>
-                                <p>No se encontraron registros en el rango de fechas seleccionado.</p>
+                                <h5>{% translate "No hay registros de asistencia" %}</h5>
+                                <p>{% translate "No se encontraron registros en el rango de fechas seleccionado." %}</p>
                                 <a href="{% url 'attendance_overview' %}" class="btn btn-primary">
-                                    <i class="bi bi-arrow-clockwise"></i> Recargar
+                                    <i class="bi bi-arrow-clockwise"></i> {% translate "Recargar" %}
                                 </a>
                             </div>
                         </div>

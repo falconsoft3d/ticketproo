@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -202,14 +203,14 @@
             <div class="goals-display">
                 {% if sport_goal.target_time %}
                 <div class="goal-card">
-                    <h4><i class="bi bi-clock text-warning"></i> Tiempo Objetivo</h4>
+                    <h4><i class="bi bi-clock text-warning"></i> {% translate "Tiempo Objetivo" %}</h4>
                     <div class="goal-value">{{ sport_goal.format_target_time }}</div>
                 </div>
                 {% endif %}
 
                 {% if sport_goal.target_distance %}
                 <div class="goal-card">
-                    <h4><i class="bi bi-signpost text-success"></i> Distancia Objetivo</h4>
+                    <h4><i class="bi bi-signpost text-success"></i> {% translate "Distancia Objetivo" %}</h4>
                     <div class="goal-value">{{ sport_goal.target_distance }} km</div>
                 </div>
                 {% endif %}
@@ -221,32 +222,32 @@
             <!-- Controles -->
             <div class="control-buttons mb-4">
                 <button class="btn-control btn-start" id="btnStart">
-                    <i class="bi bi-play-fill"></i> Iniciar
+                    <i class="bi bi-play-fill"></i> {% translate "Iniciar" %}
                 </button>
                 <button class="btn-control btn-stop" id="btnStop" disabled>
-                    <i class="bi bi-stop-fill"></i> Detener
+                    <i class="bi bi-stop-fill"></i> {% translate "Detener" %}
                 </button>
                 <button class="btn-control btn-reset" id="btnReset">
-                    <i class="bi bi-arrow-counterclockwise"></i> Reiniciar
+                    <i class="bi bi-arrow-counterclockwise"></i> {% translate "Reiniciar" %}
                 </button>
             </div>
 
             <!-- Input de distancia -->
             {% if sport_goal.target_distance %}
             <div class="distance-input-group">
-                <label class="form-label"><strong>Distancia Recorrida (km)</strong></label>
+                <label class="form-label"><strong>{% translate "Distancia Recorrida (km)" %}</strong></label>
                 <div class="input-group input-group-lg">
                     <span class="input-group-text"><i class="bi bi-signpost"></i></span>
                     <input type="number" class="form-control" id="distanceInput" 
                            placeholder="0.00" step="0.01" min="0">
-                    <span class="input-group-text">km</span>
+                    <span class="input-group-text">{% translate "km" %}</span>
                 </div>
             </div>
             {% endif %}
 
             <!-- Botón de registrar -->
             <button class="btn-control btn-record w-100 mt-3" id="btnRecord">
-                <i class="bi bi-save"></i> Registrar Intento
+                <i class="bi bi-save"></i> {% translate "Registrar Intento" %}
             </button>
         </div>
     </div>
@@ -254,10 +255,10 @@
     <!-- Overlay de éxito -->
     <div class="success-overlay" id="successOverlay">
         <div class="trophy-animation">🏆</div>
-        <h1 id="successMessage">¡Intento Registrado!</h1>
+        <h1 id="successMessage">{% translate "¡Intento Registrado!" %}</h1>
         <p id="successDetails" style="font-size: 1.5rem; margin-top: 20px;"></p>
         <button class="btn-control btn-start mt-4" id="btnContinue">
-            <i class="bi bi-check-circle"></i> Continuar
+            <i class="bi bi-check-circle"></i> {% translate "Continuar" %}
         </button>
     </div>
 

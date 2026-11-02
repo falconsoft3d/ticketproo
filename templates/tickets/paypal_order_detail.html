@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -11,10 +12,10 @@
             <div class="col-lg-12 text-center text-white">
                 <i class="bi bi-check-circle-fill" style="font-size: 4rem;"></i>
                 <h1 class="display-5 fw-bold mb-3 mt-3">
-                    ¡Pago Completado!
+                    {% translate "¡Pago Completado!" %}
                 </h1>
                 <p class="lead mb-0">
-                    Gracias por tu compra
+                    {% translate "Gracias por tu compra" %}
                 </p>
             </div>
         </div>
@@ -30,7 +31,7 @@
             <div class="card shadow-lg border-0 mb-4">
                 <div class="card-header bg-white border-0 pt-4">
                     <h3 class="text-center mb-0">
-                        <i class="bi bi-receipt text-success"></i> Resumen de tu Orden
+                        <i class="bi bi-receipt text-success"></i> {% translate "Resumen de tu Orden" %}
                     </h3>
                 </div>
                 <div class="card-body p-4">
@@ -38,13 +39,13 @@
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <div class="info-box">
-                                <small class="text-muted d-block mb-1">Número de Orden</small>
+                                <small class="text-muted d-block mb-1">{% translate "Número de Orden" %}</small>
                                 <strong>#{{ order.id|stringformat:"05d" }}</strong>
                             </div>
                         </div>
                         <div class="col-md-6 text-md-end">
                             <div class="info-box">
-                                <small class="text-muted d-block mb-1">Fecha de Pago</small>
+                                <small class="text-muted d-block mb-1">{% translate "Fecha de Pago" %}</small>
                                 <strong>{{ order.payment_date|date:"d/m/Y H:i" }}</strong>
                             </div>
                         </div>
@@ -55,7 +56,7 @@
                     <!-- Producto -->
                     <div class="mb-4">
                         <h5 class="text-primary mb-3">
-                            <i class="bi bi-box"></i> Producto Adquirido
+                            <i class="bi bi-box"></i> {% translate "Producto Adquirido" %}
                         </h5>
                         <div class="product-info p-3 bg-light rounded">
                             <h4 class="mb-2">{{ order.product_name }}</h4>
@@ -70,31 +71,31 @@
                     <!-- Detalles del Pago -->
                     <div class="mb-4">
                         <h5 class="text-primary mb-3">
-                            <i class="bi bi-credit-card"></i> Detalles del Pago
+                            <i class="bi bi-credit-card"></i> {% translate "Detalles del Pago" %}
                         </h5>
                         <table class="table table-borderless">
                             <tbody>
                                 <tr>
-                                    <td class="text-muted">Importe:</td>
+                                    <td class="text-muted">{% translate "Importe:" %}</td>
                                     <td class="text-end"><strong class="text-success fs-5">€{{ order.amount }}</strong></td>
                                 </tr>
                                 <tr>
-                                    <td class="text-muted">Método de pago:</td>
+                                    <td class="text-muted">{% translate "Método de pago:" %}</td>
                                     <td class="text-end"><i class="bi bi-paypal text-primary"></i> PayPal</td>
                                 </tr>
                                 <tr>
-                                    <td class="text-muted">ID de transacción:</td>
+                                    <td class="text-muted">{% translate "ID de transacción:" %}</td>
                                     <td class="text-end"><code class="small">{{ order.paypal_order_id }}</code></td>
                                 </tr>
                                 {% if order.paypal_payer_name %}
                                 <tr>
-                                    <td class="text-muted">Pagador:</td>
+                                    <td class="text-muted">{% translate "Pagador:" %}</td>
                                     <td class="text-end">{{ order.paypal_payer_name }}</td>
                                 </tr>
                                 {% endif %}
                                 {% if order.paypal_payer_email %}
                                 <tr>
-                                    <td class="text-muted">Email:</td>
+                                    <td class="text-muted">{% translate "Email:" %}</td>
                                     <td class="text-end">{{ order.paypal_payer_email }}</td>
                                 </tr>
                                 {% endif %}
@@ -108,7 +109,7 @@
                     {% if order.payment_link.attachment %}
                     <div class="mb-4">
                         <h5 class="text-primary mb-3">
-                            <i class="bi bi-download"></i> Descarga tu Archivo
+                            <i class="bi bi-download"></i> {% translate "Descarga tu Archivo" %}
                         </h5>
                         
                         {% if download_url_valid %}
@@ -119,13 +120,13 @@
                             
                             <a href="{% url 'paypal_order_download' order.download_token %}" 
                                class="btn btn-success btn-lg mb-3">
-                                <i class="bi bi-download"></i> Descargar Archivo
+                                <i class="bi bi-download"></i> {% translate "Descargar Archivo" %}
                             </a>
                             
                             <div class="alert alert-info mb-0">
                                 <i class="bi bi-clock"></i>
-                                <strong>Importante:</strong> Este enlace de descarga es válido por 
-                                <strong class="text-primary">{{ hours_remaining }} horas</strong> más.
+                                <strong>{% translate "Importante:" %}</strong> {% translate "Este enlace de descarga es válido por" %} 
+                                <strong class="text-primary">{{ hours_remaining }} horas</strong> {% translate "más." %}
                                 <br>
                                 <small class="text-muted">
                                     Expira el: {{ order.download_token_expires_at|date:"d/m/Y H:i" }}
@@ -135,9 +136,9 @@
                             <div class="mt-3">
                                 <small class="text-muted">
                                     <i class="bi bi-info-circle"></i>
-                                    Puedes descargar el archivo múltiples veces dentro del período válido.
+                                    {% translate "Puedes descargar el archivo múltiples veces dentro del período válido." %}
                                     <br>
-                                    Descargas realizadas: <strong id="download-counter">{{ order.download_count }}</strong>
+                                    {% translate "Descargas realizadas:" %} <strong id="download-counter">{{ order.download_count }}</strong>
                                 </small>
                             </div>
                         </div>
@@ -146,22 +147,22 @@
                         <!-- Token expirado -->
                         <div class="download-section p-4 bg-light rounded text-center border border-warning">
                             <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
-                            <h5 class="mt-3 mb-3 text-warning">Enlace de Descarga Expirado</h5>
+                            <h5 class="mt-3 mb-3 text-warning">{% translate "Enlace de Descarga Expirado" %}</h5>
                             
                             <div class="alert alert-warning">
-                                <strong>El período de descarga de 72 horas ha expirado.</strong>
+                                <strong>{% translate "El período de descarga de 72 horas ha expirado." %}</strong>
                                 <br>
                                 El enlace expiró el: {{ order.download_token_expires_at|date:"d/m/Y H:i" }}
                             </div>
                             
                             <p class="text-muted mb-3">
-                                Por favor, contacta con el vendedor para solicitar un nuevo enlace de descarga.
+                                {% translate "Por favor, contacta con el vendedor para solicitar un nuevo enlace de descarga." %}
                             </p>
                             
                             {% if order.payment_link.user.email %}
                             <a href="mailto:{{ order.payment_link.user.email }}?subject=Solicitud%20de%20nuevo%20enlace%20-%20Orden%20%23{{ order.id }}" 
                                class="btn btn-outline-primary">
-                                <i class="bi bi-envelope"></i> Contactar Vendedor
+                                <i class="bi bi-envelope"></i> {% translate "Contactar Vendedor" %}
                             </a>
                             {% endif %}
                         </div>
@@ -171,7 +172,7 @@
                     <!-- Sin archivo adjunto -->
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i>
-                        Este producto no incluye archivo digital para descarga.
+                        {% translate "Este producto no incluye archivo digital para descarga." %}
                     </div>
                     {% endif %}
 
@@ -181,10 +182,10 @@
                     <div class="text-center text-muted">
                         <p class="mb-2">
                             <i class="bi bi-shield-check text-success"></i>
-                            Transacción procesada de forma segura por PayPal
+                            {% translate "Transacción procesada de forma segura por PayPal" %}
                         </p>
                         <p class="mb-0 small">
-                            Guarda esta página en tus favoritos para acceder a tu descarga.
+                            {% translate "Guarda esta página en tus favoritos para acceder a tu descarga." %}
                         </p>
                     </div>
                 </div>
@@ -194,10 +195,10 @@
             <div class="card border-0 bg-light">
                 <div class="card-body text-center">
                     <h6 class="mb-3">
-                        <i class="bi bi-question-circle"></i> ¿Necesitas Ayuda?
+                        <i class="bi bi-question-circle"></i> {% translate "¿Necesitas Ayuda?" %}
                     </h6>
                     <p class="text-muted mb-3">
-                        Si tienes algún problema con tu orden o descarga, no dudes en contactarnos.
+                        {% translate "Si tienes algún problema con tu orden o descarga, no dudes en contactarnos." %}
                     </p>
                     {% if config and config.site_name %}
                     <p class="mb-0 small text-muted">

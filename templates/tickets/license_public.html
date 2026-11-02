@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -123,9 +124,9 @@
                 <div class="text-center mb-4">
                     <h1 class="text-white">
                         <i class="bi bi-shield-check"></i> 
-                        Verificación de Licencia
+                        {% translate "Verificación de Licencia" %}
                     </h1>
-                    <p class="text-white-50">Información pública de la licencia</p>
+                    <p class="text-white-50">{% translate "Información pública de la licencia" %}</p>
                 </div>
 
                 <!-- Tarjeta de licencia -->
@@ -145,13 +146,13 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="info-item">
-                                    <h6><i class="bi bi-building text-primary"></i> Empresa</h6>
+                                    <h6><i class="bi bi-building text-primary"></i> {% translate "Empresa" %}</h6>
                                     <p>{{ license.company.name }}</p>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="info-item">
-                                    <h6><i class="bi bi-box-seam text-primary"></i> Producto</h6>
+                                    <h6><i class="bi bi-box-seam text-primary"></i> {% translate "Producto" %}</h6>
                                     <p>{{ license.product }}</p>
                                 </div>
                             </div>
@@ -161,13 +162,13 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="info-item">
-                                    <h6><i class="bi bi-calendar-check text-success"></i> Fecha de Inicio</h6>
+                                    <h6><i class="bi bi-calendar-check text-success"></i> {% translate "Fecha de Inicio" %}</h6>
                                     <p>{{ license.start_date|date:"d F Y" }}</p>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="info-item">
-                                    <h6><i class="bi bi-calendar-x text-danger"></i> Fecha de Vencimiento</h6>
+                                    <h6><i class="bi bi-calendar-x text-danger"></i> {% translate "Fecha de Vencimiento" %}</h6>
                                     <p>{{ license.end_date|date:"d F Y" }}</p>
                                 </div>
                             </div>
@@ -179,16 +180,16 @@
                                 <div class="verification-stamp {% if days_left <= 30 %}expired-stamp{% endif %}">
                                     <i class="bi bi-check-circle-fill text-{% if days_left <= 30 %}warning{% else %}success{% endif %} display-4"></i>
                                     <h4 class="mt-2 text-{% if days_left <= 30 %}warning{% else %}success{% endif %}">
-                                        LICENCIA VÁLIDA
+                                        {% translate "LICENCIA VÁLIDA" %}
                                     </h4>
                                     <div class="days-counter text-{% if days_left <= 30 %}warning{% else %}success{% endif %}">
                                         {{ days_left }}
                                     </div>
-                                    <p class="mb-0">días restantes</p>
+                                    <p class="mb-0">{% translate "días restantes" %}</p>
                                     {% if days_left <= 30 %}
                                         <small class="text-warning">
                                             <i class="bi bi-exclamation-triangle"></i> 
-                                            La licencia vence pronto
+                                            {% translate "La licencia vence pronto" %}
                                         </small>
                                     {% endif %}
                                 </div>
@@ -196,14 +197,14 @@
                         {% elif license.is_expired %}
                             <div class="verification-stamp expired-stamp">
                                 <i class="bi bi-x-circle-fill text-danger display-4"></i>
-                                <h4 class="mt-2 text-danger">LICENCIA EXPIRADA</h4>
-                                <p class="mb-0">Esta licencia ya no es válida</p>
+                                <h4 class="mt-2 text-danger">{% translate "LICENCIA EXPIRADA" %}</h4>
+                                <p class="mb-0">{% translate "Esta licencia ya no es válida" %}</p>
                             </div>
                         {% else %}
                             <div class="verification-stamp expired-stamp">
                                 <i class="bi bi-pause-circle-fill text-warning display-4"></i>
                                 <h4 class="mt-2 text-warning">LICENCIA {{ license.get_status_display|upper }}</h4>
-                                <p class="mb-0">Esta licencia no está activa</p>
+                                <p class="mb-0">{% translate "Esta licencia no está activa" %}</p>
                             </div>
                         {% endif %}
 
@@ -211,13 +212,13 @@
                         <div class="border-top pt-3 mt-3">
                             <small class="text-muted">
                                 <i class="bi bi-info-circle"></i> 
-                                <strong>Verificación realizada el:</strong> 
+                                <strong>{% translate "Verificación realizada el:" %}</strong> 
                                 {{ "now"|date:"d/m/Y H:i" }}
                             </small>
                             <br>
                             <small class="text-muted">
                                 <i class="bi bi-code-square"></i> 
-                                <strong>API JSON disponible en:</strong> 
+                                <strong>{% translate "API JSON disponible en:" %}</strong> 
                                 <code>{{ request.scheme }}://{{ request.get_host }}/api/license/{{ license.public_uuid }}/</code>
                             </small>
                         </div>
@@ -228,10 +229,9 @@
                 <div class="text-center mt-4">
                     <div class="card bg-transparent border-0">
                         <div class="card-body text-white">
-                            <h6><i class="bi bi-shield-check"></i> Verificación Automática</h6>
+                            <h6><i class="bi bi-shield-check"></i> {% translate "Verificación Automática" %}</h6>
                             <p class="mb-0">
-                                Esta información es verificada automáticamente contra nuestra base de datos.
-                                El estado y validez de la licencia se actualiza en tiempo real.
+                                {% translate "Esta información es verificada automáticamente contra nuestra base de datos. El estado y validez de la licencia se actualiza en tiempo real." %}
                             </p>
                         </div>
                     </div>
@@ -243,7 +243,7 @@
     <!-- Footer -->
     <div class="footer">
         <p>&copy; {{ "now"|date:"Y" }} - Sistema de Control de Licencias</p>
-        <small>Verificación pública de licencias de software</small>
+        <small>{% translate "Verificación pública de licencias de software" %}</small>
     </div>
 
     <!-- Bootstrap JS -->

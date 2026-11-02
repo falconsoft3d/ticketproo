@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -11,7 +12,7 @@
             <div class="text-center mb-4">
                 <i class="bi bi-exclamation-triangle-fill text-warning display-1"></i>
                 <h2 class="mt-3">{{ title }}</h2>
-                <p class="text-muted">Esta acción no se puede deshacer</p>
+                <p class="text-muted">{% translate "Esta acción no se puede deshacer" %}</p>
             </div>
 
             <!-- Información del concepto -->
@@ -29,8 +30,8 @@
                     {% endif %}
                     
                     <div class="text-muted small">
-                        <strong>Creado por:</strong> {{ concept.created_by.get_full_name|default:concept.created_by.username }}<br>
-                        <strong>Fecha:</strong> {{ concept.created_at|date:"d/m/Y H:i" }}
+                        <strong>{% translate "Creado por:" %}</strong> {{ concept.created_by.get_full_name|default:concept.created_by.username }}<br>
+                        <strong>{% translate "Fecha:" %}</strong> {{ concept.created_at|date:"d/m/Y H:i" }}
                     </div>
                 </div>
             </div>
@@ -38,16 +39,16 @@
             <!-- Confirmación -->
             <div class="card mt-4">
                 <div class="card-body">
-                    <p><strong>¿Estás seguro de que deseas eliminar este concepto?</strong></p>
+                    <p><strong>{% translate "¿Estás seguro de que deseas eliminar este concepto?" %}</strong></p>
                     <p class="text-muted">Esta acción eliminará permanentemente el concepto "{{ concept.term }}" del sistema.</p>
                     
                     <form method="post" class="d-flex justify-content-between">
                         {% csrf_token %}
                         <a href="{% url 'concept_list' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
+                            <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                         </a>
                         <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-trash"></i> Eliminar Concepto
+                            <i class="bi bi-trash"></i> {% translate "Eliminar Concepto" %}
                         </button>
                     </form>
                 </div>

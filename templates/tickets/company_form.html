@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -16,15 +17,15 @@
                     </h1>
                     <p class="text-muted mb-0">
                         {% if is_create %}
-                            Complete la información para crear una nueva empresa
+                            {% translate "Complete la información para crear una nueva empresa" %}
                         {% else %}
-                            Modifique la información de la empresa
+                            {% translate "Modifique la información de la empresa" %}
                         {% endif %}
                     </p>
                 </div>
                 <a href="{% url 'company_list' %}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-2"></i>
-                    Volver a Lista
+                    {% translate "Volver a Lista" %}
                 </a>
             </div>
 
@@ -33,7 +34,7 @@
                 <div class="card-header bg-light">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-info-circle me-2"></i>
-                        Información de la Empresa
+                        {% translate "Información de la Empresa" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -51,7 +52,7 @@
                                             <span class="text-danger">*</span>
                                         </label>
                                         <button type="button" class="btn btn-outline-primary btn-sm" onclick="searchCompanyInfo()">
-                                            <i class="bi bi-search"></i> Buscar con IA
+                                            <i class="bi bi-search"></i> {% translate "Buscar con IA" %}
                                         </button>
                                     </div>
                                     {{ form.name }}
@@ -148,12 +149,12 @@
                                     <div class="text-danger small mt-1">{{ error }}</div>
                                 {% endfor %}
                             {% endif %}
-                            <small class="text-muted">Objetivos, metas y KPIs estratégicos de la empresa</small>
+                            <small class="text-muted">{% translate "Objetivos, metas y KPIs estratégicos de la empresa" %}</small>
                         </div>
 
                         <!-- Sección de Información Fiscal -->
                         <hr class="my-4">
-                        <h5 class="mb-3"><i class="bi bi-card-list me-2"></i>Información Fiscal</h5>
+                        <h5 class="mb-3"><i class="bi bi-card-list me-2"></i>{% translate "Información Fiscal" %}</h5>
                         
                         <div class="row">
                             <div class="col-md-4">
@@ -228,7 +229,7 @@
 
                         <!-- Sección de Información Bancaria -->
                         <hr class="my-4">
-                        <h5 class="mb-3"><i class="bi bi-bank me-2"></i>Información Bancaria</h5>
+                        <h5 class="mb-3"><i class="bi bi-bank me-2"></i>{% translate "Información Bancaria" %}</h5>
                         
                         <div class="row">
                             <div class="col-md-6">
@@ -302,7 +303,7 @@
 
                         <!-- Sección de Condiciones de Pago y Cotizaciones -->
                         <hr class="my-4">
-                        <h5 class="mb-3"><i class="bi bi-file-text me-2"></i>Condiciones de Pago y Cotizaciones</h5>
+                        <h5 class="mb-3"><i class="bi bi-file-text me-2"></i>{% translate "Condiciones de Pago y Cotizaciones" %}</h5>
                         
                         <div class="mb-3">
                             <label for="{{ form.payment_terms.id_for_label }}" class="form-label fw-bold">
@@ -314,11 +315,11 @@
                                     <div class="text-danger small mt-1">{{ error }}</div>
                                 {% endfor %}
                             {% endif %}
-                            <small class="text-muted">Términos y condiciones de pago que se mostrarán en las cotizaciones (se mostrará en el PDF)</small>
+                            <small class="text-muted">{% translate "Términos y condiciones de pago que se mostrarán en las cotizaciones (se mostrará en el PDF)" %}</small>
                         </div>
 
                         <hr class="my-4">
-                        <h5 class="mb-3"><i class="bi bi-palette me-2"></i>Personalización</h5>
+                        <h5 class="mb-3"><i class="bi bi-palette me-2"></i>{% translate "Personalización" %}</h5>
 
                         <div class="row">
                             <div class="col-md-6">
@@ -329,7 +330,7 @@
                                     </label>
                                     <div class="d-flex align-items-center">
                                         {{ form.color }}
-                                        <small class="text-muted ms-2">Color identificativo de la empresa</small>
+                                        <small class="text-muted ms-2">{% translate "Color identificativo de la empresa" %}</small>
                                     </div>
                                     {% if form.color.errors %}
                                         {% for error in form.color.errors %}
@@ -353,11 +354,11 @@
                                     {% endif %}
                                     {% if form.instance.logo %}
                                         <div class="mt-2">
-                                            <small class="text-muted">Logo actual:</small><br>
+                                            <small class="text-muted">{% translate "Logo actual:" %}</small><br>
                                             <img src="{{ form.instance.logo.url }}" alt="Logo actual" class="img-thumbnail" style="max-height: 60px;">
                                         </div>
                                     {% endif %}
-                                    <small class="text-muted">Formatos aceptados: JPG, PNG, GIF. Tamaño máximo: 2MB</small>
+                                    <small class="text-muted">{% translate "Formatos aceptados: JPG, PNG, GIF. Tamaño máximo: 2MB" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -367,7 +368,7 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">
                                         <i class="bi bi-toggle-on me-1"></i>
-                                        Estado
+                                        {% translate "Estado" %}
                                     </label>
                                     <div class="form-check form-switch">
                                         {{ form.is_active }}
@@ -395,7 +396,7 @@
                                             <div class="text-danger small mt-1">{{ error }}</div>
                                         {% endfor %}
                                     {% endif %}
-                                    <small class="text-muted">Token único para acceso público a estadísticas</small>
+                                    <small class="text-muted">{% translate "Token único para acceso público a estadísticas" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -404,23 +405,23 @@
                         <div class="d-flex justify-content-between pt-3 border-top">
                             <a href="{% url 'company_list' %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-lg me-2"></i>
-                                Cancelar
+                                {% translate "Cancelar" %}
                             </a>
                             
                             <div>
                                 {% if not is_create %}
                                 <a href="{% url 'company_detail' company.id %}" class="btn btn-outline-info me-2">
                                     <i class="bi bi-eye me-2"></i>
-                                    Ver Detalles
+                                    {% translate "Ver Detalles" %}
                                 </a>
                                 {% endif %}
                                 
                                 <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-check-lg me-2"></i>
                                     {% if is_create %}
-                                        Crear Empresa
+                                        {% translate "Crear Empresa" %}
                                     {% else %}
-                                        Guardar Cambios
+                                        {% translate "Guardar Cambios" %}
                                     {% endif %}
                                 </button>
                             </div>
@@ -435,28 +436,28 @@
                 <div class="card-header bg-light">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-info-circle me-2"></i>
-                        Información Adicional
+                        {% translate "Información Adicional" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <p class="mb-1"><strong>Fecha de Creación:</strong></p>
+                            <p class="mb-1"><strong>{% translate "Fecha de Creación:" %}</strong></p>
                             <p class="text-muted">{{ company.created_at|date:"d/m/Y H:i" }}</p>
                         </div>
                         <div class="col-md-6">
-                            <p class="mb-1"><strong>Última Actualización:</strong></p>
+                            <p class="mb-1"><strong>{% translate "Última Actualización:" %}</strong></p>
                             <p class="text-muted">{{ company.updated_at|date:"d/m/Y H:i" }}</p>
                         </div>
                     </div>
                     
                     <div class="row">
                         <div class="col-md-6">
-                            <p class="mb-1"><strong>Total de Tickets:</strong></p>
+                            <p class="mb-1"><strong>{% translate "Total de Tickets:" %}</strong></p>
                             <p class="text-muted">{{ company.get_active_tickets_count }} tickets activos</p>
                         </div>
                         <div class="col-md-6">
-                            <p class="mb-1"><strong>Total de Usuarios:</strong></p>
+                            <p class="mb-1"><strong>{% translate "Total de Usuarios:" %}</strong></p>
                             <p class="text-muted">{{ company.get_users_count }} usuarios asociados</p>
                         </div>
                     </div>
@@ -473,10 +474,10 @@
         <div class="modal-content">
             <div class="modal-body text-center">
                 <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Cargando...</span>
+                    <span class="visually-hidden">{% translate "Cargando..." %}</span>
                 </div>
-                <p class="mt-3 mb-0">Buscando información de la empresa...</p>
-                <small class="text-muted">Esto puede tomar unos segundos</small>
+                <p class="mt-3 mb-0">{% translate "Buscando información de la empresa..." %}</p>
+                <small class="text-muted">{% translate "Esto puede tomar unos segundos" %}</small>
             </div>
         </div>
     </div>
@@ -489,18 +490,18 @@
             <div class="modal-header">
                 <h5 class="modal-title">
                     <i class="bi bi-info-circle text-primary me-2"></i>
-                    Información Encontrada
+                    {% translate "Información Encontrada" %}
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
             </div>
             <div class="modal-body" id="modalResults">
                 <!-- Results will be loaded here -->
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                 <button type="button" class="btn btn-primary" onclick="applyCompanyInfo()">
                     <i class="bi bi-check-lg me-2"></i>
-                    Aplicar Información
+                    {% translate "Aplicar Información" %}
                 </button>
             </div>
         </div>

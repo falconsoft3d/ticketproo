@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -6,11 +7,11 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
                     <a href="{% url 'employee_absence_list' %}">
-                        <i class="bi bi-calendar-x"></i> Ausencias
+                        <i class="bi bi-calendar-x"></i> {% translate "Ausencias" %}
                     </a>
                 </li>
                 <li class="breadcrumb-item active">{{ page_title }}</li>
@@ -28,7 +29,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-form"></i> Información de la Ausencia
+                    <i class="bi bi-form"></i> {% translate "Información de la Ausencia" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -38,10 +39,10 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="employee" class="form-label">
-                                <i class="bi bi-person"></i> Empleado <span class="text-danger">*</span>
+                                <i class="bi bi-person"></i> {% translate "Empleado" %} <span class="text-danger">*</span>
                             </label>
                             <select class="form-select" id="employee" name="employee" required>
-                                <option value="">Selecciona un empleado</option>
+                                <option value="">{% translate "Selecciona un empleado" %}</option>
                                 {% for emp in employees %}
                                 <option value="{{ emp.id }}" {% if absence and absence.employee.id == emp.id %}selected{% endif %}>
                                     {{ emp.get_full_name|default:emp.username }} ({{ emp.username }})
@@ -52,10 +53,10 @@
                         
                         <div class="col-md-6 mb-3">
                             <label for="absence_type" class="form-label">
-                                <i class="bi bi-tag"></i> Tipo de Ausencia <span class="text-danger">*</span>
+                                <i class="bi bi-tag"></i> {% translate "Tipo de Ausencia" %} <span class="text-danger">*</span>
                             </label>
                             <select class="form-select" id="absence_type" name="absence_type" required>
-                                <option value="">Selecciona un tipo</option>
+                                <option value="">{% translate "Selecciona un tipo" %}</option>
                                 {% for type in absence_types %}
                                 <option value="{{ type.id }}" 
                                         data-color="{{ type.color }}"
@@ -63,7 +64,7 @@
                                         data-documentation="{{ type.requires_documentation|yesno:'true,false' }}"
                                         {% if absence and absence.absence_type.id == type.id %}selected{% endif %}>
                                     {{ type.name }}
-                                    {% if not type.is_paid %} (Sin goce de sueldo){% endif %}
+                                    {% if not type.is_paid %} {% translate "(Sin goce de sueldo)" %}{% endif %}
                                 </option>
                                 {% endfor %}
                             </select>
@@ -74,7 +75,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="start_date" class="form-label">
-                                <i class="bi bi-calendar-event"></i> Fecha de Inicio <span class="text-danger">*</span>
+                                <i class="bi bi-calendar-event"></i> {% translate "Fecha de Inicio" %} <span class="text-danger">*</span>
                             </label>
                             <input type="date" 
                                    class="form-control" 
@@ -86,7 +87,7 @@
                         
                         <div class="col-md-6 mb-3">
                             <label for="end_date" class="form-label">
-                                <i class="bi bi-calendar-event"></i> Fecha de Fin <span class="text-danger">*</span>
+                                <i class="bi bi-calendar-event"></i> {% translate "Fecha de Fin" %} <span class="text-danger">*</span>
                             </label>
                             <input type="date" 
                                    class="form-control" 
@@ -103,7 +104,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="lost_hours" class="form-label">
-                                <i class="bi bi-clock-history"></i> Horas Perdidas
+                                <i class="bi bi-clock-history"></i> {% translate "Horas Perdidas" %}
                             </label>
                             <input type="number" 
                                    class="form-control" 
@@ -115,23 +116,23 @@
                                    value="{% if absence %}{{ absence.lost_hours|floatformat:1 }}{% else %}0{% endif %}"
                                    placeholder="0.0">
                             <div class="form-text">
-                                Total de horas laborales perdidas por la ausencia. 
+                                {% translate "Total de horas laborales perdidas por la ausencia." %} 
                                 <button type="button" class="btn btn-link btn-sm p-0" id="calculate-hours">
-                                    Calcular automáticamente
+                                    {% translate "Calcular automáticamente" %}
                                 </button>
                             </div>
                         </div>
                         
                         <div class="col-md-6 mb-3">
                             <label class="form-label">
-                                <i class="bi bi-calculator"></i> Cálculo Sugerido
+                                <i class="bi bi-calculator"></i> {% translate "Cálculo Sugerido" %}
                             </label>
                             <div class="card bg-light">
                                 <div class="card-body p-2">
                                     <small>
-                                        <div>Días: <span id="calculated-days">-</span></div>
-                                        <div>Horas/día: <span id="hours-per-day">8</span></div>
-                                        <div><strong>Total: <span id="calculated-hours">-</span> horas</strong></div>
+                                        <div>{% translate "Días:" %} <span id="calculated-days">-</span></div>
+                                        <div>{% translate "Horas/día:" %} <span id="hours-per-day">8</span></div>
+                                        <div><strong>{% translate "Total:" %} <span id="calculated-hours">-</span> {% translate "horas" %}</strong></div>
                                     </small>
                                 </div>
                             </div>
@@ -140,7 +141,7 @@
                     
                     <div class="mb-3">
                         <label for="reason" class="form-label">
-                            <i class="bi bi-chat-text"></i> Motivo de la Ausencia <span class="text-danger">*</span>
+                            <i class="bi bi-chat-text"></i> {% translate "Motivo de la Ausencia" %} <span class="text-danger">*</span>
                         </label>
                         <textarea class="form-control" 
                                   id="reason" 
@@ -152,7 +153,7 @@
                     
                     <div class="mb-4" id="documentation-field" style="display: none;">
                         <label for="documentation_file" class="form-label">
-                            <i class="bi bi-file-earmark-arrow-up"></i> Documentación de Respaldo
+                            <i class="bi bi-file-earmark-arrow-up"></i> {% translate "Documentación de Respaldo" %}
                         </label>
                         <input type="file" 
                                class="form-control" 
@@ -161,26 +162,26 @@
                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
                         {% if absence and absence.documentation_file %}
                         <div class="form-text">
-                            Archivo actual: 
+                            {% translate "Archivo actual:" %} 
                             <a href="{{ absence.documentation_file.url }}" target="_blank">
                                 {{ absence.documentation_file.name }}
                             </a>
                         </div>
                         {% endif %}
-                        <div class="form-text">Formatos permitidos: PDF, imágenes, documentos de Word</div>
+                        <div class="form-text">{% translate "Formatos permitidos: PDF, imágenes, documentos de Word" %}</div>
                     </div>
                     
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-circle"></i> 
-                            {% if absence %}Actualizar Ausencia{% else %}Registrar Ausencia{% endif %}
+                            {% if absence %}{% translate "Actualizar Ausencia" %}{% else %}{% translate "Registrar Ausencia" %}{% endif %}
                         </button>
                         <a href="{% url 'employee_absence_list' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Volver
+                            <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                         </a>
                         {% if absence %}
                         <a href="{% url 'employee_absence_detail' absence.pk %}" class="btn btn-outline-info">
-                            <i class="bi bi-eye"></i> Ver Detalle
+                            <i class="bi bi-eye"></i> {% translate "Ver Detalle" %}
                         </a>
                         {% endif %}
                     </div>
@@ -193,22 +194,22 @@
         <div class="card">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-info-circle"></i> Información
+                    <i class="bi bi-info-circle"></i> {% translate "Información" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="small">
-                    <h6 class="text-primary">Tipos de Ausencias:</h6>
+                    <h6 class="text-primary">{% translate "Tipos de Ausencias:" %}</h6>
                     {% for type in absence_types %}
                     <div class="mb-2">
                         <span class="badge" style="background-color: {{ type.color }}; color: white;">
                             {{ type.name }}
                         </span>
                         {% if not type.is_paid %}
-                        <small class="text-warning">(Sin goce)</small>
+                        <small class="text-warning">{% translate "(Sin goce)" %}</small>
                         {% endif %}
                         {% if type.requires_documentation %}
-                        <small class="text-info">(Requiere doc.)</small>
+                        <small class="text-info">{% translate "(Requiere doc.)" %}</small>
                         {% endif %}
                         {% if type.max_days_per_year %}
                         <small class="text-muted">(Max: {{ type.max_days_per_year }} días/año)</small>
@@ -223,26 +224,26 @@
         <div class="card mt-3">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-clock-history"></i> Historial
+                    <i class="bi bi-clock-history"></i> {% translate "Historial" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="small">
                     <div class="mb-2">
-                        <strong>Creada:</strong> {{ absence.created_at|date:"d/m/Y H:i" }}
+                        <strong>{% translate "Creada:" %}</strong> {{ absence.created_at|date:"d/m/Y H:i" }}
                     </div>
                     <div class="mb-2">
-                        <strong>Estado:</strong> 
+                        <strong>{% translate "Estado:" %}</strong> 
                         <span class="badge bg-{{ absence.get_status_display_class }}">
                             {{ absence.get_status_display }}
                         </span>
                     </div>
                     {% if absence.approved_by %}
                     <div class="mb-2">
-                        <strong>Gestionada por:</strong> {{ absence.approved_by.get_full_name|default:absence.approved_by.username }}
+                        <strong>{% translate "Gestionada por:" %}</strong> {{ absence.approved_by.get_full_name|default:absence.approved_by.username }}
                     </div>
                     <div class="mb-2">
-                        <strong>Fecha:</strong> {{ absence.approved_at|date:"d/m/Y H:i" }}
+                        <strong>{% translate "Fecha:" %}</strong> {{ absence.approved_at|date:"d/m/Y H:i" }}
                     </div>
                     {% endif %}
                 </div>

@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% block title %}Importar Datos - {{ table.name }}{% endblock %}
 {% block content %}
 <div class="container mt-5">
@@ -6,7 +7,7 @@
         <div class="col-lg-8">
             <!-- Header -->
             <div class="text-center mb-4">
-                <h2><i class="bi bi-upload"></i> Importar Datos</h2>
+                <h2><i class="bi bi-upload"></i> {% translate "Importar Datos" %}</h2>
                 <p class="text-muted">{{ table.name }} - {{ table.odoo_model }}</p>
                 {% if expires_at %}
                 <small class="text-warning">
@@ -19,7 +20,7 @@
             {% if requires_password %}
             <div class="card mb-4">
                 <div class="card-header bg-warning text-white">
-                    <h5 class="mb-0"><i class="bi bi-lock"></i> Acceso Protegido</h5>
+                    <h5 class="mb-0"><i class="bi bi-lock"></i> {% translate "Acceso Protegido" %}</h5>
                 </div>
                 <div class="card-body">
                     {% if error %}
@@ -31,12 +32,12 @@
                     <form method="post">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <label for="password" class="form-label">Contraseña</label>
+                            <label for="password" class="form-label">{% translate "Contraseña" %}</label>
                             <input type="password" class="form-control" id="password" name="password" required autofocus>
-                            <small class="form-text text-muted">Ingresa la contraseña proporcionada por el administrador</small>
+                            <small class="form-text text-muted">{% translate "Ingresa la contraseña proporcionada por el administrador" %}</small>
                         </div>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-unlock"></i> Acceder
+                            <i class="bi bi-unlock"></i> {% translate "Acceder" %}
                         </button>
                     </form>
                 </div>
@@ -51,13 +52,13 @@
             </div>
             {% if errors %}
             <div class="alert alert-warning">
-                <h6><i class="bi bi-exclamation-triangle"></i> Errores encontrados:</h6>
+                <h6><i class="bi bi-exclamation-triangle"></i> {% translate "Errores encontrados:" %}</h6>
                 <ul class="mb-0">
                     {% for error in errors %}
                     <li>{{ error }}</li>
                     {% endfor %}
                     {% if errors|length == 10 %}
-                    <li class="text-muted">... y posiblemente más</li>
+                    <li class="text-muted">{% translate "... y posiblemente más" %}</li>
                     {% endif %}
                 </ul>
             </div>
@@ -73,20 +74,20 @@
             <!-- Información de Campos -->
             <div class="card mb-4">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0"><i class="bi bi-table"></i> Formato de Importación</h5>
+                    <h5 class="mb-0"><i class="bi bi-table"></i> {% translate "Formato de Importación" %}</h5>
                 </div>
                 <div class="card-body">
-                    <p>La plantilla debe contener los siguientes campos en este orden:</p>
+                    <p>{% translate "La plantilla debe contener los siguientes campos en este orden:" %}</p>
                     
                     <div class="table-responsive">
                         <table class="table table-sm table-bordered">
                             <thead class="table-dark">
                                 <tr>
                                     <th>#</th>
-                                    <th>Campo</th>
-                                    <th>Campo Odoo</th>
-                                    <th>Tipo</th>
-                                    <th>Requerido</th>
+                                    <th>{% translate "Campo" %}</th>
+                                    <th>{% translate "Campo Odoo" %}</th>
+                                    <th>{% translate "Tipo" %}</th>
+                                    <th>{% translate "Requerido" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -100,9 +101,9 @@
                                     </td>
                                     <td>
                                         {% if field.required %}
-                                        <span class="badge bg-danger">Sí</span>
+                                        <span class="badge bg-danger">{% translate "Sí" %}</span>
                                         {% else %}
-                                        <span class="badge bg-success">No</span>
+                                        <span class="badge bg-success">{% translate "No" %}</span>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -112,17 +113,17 @@
                     </div>
 
                     <div class="alert alert-light mt-3">
-                        <h6><i class="bi bi-lightbulb"></i> Consejos:</h6>
+                        <h6><i class="bi bi-lightbulb"></i> {% translate "Consejos:" %}</h6>
                         <ul class="mb-0">
-                            <li>Descarga primero la plantilla vacía para tener el formato correcto</li>
-                            <li>No modifiques los encabezados de las columnas</li>
-                            <li>Completa todos los campos marcados como "Requeridos"</li>
-                            <li>Los datos comienzan en la fila 4 (después de los encabezados técnicos)</li>
+                            <li>{% translate "Descarga primero la plantilla vacía para tener el formato correcto" %}</li>
+                            <li>{% translate "No modifiques los encabezados de las columnas" %}</li>
+                            <li>{% translate 'Completa todos los campos marcados como "Requeridos"' %}</li>
+                            <li>{% translate "Los datos comienzan en la fila 4 (después de los encabezados técnicos)" %}</li>
                         </ul>
                     </div>
 
                     <a href="{% url 'odoo_rpc_table_export_template' table.id %}" class="btn btn-success" target="_blank">
-                        <i class="bi bi-download"></i> Descargar Plantilla Excel
+                        <i class="bi bi-download"></i> {% translate "Descargar Plantilla Excel" %}
                     </a>
                 </div>
             </div>
@@ -130,31 +131,30 @@
             <!-- Formulario de Importación -->
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-file-earmark-arrow-up"></i> Subir Archivo</h5>
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-arrow-up"></i> {% translate "Subir Archivo" %}</h5>
                 </div>
                 <div class="card-body">
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         
                         <div class="mb-3">
-                            <label for="excel_file" class="form-label">Archivo Excel (.xlsx)</label>
+                            <label for="excel_file" class="form-label">{% translate "Archivo Excel (.xlsx)" %}</label>
                             <input type="file" class="form-control" id="excel_file" name="excel_file" accept=".xlsx,.xls" required>
                             <small class="form-text text-muted">
-                                Selecciona el archivo Excel con los datos a importar
+                                {% translate "Selecciona el archivo Excel con los datos a importar" %}
                             </small>
                         </div>
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-upload"></i> Importar Datos
+                                <i class="bi bi-upload"></i> {% translate "Importar Datos" %}
                             </button>
                         </div>
                     </form>
 
                     <div class="alert alert-warning mt-3">
-                        <i class="bi bi-info-circle"></i> <strong>Importante:</strong>
-                        Los datos que importes quedarán pendientes de revisión. El administrador 
-                        deberá aprobar y enviar los datos a Odoo.
+                        <i class="bi bi-info-circle"></i> <strong>{% translate "Importante:" %}</strong>
+                        {% translate "Los datos que importes quedarán pendientes de revisión. El administrador deberá aprobar y enviar los datos a Odoo." %}
                     </div>
                 </div>
             </div>
@@ -164,8 +164,7 @@
             <!-- Footer -->
             <div class="text-center mt-4 text-muted">
                 <small>
-                    <i class="bi bi-shield-check"></i> Conexión segura | 
-                    Powered by Ticket System
+                    <i class="bi bi-shield-check"></i> {% translate "Conexión segura | Powered by Ticket System" %}
                 </small>
             </div>
         </div>

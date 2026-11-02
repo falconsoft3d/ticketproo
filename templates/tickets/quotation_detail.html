@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 {% csrf_token %}
@@ -16,13 +17,13 @@
                             <i class="bi bi-file-earmark-text text-primary"></i>
                             {{ quotation.sequence }}
                         </h1>
-                        <p class="text-muted mb-0">Detalles de la cotización</p>
+                        <p class="text-muted mb-0">{% translate "Detalles de la cotización" %}</p>
                     </div>
                 </div>
                 <div class="btn-group">
                     <a href="{% url 'quotation_edit' quotation.id %}" class="btn btn-primary">
                         <i class="bi bi-pencil"></i>
-                        Editar
+                        {% translate "Editar" %}
                     </a>
                     <a href="{% url 'quotation_pdf' quotation.id %}" class="btn btn-outline-danger" target="_blank">
                         <i class="bi bi-file-earmark-pdf"></i>
@@ -30,30 +31,30 @@
                     </a>
                     <button type="button" class="btn btn-outline-info" onclick="shareQuotation({{ quotation.id }})">
                         <i class="bi bi-share"></i>
-                        Compartir
+                        {% translate "Compartir" %}
                     </button>
                     <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" 
                             data-bs-toggle="dropdown">
-                        <span class="visually-hidden">Toggle Dropdown</span>
+                        <span class="visually-hidden">{% translate "Toggle Dropdown" %}</span>
                     </button>
                     <ul class="dropdown-menu">
                         <li>
                             <a class="dropdown-item" href="{% url 'quotation_duplicate' quotation.id %}">
                                 <i class="bi bi-files text-info"></i>
-                                Duplicar Cotización
+                                {% translate "Duplicar Cotización" %}
                             </a>
                         </li>
                         <li>
                             <a class="dropdown-item" href="{% url 'quotation_template_create' quotation.id %}">
                                 <i class="bi bi-share text-success"></i>
-                                Crear Plantilla Pública
+                                {% translate "Crear Plantilla Pública" %}
                             </a>
                         </li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <a class="dropdown-item" href="{% url 'quotation_delete' quotation.id %}">
                                 <i class="bi bi-trash text-danger"></i>
-                                Eliminar
+                                {% translate "Eliminar" %}
                             </a>
                         </li>
                     </ul>
@@ -67,28 +68,28 @@
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0">
                                 <i class="bi bi-info-circle"></i>
-                                Información Principal
+                                {% translate "Información Principal" %}
                             </h5>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label text-muted">Secuencia</label>
+                                    <label class="form-label text-muted">{% translate "Secuencia" %}</label>
                                     <div class="fw-bold fs-5 text-primary">{{ quotation.sequence }}</div>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label text-muted">Estado Interno</label>
+                                    <label class="form-label text-muted">{% translate "Estado Interno" %}</label>
                                     <div>
                                         {% if quotation.status == 'draft' %}
-                                            <span class="badge bg-secondary fs-6">Borrador</span>
+                                            <span class="badge bg-secondary fs-6">{% translate "Borrador" %}</span>
                                         {% elif quotation.status == 'sent' %}
-                                            <span class="badge bg-primary fs-6">Enviada</span>
+                                            <span class="badge bg-primary fs-6">{% translate "Enviada" %}</span>
                                         {% elif quotation.status == 'approved' %}
-                                            <span class="badge bg-success fs-6">Aprobada</span>
+                                            <span class="badge bg-success fs-6">{% translate "Aprobada" %}</span>
                                         {% elif quotation.status == 'rejected' %}
-                                            <span class="badge bg-danger fs-6">Rechazada</span>
+                                            <span class="badge bg-danger fs-6">{% translate "Rechazada" %}</span>
                                         {% elif quotation.status == 'expired' %}
-                                            <span class="badge bg-warning fs-6">Expirada</span>
+                                            <span class="badge bg-warning fs-6">{% translate "Expirada" %}</span>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -96,14 +97,14 @@
 
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label text-muted">Estado del Cliente</label>
+                                    <label class="form-label text-muted">{% translate "Estado del Cliente" %}</label>
                                     <div>
                                         {% if quotation.client_status == 'pending' %}
-                                            <span class="badge bg-warning fs-6">Pendiente de Respuesta</span>
+                                            <span class="badge bg-warning fs-6">{% translate "Pendiente de Respuesta" %}</span>
                                         {% elif quotation.client_status == 'accepted' %}
-                                            <span class="badge bg-success fs-6">Aceptada por Cliente</span>
+                                            <span class="badge bg-success fs-6">{% translate "Aceptada por Cliente" %}</span>
                                         {% elif quotation.client_status == 'rejected' %}
-                                            <span class="badge bg-danger fs-6">Rechazada por Cliente</span>
+                                            <span class="badge bg-danger fs-6">{% translate "Rechazada por Cliente" %}</span>
                                         {% endif %}
                                     </div>
                                     {% if quotation.client_response_name %}
@@ -117,7 +118,7 @@
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     {% if quotation.client_response_comments %}
-                                        <label class="form-label text-muted">Comentarios del Cliente</label>
+                                        <label class="form-label text-muted">{% translate "Comentarios del Cliente" %}</label>
                                         <div class="border p-2 rounded bg-light">
                                             <small>{{ quotation.client_response_comments }}</small>
                                         </div>
@@ -129,7 +130,7 @@
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label text-muted">
                                         <i class="bi bi-building"></i>
-                                        Empresa
+                                        {% translate "Empresa" %}
                                     </label>
                                     <div class="fw-bold">{{ quotation.company.name }}</div>
                                     {% if quotation.company.address %}
@@ -139,7 +140,7 @@
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label text-muted">
                                         <i class="bi bi-person"></i>
-                                        Vendedor
+                                        {% translate "Vendedor" %}
                                     </label>
                                     <div class="fw-bold">{{ quotation.salesperson.get_full_name|default:quotation.salesperson.username }}</div>
                                     <small class="text-muted">{{ quotation.salesperson.email }}</small>
@@ -150,14 +151,14 @@
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label text-muted">
                                         <i class="bi bi-calendar"></i>
-                                        Fecha
+                                        {% translate "Fecha" %}
                                     </label>
                                     <div class="fw-bold">{{ quotation.date|date:"d/m/Y" }}</div>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label text-muted">
                                         <i class="bi bi-hourglass-split"></i>
-                                        Fecha de Vencimiento
+                                        {% translate "Fecha de Vencimiento" %}
                                     </label>
                                     {% if quotation.expiry_date %}
                                         <div class="fw-bold">{{ quotation.expiry_date|date:"d/m/Y" }}</div>
@@ -165,13 +166,13 @@
                                             {{ quotation.get_expiry_status_display }}
                                         </small>
                                     {% else %}
-                                        <div class="text-muted">No establecida</div>
+                                        <div class="text-muted">{% translate "No establecida" %}</div>
                                     {% endif %}
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label text-muted">
                                         <i class="bi bi-clock"></i>
-                                        Creada
+                                        {% translate "Creada" %}
                                     </label>
                                     <div class="fw-bold">{{ quotation.created_at|date:"d/m/Y H:i" }}</div>
                                 </div>
@@ -181,7 +182,7 @@
                             <div class="mb-3">
                                 <label class="form-label text-muted">
                                     <i class="bi bi-text-paragraph"></i>
-                                    Descripción
+                                    {% translate "Descripción" %}
                                 </label>
                                 <div class="bg-light p-3 rounded">
                                     {{ quotation.description|linebreaks }}
@@ -197,7 +198,7 @@
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0">
                                 <i class="bi bi-list-ul"></i>
-                                Líneas de la Cotización
+                                {% translate "Líneas de la Cotización" %}
                             </h5>
                         </div>
                         <div class="card-body p-0">
@@ -205,13 +206,13 @@
                                 <table class="table table-hover mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>Producto</th>
-                                            <th>Descripción</th>
-                                            <th class="text-center">Cantidad</th>
-                                            <th class="text-end">Precio Unit.</th>
-                                            <th class="text-center">Descuento</th>
-                                            <th class="text-end">Subtotal</th>
-                                            <th class="text-end">Total</th>
+                                            <th>{% translate "Producto" %}</th>
+                                            <th>{% translate "Descripción" %}</th>
+                                            <th class="text-center">{% translate "Cantidad" %}</th>
+                                            <th class="text-end">{% translate "Precio Unit." %}</th>
+                                            <th class="text-center">{% translate "Descuento" %}</th>
+                                            <th class="text-end">{% translate "Subtotal" %}</th>
+                                            <th class="text-end">{% translate "Total" %}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -225,7 +226,7 @@
                                                 {% if line.description %}
                                                     <span class="text-dark">{{ line.description }}</span>
                                                 {% else %}
-                                                    <em class="text-muted">Sin descripción adicional</em>
+                                                    <em class="text-muted">{% translate "Sin descripción adicional" %}</em>
                                                 {% endif %}
                                             </td>
                                             <td class="text-center">{{ line.quantity }}</td>
@@ -246,7 +247,7 @@
                                     </tbody>
                                     <tfoot class="table-light">
                                         <tr>
-                                            <th colspan="6" class="text-end">Total General:</th>
+                                            <th colspan="6" class="text-end">{% translate "Total General:" %}</th>
                                             <th class="text-end">
                                                 <span class="fs-5 fw-bold text-primary">{{ currency_symbol }}{{ quotation.get_total_amount|floatformat:2 }}</span>
                                             </th>
@@ -269,7 +270,7 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="bi bi-lightning"></i>
-                                Acciones Rápidas
+                                {% translate "Acciones Rápidas" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -284,7 +285,7 @@
                                     <input type="hidden" name="description" value="{{ quotation.description }}">
                                     <button type="submit" class="btn btn-primary w-100">
                                         <i class="bi bi-send"></i>
-                                        Marcar como Enviada
+                                        {% translate "Marcar como Enviada" %}
                                     </button>
                                 </form>
                                 {% elif quotation.status == 'sent' %}
@@ -297,7 +298,7 @@
                                     <input type="hidden" name="description" value="{{ quotation.description }}">
                                     <button type="submit" class="btn btn-success w-100 mb-2">
                                         <i class="bi bi-check-circle"></i>
-                                        Marcar como Aprobada
+                                        {% translate "Marcar como Aprobada" %}
                                     </button>
                                 </form>
                                 <form method="post" action="{% url 'quotation_edit' quotation.id %}" class="d-inline">
@@ -309,7 +310,7 @@
                                     <input type="hidden" name="description" value="{{ quotation.description }}">
                                     <button type="submit" class="btn btn-danger w-100">
                                         <i class="bi bi-x-circle"></i>
-                                        Marcar como Rechazada
+                                        {% translate "Marcar como Rechazada" %}
                                     </button>
                                 </form>
                                 {% endif %}
@@ -323,14 +324,14 @@
                         <div class="card-header bg-primary text-white">
                             <h6 class="mb-0">
                                 <i class="bi bi-calculator"></i>
-                                Resumen Financiero
+                                {% translate "Resumen Financiero" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             {% with total_lines=quotation.lines.count total_quantity=quotation.lines.aggregate.total_quantity.quantity__sum|default:0 %}
                             <div class="row mb-2">
                                 <div class="col-8">
-                                    <span class="text-muted">Líneas de productos:</span>
+                                    <span class="text-muted">{% translate "Líneas de productos:" %}</span>
                                 </div>
                                 <div class="col-4 text-end">
                                     <span class="fw-bold">{{ total_lines }}</span>
@@ -339,7 +340,7 @@
                             
                             <div class="row mb-2">
                                 <div class="col-8">
-                                    <span class="text-muted">Cantidad total:</span>
+                                    <span class="text-muted">{% translate "Cantidad total:" %}</span>
                                 </div>
                                 <div class="col-4 text-end">
                                     <span class="fw-bold">{{ quotation.lines.all|length }}</span>
@@ -351,7 +352,7 @@
                             
                             <div class="row mb-3">
                                 <div class="col-8">
-                                    <span class="text-muted">Total General:</span>
+                                    <span class="text-muted">{% translate "Total General:" %}</span>
                                 </div>
                                 <div class="col-4 text-end">
                                     <span class="fs-4 fw-bold text-primary">{{ currency_symbol }}{{ quotation.get_total_amount|floatformat:2 }}</span>
@@ -361,7 +362,7 @@
                             <div class="text-center">
                                 <small class="text-muted">
                                     <i class="bi bi-info-circle"></i>
-                                    Incluye descuentos aplicados
+                                    {% translate "Incluye descuentos aplicados" %}
                                 </small>
                             </div>
                         </div>
@@ -373,20 +374,20 @@
                         <div class="card-header bg-info text-white">
                             <h6 class="mb-0">
                                 <i class="bi bi-eye"></i>
-                                Estadísticas de Visitas
+                                {% translate "Estadísticas de Visitas" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <div class="row mb-3">
                                 <div class="col-12 text-center">
                                     <h3 class="fw-bold text-info mb-0">{{ total_views }}</h3>
-                                    <small class="text-muted">Visitas Totales</small>
+                                    <small class="text-muted">{% translate "Visitas Totales" %}</small>
                                 </div>
                             </div>
                             
                             {% if views_by_country %}
                             <hr>
-                            <h6 class="mb-3">Visitas por País:</h6>
+                            <h6 class="mb-3">{% translate "Visitas por País:" %}</h6>
                             <div class="list-group list-group-flush">
                                 {% for view in views_by_country %}
                                 <div class="list-group-item d-flex justify-content-between align-items-center px-0">
@@ -406,13 +407,13 @@
                             {% else %}
                             <p class="text-muted text-center mb-0">
                                 <i class="bi bi-info-circle"></i>
-                                Sin visitas aún
+                                {% translate "Sin visitas aún" %}
                             </p>
                             {% endif %}
                             
                             {% if recent_views %}
                             <hr>
-                            <h6 class="mb-2">Últimas Visitas:</h6>
+                            <h6 class="mb-2">{% translate "Últimas Visitas:" %}</h6>
                             <div class="small">
                                 {% for view in recent_views|slice:":5" %}
                                 <div class="d-flex justify-content-between align-items-start mb-2">
@@ -440,7 +441,7 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="bi bi-building"></i>
-                                Información de la Empresa
+                                {% translate "Información de la Empresa" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -470,7 +471,7 @@
                             <div class="mt-3">
                                 <a href="{% url 'company_detail' quotation.company.id %}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-eye"></i>
-                                    Ver Empresa
+                                    {% translate "Ver Empresa" %}
                                 </a>
                             </div>
                         </div>
@@ -488,39 +489,39 @@
             <div class="modal-header">
                 <h5 class="modal-title">
                     <i class="bi bi-share"></i>
-                    Compartir Cotización
+                    {% translate "Compartir Cotización" %}
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted">Comparta esta cotización con su cliente usando el enlace público:</p>
+                <p class="text-muted">{% translate "Comparta esta cotización con su cliente usando el enlace público:" %}</p>
                 
                 <div class="mb-3">
-                    <label for="publicUrl" class="form-label">Enlace Público:</label>
+                    <label for="publicUrl" class="form-label">{% translate "Enlace Público:" %}</label>
                     <div class="input-group">
                         <input type="text" class="form-control" id="publicUrl" readonly>
                         <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard()">
                             <i class="bi bi-clipboard"></i>
-                            Copiar
+                            {% translate "Copiar" %}
                         </button>
                     </div>
                 </div>
                 
                 <div class="alert alert-info">
-                    <h6><i class="bi bi-info-circle"></i> Información importante:</h6>
+                    <h6><i class="bi bi-info-circle"></i> {% translate "Información importante:" %}</h6>
                     <ul class="mb-0 small">
-                        <li>Su cliente podrá ver la cotización sin necesidad de registro</li>
-                        <li>Podrá aceptar o rechazar la cotización directamente desde el enlace</li>
-                        <li>Recibirá una notificación cuando el cliente responda</li>
-                        <li>El enlace será válido mientras la cotización esté activa</li>
+                        <li>{% translate "Su cliente podrá ver la cotización sin necesidad de registro" %}</li>
+                        <li>{% translate "Podrá aceptar o rechazar la cotización directamente desde el enlace" %}</li>
+                        <li>{% translate "Recibirá una notificación cuando el cliente responda" %}</li>
+                        <li>{% translate "El enlace será válido mientras la cotización esté activa" %}</li>
                     </ul>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cerrar" %}</button>
                 <a href="#" id="openPublicUrl" class="btn btn-primary" target="_blank">
                     <i class="bi bi-eye"></i>
-                    Ver Vista Pública
+                    {% translate "Ver Vista Pública" %}
                 </a>
             </div>
         </div>

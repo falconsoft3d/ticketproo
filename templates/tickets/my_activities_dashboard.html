@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -77,22 +78,22 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h1 class="h3 mb-0 text-primary">
-                    <i class="fas fa-tasks"></i> Mis Actividades
+                    <i class="fas fa-tasks"></i> {% translate "Mis Actividades" %}
                 </h1>
-                <p class="text-muted mb-0">Panel de seguimiento de actividades asignadas</p>
+                <p class="text-muted mb-0">{% translate "Panel de seguimiento de actividades asignadas" %}</p>
             </div>
             <div class="text-end">
                 <!-- Botones de vista -->
-                <div class="btn-group me-2" role="group" aria-label="Vista de actividades">
+                <div class="btn-group me-2" role="group" aria-label="{% translate 'Vista de actividades' %}">
                     <button type="button" class="btn btn-outline-primary active" id="listViewBtn">
-                        <i class="fas fa-list"></i> Lista
+                        <i class="fas fa-list"></i> {% translate "Lista" %}
                     </button>
                     <button type="button" class="btn btn-outline-primary" id="calendarViewBtn">
-                        <i class="fas fa-calendar"></i> Calendario
+                        <i class="fas fa-calendar"></i> {% translate "Calendario" %}
                     </button>
                 </div>
                 <a href="{% url 'activity_create_standalone' %}" class="btn btn-success me-2">
-                    <i class="fas fa-plus"></i> Nueva Actividad
+                    <i class="fas fa-plus"></i> {% translate "Nueva Actividad" %}
                 </a>
                 <span class="badge bg-info fs-6">CRM</span>
             </div>
@@ -106,7 +107,7 @@
         <div class="card bg-warning text-white">
             <div class="card-body text-center">
                 <h4 class="mb-1">{{ stats.total_pending }}</h4>
-                <small>Pendientes</small>
+                <small>{% translate "Pendientes" %}</small>
             </div>
         </div>
     </div>
@@ -114,7 +115,7 @@
         <div class="card bg-info text-white">
             <div class="card-body text-center">
                 <h4 class="mb-1">{{ stats.total_in_progress }}</h4>
-                <small>En Progreso</small>
+                <small>{% translate "En Progreso" %}</small>
             </div>
         </div>
     </div>
@@ -122,7 +123,7 @@
         <div class="card bg-danger text-white">
             <div class="card-body text-center">
                 <h4 class="mb-1">{{ stats.total_overdue }}</h4>
-                <small>Vencidas</small>
+                <small>{% translate "Vencidas" %}</small>
             </div>
         </div>
     </div>
@@ -130,7 +131,7 @@
         <div class="card bg-primary text-white">
             <div class="card-body text-center">
                 <h4 class="mb-1">{{ stats.total_today }}</h4>
-                <small>Para Hoy</small>
+                <small>{% translate "Para Hoy" %}</small>
             </div>
         </div>
     </div>
@@ -138,7 +139,7 @@
         <div class="card bg-success text-white">
             <div class="card-body text-center">
                 <h4 class="mb-1">{{ stats.total_completed_week }}</h4>
-                <small>Completadas (7 días)</small>
+                <small>{% translate "Completadas (7 días)" %}</small>
             </div>
         </div>
     </div>
@@ -152,7 +153,7 @@
                 <div class="card-header bg-primary text-white">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
-                            <i class="fas fa-calendar"></i> Calendario de Actividades
+                            <i class="fas fa-calendar"></i> {% translate "Calendario de Actividades" %}
                         </h5>
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" class="btn btn-light" id="prevMonth">
@@ -172,9 +173,9 @@
                         <!-- Contenido del calendario se generará aquí -->
                         <div class="p-4 text-center">
                             <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Cargando calendario...</span>
+                                <span class="visually-hidden">{% translate "Cargando calendario..." %}</span>
                             </div>
-                            <p class="mt-3 text-muted">Cargando calendario de actividades...</p>
+                            <p class="mt-3 text-muted">{% translate "Cargando calendario de actividades..." %}</p>
                         </div>
                     </div>
                 </div>
@@ -193,7 +194,7 @@
             <div class="card-header bg-info text-white">
                 <h5 class="mb-0">
                     <i class="fas fa-calendar-alt"></i> 
-                    Próximas Actividades
+                    {% translate "Próximas Actividades" %}
                 </h5>
             </div>
             <div class="card-body p-0">
@@ -213,7 +214,7 @@
                                     {% elif activity.contact %}
                                         <i class="fas fa-user-tie me-1"></i>{{ activity.contact.name }}
                                     {% else %}
-                                        <i class="fas fa-tasks me-1"></i><em>Actividad independiente</em>
+                                        <i class="fas fa-tasks me-1"></i><em>{% translate "Actividad independiente" %}</em>
                                     {% endif %}
                                 </p>
                                 <div class="d-flex align-items-center">
@@ -224,7 +225,7 @@
                                         {{ activity.scheduled_date|date:"d/m/Y H:i" }}
                                         {% if activity.is_due_soon %}
                                             <span class="text-warning">
-                                                <i class="fas fa-exclamation-circle"></i> Próxima
+                                                <i class="fas fa-exclamation-circle"></i> {% translate "Próxima" %}
                                             </span>
                                         {% endif %}
                                     </small>
@@ -236,15 +237,15 @@
                                 </button>
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" href="{% url 'opportunity_activity_detail' activity.pk %}">
-                                        <i class="fas fa-eye"></i> Ver Detalles
+                                        <i class="fas fa-eye"></i> {% translate "Ver Detalles" %}
                                     </a></li>
                                     <li><a class="dropdown-item" href="{% url 'opportunity_activity_edit' activity.pk %}">
-                                        <i class="fas fa-edit"></i> Editar
+                                        <i class="fas fa-edit"></i> {% translate "Editar" %}
                                     </a></li>
                                     {% if activity.opportunity %}
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{% url 'opportunity_detail' activity.opportunity.pk %}">
-                                        <i class="fas fa-bullseye"></i> Ver Oportunidad
+                                        <i class="fas fa-bullseye"></i> {% translate "Ver Oportunidad" %}
                                     </a></li>
                                     {% endif %}
                                 </ul>
@@ -255,7 +256,7 @@
                 {% else %}
                     <div class="p-4 text-center text-muted">
                         <i class="fas fa-calendar-times fa-3x mb-3"></i>
-                        <p>No tienes actividades próximas programadas</p>
+                        <p>{% translate "No tienes actividades próximas programadas" %}</p>
                     </div>
                 {% endif %}
             </div>
@@ -268,7 +269,7 @@
             <div class="card-header bg-success text-white">
                 <h5 class="mb-0">
                     <i class="fas fa-check-circle"></i> 
-                    Completadas Recientemente
+                    {% translate "Completadas Recientemente" %}
                 </h5>
             </div>
             <div class="card-body p-0">
@@ -286,7 +287,7 @@
                             {% elif activity.contact %}
                                 <i class="fas fa-user-tie me-1"></i>{{ activity.contact.name }}
                             {% else %}
-                                <i class="fas fa-tasks me-1"></i><em>Actividad independiente</em>
+                                <i class="fas fa-tasks me-1"></i><em>{% translate "Actividad independiente" %}</em>
                             {% endif %}
                         </p>
                         <small class="text-success">
@@ -298,7 +299,7 @@
                 {% else %}
                     <div class="p-4 text-center text-muted">
                         <i class="fas fa-tasks fa-2x mb-3"></i>
-                        <p class="small">No hay actividades completadas esta semana</p>
+                        <p class="small">{% translate "No hay actividades completadas esta semana" %}</p>
                     </div>
                 {% endif %}
             </div>
@@ -333,7 +334,7 @@
                                 {% elif activity.contact %}
                                     <i class="fas fa-user-tie me-1"></i>{{ activity.contact.name }}
                                 {% else %}
-                                    <i class="fas fa-tasks me-1"></i><em>Actividad independiente</em>
+                                    <i class="fas fa-tasks me-1"></i><em>{% translate "Actividad independiente" %}</em>
                                 {% endif %}
                             </p>
                             <div class="d-flex align-items-center">
@@ -351,15 +352,15 @@
                             </button>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{% url 'opportunity_activity_complete' activity.pk %}">
-                                    <i class="fas fa-check"></i> Completar
+                                    <i class="fas fa-check"></i> {% translate "Completar" %}
                                 </a></li>
                                 <li><a class="dropdown-item" href="{% url 'opportunity_activity_edit' activity.pk %}">
-                                    <i class="fas fa-edit"></i> Editar
+                                    <i class="fas fa-edit"></i> {% translate "Editar" %}
                                 </a></li>
                                 {% if activity.opportunity %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{% url 'opportunity_detail' activity.opportunity.pk %}">
-                                    <i class="fas fa-bullseye"></i> Ver Oportunidad
+                                    <i class="fas fa-bullseye"></i> {% translate "Ver Oportunidad" %}
                                 </a></li>
                                 {% endif %}
                             </ul>
@@ -396,7 +397,7 @@
                                     {% if activity.opportunity %}
                                         {{ activity.opportunity.name }}
                                     {% else %}
-                                        <em>Actividad independiente</em>
+                                        <em>{% translate "Actividad independiente" %}</em>
                                     {% endif %}
                                 </p>
                                 <div class="d-flex align-items-center">
@@ -415,10 +416,10 @@
                                 <ul class="dropdown-menu">
                                     {% if activity.status != 'completed' %}
                                     <li><a class="dropdown-item" href="{% url 'opportunity_activity_complete' activity.pk %}">
-                                        <i class="fas fa-check"></i> Completar
+                                        <i class="fas fa-check"></i> {% translate "Completar" %}
                                     </a></li>
                                     <li><a class="dropdown-item" href="{% url 'opportunity_activity_edit' activity.pk %}">
-                                        <i class="fas fa-edit"></i> Editar
+                                        <i class="fas fa-edit"></i> {% translate "Editar" %}
                                     </a></li>
                                     {% if activity.opportunity %}
                                     <li><hr class="dropdown-divider"></li>
@@ -426,7 +427,7 @@
                                     {% endif %}
                                     {% if activity.opportunity %}
                                     <li><a class="dropdown-item" href="{% url 'opportunity_detail' activity.opportunity.pk %}">
-                                        <i class="fas fa-bullseye"></i> Ver Oportunidad
+                                        <i class="fas fa-bullseye"></i> {% translate "Ver Oportunidad" %}
                                     </a></li>
                                     {% endif %}
                                 </ul>
@@ -437,7 +438,7 @@
                 {% else %}
                     <div class="p-4 text-center text-muted">
                         <i class="fas fa-calendar-check fa-3x mb-3"></i>
-                        <p>No tienes actividades programadas para hoy</p>
+                        <p>{% translate "No tienes actividades programadas para hoy" %}</p>
                     </div>
                 {% endif %}
             </div>

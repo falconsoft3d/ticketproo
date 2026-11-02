@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -25,10 +26,10 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1>
                     <i class="fas fa-rocket text-primary"></i> 
-                    {% if landing_page %}Editar{% else %}Crear{% endif %} Landing Page
+                    {% if landing_page %}{% translate "Editar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Landing Page" %}
                 </h1>
                 <a href="{% url 'landing_page_list' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver
+                    <i class="fas fa-arrow-left"></i> {% translate "Volver" %}
                 </a>
             </div>
 
@@ -83,7 +84,7 @@
                                                     {% endfor %}
                                                 </div>
                                             {% endif %}
-                                            <small class="text-muted">La URL será: /lp/<span id="slug-preview">{{ form.slug.value|default:"tu-producto" }}</span>/</small>
+                                            <small class="text-muted">{% translate "La URL será: /lp/" %}<span id="slug-preview">{{ form.slug.value|default:"tu-producto" }}</span>/</small>
                                         </div>
                                     </div>
                                 </div>
@@ -127,7 +128,7 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label">
-                                                <i class="fas fa-toggle-on"></i> Estado
+                                                <i class="fas fa-toggle-on"></i> {% translate "Estado" %}
                                             </label>
                                             <div class="form-check">
                                                 {{ form.is_active }}
@@ -231,8 +232,8 @@
                                 <!-- Configuración de Telegram -->
                                 <hr class="my-4">
                                 <h5 class="mb-3">
-                                    <i class="fab fa-telegram-plane text-info"></i> Integración con Telegram
-                                    <small class="text-muted fs-6">Opcional - Recibe notificaciones automáticas</small>
+                                    <i class="fab fa-telegram-plane text-info"></i> {% translate "Integración con Telegram" %}
+                                    <small class="text-muted fs-6">{% translate "Opcional - Recibe notificaciones automáticas" %}</small>
                                 </h5>
                                 
                                 <div class="row">
@@ -250,7 +251,7 @@
                                                 </div>
                                             {% endif %}
                                             <small class="text-muted">
-                                                Crea un bot con <a href="https://t.me/BotFather" target="_blank">@BotFather</a> en Telegram
+                                                {% translate "Crea un bot con" %} <a href="https://t.me/BotFather" target="_blank">@BotFather</a> {% translate "en Telegram" %}
                                             </small>
                                         </div>
                                     </div>
@@ -269,7 +270,7 @@
                                                 </div>
                                             {% endif %}
                                             <small class="text-muted">
-                                                Obtén el ID con <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a>
+                                                {% translate "Obtén el ID con" %} <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a>
                                             </small>
                                         </div>
                                     </div>
@@ -277,21 +278,21 @@
                                 
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle"></i>
-                                    <strong>¿Cómo configurar Telegram?</strong>
+                                    <strong>{% translate "¿Cómo configurar Telegram?" %}</strong>
                                     <ol class="mb-0 mt-2">
-                                        <li>Habla con <strong>@BotFather</strong> en Telegram</li>
+                                        <li>{% translate "Habla con" %} <strong>@BotFather</strong> {% translate "en Telegram" %}</li>
                                         <li>Usa el comando <code>/newbot</code> para crear un bot</li>
-                                        <li>Copia el token que te dé BotFather</li>
-                                        <li>Habla con <strong>@userinfobot</strong> para obtener tu Chat ID</li>
-                                        <li>Asegúrate de iniciar una conversación con tu bot antes de usar</li>
+                                        <li>{% translate "Copia el token que te dé BotFather" %}</li>
+                                        <li>{% translate "Habla con" %} <strong>@userinfobot</strong> {% translate "para obtener tu Chat ID" %}</li>
+                                        <li>{% translate "Asegúrate de iniciar una conversación con tu bot antes de usar" %}</li>
                                     </ol>
                                 </div>
 
                                 <!-- URL de Reunión -->
                                 <hr class="my-4">
                                 <h5 class="mb-3">
-                                    <i class="fas fa-calendar-alt text-success"></i> URL de Reunión
-                                    <small class="text-muted fs-6">Opcional - Permite a los visitantes planificar reuniones</small>
+                                    <i class="fas fa-calendar-alt text-success"></i> {% translate "URL de Reunión" %}
+                                    <small class="text-muted fs-6">{% translate "Opcional - Permite a los visitantes planificar reuniones" %}</small>
                                 </h5>
                                 
                                 <div class="mb-3">
@@ -307,19 +308,19 @@
                                         </div>
                                     {% endif %}
                                     <small class="text-muted">
-                                        Agrega la URL de tu herramienta de citas (Calendly, Google Meet, Zoom, etc.)
+                                        {% translate "Agrega la URL de tu herramienta de citas (Calendly, Google Meet, Zoom, etc.)" %}
                                     </small>
                                 </div>
                                 
                                 <div class="alert alert-success">
                                     <i class="fas fa-info-circle"></i>
-                                    <strong>¿Cómo funciona?</strong>
+                                    <strong>{% translate "¿Cómo funciona?" %}</strong>
                                     <p class="mb-0 mt-2">
-                                        Si agregas una URL de reunión, aparecerá un botón <strong>"Planificar Reunión"</strong> 
-                                        en tu landing page pública. Esto permite a los visitantes programar reuniones directamente contigo.
+                                        {% translate "Si agregas una URL de reunión, aparecerá un botón" %} <strong>{% translate '"Planificar Reunión"' %}</strong> 
+                                        {% translate "en tu landing page pública. Esto permite a los visitantes programar reuniones directamente contigo." %}
                                     </p>
                                     <p class="mb-0 mt-2">
-                                        <strong>Ejemplos:</strong> https://calendly.com/tu-usuario, https://meet.google.com/tu-sala, 
+                                        <strong>{% translate "Ejemplos:" %}</strong> https://calendly.com/tu-usuario, https://meet.google.com/tu-sala, 
                                         https://zoom.us/j/tu-reunion
                                     </p>
                                 </div>
@@ -327,10 +328,10 @@
                                 <div class="d-flex gap-2">
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-save"></i> 
-                                        {% if landing_page %}Actualizar{% else %}Crear{% endif %} Landing Page
+                                        {% if landing_page %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Landing Page" %}
                                     </button>
                                     <a href="{% url 'landing_page_list' %}" class="btn btn-outline-secondary">
-                                        <i class="fas fa-times"></i> Cancelar
+                                        <i class="fas fa-times"></i> {% translate "Cancelar" %}
                                     </a>
                                 </div>
                             </form>
@@ -341,58 +342,56 @@
                 <div class="col-lg-4">
                     <div class="card">
                         <div class="card-header">
-                            <h5><i class="fas fa-info-circle"></i> Información</h5>
+                            <h5><i class="fas fa-info-circle"></i> {% translate "Información" %}</h5>
                         </div>
                         <div class="card-body">
                             <div class="mb-3">
-                                <h6><i class="fas fa-question-circle text-info"></i> ¿Qué es una Landing Page?</h6>
+                                <h6><i class="fas fa-question-circle text-info"></i> {% translate "¿Qué es una Landing Page?" %}</h6>
                                 <p class="small text-muted">
-                                    Una landing page es una página web diseñada específicamente para convertir visitantes en leads. 
-                                    Está enfocada en una sola acción: capturar información de contacto.
+                                    {% translate "Una landing page es una página web diseñada específicamente para convertir visitantes en leads. Está enfocada en una sola acción: capturar información de contacto." %}
                                 </p>
                             </div>
                             
                             <div class="mb-3">
-                                <h6><i class="fas fa-lightbulb text-warning"></i> Consejos</h6>
+                                <h6><i class="fas fa-lightbulb text-warning"></i> {% translate "Consejos" %}</h6>
                                 <ul class="small text-muted">
-                                    <li>Usa títulos claros y atractivos</li>
-                                    <li>Incluye una imagen de alta calidad</li>
-                                    <li>Mantén el formulario simple</li>
-                                    <li>Usa colores que reflejen tu marca</li>
-                                    <li>Configura Telegram para notificaciones instantáneas</li>
+                                    <li>{% translate "Usa títulos claros y atractivos" %}</li>
+                                    <li>{% translate "Incluye una imagen de alta calidad" %}</li>
+                                    <li>{% translate "Mantén el formulario simple" %}</li>
+                                    <li>{% translate "Usa colores que reflejen tu marca" %}</li>
+                                    <li>{% translate "Configura Telegram para notificaciones instantáneas" %}</li>
                                 </ul>
                             </div>
                             
                             <div class="mb-3">
-                                <h6><i class="fab fa-telegram-plane text-info"></i> Notificaciones Telegram</h6>
+                                <h6><i class="fab fa-telegram-plane text-info"></i> {% translate "Notificaciones Telegram" %}</h6>
                                 <p class="small text-muted">
-                                    Recibe un mensaje inmediato en Telegram cada vez que alguien complete el formulario. 
-                                    Incluye toda la información del lead y datos de seguimiento UTM.
+                                    {% translate "Recibe un mensaje inmediato en Telegram cada vez que alguien complete el formulario. Incluye toda la información del lead y datos de seguimiento UTM." %}
                                 </p>
                             </div>
                             
                             {% if landing_page %}
                                 <div class="mb-3">
-                                    <h6><i class="fas fa-chart-line text-success"></i> Estadísticas</h6>
+                                    <h6><i class="fas fa-chart-line text-success"></i> {% translate "Estadísticas" %}</h6>
                                     <div class="row text-center">
                                         <div class="col-4">
                                             <div class="fw-bold text-primary">{{ landing_page.total_views }}</div>
-                                            <small class="text-muted">Vistas</small>
+                                            <small class="text-muted">{% translate "Vistas" %}</small>
                                         </div>
                                         <div class="col-4">
                                             <div class="fw-bold text-success">{{ landing_page.total_submissions }}</div>
-                                            <small class="text-muted">Envíos</small>
+                                            <small class="text-muted">{% translate "Envíos" %}</small>
                                         </div>
                                         <div class="col-4">
                                             <div class="fw-bold text-info">{{ landing_page.conversion_rate|floatformat:1 }}%</div>
-                                            <small class="text-muted">Conversión</small>
+                                            <small class="text-muted">{% translate "Conversión" %}</small>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div class="d-grid">
                                     <a href="{% url 'landing_page_public' landing_page.slug %}" class="btn btn-outline-success btn-sm" target="_blank">
-                                        <i class="fas fa-external-link-alt"></i> Ver Landing Page
+                                        <i class="fas fa-external-link-alt"></i> {% translate "Ver Landing Page" %}
                                     </a>
                                 </div>
                             {% endif %}

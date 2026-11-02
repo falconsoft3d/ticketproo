@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -37,7 +38,7 @@
       {{ page_title }}
     </h1>
     <a href="{% url 'process_survey_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i> Volver
+      <i class="bi bi-arrow-left me-1"></i> {% translate "Volver" %}
     </a>
   </div>
 
@@ -45,27 +46,27 @@
     {% csrf_token %}
     <div class="row g-3 mb-4">
       <div class="col-md-4">
-        <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+        <label class="form-label fw-semibold">{% translate "Nombre" %} <span class="text-danger">*</span></label>
         <input type="text" name="name" class="form-control"
-               value="{{ survey.name|default:'' }}" required placeholder="Nombre del levantamiento">
+               value="{{ survey.name|default:'' }}" required placeholder="{% translate 'Nombre del levantamiento' %}">
       </div>
       <div class="col-md-2">
-        <label class="form-label fw-semibold">Fecha <span class="text-danger">*</span></label>
+        <label class="form-label fw-semibold">{% translate "Fecha" %} <span class="text-danger">*</span></label>
         <input type="date" name="date" class="form-control"
                value="{% if survey %}{{ survey.date|date:'Y-m-d' }}{% endif %}" required>
       </div>
       <div class="col-md-2">
-        <label class="form-label fw-semibold">Estado</label>
+        <label class="form-label fw-semibold">{% translate "Estado" %}</label>
         <select name="status" class="form-select">
-          <option value="proceso" {% if survey.status == 'proceso' or not survey %}selected{% endif %}>En proceso</option>
-          <option value="aceptado" {% if survey.status == 'aceptado' %}selected{% endif %}>Aceptado</option>
-          <option value="rechazado" {% if survey.status == 'rechazado' %}selected{% endif %}>Rechazado</option>
+          <option value="proceso" {% if survey.status == 'proceso' or not survey %}selected{% endif %}>{% translate "En proceso" %}</option>
+          <option value="aceptado" {% if survey.status == 'aceptado' %}selected{% endif %}>{% translate "Aceptado" %}</option>
+          <option value="rechazado" {% if survey.status == 'rechazado' %}selected{% endif %}>{% translate "Rechazado" %}</option>
         </select>
       </div>
       <div class="col-md-2">
-        <label class="form-label fw-semibold">Responsable</label>
+        <label class="form-label fw-semibold">{% translate "Responsable" %}</label>
         <select name="responsible" class="form-select">
-          <option value="">— Sin asignar —</option>
+          <option value="">{% translate "— Sin asignar —" %}</option>
           {% for u in users %}
             <option value="{{ u.pk }}"
               {% if survey and survey.responsible_id == u.pk %}selected
@@ -76,9 +77,9 @@
         </select>
       </div>
       <div class="col-md-2">
-        <label class="form-label fw-semibold">Empresa</label>
+        <label class="form-label fw-semibold">{% translate "Empresa" %}</label>
         <select name="company" class="form-select">
-          <option value="">— Sin empresa —</option>
+          <option value="">{% translate "— Sin empresa —" %}</option>
           {% for company in companies %}
             <option value="{{ company.pk }}"
               {% if survey and survey.company_id == company.pk %}selected{% endif %}>
@@ -88,7 +89,7 @@
         </select>
       </div>
       <div class="col-md-1">
-        <label class="form-label fw-semibold">Moneda</label>
+        <label class="form-label fw-semibold">{% translate "Moneda" %}</label>
         <select name="importe_currency" class="form-select">
           {% for cur in 'USD,MXN,EUR,GTQ,HNL,CRC,NIO,DOP,COP,PEN,ARS,CLP,BRL' %}
           {% endfor %}
@@ -103,12 +104,12 @@
         </select>
       </div>
       <div class="col-md-1">
-        <label class="form-label fw-semibold">Importe</label>
+        <label class="form-label fw-semibold">{% translate "Importe" %}</label>
         <input type="number" name="importe" class="form-control" step="0.01" min="0"
                value="{{ survey.importe|default:'' }}" placeholder="0.00">
       </div>
       <div class="col-12">
-        <label class="form-label fw-semibold">Descripción del proyecto</label>
+        <label class="form-label fw-semibold">{% translate "Descripción del proyecto" %}</label>
         <textarea name="description" class="form-control" rows="3"
                   placeholder="Describe el alcance, objetivo o contexto del levantamiento...">{{ survey.description|default:'' }}</textarea>
       </div>
@@ -118,13 +119,13 @@
     <div class="card shadow-sm mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h6 class="mb-0">
-          <i class="bi bi-list-ul me-2"></i>Líneas del levantamiento
+          <i class="bi bi-list-ul me-2"></i>{% translate "Líneas del levantamiento" %}
           {% if current_version %}
             <span class="badge bg-warning text-dark ms-2">Versión {{ current_version }}</span>
           {% endif %}
         </h6>
         <button type="button" class="btn btn-sm btn-outline-primary" id="add-line-btn">
-          <i class="bi bi-plus-lg me-1"></i> Agregar línea
+          <i class="bi bi-plus-lg me-1"></i> {% translate "Agregar línea" %}
         </button>
       </div>
       <div class="card-body">
@@ -134,61 +135,61 @@
             <div class="line-row p-3 mb-2 border{% if line.is_hidden %} is-hidden-row{% endif %}">
               <div class="row g-2 align-items-start">
                 <div class="col-md-2">
-                  <label class="form-label small text-muted mb-1">Orden</label>
+                  <label class="form-label small text-muted mb-1">{% translate "Orden" %}</label>
                   <div class="input-group input-group-sm">
-                    <button type="button" class="btn btn-outline-secondary move-line-up-btn" title="Subir fila">
+                    <button type="button" class="btn btn-outline-secondary move-line-up-btn" title="{% translate 'Subir fila' %}">
                       <i class="bi bi-arrow-up"></i>
                     </button>
                     <input type="number" name="line_order" class="form-control form-control-sm line-order-input"
-                           min="1" step="1" value="{{ forloop.counter }}" aria-label="Orden de la fila">
-                    <button type="button" class="btn btn-outline-secondary move-line-down-btn" title="Bajar fila">
+                           min="1" step="1" value="{{ forloop.counter }}" aria-label="{% translate 'Orden de la fila' %}">
+                    <button type="button" class="btn btn-outline-secondary move-line-down-btn" title="{% translate 'Bajar fila' %}">
                       <i class="bi bi-arrow-down"></i>
                     </button>
                   </div>
-                  <button type="button" class="btn btn-sm btn-light border mt-2 drag-line-btn" draggable="true" title="Arrastrar para reordenar">
-                    <i class="bi bi-grip-vertical me-1"></i> Arrastrar
+                  <button type="button" class="btn btn-sm btn-light border mt-2 drag-line-btn" draggable="true" title="{% translate 'Arrastrar para reordenar' %}">
+                    <i class="bi bi-grip-vertical me-1"></i> {% translate "Arrastrar" %}
                   </button>
                 </div>
                 <div class="col-md-3">
-                  <label class="form-label small text-muted mb-1">Título</label>
+                  <label class="form-label small text-muted mb-1">{% translate "Título" %}</label>
                   <input type="text" name="line_title" class="form-control form-control-sm"
-                         value="{{ line.title }}" required placeholder="Título del proceso">
+                         value="{{ line.title }}" required placeholder="{% translate 'Título del proceso' %}">
                 </div>
                 <div class="col-md-2">
-                  <label class="form-label small text-muted mb-1">Complejidad</label>
+                  <label class="form-label small text-muted mb-1">{% translate "Complejidad" %}</label>
                   <select name="line_complexity" class="form-select form-select-sm complexity-select">
                     <option value="">—</option>
                     {% for n in "1234567890" %}
                     {% endfor %}
-                    <option value="1"  {% if line.complexity == 1  %}selected{% endif %}>1 — Muy simple</option>
+                    <option value="1"  {% if line.complexity == 1  %}selected{% endif %}>{% translate "1 — Muy simple" %}</option>
                     <option value="2"  {% if line.complexity == 2  %}selected{% endif %}>2</option>
                     <option value="3"  {% if line.complexity == 3  %}selected{% endif %}>3</option>
-                    <option value="4"  {% if line.complexity == 4  %}selected{% endif %}>4 — Medio</option>
+                    <option value="4"  {% if line.complexity == 4  %}selected{% endif %}>{% translate "4 — Medio" %}</option>
                     <option value="5"  {% if line.complexity == 5  %}selected{% endif %}>5</option>
                     <option value="6"  {% if line.complexity == 6  %}selected{% endif %}>6</option>
-                    <option value="7"  {% if line.complexity == 7  %}selected{% endif %}>7 — Complejo</option>
+                    <option value="7"  {% if line.complexity == 7  %}selected{% endif %}>{% translate "7 — Complejo" %}</option>
                     <option value="8"  {% if line.complexity == 8  %}selected{% endif %}>8</option>
                     <option value="9"  {% if line.complexity == 9  %}selected{% endif %}>9</option>
-                    <option value="10" {% if line.complexity == 10 %}selected{% endif %}>10 — Muy complejo</option>
+                    <option value="10" {% if line.complexity == 10 %}selected{% endif %}>{% translate "10 — Muy complejo" %}</option>
                   </select>
                 </div>
                 <div class="col-md-2">
-                  <label class="form-label small text-muted mb-1">Categoría</label>
+                  <label class="form-label small text-muted mb-1">{% translate "Categoría" %}</label>
                   <div class="input-group input-group-sm">
                     <select name="line_category" class="form-select form-select-sm line-category-select">
-                      <option value="">— Sin categoría —</option>
+                      <option value="">{% translate "— Sin categoría —" %}</option>
                       {% for cat in line_categories %}
                       <option value="{{ cat.id }}" data-color="{{ cat.color }}"
                         {% if line.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
                       {% endfor %}
                     </select>
-                    <button type="button" class="btn btn-outline-secondary btn-new-category" title="Nueva categoría">
+                    <button type="button" class="btn btn-outline-secondary btn-new-category" title="{% translate 'Nueva categoría' %}">
                       <i class="bi bi-plus"></i>
                     </button>
                   </div>
                 </div>
                 <div class="col-md-2">
-                  <label class="form-label small text-muted mb-1">Descripción</label>
+                  <label class="form-label small text-muted mb-1">{% translate "Descripción" %}</label>
                   <textarea name="line_description" class="form-control form-control-sm" rows="2"
                             placeholder="Descripción detallada...">{{ line.description }}</textarea>
                 </div>
@@ -196,12 +197,12 @@
                   <input type="hidden" name="line_hidden" value="{% if line.is_hidden %}1{% else %}0{% endif %}">
                   <button type="button"
                           class="btn btn-sm {% if line.is_hidden %}btn-secondary{% else %}btn-outline-secondary{% endif %} hide-line-btn"
-                          title="Ocultar / Mostrar en vista pública"
+                          title="{% translate 'Ocultar / Mostrar en vista pública' %}"
                           data-line-pk="{{ line.pk }}"
                           data-toggle-url="{% url 'process_survey_line_toggle_hidden' line.pk %}">
                     <i class="bi {% if line.is_hidden %}bi-eye-slash{% else %}bi-eye{% endif %}"></i>
                   </button>
-                  <button type="button" class="btn btn-sm btn-outline-danger remove-line-btn" title="Eliminar línea">
+                  <button type="button" class="btn btn-sm btn-outline-danger remove-line-btn" title="{% translate 'Eliminar línea' %}">
                     <i class="bi bi-x-lg"></i>
                   </button>
                 </div>
@@ -213,7 +214,7 @@
         <p id="empty-lines-msg" class="text-muted text-center py-3 mb-0
           {% if action == 'edit' and lines %}d-none{% endif %}">
           <i class="bi bi-info-circle me-1"></i>
-          Haz clic en "Agregar línea" para añadir procesos.
+          {% translate 'Haz clic en "Agregar línea" para añadir procesos.' %}
         </p>
       </div>
     </div>
@@ -221,9 +222,9 @@
     <!-- URLs de referencia -->
     <div class="card shadow-sm mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="bi bi-link-45deg me-2"></i>URLs de referencia</h6>
+        <h6 class="mb-0"><i class="bi bi-link-45deg me-2"></i>{% translate "URLs de referencia" %}</h6>
         <button type="button" class="btn btn-sm btn-outline-primary" id="add-url-btn">
-          <i class="bi bi-plus-lg me-1"></i> Agregar URL
+          <i class="bi bi-plus-lg me-1"></i> {% translate "Agregar URL" %}
         </button>
       </div>
       <div class="card-body">
@@ -233,14 +234,14 @@
             <div class="url-row row g-2 align-items-center mb-2">
               <div class="col-md-4">
                 <input type="text" name="url_label" class="form-control form-control-sm"
-                       value="{{ u.label }}" placeholder="Etiqueta (ej. Drive, Figma…)">
+                       value="{{ u.label }}" placeholder="{% translate 'Etiqueta (ej. Drive, Figma…)' %}">
               </div>
               <div class="col-md-7">
                 <input type="url" name="url_value" class="form-control form-control-sm"
                        value="{{ u.url }}" placeholder="https://...">
               </div>
               <div class="col-md-1 text-end">
-                <button type="button" class="btn btn-sm btn-outline-danger remove-url-btn" title="Eliminar">
+                <button type="button" class="btn btn-sm btn-outline-danger remove-url-btn" title="{% translate 'Eliminar' %}">
                   <i class="bi bi-x-lg"></i>
                 </button>
               </div>
@@ -248,7 +249,7 @@
             {% endfor %}
           {% else %}
             <p class="text-muted small mb-0" id="urls-empty-msg">
-              <i class="bi bi-info-circle me-1"></i>Agrega enlaces de referencia (documentos, diseños, Drive, etc.)
+              <i class="bi bi-info-circle me-1"></i>{% translate "Agrega enlaces de referencia (documentos, diseños, Drive, etc.)" %}
             </p>
           {% endif %}
         </div>
@@ -258,9 +259,9 @@
     <div class="d-flex gap-2">
       <button type="submit" class="btn btn-primary">
         <i class="bi bi-check-lg me-1"></i>
-        {% if action == 'edit' %}Guardar cambios{% else %}Crear levantamiento{% endif %}
+        {% if action == 'edit' %}{% translate "Guardar cambios" %}{% else %}{% translate "Crear levantamiento" %}{% endif %}
       </button>
-      <a href="{% url 'process_survey_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+      <a href="{% url 'process_survey_list' %}" class="btn btn-outline-secondary">{% translate "Cancelar" %}</a>
     </div>
   </form>
 </div>
@@ -270,14 +271,14 @@
   <div class="url-row row g-2 align-items-center mb-2">
     <div class="col-md-4">
       <input type="text" name="url_label" class="form-control form-control-sm"
-             placeholder="Etiqueta (ej. Drive, Figma…)">
+             placeholder="{% translate 'Etiqueta (ej. Drive, Figma…)' %}">
     </div>
     <div class="col-md-7">
       <input type="url" name="url_value" class="form-control form-control-sm"
              placeholder="https://...">
     </div>
     <div class="col-md-1 text-end">
-      <button type="button" class="btn btn-sm btn-outline-danger remove-url-btn" title="Eliminar">
+      <button type="button" class="btn btn-sm btn-outline-danger remove-url-btn" title="{% translate 'Eliminar' %}">
         <i class="bi bi-x-lg"></i>
       </button>
     </div>
@@ -289,55 +290,55 @@
   <div class="line-row p-3 mb-2 border">
     <div class="row g-2 align-items-start">
       <div class="col-md-2">
-        <label class="form-label small text-muted mb-1">Orden</label>
+        <label class="form-label small text-muted mb-1">{% translate "Orden" %}</label>
         <div class="input-group input-group-sm">
-          <button type="button" class="btn btn-outline-secondary move-line-up-btn" title="Subir fila">
+          <button type="button" class="btn btn-outline-secondary move-line-up-btn" title="{% translate 'Subir fila' %}">
             <i class="bi bi-arrow-up"></i>
           </button>
           <input type="number" name="line_order" class="form-control form-control-sm line-order-input"
-                 min="1" step="1" value="1" aria-label="Orden de la fila">
-          <button type="button" class="btn btn-outline-secondary move-line-down-btn" title="Bajar fila">
+                 min="1" step="1" value="1" aria-label="{% translate 'Orden de la fila' %}">
+          <button type="button" class="btn btn-outline-secondary move-line-down-btn" title="{% translate 'Bajar fila' %}">
             <i class="bi bi-arrow-down"></i>
           </button>
         </div>
-        <button type="button" class="btn btn-sm btn-light border mt-2 drag-line-btn" draggable="true" title="Arrastrar para reordenar">
-          <i class="bi bi-grip-vertical me-1"></i> Arrastrar
+        <button type="button" class="btn btn-sm btn-light border mt-2 drag-line-btn" draggable="true" title="{% translate 'Arrastrar para reordenar' %}">
+          <i class="bi bi-grip-vertical me-1"></i> {% translate "Arrastrar" %}
         </button>
       </div>
       <div class="col-md-3">
-        <label class="form-label small text-muted mb-1">Título</label>
+        <label class="form-label small text-muted mb-1">{% translate "Título" %}</label>
         <input type="text" name="line_title" class="form-control form-control-sm"
-               required placeholder="Título del proceso">
+               required placeholder="{% translate 'Título del proceso' %}">
       </div>
       <div class="col-md-2">
-        <label class="form-label small text-muted mb-1">Complejidad</label>
+        <label class="form-label small text-muted mb-1">{% translate "Complejidad" %}</label>
         <select name="line_complexity" class="form-select form-select-sm complexity-select">
           <option value="">—</option>
-          <option value="1">1 — Muy simple</option>
+          <option value="1">{% translate "1 — Muy simple" %}</option>
           <option value="2">2</option>
           <option value="3">3</option>
-          <option value="4">4 — Medio</option>
+          <option value="4">{% translate "4 — Medio" %}</option>
           <option value="5">5</option>
           <option value="6">6</option>
-          <option value="7">7 — Complejo</option>
+          <option value="7">{% translate "7 — Complejo" %}</option>
           <option value="8">8</option>
           <option value="9">9</option>
-          <option value="10">10 — Muy complejo</option>
+          <option value="10">{% translate "10 — Muy complejo" %}</option>
         </select>
       </div>
       <div class="col-md-2">
-        <label class="form-label small text-muted mb-1">Categoría</label>
+        <label class="form-label small text-muted mb-1">{% translate "Categoría" %}</label>
         <div class="input-group input-group-sm">
           <select name="line_category" class="form-select form-select-sm line-category-select">
-            <option value="">— Sin categoría —</option>
+            <option value="">{% translate "— Sin categoría —" %}</option>
           </select>
-          <button type="button" class="btn btn-outline-secondary btn-new-category" title="Nueva categoría">
+          <button type="button" class="btn btn-outline-secondary btn-new-category" title="{% translate 'Nueva categoría' %}">
             <i class="bi bi-plus"></i>
           </button>
         </div>
       </div>
       <div class="col-md-2">
-        <label class="form-label small text-muted mb-1">Descripción</label>
+        <label class="form-label small text-muted mb-1">{% translate "Descripción" %}</label>
         <textarea name="line_description" class="form-control form-control-sm" rows="2"
                   placeholder="Descripción detallada..."></textarea>
       </div>
@@ -345,10 +346,10 @@
         <input type="hidden" name="line_hidden" value="0">
         <button type="button"
                 class="btn btn-sm btn-outline-secondary hide-line-btn"
-                title="Ocultar / Mostrar en vista pública">
+                title="{% translate 'Ocultar / Mostrar en vista pública' %}">
           <i class="bi bi-eye"></i>
         </button>
-        <button type="button" class="btn btn-sm btn-outline-danger remove-line-btn" title="Eliminar línea">
+        <button type="button" class="btn btn-sm btn-outline-danger remove-line-btn" title="{% translate 'Eliminar línea' %}">
           <i class="bi bi-x-lg"></i>
         </button>
       </div>

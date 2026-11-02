@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -12,11 +13,11 @@
                 <div>
                     <h4><i class="fas fa-edit text-primary"></i> {{ page_title }}</h4>
                     <p class="text-muted mb-0">
-                        Documentación: <strong>{{ documentation.title }}</strong>
+                        {% translate "Documentación:" %} <strong>{{ documentation.title }}</strong>
                     </p>
                 </div>
                 <a href="{% url 'multiple_documentation_detail' documentation.pk %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver
+                    <i class="fas fa-arrow-left"></i> {% translate "Volver" %}
                 </a>
             </div>
 
@@ -26,7 +27,7 @@
                         <div class="card-header">
                             <h5 class="mb-0">
                                 <i class="fas fa-edit text-info"></i>
-                                Editar Archivo
+                                {% translate "Editar Archivo" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -35,7 +36,7 @@
                                 
                                 <div class="mb-3">
                                     <label for="number" class="form-label">
-                                        <i class="fas fa-sort-numeric-up"></i> Número *
+                                        <i class="fas fa-sort-numeric-up"></i> {% translate "Número *" %}
                                     </label>
                                     <input type="number" 
                                            class="form-control" 
@@ -45,29 +46,29 @@
                                            min="1"
                                            required>
                                     <div class="form-text">
-                                        Número de orden para organizar los archivos
+                                        {% translate "Número de orden para organizar los archivos" %}
                                     </div>
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label for="name" class="form-label">
-                                        <i class="fas fa-tag"></i> Nombre del Documento *
+                                        <i class="fas fa-tag"></i> {% translate "Nombre del Documento *" %}
                                     </label>
                                     <input type="text" 
                                            class="form-control" 
                                            id="name" 
                                            name="name" 
                                            value="{{ item.name }}" 
-                                           placeholder="Ej: Plantilla de Productos"
+                                           placeholder="{% translate 'Ej: Plantilla de Productos' %}"
                                            required>
                                     <div class="form-text">
-                                        Nombre descriptivo que verán los usuarios
+                                        {% translate "Nombre descriptivo que verán los usuarios" %}
                                     </div>
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label for="description" class="form-label">
-                                        <i class="fas fa-align-left"></i> Descripción
+                                        <i class="fas fa-align-left"></i> {% translate "Descripción" %}
                                     </label>
                                     <textarea class="form-control" 
                                               id="description" 
@@ -75,13 +76,13 @@
                                               rows="3" 
                                               placeholder="Descripción del archivo (opcional)...">{{ item.description }}</textarea>
                                     <div class="form-text">
-                                        Explicación opcional de qué contiene o para qué sirve este archivo
+                                        {% translate "Explicación opcional de qué contiene o para qué sirve este archivo" %}
                                     </div>
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label for="expiration_date" class="form-label">
-                                        <i class="fas fa-calendar-times"></i> Fecha de Vencimiento
+                                        <i class="fas fa-calendar-times"></i> {% translate "Fecha de Vencimiento" %}
                                     </label>
                                     <input type="date" 
                                            class="form-control" 
@@ -89,21 +90,21 @@
                                            name="expiration_date" 
                                            value="{% if item.expiration_date %}{{ item.expiration_date|date:'Y-m-d' }}{% endif %}">
                                     <div class="form-text">
-                                        Fecha opcional en la que este documento vencerá
+                                        {% translate "Fecha opcional en la que este documento vencerá" %}
                                     </div>
                                 </div>
                                 
                                 <div class="mb-4">
                                     <label for="file" class="form-label">
-                                        <i class="fas fa-file"></i> Archivo
+                                        <i class="fas fa-file"></i> {% translate "Archivo" %}
                                     </label>
                                     
                                     {% if item.file %}
                                     <div class="alert alert-info mb-2">
                                         <i class="fas fa-info-circle"></i>
-                                        <strong>Archivo actual:</strong> {{ item.file.name|slice:"21:" }}
+                                        <strong>{% translate "Archivo actual:" %}</strong> {{ item.file.name|slice:"21:" }}
                                         <br>
-                                        <small>Solo selecciona un nuevo archivo si quieres reemplazarlo</small>
+                                        <small>{% translate "Solo selecciona un nuevo archivo si quieres reemplazarlo" %}</small>
                                     </div>
                                     {% endif %}
                                     
@@ -113,16 +114,16 @@
                                            name="file" 
                                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.jpg,.jpeg,.png,.gif">
                                     <div class="form-text">
-                                        Formatos soportados: PDF, Word, Excel, PowerPoint, texto, imágenes, archivos comprimidos
+                                        {% translate "Formatos soportados: PDF, Word, Excel, PowerPoint, texto, imágenes, archivos comprimidos" %}
                                     </div>
                                 </div>
                                 
                                 <div class="d-flex justify-content-between">
                                     <a href="{% url 'multiple_documentation_detail' documentation.pk %}" class="btn btn-outline-secondary">
-                                        <i class="fas fa-times"></i> Cancelar
+                                        <i class="fas fa-times"></i> {% translate "Cancelar" %}
                                     </a>
                                     <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save"></i> Actualizar Archivo
+                                        <i class="fas fa-save"></i> {% translate "Actualizar Archivo" %}
                                     </button>
                                 </div>
                             </form>
@@ -135,7 +136,7 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="fas fa-info-circle text-info"></i>
-                                Archivo Actual
+                                {% translate "Archivo Actual" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -154,7 +155,7 @@
                                         <strong>{{ item.file.name|slice:"21:" }}</strong><br>
                                         <small class="text-muted">{{ item.get_file_size }}</small><br>
                                         <a href="{{ item.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
-                                            <i class="fas fa-external-link-alt"></i> Ver archivo
+                                            <i class="fas fa-external-link-alt"></i> {% translate "Ver archivo" %}
                                         </a>
                                     </div>
                                 </div>
@@ -167,15 +168,15 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="fas fa-exclamation-triangle text-warning"></i>
-                                Importante
+                                {% translate "Importante" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <ul class="small mb-0">
-                                <li>Si subes un nuevo archivo, reemplazará al actual completamente</li>
-                                <li>El archivo anterior se eliminará permanentemente</li>
-                                <li>Puedes cambiar el nombre y descripción sin subir un nuevo archivo</li>
-                                <li>El número determina el orden de visualización</li>
+                                <li>{% translate "Si subes un nuevo archivo, reemplazará al actual completamente" %}</li>
+                                <li>{% translate "El archivo anterior se eliminará permanentemente" %}</li>
+                                <li>{% translate "Puedes cambiar el nombre y descripción sin subir un nuevo archivo" %}</li>
+                                <li>{% translate "El número determina el orden de visualización" %}</li>
                             </ul>
                         </div>
                     </div>

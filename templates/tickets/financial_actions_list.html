@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Gestión de Acciones Financieras - TicketProo{% endblock %}
+{% block title %}{% translate "Gestión de Acciones Financieras - TicketProo" %}{% endblock %}
 
 {% block content %}
 {% csrf_token %}
@@ -9,23 +10,23 @@
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h1 class="mb-2">
-                    <i class="bi bi-graph-up-arrow"></i> Gestión de Acciones Financieras
+                    <i class="bi bi-graph-up-arrow"></i> {% translate "Gestión de Acciones Financieras" %}
                 </h1>
                 <p class="text-muted">
-                    Configure las acciones que aparecerán en el ticker del dashboard
+                    {% translate "Configure las acciones que aparecerán en el ticker del dashboard" %}
                     <br>
                     <small id="lastUpdateInfo" class="text-info">
                         <i class="bi bi-clock"></i> 
-                        Última actualización masiva: <span id="lastMassUpdate">Cargando...</span>
+                        {% translate "Última actualización masiva:" %} <span id="lastMassUpdate">{% translate "Cargando..." %}</span>
                     </small>
                 </p>
             </div>
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-success" onclick="updateAllPrices()" id="updateAllBtn">
-                    <i class="bi bi-arrow-clockwise"></i> Actualizar Todos los Precios
+                    <i class="bi bi-arrow-clockwise"></i> {% translate "Actualizar Todos los Precios" %}
                 </button>
                 <a href="{% url 'financial_action_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Nueva Acción
+                    <i class="bi bi-plus-circle"></i> {% translate "Nueva Acción" %}
                 </a>
             </div>
         </div>
@@ -39,27 +40,27 @@
             <div class="card-body">
                 <form method="get" class="d-flex gap-3 align-items-end">
                     <div class="flex-grow-1">
-                        <label for="search" class="form-label">Buscar</label>
+                        <label for="search" class="form-label">{% translate "Buscar" %}</label>
                         <input type="text" class="form-control" id="search" name="search" 
-                               value="{{ search|default:'' }}" placeholder="Buscar por símbolo o nombre...">
+                               value="{{ search|default:'' }}" placeholder="{% translate 'Buscar por símbolo o nombre...' %}">
                     </div>
                     <div>
-                        <label for="status" class="form-label">Estado</label>
+                        <label for="status" class="form-label">{% translate "Estado" %}</label>
                         <select class="form-select" id="status" name="status">
-                            <option value="">Todos</option>
-                            <option value="active" {% if status == 'active' %}selected{% endif %}>Activas</option>
-                            <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactivas</option>
+                            <option value="">{% translate "Todos" %}</option>
+                            <option value="active" {% if status == 'active' %}selected{% endif %}>{% translate "Activas" %}</option>
+                            <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>{% translate "Inactivas" %}</option>
                         </select>
                     </div>
                     <div>
                         <button type="submit" class="btn btn-outline-primary">
-                            <i class="bi bi-search"></i> Buscar
+                            <i class="bi bi-search"></i> {% translate "Buscar" %}
                         </button>
                     </div>
                     {% if search or status %}
                     <div>
                         <a href="{% url 'financial_actions_list' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-x-circle"></i> Limpiar
+                            <i class="bi bi-x-circle"></i> {% translate "Limpiar" %}
                         </a>
                     </div>
                     {% endif %}
@@ -75,7 +76,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="bi bi-list"></i> Acciones Configuradas
+                    <i class="bi bi-list"></i> {% translate "Acciones Configuradas" %}
                     <span class="badge bg-secondary">{{ actions.count }}</span>
                 </h5>
             </div>
@@ -85,14 +86,14 @@
                     <table class="table table-hover table-striped">
                         <thead class="table-dark">
                             <tr>
-                                <th width="5%">Orden</th>
-                                <th width="15%">Símbolo</th>
-                                <th width="25%">Nombre</th>
-                                <th width="15%">Precio Actual</th>
-                                <th width="15%">Cambio</th>
-                                <th width="10%">Estado</th>
-                                <th width="10%">Última Act.</th>
-                                <th width="15%">Acciones</th>
+                                <th width="5%">{% translate "Orden" %}</th>
+                                <th width="15%">{% translate "Símbolo" %}</th>
+                                <th width="25%">{% translate "Nombre" %}</th>
+                                <th width="15%">{% translate "Precio Actual" %}</th>
+                                <th width="15%">{% translate "Cambio" %}</th>
+                                <th width="10%">{% translate "Estado" %}</th>
+                                <th width="10%">{% translate "Última Act." %}</th>
+                                <th width="15%">{% translate "Acciones" %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -121,14 +122,14 @@
                                             ({{ action.price_change_percent|floatformat:2 }}%)
                                         </span>
                                     {% else %}
-                                        <span class="text-muted">Sin datos</span>
+                                        <span class="text-muted">{% translate "Sin datos" %}</span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if action.is_active %}
-                                        <span class="badge bg-success">Activa</span>
+                                        <span class="badge bg-success">{% translate "Activa" %}</span>
                                     {% else %}
-                                        <span class="badge bg-secondary">Inactiva</span>
+                                        <span class="badge bg-secondary">{% translate "Inactiva" %}</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -137,7 +138,7 @@
                                         <strong>{{ action.last_updated|date:"H:i" }}</strong>
                                         {% now "Y-m-d H:i" as current_time %}
                                         {% if action.last_updated|timesince < "5 minutes" %}
-                                            <span class="badge bg-success ms-1" style="font-size: 0.6em;">Reciente</span>
+                                            <span class="badge bg-success ms-1" style="font-size: 0.6em;">{% translate "Reciente" %}</span>
                                         {% elif action.last_updated|timesince < "1 hour" %}
                                             <span class="badge bg-warning ms-1" style="font-size: 0.6em;">{{ action.last_updated|timesince }}</span>
                                         {% else %}
@@ -149,11 +150,11 @@
                                     <div class="btn-group btn-group-sm" role="group">
                                         <button type="button" class="btn btn-outline-info" 
                                                 onclick="updateSinglePrice({{ action.pk }}, '{{ action.symbol }}')" 
-                                                title="Actualizar Precio">
+                                                title="{% translate 'Actualizar Precio' %}">
                                             <i class="bi bi-arrow-clockwise"></i>
                                         </button>
                                         <a href="{% url 'financial_action_edit' action.pk %}" 
-                                           class="btn btn-outline-primary" title="Editar">
+                                           class="btn btn-outline-primary" title="{% translate 'Editar' %}">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <a href="{% url 'financial_action_toggle' action.pk %}" 
@@ -162,7 +163,7 @@
                                             <i class="bi bi-{% if action.is_active %}pause{% else %}play{% endif %}"></i>
                                         </a>
                                         <a href="{% url 'financial_action_delete' action.pk %}" 
-                                           class="btn btn-outline-danger" title="Eliminar">
+                                           class="btn btn-outline-danger" title="{% translate 'Eliminar' %}">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                     </div>
@@ -175,10 +176,10 @@
                 {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-graph-up-arrow display-1 text-muted"></i>
-                    <h3 class="mt-3 text-muted">No hay acciones configuradas</h3>
-                    <p class="text-muted">Agregue acciones financieras para mostrar en el ticker del dashboard.</p>
+                    <h3 class="mt-3 text-muted">{% translate "No hay acciones configuradas" %}</h3>
+                    <p class="text-muted">{% translate "Agregue acciones financieras para mostrar en el ticker del dashboard." %}</p>
                     <a href="{% url 'financial_action_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear Primera Acción
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Primera Acción" %}
                     </a>
                 </div>
                 {% endif %}
@@ -192,14 +193,14 @@
     <div class="col-12">
         <div class="alert alert-info">
             <h6 class="alert-heading">
-                <i class="bi bi-info-circle"></i> Información sobre el Ticker
+                <i class="bi bi-info-circle"></i> {% translate "Información sobre el Ticker" %}
             </h6>
             <ul class="mb-0">
-                <li>Las acciones <strong>activas</strong> aparecerán rotando en la parte inferior del dashboard</li>
-                <li>El <strong>orden</strong> determina la secuencia de aparición (menor número = primera posición)</li>
-                <li>El <strong>cambio de precio</strong> se calcula comparando el precio actual con el anterior</li>
-                <li>Los precios se obtienen automáticamente desde APIs financieras externas</li>
-                <li>Use los botones de <strong>actualizar precio</strong> para obtener cotizaciones en tiempo real</li>
+                <li>{% translate "Las acciones" %} <strong>{% translate "activas" %}</strong> {% translate "aparecerán rotando en la parte inferior del dashboard" %}</li>
+                <li>{% translate "El" %} <strong>{% translate "orden" %}</strong> {% translate "determina la secuencia de aparición (menor número = primera posición)" %}</li>
+                <li>{% translate "El" %} <strong>{% translate "cambio de precio" %}</strong> {% translate "se calcula comparando el precio actual con el anterior" %}</li>
+                <li>{% translate "Los precios se obtienen automáticamente desde APIs financieras externas" %}</li>
+                <li>{% translate "Use los botones de" %} <strong>{% translate "actualizar precio" %}</strong> {% translate "para obtener cotizaciones en tiempo real" %}</li>
             </ul>
         </div>
     </div>

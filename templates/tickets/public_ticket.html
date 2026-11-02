@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load django_bootstrap5 %}
 {% load static %}
 <!DOCTYPE html>
@@ -58,7 +59,7 @@
             <h1 class="mb-2">
                 <i class="bi bi-ticket-perforated"></i> TicketProo
             </h1>
-            <p class="mb-0 opacity-75">Vista Pública de Ticket</p>
+            <p class="mb-0 opacity-75">{% translate "Vista Pública de Ticket" %}</p>
         </div>
     </div>
 
@@ -70,11 +71,11 @@
                     <div class="card border-danger">
                         <div class="card-body text-center py-5">
                             <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 3rem;"></i>
-                            <h3 class="mt-3 text-danger">Ticket No Encontrado</h3>
+                            <h3 class="mt-3 text-danger">{% translate "Ticket No Encontrado" %}</h3>
                             <p class="text-muted">{{ error_message }}</p>
                             <hr>
                             <p class="text-muted small">
-                                Si crees que esto es un error, por favor contacta con el soporte técnico.
+                                {% translate "Si crees que esto es un error, por favor contacta con el soporte técnico." %}
                             </p>
                         </div>
                     </div>
@@ -135,9 +136,9 @@
                                         <div>
                                             <strong>{{ comment.user.get_full_name|default:comment.user.username }}</strong>
                                             {% if comment.user.groups.all.0.name == 'Agentes' %}
-                                                <span class="badge bg-primary ms-1">Agente</span>
+                                                <span class="badge bg-primary ms-1">{% translate "Agente" %}</span>
                                             {% else %}
-                                                <span class="badge bg-secondary ms-1">Usuario</span>
+                                                <span class="badge bg-secondary ms-1">{% translate "Usuario" %}</span>
                                             {% endif %}
                                         </div>
                                         <small class="text-muted">
@@ -160,7 +161,7 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
                                 <i class="bi bi-clock-history"></i>
-                                Registro de Horas
+                                {% translate "Registro de Horas" %}
                             </h5>
                             <span class="badge bg-primary">Total: {{ hour_lines_total }} h</span>
                         </div>
@@ -169,10 +170,10 @@
                                 <table class="table table-sm table-hover mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th><i class="bi bi-card-text me-1"></i>Descripción</th>
-                                            <th><i class="bi bi-person me-1"></i>Usuario</th>
-                                            <th class="text-center"><i class="bi bi-clock me-1"></i>Horas</th>
-                                            <th class="text-center"><i class="bi bi-calendar me-1"></i>Fecha</th>
+                                            <th><i class="bi bi-card-text me-1"></i>{% translate "Descripción" %}</th>
+                                            <th><i class="bi bi-person me-1"></i>{% translate "Usuario" %}</th>
+                                            <th class="text-center"><i class="bi bi-clock me-1"></i>{% translate "Horas" %}</th>
+                                            <th class="text-center"><i class="bi bi-calendar me-1"></i>{% translate "Fecha" %}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -191,7 +192,7 @@
                                     </tbody>
                                     <tfoot class="table-light fw-bold">
                                         <tr>
-                                            <td colspan="2">Total</td>
+                                            <td colspan="2">{% translate "Total" %}</td>
                                             <td class="text-center">
                                                 <span class="badge bg-primary">{{ hour_lines_total }} h</span>
                                             </td>
@@ -232,7 +233,7 @@
                                         <a href="{{ attachment.file.url }}" 
                                            class="btn btn-sm btn-outline-primary mt-1" 
                                            target="_blank">
-                                            <i class="bi bi-download"></i> Descargar
+                                            <i class="bi bi-download"></i> {% translate "Descargar" %}
                                         </a>
                                     </div>
                                 </div>
@@ -249,16 +250,16 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="bi bi-info-circle"></i>
-                                Información del Ticket
+                                {% translate "Información del Ticket" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <div class="row mb-2">
-                                <div class="col-5"><strong>Número:</strong></div>
+                                <div class="col-5"><strong>{% translate "Número:" %}</strong></div>
                                 <div class="col-7">{{ ticket.ticket_number }}</div>
                             </div>
                             <div class="row mb-2">
-                                <div class="col-5"><strong>Estado:</strong></div>
+                                <div class="col-5"><strong>{% translate "Estado:" %}</strong></div>
                                 <div class="col-7">
                                     <span class="badge {{ ticket.get_status_badge_class }}">
                                         {{ ticket.get_status_display }}
@@ -266,24 +267,24 @@
                                 </div>
                             </div>
                             <div class="row mb-2">
-                                <div class="col-5"><strong>Estado de Aprobación:</strong></div>
+                                <div class="col-5"><strong>{% translate "Estado de Aprobación:" %}</strong></div>
                                 <div class="col-7">
                                     {% if ticket.is_approved %}
                                         <span class="badge bg-success">
-                                            <i class="bi bi-check-circle"></i> Aprobado
+                                            <i class="bi bi-check-circle"></i> {% translate "Aprobado" %}
                                         </span>
                                         {% if ticket.approved_at %}
                                             <br><small class="text-muted">{{ ticket.approved_at|date:"d/m/Y H:i" }}</small>
                                         {% endif %}
                                     {% else %}
                                         <span class="badge bg-warning">
-                                            <i class="bi bi-clock"></i> Pendiente de Aprobación
+                                            <i class="bi bi-clock"></i> {% translate "Pendiente de Aprobación" %}
                                         </span>
                                     {% endif %}
                                 </div>
                             </div>
                             <div class="row mb-2">
-                                <div class="col-5"><strong>Prioridad:</strong></div>
+                                <div class="col-5"><strong>{% translate "Prioridad:" %}</strong></div>
                                 <div class="col-7">
                                     <span class="badge {{ ticket.get_priority_badge_class }}">
                                         {{ ticket.get_priority_display }}
@@ -292,27 +293,27 @@
                             </div>
                             {% if ticket.category %}
                             <div class="row mb-2">
-                                <div class="col-5"><strong>Categoría:</strong></div>
+                                <div class="col-5"><strong>{% translate "Categoría:" %}</strong></div>
                                 <div class="col-7">{{ ticket.category.name }}</div>
                             </div>
                             {% endif %}
                             <div class="row mb-2">
-                                <div class="col-5"><strong>Creado:</strong></div>
+                                <div class="col-5"><strong>{% translate "Creado:" %}</strong></div>
                                 <div class="col-7">{{ ticket.created_at|date:"d/m/Y H:i" }}</div>
                             </div>
                             <div class="row mb-2">
-                                <div class="col-5"><strong>Actualizado:</strong></div>
+                                <div class="col-5"><strong>{% translate "Actualizado:" %}</strong></div>
                                 <div class="col-7">{{ ticket.updated_at|date:"d/m/Y H:i" }}</div>
                             </div>
                             {% if ticket.assigned_to %}
                             <div class="row mb-2">
-                                <div class="col-5"><strong>Asignado a:</strong></div>
+                                <div class="col-5"><strong>{% translate "Asignado a:" %}</strong></div>
                                 <div class="col-7">{{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}</div>
                             </div>
                             {% endif %}
                             {% if ticket.hours %}
                             <div class="row mb-2">
-                                <div class="col-5"><strong>Horas:</strong></div>
+                                <div class="col-5"><strong>{% translate "Horas:" %}</strong></div>
                                 <div class="col-7">{{ ticket.hours }} h</div>
                             </div>
                             {% endif %}
@@ -324,13 +325,12 @@
                     <div class="card mt-3 border-success">
                         <div class="card-body text-center">
                             <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
-                            <h6 class="mt-2">¿Aprobar este ticket?</h6>
+                            <h6 class="mt-2">{% translate "¿Aprobar este ticket?" %}</h6>
                             <p class="text-muted small">
-                                Si estás satisfecho con la solución proporcionada,
-                                puedes aprobar este ticket.
+                                {% translate "Si estás satisfecho con la solución proporcionada, puedes aprobar este ticket." %}
                             </p>
                             <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#approvalModal">
-                                <i class="bi bi-check-circle"></i> Aprobar Ticket
+                                <i class="bi bi-check-circle"></i> {% translate "Aprobar Ticket" %}
                             </button>
                         </div>
                     </div>
@@ -338,22 +338,22 @@
                     <div class="card mt-3 border-success">
                         <div class="card-body text-center">
                             <i class="bi bi-check-circle-fill text-success" style="font-size: 2rem;"></i>
-                            <h6 class="mt-2 text-success">Ticket Aprobado</h6>
+                            <h6 class="mt-2 text-success">{% translate "Ticket Aprobado" %}</h6>
                             {% if has_approval %}
                                 <p class="text-muted small">
-                                    <strong>Aprobado por:</strong> {{ approval.client_name }}<br>
-                                    <strong>Email:</strong> {{ approval.client_email }}<br>
-                                    <strong>Fecha:</strong> {{ approval.approved_at|date:"d/m/Y H:i" }}
+                                    <strong>{% translate "Aprobado por:" %}</strong> {{ approval.client_name }}<br>
+                                    <strong>{% translate "Email:" %}</strong> {{ approval.client_email }}<br>
+                                    <strong>{% translate "Fecha:" %}</strong> {{ approval.approved_at|date:"d/m/Y H:i" }}
                                 </p>
                                 {% if approval.notes %}
                                 <div class="alert alert-light mt-2">
-                                    <small><strong>Comentarios:</strong><br>{{ approval.notes|linebreaks }}</small>
+                                    <small><strong>{% translate "Comentarios:" %}</strong><br>{{ approval.notes|linebreaks }}</small>
                                 </div>
                                 {% endif %}
                             {% elif ticket.is_approved %}
                                 <p class="text-muted small">
-                                    <strong>Fecha de aprobación:</strong> {{ ticket.approved_at|date:"d/m/Y H:i" }}<br>
-                                    <small>El cliente ha confirmado su satisfacción con la solución.</small>
+                                    <strong>{% translate "Fecha de aprobación:" %}</strong> {{ ticket.approved_at|date:"d/m/Y H:i" }}<br>
+                                    <small>{% translate "El cliente ha confirmado su satisfacción con la solución." %}</small>
                                 </p>
                             {% endif %}
                         </div>
@@ -366,13 +366,12 @@
                         <div class="card mt-3 border-info">
                             <div class="card-body text-center">
                                 <i class="bi bi-star text-info" style="font-size: 2rem;"></i>
-                                <h6 class="mt-2 text-info">Encuesta de Satisfacción</h6>
+                                <h6 class="mt-2 text-info">{% translate "Encuesta de Satisfacción" %}</h6>
                                 <p class="text-muted small">
-                                    Tu opinión es muy importante para nosotros. 
-                                    Ayúdanos a mejorar nuestro servicio.
+                                    {% translate "Tu opinión es muy importante para nosotros. Ayúdanos a mejorar nuestro servicio." %}
                                 </p>
                                 <a href="{% url 'public_ticket_survey' token %}" class="btn btn-info btn-sm">
-                                    <i class="bi bi-star"></i> Llenar Encuesta
+                                    <i class="bi bi-star"></i> {% translate "Llenar Encuesta" %}
                                 </a>
                             </div>
                         </div>
@@ -380,20 +379,20 @@
                         <div class="card mt-3 border-info">
                             <div class="card-body text-center">
                                 <i class="bi bi-star-fill text-info" style="font-size: 2rem;"></i>
-                                <h6 class="mt-2 text-info">Encuesta Completada</h6>
+                                <h6 class="mt-2 text-info">{% translate "Encuesta Completada" %}</h6>
                                 <p class="text-muted small">
-                                    <strong>Enviada por:</strong> {{ ticket.satisfaction_survey.client_name }}<br>
-                                    <strong>Calificación promedio:</strong> {{ ticket.satisfaction_survey.average_rating }}/5 
+                                    <strong>{% translate "Enviada por:" %}</strong> {{ ticket.satisfaction_survey.client_name }}<br>
+                                    <strong>{% translate "Calificación promedio:" %}</strong> {{ ticket.satisfaction_survey.average_rating }}/5 
                                     <span class="badge bg-{{ ticket.satisfaction_survey.rating_color }}">{{ ticket.satisfaction_survey.rating_summary }}</span><br>
-                                    <strong>Fecha:</strong> {{ ticket.satisfaction_survey.submitted_at|date:"d/m/Y H:i" }}
+                                    <strong>{% translate "Fecha:" %}</strong> {{ ticket.satisfaction_survey.submitted_at|date:"d/m/Y H:i" }}
                                 </p>
                                 {% if ticket.satisfaction_survey.would_recommend %}
                                     <div class="alert alert-success alert-sm mt-2">
-                                        <i class="bi bi-hand-thumbs-up"></i> <strong>Recomendaría nuestros servicios</strong>
+                                        <i class="bi bi-hand-thumbs-up"></i> <strong>{% translate "Recomendaría nuestros servicios" %}</strong>
                                     </div>
                                 {% else %}
                                     <div class="alert alert-warning alert-sm mt-2">
-                                        <i class="bi bi-hand-thumbs-down"></i> <strong>No recomendaría nuestros servicios</strong>
+                                        <i class="bi bi-hand-thumbs-down"></i> <strong>{% translate "No recomendaría nuestros servicios" %}</strong>
                                     </div>
                                 {% endif %}
                             </div>
@@ -406,13 +405,12 @@
                     <div class="card mt-3 border-info">
                         <div class="card-body text-center">
                             <i class="bi bi-cloud-upload text-info" style="font-size: 2rem;"></i>
-                            <h6 class="mt-2 text-info">Subir Archivos</h6>
+                            <h6 class="mt-2 text-info">{% translate "Subir Archivos" %}</h6>
                             <p class="text-muted small">
-                                ¿Tienes archivos adicionales que puedan ayudar con este ticket?
-                                Puedes subirlos aquí para proporcionar más información.
+                                {% translate "¿Tienes archivos adicionales que puedan ayudar con este ticket? Puedes subirlos aquí para proporcionar más información." %}
                             </p>
                             <a href="{% url 'public_ticket_upload' token %}" class="btn btn-info btn-sm">
-                                <i class="bi bi-cloud-upload"></i> Subir Archivos
+                                <i class="bi bi-cloud-upload"></i> {% translate "Subir Archivos" %}
                             </a>
                         </div>
                     </div>
@@ -422,13 +420,12 @@
                     <div class="card mt-3">
                         <div class="card-body text-center">
                             <i class="bi bi-envelope text-primary" style="font-size: 2rem;"></i>
-                            <h6 class="mt-2">¿Necesitas ayuda?</h6>
+                            <h6 class="mt-2">{% translate "¿Necesitas ayuda?" %}</h6>
                             <p class="text-muted small">
-                                Si tienes preguntas sobre este ticket, 
-                                contacta con nuestro equipo de soporte.
+                                {% translate "Si tienes preguntas sobre este ticket, contacta con nuestro equipo de soporte." %}
                             </p>
                             <a href="mailto:mfalconsoft@gmail.com" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-envelope"></i> Contactar Soporte
+                                <i class="bi bi-envelope"></i> {% translate "Contactar Soporte" %}
                             </a>
                         </div>
                     </div>
@@ -441,10 +438,10 @@
     <div class="public-footer">
         <div class="container">
             <p class="mb-1">
-                <strong>TicketProo</strong> - Sistema Profesional de Gestión de Tickets
+                <strong>TicketProo</strong> {% translate "- Sistema Profesional de Gestión de Tickets" %}
             </p>
             <p class="mb-0 small opacity-75">
-                Desarrollado por Marlon Falcón Hdez | &copy; 2025 TicketProo
+                {% translate "Desarrollado por Marlon Falcón Hdez | &copy; 2025 TicketProo" %}
             </p>
         </div>
     </div>
@@ -455,33 +452,32 @@
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title" id="approvalModalLabel">
-                        <i class="bi bi-check-circle"></i> Aprobar Ticket
+                        <i class="bi bi-check-circle"></i> {% translate "Aprobar Ticket" %}
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
                 </div>
                 <form method="post" action="{% url 'public_ticket_approve' token %}">
                     <div class="modal-body">
                         {% csrf_token %}
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i>
-                            <strong>Confirmación de aprobación</strong><br>
+                            <strong>{% translate "Confirmación de aprobación" %}</strong><br>
                             <small>
-                                Al aprobar este ticket, confirmas que estás satisfecho con la solución proporcionada.
-                                Esta acción no se puede deshacer.
+                                {% translate "Al aprobar este ticket, confirmas que estás satisfecho con la solución proporcionada. Esta acción no se puede deshacer." %}
                             </small>
                         </div>
                         
                         <div class="mb-3">
                             <label for="client_name" class="form-label">
-                                <strong>Tu nombre completo *</strong>
+                                <strong>{% translate "Tu nombre completo *" %}</strong>
                             </label>
                             <input type="text" class="form-control" id="client_name" name="client_name" 
-                                   placeholder="Ej: Juan Pérez García" required>
+                                   placeholder="{% translate 'Ej: Juan Pérez García' %}" required>
                         </div>
                         
                         <div class="mb-3">
                             <label for="client_email" class="form-label">
-                                <strong>Tu correo electrónico *</strong>
+                                <strong>{% translate "Tu correo electrónico *" %}</strong>
                             </label>
                             <input type="email" class="form-control" id="client_email" name="client_email" 
                                    placeholder="Ej: juan@empresa.com" required>
@@ -489,7 +485,7 @@
                         
                         <div class="mb-3">
                             <label for="notes" class="form-label">
-                                <strong>Comentarios adicionales</strong> <small class="text-muted">(opcional)</small>
+                                <strong>{% translate "Comentarios adicionales" %}</strong> <small class="text-muted">{% translate "(opcional)" %}</small>
                             </label>
                             <textarea class="form-control" id="notes" name="notes" rows="3"
                                       placeholder="Comparte tu experiencia o comentarios sobre la solución..."></textarea>
@@ -498,17 +494,16 @@
                         <div class="alert alert-warning">
                             <i class="bi bi-exclamation-triangle"></i>
                             <small>
-                                <strong>Importante:</strong> Tu información se utilizará únicamente para confirmar
-                                la aprobación y mejorar nuestro servicio. No será compartida con terceros.
+                                <strong>{% translate "Importante:" %}</strong> {% translate "Tu información se utilizará únicamente para confirmar la aprobación y mejorar nuestro servicio. No será compartida con terceros." %}
                             </small>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="bi bi-x-circle"></i> Cancelar
+                            <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                         </button>
                         <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-circle"></i> Confirmar Aprobación
+                            <i class="bi bi-check-circle"></i> {% translate "Confirmar Aprobación" %}
                         </button>
                     </div>
                 </form>

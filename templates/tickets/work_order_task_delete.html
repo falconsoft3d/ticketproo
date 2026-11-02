@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -13,7 +14,7 @@
                         <i class="fas fa-exclamation-triangle"></i> {{ page_title }}
                     </h4>
                     <a href="{% url 'work_order_task_list' work_order.pk %}" class="btn btn-secondary btn-sm">
-                        <i class="fas fa-arrow-left"></i> Volver a Tareas
+                        <i class="fas fa-arrow-left"></i> {% translate "Volver a Tareas" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -25,10 +26,9 @@
 
                     <!-- Confirmación -->
                     <div class="alert alert-danger">
-                        <h5><i class="fas fa-exclamation-triangle"></i> ¿Está seguro?</h5>
+                        <h5><i class="fas fa-exclamation-triangle"></i> {% translate "¿Está seguro?" %}</h5>
                         <p class="mb-0">
-                            Esta acción eliminará permanentemente la tarea y <strong>todos sus registros de tiempo asociados</strong>. 
-                            Esta operación no se puede deshacer.
+                            {% translate "Esta acción eliminará permanentemente la tarea y" %} <strong>{% translate "todos sus registros de tiempo asociados" %}</strong>{% translate ". Esta operación no se puede deshacer." %}
                         </p>
                     </div>
 
@@ -44,7 +44,7 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <small class="text-muted">
-                                        <strong>Estado:</strong> 
+                                        <strong>{% translate "Estado:" %}</strong> 
                                         <span class="badge badge-{% if task.status == 'pending' %}secondary{% elif task.status == 'in_progress' %}warning{% else %}success{% endif %}">
                                             {{ task.get_status_display }}
                                         </span>
@@ -52,19 +52,19 @@
                                 </div>
                                 <div class="col-md-6">
                                     <small class="text-muted">
-                                        <strong>Tiempo estimado:</strong> {{ task.estimated_hours|default:"No especificado" }}{% if task.estimated_hours %}h{% endif %}
+                                        <strong>{% translate "Tiempo estimado:" %}</strong> {{ task.estimated_hours|default:"No especificado" }}{% if task.estimated_hours %}{% translate "h" %}{% endif %}
                                     </small>
                                 </div>
                             </div>
                             <div class="row mt-2">
                                 <div class="col-md-6">
                                     <small class="text-muted">
-                                        <strong>Tiempo trabajado:</strong> {{ task.get_total_time_logged|floatformat:1 }}h
+                                        <strong>{% translate "Tiempo trabajado:" %}</strong> {{ task.get_total_time_logged|floatformat:1 }}h
                                     </small>
                                 </div>
                                 <div class="col-md-6">
                                     <small class="text-muted">
-                                        <strong>Registros de tiempo:</strong> {{ task.time_entries.count }}
+                                        <strong>{% translate "Registros de tiempo:" %}</strong> {{ task.time_entries.count }}
                                     </small>
                                 </div>
                             </div>
@@ -76,10 +76,10 @@
                         {% csrf_token %}
                         <div class="form-group">
                             <button type="submit" class="btn btn-danger">
-                                <i class="fas fa-trash"></i> Sí, eliminar tarea
+                                <i class="fas fa-trash"></i> {% translate "Sí, eliminar tarea" %}
                             </button>
                             <a href="{% url 'work_order_task_list' work_order.pk %}" class="btn btn-secondary ml-2">
-                                <i class="fas fa-times"></i> Cancelar
+                                <i class="fas fa-times"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>

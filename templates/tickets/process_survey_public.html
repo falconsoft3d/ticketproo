@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ survey.name }} — Levantamiento de Procesos{% endblock %}
@@ -72,9 +73,9 @@
 <div class="container py-5" style="max-width:1200px;">
   <div class="survey-card text-center py-5 px-4">
     <div style="color:#dc3545; font-size:4rem;"><i class="bi bi-x-circle-fill"></i></div>
-    <h2 class="fw-bold mt-3 mb-2" style="color:#dc3545;">Levantamiento rechazado</h2>
+    <h2 class="fw-bold mt-3 mb-2" style="color:#dc3545;">{% translate "Levantamiento rechazado" %}</h2>
     <p class="text-muted mb-0" style="max-width:480px; margin:0 auto;">
-      Este levantamiento fue rechazado por el cliente y ya no es posible acceder a su contenido.
+      {% translate "Este levantamiento fue rechazado por el cliente y ya no es posible acceder a su contenido." %}
     </p>
   </div>
 </div>
@@ -104,7 +105,7 @@
             {% endif %}
             {% if survey.responsible %}
               &nbsp;·&nbsp;<i class="bi bi-person-badge me-1"></i>
-              <strong>Responsable:</strong>
+              <strong>{% translate "Responsable:" %}</strong>
               {% if survey.responsible.get_full_name %}{{ survey.responsible.get_full_name }}{% else %}{{ survey.responsible.username }}{% endif %}
             {% endif %}
           </div>
@@ -122,7 +123,7 @@
                     style="background:#22c55e;color:#fff;border:none;"
                     {% if survey.status == 'aceptado' %}disabled{% endif %}>
               <i class="bi bi-check-lg me-1"></i>
-              {% if survey.status == 'aceptado' %}Aceptado{% else %}Aceptar{% endif %}
+              {% if survey.status == 'aceptado' %}{% translate "Aceptado" %}{% else %}{% translate "Aceptar" %}{% endif %}
             </button>
           </form>
           <button class="btn btn-sm no-print" id="btn-rechazar-survey"
@@ -130,30 +131,30 @@
                   data-bs-toggle="modal" data-bs-target="#rechazarSurveyModal"
                   {% if survey.status == 'rechazado' %}disabled{% endif %}>
             <i class="bi bi-x-lg me-1"></i>
-            {% if survey.status == 'rechazado' %}Rechazado{% else %}Rechazar{% endif %}
+            {% if survey.status == 'rechazado' %}{% translate "Rechazado" %}{% else %}{% translate "Rechazar" %}{% endif %}
           </button>
           <button class="btn btn-sm no-print" id="ai-analysis-btn"
                   style="background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff;border:none;"
                   data-bs-toggle="modal" data-bs-target="#aiAnalysisModal"
                   onclick="startAIAnalysis()">
-            <i class="bi bi-stars me-1"></i> Analizar con IA
+            <i class="bi bi-stars me-1"></i> {% translate "Analizar con IA" %}
           </button>
           <button class="btn btn-light btn-sm" onclick="copyUrl()" id="copy-btn">
-            <i class="bi bi-clipboard me-1"></i> Copiar enlace
+            <i class="bi bi-clipboard me-1"></i> {% translate "Copiar enlace" %}
           </button>
           <a href="{% url 'public_process_survey_pdf' survey.public_share_token %}" target="_blank" class="btn btn-light btn-sm">
-            <i class="bi bi-file-earmark-pdf me-1"></i> Descargar PDF
+            <i class="bi bi-file-earmark-pdf me-1"></i> {% translate "Descargar PDF" %}
           </a>
         </div>
       </div>
       {% if survey.importe %}
       <div class="mt-4 pt-3" style="border-top:1px solid rgba(255,255,255,.2);">
         <div class="text-center">
-          <div class="opacity-75 small text-uppercase fw-semibold mb-1" style="letter-spacing:.08em;">Importe del proyecto</div>
+          <div class="opacity-75 small text-uppercase fw-semibold mb-1" style="letter-spacing:.08em;">{% translate "Importe del proyecto" %}</div>
           <div class="fw-bold" style="font-size:2.6rem; letter-spacing:-.01em;">
             {{ survey.importe_currency }}&nbsp;{{ survey.importe|floatformat:2 }}
           </div>
-          <div class="opacity-60 small mt-1">* Este importe solo cubre los puntos del levantamiento</div>
+          <div class="opacity-60 small mt-1">{% translate "* Este importe solo cubre los puntos del levantamiento" %}</div>
         </div>
       </div>
       {% endif %}
@@ -192,7 +193,7 @@
             {% if not forloop.first %}
             <div class="alert alert-secondary py-2 px-3 mb-3" role="alert">
               <i class="bi bi-archive me-1"></i>
-              <strong>Versión {{ version_num }}</strong> — Versión archivada (solo lectura).
+              <strong>Versión {{ version_num }}</strong> {% translate "— Versión archivada (solo lectura)." %}
             </div>
             {% endif %}
 
@@ -205,11 +206,11 @@
                     <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
                       <span class="fw-semibold fs-6">{{ line.title }}</span>
                       {% if line.status == 'accepted' %}
-                        <span class="badge badge-accepted"><i class="bi bi-check-circle me-1"></i>Aceptado</span>
+                        <span class="badge badge-accepted"><i class="bi bi-check-circle me-1"></i>{% translate "Aceptado" %}</span>
                       {% elif line.status == 'rejected' %}
-                        <span class="badge badge-rejected"><i class="bi bi-x-circle me-1"></i>Rechazado</span>
+                        <span class="badge badge-rejected"><i class="bi bi-x-circle me-1"></i>{% translate "Rechazado" %}</span>
                       {% else %}
-                        <span class="badge badge-pending">Pendiente</span>
+                        <span class="badge badge-pending">{% translate "Pendiente" %}</span>
                       {% endif %}
                       <span class="badge bg-light text-muted border" style="font-size:.7rem;">v{{ line.version }}</span>
                     </div>
@@ -226,7 +227,7 @@
                         <input type="hidden" name="action" value="accept">
                         <button type="submit"
                                 class="btn btn-sm {% if line.status == 'accepted' %}btn-success{% else %}btn-outline-success{% endif %}">
-                          <i class="bi bi-check-lg me-1"></i> Aceptar
+                          <i class="bi bi-check-lg me-1"></i> {% translate "Aceptar" %}
                         </button>
                       </form>
                       <form method="post">
@@ -235,13 +236,13 @@
                         <input type="hidden" name="action" value="reject">
                         <button type="submit"
                                 class="btn btn-sm {% if line.status == 'rejected' %}btn-danger{% else %}btn-outline-danger{% endif %}">
-                          <i class="bi bi-x-lg me-1"></i> Rechazar
+                          <i class="bi bi-x-lg me-1"></i> {% translate "Rechazar" %}
                         </button>
                       </form>
                       <button type="button"
                               class="btn btn-sm btn-outline-primary"
                               onclick="toggleForm({{ line.pk }})">
-                        <i class="bi bi-plus-lg me-1"></i> Agregar comentario / adjunto
+                        <i class="bi bi-plus-lg me-1"></i> {% translate "Agregar comentario / adjunto" %}
                       </button>
                     </div>
                     {% endif %}
@@ -251,7 +252,7 @@
                     <div class="mt-3">
                       <div class="small text-muted fw-semibold mb-2">
                         <i class="bi bi-chat-left-text me-1"></i>
-                        {{ line.comments.count }} comentario{% if line.comments.count != 1 %}s{% endif %}
+                        {{ line.comments.count }} comentario{% if line.comments.count != 1 %}{% translate "s" %}{% endif %}
                       </div>
                       <div class="d-flex flex-column gap-2">
                         {% for comment in line.comments.all %}
@@ -274,7 +275,7 @@
                                     class="d-inline m-0">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-link p-0 text-danger no-print"
-                                        title="Eliminar comentario" style="font-size:.8rem;line-height:1;">
+                                        title="{% translate 'Eliminar comentario' %}" style="font-size:.8rem;line-height:1;">
                                   <i class="bi bi-trash3"></i>
                                 </button>
                               </form>
@@ -287,7 +288,7 @@
                           {% if comment.attachment %}
                             <a href="{{ comment.attachment.url }}" target="_blank"
                                class="attachment-link text-decoration-none text-primary">
-                              <i class="bi bi-paperclip me-1"></i>Ver adjunto
+                              <i class="bi bi-paperclip me-1"></i>{% translate "Ver adjunto" %}
                             </a>
                           {% endif %}
                         </div>
@@ -305,21 +306,21 @@
                           <button class="nav-link active py-1 px-3" id="tab-comment-{{ line.pk }}"
                                   data-bs-toggle="tab" data-bs-target="#pane-comment-{{ line.pk }}"
                                   type="button" role="tab" style="font-size:.85rem;">
-                            <i class="bi bi-chat-left-text me-1"></i>Comentar
+                            <i class="bi bi-chat-left-text me-1"></i>{% translate "Comentar" %}
                           </button>
                         </li>
                         <li class="nav-item" role="presentation">
                           <button class="nav-link py-1 px-3" id="tab-ai-{{ line.pk }}"
                                   data-bs-toggle="tab" data-bs-target="#pane-ai-{{ line.pk }}"
                                   type="button" role="tab" style="font-size:.85rem;">
-                            <i class="bi bi-stars me-1"></i>Preguntar a la IA
+                            <i class="bi bi-stars me-1"></i>{% translate "Preguntar a la IA" %}
                           </button>
                         </li>
                         <li class="nav-item" role="presentation">
                           <button class="nav-link py-1 px-3" id="tab-edit-{{ line.pk }}"
                                   data-bs-toggle="tab" data-bs-target="#pane-edit-{{ line.pk }}"
                                   type="button" role="tab" style="font-size:.85rem;">
-                            <i class="bi bi-pencil-square me-1"></i>Editar línea
+                            <i class="bi bi-pencil-square me-1"></i>{% translate "Editar línea" %}
                           </button>
                         </li>
                       </ul>
@@ -332,11 +333,11 @@
                             <div class="row g-2 mb-2">
                               <div class="col-md-6">
                                 <input type="text" name="author_name" class="form-control form-control-sm"
-                                       placeholder="Tu nombre *" required>
+                                       placeholder="{% translate 'Tu nombre *' %}" required>
                               </div>
                               <div class="col-md-6">
                                 <input type="email" name="author_email" class="form-control form-control-sm"
-                                       placeholder="Tu email (opcional)">
+                                       placeholder="{% translate 'Tu email (opcional)' %}">
                               </div>
                             </div>
                             <div class="position-relative mb-2">
@@ -348,41 +349,41 @@
                                       style="bottom:6px;right:6px;font-size:.72rem;padding:2px 8px;background:#6d28d9;color:#fff;border:none;border-radius:4px;line-height:1.4;"
                                       onclick="reviewWithAI({{ line.pk }})"
                                       id="review-btn-{{ line.pk }}"
-                                      title="La IA revisa y mejora tu comentario">
-                                <i class="bi bi-stars"></i> Revisar con IA
+                                      title="{% translate 'La IA revisa y mejora tu comentario' %}">
+                                <i class="bi bi-stars"></i> {% translate "Revisar con IA" %}
                               </button>
                             </div>
                             <div class="mb-3">
                               <label class="form-label small text-muted mb-1">
-                                <i class="bi bi-paperclip me-1"></i>Adjunto (PDF, Word, imagen, ZIP — máx. 10 MB)
+                                <i class="bi bi-paperclip me-1"></i>{% translate "Adjunto (PDF, Word, imagen, ZIP — máx. 10 MB)" %}
                               </label>
                               <input type="file" name="attachment" class="form-control form-control-sm"
                                      accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.zip,.xlsx,.xls">
                             </div>
                             <div class="d-flex gap-2">
                               <button type="submit" class="btn btn-primary btn-sm">
-                                <i class="bi bi-send me-1"></i> Enviar
+                                <i class="bi bi-send me-1"></i> {% translate "Enviar" %}
                               </button>
                               <button type="button" class="btn btn-outline-secondary btn-sm"
                                       onclick="toggleForm({{ line.pk }})">
-                                Cancelar
+                                {% translate "Cancelar" %}
                               </button>
                             </div>
                           </form>
                         </div>
                         <!-- Pestaña: Preguntar a la IA -->
                         <div class="tab-pane fade" id="pane-ai-{{ line.pk }}" role="tabpanel">
-                          <p class="text-muted small mb-2">Pregúntale a la IA sobre este proceso y usa la respuesta como comentario.</p>
+                          <p class="text-muted small mb-2">{% translate "Pregúntale a la IA sobre este proceso y usa la respuesta como comentario." %}</p>
                           <div class="d-flex gap-2 mb-2">
                             <input type="text" id="ai-q-{{ line.pk }}"
                                    class="form-control form-control-sm"
-                                   placeholder="Ej. ¿Cómo optimizar este proceso? ¿Qué riesgos tiene?"
+                                   placeholder="{% translate 'Ej. ¿Cómo optimizar este proceso? ¿Qué riesgos tiene?' %}"
                                    onkeydown="if(event.key==='Enter'){event.preventDefault();askAI({{ line.pk }})}">
                             <button type="button"
                                     class="btn btn-sm flex-shrink-0"
                                     style="background:#6d28d9;color:#fff;white-space:nowrap;"
                                     onclick="askAI({{ line.pk }})">
-                              <i class="bi bi-stars me-1"></i>Preguntar
+                              <i class="bi bi-stars me-1"></i>{% translate "Preguntar" %}
                             </button>
                           </div>
                           <div id="ai-resp-{{ line.pk }}" class="mt-2" style="display:none;">
@@ -390,7 +391,7 @@
                             <button type="button" class="btn btn-link btn-sm p-0 mt-1 text-decoration-none"
                                     style="font-size:.8rem;color:#6d28d9;"
                                     onclick="useAIResponse({{ line.pk }})">
-                              <i class="bi bi-clipboard-plus me-1"></i>Usar como comentario
+                              <i class="bi bi-clipboard-plus me-1"></i>{% translate "Usar como comentario" %}
                             </button>
                           </div>
                           <div id="ai-err-{{ line.pk }}" class="text-danger small mt-1" style="display:none;"></div>
@@ -399,7 +400,7 @@
                         <div class="tab-pane fade" id="pane-edit-{{ line.pk }}" role="tabpanel">
                           <div class="alert alert-warning py-2 px-3 mb-3" style="font-size:.82rem;">
                             <i class="bi bi-info-circle me-1"></i>
-                            Al guardar, los valores anteriores quedan registrados como comentario de trazabilidad.
+                            {% translate "Al guardar, los valores anteriores quedan registrados como comentario de trazabilidad." %}
                           </div>
                           <form method="post" novalidate>
                             {% csrf_token %}
@@ -407,30 +408,30 @@
                             <input type="hidden" name="action" value="edit_line">
                             <div class="mb-2">
                               <label class="form-label small fw-semibold mb-1">
-                                Tu nombre <span class="text-danger">*</span>
+                                {% translate "Tu nombre" %} <span class="text-danger">*</span>
                               </label>
                               <input type="text" name="author_name" class="form-control form-control-sm"
-                                     placeholder="Nombre de quien edita" required>
+                                     placeholder="{% translate 'Nombre de quien edita' %}" required>
                             </div>
                             <div class="mb-2">
                               <label class="form-label small fw-semibold mb-1">
-                                Título del proceso <span class="text-danger">*</span>
+                                {% translate "Título del proceso" %} <span class="text-danger">*</span>
                               </label>
                               <input type="text" name="new_title" class="form-control form-control-sm"
                                      value="{{ line.title }}" required>
                             </div>
                             <div class="mb-3">
-                              <label class="form-label small fw-semibold mb-1">Descripción</label>
+                              <label class="form-label small fw-semibold mb-1">{% translate "Descripción" %}</label>
                               <textarea name="new_description" class="form-control form-control-sm" rows="4"
                                         placeholder="Descripción del proceso...">{{ line.description }}</textarea>
                             </div>
                             <div class="d-flex gap-2">
                               <button type="submit" class="btn btn-warning btn-sm">
-                                <i class="bi bi-floppy me-1"></i> Guardar cambios
+                                <i class="bi bi-floppy me-1"></i> {% translate "Guardar cambios" %}
                               </button>
                               <button type="button" class="btn btn-outline-secondary btn-sm"
                                       onclick="toggleForm({{ line.pk }})">
-                                Cancelar
+                                {% translate "Cancelar" %}
                               </button>
                             </div>
                           </form>
@@ -473,7 +474,7 @@
       {% else %}
         <p class="text-muted text-center py-4">
           <i class="bi bi-clipboard-x fs-3 d-block mb-2"></i>
-          Este levantamiento no tiene líneas registradas.
+          {% translate "Este levantamiento no tiene líneas registradas." %}
         </p>
       {% endif %}
 
@@ -481,42 +482,42 @@
       <div class="mt-4 no-print">
         <button type="button" class="btn btn-outline-primary btn-sm"
                 onclick="document.getElementById('add-line-panel').classList.toggle('d-none')">
-          <i class="bi bi-plus-circle me-1"></i> Proponer nuevo proceso
+          <i class="bi bi-plus-circle me-1"></i> {% translate "Proponer nuevo proceso" %}
         </button>
         <div id="add-line-panel" class="d-none mt-3 p-4 border rounded bg-light">
-          <h6 class="fw-semibold mb-3"><i class="bi bi-plus-lg me-1 text-primary"></i>Nuevo proceso</h6>
+          <h6 class="fw-semibold mb-3"><i class="bi bi-plus-lg me-1 text-primary"></i>{% translate "Nuevo proceso" %}</h6>
           <form method="post" novalidate>
             {% csrf_token %}
             <input type="hidden" name="action" value="add_line">
             <div class="mb-3">
-              <label class="form-label small fw-semibold">Título del proceso <span class="text-danger">*</span></label>
+              <label class="form-label small fw-semibold">{% translate "Título del proceso" %} <span class="text-danger">*</span></label>
               <input type="text" name="new_title" class="form-control form-control-sm"
-                     placeholder="Ej. Validación de facturas, Alta de proveedor..." required>
+                     placeholder="{% translate 'Ej. Validación de facturas, Alta de proveedor...' %}" required>
             </div>
             <div class="mb-3">
-              <label class="form-label small fw-semibold">Descripción <span class="text-muted fw-normal">(opcional)</span></label>
+              <label class="form-label small fw-semibold">{% translate "Descripción" %} <span class="text-muted fw-normal">{% translate "(opcional)" %}</span></label>
               <textarea name="new_description" class="form-control form-control-sm" rows="3"
                         placeholder="Describe el proceso con detalle..."></textarea>
             </div>
             <div class="row g-2 mb-3">
               <div class="col-md-6">
-                <label class="form-label small fw-semibold">Tu nombre <span class="text-muted fw-normal">(opcional)</span></label>
+                <label class="form-label small fw-semibold">{% translate "Tu nombre" %} <span class="text-muted fw-normal">{% translate "(opcional)" %}</span></label>
                 <input type="text" name="proposer_name" class="form-control form-control-sm"
-                       placeholder="Nombre del proponente">
+                       placeholder="{% translate 'Nombre del proponente' %}">
               </div>
               <div class="col-md-6">
-                <label class="form-label small fw-semibold">Tu email <span class="text-muted fw-normal">(opcional)</span></label>
+                <label class="form-label small fw-semibold">{% translate "Tu email" %} <span class="text-muted fw-normal">{% translate "(opcional)" %}</span></label>
                 <input type="email" name="proposer_email" class="form-control form-control-sm"
                        placeholder="correo@ejemplo.com">
               </div>
             </div>
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-primary btn-sm">
-                <i class="bi bi-send me-1"></i> Enviar propuesta
+                <i class="bi bi-send me-1"></i> {% translate "Enviar propuesta" %}
               </button>
               <button type="button" class="btn btn-outline-secondary btn-sm"
                       onclick="document.getElementById('add-line-panel').classList.add('d-none')">
-                Cancelar
+                {% translate "Cancelar" %}
               </button>
             </div>
           </form>
@@ -528,7 +529,7 @@
     {% if survey_urls %}
     <div class="px-4 py-4 border-top">
       <h6 class="fw-semibold mb-3 text-muted">
-        <i class="bi bi-link-45deg me-1"></i> Recursos y enlaces
+        <i class="bi bi-link-45deg me-1"></i> {% translate "Recursos y enlaces" %}
       </h6>
       <div class="d-flex flex-column gap-2">
         {% for u in survey_urls %}
@@ -558,11 +559,10 @@
   <div class="survey-card mt-4">
     <div class="survey-header">
       <h2 class="h5 mb-0 fw-bold">
-        <i class="bi bi-pen me-2"></i> Firma de acuerdo
+        <i class="bi bi-pen me-2"></i> {% translate "Firma de acuerdo" %}
       </h2>
       <p class="mb-0 mt-1 opacity-75 small">
-        Al firmar, el participante confirma haber revisado y aceptado el contenido del levantamiento.
-        Puede haber múltiples firmantes.
+        {% translate "Al firmar, el participante confirma haber revisado y aceptado el contenido del levantamiento. Puede haber múltiples firmantes." %}
       </p>
     </div>
 
@@ -571,7 +571,7 @@
       <!-- Firmas existentes -->
       {% if signatures %}
       <h6 class="text-muted text-uppercase fw-semibold mb-3" style="letter-spacing:.05em;">
-        <i class="bi bi-people me-1"></i> Firmantes
+        <i class="bi bi-people me-1"></i> {% translate "Firmantes" %}
         <span class="badge bg-secondary ms-1">{{ signatures|length }}</span>
       </h6>
       <div class="row g-3 mb-4">
@@ -600,7 +600,7 @@
 
       <!-- Formulario nueva firma -->
       <h6 class="fw-semibold mb-3 no-print">
-        <i class="bi bi-plus-circle me-1"></i> Agregar firma
+        <i class="bi bi-plus-circle me-1"></i> {% translate "Agregar firma" %}
       </h6>
       <form method="post" id="sign-form" class="no-print" onsubmit="return prepareSignature()">
         {% csrf_token %}
@@ -608,24 +608,24 @@
         <input type="hidden" name="signature_data" id="signature_data">
         <div class="row g-3 mb-3">
           <div class="col-md-4">
-            <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
-            <input type="text" name="signer_name" class="form-control" required placeholder="Nombre completo">
+            <label class="form-label fw-semibold">{% translate "Nombre" %} <span class="text-danger">*</span></label>
+            <input type="text" name="signer_name" class="form-control" required placeholder="{% translate 'Nombre completo' %}">
           </div>
           <div class="col-md-4">
-            <label class="form-label fw-semibold">Email</label>
+            <label class="form-label fw-semibold">{% translate "Email" %}</label>
             <input type="email" name="signer_email" class="form-control" placeholder="correo@ejemplo.com">
           </div>
           <div class="col-md-4">
-            <label class="form-label fw-semibold">Teléfono</label>
+            <label class="form-label fw-semibold">{% translate "Teléfono" %}</label>
             <input type="tel" name="signer_phone" class="form-control" placeholder="+52 555 000 0000">
           </div>
         </div>
         <div class="mb-3">
-          <label class="form-label fw-semibold">Firma <span class="text-danger">*</span></label>
+          <label class="form-label fw-semibold">{% translate "Firma" %} <span class="text-danger">*</span></label>
           <div class="d-flex align-items-center gap-2 mb-1">
-            <small class="text-muted">Dibuja tu firma en el recuadro</small>
+            <small class="text-muted">{% translate "Dibuja tu firma en el recuadro" %}</small>
             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearCanvas()">
-              <i class="bi bi-eraser me-1"></i> Limpiar
+              <i class="bi bi-eraser me-1"></i> {% translate "Limpiar" %}
             </button>
           </div>
           <canvas id="signature-canvas"
@@ -633,7 +633,7 @@
           </canvas>
         </div>
         <button type="submit" class="btn btn-primary">
-          <i class="bi bi-check2-circle me-1"></i> Firmar acuerdo
+          <i class="bi bi-check2-circle me-1"></i> {% translate "Firmar acuerdo" %}
         </button>
       </form>
 
@@ -646,7 +646,7 @@
       <div class="card-header d-flex align-items-center justify-content-between py-3 px-4"
            style="background:linear-gradient(135deg,#0f3460,#533483);">
         <span class="text-white fw-bold">
-          <i class="bi bi-stars me-2"></i>Historial de Análisis IA
+          <i class="bi bi-stars me-2"></i>{% translate "Historial de Análisis IA" %}
         </span>
         <span class="badge bg-white text-dark" id="ai-history-count">
           {{ ai_analyses|length }}
@@ -676,15 +676,15 @@
                     data-bs-toggle="collapse"
                     data-bs-target="#collapse-hist-{{ rec.pk }}"
                     onclick="this.querySelector('i').classList.toggle('bi-chevron-down');this.querySelector('i').classList.toggle('bi-chevron-up');">
-              <i class="bi bi-chevron-down me-1"></i>Ver análisis
+              <i class="bi bi-chevron-down me-1"></i>{% translate "Ver análisis" %}
             </button>
           </div>
           {% endfor %}
         {% else %}
           <div class="text-center py-4 text-muted" id="ai-history-empty">
             <i class="bi bi-stars fs-2 opacity-25"></i>
-            <p class="mt-2 mb-0 small">Aún no se han generado análisis.<br>
-            Usa el botón <strong>"Analizar con IA"</strong> en la cabecera.</p>
+            <p class="mt-2 mb-0 small">{% translate "Aún no se han generado análisis." %}<br>
+            {% translate "Usa el botón" %} <strong>{% translate '"Analizar con IA"' %}</strong> {% translate "en la cabecera." %}</p>
           </div>
         {% endif %}
       </div>
@@ -699,7 +699,7 @@
     <div class="modal-content">
       <div class="modal-header" style="background:#ef4444;">
         <h5 class="modal-title text-white fw-bold" id="rechazarSurveyModalLabel">
-          <i class="bi bi-x-circle me-2"></i>Rechazar levantamiento
+          <i class="bi bi-x-circle me-2"></i>{% translate "Rechazar levantamiento" %}
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
@@ -708,15 +708,15 @@
         <input type="hidden" name="action" value="change_status">
         <input type="hidden" name="new_status" value="rechazado">
         <div class="modal-body">
-          <p class="text-muted mb-3">Por favor indica el motivo por el cual se rechaza este levantamiento.</p>
-          <label class="form-label fw-semibold">Motivo del rechazo <span class="text-danger">*</span></label>
+          <p class="text-muted mb-3">{% translate "Por favor indica el motivo por el cual se rechaza este levantamiento." %}</p>
+          <label class="form-label fw-semibold">{% translate "Motivo del rechazo" %} <span class="text-danger">*</span></label>
           <textarea name="rejection_reason" class="form-control" rows="4"
                     placeholder="Describe el motivo del rechazo..." required></textarea>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
           <button type="submit" class="btn btn-sm text-white" style="background:#ef4444;border:none;">
-            <i class="bi bi-x-lg me-1"></i>Confirmar rechazo
+            <i class="bi bi-x-lg me-1"></i>{% translate "Confirmar rechazo" %}
           </button>
         </div>
       </form>
@@ -738,8 +738,8 @@
         <!-- Estado: cargando -->
         <div id="ai-analysis-loading" class="text-center py-5">
           <div class="spinner-border mb-3" style="color:#6d28d9;width:3rem;height:3rem;"></div>
-          <p class="text-muted fw-semibold">Analizando todos los procesos del levantamiento…</p>
-          <p class="text-muted small">Esto puede tardar unos segundos</p>
+          <p class="text-muted fw-semibold">{% translate "Analizando todos los procesos del levantamiento…" %}</p>
+          <p class="text-muted small">{% translate "Esto puede tardar unos segundos" %}</p>
         </div>
         <!-- Estado: resultado -->
         <div id="ai-analysis-result" style="display:none;">
@@ -748,7 +748,7 @@
             <div id="ai-analysis-meta" class="text-muted small"></div>
             <button type="button" class="btn btn-sm btn-outline-secondary"
                     onclick="copyAnalysis()" id="copy-analysis-btn">
-              <i class="bi bi-clipboard me-1"></i>Copiar análisis
+              <i class="bi bi-clipboard me-1"></i>{% translate "Copiar análisis" %}
             </button>
           </div>
           <div id="ai-analysis-content" class="p-4" style="font-size:.93rem;line-height:1.7;"></div>
@@ -759,12 +759,12 @@
           <p class="text-danger fw-semibold mt-2" id="ai-analysis-error-msg"></p>
           <button type="button" class="btn btn-outline-primary btn-sm mt-2"
                   onclick="startAIAnalysis()">
-            <i class="bi bi-arrow-clockwise me-1"></i>Reintentar
+            <i class="bi bi-arrow-clockwise me-1"></i>{% translate "Reintentar" %}
           </button>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">{% translate "Cerrar" %}</button>
       </div>
     </div>
   </div>

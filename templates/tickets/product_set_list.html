@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Conjuntos de Productos{% endblock %}
+{% block title %}{% translate "Conjuntos de Productos" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -10,10 +11,10 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-box-seam"></i> Conjuntos de Productos
+                        <i class="bi bi-box-seam"></i> {% translate "Conjuntos de Productos" %}
                     </h5>
                     <a href="{% url 'product_set_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear Conjunto
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Conjunto" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -22,11 +23,11 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Título</th>
-                                        <th>Productos</th>
-                                        <th>Estado</th>
-                                        <th>Creado</th>
-                                        <th>Acciones</th>
+                                        <th>{% translate "Título" %}</th>
+                                        <th>{% translate "Productos" %}</th>
+                                        <th>{% translate "Estado" %}</th>
+                                        <th>{% translate "Creado" %}</th>
+                                        <th>{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -47,11 +48,11 @@
                                         <td>
                                             {% if product_set.is_public %}
                                                 <span class="badge bg-success">
-                                                    <i class="bi bi-globe"></i> Público
+                                                    <i class="bi bi-globe"></i> {% translate "Público" %}
                                                 </span>
                                             {% else %}
                                                 <span class="badge bg-secondary">
-                                                    <i class="bi bi-lock"></i> Privado
+                                                    <i class="bi bi-lock"></i> {% translate "Privado" %}
                                                 </span>
                                             {% endif %}
                                         </td>
@@ -62,12 +63,12 @@
                                             <div class="btn-group" role="group">
                                                 <a href="{% url 'product_set_detail' product_set.pk %}" 
                                                    class="btn btn-outline-primary btn-sm" 
-                                                   title="Ver detalles">
+                                                   title="{% translate 'Ver detalles' %}">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
                                                 <a href="{% url 'product_set_edit' product_set.pk %}" 
                                                    class="btn btn-outline-secondary btn-sm" 
-                                                   title="Editar">
+                                                   title="{% translate 'Editar' %}">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
                                                 <a href="{% url 'product_set_toggle_public' product_set.pk %}" 
@@ -78,14 +79,14 @@
                                                 {% if product_set.is_public %}
                                                 <a href="{{ product_set.get_public_url }}" 
                                                    class="btn btn-outline-info btn-sm" 
-                                                   title="Ver vista pública" 
+                                                   title="{% translate 'Ver vista pública' %}" 
                                                    target="_blank">
                                                     <i class="bi bi-box-arrow-up-right"></i>
                                                 </a>
                                                 {% endif %}
                                                 <a href="{% url 'product_set_delete' product_set.pk %}" 
                                                    class="btn btn-outline-danger btn-sm" 
-                                                   title="Eliminar">
+                                                   title="{% translate 'Eliminar' %}">
                                                     <i class="bi bi-trash"></i>
                                                 </a>
                                             </div>
@@ -100,10 +101,10 @@
                             <div class="mb-3">
                                 <i class="bi bi-box-seam display-1 text-muted"></i>
                             </div>
-                            <h4 class="text-muted">No hay conjuntos de productos</h4>
-                            <p class="text-muted">Crea tu primer conjunto de productos para comenzar.</p>
+                            <h4 class="text-muted">{% translate "No hay conjuntos de productos" %}</h4>
+                            <p class="text-muted">{% translate "Crea tu primer conjunto de productos para comenzar." %}</p>
                             <a href="{% url 'product_set_create' %}" class="btn btn-primary">
-                                <i class="bi bi-plus-circle"></i> Crear Primer Conjunto
+                                <i class="bi bi-plus-circle"></i> {% translate "Crear Primer Conjunto" %}
                             </a>
                         </div>
                     {% endif %}

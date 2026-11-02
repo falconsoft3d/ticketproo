@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -291,25 +292,25 @@
         <div class="exercise-controls">
             {% if exercise.status == 'pending' %}
                 <button class="btn-start" onclick="startExercise()">
-                    <i class="bi bi-play-circle"></i> Iniciar
+                    <i class="bi bi-play-circle"></i> {% translate "Iniciar" %}
                 </button>
             {% elif exercise.status == 'in_progress' %}
                 <button class="btn-pause" onclick="pauseExercise()">
-                    <i class="bi bi-pause-circle"></i> Pausar
+                    <i class="bi bi-pause-circle"></i> {% translate "Pausar" %}
                 </button>
                 <button class="btn-finish" onclick="finishExercise()">
-                    <i class="bi bi-stop-circle"></i> Finalizar
+                    <i class="bi bi-stop-circle"></i> {% translate "Finalizar" %}
                 </button>
             {% elif exercise.status == 'paused' %}
                 <button class="btn-start" onclick="pauseExercise()">
-                    <i class="bi bi-play-circle"></i> Reanudar
+                    <i class="bi bi-play-circle"></i> {% translate "Reanudar" %}
                 </button>
                 <button class="btn-finish" onclick="finishExercise()">
-                    <i class="bi bi-stop-circle"></i> Finalizar
+                    <i class="bi bi-stop-circle"></i> {% translate "Finalizar" %}
                 </button>
             {% elif exercise.status == 'finished' %}
                 <button class="btn-clone" onclick="cloneExercise()">
-                    <i class="bi bi-files"></i> Clonar
+                    <i class="bi bi-files"></i> {% translate "Clonar" %}
                 </button>
             {% endif %}
         </div>
@@ -317,13 +318,13 @@
         <div class="exercise-status">
             <span class="status-badge status-{{ exercise.status }}" id="statusBadge">
                 {% if exercise.status == 'pending' %}
-                    ⏸️ Pendiente
+                    {% translate "⏸️ Pendiente" %}
                 {% elif exercise.status == 'in_progress' %}
-                    ▶️ En Progreso
+                    {% translate "▶️ En Progreso" %}
                 {% elif exercise.status == 'paused' %}
-                    ⏸️ Pausado
+                    {% translate "⏸️ Pausado" %}
                 {% else %}
-                    ⏹️ Finalizado
+                    {% translate "⏹️ Finalizado" %}
                 {% endif %}
             </span>
         </div>
@@ -346,7 +347,7 @@
                 <div class="counter-target">de {{ exercise.sets_target }}</div>
                 {% if exercise.status in 'in_progress,paused' %}
                 <div class="tap-hint">
-                    <i class="bi bi-hand-index"></i> Toca para completar tanda
+                    <i class="bi bi-hand-index"></i> {% translate "Toca para completar tanda" %}
                 </div>
                 {% endif %}
             </div>
@@ -360,13 +361,13 @@
              onclick="addRep()" id="repsZone">
             <div class="counter-content">
                 <div class="counter-name">
-                    <i class="bi bi-arrow-repeat"></i> REPETICIONES
+                    <i class="bi bi-arrow-repeat"></i> {% translate "REPETICIONES" %}
                 </div>
                 <div class="counter-display" id="repsDisplay">{{ exercise.current_reps }}</div>
                 <div class="counter-target">de {{ exercise.reps_target }}</div>
                 {% if exercise.status in 'in_progress,paused' %}
                 <div class="tap-hint">
-                    <i class="bi bi-hand-index"></i> Toca para añadir repetición
+                    <i class="bi bi-hand-index"></i> {% translate "Toca para añadir repetición" %}
                 </div>
                 {% endif %}
             </div>
@@ -377,10 +378,10 @@
     <div class="finished-overlay" id="finishedOverlay">
         <div class="finished-content">
             <div class="trophy-icon">🏆</div>
-            <h1>¡Ejercicio Completado!</h1>
+            <h1>{% translate "¡Ejercicio Completado!" %}</h1>
             <h3 id="finishedStats"></h3>
             <button class="btn btn-light mt-4" onclick="location.reload()">
-                <i class="bi bi-arrow-clockwise"></i> Recargar
+                <i class="bi bi-arrow-clockwise"></i> {% translate "Recargar" %}
             </button>
         </div>
     </div>

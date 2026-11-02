@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Eliminar Consulta{% endblock %}
+{% block title %}{% translate "Eliminar Consulta" %}{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -10,30 +11,30 @@
             <div class="card shadow">
                 <div class="card-header bg-danger text-white">
                     <h4 class="mb-0">
-                        <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                        <i class="bi bi-exclamation-triangle"></i> {% translate "Confirmar Eliminación" %}
                     </h4>
                 </div>
                 <div class="card-body">
-                    <p class="lead">¿Estás seguro que deseas eliminar esta consulta?</p>
+                    <p class="lead">{% translate "¿Estás seguro que deseas eliminar esta consulta?" %}</p>
                     
                     <div class="alert alert-warning">
-                        <strong>Consulta:</strong> {{ query.name }}
+                        <strong>{% translate "Consulta:" %}</strong> {{ query.name }}
                     </div>
                     
                     <pre class="font-monospace bg-light p-3 rounded">{{ query.query }}</pre>
                     
                     <p class="text-muted mb-0">
-                        <i class="bi bi-info-circle"></i> Esta acción no se puede deshacer.
+                        <i class="bi bi-info-circle"></i> {% translate "Esta acción no se puede deshacer." %}
                     </p>
                 </div>
                 <div class="card-footer">
                     <form method="post" class="d-inline">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-trash"></i> Sí, Eliminar
+                            <i class="bi bi-trash"></i> {% translate "Sí, Eliminar" %}
                         </button>
                         <a href="{% url 'sql_query_list' %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
+                            <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                         </a>
                     </form>
                 </div>

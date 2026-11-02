@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -18,19 +19,19 @@
                         {{ project.get_status_display }}
                     </span>
                     {% if not project.is_active %}
-                        <span class="badge bg-secondary">Inactivo</span>
+                        <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                     {% endif %}
                 </div>
                 <div class="btn-group" role="group">
                     <a href="{% url 'project_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver a Proyectos
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver a Proyectos" %}
                     </a>
                     {% if can_edit_project %}
                         <a href="{% url 'project_edit' project.id %}" class="btn btn-primary">
-                            <i class="bi bi-pencil"></i> Editar
+                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                         </a>
                         <a href="{% url 'project_duplicate' project.id %}" class="btn btn-success">
-                            <i class="bi bi-files"></i> Duplicar
+                            <i class="bi bi-files"></i> {% translate "Duplicar" %}
                         </a>
                     {% endif %}
                 </div>
@@ -43,25 +44,25 @@
         <div class="col-md-8">
             <div class="card h-100">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información del Proyecto</h5>
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> {% translate "Información del Proyecto" %}</h5>
                 </div>
                 <div class="card-body">
                     {% if project.description %}
                         <p class="card-text">{{ project.description|linebreaks }}</p>
                     {% else %}
-                        <p class="text-muted"><em>Sin descripción</em></p>
+                        <p class="text-muted"><em>{% translate "Sin descripción" %}</em></p>
                     {% endif %}
                     
                     <div class="row mt-4">
                         {% if project.start_date %}
                         <div class="col-md-6">
-                            <strong>Fecha de Inicio:</strong><br>
+                            <strong>{% translate "Fecha de Inicio:" %}</strong><br>
                             <span class="text-muted">{{ project.start_date|date:"d/m/Y" }}</span>
                         </div>
                         {% endif %}
                         {% if project.end_date %}
                         <div class="col-md-6">
-                            <strong>Fecha de Fin:</strong><br>
+                            <strong>{% translate "Fecha de Fin:" %}</strong><br>
                             <span class="text-muted">{{ project.end_date|date:"d/m/Y" }}</span>
                         </div>
                         {% endif %}
@@ -69,11 +70,11 @@
                     
                     <div class="row mt-3">
                         <div class="col-md-6">
-                            <strong>Creado por:</strong><br>
+                            <strong>{% translate "Creado por:" %}</strong><br>
                             <span class="text-muted">{{ project.created_by.get_full_name|default:project.created_by.username }}</span>
                         </div>
                         <div class="col-md-6">
-                            <strong>Fecha de Creación:</strong><br>
+                            <strong>{% translate "Fecha de Creación:" %}</strong><br>
                             <span class="text-muted">{{ project.created_at|date:"d/m/Y H:i" }}</span>
                         </div>
                     </div>
@@ -84,17 +85,17 @@
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Estadísticas</h5>
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> {% translate "Estadísticas" %}</h5>
                 </div>
                 <div class="card-body text-center">
                     <div class="row">
                         <div class="col-12 mb-3">
                             <h3 class="text-primary mb-0">{{ total_hours }}h</h3>
-                            <small class="text-muted">Total de Horas Trabajadas</small>
+                            <small class="text-muted">{% translate "Total de Horas Trabajadas" %}</small>
                         </div>
                         <div class="col-12 mb-3">
                             <h4 class="text-success mb-0">{{ active_workers_count }}</h4>
-                            <small class="text-muted">Trabajadores Activos Ahora</small>
+                            <small class="text-muted">{% translate "Trabajadores Activos Ahora" %}</small>
                         </div>
                     </div>
                 </div>
@@ -109,7 +110,7 @@
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="bi bi-share text-primary"></i> 
-                        Enlace Público para Compartir
+                        {% translate "Enlace Público para Compartir" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -117,8 +118,8 @@
                         <div class="alert alert-info d-flex align-items-center">
                             <i class="bi bi-info-circle me-2"></i>
                             <div class="flex-grow-1">
-                                <strong>Enlace público disponible</strong><br>
-                                <small>Comparte este enlace para mostrar información del proyecto sin necesidad de iniciar sesión.</small>
+                                <strong>{% translate "Enlace público disponible" %}</strong><br>
+                                <small>{% translate "Comparte este enlace para mostrar información del proyecto sin necesidad de iniciar sesión." %}</small>
                             </div>
                         </div>
                         
@@ -127,30 +128,30 @@
                                    value="{{ request.build_absolute_uri }}{% url 'public_project_view' project.public_share_token %}" 
                                    readonly>
                             <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard()">
-                                <i class="bi bi-clipboard"></i> Copiar
+                                <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                             </button>
                             <a href="{% url 'public_project_view' project.public_share_token %}" 
                                class="btn btn-outline-success" target="_blank">
-                                <i class="bi bi-eye"></i> Ver
+                                <i class="bi bi-eye"></i> {% translate "Ver" %}
                             </a>
                         </div>
                         
                         <div class="text-muted">
                             <small>
                                 <i class="bi bi-shield-check"></i> 
-                                Este enlace muestra: Total de horas, tickets levantados/resueltos, órdenes completadas y datos de contacto del equipo.
+                                {% translate "Este enlace muestra: Total de horas, tickets levantados/resueltos, órdenes completadas y datos de contacto del equipo." %}
                             </small>
                         </div>
                     {% else %}
                         <div class="text-center py-3">
                             <p class="text-muted mb-3">
                                 <i class="bi bi-link-45deg fa-2x"></i><br>
-                                No hay enlace público generado para este proyecto
+                                {% translate "No hay enlace público generado para este proyecto" %}
                             </p>
                             <form method="post" action="{% url 'project_generate_public_token' project.id %}" class="d-inline">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-plus-circle"></i> Generar Enlace Público
+                                    <i class="bi bi-plus-circle"></i> {% translate "Generar Enlace Público" %}
                                 </button>
                             </form>
                         </div>
@@ -204,19 +205,19 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Registros Recientes (Últimos 10)</h5>
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> {% translate "Registros Recientes (Últimos 10)" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Empleado</th>
-                                    <th>Fecha</th>
-                                    <th>Entrada</th>
-                                    <th>Salida</th>
-                                    <th>Duración</th>
-                                    <th>Notas</th>
+                                    <th>{% translate "Empleado" %}</th>
+                                    <th>{% translate "Fecha" %}</th>
+                                    <th>{% translate "Entrada" %}</th>
+                                    <th>{% translate "Salida" %}</th>
+                                    <th>{% translate "Duración" %}</th>
+                                    <th>{% translate "Notas" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -256,8 +257,8 @@
                 <div class="card-body text-center py-5">
                     <div class="text-muted">
                         <i class="bi bi-clock fa-3x mb-3"></i>
-                        <h5>Sin registros de tiempo</h5>
-                        <p>Aún no hay registros de tiempo para este proyecto.</p>
+                        <h5>{% translate "Sin registros de tiempo" %}</h5>
+                        <p>{% translate "Aún no hay registros de tiempo para este proyecto." %}</p>
                     </div>
                 </div>
             </div>

@@ -358,3 +358,28 @@ class PageVisitTrackingMiddleware(MiddlewareMixin):
             logger.error(f"Error obteniendo título de landing page: {e}")
         
         return "Landing Page"
+
+class UserLanguageMiddleware:
+    """
+    Activa el idioma que el usuario eligió en el selector (cookie de la vista
+    set_language). Si no eligió ninguno se usa LANGUAGE_CODE: a diferencia de
+    LocaleMiddleware, se ignora Accept-Language a propósito para que el sitio
+    no cambie de idioma sin que el usuario lo pida.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        from django.conf import settings
+        from django.utils import translation
+
+        code = request.COOKIES.get(settings.LANGUAGE_COOKIE_NAME)
+        if code not in dict(settings.LANGUAGES):
+            code = settings.LANGUAGE_CODE
+        translation.activate(code)
+        request.LANGUAGE_CODE = translation.get_language()
+
+        response = self.get_response(request)
+        response.headers.setdefault('Content-Language', request.LANGUAGE_CODE)
+        return response

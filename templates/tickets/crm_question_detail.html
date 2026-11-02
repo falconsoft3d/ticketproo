@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Pregunta #{{ question.sequence }} - {{ question.company.name }}{% endblock %}
@@ -45,11 +46,11 @@
                 <div class="d-flex gap-2">
                     <a href="{% url 'crm_question_edit' question.pk %}" class="btn btn-outline-primary">
                         <i class="fas fa-edit me-2"></i>
-                        Editar
+                        {% translate "Editar" %}
                     </a>
                     <a href="{% url 'crm_questions_list' %}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-2"></i>
-                        Volver
+                        {% translate "Volver" %}
                     </a>
                 </div>
             </div>
@@ -59,21 +60,21 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
-                            <h6 class="mb-1">Estado de la Pregunta</h6>
+                            <h6 class="mb-1">{% translate "Estado de la Pregunta" %}</h6>
                             {% if question.is_answered %}
                                 <span class="status-badge status-respondida">
                                     <i class="fas fa-check me-1"></i>
-                                    Respondida
+                                    {% translate "Respondida" %}
                                 </span>
                             {% else %}
                                 <span class="status-badge status-pendiente">
                                     <i class="fas fa-clock me-1"></i>
-                                    Pendiente
+                                    {% translate "Pendiente" %}
                                 </span>
                             {% endif %}
                         </div>
                         <div class="text-end">
-                            <small class="text-muted d-block">Creada el</small>
+                            <small class="text-muted d-block">{% translate "Creada el" %}</small>
                             <strong>{{ question.created_at|date:"d/m/Y H:i" }}</strong>
                         </div>
                     </div>
@@ -81,7 +82,7 @@
                     <!-- Información de origen -->
                     <div class="row">
                         <div class="col-md-6">
-                            <small class="text-muted d-block">Origen:</small>
+                            <small class="text-muted d-block">{% translate "Origen:" %}</small>
                             <span class="badge {{ question.get_origin_badge_class }}">
                                 <i class="{{ question.get_origin_icon }} me-1"></i>
                                 {{ question.get_creator_display }}
@@ -89,7 +90,7 @@
                         </div>
                         {% if question.is_answered %}
                         <div class="col-md-6">
-                            <small class="text-muted d-block">Respondida por:</small>
+                            <small class="text-muted d-block">{% translate "Respondida por:" %}</small>
                             <strong>{{ question.get_answered_by_display }}</strong>
                             <small class="text-muted d-block">{{ question.answered_at|date:"d/m/Y H:i" }}</small>
                         </div>
@@ -103,17 +104,17 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="fas fa-user me-2"></i>
-                        Información del Contacto
+                        {% translate "Información del Contacto" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <strong>Nombre:</strong><br>
+                            <strong>{% translate "Nombre:" %}</strong><br>
                             {{ question.person_name }}
                         </div>
                         <div class="col-md-6">
-                            <strong>Email:</strong><br>
+                            <strong>{% translate "Email:" %}</strong><br>
                             <a href="mailto:{{ question.person_email }}" class="text-decoration-none">
                                 {{ question.person_email }}
                             </a>
@@ -127,7 +128,7 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="fas fa-question me-2"></i>
-                        Pregunta
+                        {% translate "Pregunta" %}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -141,7 +142,7 @@
                 <div class="card-header bg-transparent">
                     <h6 class="mb-0">
                         <i class="fas fa-reply me-2"></i>
-                        Respuesta
+                        {% translate "Respuesta" %}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -150,7 +151,7 @@
                     <div class="border-top pt-3">
                         <small class="text-muted">
                             <i class="fas fa-user me-1"></i>
-                            Respondida por <strong>{{ question.get_answered_by_display }}</strong>
+                            {% translate "Respondida por" %} <strong>{{ question.get_answered_by_display }}</strong>
                             el {{ question.answered_at|date:"d/m/Y H:i" }}
                         </small>
                     </div>
@@ -161,11 +162,11 @@
             <div class="card mb-4">
                 <div class="card-body text-center py-4">
                     <i class="fas fa-clock fa-2x text-muted mb-3"></i>
-                    <h6 class="text-muted mb-2">Pregunta Pendiente de Respuesta</h6>
-                    <p class="text-muted mb-3">Esta pregunta aún no ha sido respondida.</p>
+                    <h6 class="text-muted mb-2">{% translate "Pregunta Pendiente de Respuesta" %}</h6>
+                    <p class="text-muted mb-3">{% translate "Esta pregunta aún no ha sido respondida." %}</p>
                     <a href="{% url 'crm_question_edit' question.pk %}" class="btn btn-primary">
                         <i class="fas fa-reply me-2"></i>
-                        Responder Pregunta
+                        {% translate "Responder Pregunta" %}
                     </a>
                 </div>
             </div>
@@ -176,26 +177,26 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="fas fa-info-circle me-2"></i>
-                        Información Adicional
+                        {% translate "Información Adicional" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="row text-sm">
                         <div class="col-md-6 mb-2">
-                            <strong>Registrada por:</strong><br>
+                            <strong>{% translate "Registrada por:" %}</strong><br>
                             {% if question.created_by %}
                                 {{ question.created_by.get_full_name|default:question.created_by.username }}
                             {% else %}
-                                <span class="text-muted">Pregunta Pública</span>
+                                <span class="text-muted">{% translate "Pregunta Pública" %}</span>
                             {% endif %}
                         </div>
                         <div class="col-md-6 mb-2">
-                            <strong>Fecha de registro:</strong><br>
+                            <strong>{% translate "Fecha de registro:" %}</strong><br>
                             {{ question.created_at|date:"d/m/Y H:i" }}
                         </div>
                         {% if question.updated_at %}
                         <div class="col-md-6 mb-2">
-                            <strong>Última actualización:</strong><br>
+                            <strong>{% translate "Última actualización:" %}</strong><br>
                             {{ question.updated_at|date:"d/m/Y H:i" }}
                         </div>
                         {% endif %}
@@ -207,16 +208,16 @@
             <div class="d-flex justify-content-between mt-4 mb-4">
                 <a href="{% url 'crm_questions_list' %}" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left me-2"></i>
-                    Volver a la Lista
+                    {% translate "Volver a la Lista" %}
                 </a>
                 <div class="d-flex gap-2">
                     <a href="{% url 'crm_question_edit' question.pk %}" class="btn btn-primary">
                         <i class="fas fa-edit me-2"></i>
-                        Editar
+                        {% translate "Editar" %}
                     </a>
                     <a href="{% url 'crm_question_delete' question.pk %}" class="btn btn-outline-danger">
                         <i class="fas fa-trash me-2"></i>
-                        Eliminar
+                        {% translate "Eliminar" %}
                     </a>
                 </div>
             </div>

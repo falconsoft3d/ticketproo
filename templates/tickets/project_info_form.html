@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -24,7 +25,7 @@
       <i class="bi bi-folder-fill me-2 text-primary"></i>{{ page_title }}
     </h1>
     <a href="{% url 'project_info_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i> Volver
+      <i class="bi bi-arrow-left me-1"></i> {% translate "Volver" %}
     </a>
   </div>
 
@@ -34,19 +35,19 @@
     <!-- Datos generales -->
     <div class="card shadow-sm mb-4">
       <div class="card-header fw-semibold">
-        <i class="bi bi-info-circle me-2"></i>Datos del Proyecto
+        <i class="bi bi-info-circle me-2"></i>{% translate "Datos del Proyecto" %}
       </div>
       <div class="card-body">
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+            <label class="form-label fw-semibold">{% translate "Nombre" %} <span class="text-danger">*</span></label>
             <input type="text" name="name" class="form-control" required
-                   value="{{ project.name|default:'' }}" placeholder="Nombre del proyecto">
+                   value="{{ project.name|default:'' }}" placeholder="{% translate 'Nombre del proyecto' %}">
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Empresa</label>
+            <label class="form-label fw-semibold">{% translate "Empresa" %}</label>
             <select name="company" class="form-select">
-              <option value="">— Sin empresa —</option>
+              <option value="">{% translate "— Sin empresa —" %}</option>
               {% for c in companies %}
               <option value="{{ c.pk }}"
                 {% if project and project.company_id == c.pk %}selected{% endif %}>
@@ -57,25 +58,25 @@
           </div>
           {% if project.folio %}
           <div class="col-md-3">
-            <label class="form-label fw-semibold text-muted">Folio</label>
+            <label class="form-label fw-semibold text-muted">{% translate "Folio" %}</label>
             <div class="form-control-plaintext fw-bold font-monospace text-primary">{{ project.folio }}</div>
           </div>
           {% endif %}
           <div class="col-12">
-            <label class="form-label fw-semibold">Descripción del proyecto</label>
+            <label class="form-label fw-semibold">{% translate "Descripción del proyecto" %}</label>
             <textarea name="description" class="form-control" rows="3"
                       placeholder="Descripción general del proyecto (visible en la vista pública)…">{{ project.description|default:'' }}</textarea>
           </div>
           <div class="col-md-4">
             <label class="form-label fw-semibold">
-              <i class="bi bi-lock me-1 text-muted"></i>PIN de acceso público
-              <span class="text-muted fw-normal small">(opcional)</span>
+              <i class="bi bi-lock me-1 text-muted"></i>{% translate "PIN de acceso público" %}
+              <span class="text-muted fw-normal small">{% translate "(opcional)" %}</span>
             </label>
             <input type="text" name="pin" class="form-control font-monospace"
                    value="{{ project.pin|default:'' }}"
-                   placeholder="Déjalo vacío para acceso libre"
+                   placeholder="{% translate 'Déjalo vacío para acceso libre' %}"
                    autocomplete="off" maxlength="20">
-            <div class="form-text">Si se establece, los visitantes deberán ingresarlo para ver el contenido.</div>
+            <div class="form-text">{% translate "Si se establece, los visitantes deberán ingresarlo para ver el contenido." %}</div>
           </div>
         </div>
       </div>
@@ -84,9 +85,9 @@
     <!-- Líneas -->
     <div class="card shadow-sm mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="bi bi-list-ul me-2"></i>Líneas del proyecto</h6>
+        <h6 class="mb-0"><i class="bi bi-list-ul me-2"></i>{% translate "Líneas del proyecto" %}</h6>
         <button type="button" class="btn btn-sm btn-outline-primary" id="add-line-btn">
-          <i class="bi bi-plus-lg me-1"></i> Agregar línea
+          <i class="bi bi-plus-lg me-1"></i> {% translate "Agregar línea" %}
         </button>
       </div>
       <div class="card-body">
@@ -96,32 +97,32 @@
           <div class="line-row p-3 mb-2 border">
             <div class="row g-2 align-items-start">
               <div class="col-md-1">
-                <label class="form-label small text-muted mb-1">Orden</label>
+                <label class="form-label small text-muted mb-1">{% translate "Orden" %}</label>
                 <input type="number" name="line_order" class="form-control form-control-sm line-order-input"
                        min="1" value="{{ forloop.counter }}">
               </div>
               <div class="col-md-3">
-                <label class="form-label small text-muted mb-1">Título</label>
+                <label class="form-label small text-muted mb-1">{% translate "Título" %}</label>
                 <input type="text" name="line_title" class="form-control form-control-sm"
-                       value="{{ line.title }}" required placeholder="Título">
+                       value="{{ line.title }}" required placeholder="{% translate 'Título' %}">
               </div>
               <div class="col-md-2">
-                <label class="form-label small text-muted mb-1">Categoría</label>
+                <label class="form-label small text-muted mb-1">{% translate "Categoría" %}</label>
                 <div class="input-group input-group-sm">
                   <select name="line_category" class="form-select form-select-sm">
-                    <option value="">— Sin cat. —</option>
+                    <option value="">{% translate "— Sin cat. —" %}</option>
                     {% for cat in line_categories %}
                     <option value="{{ cat.id }}"
                       {% if line.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
                     {% endfor %}
                   </select>
-                  <button type="button" class="btn btn-outline-secondary btn-new-category" title="Nueva categoría">
+                  <button type="button" class="btn btn-outline-secondary btn-new-category" title="{% translate 'Nueva categoría' %}">
                     <i class="bi bi-plus"></i>
                   </button>
                 </div>
               </div>
               <div class="col-md-5">
-                <label class="form-label small text-muted mb-1">Texto</label>
+                <label class="form-label small text-muted mb-1">{% translate "Texto" %}</label>
                 <textarea name="line_body" class="form-control form-control-sm" rows="2"
                           placeholder="Contenido…">{{ line.body }}</textarea>
               </div>
@@ -137,7 +138,7 @@
         </div>
         <p id="empty-lines-msg" class="text-muted text-center py-3 mb-0
            {% if action == 'edit' and lines %}d-none{% endif %}">
-          <i class="bi bi-info-circle me-1"></i>Haz clic en "Agregar línea" para añadir contenido.
+          <i class="bi bi-info-circle me-1"></i>{% translate 'Haz clic en "Agregar línea" para añadir contenido.' %}
         </p>
       </div>
     </div>
@@ -145,9 +146,9 @@
     <div class="d-flex gap-2">
       <button type="submit" class="btn btn-primary">
         <i class="bi bi-check-lg me-1"></i>
-        {% if action == 'edit' %}Guardar cambios{% else %}Crear proyecto{% endif %}
+        {% if action == 'edit' %}{% translate "Guardar cambios" %}{% else %}{% translate "Crear proyecto" %}{% endif %}
       </button>
-      <a href="{% url 'project_info_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+      <a href="{% url 'project_info_list' %}" class="btn btn-outline-secondary">{% translate "Cancelar" %}</a>
     </div>
   </form>
 </div>
@@ -157,26 +158,26 @@
   <div class="line-row p-3 mb-2 border">
     <div class="row g-2 align-items-start">
       <div class="col-md-1">
-        <label class="form-label small text-muted mb-1">Orden</label>
+        <label class="form-label small text-muted mb-1">{% translate "Orden" %}</label>
         <input type="number" name="line_order" class="form-control form-control-sm line-order-input" min="1" value="1">
       </div>
       <div class="col-md-3">
-        <label class="form-label small text-muted mb-1">Título</label>
-        <input type="text" name="line_title" class="form-control form-control-sm" required placeholder="Título">
+        <label class="form-label small text-muted mb-1">{% translate "Título" %}</label>
+        <input type="text" name="line_title" class="form-control form-control-sm" required placeholder="{% translate 'Título' %}">
       </div>
       <div class="col-md-2">
-        <label class="form-label small text-muted mb-1">Categoría</label>
+        <label class="form-label small text-muted mb-1">{% translate "Categoría" %}</label>
         <div class="input-group input-group-sm">
           <select name="line_category" class="form-select form-select-sm">
-            <option value="">— Sin cat. —</option>
+            <option value="">{% translate "— Sin cat. —" %}</option>
           </select>
-          <button type="button" class="btn btn-outline-secondary btn-new-category" title="Nueva categoría">
+          <button type="button" class="btn btn-outline-secondary btn-new-category" title="{% translate 'Nueva categoría' %}">
             <i class="bi bi-plus"></i>
           </button>
         </div>
       </div>
       <div class="col-md-5">
-        <label class="form-label small text-muted mb-1">Texto</label>
+        <label class="form-label small text-muted mb-1">{% translate "Texto" %}</label>
         <textarea name="line_body" class="form-control form-control-sm" rows="2" placeholder="Contenido…"></textarea>
       </div>
       <div class="col-md-1 d-flex align-items-end justify-content-end pb-1">

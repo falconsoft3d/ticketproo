@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -23,13 +24,13 @@
         </h2>
         <div>
             <a href="{% url 'multi_measurement_list' %}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+                <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
             </a>
             <a href="{% url 'multi_measurement_edit' measurement.pk %}" class="btn btn-warning">
-                <i class="bi bi-pencil"></i> Editar
+                <i class="bi bi-pencil"></i> {% translate "Editar" %}
             </a>
             <a href="{% url 'multi_measurement_delete' measurement.pk %}" class="btn btn-danger">
-                <i class="bi bi-trash"></i> Eliminar
+                <i class="bi bi-trash"></i> {% translate "Eliminar" %}
             </a>
         </div>
     </div>
@@ -48,7 +49,7 @@
         <div class="col-md-8">
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
-                    <strong><i class="bi bi-bar-chart"></i> Gráfico de Mediciones</strong>
+                    <strong><i class="bi bi-bar-chart"></i> {% translate "Gráfico de Mediciones" %}</strong>
                 </div>
                 <div class="card-body">
                     {% if records %}
@@ -58,7 +59,7 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="bi bi-graph-up" style="font-size: 3rem; color: #ccc;"></i>
-                            <p class="text-muted mt-3">No hay registros aún</p>
+                            <p class="text-muted mt-3">{% translate "No hay registros aún" %}</p>
                         </div>
                     {% endif %}
                 </div>
@@ -75,13 +76,13 @@
                             <table class="table table-sm table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Fecha y Hora</th>
+                                        <th>{% translate "Fecha y Hora" %}</th>
                                         <th>{{ measurement.label_1 }}</th>
                                         <th>{{ measurement.label_2 }}</th>
                                         <th>{{ measurement.label_3 }}</th>
                                         <th>{{ measurement.label_4 }}</th>
                                         <th>{{ measurement.label_5 }}</th>
-                                        <th>Acciones</th>
+                                        <th>{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -98,7 +99,7 @@
                                                       style="display: inline;"
                                                       onsubmit="return confirm('¿Estás seguro de eliminar este registro?');">
                                                     {% csrf_token %}
-                                                    <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
+                                                    <button type="submit" class="btn btn-sm btn-danger" title="{% translate 'Eliminar' %}">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </form>
@@ -109,7 +110,7 @@
                             </table>
                         </div>
                     {% else %}
-                        <p class="text-muted text-center py-3">No hay registros aún</p>
+                        <p class="text-muted text-center py-3">{% translate "No hay registros aún" %}</p>
                     {% endif %}
                 </div>
             </div>
@@ -120,7 +121,7 @@
             <!-- URL Pública para Registrar -->
             <div class="card mb-3">
                 <div class="card-header bg-success text-white">
-                    <strong><i class="bi bi-link-45deg"></i> URL Registro Público</strong>
+                    <strong><i class="bi bi-link-45deg"></i> {% translate "URL Registro Público" %}</strong>
                 </div>
                 <div class="card-body">
                     <div class="input-group mb-2">
@@ -132,7 +133,7 @@
                         </button>
                     </div>
                     <small class="text-muted">
-                        Para registrar mediciones diarias
+                        {% translate "Para registrar mediciones diarias" %}
                     </small>
                 </div>
             </div>
@@ -140,7 +141,7 @@
             <!-- URL Pública del Gráfico -->
             <div class="card mb-3">
                 <div class="card-header bg-primary text-white">
-                    <strong><i class="bi bi-bar-chart"></i> URL Gráfico Público</strong>
+                    <strong><i class="bi bi-bar-chart"></i> {% translate "URL Gráfico Público" %}</strong>
                 </div>
                 <div class="card-body">
                     <div class="input-group mb-2">
@@ -152,12 +153,12 @@
                         </button>
                     </div>
                     <small class="text-muted">
-                        Para ver el gráfico y tabla de datos
+                        {% translate "Para ver el gráfico y tabla de datos" %}
                     </small>
                     <div class="mt-2">
                         <a href="{% url 'multi_measurement_public_chart' measurement.public_token %}" 
                            target="_blank" class="btn btn-sm btn-primary w-100">
-                            <i class="bi bi-eye"></i> Ver Gráfico Público
+                            <i class="bi bi-eye"></i> {% translate "Ver Gráfico Público" %}
                         </a>
                     </div>
                 </div>
@@ -166,34 +167,34 @@
             <!-- QR Code Gráfico -->
             <div class="card mb-3">
                 <div class="card-header bg-info text-white">
-                    <strong><i class="bi bi-qr-code"></i> QR Gráfico</strong>
+                    <strong><i class="bi bi-qr-code"></i> {% translate "QR Gráfico" %}</strong>
                 </div>
                 <div class="card-body text-center">
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ request.scheme }}://{{ request.get_host }}{% url 'multi_measurement_public_chart' measurement.public_token %}" 
                          alt="QR Code Gráfico" class="img-fluid mb-2">
-                    <small class="text-muted d-block">Escanea para ver el gráfico</small>
+                    <small class="text-muted d-block">{% translate "Escanea para ver el gráfico" %}</small>
                 </div>
             </div>
 
             <!-- Información -->
             <div class="card mb-3">
                 <div class="card-header bg-info text-white">
-                    <strong><i class="bi bi-info-circle"></i> Información</strong>
+                    <strong><i class="bi bi-info-circle"></i> {% translate "Información" %}</strong>
                 </div>
                 <div class="card-body">
                     <p class="small mb-2">
-                        <strong>Estado:</strong> 
+                        <strong>{% translate "Estado:" %}</strong> 
                         {% if measurement.is_active %}
-                            <span class="badge bg-success">Activo</span>
+                            <span class="badge bg-success">{% translate "Activo" %}</span>
                         {% else %}
-                            <span class="badge bg-secondary">Inactivo</span>
+                            <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                         {% endif %}
                     </p>
                     <p class="small mb-2">
-                        <strong>Creado:</strong> {{ measurement.created_at|date:"d/m/Y H:i" }}
+                        <strong>{% translate "Creado:" %}</strong> {{ measurement.created_at|date:"d/m/Y H:i" }}
                     </p>
                     <p class="small mb-0">
-                        <strong>Total Registros:</strong> {{ records.count }}
+                        <strong>{% translate "Total Registros:" %}</strong> {{ records.count }}
                     </p>
                 </div>
             </div>
@@ -201,7 +202,7 @@
             <!-- Etiquetas -->
             <div class="card">
                 <div class="card-header bg-warning">
-                    <strong><i class="bi bi-tags"></i> Etiquetas</strong>
+                    <strong><i class="bi bi-tags"></i> {% translate "Etiquetas" %}</strong>
                 </div>
                 <div class="card-body">
                     <ul class="list-unstyled mb-0">

@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Políticas de Privacidad{% endblock %}
+{% block title %}{% translate "Políticas de Privacidad" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -12,13 +13,13 @@
                 <div class="col-md-8">
                     <h1>
                         <i class="bi bi-shield-check text-primary"></i> 
-                        Políticas de Privacidad
+                        {% translate "Políticas de Privacidad" %}
                     </h1>
-                    <p class="mb-0">Gestiona las políticas de privacidad del sitio</p>
+                    <p class="mb-0">{% translate "Gestiona las políticas de privacidad del sitio" %}</p>
                 </div>
                 <div class="col-md-4 text-end">
                     <a href="{% url 'privacy_policy_create' %}" class="btn btn-primary btn-lg">
-                        <i class="bi bi-plus-circle"></i> Nueva Política
+                        <i class="bi bi-plus-circle"></i> {% translate "Nueva Política" %}
                     </a>
                 </div>
             </div>
@@ -30,21 +31,21 @@
         <div class="card-body">
             <form method="get" class="row g-3">
                 <div class="col-md-6">
-                    <label for="search" class="form-label">Buscar</label>
+                    <label for="search" class="form-label">{% translate "Buscar" %}</label>
                     <input type="text" class="form-control" id="search" name="search" 
-                           value="{{ search }}" placeholder="Título o contenido...">
+                           value="{{ search }}" placeholder="{% translate 'Título o contenido...' %}">
                 </div>
                 <div class="col-md-4">
-                    <label for="status" class="form-label">Estado</label>
+                    <label for="status" class="form-label">{% translate "Estado" %}</label>
                     <select class="form-select" id="status" name="status">
-                        <option value="">Todos</option>
-                        <option value="active" {% if status == 'active' %}selected{% endif %}>Activas</option>
-                        <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactivas</option>
+                        <option value="">{% translate "Todos" %}</option>
+                        <option value="active" {% if status == 'active' %}selected{% endif %}>{% translate "Activas" %}</option>
+                        <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>{% translate "Inactivas" %}</option>
                     </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-search"></i> Buscar
+                        <i class="bi bi-search"></i> {% translate "Buscar" %}
                     </button>
                 </div>
             </form>
@@ -60,9 +61,9 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">{{ policy.title|truncatechars:50 }}</h5>
                         {% if policy.is_active %}
-                            <span class="badge bg-success">Activa</span>
+                            <span class="badge bg-success">{% translate "Activa" %}</span>
                         {% else %}
-                            <span class="badge bg-secondary">Inactiva</span>
+                            <span class="badge bg-secondary">{% translate "Inactiva" %}</span>
                         {% endif %}
                     </div>
                     <div class="card-body">
@@ -83,21 +84,21 @@
                             <div class="alert alert-success alert-sm mb-3">
                                 <i class="bi bi-link-45deg"></i> 
                                 <a href="{% url 'public_privacy_policy' policy.slug %}" target="_blank">
-                                    Ver pública
+                                    {% translate "Ver pública" %}
                                 </a>
                                 <button class="btn btn-sm btn-outline-success ms-2" 
                                         onclick="copyToClipboard('{{ request.scheme }}://{{ request.get_host }}{% url 'public_privacy_policy' policy.slug %}', this)">
-                                    <i class="bi bi-clipboard"></i> Copiar URL
+                                    <i class="bi bi-clipboard"></i> {% translate "Copiar URL" %}
                                 </button>
                             </div>
                         {% endif %}
                     </div>
                     <div class="card-footer d-flex justify-content-between">
                         <a href="{% url 'privacy_policy_edit' policy.pk %}" class="btn btn-sm btn-warning">
-                            <i class="bi bi-pencil"></i> Editar
+                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                         </a>
                         <a href="{% url 'privacy_policy_delete' policy.pk %}" class="btn btn-sm btn-danger">
-                            <i class="bi bi-trash"></i> Eliminar
+                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                         </a>
                     </div>
                 </div>
@@ -107,8 +108,8 @@
     {% else %}
         <div class="alert alert-info">
             <i class="bi bi-info-circle"></i> 
-            No se encontraron políticas de privacidad.
-            <a href="{% url 'privacy_policy_create' %}">Crear la primera política</a>.
+            {% translate "No se encontraron políticas de privacidad." %}
+            <a href="{% url 'privacy_policy_create' %}">{% translate "Crear la primera política" %}</a>.
         </div>
     {% endif %}
 </div>

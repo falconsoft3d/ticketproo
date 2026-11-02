@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -63,17 +64,17 @@
                 <div class="warning-icon">
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
-                <h2 class="mb-0">Confirmar Eliminación</h2>
-                <p class="mb-0 mt-2">Esta acción no se puede deshacer</p>
+                <h2 class="mb-0">{% translate "Confirmar Eliminación" %}</h2>
+                <p class="mb-0 mt-2">{% translate "Esta acción no se puede deshacer" %}</p>
             </div>
             
             <div class="p-4">
                 <div class="text-center mb-4">
                     <h4 class="text-danger">
-                        ¿Estás seguro de que quieres eliminar este tutor IA?
+                        {% translate "¿Estás seguro de que quieres eliminar este tutor IA?" %}
                     </h4>
                     <p class="text-muted">
-                        Se perderán todos los datos asociados permanentemente.
+                        {% translate "Se perderán todos los datos asociados permanentemente." %}
                     </p>
                 </div>
                 
@@ -97,11 +98,11 @@
                                 </small>
                                 {% if tutor.is_private %}
                                     <span class="badge bg-warning">
-                                        <i class="fas fa-lock"></i> Privado
+                                        <i class="fas fa-lock"></i> {% translate "Privado" %}
                                     </span>
                                 {% else %}
                                     <span class="badge bg-success">
-                                        <i class="fas fa-globe"></i> Público
+                                        <i class="fas fa-globe"></i> {% translate "Público" %}
                                     </span>
                                 {% endif %}
                             </div>
@@ -114,13 +115,13 @@
                     <div class="col-md-4 mb-3">
                         <div class="stats-item">
                             <div class="h4 text-warning mb-1">{{ tutor.progress_reports.count }}</div>
-                            <small class="text-muted">Reportes de progreso</small>
+                            <small class="text-muted">{% translate "Reportes de progreso" %}</small>
                         </div>
                     </div>
                     <div class="col-md-4 mb-3">
                         <div class="stats-item">
                             <div class="h4 text-info mb-1">{{ tutor.attachments.count }}</div>
-                            <small class="text-muted">Archivos adjuntos</small>
+                            <small class="text-muted">{% translate "Archivos adjuntos" %}</small>
                         </div>
                     </div>
                     <div class="col-md-4 mb-3">
@@ -128,7 +129,7 @@
                             <div class="h4 text-danger mb-1">
                                 {{ tutor.progress_reports.count }}
                             </div>
-                            <small class="text-muted">Total de reportes</small>
+                            <small class="text-muted">{% translate "Total de reportes" %}</small>
                         </div>
                     </div>
                 </div>
@@ -136,14 +137,14 @@
                 <div class="confirm-text">
                     <h6 class="text-warning mb-2">
                         <i class="fas fa-exclamation-circle me-2"></i>
-                        Datos que se eliminarán permanentemente:
+                        {% translate "Datos que se eliminarán permanentemente:" %}
                     </h6>
                     <ul class="mb-0">
                         <li>El tutor IA "{{ tutor.title }}"</li>
                         <li>Todos los reportes de progreso ({{ tutor.progress_reports.count }})</li>
-                        <li>Todos los archivos adjuntos</li>
-                        <li>Todo el feedback y recomendaciones de IA generadas</li>
-                        <li>El historial completo de aprendizaje</li>
+                        <li>{% translate "Todos los archivos adjuntos" %}</li>
+                        <li>{% translate "Todo el feedback y recomendaciones de IA generadas" %}</li>
+                        <li>{% translate "El historial completo de aprendizaje" %}</li>
                     </ul>
                 </div>
                 
@@ -152,11 +153,11 @@
                     {% csrf_token %}
                     <div class="d-flex justify-content-between align-items-center">
                         <a href="{% url 'ai_tutor_detail' tutor.pk %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>Cancelar
+                            <i class="fas fa-arrow-left me-2"></i>{% translate "Cancelar" %}
                         </a>
                         
                         <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás absolutamente seguro? Esta acción no se puede deshacer.')">
-                            <i class="fas fa-trash me-2"></i>Sí, Eliminar Permanentemente
+                            <i class="fas fa-trash me-2"></i>{% translate "Sí, Eliminar Permanentemente" %}
                         </button>
                     </div>
                 </form>
@@ -164,7 +165,7 @@
                 <div class="text-center mt-3">
                     <small class="text-muted">
                         <i class="fas fa-info-circle me-1"></i>
-                        Si solo quieres pausar temporalmente el tutor, puedes editarlo y cambiar su estado a "Pausado".
+                        {% translate 'Si solo quieres pausar temporalmente el tutor, puedes editarlo y cambiar su estado a "Pausado".' %}
                     </small>
                 </div>
             </div>

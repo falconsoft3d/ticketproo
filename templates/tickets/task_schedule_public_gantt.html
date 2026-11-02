@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -56,7 +57,7 @@
 {% block content %}
 <div class="container-fluid py-4">
     <div class="text-center mb-4">
-        <h1 class="display-5"><i class="fas fa-chart-gantt"></i> Diagrama Gantt</h1>
+        <h1 class="display-5"><i class="fas fa-chart-gantt"></i> {% translate "Diagrama Gantt" %}</h1>
         <h3 class="text-primary">{{ schedule.title }}</h3>
         <p class="text-muted">
             <i class="fas fa-building"></i> {{ schedule.company.name }} | 
@@ -66,7 +67,7 @@
 
     <div class="text-center mb-4">
         <a href="{% url 'task_schedule_public' schedule.public_token %}" class="btn btn-secondary">
-            <i class="fas fa-list"></i> Vista Lista
+            <i class="fas fa-list"></i> {% translate "Vista Lista" %}
         </a>
     </div>
 
@@ -75,7 +76,7 @@
             <div class="card text-center shadow-sm kpi-card">
                 <div class="card-body py-3">
                     <h4 class="text-info mb-0">{{ kpis.total_tasks }}</h4>
-                    <small class="text-muted">Total Tareas</small>
+                    <small class="text-muted">{% translate "Total Tareas" %}</small>
                 </div>
             </div>
         </div>
@@ -83,7 +84,7 @@
             <div class="card text-center shadow-sm kpi-card">
                 <div class="card-body py-3">
                     <h4 class="text-success mb-0">{{ kpis.completed_tasks }}</h4>
-                    <small class="text-muted">Completadas</small>
+                    <small class="text-muted">{% translate "Completadas" %}</small>
                 </div>
             </div>
         </div>
@@ -91,7 +92,7 @@
             <div class="card text-center shadow-sm kpi-card">
                 <div class="card-body py-3">
                     <h4 class="text-warning mb-0">{{ kpis.pending_tasks }}</h4>
-                    <small class="text-muted">Pendientes</small>
+                    <small class="text-muted">{% translate "Pendientes" %}</small>
                 </div>
             </div>
         </div>
@@ -99,7 +100,7 @@
             <div class="card text-center shadow-sm kpi-card">
                 <div class="card-body py-3">
                     <h4 class="text-danger mb-0">{{ kpis.overdue_tasks }}</h4>
-                    <small class="text-muted">Vencidas</small>
+                    <small class="text-muted">{% translate "Vencidas" %}</small>
                 </div>
             </div>
         </div>
@@ -107,7 +108,7 @@
             <div class="card text-center shadow-sm kpi-card">
                 <div class="card-body py-3">
                     <h4 class="text-primary mb-0">{{ kpis.progress_percentage|floatformat:0 }}%</h4>
-                    <small class="text-muted">Progreso</small>
+                    <small class="text-muted">{% translate "Progreso" %}</small>
                 </div>
             </div>
         </div>
@@ -115,7 +116,7 @@
             <div class="card text-center shadow-sm kpi-card">
                 <div class="card-body py-3">
                     <h4 class="text-primary mb-0">{{ kpis.on_time_rate|floatformat:0 }}%</h4>
-                    <small class="text-muted">A Tiempo</small>
+                    <small class="text-muted">{% translate "A Tiempo" %}</small>
                 </div>
             </div>
         </div>
@@ -123,7 +124,7 @@
 
     <div class="card shadow">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0"><i class="fas fa-chart-gantt"></i> Diagrama de Gantt</h5>
+            <h5 class="mb-0"><i class="fas fa-chart-gantt"></i> {% translate "Diagrama de Gantt" %}</h5>
         </div>
         <div class="card-body gantt-container">
             <div id="gantt_chart"></div>
@@ -132,23 +133,23 @@
 
     <div class="card shadow mt-4">
         <div class="card-body">
-            <h6 class="mb-3"><i class="fas fa-info-circle"></i> Leyenda</h6>
+            <h6 class="mb-3"><i class="fas fa-info-circle"></i> {% translate "Leyenda" %}</h6>
             <div class="d-flex flex-wrap">
                 <div class="legend-item">
                     <div class="legend-color legend-completed"></div>
-                    <span>Completada</span>
+                    <span>{% translate "Completada" %}</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color legend-in-progress"></div>
-                    <span>En Progreso</span>
+                    <span>{% translate "En Progreso" %}</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color legend-overdue"></div>
-                    <span>Vencida</span>
+                    <span>{% translate "Vencida" %}</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color legend-not-started"></div>
-                    <span>No Iniciada</span>
+                    <span>{% translate "No Iniciada" %}</span>
                 </div>
             </div>
         </div>

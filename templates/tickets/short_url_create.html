@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -9,16 +10,16 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1>
                     <i class="fas fa-plus text-primary"></i> 
-                    Crear URL Corta
+                    {% translate "Crear URL Corta" %}
                 </h1>
                 <a href="{% url 'short_url_list' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver
+                    <i class="fas fa-arrow-left"></i> {% translate "Volver" %}
                 </a>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <h5><i class="fas fa-link"></i> Nueva URL Corta</h5>
+                    <h5><i class="fas fa-link"></i> {% translate "Nueva URL Corta" %}</h5>
                 </div>
                 <div class="card-body">
                     <form method="post">
@@ -26,7 +27,7 @@
                         
                         <div class="mb-3">
                             <label for="original_url" class="form-label">
-                                <i class="fas fa-external-link-alt"></i> URL Original *
+                                <i class="fas fa-external-link-alt"></i> {% translate "URL Original *" %}
                             </label>
                             <input type="url" 
                                    class="form-control" 
@@ -35,28 +36,28 @@
                                    placeholder="https://ejemplo.com/ruta/muy/larga/con/parametros?param1=valor1&param2=valor2"
                                    required>
                             <div class="form-text">
-                                Introduce la URL completa que quieres acortar. Debe incluir el protocolo (http:// o https://).
+                                {% translate "Introduce la URL completa que quieres acortar. Debe incluir el protocolo (http:// o https://)." %}
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label for="title" class="form-label">
-                                <i class="fas fa-tag"></i> Título (Opcional)
+                                <i class="fas fa-tag"></i> {% translate "Título (Opcional)" %}
                             </label>
                             <input type="text" 
                                    class="form-control" 
                                    id="title" 
                                    name="title" 
-                                   placeholder="Título descriptivo para la URL"
+                                   placeholder="{% translate 'Título descriptivo para la URL' %}"
                                    maxlength="200">
                             <div class="form-text">
-                                Un título descriptivo te ayudará a identificar la URL más fácilmente.
+                                {% translate "Un título descriptivo te ayudará a identificar la URL más fácilmente." %}
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label for="description" class="form-label">
-                                <i class="fas fa-align-left"></i> Descripción (Opcional)
+                                <i class="fas fa-align-left"></i> {% translate "Descripción (Opcional)" %}
                             </label>
                             <textarea class="form-control" 
                                       id="description" 
@@ -64,44 +65,44 @@
                                       rows="3" 
                                       placeholder="Descripción detallada de la URL o su propósito"></textarea>
                             <div class="form-text">
-                                Puedes agregar una descripción más detallada sobre el contenido o propósito de la URL.
+                                {% translate "Puedes agregar una descripción más detallada sobre el contenido o propósito de la URL." %}
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label for="expires_days" class="form-label">
-                                <i class="fas fa-calendar-times"></i> Expiración (Opcional)
+                                <i class="fas fa-calendar-times"></i> {% translate "Expiración (Opcional)" %}
                             </label>
                             <select class="form-select" id="expires_days" name="expires_days">
-                                <option value="">Sin expiración</option>
-                                <option value="7">7 días</option>
-                                <option value="30">30 días</option>
-                                <option value="90">90 días</option>
-                                <option value="365">1 año</option>
+                                <option value="">{% translate "Sin expiración" %}</option>
+                                <option value="7">{% translate "7 días" %}</option>
+                                <option value="30">{% translate "30 días" %}</option>
+                                <option value="90">{% translate "90 días" %}</option>
+                                <option value="365">{% translate "1 año" %}</option>
                             </select>
                             <div class="form-text">
-                                Opcionalmente puedes establecer una fecha de expiración para la URL corta.
+                                {% translate "Opcionalmente puedes establecer una fecha de expiración para la URL corta." %}
                             </div>
                         </div>
 
                         <!-- Preview de cómo se verá la URL corta -->
                         <div class="alert alert-info">
-                            <h6><i class="fas fa-info-circle"></i> Vista Previa</h6>
+                            <h6><i class="fas fa-info-circle"></i> {% translate "Vista Previa" %}</h6>
                             <p class="mb-0">
                                 Tu URL corta se verá como: 
                                 <code>{{ request.scheme }}://{{ request.get_host }}/s/XXXXXX</code>
                             </p>
                             <small class="text-muted">
-                                Se generará automáticamente un código único de 6 caracteres.
+                                {% translate "Se generará automáticamente un código único de 6 caracteres." %}
                             </small>
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'short_url_list' %}" class="btn btn-secondary me-md-2">
-                                <i class="fas fa-times"></i> Cancelar
+                                <i class="fas fa-times"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Crear URL Corta
+                                <i class="fas fa-save"></i> {% translate "Crear URL Corta" %}
                             </button>
                         </div>
                     </form>
@@ -111,29 +112,29 @@
             <!-- Ayuda -->
             <div class="card mt-4">
                 <div class="card-header">
-                    <h6><i class="fas fa-question-circle"></i> ¿Cómo funciona?</h6>
+                    <h6><i class="fas fa-question-circle"></i> {% translate "¿Cómo funciona?" %}</h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4">
                             <div class="text-center mb-3">
                                 <i class="fas fa-link fa-2x text-primary mb-2"></i>
-                                <h6>1. Pega tu URL</h6>
-                                <p class="small">Introduce la URL larga que quieres acortar</p>
+                                <h6>{% translate "1. Pega tu URL" %}</h6>
+                                <p class="small">{% translate "Introduce la URL larga que quieres acortar" %}</p>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="text-center mb-3">
                                 <i class="fas fa-magic fa-2x text-success mb-2"></i>
-                                <h6>2. Generamos código</h6>
-                                <p class="small">Creamos un código único de 6 caracteres</p>
+                                <h6>{% translate "2. Generamos código" %}</h6>
+                                <p class="small">{% translate "Creamos un código único de 6 caracteres" %}</p>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="text-center mb-3">
                                 <i class="fas fa-share fa-2x text-info mb-2"></i>
-                                <h6>3. Comparte</h6>
-                                <p class="small">Usa tu nueva URL corta en cualquier lugar</p>
+                                <h6>{% translate "3. Comparte" %}</h6>
+                                <p class="small">{% translate "Usa tu nueva URL corta en cualquier lugar" %}</p>
                             </div>
                         </div>
                     </div>

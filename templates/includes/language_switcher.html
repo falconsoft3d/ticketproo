@@ -1,0 +1,21 @@
+{% load i18n %}
+{% get_current_language as CURRENT_LANG %}
+{% get_available_languages as AVAILABLE_LANGS %}
+<!-- Selector de idioma reutilizable (navbar pública y del panel) -->
+<li class="nav-item dropdown d-flex align-items-center">
+    <button type="button" class="ap-theme-toggle ap-lang-toggle" data-bs-toggle="dropdown" aria-expanded="false"
+            title="{% translate 'Idioma' %}" aria-label="{% translate 'Idioma' %}">
+        {{ CURRENT_LANG|upper }}
+    </button>
+    <form action="{% url 'set_language' %}" method="post" class="dropdown-menu dropdown-menu-end ap-lang-menu">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        {% for code, name in AVAILABLE_LANGS %}
+        <button type="submit" name="language" value="{{ code }}"
+                class="dropdown-item d-flex justify-content-between align-items-center{% if code == CURRENT_LANG %} active{% endif %}">
+            <span>{{ name }}</span>
+            <small class="ms-3 opacity-50">{{ code|upper }}</small>
+        </button>
+        {% endfor %}
+    </form>
+</li>

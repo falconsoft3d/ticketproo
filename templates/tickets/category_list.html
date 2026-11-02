@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -10,7 +11,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="fas fa-tags me-2"></i>{{ page_title }}</h2>
                 <a href="{% url 'category_create' %}" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>Nueva Categoría
+                    <i class="fas fa-plus me-2"></i>{% translate "Nueva Categoría" %}
                 </a>
             </div>
 
@@ -21,13 +22,13 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Color</th>
-                                    <th>Nombre</th>
-                                    <th>Descripción</th>
-                                    <th>Tickets</th>
-                                    <th>Estado</th>
-                                    <th>Fecha de Creación</th>
-                                    <th>Acciones</th>
+                                    <th>{% translate "Color" %}</th>
+                                    <th>{% translate "Nombre" %}</th>
+                                    <th>{% translate "Descripción" %}</th>
+                                    <th>{% translate "Tickets" %}</th>
+                                    <th>{% translate "Estado" %}</th>
+                                    <th>{% translate "Fecha de Creación" %}</th>
+                                    <th>{% translate "Acciones" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -45,7 +46,7 @@
                                         {% if category.description %}
                                             {{ category.description|truncatechars:50 }}
                                         {% else %}
-                                            <span class="text-muted">Sin descripción</span>
+                                            <span class="text-muted">{% translate "Sin descripción" %}</span>
                                         {% endif %}
                                     </td>
                                     <td>
@@ -55,9 +56,9 @@
                                     </td>
                                     <td>
                                         {% if category.is_active %}
-                                            <span class="badge bg-success">Activa</span>
+                                            <span class="badge bg-success">{% translate "Activa" %}</span>
                                         {% else %}
-                                            <span class="badge bg-secondary">Inactiva</span>
+                                            <span class="badge bg-secondary">{% translate "Inactiva" %}</span>
                                         {% endif %}
                                     </td>
                                     <td>
@@ -65,13 +66,13 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{% url 'category_detail' category.pk %}" class="btn btn-sm btn-outline-info" title="Ver detalles">
+                                            <a href="{% url 'category_detail' category.pk %}" class="btn btn-sm btn-outline-info" title="{% translate 'Ver detalles' %}">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{% url 'category_edit' category.pk %}" class="btn btn-sm btn-outline-warning" title="Editar">
+                                            <a href="{% url 'category_edit' category.pk %}" class="btn btn-sm btn-outline-warning" title="{% translate 'Editar' %}">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="{% url 'category_delete' category.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <a href="{% url 'category_delete' category.pk %}" class="btn btn-sm btn-outline-danger" title="{% translate 'Eliminar' %}">
                                                 <i class="fas fa-trash"></i>
                                             </a>
                                         </div>
@@ -86,10 +87,10 @@
             {% else %}
             <div class="text-center py-5">
                 <i class="fas fa-tags fa-3x text-muted mb-3"></i>
-                <h4 class="text-muted">No hay categorías registradas</h4>
-                <p class="text-muted">Crea la primera categoría para organizar mejor los tickets.</p>
+                <h4 class="text-muted">{% translate "No hay categorías registradas" %}</h4>
+                <p class="text-muted">{% translate "Crea la primera categoría para organizar mejor los tickets." %}</p>
                 <a href="{% url 'category_create' %}" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>Crear Primera Categoría
+                    <i class="fas fa-plus me-2"></i>{% translate "Crear Primera Categoría" %}
                 </a>
             </div>
             {% endif %}

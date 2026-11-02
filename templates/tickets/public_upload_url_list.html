@@ -1,17 +1,18 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}URLs Públicas de Subida - TicketProo{% endblock %}
+{% block title %}{% translate "URLs Públicas de Subida - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <!-- Breadcrumb -->
-            <nav aria-label="breadcrumb" class="mb-4">
+            <nav aria-label="{% translate 'breadcrumb' %}" class="mb-4">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    <li class="breadcrumb-item">Herramientas</li>
-                    <li class="breadcrumb-item active">URLs Públicas de Subida</li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                    <li class="breadcrumb-item">{% translate "Herramientas" %}</li>
+                    <li class="breadcrumb-item active">{% translate "URLs Públicas de Subida" %}</li>
                 </ol>
             </nav>
 
@@ -20,13 +21,13 @@
                 <div>
                     <h1 class="h3 mb-1">
                         <i class="bi bi-cloud-upload text-primary me-2"></i>
-                        URLs Públicas de Subida
+                        {% translate "URLs Públicas de Subida" %}
                     </h1>
-                    <p class="text-muted">Genera enlaces para que otros puedan subir documentos sin necesidad de autenticarse</p>
+                    <p class="text-muted">{% translate "Genera enlaces para que otros puedan subir documentos sin necesidad de autenticarse" %}</p>
                 </div>
                 <a href="{% url 'public_upload_url_create' %}" class="btn btn-primary">
                     <i class="bi bi-plus-circle me-1"></i>
-                    Nueva URL Pública
+                    {% translate "Nueva URL Pública" %}
                 </a>
             </div>
 
@@ -55,13 +56,13 @@
                                         <ul class="dropdown-menu">
                                             <li>
                                                 <a class="dropdown-item" href="{% url 'public_upload_url_detail' upload_url.pk %}">
-                                                    <i class="bi bi-eye me-1"></i> Ver detalle
+                                                    <i class="bi bi-eye me-1"></i> {% translate "Ver detalle" %}
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item" href="{% url 'public_upload_url_toggle' upload_url.pk %}">
                                                     <i class="bi bi-{% if upload_url.is_active %}toggle-off{% else %}toggle-on{% endif %} me-1"></i>
-                                                    {% if upload_url.is_active %}Desactivar{% else %}Activar{% endif %}
+                                                    {% if upload_url.is_active %}{% translate "Desactivar" %}{% else %}{% translate "Activar" %}{% endif %}
                                                 </a>
                                             </li>
                                         </ul>
@@ -71,11 +72,11 @@
                                     <!-- Estado -->
                                     <div class="mb-3">
                                         {% if not upload_url.is_active %}
-                                            <span class="badge bg-danger">Desactivada</span>
+                                            <span class="badge bg-danger">{% translate "Desactivada" %}</span>
                                         {% elif not upload_url.is_valid %}
-                                            <span class="badge bg-warning">Expirada</span>
+                                            <span class="badge bg-warning">{% translate "Expirada" %}</span>
                                         {% else %}
-                                            <span class="badge bg-success">Activa</span>
+                                            <span class="badge bg-success">{% translate "Activa" %}</span>
                                         {% endif %}
                                     </div>
 
@@ -99,7 +100,7 @@
                                         <div class="col-6">
                                             <div class="border-end">
                                                 <div class="fs-5 fw-bold text-primary">{{ upload_url.upload_count }}</div>
-                                                <div class="small text-muted">Subidas</div>
+                                                <div class="small text-muted">{% translate "Subidas" %}</div>
                                             </div>
                                         </div>
                                         <div class="col-6">
@@ -110,7 +111,7 @@
                                                     ∞
                                                 {% endif %}
                                             </div>
-                                            <div class="small text-muted">Restantes</div>
+                                            <div class="small text-muted">{% translate "Restantes" %}</div>
                                         </div>
                                     </div>
 
@@ -135,7 +136,7 @@
                                 <div class="card-footer">
                                     <a href="{% url 'public_upload_url_detail' upload_url.pk %}" class="btn btn-primary btn-sm w-100">
                                         <i class="bi bi-eye me-1"></i>
-                                        Ver Detalle
+                                        {% translate "Ver Detalle" %}
                                     </a>
                                 </div>
                             </div>
@@ -145,11 +146,11 @@
             {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-cloud-upload display-1 text-muted mb-3"></i>
-                    <h3 class="text-muted">No hay URLs públicas de subida</h3>
-                    <p class="text-muted mb-4">Crea tu primera URL pública para permitir que otros suban documentos</p>
+                    <h3 class="text-muted">{% translate "No hay URLs públicas de subida" %}</h3>
+                    <p class="text-muted mb-4">{% translate "Crea tu primera URL pública para permitir que otros suban documentos" %}</p>
                     <a href="{% url 'public_upload_url_create' %}" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-1"></i>
-                        Crear Primera URL
+                        {% translate "Crear Primera URL" %}
                     </a>
                 </div>
             {% endif %}

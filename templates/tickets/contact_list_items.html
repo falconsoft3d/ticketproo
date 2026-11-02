@@ -1,3 +1,4 @@
+{% load i18n %}
 {% for contact in contacts %}
 <tr class="contact-item">
     <td>
@@ -43,11 +44,11 @@
     <td>
         {% if contact.company_size %}
             {% if contact.company_size == 'small' %}
-                <span class="badge bg-secondary"><i class="bi bi-building"></i> Pequeña</span>
+                <span class="badge bg-secondary"><i class="bi bi-building"></i> {% translate "Pequeña" %}</span>
             {% elif contact.company_size == 'medium' %}
-                <span class="badge bg-primary"><i class="bi bi-building"></i> Mediana</span>
+                <span class="badge bg-primary"><i class="bi bi-building"></i> {% translate "Mediana" %}</span>
             {% elif contact.company_size == 'large' %}
-                <span class="badge bg-success"><i class="bi bi-buildings"></i> Grande</span>
+                <span class="badge bg-success"><i class="bi bi-buildings"></i> {% translate "Grande" %}</span>
             {% endif %}
         {% else %}
             <span class="text-muted">-</span>
@@ -66,7 +67,7 @@
             <div class="activity-info">
                 <div class="d-flex align-items-center justify-content-center mb-1">
                     <span class="badge bg-success me-1">{{ contact.activity_count }}</span>
-                    <i class="bi bi-telephone-fill text-success" title="Tiene actividades programadas"></i>
+                    <i class="bi bi-telephone-fill text-success" title="{% translate 'Tiene actividades programadas' %}"></i>
                 </div>
                 {% if contact.next_activity_date %}
                     <small class="activity-date text-muted">
@@ -79,7 +80,7 @@
                 {% else %}
                     <small class="activity-date text-warning">
                         <i class="bi bi-exclamation-circle"></i>
-                        Sin fecha futura
+                        {% translate "Sin fecha futura" %}
                     </small>
                 {% endif %}
             </div>
@@ -87,10 +88,10 @@
             <div class="activity-info">
                 <div class="d-flex align-items-center justify-content-center">
                     <span class="badge bg-light text-muted me-1">0</span>
-                    <i class="bi bi-telephone-x text-muted" title="Sin actividades"></i>
+                    <i class="bi bi-telephone-x text-muted" title="{% translate 'Sin actividades' %}"></i>
                 </div>
                 <small class="activity-date text-muted">
-                    Sin actividades
+                    {% translate "Sin actividades" %}
                 </small>
             </div>
         {% endif %}
@@ -98,7 +99,7 @@
     <td class="text-center">
         {% if contact.had_meeting %}
             <div>
-                <i class="bi bi-calendar-check-fill text-success" style="font-size: 1.2rem;" title="Reunión realizada"></i>
+                <i class="bi bi-calendar-check-fill text-success" style="font-size: 1.2rem;" title="{% translate 'Reunión realizada' %}"></i>
                 {% if contact.meeting_date %}
                     <br><small class="text-muted">{{ contact.meeting_date|date:"d/m/Y" }}</small>
                 {% endif %}
@@ -118,7 +119,7 @@
     <td>
         <div class="btn-group" role="group">
             <a href="{% url 'contact_detail' contact.pk %}" 
-               class="btn btn-outline-primary btn-sm" title="Ver">
+               class="btn btn-outline-primary btn-sm" title="{% translate 'Ver' %}">
                 <i class="bi bi-eye"></i>
             </a>
         </div>

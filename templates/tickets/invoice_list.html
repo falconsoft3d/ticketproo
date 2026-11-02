@@ -1,20 +1,21 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Facturas de 3ros{% endblock %}
+{% block title %}{% translate "Facturas de 3ros" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-receipt"></i> Facturas de 3ros</h2>
+                <h2><i class="bi bi-receipt"></i> {% translate "Facturas de 3ros" %}</h2>
                 <div>
                     <a href="{% url 'invoice_sequence_config' %}" class="btn btn-outline-primary me-2">
-                        <i class="bi bi-sliders"></i> Configurar Secuencia
+                        <i class="bi bi-sliders"></i> {% translate "Configurar Secuencia" %}
                     </a>
                     <a href="{% url 'invoice_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Nueva Factura
+                        <i class="bi bi-plus-circle"></i> {% translate "Nueva Factura" %}
                     </a>
                 </div>
             </div>
@@ -22,14 +23,14 @@
             {% if user.profile.invoice_sequence_prefix %}
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <i class="bi bi-check-circle"></i>
-                    Tu secuencia personalizada está configurada: <strong>{{ user.profile.invoice_sequence_prefix }}{{ user.profile.invoice_next_number|stringformat:"05d" }}</strong> será tu próxima factura.
+                    {% translate "Tu secuencia personalizada está configurada:" %} <strong>{{ user.profile.invoice_sequence_prefix }}{{ user.profile.invoice_next_number|stringformat:"05d" }}</strong> {% translate "será tu próxima factura." %}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             {% else %}
                 <div class="alert alert-info alert-dismissible fade show" role="alert">
                     <i class="bi bi-info-circle"></i>
-                    Puedes personalizar tu secuencia de facturas (ej: MCVARQ/2025/00010). 
-                    <a href="{% url 'invoice_sequence_config' %}" class="alert-link">Configurar ahora</a>
+                    {% translate "Puedes personalizar tu secuencia de facturas (ej: MCVARQ/2025/00010)." %} 
+                    <a href="{% url 'invoice_sequence_config' %}" class="alert-link">{% translate "Configurar ahora" %}</a>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             {% endif %}
@@ -39,14 +40,14 @@
                 <div class="card-body">
                     <form method="get" class="row g-3">
                         <div class="col-md-4">
-                            <label for="search" class="form-label">Buscar</label>
+                            <label for="search" class="form-label">{% translate "Buscar" %}</label>
                             <input type="text" class="form-control" id="search" name="search" 
-                                   value="{{ search }}" placeholder="Número, empresa, notas...">
+                                   value="{{ search }}" placeholder="{% translate 'Número, empresa, notas...' %}">
                         </div>
                         <div class="col-md-3">
-                            <label for="company" class="form-label">Empresa</label>
+                            <label for="company" class="form-label">{% translate "Empresa" %}</label>
                             <select class="form-select" id="company" name="company">
-                                <option value="">Todas las empresas</option>
+                                <option value="">{% translate "Todas las empresas" %}</option>
                                 {% for company in companies %}
                                     <option value="{{ company.id }}" {% if company.id|stringformat:"s" == company_id %}selected{% endif %}>
                                         {{ company.name }}
@@ -55,21 +56,21 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="status" class="form-label">Estado</label>
+                            <label for="status" class="form-label">{% translate "Estado" %}</label>
                             <select class="form-select" id="status" name="status">
-                                <option value="">Todos los estados</option>
-                                <option value="draft" {% if status == 'draft' %}selected{% endif %}>Borrador</option>
-                                <option value="sent" {% if status == 'sent' %}selected{% endif %}>Enviada</option>
-                                <option value="paid" {% if status == 'paid' %}selected{% endif %}>Pagada</option>
-                                <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Cancelada</option>
+                                <option value="">{% translate "Todos los estados" %}</option>
+                                <option value="draft" {% if status == 'draft' %}selected{% endif %}>{% translate "Borrador" %}</option>
+                                <option value="sent" {% if status == 'sent' %}selected{% endif %}>{% translate "Enviada" %}</option>
+                                <option value="paid" {% if status == 'paid' %}selected{% endif %}>{% translate "Pagada" %}</option>
+                                <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>{% translate "Cancelada" %}</option>
                             </select>
                         </div>
                         <div class="col-md-2 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary me-2">
-                                <i class="bi bi-search"></i> Filtrar
+                                <i class="bi bi-search"></i> {% translate "Filtrar" %}
                             </button>
                             <a href="{% url 'invoice_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Limpiar
+                                <i class="bi bi-x-circle"></i> {% translate "Limpiar" %}
                             </a>
                         </div>
                     </form>
@@ -84,14 +85,14 @@
                             <table class="table table-hover">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Secuencia</th>
-                                        <th>Cliente</th>
-                                        <th>Fecha</th>
-                                        <th>Fecha Vencimiento</th>
-                                        <th class="text-end">Total</th>
-                                        <th>Estado</th>
-                                        <th>Creado por</th>
-                                        <th class="text-end">Acciones</th>
+                                        <th>{% translate "Secuencia" %}</th>
+                                        <th>{% translate "Cliente" %}</th>
+                                        <th>{% translate "Fecha" %}</th>
+                                        <th>{% translate "Fecha Vencimiento" %}</th>
+                                        <th class="text-end">{% translate "Total" %}</th>
+                                        <th>{% translate "Estado" %}</th>
+                                        <th>{% translate "Creado por" %}</th>
+                                        <th class="text-end">{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -116,31 +117,31 @@
                                             </td>
                                             <td>
                                                 {% if invoice.status == 'draft' %}
-                                                    <span class="badge bg-secondary">Borrador</span>
+                                                    <span class="badge bg-secondary">{% translate "Borrador" %}</span>
                                                 {% elif invoice.status == 'sent' %}
-                                                    <span class="badge bg-info">Enviada</span>
+                                                    <span class="badge bg-info">{% translate "Enviada" %}</span>
                                                 {% elif invoice.status == 'paid' %}
-                                                    <span class="badge bg-success">Pagada</span>
+                                                    <span class="badge bg-success">{% translate "Pagada" %}</span>
                                                 {% elif invoice.status == 'cancelled' %}
-                                                    <span class="badge bg-danger">Cancelada</span>
+                                                    <span class="badge bg-danger">{% translate "Cancelada" %}</span>
                                                 {% endif %}
                                             </td>
                                             <td>{{ invoice.created_by.username }}</td>
                                             <td class="text-end">
                                                 <a href="{% url 'invoice_detail' invoice.pk %}" 
-                                                   class="btn btn-sm btn-info" title="Ver detalle">
+                                                   class="btn btn-sm btn-info" title="{% translate 'Ver detalle' %}">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
                                                 <a href="{% url 'invoice_pdf' invoice.pk %}" 
-                                                   class="btn btn-sm btn-success" title="Descargar PDF" target="_blank">
+                                                   class="btn btn-sm btn-success" title="{% translate 'Descargar PDF' %}" target="_blank">
                                                     <i class="bi bi-file-pdf"></i>
                                                 </a>
                                                 <a href="{% url 'invoice_update' invoice.pk %}" 
-                                                   class="btn btn-sm btn-warning" title="Editar">
+                                                   class="btn btn-sm btn-warning" title="{% translate 'Editar' %}">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
                                                 <a href="{% url 'invoice_delete' invoice.pk %}" 
-                                                   class="btn btn-sm btn-danger" title="Eliminar">
+                                                   class="btn btn-sm btn-danger" title="{% translate 'Eliminar' %}">
                                                     <i class="bi bi-trash"></i>
                                                 </a>
                                             </td>
@@ -152,14 +153,14 @@
 
                         <!-- Paginación -->
                         {% if page_obj.has_other_pages %}
-                            <nav aria-label="Navegación de páginas">
+                            <nav aria-label="{% translate 'Navegación de páginas' %}">
                                 <ul class="pagination justify-content-center">
                                     {% if page_obj.has_previous %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if company_id %}&company={{ company_id }}{% endif %}">Primera</a>
+                                            <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if company_id %}&company={{ company_id }}{% endif %}">{% translate "Primera" %}</a>
                                         </li>
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if company_id %}&company={{ company_id }}{% endif %}">Anterior</a>
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if company_id %}&company={{ company_id }}{% endif %}">{% translate "Anterior" %}</a>
                                         </li>
                                     {% endif %}
 
@@ -171,10 +172,10 @@
 
                                     {% if page_obj.has_next %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if company_id %}&company={{ company_id }}{% endif %}">Siguiente</a>
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if company_id %}&company={{ company_id }}{% endif %}">{% translate "Siguiente" %}</a>
                                         </li>
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if company_id %}&company={{ company_id }}{% endif %}">Última</a>
+                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if company_id %}&company={{ company_id }}{% endif %}">{% translate "Última" %}</a>
                                         </li>
                                     {% endif %}
                                 </ul>
@@ -183,8 +184,8 @@
                     {% else %}
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i> 
-                            No hay facturas registradas. 
-                            <a href="{% url 'invoice_create' %}">Crear la primera factura</a>
+                            {% translate "No hay facturas registradas." %} 
+                            <a href="{% url 'invoice_create' %}">{% translate "Crear la primera factura" %}</a>
                         </div>
                     {% endif %}
                 </div>

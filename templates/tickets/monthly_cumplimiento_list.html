@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -10,13 +11,13 @@
         <div>
             <h2>
                 <i class="bi bi-calendar-check text-primary"></i>
-                Cumplimiento Mensual
+                {% translate "Cumplimiento Mensual" %}
             </h2>
-            <p class="text-muted mb-0">Gestión de metas y cumplimientos mensuales</p>
+            <p class="text-muted mb-0">{% translate "Gestión de metas y cumplimientos mensuales" %}</p>
         </div>
         <div>
             <a href="{% url 'monthly_cumplimiento_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Nueva Meta
+                <i class="bi bi-plus-circle"></i> {% translate "Nueva Meta" %}
             </a>
         </div>
     </div>
@@ -25,32 +26,32 @@
     <div class="card mb-4">
         <div class="card-header">
             <h5 class="mb-0">
-                <i class="bi bi-funnel"></i> Filtros
+                <i class="bi bi-funnel"></i> {% translate "Filtros" %}
             </h5>
         </div>
         <div class="card-body">
             <form method="GET" class="row">
                 <div class="col-md-4 mb-3">
-                    <label for="search" class="form-label">Buscar</label>
+                    <label for="search" class="form-label">{% translate "Buscar" %}</label>
                     <input type="text" class="form-control" id="search" name="search" 
                            value="{{ request.GET.search }}" 
-                           placeholder="Nombre de meta, usuario, descripción...">
+                           placeholder="{% translate 'Nombre de meta, usuario, descripción...' %}">
                 </div>
                 <div class="col-md-3 mb-3">
-                    <label for="is_active" class="form-label">Estado</label>
+                    <label for="is_active" class="form-label">{% translate "Estado" %}</label>
                     <select class="form-select" id="is_active" name="is_active">
-                        <option value="">Todos</option>
-                        <option value="true" {% if request.GET.is_active == 'true' %}selected{% endif %}>Activos</option>
-                        <option value="false" {% if request.GET.is_active == 'false' %}selected{% endif %}>Inactivos</option>
+                        <option value="">{% translate "Todos" %}</option>
+                        <option value="true" {% if request.GET.is_active == 'true' %}selected{% endif %}>{% translate "Activos" %}</option>
+                        <option value="false" {% if request.GET.is_active == 'false' %}selected{% endif %}>{% translate "Inactivos" %}</option>
                     </select>
                 </div>
                 <div class="col-md-5 mb-3 d-flex align-items-end">
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-search"></i> Buscar
+                            <i class="bi bi-search"></i> {% translate "Buscar" %}
                         </button>
                         <a href="{% url 'monthly_cumplimiento_list' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-clockwise"></i> Limpiar
+                            <i class="bi bi-arrow-clockwise"></i> {% translate "Limpiar" %}
                         </a>
                     </div>
                 </div>
@@ -61,7 +62,7 @@
     <!-- Lista de cumplimientos -->
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Metas de Cumplimiento</h5>
+            <h5 class="mb-0">{% translate "Metas de Cumplimiento" %}</h5>
             <span class="badge bg-secondary">{{ page_obj.paginator.count }} total</span>
         </div>
         <div class="card-body">
@@ -73,9 +74,9 @@
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h6 class="mb-0 text-truncate">{{ cumplimiento.name }}</h6>
                                 {% if cumplimiento.is_active %}
-                                    <span class="badge bg-success">Activo</span>
+                                    <span class="badge bg-success">{% translate "Activo" %}</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Inactivo</span>
+                                    <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                                 {% endif %}
                             </div>
                             <div class="card-body">
@@ -87,7 +88,7 @@
                                 <div class="mb-2">
                                     <i class="bi bi-clock text-info"></i>
                                     {% if cumplimiento.frequency_type == 'daily' %}
-                                        <span class="text-info">Todos los días</span>
+                                        <span class="text-info">{% translate "Todos los días" %}</span>
                                     {% else %}
                                         <span class="text-warning">{{ cumplimiento.target_days }} días al mes</span>
                                     {% endif %}
@@ -103,7 +104,7 @@
                                 {% with progress=cumplimiento.get_current_month_progress %}
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between small">
-                                        <span>Progreso del mes</span>
+                                        <span>{% translate "Progreso del mes" %}</span>
                                         <span><strong>{{ progress.completed_days }}/{{ progress.target_days }}</strong></span>
                                     </div>
                                     <div class="progress" style="height: 8px;">
@@ -125,7 +126,7 @@
                                     <small class="text-success">
                                         <i class="bi bi-link-45deg"></i> 
                                         <a href="{{ cumplimiento.get_public_url }}" target="_blank" class="text-decoration-none">
-                                            Ver URL pública
+                                            {% translate "Ver URL pública" %}
                                         </a>
                                     </small>
                                 </div>
@@ -134,15 +135,15 @@
                                 <div class="btn-group w-100" role="group">
                                     <a href="{% url 'monthly_cumplimiento_detail' cumplimiento.pk %}" 
                                        class="btn btn-outline-primary btn-sm">
-                                        <i class="bi bi-eye"></i> Ver
+                                        <i class="bi bi-eye"></i> {% translate "Ver" %}
                                     </a>
                                     <a href="{% url 'monthly_cumplimiento_edit' cumplimiento.pk %}" 
                                        class="btn btn-outline-warning btn-sm">
-                                        <i class="bi bi-pencil"></i> Editar
+                                        <i class="bi bi-pencil"></i> {% translate "Editar" %}
                                     </a>
                                     <a href="{{ cumplimiento.get_public_url }}" 
                                        class="btn btn-outline-success btn-sm" target="_blank">
-                                        <i class="bi bi-phone"></i> Móvil
+                                        <i class="bi bi-phone"></i> {% translate "Móvil" %}
                                     </a>
                                 </div>
                             </div>
@@ -153,14 +154,14 @@
 
                 <!-- Paginación -->
                 {% if page_obj.has_other_pages %}
-                <nav aria-label="Paginación de cumplimientos">
+                <nav aria-label="{% translate 'Paginación de cumplimientos' %}">
                     <ul class="pagination justify-content-center">
                         {% if page_obj.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="?page=1">Primera</a>
+                                <a class="page-link" href="?page=1">{% translate "Primera" %}</a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{% translate "Anterior" %}</a>
                             </li>
                         {% endif %}
 
@@ -172,10 +173,10 @@
 
                         {% if page_obj.has_next %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">{% translate "Siguiente" %}</a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">{% translate "Última" %}</a>
                             </li>
                         {% endif %}
                     </ul>
@@ -184,10 +185,10 @@
             {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-calendar-x display-1 text-muted"></i>
-                    <h3 class="mt-3">No hay metas de cumplimiento</h3>
-                    <p class="text-muted">No se encontraron metas que coincidan con los filtros.</p>
+                    <h3 class="mt-3">{% translate "No hay metas de cumplimiento" %}</h3>
+                    <p class="text-muted">{% translate "No se encontraron metas que coincidan con los filtros." %}</p>
                     <a href="{% url 'monthly_cumplimiento_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear Primera Meta
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Primera Meta" %}
                     </a>
                 </div>
             {% endif %}

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -6,10 +7,10 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2><i class="bi bi-calculator me-2"></i>{{ page_title }}</h2>
-            <p class="text-muted">Gestiona tus contadores diarios</p>
+            <p class="text-muted">{% translate "Gestiona tus contadores diarios" %}</p>
         </div>
         <a href="{% url 'counter_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Nuevo Contador
+            <i class="bi bi-plus-circle me-1"></i> {% translate "Nuevo Contador" %}
         </a>
     </div>
 
@@ -18,17 +19,17 @@
         <div class="card-body">
             <form method="get" class="row g-3">
                 <div class="col-md-3">
-                    <label for="date_from" class="form-label">Desde</label>
+                    <label for="date_from" class="form-label">{% translate "Desde" %}</label>
                     <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from|date:'Y-m-d' }}">
                 </div>
                 <div class="col-md-3">
-                    <label for="date_to" class="form-label">Hasta</label>
+                    <label for="date_to" class="form-label">{% translate "Hasta" %}</label>
                     <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to|date:'Y-m-d' }}">
                 </div>
                 <div class="col-md-3">
-                    <label for="user" class="form-label">Usuario</label>
+                    <label for="user" class="form-label">{% translate "Usuario" %}</label>
                     <select class="form-select" id="user" name="user">
-                        <option value="">Todos</option>
+                        <option value="">{% translate "Todos" %}</option>
                         {% for u in users %}
                         <option value="{{ u.id }}" {% if user_filter == u.id|stringformat:'s' %}selected{% endif %}>
                             {{ u.get_full_name|default:u.username }}
@@ -37,15 +38,15 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label for="search" class="form-label">Buscar</label>
-                    <input type="text" class="form-control" id="search" name="search" value="{{ search }}" placeholder="Título o notas...">
+                    <label for="search" class="form-label">{% translate "Buscar" %}</label>
+                    <input type="text" class="form-control" id="search" name="search" value="{{ search }}" placeholder="{% translate 'Título o notas...' %}">
                 </div>
                 <div class="col-12">
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-search me-1"></i> Filtrar
+                        <i class="bi bi-search me-1"></i> {% translate "Filtrar" %}
                     </button>
                     <a href="{% url 'counter_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-x-circle me-1"></i> Limpiar
+                        <i class="bi bi-x-circle me-1"></i> {% translate "Limpiar" %}
                     </a>
                 </div>
             </form>
@@ -78,13 +79,13 @@
                     <div class="card-footer bg-transparent">
                         <div class="btn-group w-100" role="group">
                             <a href="{% url 'counter_detail' counter.pk %}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-eye"></i> Ver
+                                <i class="bi bi-eye"></i> {% translate "Ver" %}
                             </a>
                             <a href="{% url 'counter_edit' counter.pk %}" class="btn btn-sm btn-outline-warning">
-                                <i class="bi bi-pencil"></i> Editar
+                                <i class="bi bi-pencil"></i> {% translate "Editar" %}
                             </a>
                             <a href="{% url 'counter_delete' counter.pk %}" class="btn btn-sm btn-outline-danger">
-                                <i class="bi bi-trash"></i> Eliminar
+                                <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                             </a>
                         </div>
                     </div>
@@ -95,7 +96,7 @@
             <div class="col-12">
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle me-2"></i>
-                    No hay contadores registrados.
+                    {% translate "No hay contadores registrados." %}
                 </div>
             </div>
         {% endif %}
@@ -103,14 +104,14 @@
 
     <!-- Paginación -->
     {% if page_obj.has_other_pages %}
-    <nav aria-label="Paginación">
+    <nav aria-label="{% translate 'Paginación' %}">
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if date_from %}&date_from={{ date_from|date:'Y-m-d' }}{% endif %}{% if date_to %}&date_to={{ date_to|date:'Y-m-d' }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}">Primera</a>
+                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if date_from %}&date_from={{ date_from|date:'Y-m-d' }}{% endif %}{% if date_to %}&date_to={{ date_to|date:'Y-m-d' }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}">{% translate "Primera" %}</a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if date_from %}&date_from={{ date_from|date:'Y-m-d' }}{% endif %}{% if date_to %}&date_to={{ date_to|date:'Y-m-d' }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}">Anterior</a>
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if date_from %}&date_from={{ date_from|date:'Y-m-d' }}{% endif %}{% if date_to %}&date_to={{ date_to|date:'Y-m-d' }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}">{% translate "Anterior" %}</a>
             </li>
             {% endif %}
             
@@ -122,10 +123,10 @@
             
             {% if page_obj.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if date_from %}&date_from={{ date_from|date:'Y-m-d' }}{% endif %}{% if date_to %}&date_to={{ date_to|date:'Y-m-d' }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}">Siguiente</a>
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if date_from %}&date_from={{ date_from|date:'Y-m-d' }}{% endif %}{% if date_to %}&date_to={{ date_to|date:'Y-m-d' }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}">{% translate "Siguiente" %}</a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if date_from %}&date_from={{ date_from|date:'Y-m-d' }}{% endif %}{% if date_to %}&date_to={{ date_to|date:'Y-m-d' }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}">Última</a>
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if date_from %}&date_from={{ date_from|date:'Y-m-d' }}{% endif %}{% if date_to %}&date_to={{ date_to|date:'Y-m-d' }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}">{% translate "Última" %}</a>
             </li>
             {% endif %}
         </ul>

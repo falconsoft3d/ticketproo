@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 {% load tickets_tags %}
 
-{% block title %}Red Social - TicketProo{% endblock %}
+{% block title %}{% translate "Red Social - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -12,9 +13,9 @@
             <div class="sticky-sidebar">
                 <div class="card">
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0"><i class="bi bi-hash"></i> Hashtags</h6>
+                        <h6 class="mb-0"><i class="bi bi-hash"></i> {% translate "Hashtags" %}</h6>
                         {% if search_query and '#' in search_query %}
-                        <a href="/social/" class="btn btn-sm btn-light" title="Limpiar filtro">
+                        <a href="/social/" class="btn btn-sm btn-light" title="{% translate 'Limpiar filtro' %}">
                             <i class="bi bi-x"></i>
                         </a>
                         {% endif %}
@@ -22,7 +23,7 @@
                     <div class="card-body p-2" id="hashtagsList">
                         <div class="d-flex justify-content-center py-3">
                             <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                <span class="visually-hidden">Cargando...</span>
+                                <span class="visually-hidden">{% translate "Cargando..." %}</span>
                             </div>
                         </div>
                     </div>
@@ -34,13 +35,13 @@
         <div class="col-lg-8">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-people-fill"></i> Red Social Interna</h2>
+                <h2><i class="bi bi-people-fill"></i> {% translate "Red Social Interna" %}</h2>
                 <div class="d-flex gap-2">
                     <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#createPostCollapse" aria-expanded="false" aria-controls="createPostCollapse">
-                        <i class="bi bi-plus-circle"></i> Publicar
+                        <i class="bi bi-plus-circle"></i> {% translate "Publicar" %}
                     </button>
                     <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#searchCollapse" aria-expanded="false" aria-controls="searchCollapse">
-                        <i class="bi bi-search"></i> Buscar
+                        <i class="bi bi-search"></i> {% translate "Buscar" %}
                     </button>
                 </div>
             </div>
@@ -55,33 +56,33 @@
                                     type="text" 
                                     class="form-control" 
                                     name="q" 
-                                    placeholder="Buscar publicaciones por contenido o usuario..." 
+                                    placeholder="{% translate 'Buscar publicaciones por contenido o usuario...' %}" 
                                     value="{{ search_query }}"
                                 >
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-search"></i> Buscar
+                                    <i class="bi bi-search"></i> {% translate "Buscar" %}
                                 </button>
                                 {% if search_query or show_favorites or show_loved %}
                                 <a href="{% url 'social_feed' %}" class="btn btn-outline-secondary">
-                                    <i class="bi bi-x"></i> Limpiar
+                                    <i class="bi bi-x"></i> {% translate "Limpiar" %}
                                 </a>
                                 {% endif %}
                             </div>
                             <div class="d-flex gap-2">
                                 <a href="?favorites=1" class="btn btn-sm {% if show_favorites %}btn-warning{% else %}btn-outline-warning{% endif %}">
-                                    <i class="bi bi-star-fill"></i> Mis Favoritos
+                                    <i class="bi bi-star-fill"></i> {% translate "Mis Favoritos" %}
                                 </a>
                                 <a href="?loved=1" class="btn btn-sm {% if show_loved %}btn-danger{% else %}btn-outline-danger{% endif %}">
-                                    <i class="bi bi-heart-fill"></i> Me encantan
+                                    <i class="bi bi-heart-fill"></i> {% translate "Me encantan" %}
                                 </a>
                                 {% if show_favorites %}
                                 <span class="badge bg-warning text-dark align-self-center">
-                                    Mostrando solo favoritos
+                                    {% translate "Mostrando solo favoritos" %}
                                 </span>
                                 {% endif %}
                                 {% if show_loved %}
                                 <span class="badge bg-danger align-self-center">
-                                    Mostrando publicaciones que me encantan
+                                    {% translate "Mostrando publicaciones que me encantan" %}
                                 </span>
                                 {% endif %}
                             </div>
@@ -128,40 +129,40 @@
                                     type="url" 
                                     class="form-control mb-3" 
                                     id="youtubeUrl" 
-                                    placeholder="URL de video de YouTube (opcional)"
+                                    placeholder="{% translate 'URL de video de YouTube (opcional)' %}"
                                 >
                                 
                                 <!-- Preview de imagen -->
                                 <div id="imagePreview" class="mb-3" style="display: none;">
                                     <img id="previewImg" src="" class="img-fluid rounded" style="max-height: 300px;">
                                     <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removeImage()">
-                                        <i class="bi bi-x"></i> Quitar imagen
+                                        <i class="bi bi-x"></i> {% translate "Quitar imagen" %}
                                     </button>
                                 </div>
                                 
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="d-flex gap-2 align-items-center">
                                         <label for="postImage" class="btn btn-outline-primary btn-sm mb-0">
-                                            <i class="bi bi-image"></i> Foto
+                                            <i class="bi bi-image"></i> {% translate "Foto" %}
                                         </label>
                                         <input type="file" id="postImage" accept="image/*" style="display: none;" onchange="previewImage(this)">
                                         
                                         <div class="form-check mb-0 me-2">
                                             <input type="checkbox" class="form-check-input" id="isPrivate">
                                             <label class="form-check-label" for="isPrivate">
-                                                <i class="bi bi-lock"></i> Privado
+                                                <i class="bi bi-lock"></i> {% translate "Privado" %}
                                             </label>
                                         </div>
                                         
                                         <div class="form-check mb-0">
                                             <input type="checkbox" class="form-check-input" id="companyOnly" checked>
                                             <label class="form-check-label" for="companyOnly">
-                                                <i class="bi bi-building"></i> Solo mi empresa
+                                                <i class="bi bi-building"></i> {% translate "Solo mi empresa" %}
                                             </label>
                                         </div>
                                     </div>
                                     <button type="submit" class="btn btn-primary">
-                                        <i class="bi bi-send"></i> Publicar
+                                        <i class="bi bi-send"></i> {% translate "Publicar" %}
                                     </button>
                                 </div>
                             </form>
@@ -179,8 +180,8 @@
                     <div class="card">
                         <div class="card-body text-center py-5">
                             <i class="bi bi-chat-left-text" style="font-size: 4rem; color: #ccc;"></i>
-                            <h4 class="mt-3 text-muted">No hay publicaciones aún</h4>
-                            <p class="text-muted">¡Sé el primero en compartir algo!</p>
+                            <h4 class="mt-3 text-muted">{% translate "No hay publicaciones aún" %}</h4>
+                            <p class="text-muted">{% translate "¡Sé el primero en compartir algo!" %}</p>
                         </div>
                     </div>
                 {% endif %}
@@ -189,14 +190,14 @@
             <!-- Loading spinner -->
             <div id="loadingSpinner" class="text-center py-4" style="display: none;">
                 <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Cargando...</span>
+                    <span class="visually-hidden">{% translate "Cargando..." %}</span>
                 </div>
-                <p class="text-muted mt-2">Cargando más publicaciones...</p>
+                <p class="text-muted mt-2">{% translate "Cargando más publicaciones..." %}</p>
             </div>
             
             <!-- Mensaje de fin -->
             <div id="endMessage" class="text-center py-4" style="display: none;">
-                <p class="text-muted">No hay más publicaciones para mostrar</p>
+                <p class="text-muted">{% translate "No hay más publicaciones para mostrar" %}</p>
             </div>
         </div>
         
@@ -206,11 +207,11 @@
                 <div class="card">
                     <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                         <h6 class="mb-0 d-flex align-items-center gap-2">
-                            <i class="bi bi-at"></i> Menciones
+                            <i class="bi bi-at"></i> {% translate "Menciones" %}
                             <span id="myMentionsCount" class="badge bg-danger text-white" style="display: none; font-size: 0.85rem; padding: 0.35rem 0.6rem; font-weight: bold;">0</span>
                         </h6>
                         {% if search_query and '@' in search_query %}
-                        <a href="/social/" class="btn btn-sm btn-light" title="Limpiar filtro">
+                        <a href="/social/" class="btn btn-sm btn-light" title="{% translate 'Limpiar filtro' %}">
                             <i class="bi bi-x"></i>
                         </a>
                         {% endif %}
@@ -218,7 +219,7 @@
                     <div class="card-body p-2" id="mentionsList">
                         <div class="d-flex justify-content-center py-3">
                             <div class="spinner-border spinner-border-sm text-success" role="status">
-                                <span class="visually-hidden">Cargando...</span>
+                                <span class="visually-hidden">{% translate "Cargando..." %}</span>
                             </div>
                         </div>
                     </div>
@@ -234,9 +235,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editPostModalLabel">
-                    <i class="bi bi-pencil"></i> Editar Publicación
+                    <i class="bi bi-pencil"></i> {% translate "Editar Publicación" %}
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
             </div>
             <div class="modal-body">
                 <form id="editPostForm">
@@ -245,7 +246,7 @@
                     <!-- Contenido -->
                     <div class="mb-3">
                         <label for="editContent" class="form-label">
-                            <i class="bi bi-chat-left-text"></i> Contenido
+                            <i class="bi bi-chat-left-text"></i> {% translate "Contenido" %}
                         </label>
                         <textarea class="form-control" id="editContent" name="content" rows="4" placeholder="¿Qué estás pensando?"></textarea>
                     </div>
@@ -253,12 +254,12 @@
                     <!-- Vista previa de imagen actual -->
                     <div id="editCurrentImagePreview" class="mb-3" style="display: none;">
                         <label class="form-label">
-                            <i class="bi bi-image"></i> Imagen actual
+                            <i class="bi bi-image"></i> {% translate "Imagen actual" %}
                         </label>
                         <div class="position-relative d-inline-block">
                             <img id="editCurrentImage" src="" class="img-thumbnail" style="max-width: 200px;">
                             <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" 
-                                    onclick="removeCurrentImage()" title="Eliminar imagen">
+                                    onclick="removeCurrentImage()" title="{% translate 'Eliminar imagen' %}">
                                 <i class="bi bi-x-lg"></i>
                             </button>
                         </div>
@@ -267,20 +268,20 @@
                     <!-- Nueva imagen -->
                     <div class="mb-3">
                         <label for="editImage" class="form-label">
-                            <i class="bi bi-image"></i> Cambiar imagen
+                            <i class="bi bi-image"></i> {% translate "Cambiar imagen" %}
                         </label>
                         <input type="file" class="form-control" id="editImage" name="image" accept="image/*">
-                        <small class="text-muted">Selecciona una nueva imagen para reemplazar la actual</small>
+                        <small class="text-muted">{% translate "Selecciona una nueva imagen para reemplazar la actual" %}</small>
                     </div>
                     
                     <!-- URL de YouTube -->
                     <div class="mb-3">
                         <label for="editYoutubeUrl" class="form-label">
-                            <i class="bi bi-youtube"></i> URL de YouTube
+                            <i class="bi bi-youtube"></i> {% translate "URL de YouTube" %}
                         </label>
                         <input type="url" class="form-control" id="editYoutubeUrl" name="youtube_url" 
                                placeholder="https://www.youtube.com/watch?v=...">
-                        <small class="text-muted">Deja vacío para eliminar el video</small>
+                        <small class="text-muted">{% translate "Deja vacío para eliminar el video" %}</small>
                     </div>
                     
                     <!-- Opciones de privacidad -->
@@ -288,7 +289,7 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="editIsPrivate" name="is_private">
                             <label class="form-check-label" for="editIsPrivate">
-                                <i class="bi bi-lock"></i> Publicación privada (solo tú puedes verla)
+                                <i class="bi bi-lock"></i> {% translate "Publicación privada (solo tú puedes verla)" %}
                             </label>
                         </div>
                     </div>
@@ -297,7 +298,7 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="editCompanyOnly" name="company_only">
                             <label class="form-check-label" for="editCompanyOnly">
-                                <i class="bi bi-building"></i> Solo para mi empresa
+                                <i class="bi bi-building"></i> {% translate "Solo para mi empresa" %}
                             </label>
                         </div>
                     </div>
@@ -305,10 +306,10 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle"></i> Cancelar
+                    <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                 </button>
                 <button type="button" class="btn btn-primary" onclick="saveEditPost()">
-                    <i class="bi bi-check-circle"></i> Guardar cambios
+                    <i class="bi bi-check-circle"></i> {% translate "Guardar cambios" %}
                 </button>
             </div>
         </div>

@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -80,17 +81,17 @@
     <div class="test-container">
         <div class="text-center">
             <span class="counter-badge">
-                <i class="bi bi-graph-up"></i> Contador Web Activo
+                <i class="bi bi-graph-up"></i> {% translate "Contador Web Activo" %}
             </span>
             <h1 class="mt-3">{{ counter.title }}</h1>
-            <p class="text-muted">Página de Prueba del Contador</p>
+            <p class="text-muted">{% translate "Página de Prueba del Contador" %}</p>
         </div>
 
         <div class="info-card">
             <div class="text-center">
-                <p class="mb-2">Esta página está siendo rastreada por el contador web:</p>
+                <p class="mb-2">{% translate "Esta página está siendo rastreada por el contador web:" %}</p>
                 <div class="page-counter">
-                    <i class="bi bi-eye pulse"></i> Visita Registrada
+                    <i class="bi bi-eye pulse"></i> {% translate "Visita Registrada" %}
                 </div>
             </div>
         </div>
@@ -101,7 +102,7 @@
                     <div class="card-body text-center">
                         <i class="bi bi-people-fill text-primary" style="font-size: 2rem;"></i>
                         <h5 class="mt-2" id="total-visits">{{ counter.total_visits }}</h5>
-                        <small class="text-muted">Visitas Únicas</small>
+                        <small class="text-muted">{% translate "Visitas Únicas" %}</small>
                     </div>
                 </div>
             </div>
@@ -110,42 +111,41 @@
                     <div class="card-body text-center">
                         <i class="bi bi-file-earmark-text text-success" style="font-size: 2rem;"></i>
                         <h5 class="mt-2" id="total-page-views">{{ counter.total_page_views }}</h5>
-                        <small class="text-muted">Páginas Vistas</small>
+                        <small class="text-muted">{% translate "Páginas Vistas" %}</small>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="info-card mt-4">
-            <h5><i class="bi bi-info-circle"></i> ¿Qué está rastreando?</h5>
+            <h5><i class="bi bi-info-circle"></i> {% translate "¿Qué está rastreando?" %}</h5>
             <ul class="feature-list">
-                <li><i class="bi bi-check-circle-fill"></i> URL de la página visitada</li>
-                <li><i class="bi bi-check-circle-fill"></i> Navegador y versión</li>
-                <li><i class="bi bi-check-circle-fill"></i> Sistema operativo</li>
-                <li><i class="bi bi-check-circle-fill"></i> Tipo de dispositivo (móvil, tablet, escritorio)</li>
-                <li><i class="bi bi-check-circle-fill"></i> Resolución de pantalla</li>
-                <li><i class="bi bi-check-circle-fill"></i> Idioma del navegador</li>
-                <li><i class="bi bi-check-circle-fill"></i> País de origen</li>
-                <li><i class="bi bi-check-circle-fill"></i> Página de referencia</li>
+                <li><i class="bi bi-check-circle-fill"></i> {% translate "URL de la página visitada" %}</li>
+                <li><i class="bi bi-check-circle-fill"></i> {% translate "Navegador y versión" %}</li>
+                <li><i class="bi bi-check-circle-fill"></i> {% translate "Sistema operativo" %}</li>
+                <li><i class="bi bi-check-circle-fill"></i> {% translate "Tipo de dispositivo (móvil, tablet, escritorio)" %}</li>
+                <li><i class="bi bi-check-circle-fill"></i> {% translate "Resolución de pantalla" %}</li>
+                <li><i class="bi bi-check-circle-fill"></i> {% translate "Idioma del navegador" %}</li>
+                <li><i class="bi bi-check-circle-fill"></i> {% translate "País de origen" %}</li>
+                <li><i class="bi bi-check-circle-fill"></i> {% translate "Página de referencia" %}</li>
             </ul>
         </div>
 
         <div class="test-actions">
             <button class="btn btn-primary" onclick="location.reload()">
-                <i class="bi bi-arrow-clockwise"></i> Recargar Página
+                <i class="bi bi-arrow-clockwise"></i> {% translate "Recargar Página" %}
             </button>
             <button class="btn btn-success" onclick="openNewTab()">
-                <i class="bi bi-box-arrow-up-right"></i> Abrir en Nueva Pestaña
+                <i class="bi bi-box-arrow-up-right"></i> {% translate "Abrir en Nueva Pestaña" %}
             </button>
             <button class="btn btn-info" onclick="testMobile()">
-                <i class="bi bi-phone"></i> Simular Móvil
+                <i class="bi bi-phone"></i> {% translate "Simular Móvil" %}
             </button>
         </div>
 
         <div class="alert alert-success mt-4">
-            <i class="bi bi-lightbulb"></i> <strong>Consejo:</strong> 
-            Recarga esta página varias veces, ábrela en diferentes navegadores o dispositivos 
-            para ver cómo el contador registra cada visita.
+            <i class="bi bi-lightbulb"></i> <strong>{% translate "Consejo:" %}</strong> 
+            {% translate "Recarga esta página varias veces, ábrela en diferentes navegadores o dispositivos para ver cómo el contador registra cada visita." %}
         </div>
 
         <div class="text-center mt-4">

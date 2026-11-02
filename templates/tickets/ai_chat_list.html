@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Chat con IA - TicketProo{% endblock %}
+{% block title %}{% translate "Chat con IA - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -8,10 +9,10 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>
-                    <i class="bi bi-robot"></i> Chat con IA
+                    <i class="bi bi-robot"></i> {% translate "Chat con IA" %}
                 </h2>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newSessionModal">
-                    <i class="bi bi-plus-circle"></i> Nueva Conversación
+                    <i class="bi bi-plus-circle"></i> {% translate "Nueva Conversación" %}
                 </button>
             </div>
         </div>
@@ -30,9 +31,9 @@
                             </h5>
                             <p class="card-text">
                                 <small class="text-muted">
-                                    <strong>Modelo:</strong> {{ session.ai_model }}<br>
-                                    <strong>Mensajes:</strong> {{ session.get_message_count }}<br>
-                                    <strong>Última actualización:</strong> {{ session.updated_at|date:"d/m/Y H:i" }}
+                                    <strong>{% translate "Modelo:" %}</strong> {{ session.ai_model }}<br>
+                                    <strong>{% translate "Mensajes:" %}</strong> {{ session.get_message_count }}<br>
+                                    <strong>{% translate "Última actualización:" %}</strong> {{ session.updated_at|date:"d/m/Y H:i" }}
                                 </small>
                             </p>
                             {% if session.get_last_message %}
@@ -44,7 +45,7 @@
                         <div class="card-footer">
                             <div class="d-flex justify-content-between">
                                 <a href="{% url 'ai_chat_live' session.id %}" class="btn btn-primary btn-sm">
-                                    <i class="bi bi-chat"></i> Continuar
+                                    <i class="bi bi-chat"></i> {% translate "Continuar" %}
                                 </a>
                                 <a href="{% url 'ai_chat_delete_session' session.id %}" class="btn btn-outline-danger btn-sm" 
                                    onclick="return confirm('¿Estás seguro de que quieres eliminar esta conversación?')">
@@ -59,10 +60,10 @@
             {% else %}
             <div class="text-center py-5">
                 <i class="bi bi-robot" style="font-size: 4rem; color: #6c757d;"></i>
-                <h4 class="mt-3 text-muted">No tienes conversaciones aún</h4>
-                <p class="text-muted">Crea tu primera conversación con IA para comenzar</p>
+                <h4 class="mt-3 text-muted">{% translate "No tienes conversaciones aún" %}</h4>
+                <p class="text-muted">{% translate "Crea tu primera conversación con IA para comenzar" %}</p>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newSessionModal">
-                    <i class="bi bi-plus-circle"></i> Crear Primera Conversación
+                    <i class="bi bi-plus-circle"></i> {% translate "Crear Primera Conversación" %}
                 </button>
             </div>
             {% endif %}
@@ -76,9 +77,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="newSessionModalLabel">
-                    <i class="bi bi-plus-circle"></i> Nueva Conversación con IA
+                    <i class="bi bi-plus-circle"></i> {% translate "Nueva Conversación con IA" %}
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
             </div>
             <form method="post">
                 {% csrf_token %}
@@ -110,9 +111,9 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check"></i> Crear Conversación
+                        <i class="bi bi-check"></i> {% translate "Crear Conversación" %}
                     </button>
                 </div>
             </form>

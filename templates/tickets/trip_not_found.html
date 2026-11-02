@@ -1,7 +1,8 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Viaje No Encontrado - TicketProo{% endblock %}
+{% block title %}{% translate "Viaje No Encontrado - TicketProo" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -28,12 +29,12 @@
     <div class="error-card mx-auto">
         <i class="bi bi-airplane-engines" style="font-size: 5rem; color: #dc3545;"></i>
         <h1 class="display-4 mt-3">404</h1>
-        <h3>Viaje No Encontrado</h3>
+        <h3>{% translate "Viaje No Encontrado" %}</h3>
         <p class="text-muted mt-3">
-            Lo sentimos, el viaje que buscas no existe o no está disponible públicamente.
+            {% translate "Lo sentimos, el viaje que buscas no existe o no está disponible públicamente." %}
         </p>
         <p class="text-muted">
-            Verifica que el enlace sea correcto o contacta con quien te compartió el viaje.
+            {% translate "Verifica que el enlace sea correcto o contacta con quien te compartió el viaje." %}
         </p>
     </div>
 </div>

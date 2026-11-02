@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 {% load project_extras %}
 {% load crm_tags %}
@@ -12,7 +13,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <h2><i class="bi bi-folder text-primary"></i> {{ page_title }}</h2>
                 <a href="{% url 'project_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Nuevo Proyecto
+                    <i class="bi bi-plus-circle"></i> {% translate "Nuevo Proyecto" %}
                 </a>
             </div>
         </div>
@@ -23,7 +24,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h6>
+                    <h6 class="mb-0"><i class="bi bi-funnel"></i> {% translate "Filtros" %}</h6>
                 </div>
                 <div class="card-body">
                     <form method="get" class="row g-3">
@@ -31,12 +32,12 @@
                             <input type="text" 
                                    name="search" 
                                    class="form-control" 
-                                   placeholder="Buscar por nombre o descripción..."
+                                   placeholder="{% translate 'Buscar por nombre o descripción...' %}"
                                    value="{{ search_query }}">
                         </div>
                         <div class="col-md-3">
                             <select name="status" class="form-select">
-                                <option value="">Todos los estados</option>
+                                <option value="">{% translate "Todos los estados" %}</option>
                                 {% for value, label in project_status_choices %}
                                     <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
                                         {{ label }}
@@ -46,10 +47,10 @@
                         </div>
                         <div class="col-md-5 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary me-2">
-                                <i class="bi bi-search"></i> Filtrar
+                                <i class="bi bi-search"></i> {% translate "Filtrar" %}
                             </button>
                             <a href="{% url 'project_list' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x"></i> Limpiar
+                                <i class="bi bi-x"></i> {% translate "Limpiar" %}
                             </a>
                         </div>
                     </form>
@@ -64,7 +65,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-list"></i> Proyectos
+                        <i class="bi bi-list"></i> {% translate "Proyectos" %}
                         {% if page_obj.paginator.count %}
                             <span class="badge bg-primary">{{ page_obj.paginator.count }}</span>
                         {% endif %}
@@ -76,15 +77,15 @@
                             <table class="table table-hover">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Proyecto</th>
-                                        <th>Estado</th>
-                                        <th class="text-center">Total Horas</th>
-                                        <th class="text-center">Trabajadores</th>
-                                        <th class="text-end">Coste Total</th>
-                                        <th class="text-end">Venta Total</th>
-                                        <th class="text-end">Beneficio</th>
-                                        <th class="text-center">Margen</th>
-                                        <th class="text-center">Acciones</th>
+                                        <th>{% translate "Proyecto" %}</th>
+                                        <th>{% translate "Estado" %}</th>
+                                        <th class="text-center">{% translate "Total Horas" %}</th>
+                                        <th class="text-center">{% translate "Trabajadores" %}</th>
+                                        <th class="text-end">{% translate "Coste Total" %}</th>
+                                        <th class="text-end">{% translate "Venta Total" %}</th>
+                                        <th class="text-end">{% translate "Beneficio" %}</th>
+                                        <th class="text-center">{% translate "Margen" %}</th>
+                                        <th class="text-center">{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -131,12 +132,12 @@
                                         <td class="text-center">
                                             <div class="btn-group btn-group-sm" role="group">
                                                 <a href="{% url 'project_detail' project.id %}" 
-                                                   class="btn btn-outline-primary btn-sm" title="Ver detalles">
+                                                   class="btn btn-outline-primary btn-sm" title="{% translate 'Ver detalles' %}">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
                                                 {% if project.can_edit|default:True %}
                                                 <a href="{% url 'project_edit' project.id %}" 
-                                                   class="btn btn-outline-secondary btn-sm" title="Editar">
+                                                   class="btn btn-outline-secondary btn-sm" title="{% translate 'Editar' %}">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
                                                 {% endif %}
@@ -147,7 +148,7 @@
                                 </tbody>
                                 <tfoot class="table-light">
                                     <tr class="fw-bold">
-                                        <td colspan="4" class="text-end">TOTALES:</td>
+                                        <td colspan="4" class="text-end">{% translate "TOTALES:" %}</td>
                                         <td class="text-end text-danger">
                                             {{ page_obj.object_list|sum_cost|format_currency }}
                                         </td>
@@ -166,12 +167,12 @@
 
                         <!-- Paginación -->
                         {% if page_obj.has_other_pages %}
-                        <nav aria-label="Paginación">
+                        <nav aria-label="{% translate 'Paginación' %}">
                             <ul class="pagination justify-content-center">
                                 {% if page_obj.has_previous %}
                                     <li class="page-item">
                                         <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
-                                            <i class="bi bi-chevron-left"></i> Anterior
+                                            <i class="bi bi-chevron-left"></i> {% translate "Anterior" %}
                                         </a>
                                     </li>
                                 {% endif %}
@@ -185,7 +186,7 @@
                                 {% if page_obj.has_next %}
                                     <li class="page-item">
                                         <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
-                                            Siguiente <i class="bi bi-chevron-right"></i>
+                                            {% translate "Siguiente" %} <i class="bi bi-chevron-right"></i>
                                         </a>
                                     </li>
                                 {% endif %}
@@ -196,16 +197,16 @@
                         <div class="text-center py-5">
                             <div class="text-muted">
                                 <i class="bi bi-folder-x fa-3x mb-3"></i>
-                                <h5>No hay proyectos</h5>
+                                <h5>{% translate "No hay proyectos" %}</h5>
                                 {% if search_query or status_filter %}
-                                    <p>No se encontraron proyectos con los filtros aplicados.</p>
+                                    <p>{% translate "No se encontraron proyectos con los filtros aplicados." %}</p>
                                     <a href="{% url 'project_list' %}" class="btn btn-outline-primary">
-                                        <i class="bi bi-arrow-clockwise"></i> Ver Todos
+                                        <i class="bi bi-arrow-clockwise"></i> {% translate "Ver Todos" %}
                                     </a>
                                 {% else %}
-                                    <p>Aún no se han creado proyectos.</p>
+                                    <p>{% translate "Aún no se han creado proyectos." %}</p>
                                     <a href="{% url 'project_create' %}" class="btn btn-primary">
-                                        <i class="bi bi-plus"></i> Crear Primer Proyecto
+                                        <i class="bi bi-plus"></i> {% translate "Crear Primer Proyecto" %}
                                     </a>
                                 {% endif %}
                             </div>

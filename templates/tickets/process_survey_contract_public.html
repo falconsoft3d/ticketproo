@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -244,15 +245,15 @@
   {# ── Barra de acciones (no imprimible) ── #}
   <div class="d-flex justify-content-between align-items-center mb-3 no-print">
     <span class="text-white-50 small">
-      <i class="bi bi-file-earmark-text me-1"></i>Vista pública del contrato
+      <i class="bi bi-file-earmark-text me-1"></i>{% translate "Vista pública del contrato" %}
       {% if contract_private %}
-      <span class="badge bg-warning text-dark ms-2"><i class="bi bi-lock me-1"></i>Privado</span>
+      <span class="badge bg-warning text-dark ms-2"><i class="bi bi-lock me-1"></i>{% translate "Privado" %}</span>
       {% endif %}
     </span>
     {% if not contract_private %}
     <a href="{% url 'public_process_survey_contract_pdf' survey.public_share_token %}"
        class="btn btn-success btn-sm">
-      <i class="bi bi-file-earmark-pdf me-1"></i> Descargar PDF
+      <i class="bi bi-file-earmark-pdf me-1"></i> {% translate "Descargar PDF" %}
     </a>
     {% endif %}
   </div>
@@ -285,10 +286,10 @@
               data-days-remaining="{{ contract_days_remaining|default:'' }}">
           {% if contract_expired %}
             <i class="bi bi-lock-fill"></i>
-            <span>Vencido</span>
+            <span>{% translate "Vencido" %}</span>
           {% else %}
             <i class="bi bi-hourglass-split"></i>
-            <span id="contract-expiry-text">Vence pronto</span>
+            <span id="contract-expiry-text">{% translate "Vence pronto" %}</span>
           {% endif %}
         </span>
       </div>
@@ -305,27 +306,27 @@
 
         {# Fecha de apertura #}
         <p class="mb-3">
-          {% if p.contract_date %}{{ p.contract_date|date:"d \d\e F \d\e Y" }}, {% endif %}Comparecen:
+          {% if p.contract_date %}{{ p.contract_date|date:"d \d\e F \d\e Y" }}, {% endif %}{% translate "Comparecen:" %}
         </p>
 
         {# Proveedor #}
         <p class="mb-3">
-          <strong>Don/Doña {{ p.created_by.get_full_name|default:p.created_by.username }}</strong>{% if p.provider_nationality %}, mayor de edad, nacionalidad {{ p.provider_nationality }}{% endif %}{% if p.provider_civil_status %}, de estado civil {{ p.provider_civil_status }}{% endif %}{% if p.provider_nif %}, con NIF: <strong>{{ p.provider_nif }}</strong>{% endif %}{% if p.provider_occupation %}, {{ p.provider_occupation }}{% endif %}{% if p.provider_address %}, con domicilio en {{ p.provider_address }}{% elif p.created_by.profile.city %}{% with pr=p.created_by.profile %}, con domicilio en {% if pr.city %}{{ pr.city }}{% endif %}{% if pr.country %}, {{ pr.country }}{% endif %}{% endwith %}{% endif %}{% if p.created_by.email %}, email: <strong>{{ p.created_by.email }}</strong>{% endif %}, en lo sucesivo denominado como <strong>"EL EJECUTOR"</strong>
+          <strong>Don/Doña {{ p.created_by.get_full_name|default:p.created_by.username }}</strong>{% if p.provider_nationality %}, mayor de edad, nacionalidad {{ p.provider_nationality }}{% endif %}{% if p.provider_civil_status %}, de estado civil {{ p.provider_civil_status }}{% endif %}{% if p.provider_nif %}{% translate ", con NIF:" %} <strong>{{ p.provider_nif }}</strong>{% endif %}{% if p.provider_occupation %}, {{ p.provider_occupation }}{% endif %}{% if p.provider_address %}, con domicilio en {{ p.provider_address }}{% elif p.created_by.profile.city %}{% with pr=p.created_by.profile %}{% translate ", con domicilio en" %} {% if pr.city %}{{ pr.city }}{% endif %}{% if pr.country %}, {{ pr.country }}{% endif %}{% endwith %}{% endif %}{% if p.created_by.email %}{% translate ", email:" %} <strong>{{ p.created_by.email }}</strong>{% endif %}{% translate ", en lo sucesivo denominado como" %} <strong>{% translate '"EL EJECUTOR"' %}</strong>
         </p>
 
         {# Cliente #}
         {% if p.client_rep_name or p.client_signed_name or p.company %}
         <p class="mb-3">
-          Y <strong>{{ p.client_rep_name|default:p.client_signed_name|default:"___________________________" }}</strong>{% if p.client_rep_id %}, con ID: <strong>{{ p.client_rep_id }}</strong>{% endif %}{% if p.client_rep_role %}, {{ p.client_rep_role }}{% endif %}{% if p.client_signed_email %}, email: <strong>{{ p.client_signed_email }}</strong>{% endif %}
-          {% if p.company %} en representación de la empresa <strong>{{ p.company.name }}</strong>{% if p.company.tax_id %}, CIF: <strong>{{ p.company.tax_id }}</strong>{% endif %}{% if p.company.email %}, email: <strong>{{ p.company.email }}</strong>{% endif %}{% if p.company.address or p.company.city or p.company.country %}, con domicilio en {{ p.company.address }}{% if p.company.address and p.company.city %}, {% endif %}{{ p.company.city }}{% if p.company.city and p.company.country %}, {% endif %}{{ p.company.country }}{% endif %}{% endif %}, en lo sucesivo denominado como <strong>"EL CLIENTE"</strong>
+          Y <strong>{{ p.client_rep_name|default:p.client_signed_name|default:"___________________________" }}</strong>{% if p.client_rep_id %}{% translate ", con ID:" %} <strong>{{ p.client_rep_id }}</strong>{% endif %}{% if p.client_rep_role %}, {{ p.client_rep_role }}{% endif %}{% if p.client_signed_email %}{% translate ", email:" %} <strong>{{ p.client_signed_email }}</strong>{% endif %}
+          {% if p.company %} {% translate "en representación de la empresa" %} <strong>{{ p.company.name }}</strong>{% if p.company.tax_id %}{% translate ", CIF:" %} <strong>{{ p.company.tax_id }}</strong>{% endif %}{% if p.company.email %}{% translate ", email:" %} <strong>{{ p.company.email }}</strong>{% endif %}{% if p.company.address or p.company.city or p.company.country %}, con domicilio en {{ p.company.address }}{% if p.company.address and p.company.city %}, {% endif %}{{ p.company.city }}{% if p.company.city and p.company.country %}, {% endif %}{{ p.company.country }}{% endif %}{% endif %}{% translate ", en lo sucesivo denominado como" %} <strong>{% translate '"EL CLIENTE"' %}</strong>
         </p>
         {% endif %}
 
         <p class="mb-4">
-          Se ha convenido celebrar el presente <em>{% if p.contract_title %}{{ p.contract_title }}{% else %}contrato{% endif %}</em> que se regirá por las siguientes:
+          {% translate "Se ha convenido celebrar el presente" %} <em>{% if p.contract_title %}{{ p.contract_title }}{% else %}{% translate "contrato" %}{% endif %}</em> {% translate "que se regirá por las siguientes:" %}
         </p>
 
-        <p class="text-center fw-bold" style="letter-spacing:.08em;font-size:1rem;"> CLÁUSULAS:</p>
+        <p class="text-center fw-bold" style="letter-spacing:.08em;font-size:1rem;"> {% translate "CLÁUSULAS:" %}</p>
       </div>
       <hr class="clause-divider">
       {% endif %}
@@ -346,13 +347,13 @@
             <div class="d-flex gap-1 no-print">
               {% if not survey.client_signature_image %}
               <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:.75rem;"
-                      onclick="pubEditClause({{ clause.pk }})" title="Editar cláusula">
-                <i class="bi bi-pencil me-1"></i>Editar
+                      onclick="pubEditClause({{ clause.pk }})" title="{% translate 'Editar cláusula' %}">
+                <i class="bi bi-pencil me-1"></i>{% translate "Editar" %}
               </button>
               {% endif %}
               <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2" style="font-size:.75rem;"
-                      onclick="pubHistoryClause({{ clause.pk }}, {{ forloop.counter }})" title="Ver historial de cambios">
-                <i class="bi bi-clock-history me-1"></i>Historial
+                      onclick="pubHistoryClause({{ clause.pk }}, {{ forloop.counter }})" title="{% translate 'Ver historial de cambios' %}">
+                <i class="bi bi-clock-history me-1"></i>{% translate "Historial" %}
               </button>
             </div>
           </div>
@@ -373,17 +374,17 @@
           {# Formulario edición inline (oculto por defecto) #}
           <div class="pub-clause-edit d-none mt-2" id="pub-clause-edit-{{ clause.pk }}">
             <div class="mb-2">
-              <label class="form-label small fw-semibold mb-1">Tu nombre (opcional)</label>
+              <label class="form-label small fw-semibold mb-1">{% translate "Tu nombre (opcional)" %}</label>
               <input type="text" id="pub-editor-name-{{ clause.pk }}" class="form-control form-control-sm"
-                     placeholder="Ej: Juan García" maxlength="200">
+                     placeholder="{% translate 'Ej: Juan García' %}" maxlength="200">
             </div>
             <textarea id="pub-clause-body-{{ clause.pk }}" class="form-control form-control-sm font-monospace mb-2"
                       rows="6" style="white-space:pre-wrap;">{{ clause.body }}</textarea>
             <div class="d-flex gap-2 justify-content-end">
-              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="pubCancelEdit({{ clause.pk }})">Cancelar</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="pubCancelEdit({{ clause.pk }})">{% translate "Cancelar" %}</button>
               <button type="button" class="btn btn-success btn-sm" onclick="pubSaveClause({{ clause.pk }})">
                 <span id="pub-save-spinner-{{ clause.pk }}" class="spinner-border spinner-border-sm d-none me-1"></span>
-                <i class="bi bi-floppy me-1" id="pub-save-icon-{{ clause.pk }}"></i>Guardar
+                <i class="bi bi-floppy me-1" id="pub-save-icon-{{ clause.pk }}"></i>{% translate "Guardar" %}
               </button>
             </div>
             <div id="pub-clause-error-{{ clause.pk }}" class="text-danger small mt-1 d-none"></div>
@@ -395,7 +396,7 @@
       {% else %}
         <div class="text-center text-muted py-5">
           <i class="bi bi-file-earmark-x fs-2 opacity-50"></i>
-          <p class="mt-2 mb-0">Este contrato aún no tiene cláusulas.</p>
+          <p class="mt-2 mb-0">{% translate "Este contrato aún no tiene cláusulas." %}</p>
         </div>
       {% endif %}
 
@@ -409,7 +410,7 @@
         <div class="d-flex align-items-center gap-3 mb-3">
           <div style="height:2px;flex:1;background:linear-gradient(90deg,#0f3460,transparent);"></div>
           <span class="fw-bold text-uppercase" style="color:var(--brand);letter-spacing:.08em;font-size:.85rem;">
-            Anexo A — Alcance del proyecto
+            {% translate "Anexo A — Alcance del proyecto" %}
           </span>
           <div style="height:2px;flex:1;background:linear-gradient(270deg,#0f3460,transparent);"></div>
         </div>
@@ -425,15 +426,15 @@
             <span class="anexo-category-dot" style="background:{{ category.color }};"></span>
             <span class="anexo-category-label">{{ category.name }}</span>
             <span class="anexo-category-line"></span>
-            <span class="text-muted" style="font-size:.75rem;white-space:nowrap;">{{ cat_lines|length }} proceso{% if cat_lines|length != 1 %}s{% endif %}</span>
+            <span class="text-muted" style="font-size:.75rem;white-space:nowrap;">{{ cat_lines|length }} proceso{% if cat_lines|length != 1 %}{% translate "s" %}{% endif %}</span>
           </div>
           {% else %}
           {% if lines_grouped|length > 1 %}
           <div class="anexo-category-header">
             <span class="anexo-category-dot" style="background:#adb5bd;"></span>
-            <span class="anexo-category-label" style="color:#6c757d;">Sin categoría</span>
+            <span class="anexo-category-label" style="color:#6c757d;">{% translate "Sin categoría" %}</span>
             <span class="anexo-category-line"></span>
-            <span class="text-muted" style="font-size:.75rem;white-space:nowrap;">{{ cat_lines|length }} proceso{% if cat_lines|length != 1 %}s{% endif %}</span>
+            <span class="text-muted" style="font-size:.75rem;white-space:nowrap;">{{ cat_lines|length }} proceso{% if cat_lines|length != 1 %}{% translate "s" %}{% endif %}</span>
           </div>
           {% endif %}
           {% endif %}
@@ -477,7 +478,7 @@
       <div class="row g-4 mt-1{% if contract_private %} section-private{% endif %}">
         {% if survey.client_signature_image %}
         <div class="col-6">
-          <p class="small text-muted fw-semibold mb-1 text-uppercase" style="letter-spacing:.04em;">Firma del proveedor</p>
+          <p class="small text-muted fw-semibold mb-1 text-uppercase" style="letter-spacing:.04em;">{% translate "Firma del proveedor" %}</p>
           {% if provider_signature %}
           <div class="border rounded bg-light" style="height:80px;line-height:0;overflow:hidden;">
             <img src="{{ provider_signature }}" alt="Firma"
@@ -491,7 +492,7 @@
         </div>
         {% endif %}
         <div class="col-6">
-          <p class="small text-muted fw-semibold mb-1 text-uppercase" style="letter-spacing:.04em;">Firma del cliente</p>
+          <p class="small text-muted fw-semibold mb-1 text-uppercase" style="letter-spacing:.04em;">{% translate "Firma del cliente" %}</p>
           {% if survey.client_signature_image %}
             <div class="border rounded bg-light" style="height:80px;line-height:0;overflow:hidden;">
               <img src="{{ survey.client_signature_image.url }}" alt="Firma del cliente"
@@ -501,15 +502,15 @@
             <p class="small text-muted mb-0">Fecha: {{ survey.client_signed_at|date:"d/m/Y"|default:"_______________" }}</p>
             {% if not signature_locked %}
             <button type="button" class="btn btn-outline-secondary btn-sm mt-2 no-print" onclick="document.getElementById('sigClientPanel').classList.toggle('d-none')">
-              <i class="bi bi-pencil"></i> Cambiar firma
+              <i class="bi bi-pencil"></i> {% translate "Cambiar firma" %}
             </button>
             {% else %}
-            <p class="small text-danger mt-2 no-print mb-0"><i class="bi bi-lock me-1"></i>Firma bloqueada (han pasado más de 24 h)</p>
+            <p class="small text-danger mt-2 no-print mb-0"><i class="bi bi-lock me-1"></i>{% translate "Firma bloqueada (han pasado más de 24 h)" %}</p>
             {% endif %}
           {% else %}
             <div class="signature-box no-print" id="sigClientBoxEmpty"></div>
-            <p class="small text-muted mt-1 mb-0">Nombre: _______________________________</p>
-            <p class="small text-muted mb-0">Fecha: _________________________________</p>
+            <p class="small text-muted mt-1 mb-0">{% translate "Nombre: _______________________________" %}</p>
+            <p class="small text-muted mb-0">{% translate "Fecha: _________________________________" %}</p>
           {% endif %}
 
           {# Panel de firma (canvas) — siempre presente, oculto si ya hay firma o está bloqueado #}
@@ -517,9 +518,9 @@
           <div id="sigClientPanel" class="mt-2 no-print {% if survey.client_signature_image %}d-none{% endif %}">
             <div class="mb-1">
               <input type="text" id="clientNameInput" class="form-control form-control-sm mb-1"
-                     placeholder="Tu nombre completo *" value="{{ survey.client_signed_name }}">
+                     placeholder="{% translate 'Tu nombre completo *' %}" value="{{ survey.client_signed_name }}">
               <input type="email" id="clientEmailInput" class="form-control form-control-sm"
-                     placeholder="Tu email *" value="{{ survey.client_signed_email }}">
+                     placeholder="{% translate 'Tu email *' %}" value="{{ survey.client_signed_email }}">
             </div>
             <div class="border rounded bg-white" style="touch-action:none;display:inline-block;">
               <canvas id="sigClientCanvas" width="260" height="100"
@@ -527,10 +528,10 @@
             </div>
             <div class="mt-1 d-flex gap-2">
               <button type="button" class="btn btn-outline-secondary btn-sm" onclick="sigClientClear()">
-                <i class="bi bi-eraser"></i> Limpiar
+                <i class="bi bi-eraser"></i> {% translate "Limpiar" %}
               </button>
               <button type="button" class="btn btn-success btn-sm" onclick="sigClientSave()">
-                <i class="bi bi-check2-circle"></i> Firmar contrato
+                <i class="bi bi-check2-circle"></i> {% translate "Firmar contrato" %}
               </button>
             </div>
           </div>
@@ -564,12 +565,12 @@
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header py-2 px-3">
-        <h6 class="modal-title mb-0" id="pubHistoryModalLabel"><i class="bi bi-clock-history me-2 text-primary"></i>Historial de cambios</h6>
+        <h6 class="modal-title mb-0" id="pubHistoryModalLabel"><i class="bi bi-clock-history me-2 text-primary"></i>{% translate "Historial de cambios" %}</h6>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body p-3" id="pubHistoryModalBody">
         <div class="text-center text-muted py-4" id="pubHistoryLoading">
-          <div class="spinner-border spinner-border-sm me-2"></div>Cargando historial…
+          <div class="spinner-border spinner-border-sm me-2"></div>{% translate "Cargando historial…" %}
         </div>
         <div id="pubHistoryContent" class="d-none"></div>
       </div>

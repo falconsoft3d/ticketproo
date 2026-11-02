@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Grupos de Accesos - {{ block.super }}{% endblock %}
@@ -31,9 +32,9 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
-                <h1><i class="bi bi-collection"></i> Grupos de Accesos</h1>
+                <h1><i class="bi bi-collection"></i> {% translate "Grupos de Accesos" %}</h1>
                 <a href="{% url 'access_group_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Crear Grupo
+                    <i class="bi bi-plus-circle"></i> {% translate "Crear Grupo" %}
                 </a>
             </div>
         </div>
@@ -52,9 +53,9 @@
                         </h5>
                         <span class="badge {% if group.is_public %}badge-public{% else %}badge-private{% endif %}">
                             {% if group.is_public %}
-                                <i class="bi bi-globe"></i> Público
+                                <i class="bi bi-globe"></i> {% translate "Público" %}
                             {% else %}
-                                <i class="bi bi-lock"></i> Privado
+                                <i class="bi bi-lock"></i> {% translate "Privado" %}
                             {% endif %}
                         </span>
                     </div>
@@ -70,7 +71,7 @@
 
                     {% if group.is_public %}
                     <div class="mb-3">
-                        <small class="text-muted">URL Pública:</small>
+                        <small class="text-muted">{% translate "URL Pública:" %}</small>
                         <div class="input-group input-group-sm">
                             <input type="text" class="form-control" readonly 
                                    value="{{ request.scheme }}://{{ request.get_host }}{{ group.get_public_url }}"
@@ -86,7 +87,7 @@
                     <div class="d-flex gap-2">
                         <a href="{% url 'access_group_detail' group.id %}" 
                            class="btn btn-sm btn-outline-primary flex-fill">
-                            <i class="bi bi-eye"></i> Ver
+                            <i class="bi bi-eye"></i> {% translate "Ver" %}
                         </a>
                         <a href="{% url 'access_group_edit' group.id %}" 
                            class="btn btn-sm btn-outline-secondary">
@@ -109,10 +110,10 @@
     {% else %}
     <div class="alert alert-info text-center">
         <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
-        <h4>No hay grupos de accesos creados</h4>
-        <p>Crea tu primer grupo para organizar enlaces de acceso rápido</p>
+        <h4>{% translate "No hay grupos de accesos creados" %}</h4>
+        <p>{% translate "Crea tu primer grupo para organizar enlaces de acceso rápido" %}</p>
         <a href="{% url 'access_group_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Crear Primer Grupo
+            <i class="bi bi-plus-circle"></i> {% translate "Crear Primer Grupo" %}
         </a>
     </div>
     {% endif %}

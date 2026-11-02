@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Generar Resumen Empresarial - {{ company.name }}{% endblock %}
@@ -8,12 +9,12 @@
     <!-- Breadcrumb -->
     <div class="row mb-3">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'company_ai_dashboard_list' %}">Dashboard Empresarial IA</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'company_ai_dashboard_list' %}">{% translate "Dashboard Empresarial IA" %}</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'company_ai_dashboard_detail' company.pk %}">{{ company.name }}</a></li>
-                    <li class="breadcrumb-item active">Generar Resumen</li>
+                    <li class="breadcrumb-item active">{% translate "Generar Resumen" %}</li>
                 </ol>
             </nav>
         </div>
@@ -25,7 +26,7 @@
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">
-                        <i class="bi bi-file-earmark-plus"></i> Generar Resumen Empresarial IA
+                        <i class="bi bi-file-earmark-plus"></i> {% translate "Generar Resumen Empresarial IA" %}
                     </h4>
                 </div>
                 <div class="card-body">
@@ -38,12 +39,12 @@
                         <div class="card bg-light mb-4">
                             <div class="card-body">
                                 <h6 class="card-title">
-                                    <i class="bi bi-calendar-range"></i> Período de Análisis
+                                    <i class="bi bi-calendar-range"></i> {% translate "Período de Análisis" %}
                                 </h6>
                                 
                                 <div class="row mb-3">
                                     <div class="col-md-6">
-                                        <label for="period_start" class="form-label">Fecha Inicio</label>
+                                        <label for="period_start" class="form-label">{% translate "Fecha Inicio" %}</label>
                                         <input type="date" 
                                                class="form-control" 
                                                id="period_start" 
@@ -51,7 +52,7 @@
                                                required>
                                     </div>
                                     <div class="col-md-6">
-                                        <label for="period_end" class="form-label">Fecha Fin</label>
+                                        <label for="period_end" class="form-label">{% translate "Fecha Fin" %}</label>
                                         <input type="date" 
                                                class="form-control" 
                                                id="period_end" 
@@ -62,19 +63,19 @@
 
                                 <!-- Atajos Rápidos -->
                                 <div>
-                                    <label class="form-label">Atajos Rápidos:</label>
+                                    <label class="form-label">{% translate "Atajos Rápidos:" %}</label>
                                     <div class="btn-group btn-group-sm" role="group">
                                         <button type="button" class="btn btn-outline-secondary" onclick="setLastWeek()">
-                                            Última Semana
+                                            {% translate "Última Semana" %}
                                         </button>
                                         <button type="button" class="btn btn-outline-secondary" onclick="setLastMonth()">
-                                            Último Mes
+                                            {% translate "Último Mes" %}
                                         </button>
                                         <button type="button" class="btn btn-outline-secondary" onclick="setLastQuarter()">
-                                            Último Trimestre
+                                            {% translate "Último Trimestre" %}
                                         </button>
                                         <button type="button" class="btn btn-outline-secondary" onclick="setLastYear()">
-                                            Último Año
+                                            {% translate "Último Año" %}
                                         </button>
                                     </div>
                                 </div>
@@ -85,20 +86,20 @@
                         <div class="card bg-light mb-4">
                             <div class="card-body">
                                 <h6 class="card-title">
-                                    <i class="bi bi-graph-up"></i> Datos Disponibles
+                                    <i class="bi bi-graph-up"></i> {% translate "Datos Disponibles" %}
                                 </h6>
                                 <div class="row text-center">
                                     <div class="col-4">
                                         <h4 class="text-primary mb-0">{{ total_managers }}</h4>
-                                        <small class="text-muted">Gerentes IA</small>
+                                        <small class="text-muted">{% translate "Gerentes IA" %}</small>
                                     </div>
                                     <div class="col-4">
                                         <h4 class="text-info mb-0">{{ total_meetings }}</h4>
-                                        <small class="text-muted">Reuniones Totales</small>
+                                        <small class="text-muted">{% translate "Reuniones Totales" %}</small>
                                     </div>
                                     <div class="col-4">
                                         <h4 class="text-success mb-0">{{ total_participants }}</h4>
-                                        <small class="text-muted">Participantes</small>
+                                        <small class="text-muted">{% translate "Participantes" %}</small>
                                     </div>
                                 </div>
                             </div>
@@ -107,10 +108,10 @@
                         <!-- Botones -->
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-cpu"></i> Generar con IA
+                                <i class="bi bi-cpu"></i> {% translate "Generar con IA" %}
                             </button>
                             <a href="{% url 'company_ai_dashboard_detail' company.pk %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>
@@ -125,14 +126,14 @@
             <div class="card shadow-sm border-0 mb-3">
                 <div class="card-header bg-primary text-white">
                     <h6 class="mb-0">
-                        <i class="bi bi-bullseye"></i> Objetivos Empresariales
+                        <i class="bi bi-bullseye"></i> {% translate "Objetivos Empresariales" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <p class="small mb-0">{{ company.business_objectives|linebreaks }}</p>
                     <hr>
                     <p class="small text-muted mb-0">
-                        <i class="bi bi-info-circle"></i> La IA considerará estos objetivos al generar el resumen ejecutivo
+                        <i class="bi bi-info-circle"></i> {% translate "La IA considerará estos objetivos al generar el resumen ejecutivo" %}
                     </p>
                 </div>
             </div>
@@ -142,18 +143,18 @@
             <div class="card shadow-sm border-0 mb-3">
                 <div class="card-header bg-info text-white">
                     <h6 class="mb-0">
-                        <i class="bi bi-info-circle"></i> ¿Qué incluye el resumen?
+                        <i class="bi bi-info-circle"></i> {% translate "¿Qué incluye el resumen?" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <ul class="small mb-0">
-                        <li><strong>Resumen Ejecutivo:</strong> Visión general estratégica de la empresa</li>
-                        <li><strong>Métricas Clave:</strong> KPIs consolidados de todos los gerentes</li>
-                        <li><strong>Highlights Departamentales:</strong> Logros por área</li>
-                        <li><strong>Desafíos:</strong> Problemas identificados transversalmente</li>
-                        <li><strong>Recomendaciones:</strong> Acciones estratégicas sugeridas</li>
+                        <li><strong>{% translate "Resumen Ejecutivo:" %}</strong> {% translate "Visión general estratégica de la empresa" %}</li>
+                        <li><strong>{% translate "Métricas Clave:" %}</strong> {% translate "KPIs consolidados de todos los gerentes" %}</li>
+                        <li><strong>{% translate "Highlights Departamentales:" %}</strong> {% translate "Logros por área" %}</li>
+                        <li><strong>{% translate "Desafíos:" %}</strong> {% translate "Problemas identificados transversalmente" %}</li>
+                        <li><strong>{% translate "Recomendaciones:" %}</strong> {% translate "Acciones estratégicas sugeridas" %}</li>
                         {% if company.business_objectives %}
-                        <li><strong>Evaluación de Objetivos:</strong> Progreso hacia metas empresariales</li>
+                        <li><strong>{% translate "Evaluación de Objetivos:" %}</strong> {% translate "Progreso hacia metas empresariales" %}</li>
                         {% endif %}
                     </ul>
                 </div>
@@ -163,16 +164,16 @@
             <div class="card shadow-sm border-0 mb-3">
                 <div class="card-header bg-success text-white">
                     <h6 class="mb-0">
-                        <i class="bi bi-lightbulb"></i> Cómo funciona
+                        <i class="bi bi-lightbulb"></i> {% translate "Cómo funciona" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <ol class="small mb-0">
-                        <li>Selecciona el período a analizar</li>
-                        <li>La IA recopila datos de todos los gerentes</li>
-                        <li>Analiza reuniones, patrones y tendencias</li>
-                        <li>Genera insights estratégicos consolidados</li>
-                        <li>Guarda el resumen para consulta histórica</li>
+                        <li>{% translate "Selecciona el período a analizar" %}</li>
+                        <li>{% translate "La IA recopila datos de todos los gerentes" %}</li>
+                        <li>{% translate "Analiza reuniones, patrones y tendencias" %}</li>
+                        <li>{% translate "Genera insights estratégicos consolidados" %}</li>
+                        <li>{% translate "Guarda el resumen para consulta histórica" %}</li>
                     </ol>
                 </div>
             </div>
@@ -181,15 +182,15 @@
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-warning text-dark">
                     <h6 class="mb-0">
-                        <i class="bi bi-star"></i> Tips
+                        <i class="bi bi-star"></i> {% translate "Tips" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <ul class="small mb-0">
-                        <li>Genera resúmenes mensuales para tracking continuo</li>
-                        <li>Compara resúmenes de diferentes períodos</li>
-                        <li>Usa el análisis para sesiones de planificación</li>
-                        <li>Identifica tendencias a largo plazo</li>
+                        <li>{% translate "Genera resúmenes mensuales para tracking continuo" %}</li>
+                        <li>{% translate "Compara resúmenes de diferentes períodos" %}</li>
+                        <li>{% translate "Usa el análisis para sesiones de planificación" %}</li>
+                        <li>{% translate "Identifica tendencias a largo plazo" %}</li>
                     </ul>
                 </div>
             </div>

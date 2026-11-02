@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -181,39 +182,39 @@
     <!-- Acciones de impresión (no se imprimen) -->
     <div class="print-actions no-print">
         <button onclick="window.print()" class="btn btn-primary">
-            🖨️ Imprimir Ticket
+            {% translate "🖨️ Imprimir Ticket" %}
         </button>
         <button onclick="window.close()" class="btn btn-secondary">
-            ❌ Cerrar
+            {% translate "❌ Cerrar" %}
         </button>
     </div>
 
     <!-- Encabezado -->
     <div class="print-header">
         <h1>TICKET #{{ ticket.id }}</h1>
-        <div class="company">Sistema de Tickets - TicketPro</div>
+        <div class="company">{% translate "Sistema de Tickets - TicketPro" %}</div>
     </div>
 
     <!-- Información del ticket -->
     <div class="ticket-info">
         <div class="info-grid">
             <div class="info-item">
-                <div class="info-label">Título</div>
+                <div class="info-label">{% translate "Título" %}</div>
                 <div class="info-value">{{ ticket.title }}</div>
             </div>
             
             <div class="info-item">
-                <div class="info-label">Fecha de Creación</div>
+                <div class="info-label">{% translate "Fecha de Creación" %}</div>
                 <div class="info-value">{{ ticket.created_at|date:"d/m/Y H:i" }}</div>
             </div>
             
             <div class="info-item">
-                <div class="info-label">Creado por</div>
+                <div class="info-label">{% translate "Creado por" %}</div>
                 <div class="info-value">{{ ticket.created_by.get_full_name|default:ticket.created_by.username }}</div>
             </div>
             
             <div class="info-item">
-                <div class="info-label">Estado</div>
+                <div class="info-label">{% translate "Estado" %}</div>
                 <div class="info-value">
                     <span class="status-badge status-{{ ticket.status }}">
                         {{ ticket.get_status_display }}
@@ -224,17 +225,17 @@
         
         <div class="info-grid">
             <div class="info-item">
-                <div class="info-label">Categoría</div>
+                <div class="info-label">{% translate "Categoría" %}</div>
                 <div class="info-value">{{ ticket.category.name|default:"Sin categoría" }}</div>
             </div>
             
             <div class="info-item">
-                <div class="info-label">Asignado a</div>
+                <div class="info-label">{% translate "Asignado a" %}</div>
                 <div class="info-value">
                     {% if ticket.assigned_to %}
                         {{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}
                     {% else %}
-                        Sin asignar
+                        {% translate "Sin asignar" %}
                     {% endif %}
                 </div>
             </div>
@@ -243,7 +244,7 @@
 
     <!-- Contenido del ticket -->
     <div class="ticket-content">
-        <div class="content-header">📝 Descripción del Ticket</div>
+        <div class="content-header">{% translate "📝 Descripción del Ticket" %}</div>
         <div class="ticket-text">{{ ticket.description|default:"Sin descripción disponible." }}</div>
     </div>
 

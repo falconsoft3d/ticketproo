@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -142,7 +143,7 @@
                             </p>
                             <p class="mb-0 opacity-90">
                                 <i class="fas fa-graduation-cap me-2"></i>
-                                <strong>Tu tutor IA:</strong> Experimentado profesor con más de 15 años de experiencia en educación y mentoría
+                                <strong>{% translate "Tu tutor IA:" %}</strong> {% translate "Experimentado profesor con más de 15 años de experiencia en educación y mentoría" %}
                             </p>
                         </div>
                     </div>
@@ -150,25 +151,25 @@
                     <div class="mb-3">
                         {% if tutor.status == 'active' %}
                             <span class="status-badge status-active">
-                                <i class="fas fa-play"></i> Activo
+                                <i class="fas fa-play"></i> {% translate "Activo" %}
                             </span>
                         {% elif tutor.status == 'paused' %}
                             <span class="status-badge status-paused">
-                                <i class="fas fa-pause"></i> Pausado
+                                <i class="fas fa-pause"></i> {% translate "Pausado" %}
                             </span>
                         {% else %}
                             <span class="status-badge status-completed">
-                                <i class="fas fa-check"></i> Completado
+                                <i class="fas fa-check"></i> {% translate "Completado" %}
                             </span>
                         {% endif %}
                         
                         {% if tutor.is_private %}
                             <span class="badge bg-warning ms-2">
-                                <i class="fas fa-lock"></i> Privado
+                                <i class="fas fa-lock"></i> {% translate "Privado" %}
                             </span>
                         {% else %}
                             <span class="badge bg-success ms-2">
-                                <i class="fas fa-globe"></i> Público
+                                <i class="fas fa-globe"></i> {% translate "Público" %}
                             </span>
                         {% endif %}
                     </div>
@@ -177,15 +178,15 @@
                     <div class="btn-group" role="group">
                         {% if tutor.created_by == request.user %}
                             <a href="{% url 'ai_tutor_edit' tutor.pk %}" class="btn btn-light">
-                                <i class="fas fa-edit"></i> Editar
+                                <i class="fas fa-edit"></i> {% translate "Editar" %}
                             </a>
                         {% endif %}
                         {% if not tutor.is_private or tutor.created_by == request.user %}
                             <a href="{% url 'ai_tutor_progress_report' tutor.pk %}" class="btn btn-success">
-                                <i class="fas fa-plus"></i> Reportar Progreso
+                                <i class="fas fa-plus"></i> {% translate "Reportar Progreso" %}
                             </a>
                             <a href="{% url 'ai_tutor_upload_attachment' tutor.pk %}" class="btn btn-info">
-                                <i class="fas fa-paperclip"></i> Subir Archivo
+                                <i class="fas fa-paperclip"></i> {% translate "Subir Archivo" %}
                             </a>
                         {% endif %}
                     </div>
@@ -195,25 +196,25 @@
         
         <div class="card-body">
             <h5 class="mb-3">
-                <i class="fas fa-bullseye text-primary me-2"></i>Objetivo de Aprendizaje
+                <i class="fas fa-bullseye text-primary me-2"></i>{% translate "Objetivo de Aprendizaje" %}
             </h5>
             <p class="text-gray-700 mb-4">{{ tutor.objective|linebreaks }}</p>
             
             <h5 class="mb-3">
-                <i class="fas fa-user-graduate text-success me-2"></i>Tipo de Tutor
+                <i class="fas fa-user-graduate text-success me-2"></i>{% translate "Tipo de Tutor" %}
             </h5>
             <p class="text-gray-700 mb-4">{{ tutor.tutor_persona|linebreaks }}</p>
             
             <div class="row">
                 <div class="col-md-6">
                     <h6 class="mb-2">
-                        <i class="fas fa-map-marker-alt text-warning me-2"></i>Estado Actual
+                        <i class="fas fa-map-marker-alt text-warning me-2"></i>{% translate "Estado Actual" %}
                     </h6>
                     <p class="text-gray-600 small">{{ tutor.current_state|linebreaks }}</p>
                 </div>
                 <div class="col-md-6">
                     <h6 class="mb-2">
-                        <i class="fas fa-info-circle text-info me-2"></i>Contexto
+                        <i class="fas fa-info-circle text-info me-2"></i>{% translate "Contexto" %}
                     </h6>
                     <p class="text-gray-600 small">{{ tutor.context|linebreaks }}</p>
                 </div>
@@ -228,7 +229,7 @@
             <div class="card mb-4">
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-chart-line me-2"></i>Historial de Progreso
+                        <i class="fas fa-chart-line me-2"></i>{% translate "Historial de Progreso" %}
                         <span class="badge bg-primary ms-2">{{ progress_reports.count }}</span>
                     </h6>
                 </div>
@@ -252,13 +253,13 @@
                                             {% if report.ai_feedback %}
                                                 <div class="ai-feedback">
                                                     <h6 class="mb-2">
-                                                        <i class="fas fa-user-tie me-2 text-primary"></i>Feedback de tu Profesor IA
+                                                        <i class="fas fa-user-tie me-2 text-primary"></i>{% translate "Feedback de tu Profesor IA" %}
                                                     </h6>
                                                     <div class="bg-light p-3 rounded border-start border-primary border-3">
                                                         <p class="mb-0 fst-italic">{{ report.ai_feedback }}</p>
                                                         <small class="text-muted d-block mt-2">
                                                             <i class="fas fa-graduation-cap me-1"></i>
-                                                            Tu experimentado profesor con 15+ años de experiencia
+                                                            {% translate "Tu experimentado profesor con 15+ años de experiencia" %}
                                                         </small>
                                                     </div>
                                                 </div>
@@ -267,13 +268,13 @@
                                             {% if report.ai_recommendations %}
                                                 <div class="ai-recommendations mt-3">
                                                     <h6 class="mb-2 text-warning">
-                                                        <i class="fas fa-lightbulb me-2"></i>Recomendaciones del Profesor
+                                                        <i class="fas fa-lightbulb me-2"></i>{% translate "Recomendaciones del Profesor" %}
                                                     </h6>
                                                     <div class="bg-warning bg-opacity-10 p-3 rounded border-start border-warning border-3">
                                                         <div>{{ report.ai_recommendations|linebreaks }}</div>
                                                         <small class="text-muted d-block mt-2">
                                                             <i class="fas fa-chalkboard-teacher me-1"></i>
-                                                            Basado en metodologías pedagógicas comprobadas
+                                                            {% translate "Basado en metodologías pedagógicas comprobadas" %}
                                                         </small>
                                                     </div>
                                                 </div>
@@ -284,11 +285,11 @@
                                                 <button class="btn btn-outline-primary btn-sm regenerate-feedback-btn" 
                                                         data-report-id="{{ report.id }}" 
                                                         data-bs-toggle="tooltip" 
-                                                        title="Obtener feedback personalizado de tu profesor IA">
+                                                        title="{% translate 'Obtener feedback personalizado de tu profesor IA' %}">
                                                     <i class="fas fa-user-tie me-1"></i>
-                                                    <span class="btn-text">Consultar Profesor IA</span>
+                                                    <span class="btn-text">{% translate "Consultar Profesor IA" %}</span>
                                                     <span class="spinner-border spinner-border-sm d-none" role="status">
-                                                        <span class="visually-hidden">Generando feedback...</span>
+                                                        <span class="visually-hidden">{% translate "Generando feedback..." %}</span>
                                                     </span>
                                                 </button>
                                             </div>
@@ -297,7 +298,7 @@
                                             {% if report.attachments.exists %}
                                                 <div class="mt-3">
                                                     <h6 class="mb-2">
-                                                        <i class="fas fa-paperclip me-2"></i>Archivos Adjuntos
+                                                        <i class="fas fa-paperclip me-2"></i>{% translate "Archivos Adjuntos" %}
                                                     </h6>
                                                     {% for attachment in report.attachments.all %}
                                                         <div class="attachment-item d-flex align-items-center justify-content-between">
@@ -343,11 +344,11 @@
                     {% else %}
                         <div class="text-center py-4">
                             <i class="fas fa-chart-line fa-3x text-gray-300 mb-3"></i>
-                            <h5 class="text-gray-600">No hay reportes de progreso</h5>
-                            <p class="text-gray-500 mb-3">Comienza reportando tu progreso para que la IA pueda ayudarte mejor.</p>
+                            <h5 class="text-gray-600">{% translate "No hay reportes de progreso" %}</h5>
+                            <p class="text-gray-500 mb-3">{% translate "Comienza reportando tu progreso para que la IA pueda ayudarte mejor." %}</p>
                             {% if not tutor.is_private or tutor.created_by == request.user %}
                                 <a href="{% url 'ai_tutor_progress_report' tutor.pk %}" class="btn btn-primary">
-                                    <i class="fas fa-plus"></i> Crear Primer Reporte
+                                    <i class="fas fa-plus"></i> {% translate "Crear Primer Reporte" %}
                                 </a>
                             {% endif %}
                         </div>
@@ -361,48 +362,48 @@
             <!-- Información del Tutor -->
             <div class="info-card mb-4">
                 <h6 class="mb-3">
-                    <i class="fas fa-info-circle text-primary me-2"></i>Información del Tutor
+                    <i class="fas fa-info-circle text-primary me-2"></i>{% translate "Información del Tutor" %}
                 </h6>
                 
                 <div class="row text-center mb-3">
                     <div class="col-6">
                         <div class="border-end">
                             <div class="h4 mb-0 text-primary">{{ progress_reports.count }}</div>
-                            <small class="text-muted">Reportes</small>
+                            <small class="text-muted">{% translate "Reportes" %}</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="h4 mb-0 text-success">{{ tutor_attachments.count }}</div>
-                        <small class="text-muted">Archivos</small>
+                        <small class="text-muted">{% translate "Archivos" %}</small>
                     </div>
                 </div>
                 
                 <hr>
                 
                 <div class="mb-2">
-                    <strong>Creado por:</strong><br>
+                    <strong>{% translate "Creado por:" %}</strong><br>
                     <small class="text-muted">{{ tutor.created_by.get_full_name|default:tutor.created_by.username }}</small>
                 </div>
                 
                 <div class="mb-2">
-                    <strong>Fecha de creación:</strong><br>
+                    <strong>{% translate "Fecha de creación:" %}</strong><br>
                     <small class="text-muted">{{ tutor.created_at|date:"d/m/Y H:i" }}</small>
                 </div>
                 
                 <div class="mb-2">
-                    <strong>Última actualización:</strong><br>
+                    <strong>{% translate "Última actualización:" %}</strong><br>
                     <small class="text-muted">{{ tutor.updated_at|date:"d/m/Y H:i" }}</small>
                 </div>
                 
                 <div>
-                    <strong>Visibilidad:</strong><br>
+                    <strong>{% translate "Visibilidad:" %}</strong><br>
                     {% if tutor.is_private %}
                         <span class="badge bg-warning">
-                            <i class="fas fa-lock"></i> Privado
+                            <i class="fas fa-lock"></i> {% translate "Privado" %}
                         </span>
                     {% else %}
                         <span class="badge bg-success">
-                            <i class="fas fa-globe"></i> Público
+                            <i class="fas fa-globe"></i> {% translate "Público" %}
                         </span>
                     {% endif %}
                 </div>
@@ -413,7 +414,7 @@
                 <div class="card">
                     <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text-primary">
-                            <i class="fas fa-folder me-2"></i>Archivos del Tutor
+                            <i class="fas fa-folder me-2"></i>{% translate "Archivos del Tutor" %}
                         </h6>
                     </div>
                     <div class="card-body">
@@ -438,7 +439,7 @@
                                         <small class="text-muted">{{ attachment.get_file_size_display }}</small>
                                         {% if attachment.ai_analysis %}
                                             <div class="small text-info mt-1">
-                                                <i class="fas fa-robot me-1"></i>Analizado por IA
+                                                <i class="fas fa-robot me-1"></i>{% translate "Analizado por IA" %}
                                             </div>
                                         {% endif %}
                                     </div>
@@ -457,15 +458,15 @@
                 <div class="card mt-4">
                     <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text-danger">
-                            <i class="fas fa-exclamation-triangle me-2"></i>Zona de Peligro
+                            <i class="fas fa-exclamation-triangle me-2"></i>{% translate "Zona de Peligro" %}
                         </h6>
                     </div>
                     <div class="card-body">
                         <p class="text-muted small mb-3">
-                            Una vez eliminado, este tutor y todos sus reportes de progreso se perderán permanentemente.
+                            {% translate "Una vez eliminado, este tutor y todos sus reportes de progreso se perderán permanentemente." %}
                         </p>
                         <a href="{% url 'ai_tutor_delete' tutor.pk %}" class="btn btn-danger btn-sm">
-                            <i class="fas fa-trash"></i> Eliminar Tutor
+                            <i class="fas fa-trash"></i> {% translate "Eliminar Tutor" %}
                         </a>
                     </div>
                 </div>

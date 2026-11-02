@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ title }} - TicketProo{% endblock %}
 
@@ -7,16 +8,16 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
                         <a href="{% url 'employee_dashboard' %}">
-                            <i class="bi bi-speedometer2"></i> Dashboard
+                            <i class="bi bi-speedometer2"></i> {% translate "Dashboard" %}
                         </a>
                     </li>
                     <li class="breadcrumb-item">
                         <a href="{% url 'video_meeting_list' %}">
-                            <i class="bi bi-camera-video"></i> Reuniones
+                            <i class="bi bi-camera-video"></i> {% translate "Reuniones" %}
                         </a>
                     </li>
                     <li class="breadcrumb-item active">{{ title }}</li>
@@ -27,7 +28,7 @@
         
         <div>
             <a href="{% url 'video_meeting_list' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver a Lista
+                <i class="bi bi-arrow-left"></i> {% translate "Volver a Lista" %}
             </a>
         </div>
     </div>
@@ -37,7 +38,7 @@
             <div class="card shadow">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-camera-video"></i> Información de la Reunión
+                        <i class="bi bi-camera-video"></i> {% translate "Información de la Reunión" %}
                     </h5>
                 </div>
                 
@@ -76,7 +77,7 @@
                                     </div>
                                 {% endif %}
                                 <div class="form-text">
-                                    Describe la agenda, objetivos y temas principales de la reunión
+                                    {% translate "Describe la agenda, objetivos y temas principales de la reunión" %}
                                 </div>
                             </div>
                         </div>
@@ -103,7 +104,7 @@
                                 </label>
                                 <div class="input-group">
                                     {{ form.duration_minutes }}
-                                    <span class="input-group-text">min</span>
+                                    <span class="input-group-text">{% translate "min" %}</span>
                                 </div>
                                 {% if form.duration_minutes.errors %}
                                     <div class="text-danger small">
@@ -144,7 +145,7 @@
                                     </div>
                                 {% endif %}
                                 <div class="form-text">
-                                    Mantén presionado Ctrl (Cmd en Mac) para seleccionar múltiples participantes
+                                    {% translate "Mantén presionado Ctrl (Cmd en Mac) para seleccionar múltiples participantes" %}
                                 </div>
                             </div>
                         </div>
@@ -164,7 +165,7 @@
                                     </div>
                                 {% endif %}
                                 <div class="form-text">
-                                    Enlace de Zoom, Google Meet, Teams u otra plataforma
+                                    {% translate "Enlace de Zoom, Google Meet, Teams u otra plataforma" %}
                                 </div>
                             </div>
                         </div>
@@ -174,7 +175,7 @@
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label for="{{ form.recording_files.id_for_label }}" class="form-label">
-                                    <i class="bi bi-file-play"></i> Subir archivos de grabación
+                                    <i class="bi bi-file-play"></i> {% translate "Subir archivos de grabación" %}
                                 </label>
                                 {{ form.recording_files }}
                                 {% if form.recording_files.errors %}
@@ -185,27 +186,27 @@
                                     </div>
                                 {% endif %}
                                 <div class="form-text">
-                                    <strong>Formatos soportados:</strong> MP4, AVI, MOV, MP3, WAV, M4A, WebM (máx. 500MB c/u)<br>
-                                    <strong>Múltiples archivos:</strong> Puedes seleccionar varios archivos a la vez<br>
-                                    <strong>Procesamiento automático:</strong> Los archivos se procesarán en segundo plano sin bloquear la interfaz
+                                    <strong>{% translate "Formatos soportados:" %}</strong> {% translate "MP4, AVI, MOV, MP3, WAV, M4A, WebM (máx. 500MB c/u)" %}<br>
+                                    <strong>{% translate "Múltiples archivos:" %}</strong> {% translate "Puedes seleccionar varios archivos a la vez" %}<br>
+                                    <strong>{% translate "Procesamiento automático:" %}</strong> {% translate "Los archivos se procesarán en segundo plano sin bloquear la interfaz" %}
                                 </div>
                                 
                                 {% if meeting and meeting.recording_file %}
                                 <div class="alert alert-info mt-2">
                                     <i class="bi bi-info-circle"></i>
-                                    <strong>Archivo actual:</strong> {{ meeting.recording_file.name|default:"archivo.mp4" }}
+                                    <strong>{% translate "Archivo actual:" %}</strong> {{ meeting.recording_file.name|default:"archivo.mp4" }}
                                     {% if meeting.get_file_size_display %}
                                         ({{ meeting.get_file_size_display }})
                                     {% endif %}
                                     <br>
-                                    <small>Los nuevos archivos se agregarán y procesarán adicionalmente</small>
+                                    <small>{% translate "Los nuevos archivos se agregarán y procesarán adicionalmente" %}</small>
                                 </div>
                                 {% endif %}
                                 
                                 {% if meeting.transcription_status == 'processing' %}
                                 <div class="alert alert-warning mt-2">
                                     <i class="bi bi-hourglass-split"></i>
-                                    <strong>Procesamiento en curso...</strong> Los archivos se están transcribiendo y analizando en segundo plano.
+                                    <strong>{% translate "Procesamiento en curso..." %}</strong> {% translate "Los archivos se están transcribiendo y analizando en segundo plano." %}
                                 </div>
                                 {% endif %}
                             </div>
@@ -213,8 +214,7 @@
                         {% else %}
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i>
-                            <strong>Nota:</strong> Los archivos de grabación se pueden subir después de crear la reunión.
-                            Esto permite cargar múltiples archivos y procesarlos en segundo plano sin timeouts.
+                            <strong>{% translate "Nota:" %}</strong> {% translate "Los archivos de grabación se pueden subir después de crear la reunión. Esto permite cargar múltiples archivos y procesarlos en segundo plano sin timeouts." %}
                         </div>
                         {% endif %}
                         
@@ -229,7 +229,7 @@
                         <!-- Botones -->
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'video_meeting_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i> {{ action }}

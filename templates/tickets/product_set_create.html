@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}{% if product_set %}Editar{% else %}Crear{% endif %} Conjunto de Productos{% endblock %}
+{% block title %}{% if product_set %}{% translate "Editar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Conjunto de Productos" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -11,10 +12,10 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
                         <i class="bi bi-{% if product_set %}pencil{% else %}plus-circle{% endif %}"></i> 
-                        {% if product_set %}Editar{% else %}Crear{% endif %} Conjunto de Productos
+                        {% if product_set %}{% translate "Editar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Conjunto de Productos" %}
                     </h5>
                     <a href="{% url 'product_set_list' %}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -26,7 +27,7 @@
                             <div class="col-md-8">
                                 <div class="card mb-4">
                                     <div class="card-header">
-                                        <h6 class="mb-0">Información del Conjunto</h6>
+                                        <h6 class="mb-0">{% translate "Información del Conjunto" %}</h6>
                                     </div>
                                     <div class="card-body">
                                         <div class="mb-3">
@@ -78,33 +79,33 @@
                                 {% if product_set %}
                                 <div class="card mb-4">
                                     <div class="card-header">
-                                        <h6 class="mb-0">Información Actual</h6>
+                                        <h6 class="mb-0">{% translate "Información Actual" %}</h6>
                                     </div>
                                     <div class="card-body">
                                         <table class="table table-sm table-borderless mb-0">
                                             <tr>
-                                                <td><strong>Creado:</strong></td>
+                                                <td><strong>{% translate "Creado:" %}</strong></td>
                                                 <td>{{ product_set.created_at|date:"d/m/Y H:i" }}</td>
                                             </tr>
                                             <tr>
-                                                <td><strong>Productos:</strong></td>
+                                                <td><strong>{% translate "Productos:" %}</strong></td>
                                                 <td>
                                                     <span class="badge bg-info">{{ product_set.product_count }}</span>
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><strong>Estado:</strong></td>
+                                                <td><strong>{% translate "Estado:" %}</strong></td>
                                                 <td>
                                                     {% if product_set.is_public %}
-                                                        <span class="badge bg-success">Público</span>
+                                                        <span class="badge bg-success">{% translate "Público" %}</span>
                                                     {% else %}
-                                                        <span class="badge bg-secondary">Privado</span>
+                                                        <span class="badge bg-secondary">{% translate "Privado" %}</span>
                                                     {% endif %}
                                                 </td>
                                             </tr>
                                             {% if product_set.is_public %}
                                             <tr>
-                                                <td><strong>URL Pública:</strong></td>
+                                                <td><strong>{% translate "URL Pública:" %}</strong></td>
                                                 <td>
                                                     <div class="input-group input-group-sm">
                                                         <input type="text" 
@@ -132,10 +133,10 @@
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h6 class="mb-0">
-                                    <i class="bi bi-list-ul"></i> Productos del Conjunto
+                                    <i class="bi bi-list-ul"></i> {% translate "Productos del Conjunto" %}
                                 </h6>
                                 <button type="button" class="btn btn-outline-primary btn-sm" onclick="addProductForm()">
-                                    <i class="bi bi-plus"></i> Agregar Producto
+                                    <i class="bi bi-plus"></i> {% translate "Agregar Producto" %}
                                 </button>
                             </div>
                             <div class="card-body">
@@ -147,7 +148,7 @@
                                             <div class="d-flex justify-content-between align-items-center mb-3">
                                                 <h6 class="mb-0">Producto #{{ forloop.counter }}</h6>
                                                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeProductForm(this)">
-                                                    <i class="bi bi-trash"></i> Eliminar
+                                                    <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                                                 </button>
                                             </div>
                                             
@@ -211,7 +212,7 @@
                                                         <div class="form-check mt-4">
                                                             {{ form.DELETE }}
                                                             <label class="form-check-label text-danger" for="{{ form.DELETE.id_for_label }}">
-                                                                Eliminar
+                                                                {% translate "Eliminar" %}
                                                             </label>
                                                         </div>
                                                     {% endif %}
@@ -224,8 +225,8 @@
                                 {% if not formset or formset|length == 0 %}
                                     <div class="text-center text-muted py-3" id="empty-state">
                                         <i class="bi bi-inbox display-4"></i>
-                                        <p>No hay productos agregados aún.</p>
-                                        <p>Haz clic en "Agregar Producto" para comenzar.</p>
+                                        <p>{% translate "No hay productos agregados aún." %}</p>
+                                        <p>{% translate 'Haz clic en "Agregar Producto" para comenzar.' %}</p>
                                     </div>
                                 {% endif %}
                             </div>
@@ -233,11 +234,11 @@
 
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'product_set_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i> 
-                                {% if product_set %}Actualizar{% else %}Crear{% endif %} Conjunto
+                                {% if product_set %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Conjunto" %}
                             </button>
                         </div>
                     </form>

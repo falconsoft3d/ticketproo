@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -29,17 +30,17 @@
                     <a href="{% url 'frd_download_pdf' document.pk %}" 
                        class="btn btn-danger me-2"
                        target="_blank">
-                        <i class="bi bi-file-pdf me-1"></i>Descargar PDF
+                        <i class="bi bi-file-pdf me-1"></i>{% translate "Descargar PDF" %}
                     </a>
                     <a href="{% url 'public_frd' document.public_share_token %}" 
                        class="btn btn-success me-2"
                        target="_blank">
-                        <i class="bi bi-share me-1"></i>Vista Pública
+                        <i class="bi bi-share me-1"></i>{% translate "Vista Pública" %}
                     </a>
                     <button type="button" 
                             class="btn btn-outline-secondary"
                             onclick="copyToClipboard('{{ request.scheme }}://{{ request.get_host }}{% url 'public_frd' document.public_share_token %}')">
-                        <i class="bi bi-clipboard me-1"></i>Copiar URL
+                        <i class="bi bi-clipboard me-1"></i>{% translate "Copiar URL" %}
                     </button>
                 </div>
             </div>
@@ -53,46 +54,46 @@
             {% if document.is_document_accepted %}
             <div class="alert alert-success">
                 <h5 class="alert-heading">
-                    <i class="bi bi-check-circle-fill me-2"></i>Documento Aceptado por el Cliente
+                    <i class="bi bi-check-circle-fill me-2"></i>{% translate "Documento Aceptado por el Cliente" %}
                 </h5>
                 <hr>
                 <div class="row">
                     <div class="col-md-4">
-                        <p class="mb-1"><strong>Revisado por:</strong> {{ document.document_reviewed_by_name }}</p>
+                        <p class="mb-1"><strong>{% translate "Revisado por:" %}</strong> {{ document.document_reviewed_by_name }}</p>
                     </div>
                     <div class="col-md-4">
-                        <p class="mb-1"><strong>Email:</strong> {{ document.document_reviewed_by_email }}</p>
+                        <p class="mb-1"><strong>{% translate "Email:" %}</strong> {{ document.document_reviewed_by_email }}</p>
                     </div>
                     <div class="col-md-4">
-                        <p class="mb-1"><strong>Fecha:</strong> {{ document.document_reviewed_at|date:"d/m/Y H:i" }}</p>
+                        <p class="mb-1"><strong>{% translate "Fecha:" %}</strong> {{ document.document_reviewed_at|date:"d/m/Y H:i" }}</p>
                     </div>
                 </div>
                 {% if document.document_review_comments %}
                 <hr>
-                <p class="mb-0"><strong>Comentarios:</strong></p>
+                <p class="mb-0"><strong>{% translate "Comentarios:" %}</strong></p>
                 <p class="mb-0" style="white-space: pre-wrap;">{{ document.document_review_comments }}</p>
                 {% endif %}
             </div>
             {% elif document.is_document_rejected %}
             <div class="alert alert-danger">
                 <h5 class="alert-heading">
-                    <i class="bi bi-x-circle-fill me-2"></i>Documento Rechazado por el Cliente
+                    <i class="bi bi-x-circle-fill me-2"></i>{% translate "Documento Rechazado por el Cliente" %}
                 </h5>
                 <hr>
                 <div class="row">
                     <div class="col-md-4">
-                        <p class="mb-1"><strong>Revisado por:</strong> {{ document.document_reviewed_by_name }}</p>
+                        <p class="mb-1"><strong>{% translate "Revisado por:" %}</strong> {{ document.document_reviewed_by_name }}</p>
                     </div>
                     <div class="col-md-4">
-                        <p class="mb-1"><strong>Email:</strong> {{ document.document_reviewed_by_email }}</p>
+                        <p class="mb-1"><strong>{% translate "Email:" %}</strong> {{ document.document_reviewed_by_email }}</p>
                     </div>
                     <div class="col-md-4">
-                        <p class="mb-1"><strong>Fecha:</strong> {{ document.document_reviewed_at|date:"d/m/Y H:i" }}</p>
+                        <p class="mb-1"><strong>{% translate "Fecha:" %}</strong> {{ document.document_reviewed_at|date:"d/m/Y H:i" }}</p>
                     </div>
                 </div>
                 {% if document.document_review_comments %}
                 <hr>
-                <p class="mb-0"><strong>Motivos del rechazo:</strong></p>
+                <p class="mb-0"><strong>{% translate "Motivos del rechazo:" %}</strong></p>
                 <p class="mb-0" style="white-space: pre-wrap;">{{ document.document_review_comments }}</p>
                 {% endif %}
             </div>
@@ -107,12 +108,12 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-card-text me-2"></i>Descripción General
+                        <i class="bi bi-card-text me-2"></i>{% translate "Descripción General" %}
                     </h5>
                     <button type="button" 
                             class="btn btn-sm btn-outline-primary"
                             onclick="toggleDescriptionEdit()">
-                        <i class="bi bi-pencil me-1"></i>Editar
+                        <i class="bi bi-pencil me-1"></i>{% translate "Editar" %}
                     </button>
                 </div>
                 <div class="card-body">
@@ -121,7 +122,7 @@
                             <p class="mb-0" style="white-space: pre-wrap;">{{ document.description }}</p>
                         {% else %}
                             <p class="text-muted mb-0">
-                                <i>No se ha definido una descripción general para este documento.</i>
+                                <i>{% translate "No se ha definido una descripción general para este documento." %}</i>
                             </p>
                         {% endif %}
                     </div>
@@ -134,12 +135,12 @@
                                       placeholder="Ingrese una descripción general del proyecto o alcance...">{{ document.description }}</textarea>
                         </div>
                         <button type="submit" name="edit_description" class="btn btn-primary me-2">
-                            <i class="bi bi-check-lg me-1"></i>Guardar
+                            <i class="bi bi-check-lg me-1"></i>{% translate "Guardar" %}
                         </button>
                         <button type="button" 
                                 class="btn btn-secondary"
                                 onclick="cancelDescriptionEdit()">
-                            <i class="bi bi-x-lg me-1"></i>Cancelar
+                            <i class="bi bi-x-lg me-1"></i>{% translate "Cancelar" %}
                         </button>
                     </form>
                 </div>
@@ -152,7 +153,7 @@
         <div class="col-md-3">
             <div class="card bg-primary text-white">
                 <div class="card-body">
-                    <h6 class="card-title">Total Requerimientos</h6>
+                    <h6 class="card-title">{% translate "Total Requerimientos" %}</h6>
                     <h2 class="mb-0">{{ document.get_total_count }}</h2>
                 </div>
             </div>
@@ -160,7 +161,7 @@
         <div class="col-md-3">
             <div class="card bg-success text-white">
                 <div class="card-body">
-                    <h6 class="card-title">Aprobados</h6>
+                    <h6 class="card-title">{% translate "Aprobados" %}</h6>
                     <h2 class="mb-0">{{ document.get_approved_count }}</h2>
                 </div>
             </div>
@@ -168,7 +169,7 @@
         <div class="col-md-3">
             <div class="card bg-warning text-white">
                 <div class="card-body">
-                    <h6 class="card-title">Pendientes</h6>
+                    <h6 class="card-title">{% translate "Pendientes" %}</h6>
                     <h2 class="mb-0">{{ document.get_pending_count }}</h2>
                 </div>
             </div>
@@ -176,7 +177,7 @@
         <div class="col-md-3">
             <div class="card bg-info text-white">
                 <div class="card-body">
-                    <h6 class="card-title">% Aprobación</h6>
+                    <h6 class="card-title">{% translate "% Aprobación" %}</h6>
                     <h2 class="mb-0">{{ document.get_approval_percentage }}%</h2>
                 </div>
             </div>
@@ -189,7 +190,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-list-ol me-1"></i>Requerimientos
+                        <i class="bi bi-list-ol me-1"></i>{% translate "Requerimientos" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -203,10 +204,10 @@
                                         <span class="badge bg-secondary me-2">#{{ req.number }}</span>
                                         {% if req.is_approved %}
                                             <span class="badge bg-success">
-                                                <i class="bi bi-check-circle me-1"></i>Aprobado
+                                                <i class="bi bi-check-circle me-1"></i>{% translate "Aprobado" %}
                                             </span>
                                         {% else %}
-                                            <span class="badge bg-warning">Pendiente</span>
+                                            <span class="badge bg-warning">{% translate "Pendiente" %}</span>
                                         {% endif %}
                                     </div>
                                     
@@ -223,14 +224,14 @@
                                         <form method="post" class="mb-2">
                                             {% csrf_token %}
                                             <input type="hidden" name="requirement_id" value="{{ req.id }}">
-                                            <input type="text" name="title" class="form-control mb-2" placeholder="Título del requerimiento" value="{{ req.title }}">
+                                            <input type="text" name="title" class="form-control mb-2" placeholder="{% translate 'Título del requerimiento' %}" value="{{ req.title }}">
                                             <textarea name="description" class="form-control mb-2" rows="3" required>{{ req.description }}</textarea>
                                             <div class="btn-group btn-group-sm">
                                                 <button type="submit" name="edit_requirement" class="btn btn-success">
-                                                    <i class="bi bi-check-lg me-1"></i>Guardar
+                                                    <i class="bi bi-check-lg me-1"></i>{% translate "Guardar" %}
                                                 </button>
                                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit({{ req.id }})">
-                                                    <i class="bi bi-x-lg me-1"></i>Cancelar
+                                                    <i class="bi bi-x-lg me-1"></i>{% translate "Cancelar" %}
                                                 </button>
                                             </div>
                                         </form>
@@ -248,12 +249,12 @@
                                     <!-- Botón crear ticket -->
                                     <a href="{% url 'frd_requirement_create_ticket' req.pk %}" 
                                        class="btn btn-outline-info" 
-                                       title="Crear Ticket de Soporte">
+                                       title="{% translate 'Crear Ticket de Soporte' %}">
                                         <i class="bi bi-ticket-detailed"></i>
                                     </a>
                                     
                                     <!-- Botón de editar -->
-                                    <button type="button" class="btn btn-outline-primary" onclick="editRequirement({{ req.id }})" title="Editar">
+                                    <button type="button" class="btn btn-outline-primary" onclick="editRequirement({{ req.id }})" title="{% translate 'Editar' %}">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     
@@ -274,11 +275,11 @@
                                         {% csrf_token %}
                                         <input type="hidden" name="requirement_id" value="{{ req.id }}">
                                         {% if req.is_approved %}
-                                            <button type="submit" name="toggle_approval" class="btn btn-outline-warning" title="Marcar como pendiente">
+                                            <button type="submit" name="toggle_approval" class="btn btn-outline-warning" title="{% translate 'Marcar como pendiente' %}">
                                                 <i class="bi bi-x-circle"></i>
                                             </button>
                                         {% else %}
-                                            <button type="submit" name="toggle_approval" class="btn btn-outline-success" title="Aprobar">
+                                            <button type="submit" name="toggle_approval" class="btn btn-outline-success" title="{% translate 'Aprobar' %}">
                                                 <i class="bi bi-check-circle"></i>
                                             </button>
                                         {% endif %}
@@ -289,7 +290,7 @@
                                           onsubmit="return confirm('¿Eliminar este requerimiento?');"
                                           style="display: inline;">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                        <button type="submit" class="btn btn-outline-danger" title="{% translate 'Eliminar' %}">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
@@ -321,13 +322,13 @@
                                             </div>
                                             {% else %}
                                             <p class="text-muted mb-3">
-                                                <i>No hay comentarios aún.</i>
+                                                <i>{% translate "No hay comentarios aún." %}</i>
                                             </p>
                                             {% endif %}
                                             
                                             <small class="text-muted">
                                                 <i class="bi bi-info-circle me-1"></i>
-                                                Los comentarios se agregan desde la vista pública del documento.
+                                                {% translate "Los comentarios se agregan desde la vista pública del documento." %}
                                             </small>
                                         </div>
                                     </div>
@@ -339,7 +340,7 @@
                     {% else %}
                     <div class="text-center py-5">
                         <i class="bi bi-list-ol text-muted" style="font-size: 3rem;"></i>
-                        <p class="text-muted mt-3">No hay requerimientos aún</p>
+                        <p class="text-muted mt-3">{% translate "No hay requerimientos aún" %}</p>
                     </div>
                     {% endif %}
                 </div>
@@ -351,7 +352,7 @@
             <div class="card sticky-top" style="top: 20px;">
                 <div class="card-header bg-primary text-white">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-plus-circle me-1"></i>Agregar Requerimiento
+                        <i class="bi bi-plus-circle me-1"></i>{% translate "Agregar Requerimiento" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -380,7 +381,7 @@
                             {% endif %}
                         </div>
                         <button type="submit" name="add_requirement" class="btn btn-primary w-100">
-                            <i class="bi bi-plus-circle me-1"></i>Agregar
+                            <i class="bi bi-plus-circle me-1"></i>{% translate "Agregar" %}
                         </button>
                     </form>
                 </div>
@@ -427,7 +428,7 @@ function cancelEdit(reqId) {
             <div class="card">
                 <div class="card-header bg-dark text-white">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-graph-up me-2"></i>Estadísticas de Página Pública
+                        <i class="bi bi-graph-up me-2"></i>{% translate "Estadísticas de Página Pública" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -436,14 +437,14 @@ function cancelEdit(reqId) {
                             <div class="text-center p-3 border rounded">
                                 <i class="bi bi-eye text-primary" style="font-size: 2rem;"></i>
                                 <h3 class="mt-2 mb-0">{{ document.get_total_views }}</h3>
-                                <p class="text-muted mb-0">Visitas Totales</p>
+                                <p class="text-muted mb-0">{% translate "Visitas Totales" %}</p>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="text-center p-3 border rounded">
                                 <i class="bi bi-people text-success" style="font-size: 2rem;"></i>
                                 <h3 class="mt-2 mb-0">{{ document.get_unique_visitors }}</h3>
-                                <p class="text-muted mb-0">Visitantes Únicos</p>
+                                <p class="text-muted mb-0">{% translate "Visitantes Únicos" %}</p>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -456,7 +457,7 @@ function cancelEdit(reqId) {
                                         -
                                     {% endif %}
                                 </h3>
-                                <p class="text-muted mb-0">Última Visita</p>
+                                <p class="text-muted mb-0">{% translate "Última Visita" %}</p>
                             </div>
                         </div>
                     </div>
@@ -464,14 +465,14 @@ function cancelEdit(reqId) {
                     <!-- Últimas visitas -->
                     {% if document.get_recent_views %}
                     <div class="mt-4">
-                        <h6 class="mb-3">Últimas 10 Visitas:</h6>
+                        <h6 class="mb-3">{% translate "Últimas 10 Visitas:" %}</h6>
                         <div class="table-responsive">
                             <table class="table table-sm table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Fecha y Hora</th>
+                                        <th>{% translate "Fecha y Hora" %}</th>
                                         <th>IP</th>
-                                        <th>Navegador</th>
+                                        <th>{% translate "Navegador" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>

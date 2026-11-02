@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold mb-0">
-            <i class="bi bi-receipt-cutoff text-primary"></i> Cotizaciones
+            <i class="bi bi-receipt-cutoff text-primary"></i> {% translate "Cotizaciones" %}
         </h2>
         <span class="badge bg-secondary fs-6">{{ quotations.count }} cotización{{ quotations.count|pluralize }}</span>
     </div>
@@ -21,13 +22,13 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Referencia</th>
-                        <th>Cliente</th>
-                        <th>Correo</th>
-                        <th>Empresa</th>
-                        <th class="text-end">Total</th>
-                        <th class="text-center">Productos</th>
-                        <th>Fecha</th>
+                        <th>{% translate "Referencia" %}</th>
+                        <th>{% translate "Cliente" %}</th>
+                        <th>{% translate "Correo" %}</th>
+                        <th>{% translate "Empresa" %}</th>
+                        <th class="text-end">{% translate "Total" %}</th>
+                        <th class="text-center">{% translate "Productos" %}</th>
+                        <th>{% translate "Fecha" %}</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -50,7 +51,7 @@
                         </td>
                         <td class="text-muted small">{{ q.created_at|date:"d/m/Y H:i" }}</td>
                         <td>
-                            <a href="{% url 'cart_quotation_pdf' q.pk %}" class="btn btn-sm btn-outline-secondary" title="Descargar PDF">
+                            <a href="{% url 'cart_quotation_pdf' q.pk %}" class="btn btn-sm btn-outline-secondary" title="{% translate 'Descargar PDF' %}">
                                 <i class="bi bi-file-earmark-pdf"></i> PDF
                             </a>
                         </td>
@@ -70,8 +71,8 @@
     {% else %}
     <div class="text-center py-5">
         <i class="bi bi-receipt display-1 text-muted mb-3 d-block"></i>
-        <h5 class="text-muted">No hay cotizaciones aún</h5>
-        <p class="text-muted small">Las cotizaciones generadas desde el carrito público aparecerán aquí.</p>
+        <h5 class="text-muted">{% translate "No hay cotizaciones aún" %}</h5>
+        <p class="text-muted small">{% translate "Las cotizaciones generadas desde el carrito público aparecerán aquí." %}</p>
     </div>
     {% endif %}
 </div>

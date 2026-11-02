@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ cap.titulo }}{% endblock %}
 
@@ -8,27 +9,27 @@
     <!-- Encabezado -->
     <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
         <a href="{% url 'capacitacion_list' %}" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left"></i> Volver
+            <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
         </a>
         <h2 class="mb-0 flex-grow-1">
             <i class="bi bi-journal-check text-primary"></i> {{ cap.titulo }}
         </h2>
         {% if can_manage %}
         <a href="{% url 'capacitacion_edit' cap.pk %}" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-pencil"></i> Editar
+            <i class="bi bi-pencil"></i> {% translate "Editar" %}
         </a>
         <form method="post" action="{% url 'capacitacion_duplicate' cap.pk %}"
               onsubmit="return confirm('¿Duplicar esta capacitación? Se copiarán las clases y tareas, sin respuestas, asistencia ni solicitudes.')">
             {% csrf_token %}
             <button type="submit" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-files"></i> Duplicar
+                <i class="bi bi-files"></i> {% translate "Duplicar" %}
             </button>
         </form>
         <a href="{% url 'capacitacion_delete' cap.pk %}" class="btn btn-sm btn-outline-danger">
-            <i class="bi bi-trash"></i> Eliminar
+            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
         </a>
-        <button class="btn btn-sm btn-outline-success" onclick="copyPublicUrl()" title="Copiar enlace público">
-            <i class="bi bi-share"></i> Compartir
+        <button class="btn btn-sm btn-outline-success" onclick="copyPublicUrl()" title="{% translate 'Copiar enlace público' %}">
+            <i class="bi bi-share"></i> {% translate "Compartir" %}
         </button>
         {% endif %}
     </div>
@@ -39,7 +40,7 @@
             {% if cap.temas %}
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-body">
-                    <h6 class="text-muted fw-semibold mb-2"><i class="bi bi-card-text"></i> Temas</h6>
+                    <h6 class="text-muted fw-semibold mb-2"><i class="bi bi-card-text"></i> {% translate "Temas" %}</h6>
                     <p class="mb-0" style="white-space:pre-wrap;">{{ cap.temas }}</p>
                 </div>
             </div>
@@ -49,10 +50,10 @@
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="text-muted fw-semibold mb-0"><i class="bi bi-easel"></i> Clases</h6>
+                        <h6 class="text-muted fw-semibold mb-0"><i class="bi bi-easel"></i> {% translate "Clases" %}</h6>
                         {% if can_manage %}
                         <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalAddClase">
-                            <i class="bi bi-plus-circle"></i> Agregar Clase
+                            <i class="bi bi-plus-circle"></i> {% translate "Agregar Clase" %}
                         </button>
                         {% endif %}
                     </div>
@@ -79,15 +80,15 @@
                                 <div class="d-flex gap-1">
                                     <button type="button" class="btn btn-sm btn-outline-success p-0 px-1"
                                             data-clase-url="{{ request.scheme }}://{{ request.get_host }}{% url 'capacitacion_clase_public' clase.public_token %}"
-                                            onclick="copyClasePublicUrl(this)" title="Copiar enlace público de la clase">
+                                            onclick="copyClasePublicUrl(this)" title="{% translate 'Copiar enlace público de la clase' %}">
                                         <i class="bi bi-share"></i>
                                     </button>
                                     <button type="button" class="btn btn-sm btn-outline-primary p-0 px-1"
-                                            data-bs-toggle="modal" data-bs-target="#modalEditClase{{ clase.pk }}" title="Editar clase">
+                                            data-bs-toggle="modal" data-bs-target="#modalEditClase{{ clase.pk }}" title="{% translate 'Editar clase' %}">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary p-0 px-1"
-                                            data-bs-toggle="modal" data-bs-target="#modalEditResumen{{ clase.pk }}" title="Editar resumen de la clase">
+                                            data-bs-toggle="modal" data-bs-target="#modalEditResumen{{ clase.pk }}" title="{% translate 'Editar resumen de la clase' %}">
                                         <i class="bi bi-journal-text"></i>
                                     </button>
                                     <form method="post" action="{% url 'capacitacion_clase_delete' cap.pk clase.pk %}"
@@ -104,7 +105,7 @@
                             <!-- Resumen de la clase -->
                             {% if clase.resumen %}
                             <div class="mt-2 ps-2 border-start">
-                                <span class="text-muted small fw-semibold"><i class="bi bi-journal-text"></i> Resumen de la clase</span>
+                                <span class="text-muted small fw-semibold"><i class="bi bi-journal-text"></i> {% translate "Resumen de la clase" %}</span>
                                 <p class="small mb-0 mt-1" style="white-space:pre-wrap;">{{ clase.resumen }}</p>
                             </div>
                             {% endif %}
@@ -115,7 +116,7 @@
                                     <span class="text-muted small fw-semibold"><i class="bi bi-people"></i> Asistencia ({{ clase.asistencias.all|length }})</span>
                                     {% if can_manage %}
                                     <button class="btn btn-sm btn-link p-0 small" data-bs-toggle="modal" data-bs-target="#modalAddAsistencia{{ clase.pk }}">
-                                        <i class="bi bi-person-plus"></i> Registrar asistencia
+                                        <i class="bi bi-person-plus"></i> {% translate "Registrar asistencia" %}
                                     </button>
                                     {% endif %}
                                 </div>
@@ -124,10 +125,10 @@
                                     <table class="table table-sm mb-1">
                                         <thead>
                                             <tr class="small text-muted">
-                                                <th>Nombre</th>
-                                                <th>Email</th>
-                                                <th>Teléfono</th>
-                                                <th>Cargo</th>
+                                                <th>{% translate "Nombre" %}</th>
+                                                <th>{% translate "Email" %}</th>
+                                                <th>{% translate "Teléfono" %}</th>
+                                                <th>{% translate "Cargo" %}</th>
                                                 {% if can_manage %}<th></th>{% endif %}
                                             </tr>
                                         </thead>
@@ -155,7 +156,7 @@
                                     </table>
                                 </div>
                                 {% else %}
-                                <p class="text-muted small fst-italic mb-1">Sin asistentes registrados.</p>
+                                <p class="text-muted small fst-italic mb-1">{% translate "Sin asistentes registrados." %}</p>
                                 {% endif %}
                             </div>
 
@@ -170,7 +171,7 @@
                                             <div>
                                                 <strong>{{ solicitud.nombre }}</strong>
                                                 {% if solicitud.email %}<span class="text-muted">({{ solicitud.email }})</span>{% endif %}
-                                                {% if solicitud.atendida %}<span class="badge bg-success ms-1">Atendida</span>{% endif %}
+                                                {% if solicitud.atendida %}<span class="badge bg-success ms-1">{% translate "Atendida" %}</span>{% endif %}
                                                 <p class="mb-0 mt-1" style="white-space:pre-wrap;">{{ solicitud.mensaje }}</p>
                                                 <span class="text-muted" style="font-size:.75rem;">{{ solicitud.created_at|date:"d/m/Y H:i" }}</span>
                                             </div>
@@ -178,7 +179,7 @@
                                             <div class="d-flex gap-1">
                                                 <form method="post" action="{% url 'capacitacion_solicitud_toggle' cap.pk solicitud.pk %}">
                                                     {% csrf_token %}
-                                                    <button type="submit" class="btn btn-sm btn-outline-secondary p-0 px-1" title="Marcar como atendida">
+                                                    <button type="submit" class="btn btn-sm btn-outline-secondary p-0 px-1" title="{% translate 'Marcar como atendida' %}">
                                                         <i class="bi bi-check2"></i>
                                                     </button>
                                                 </form>
@@ -238,7 +239,7 @@
                         {% endfor %}
                     </ul>
                     {% else %}
-                    <p class="text-muted small fst-italic mb-0">Sin clases agregadas.</p>
+                    <p class="text-muted small fst-italic mb-0">{% translate "Sin clases agregadas." %}</p>
                     {% endif %}
                 </div>
             </div>
@@ -247,10 +248,10 @@
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="text-muted fw-semibold mb-0"><i class="bi bi-key"></i> Enlaces de Acceso</h6>
+                        <h6 class="text-muted fw-semibold mb-0"><i class="bi bi-key"></i> {% translate "Enlaces de Acceso" %}</h6>
                         {% if can_manage %}
                         <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalAddEnlace">
-                            <i class="bi bi-plus-circle"></i> Agregar Enlace
+                            <i class="bi bi-plus-circle"></i> {% translate "Agregar Enlace" %}
                         </button>
                         {% endif %}
                     </div>
@@ -274,7 +275,7 @@
                             {% if can_manage %}
                             <div class="d-flex gap-1">
                                 <button type="button" class="btn btn-sm btn-outline-primary p-0 px-1"
-                                        data-bs-toggle="modal" data-bs-target="#modalEditEnlace{{ enlace.pk }}" title="Editar enlace">
+                                        data-bs-toggle="modal" data-bs-target="#modalEditEnlace{{ enlace.pk }}" title="{% translate 'Editar enlace' %}">
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <form method="post" action="{% url 'capacitacion_enlace_delete' cap.pk enlace.pk %}"
@@ -290,7 +291,7 @@
                         {% endfor %}
                     </ul>
                     {% else %}
-                    <p class="text-muted small fst-italic mb-0">Sin enlaces agregados.</p>
+                    <p class="text-muted small fst-italic mb-0">{% translate "Sin enlaces agregados." %}</p>
                     {% endif %}
                 </div>
             </div>
@@ -298,7 +299,7 @@
         <div class="col-md-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <h6 class="text-muted fw-semibold mb-2"><i class="bi bi-info-circle"></i> Información</h6>
+                    <h6 class="text-muted fw-semibold mb-2"><i class="bi bi-info-circle"></i> {% translate "Información" %}</h6>
                     <ul class="list-unstyled mb-0 small">
                         <li class="mb-1">
                             <i class="bi bi-calendar3"></i> Creada: {{ cap.created_at|date:"d/m/Y H:i" }}
@@ -309,19 +310,19 @@
                         </li>
                         {% endif %}
                         <li class="mb-1">
-                            <i class="bi bi-people"></i> Usuarios:
+                            <i class="bi bi-people"></i> {% translate "Usuarios:" %}
                             {% for u in cap.assigned_users.all %}
                                 <span class="badge bg-light text-dark border">{{ u.get_full_name|default:u.username }}</span>
                             {% empty %}
-                                <span class="text-muted fst-italic">Ninguno</span>
+                                <span class="text-muted fst-italic">{% translate "Ninguno" %}</span>
                             {% endfor %}
                         </li>
                         <li>
-                            <i class="bi bi-building"></i> Empresas:
+                            <i class="bi bi-building"></i> {% translate "Empresas:" %}
                             {% for co in cap.assigned_companies.all %}
                                 <span class="badge bg-light text-dark border">{{ co.name }}</span>
                             {% empty %}
-                                <span class="text-muted fst-italic">Ninguna</span>
+                                <span class="text-muted fst-italic">{% translate "Ninguna" %}</span>
                             {% endfor %}
                         </li>
                     </ul>
@@ -332,10 +333,10 @@
 
     <!-- ── Líneas / Tareas ── -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0"><i class="bi bi-list-task"></i> Lista de Tareas</h4>
+        <h4 class="mb-0"><i class="bi bi-list-task"></i> {% translate "Lista de Tareas" %}</h4>
         {% if can_manage %}
         <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddLinea">
-            <i class="bi bi-plus-circle"></i> Agregar Tarea
+            <i class="bi bi-plus-circle"></i> {% translate "Agregar Tarea" %}
         </button>
         {% endif %}
     </div>
@@ -360,7 +361,7 @@
                 {% if can_manage %}
                 <div class="d-flex gap-1">
                     <button type="button" class="btn btn-sm btn-outline-primary"
-                            data-bs-toggle="modal" data-bs-target="#modalEditLinea{{ linea.pk }}" title="Editar tarea">
+                            data-bs-toggle="modal" data-bs-target="#modalEditLinea{{ linea.pk }}" title="{% translate 'Editar tarea' %}">
                         <i class="bi bi-pencil"></i>
                     </button>
                     <form method="post" action="{% url 'capacitacion_linea_delete' cap.pk linea.pk %}"
@@ -381,10 +382,10 @@
                     <table class="table table-sm table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Nombre</th>
-                                <th>Enlace</th>
-                                <th class="text-center" style="width:130px;">Enviado por</th>
-                                <th class="text-center" style="width:120px;">Fecha</th>
+                                <th>{% translate "Nombre" %}</th>
+                                <th>{% translate "Enlace" %}</th>
+                                <th class="text-center" style="width:130px;">{% translate "Enviado por" %}</th>
+                                <th class="text-center" style="width:120px;">{% translate "Fecha" %}</th>
                                 <th style="width:50px;"></th>
                             </tr>
                         </thead>
@@ -402,7 +403,7 @@
                                     {% if resp.submitted_by %}
                                         {{ resp.submitted_by.get_full_name|default:resp.submitted_by.username }}
                                     {% else %}
-                                        <span class="text-muted fst-italic">Anónimo</span>
+                                        <span class="text-muted fst-italic">{% translate "Anónimo" %}</span>
                                     {% endif %}
                                 </td>
                                 <td class="text-center small text-muted">{{ resp.created_at|date:"d/m/Y H:i" }}</td>
@@ -424,7 +425,7 @@
                     </table>
                 </div>
                 {% else %}
-                <p class="text-muted small fst-italic mb-3">Sin respuestas aún.</p>
+                <p class="text-muted small fst-italic mb-3">{% translate "Sin respuestas aún." %}</p>
                 {% endif %}
 
                 <!-- Formulario para agregar respuesta -->
@@ -433,19 +434,19 @@
                     <input type="hidden" name="action" value="add_respuesta">
                     <input type="hidden" name="linea_id" value="{{ linea.pk }}">
                     <div class="col-sm-4">
-                        <label class="form-label small mb-1">Tu nombre</label>
+                        <label class="form-label small mb-1">{% translate "Tu nombre" %}</label>
                         <input type="text" name="nombre" class="form-control form-control-sm" required
-                               placeholder="Nombre completo"
+                               placeholder="{% translate 'Nombre completo' %}"
                                value="{{ request.user.get_full_name|default:request.user.username }}">
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label small mb-1">Enlace / URL</label>
+                        <label class="form-label small mb-1">{% translate "Enlace / URL" %}</label>
                         <input type="url" name="enlace" class="form-control form-control-sm" required
                                placeholder="https://...">
                     </div>
                     <div class="col-sm-2">
                         <button type="submit" class="btn btn-sm btn-success w-100">
-                            <i class="bi bi-send"></i> Enviar
+                            <i class="bi bi-send"></i> {% translate "Enviar" %}
                         </button>
                     </div>
                 </form>
@@ -456,7 +457,7 @@
     {% else %}
     <div class="text-center py-4 text-muted">
         <i class="bi bi-inbox" style="font-size:2rem;"></i>
-        <p class="mt-2">No hay líneas. {% if can_manage %}Agrega la primera arriba.{% endif %}</p>
+        <p class="mt-2">{% translate "No hay líneas." %} {% if can_manage %}{% translate "Agrega la primera arriba." %}{% endif %}</p>
     </div>
     {% endif %}
 </div>
@@ -477,26 +478,26 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
-                        <input type="text" name="nombre" class="form-control" required placeholder="Nombre completo">
+                        <label class="form-label fw-semibold">{% translate "Nombre" %} <span class="text-danger">*</span></label>
+                        <input type="text" name="nombre" class="form-control" required placeholder="{% translate 'Nombre completo' %}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Email</label>
+                        <label class="form-label fw-semibold">{% translate "Email" %}</label>
                         <input type="email" name="email" class="form-control" placeholder="correo@ejemplo.com">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Teléfono</label>
-                        <input type="text" name="telefono" class="form-control" placeholder="Teléfono">
+                        <label class="form-label fw-semibold">{% translate "Teléfono" %}</label>
+                        <input type="text" name="telefono" class="form-control" placeholder="{% translate 'Teléfono' %}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Cargo</label>
-                        <input type="text" name="cargo" class="form-control" placeholder="Cargo / puesto">
+                        <label class="form-label fw-semibold">{% translate "Cargo" %}</label>
+                        <input type="text" name="cargo" class="form-control" placeholder="{% translate 'Cargo / puesto' %}">
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Registrar
+                        <i class="bi bi-plus-circle"></i> {% translate "Registrar" %}
                     </button>
                 </div>
             </form>
@@ -517,35 +518,35 @@
                 <input type="hidden" name="action" value="edit_clase">
                 <input type="hidden" name="clase_id" value="{{ clase.pk }}">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar Clase</h5>
+                    <h5 class="modal-title"><i class="bi bi-pencil"></i> {% translate "Editar Clase" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{% translate "Título" %} <span class="text-danger">*</span></label>
                         <input type="text" name="titulo" class="form-control" required value="{{ clase.titulo }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Fecha <span class="text-muted fw-normal">(opcional)</span></label>
+                        <label class="form-label fw-semibold">{% translate "Fecha" %} <span class="text-muted fw-normal">{% translate "(opcional)" %}</span></label>
                         <input type="date" name="fecha" class="form-control" value="{{ clase.fecha|date:'Y-m-d' }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Enlace / URL</label>
+                        <label class="form-label fw-semibold">{% translate "Enlace / URL" %}</label>
                         <input type="url" name="enlace" class="form-control" value="{{ clase.enlace }}" placeholder="https://...">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Descripción adicional</label>
+                        <label class="form-label fw-semibold">{% translate "Descripción adicional" %}</label>
                         <textarea name="descripcion" class="form-control" rows="3">{{ clase.descripcion }}</textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Orden</label>
+                        <label class="form-label fw-semibold">{% translate "Orden" %}</label>
                         <input type="number" name="orden" class="form-control" value="{{ clase.orden }}" min="0">
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save"></i> Guardar
+                        <i class="bi bi-save"></i> {% translate "Guardar" %}
                     </button>
                 </div>
             </form>
@@ -571,15 +572,15 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Resumen de la clase</label>
+                        <label class="form-label fw-semibold">{% translate "Resumen de la clase" %}</label>
                         <textarea name="resumen" class="form-control" rows="6"
                                   placeholder="Escribe un resumen de lo tratado en esta clase...">{{ clase.resumen }}</textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save"></i> Guardar
+                        <i class="bi bi-save"></i> {% translate "Guardar" %}
                     </button>
                 </div>
             </form>
@@ -598,42 +599,42 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="add_linea">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Nueva Tarea</h5>
+                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> {% translate "Nueva Tarea" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Tarea <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{% translate "Tarea" %} <span class="text-danger">*</span></label>
                         <input type="text" name="tarea" class="form-control" required
-                               placeholder="Descripción corta de la tarea">
+                               placeholder="{% translate 'Descripción corta de la tarea' %}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Descripción adicional</label>
+                        <label class="form-label fw-semibold">{% translate "Descripción adicional" %}</label>
                         <textarea name="descripcion" class="form-control" rows="3"
                                   placeholder="Detalles opcionales..."></textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Fecha <span class="text-muted fw-normal">(opcional)</span></label>
+                        <label class="form-label fw-semibold">{% translate "Fecha" %} <span class="text-muted fw-normal">{% translate "(opcional)" %}</span></label>
                         <input type="date" name="fecha" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Clase</label>
+                        <label class="form-label fw-semibold">{% translate "Clase" %}</label>
                         <select name="clase" class="form-select">
-                            <option value="">Sin clase asignada</option>
+                            <option value="">{% translate "Sin clase asignada" %}</option>
                             {% for clase in clases %}
                             <option value="{{ clase.pk }}">{{ clase.titulo }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Orden</label>
+                        <label class="form-label fw-semibold">{% translate "Orden" %}</label>
                         <input type="number" name="orden" class="form-control" value="{{ lineas.count }}" min="0">
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Agregar
+                        <i class="bi bi-plus-circle"></i> {% translate "Agregar" %}
                     </button>
                 </div>
             </form>
@@ -651,40 +652,40 @@
                 <input type="hidden" name="action" value="edit_linea">
                 <input type="hidden" name="linea_id" value="{{ linea.pk }}">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar Tarea</h5>
+                    <h5 class="modal-title"><i class="bi bi-pencil"></i> {% translate "Editar Tarea" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Tarea <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{% translate "Tarea" %} <span class="text-danger">*</span></label>
                         <input type="text" name="tarea" class="form-control" required value="{{ linea.tarea }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Descripción adicional</label>
+                        <label class="form-label fw-semibold">{% translate "Descripción adicional" %}</label>
                         <textarea name="descripcion" class="form-control" rows="3">{{ linea.descripcion }}</textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Fecha <span class="text-muted fw-normal">(opcional)</span></label>
+                        <label class="form-label fw-semibold">{% translate "Fecha" %} <span class="text-muted fw-normal">{% translate "(opcional)" %}</span></label>
                         <input type="date" name="fecha" class="form-control" value="{{ linea.fecha|date:'Y-m-d' }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Clase</label>
+                        <label class="form-label fw-semibold">{% translate "Clase" %}</label>
                         <select name="clase" class="form-select">
-                            <option value="">Sin clase asignada</option>
+                            <option value="">{% translate "Sin clase asignada" %}</option>
                             {% for clase in clases %}
                             <option value="{{ clase.pk }}" {% if linea.clase_id == clase.pk %}selected{% endif %}>{{ clase.titulo }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Orden</label>
+                        <label class="form-label fw-semibold">{% translate "Orden" %}</label>
                         <input type="number" name="orden" class="form-control" value="{{ linea.orden }}" min="0">
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save"></i> Guardar
+                        <i class="bi bi-save"></i> {% translate "Guardar" %}
                     </button>
                 </div>
             </form>
@@ -703,37 +704,37 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="add_clase">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-easel"></i> Nueva Clase</h5>
+                    <h5 class="modal-title"><i class="bi bi-easel"></i> {% translate "Nueva Clase" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{% translate "Título" %} <span class="text-danger">*</span></label>
                         <input type="text" name="titulo" class="form-control" required
-                               placeholder="Nombre de la clase">
+                               placeholder="{% translate 'Nombre de la clase' %}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Fecha</label>
+                        <label class="form-label fw-semibold">{% translate "Fecha" %}</label>
                         <input type="date" name="fecha" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Enlace / URL</label>
+                        <label class="form-label fw-semibold">{% translate "Enlace / URL" %}</label>
                         <input type="url" name="enlace" class="form-control" placeholder="https://...">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Descripción adicional</label>
+                        <label class="form-label fw-semibold">{% translate "Descripción adicional" %}</label>
                         <textarea name="descripcion" class="form-control" rows="3"
                                   placeholder="Detalles opcionales..."></textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Orden</label>
+                        <label class="form-label fw-semibold">{% translate "Orden" %}</label>
                         <input type="number" name="orden" class="form-control" value="{{ clases.count }}" min="0">
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Agregar
+                        <i class="bi bi-plus-circle"></i> {% translate "Agregar" %}
                     </button>
                 </div>
             </form>
@@ -751,35 +752,35 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="add_enlace">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-key"></i> Nuevo Enlace de Acceso</h5>
+                    <h5 class="modal-title"><i class="bi bi-key"></i> {% translate "Nuevo Enlace de Acceso" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
-                        <input type="text" name="titulo" class="form-control" required placeholder="Ej: Acceso a la plataforma">
+                        <label class="form-label fw-semibold">{% translate "Título" %} <span class="text-danger">*</span></label>
+                        <input type="text" name="titulo" class="form-control" required placeholder="{% translate 'Ej: Acceso a la plataforma' %}">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">URL <span class="text-danger">*</span></label>
                         <input type="url" name="url" class="form-control" required placeholder="https://...">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Usuario</label>
-                        <input type="text" name="usuario" class="form-control" placeholder="Usuario de acceso">
+                        <label class="form-label fw-semibold">{% translate "Usuario" %}</label>
+                        <input type="text" name="usuario" class="form-control" placeholder="{% translate 'Usuario de acceso' %}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Contraseña</label>
-                        <input type="text" name="contrasena" class="form-control" placeholder="Contraseña de acceso">
+                        <label class="form-label fw-semibold">{% translate "Contraseña" %}</label>
+                        <input type="text" name="contrasena" class="form-control" placeholder="{% translate 'Contraseña de acceso' %}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Orden</label>
+                        <label class="form-label fw-semibold">{% translate "Orden" %}</label>
                         <input type="number" name="orden" class="form-control" value="{{ enlaces.count }}" min="0">
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Agregar
+                        <i class="bi bi-plus-circle"></i> {% translate "Agregar" %}
                     </button>
                 </div>
             </form>
@@ -797,12 +798,12 @@
                 <input type="hidden" name="action" value="edit_enlace">
                 <input type="hidden" name="enlace_id" value="{{ enlace.pk }}">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar Enlace</h5>
+                    <h5 class="modal-title"><i class="bi bi-pencil"></i> {% translate "Editar Enlace" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{% translate "Título" %} <span class="text-danger">*</span></label>
                         <input type="text" name="titulo" class="form-control" required value="{{ enlace.titulo }}">
                     </div>
                     <div class="mb-3">
@@ -810,22 +811,22 @@
                         <input type="url" name="url" class="form-control" required value="{{ enlace.url }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Usuario</label>
+                        <label class="form-label fw-semibold">{% translate "Usuario" %}</label>
                         <input type="text" name="usuario" class="form-control" value="{{ enlace.usuario }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Contraseña</label>
+                        <label class="form-label fw-semibold">{% translate "Contraseña" %}</label>
                         <input type="text" name="contrasena" class="form-control" value="{{ enlace.contrasena }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Orden</label>
+                        <label class="form-label fw-semibold">{% translate "Orden" %}</label>
                         <input type="number" name="orden" class="form-control" value="{{ enlace.orden }}" min="0">
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save"></i> Guardar
+                        <i class="bi bi-save"></i> {% translate "Guardar" %}
                     </button>
                 </div>
             </form>

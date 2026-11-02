@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Eliminar Gestión de Tareas - TicketProo{% endblock %}
+{% block title %}{% translate "Eliminar Gestión de Tareas - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -9,16 +10,16 @@
             <div class="card-header bg-danger text-white">
                 <h4 class="mb-0">
                     <i class="bi bi-exclamation-triangle"></i> 
-                    Confirmar Eliminación
+                    {% translate "Confirmar Eliminación" %}
                 </h4>
             </div>
             <div class="card-body">
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle-fill"></i>
-                    <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    <strong>{% translate "¡Atención!" %}</strong> {% translate "Esta acción no se puede deshacer." %}
                 </div>
                 
-                <p class="lead">¿Estás seguro de que deseas eliminar esta gestión de tareas?</p>
+                <p class="lead">{% translate "¿Estás seguro de que deseas eliminar esta gestión de tareas?" %}</p>
                 
                 <div class="card bg-light mb-4">
                     <div class="card-body">
@@ -37,7 +38,7 @@
                         
                         {% if session.notes %}
                         <p class="text-muted mb-2">
-                            <strong>Notas:</strong> {{ session.notes }}
+                            <strong>{% translate "Notas:" %}</strong> {{ session.notes }}
                         </p>
                         {% endif %}
                         
@@ -69,7 +70,7 @@
                 
                 {% if session.daily_task_items.exists %}
                 <div class="mb-4">
-                    <h6 class="text-muted">Tareas que se eliminarán:</h6>
+                    <h6 class="text-muted">{% translate "Tareas que se eliminarán:" %}</h6>
                     <div class="list-group">
                         {% for item in session.daily_task_items.all|slice:":5" %}
                         <div class="list-group-item">
@@ -107,10 +108,10 @@
                     {% csrf_token %}
                     <div class="d-flex gap-3 justify-content-end">
                         <a href="{% url 'daily_task_management' %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
+                            <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                         </a>
                         <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-trash"></i> Sí, Eliminar Gestión
+                            <i class="bi bi-trash"></i> {% translate "Sí, Eliminar Gestión" %}
                         </button>
                     </div>
                 </form>

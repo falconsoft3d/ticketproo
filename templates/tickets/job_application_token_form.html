@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block extra_css %}
@@ -41,11 +42,11 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h1><i class="bi bi-plus-circle"></i> {{ page_title }}</h1>
-                    <p class="text-muted">Crear enlace público para recibir aplicaciones de empleo</p>
+                    <p class="text-muted">{% translate "Crear enlace público para recibir aplicaciones de empleo" %}</p>
                 </div>
                 <div>
                     <a href="{% url 'job_application_token_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                 </div>
             </div>
@@ -57,7 +58,7 @@
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header">
-                    <h5><i class="bi bi-briefcase"></i> Información del Puesto</h5>
+                    <h5><i class="bi bi-briefcase"></i> {% translate "Información del Puesto" %}</h5>
                 </div>
                 <div class="card-body">
                     <form method="post" id="jobApplicationForm">
@@ -65,56 +66,56 @@
                         
                         <!-- Información básica del puesto -->
                         <div class="form-section">
-                            <h6 class="text-primary">Información Básica</h6>
+                            <h6 class="text-primary">{% translate "Información Básica" %}</h6>
                             
                             <div class="mb-3">
-                                <label for="job_title" class="form-label">Título del Puesto *</label>
+                                <label for="job_title" class="form-label">{% translate "Título del Puesto *" %}</label>
                                 <input type="text" class="form-control" id="job_title" name="job_title" 
-                                       placeholder="Ej: Desarrollador Full Stack Senior" required>
-                                <div class="form-text">Nombre del cargo que se está ofreciendo</div>
+                                       placeholder="{% translate 'Ej: Desarrollador Full Stack Senior' %}" required>
+                                <div class="form-text">{% translate "Nombre del cargo que se está ofreciendo" %}</div>
                             </div>
                             
                             <div class="mb-3">
-                                <label for="job_description" class="form-label">Descripción del Puesto *</label>
+                                <label for="job_description" class="form-label">{% translate "Descripción del Puesto *" %}</label>
                                 <textarea class="form-control" id="job_description" name="job_description" 
                                           rows="6" placeholder="Describe las responsabilidades, requisitos y beneficios del puesto..." required></textarea>
-                                <div class="form-text">Información detallada que verán los aplicantes</div>
+                                <div class="form-text">{% translate "Información detallada que verán los aplicantes" %}</div>
                             </div>
                         </div>
 
                         <!-- Información salarial -->
                         <div class="form-section">
-                            <h6 class="text-primary">Información Salarial</h6>
+                            <h6 class="text-primary">{% translate "Información Salarial" %}</h6>
                             
                             <div class="mb-3">
-                                <label for="proposed_salary_euros" class="form-label">Salario Propuesto (EUR)</label>
+                                <label for="proposed_salary_euros" class="form-label">{% translate "Salario Propuesto (EUR)" %}</label>
                                 <div class="salary-input">
                                     <input type="number" class="form-control" id="proposed_salary_euros" 
                                            name="proposed_salary_euros" min="0" step="100" 
                                            placeholder="45000">
                                 </div>
-                                <div class="form-text">Salario anual bruto en euros (opcional pero recomendado)</div>
+                                <div class="form-text">{% translate "Salario anual bruto en euros (opcional pero recomendado)" %}</div>
                             </div>
                         </div>
 
                         <!-- Configuración del enlace -->
                         <div class="form-section">
-                            <h6 class="text-primary">Configuración del Enlace</h6>
+                            <h6 class="text-primary">{% translate "Configuración del Enlace" %}</h6>
                             
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="max_applications" class="form-label">Máximo de Aplicaciones</label>
+                                        <label for="max_applications" class="form-label">{% translate "Máximo de Aplicaciones" %}</label>
                                         <input type="number" class="form-control" id="max_applications" 
                                                name="max_applications" min="1" placeholder="50">
-                                        <div class="form-text">Límite de aplicaciones que se pueden recibir (opcional)</div>
+                                        <div class="form-text">{% translate "Límite de aplicaciones que se pueden recibir (opcional)" %}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="expires_at" class="form-label">Fecha de Expiración</label>
+                                        <label for="expires_at" class="form-label">{% translate "Fecha de Expiración" %}</label>
                                         <input type="datetime-local" class="form-control" id="expires_at" name="expires_at">
-                                        <div class="form-text">Cuándo dejará de aceptar aplicaciones (opcional)</div>
+                                        <div class="form-text">{% translate "Cuándo dejará de aceptar aplicaciones (opcional)" %}</div>
                                     </div>
                                 </div>
                             </div>
@@ -123,10 +124,10 @@
                         <!-- Botones -->
                         <div class="d-flex justify-content-end gap-2">
                             <a href="{% url 'job_application_token_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle"></i> Crear Enlace
+                                <i class="bi bi-check-circle"></i> {% translate "Crear Enlace" %}
                             </button>
                         </div>
                     </form>
@@ -138,34 +139,34 @@
         <div class="col-lg-4">
             <div class="card">
                 <div class="card-header">
-                    <h5><i class="bi bi-eye"></i> Vista Previa</h5>
+                    <h5><i class="bi bi-eye"></i> {% translate "Vista Previa" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="preview-box">
                         <i class="bi bi-qr-code fa-3x text-muted mb-3"></i>
-                        <h6>Código QR</h6>
-                        <p class="text-muted small">Se generará automáticamente después de crear el enlace</p>
+                        <h6>{% translate "Código QR" %}</h6>
+                        <p class="text-muted small">{% translate "Se generará automáticamente después de crear el enlace" %}</p>
                     </div>
                     
                     <div class="mt-4">
-                        <h6>¿Cómo funciona?</h6>
+                        <h6>{% translate "¿Cómo funciona?" %}</h6>
                         <ul class="small text-muted">
-                            <li>Se genera un enlace único y seguro</li>
-                            <li>Los candidatos pueden aplicar sin registrarse</li>
-                            <li>Se incluye código QR para fácil acceso móvil</li>
-                            <li>Análisis automático con IA (si está configurada)</li>
-                            <li>Los candidatos se asocian a tu empresa automáticamente</li>
+                            <li>{% translate "Se genera un enlace único y seguro" %}</li>
+                            <li>{% translate "Los candidatos pueden aplicar sin registrarse" %}</li>
+                            <li>{% translate "Se incluye código QR para fácil acceso móvil" %}</li>
+                            <li>{% translate "Análisis automático con IA (si está configurada)" %}</li>
+                            <li>{% translate "Los candidatos se asocian a tu empresa automáticamente" %}</li>
                         </ul>
                     </div>
 
                     <div class="mt-4">
-                        <h6>Datos que se solicitan:</h6>
+                        <h6>{% translate "Datos que se solicitan:" %}</h6>
                         <ul class="small text-muted">
-                            <li>Nombre completo</li>
-                            <li>Correo electrónico</li>
-                            <li>Teléfono</li>
-                            <li>Descripción de experiencia</li>
-                            <li>Archivo de currículo (opcional)</li>
+                            <li>{% translate "Nombre completo" %}</li>
+                            <li>{% translate "Correo electrónico" %}</li>
+                            <li>{% translate "Teléfono" %}</li>
+                            <li>{% translate "Descripción de experiencia" %}</li>
+                            <li>{% translate "Archivo de currículo (opcional)" %}</li>
                         </ul>
                     </div>
                 </div>
@@ -174,17 +175,17 @@
             <!-- Consejos -->
             <div class="card mt-4">
                 <div class="card-header">
-                    <h5><i class="bi bi-lightbulb"></i> Consejos</h5>
+                    <h5><i class="bi bi-lightbulb"></i> {% translate "Consejos" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="small">
-                        <h6>Para mejores resultados:</h6>
+                        <h6>{% translate "Para mejores resultados:" %}</h6>
                         <ul class="text-muted">
-                            <li><strong>Sé específico</strong> en la descripción del puesto</li>
-                            <li><strong>Incluye requisitos</strong> técnicos y de experiencia</li>
-                            <li><strong>Menciona beneficios</strong> y oportunidades de crecimiento</li>
-                            <li><strong>Indica el rango salarial</strong> para atraer candidatos serios</li>
-                            <li><strong>Establece límites</strong> para evitar saturación</li>
+                            <li><strong>{% translate "Sé específico" %}</strong> {% translate "en la descripción del puesto" %}</li>
+                            <li><strong>{% translate "Incluye requisitos" %}</strong> {% translate "técnicos y de experiencia" %}</li>
+                            <li><strong>{% translate "Menciona beneficios" %}</strong> {% translate "y oportunidades de crecimiento" %}</li>
+                            <li><strong>{% translate "Indica el rango salarial" %}</strong> {% translate "para atraer candidatos serios" %}</li>
+                            <li><strong>{% translate "Establece límites" %}</strong> {% translate "para evitar saturación" %}</li>
                         </ul>
                     </div>
                 </div>

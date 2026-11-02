@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -11,11 +12,11 @@
                 <h1 class="h3 mb-0 text-primary">
                     <i class="fas fa-plus-circle"></i> {{ page_title }}
                 </h1>
-                <p class="text-muted mb-0">Crear nueva actividad de seguimiento para <strong>{{ contact.name }}</strong></p>
+                <p class="text-muted mb-0">{% translate "Crear nueva actividad de seguimiento para" %} <strong>{{ contact.name }}</strong></p>
             </div>
             <div class="text-end">
                 <a href="{% url 'contact_detail' contact.pk %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver al Contacto
+                    <i class="fas fa-arrow-left"></i> {% translate "Volver al Contacto" %}
                 </a>
             </div>
         </div>
@@ -28,24 +29,24 @@
         <div class="card border-info">
             <div class="card-header bg-info text-white">
                 <h6 class="mb-0">
-                    <i class="fas fa-user-tie"></i> Información del Contacto
+                    <i class="fas fa-user-tie"></i> {% translate "Información del Contacto" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4">
-                        <strong>Nombre:</strong><br>
+                        <strong>{% translate "Nombre:" %}</strong><br>
                         {{ contact.name }}
                     </div>
                     {% if contact.email %}
                     <div class="col-md-4">
-                        <strong>Email:</strong><br>
+                        <strong>{% translate "Email:" %}</strong><br>
                         <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>
                     </div>
                     {% endif %}
                     {% if contact.phone %}
                     <div class="col-md-4">
-                        <strong>Teléfono:</strong><br>
+                        <strong>{% translate "Teléfono:" %}</strong><br>
                         <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a>
                     </div>
                     {% endif %}
@@ -53,12 +54,12 @@
                 {% if contact.company %}
                 <div class="row mt-2">
                     <div class="col-md-6">
-                        <strong>Empresa:</strong><br>
+                        <strong>{% translate "Empresa:" %}</strong><br>
                         {{ contact.company }}
                     </div>
                     {% if contact.position %}
                     <div class="col-md-6">
-                        <strong>Cargo:</strong><br>
+                        <strong>{% translate "Cargo:" %}</strong><br>
                         {{ contact.position }}
                     </div>
                     {% endif %}
@@ -74,7 +75,7 @@
         <div class="card shadow-sm">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">
-                    <i class="fas fa-tasks"></i> Información de la Actividad
+                    <i class="fas fa-tasks"></i> {% translate "Información de la Actividad" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -85,8 +86,8 @@
                         <!-- Oportunidad -->
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.opportunity.id_for_label }}" class="form-label fw-bold">
-                                <i class="fas fa-bullseye text-primary"></i> Oportunidad
-                                <span class="text-muted small">(opcional)</span>
+                                <i class="fas fa-bullseye text-primary"></i> {% translate "Oportunidad" %}
+                                <span class="text-muted small">{% translate "(opcional)" %}</span>
                             </label>
                             {{ form.opportunity }}
                             {% if form.opportunity.errors %}
@@ -94,14 +95,14 @@
                                     {{ form.opportunity.errors.0 }}
                                 </div>
                             {% endif %}
-                            <div class="form-text">Selecciona la oportunidad relacionada (opcional).</div>
+                            <div class="form-text">{% translate "Selecciona la oportunidad relacionada (opcional)." %}</div>
                         </div>
 
                         <!-- Contacto (pre-seleccionado y readonly) -->
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.contact.id_for_label }}" class="form-label fw-bold">
-                                <i class="fas fa-user-tie text-primary"></i> Contacto
-                                <span class="text-success small">(pre-seleccionado)</span>
+                                <i class="fas fa-user-tie text-primary"></i> {% translate "Contacto" %}
+                                <span class="text-success small">{% translate "(pre-seleccionado)" %}</span>
                             </label>
                             {{ form.contact }}
                             {% if form.contact.errors %}
@@ -109,13 +110,13 @@
                                     {{ form.contact.errors.0 }}
                                 </div>
                             {% endif %}
-                            <div class="form-text">El contacto está pre-seleccionado automáticamente.</div>
+                            <div class="form-text">{% translate "El contacto está pre-seleccionado automáticamente." %}</div>
                         </div>
 
                         <!-- Título -->
                         <div class="col-md-8 mb-3">
                             <label for="{{ form.title.id_for_label }}" class="form-label fw-bold">
-                                <i class="fas fa-heading text-primary"></i> Título
+                                <i class="fas fa-heading text-primary"></i> {% translate "Título" %}
                                 <span class="text-danger">*</span>
                             </label>
                             {{ form.title }}
@@ -129,7 +130,7 @@
                         <!-- Tipo de Actividad -->
                         <div class="col-md-4 mb-3">
                             <label for="{{ form.activity_type.id_for_label }}" class="form-label fw-bold">
-                                <i class="fas fa-tag text-primary"></i> Tipo
+                                <i class="fas fa-tag text-primary"></i> {% translate "Tipo" %}
                             </label>
                             {{ form.activity_type }}
                             {% if form.activity_type.errors %}
@@ -142,7 +143,7 @@
                         <!-- Descripción -->
                         <div class="col-12 mb-3">
                             <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">
-                                <i class="fas fa-align-left text-primary"></i> Descripción
+                                <i class="fas fa-align-left text-primary"></i> {% translate "Descripción" %}
                             </label>
                             {{ form.description }}
                             {% if form.description.errors %}
@@ -155,7 +156,7 @@
                         <!-- Fecha y Hora Programada -->
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.scheduled_date.id_for_label }}" class="form-label fw-bold">
-                                <i class="fas fa-calendar text-primary"></i> Fecha y Hora Programada
+                                <i class="fas fa-calendar text-primary"></i> {% translate "Fecha y Hora Programada" %}
                                 <span class="text-danger">*</span>
                             </label>
                             {{ form.scheduled_date }}
@@ -169,7 +170,7 @@
                         <!-- Prioridad -->
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.priority.id_for_label }}" class="form-label fw-bold">
-                                <i class="fas fa-exclamation-triangle text-primary"></i> Prioridad
+                                <i class="fas fa-exclamation-triangle text-primary"></i> {% translate "Prioridad" %}
                             </label>
                             {{ form.priority }}
                             {% if form.priority.errors %}
@@ -182,7 +183,7 @@
                         <!-- Asignado a -->
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.assigned_to.id_for_label }}" class="form-label fw-bold">
-                                <i class="fas fa-user text-primary"></i> Asignado a
+                                <i class="fas fa-user text-primary"></i> {% translate "Asignado a" %}
                                 <span class="text-danger">*</span>
                             </label>
                             {{ form.assigned_to }}
@@ -196,7 +197,7 @@
                         <!-- Duración -->
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.duration_minutes.id_for_label }}" class="form-label fw-bold">
-                                <i class="fas fa-clock text-primary"></i> Duración (minutos)
+                                <i class="fas fa-clock text-primary"></i> {% translate "Duración (minutos)" %}
                             </label>
                             {{ form.duration_minutes }}
                             {% if form.duration_minutes.errors %}
@@ -209,7 +210,7 @@
                         <!-- Ubicación -->
                         <div class="col-12 mb-3">
                             <label for="{{ form.location.id_for_label }}" class="form-label fw-bold">
-                                <i class="fas fa-map-marker-alt text-primary"></i> Ubicación
+                                <i class="fas fa-map-marker-alt text-primary"></i> {% translate "Ubicación" %}
                             </label>
                             {{ form.location }}
                             {% if form.location.errors %}
@@ -223,7 +224,7 @@
                     <!-- Botones de acción -->
                     <div class="d-flex justify-content-between mt-4">
                         <a href="{% url 'contact_detail' contact.pk %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-times"></i> Cancelar
+                            <i class="fas fa-times"></i> {% translate "Cancelar" %}
                         </a>
                         <button type="submit" class="btn btn-success">
                             <i class="fas fa-save"></i> Crear Actividad para {{ contact.name }}
@@ -241,17 +242,17 @@
         <div class="card border-info">
             <div class="card-header bg-info text-white">
                 <h6 class="mb-0">
-                    <i class="fas fa-info-circle"></i> Información
+                    <i class="fas fa-info-circle"></i> {% translate "Información" %}
                 </h6>
             </div>
             <div class="card-body">
                 <ul class="mb-0 small">
-                    <li><strong>Contacto:</strong> La actividad se asociará automáticamente a {{ contact.name }}</li>
-                    <li><strong>Oportunidad:</strong> Opcionalmente puedes vincular esta actividad a una oportunidad específica</li>
-                    <li><strong>Fecha y Hora:</strong> Programa cuándo debe realizarse la actividad</li>
-                    <li><strong>Tipo:</strong> Define el tipo de actividad (llamada, reunión, correo, etc.)</li>
-                    <li><strong>Prioridad:</strong> Establece la importancia de la actividad</li>
-                    <li><strong>Asignación:</strong> Define quién será responsable de realizar la actividad</li>
+                    <li><strong>{% translate "Contacto:" %}</strong> La actividad se asociará automáticamente a {{ contact.name }}</li>
+                    <li><strong>{% translate "Oportunidad:" %}</strong> {% translate "Opcionalmente puedes vincular esta actividad a una oportunidad específica" %}</li>
+                    <li><strong>{% translate "Fecha y Hora:" %}</strong> {% translate "Programa cuándo debe realizarse la actividad" %}</li>
+                    <li><strong>{% translate "Tipo:" %}</strong> {% translate "Define el tipo de actividad (llamada, reunión, correo, etc.)" %}</li>
+                    <li><strong>{% translate "Prioridad:" %}</strong> {% translate "Establece la importancia de la actividad" %}</li>
+                    <li><strong>{% translate "Asignación:" %}</strong> {% translate "Define quién será responsable de realizar la actividad" %}</li>
                 </ul>
             </div>
         </div>

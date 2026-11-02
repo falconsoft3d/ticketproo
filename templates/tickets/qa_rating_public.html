@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -240,18 +241,18 @@
         <div class="rating-container">
         <!-- Header -->
         <div class="rating-header">
-            <h1><i class="bi bi-star-fill"></i> Evalúa nuestro servicio</h1>
-            <p>Tu opinión nos ayuda a mejorar cada día</p>
+            <h1><i class="bi bi-star-fill"></i> {% translate "Evalúa nuestro servicio" %}</h1>
+            <p>{% translate "Tu opinión nos ayuda a mejorar cada día" %}</p>
             
             {% if total_ratings > 0 %}
             <div class="rating-stats">
                 <div class="stat-item">
                     <div class="stat-number">{{ total_ratings }}</div>
-                    <div class="stat-label">Evaluaciones</div>
+                    <div class="stat-label">{% translate "Evaluaciones" %}</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-number">{{ happy_count }}</div>
-                    <div class="stat-label">Clientes felices</div>
+                    <div class="stat-label">{% translate "Clientes felices" %}</div>
                 </div>
             </div>
             {% endif %}
@@ -273,15 +274,15 @@
                 
                 <!-- Selección de Calificación -->
                 <div class="mb-4">
-                    <label class="form-label">¿Cómo calificarías nuestro servicio? <span class="text-danger">*</span></label>
+                    <label class="form-label">{% translate "¿Cómo calificarías nuestro servicio?" %} <span class="text-danger">*</span></label>
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="rating-option rating-sad{% if selected_rating == 'sad' %} selected{% endif %}" data-rating="sad">
                                 <input type="radio" name="rating" value="sad" required{% if selected_rating == 'sad' %} checked{% endif %}>
                                 <div class="rating-content">
                                     <span class="rating-emoji">😞</span>
-                                    <div class="rating-label">Triste</div>
-                                    <small class="text-muted">Necesitamos mejorar</small>
+                                    <div class="rating-label">{% translate "Triste" %}</div>
+                                    <small class="text-muted">{% translate "Necesitamos mejorar" %}</small>
                                 </div>
                             </label>
                         </div>
@@ -290,8 +291,8 @@
                                 <input type="radio" name="rating" value="neutral" required{% if selected_rating == 'neutral' %} checked{% endif %}>
                                 <div class="rating-content">
                                     <span class="rating-emoji">😐</span>
-                                    <div class="rating-label">Neutro</div>
-                                    <small class="text-muted">Aceptable</small>
+                                    <div class="rating-label">{% translate "Neutro" %}</div>
+                                    <small class="text-muted">{% translate "Aceptable" %}</small>
                                 </div>
                             </label>
                         </div>
@@ -300,8 +301,8 @@
                                 <input type="radio" name="rating" value="happy" required{% if selected_rating == 'happy' %} checked{% endif %}>
                                 <div class="rating-content">
                                     <span class="rating-emoji">😊</span>
-                                    <div class="rating-label">Feliz</div>
-                                    <small class="text-muted">Excelente servicio</small>
+                                    <div class="rating-label">{% translate "Feliz" %}</div>
+                                    <small class="text-muted">{% translate "Excelente servicio" %}</small>
                                 </div>
                             </label>
                         </div>
@@ -311,7 +312,7 @@
                 <!-- Opinión -->
                 <div class="mb-4">
                     <label for="opinion" class="form-label">
-                        Tu opinión <span class="text-danger">*</span>
+                        {% translate "Tu opinión" %} <span class="text-danger">*</span>
                     </label>
                     <textarea 
                         class="form-control" 
@@ -328,23 +329,23 @@
                 <div class="card mb-4" style="border: 2px solid #e0e0e0; border-radius: 15px;">
                     <div class="card-body">
                         <h6 class="mb-3">
-                            <i class="bi bi-person-circle"></i> Información de contacto 
-                            <span class="optional-badge">Opcional</span>
+                            <i class="bi bi-person-circle"></i> {% translate "Información de contacto" %} 
+                            <span class="optional-badge">{% translate "Opcional" %}</span>
                         </h6>
                         
                         <div class="row">
                             <div class="col-md-6 mb-3 mb-md-0">
-                                <label for="name" class="form-label">Tu nombre</label>
+                                <label for="name" class="form-label">{% translate "Tu nombre" %}</label>
                                 <input 
                                     type="text" 
                                     class="form-control" 
                                     id="name" 
                                     name="name"
-                                    placeholder="Ej: Juan Pérez"
+                                    placeholder="{% translate 'Ej: Juan Pérez' %}"
                                 >
                             </div>
                             <div class="col-md-6">
-                                <label for="email" class="form-label">Correo electrónico</label>
+                                <label for="email" class="form-label">{% translate "Correo electrónico" %}</label>
                                 <input 
                                     type="email" 
                                     class="form-control" 
@@ -359,18 +360,18 @@
 
                 <!-- Botón de envío -->
                 <button type="submit" class="btn btn-submit">
-                    <i class="bi bi-send-fill"></i> Enviar Evaluación
+                    <i class="bi bi-send-fill"></i> {% translate "Enviar Evaluación" %}
                 </button>
             </form>
 
             <!-- Información adicional -->
             <div class="info-card">
-                <h6 class="mb-2"><i class="bi bi-shield-check"></i> Tu privacidad es importante</h6>
+                <h6 class="mb-2"><i class="bi bi-shield-check"></i> {% translate "Tu privacidad es importante" %}</h6>
                 <ul class="mb-0 small">
-                    <li>Tu evaluación es anónima si no proporcionas tus datos</li>
-                    <li>Solo los campos con * son obligatorios</li>
-                    <li>Tu opinión nos ayuda a mejorar nuestros servicios</li>
-                    <li>Agradecemos tu tiempo y honestidad</li>
+                    <li>{% translate "Tu evaluación es anónima si no proporcionas tus datos" %}</li>
+                    <li>{% translate "Solo los campos con * son obligatorios" %}</li>
+                    <li>{% translate "Tu opinión nos ayuda a mejorar nuestros servicios" %}</li>
+                    <li>{% translate "Agradecemos tu tiempo y honestidad" %}</li>
                 </ul>
             </div>
         </div>
@@ -378,7 +379,7 @@
         
         <!-- Powered by -->
         <div class="powered-by">
-            <i class="bi bi-heart-fill"></i> Gracias por ayudarnos a mejorar
+            <i class="bi bi-heart-fill"></i> {% translate "Gracias por ayudarnos a mejorar" %}
         </div>
     </div>
 

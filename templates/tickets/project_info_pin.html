@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -35,7 +36,7 @@
     <i class="bi bi-lock-fill mb-2" style="font-size:2.5rem;"></i>
     <h1 class="h5 mb-1">{{ project.name }}</h1>
     <div class="opacity-75 small">{{ project.folio }}</div>
-    <div class="opacity-75 small mt-1">Este documento requiere un PIN de acceso.</div>
+    <div class="opacity-75 small mt-1">{% translate "Este documento requiere un PIN de acceso." %}</div>
   </div>
   <div class="pin-body">
     {% if pin_error %}
@@ -45,11 +46,11 @@
     {% endif %}
     <form method="post">
       {% csrf_token %}
-      <label class="form-label small text-muted fw-semibold">PIN de acceso</label>
+      <label class="form-label small text-muted fw-semibold">{% translate "PIN de acceso" %}</label>
       <input type="password" name="pin" class="form-control pin-input mb-3"
              placeholder="••••" autofocus autocomplete="off">
       <button type="submit" class="btn btn-unlock">
-        <i class="bi bi-unlock me-2"></i>Acceder
+        <i class="bi bi-unlock me-2"></i>{% translate "Acceder" %}
       </button>
     </form>
   </div>

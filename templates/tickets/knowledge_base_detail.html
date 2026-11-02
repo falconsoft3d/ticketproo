@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ knowledge_base.title }}{% endblock %}
@@ -6,10 +7,10 @@
 {% block content %}
 <div class="container-fluid mt-4">
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb">
+    <nav aria-label="{% translate 'breadcrumb' %}">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'knowledge_base_list' %}">Base de Conocimientos</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">{% translate "Inicio" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'knowledge_base_list' %}">{% translate "Base de Conocimientos" %}</a></li>
             <li class="breadcrumb-item active">{{ knowledge_base.title }}</li>
         </ol>
     </nav>
@@ -20,11 +21,11 @@
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <i class="bi bi-link-45deg"></i>
-                <strong>Enlace Público Activo:</strong>
+                <strong>{% translate "Enlace Público Activo:" %}</strong>
                 <code id="shareUrlAlert" class="ms-2">{{ share_url }}</code>
                 {% if knowledge_base.public_share_password %}
                 <span class="badge bg-warning text-dark ms-2">
-                    <i class="bi bi-lock"></i> Protegido con contraseña
+                    <i class="bi bi-lock"></i> {% translate "Protegido con contraseña" %}
                 </span>
                 {% endif %}
                 {% if knowledge_base.public_share_expires_at %}
@@ -34,10 +35,10 @@
                 {% endif %}
             </div>
             <button type="button" class="btn btn-sm btn-outline-info" onclick="copyShareUrlQuick()">
-                <i class="bi bi-clipboard"></i> Copiar
+                <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
             </button>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% translate 'Close' %}"></button>
     </div>
     {% endif %}
 
@@ -51,13 +52,13 @@
             <button type="button" 
                     class="btn {% if knowledge_base.public_share_enabled %}btn-success{% else %}btn-secondary{% endif %}" 
                     onclick="showShareModal()">
-                <i class="bi bi-share"></i> Compartir Públicamente
+                <i class="bi bi-share"></i> {% translate "Compartir Públicamente" %}
             </button>
             <a href="{% url 'knowledge_base_edit' knowledge_base.id %}" class="btn btn-warning">
-                <i class="bi bi-pencil"></i> Editar
+                <i class="bi bi-pencil"></i> {% translate "Editar" %}
             </a>
             <a href="{% url 'knowledge_base_delete' knowledge_base.id %}" class="btn btn-danger">
-                <i class="bi bi-trash"></i> Eliminar
+                <i class="bi bi-trash"></i> {% translate "Eliminar" %}
             </a>
         </div>
     </div>
@@ -68,11 +69,11 @@
             <div class="row">
                 <div class="col-md-6">
                     {% if knowledge_base.category %}
-                    <p><strong>Categoría:</strong> <span class="badge bg-secondary">{{ knowledge_base.category }}</span></p>
+                    <p><strong>{% translate "Categoría:" %}</strong> <span class="badge bg-secondary">{{ knowledge_base.category }}</span></p>
                     {% endif %}
                     
                     {% if knowledge_base.tags %}
-                    <p><strong>Etiquetas:</strong> <small class="text-muted">{{ knowledge_base.tags }}</small></p>
+                    <p><strong>{% translate "Etiquetas:" %}</strong> <small class="text-muted">{{ knowledge_base.tags }}</small></p>
                     {% endif %}
                 </div>
                 <div class="col-md-6 text-end">
@@ -97,7 +98,7 @@
     {% if knowledge_base.description %}
     <div class="card mb-3">
         <div class="card-header bg-light">
-            <h5 class="mb-0"><i class="bi bi-file-text"></i> Descripción</h5>
+            <h5 class="mb-0"><i class="bi bi-file-text"></i> {% translate "Descripción" %}</h5>
         </div>
         <div class="card-body">
             <div style="white-space: pre-wrap;">{{ knowledge_base.description }}</div>
@@ -109,9 +110,9 @@
     {% if knowledge_base.source_code %}
     <div class="card">
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="bi bi-code-slash"></i> Código Fuente</h5>
+            <h5 class="mb-0"><i class="bi bi-code-slash"></i> {% translate "Código Fuente" %}</h5>
             <button class="btn btn-sm btn-outline-light" onclick="copyCode()">
-                <i class="bi bi-clipboard"></i> Copiar
+                <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
             </button>
         </div>
         <div class="card-body p-0">
@@ -127,7 +128,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="bi bi-share"></i> Compartir Públicamente
+                    <i class="bi bi-share"></i> {% translate "Compartir Públicamente" %}
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -137,7 +138,7 @@
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="shareEnabled" onchange="toggleShareUrl()">
                         <label class="form-check-label" for="shareEnabled">
-                            <strong>Activar enlace público</strong>
+                            <strong>{% translate "Activar enlace público" %}</strong>
                         </label>
                     </div>
                 </div>
@@ -147,25 +148,25 @@
                     <!-- Contraseña -->
                     <div class="mb-3">
                         <label for="sharePassword" class="form-label">
-                            <i class="bi bi-lock"></i> Contraseña (opcional)
+                            <i class="bi bi-lock"></i> {% translate "Contraseña (opcional)" %}
                         </label>
                         <input type="text" class="form-control" id="sharePassword" 
-                               placeholder="Deja vacío para acceso sin contraseña">
-                        <small class="text-muted">Si defines una contraseña, será requerida para ver el contenido</small>
+                               placeholder="{% translate 'Deja vacío para acceso sin contraseña' %}">
+                        <small class="text-muted">{% translate "Si defines una contraseña, será requerida para ver el contenido" %}</small>
                     </div>
 
                     <!-- Fecha de expiración -->
                     <div class="mb-3">
                         <label for="shareExpires" class="form-label">
-                            <i class="bi bi-clock"></i> Fecha de expiración (opcional)
+                            <i class="bi bi-clock"></i> {% translate "Fecha de expiración (opcional)" %}
                         </label>
                         <input type="datetime-local" class="form-control" id="shareExpires">
-                        <small class="text-muted">Si defines una fecha, el enlace expirará automáticamente</small>
+                        <small class="text-muted">{% translate "Si defines una fecha, el enlace expirará automáticamente" %}</small>
                     </div>
 
                     <!-- URL generada -->
                     <div class="mb-3" id="shareUrlSection" style="display:none;">
-                        <label class="form-label"><i class="bi bi-link-45deg"></i> URL Pública</label>
+                        <label class="form-label"><i class="bi bi-link-45deg"></i> {% translate "URL Pública" %}</label>
                         <div class="input-group">
                             <input type="text" class="form-control" id="shareUrl" readonly>
                             <button class="btn btn-outline-secondary" type="button" onclick="copyShareUrl()">
@@ -176,9 +177,9 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cerrar" %}</button>
                 <button type="button" class="btn btn-primary" onclick="generateShareUrl()">
-                    <i class="bi bi-save"></i> Guardar
+                    <i class="bi bi-save"></i> {% translate "Guardar" %}
                 </button>
             </div>
         </div>

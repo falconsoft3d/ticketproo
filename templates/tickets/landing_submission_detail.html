@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -65,13 +66,13 @@
                 </div>
                 <div>
                     <a href="{% url 'landing_submissions_list' %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left"></i> Volver
+                        <i class="fas fa-arrow-left"></i> {% translate "Volver" %}
                     </a>
                     {% if not submission.ai_evaluated %}
                     <form method="post" action="{% url 'evaluate_submission_ai' submission.id %}" style="display: inline;">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-success">
-                            <i class="fas fa-robot"></i> Evaluar con IA
+                            <i class="fas fa-robot"></i> {% translate "Evaluar con IA" %}
                         </button>
                     </form>
                     {% endif %}
@@ -85,18 +86,18 @@
                         <div class="card-header">
                             <h5 class="mb-0">
                                 <i class="fas fa-address-card text-info"></i>
-                                Información del Contacto
+                                {% translate "Información del Contacto" %}
                             </h5>
                         </div>
                         <div class="card-body">
                             <div class="info-card">
                                 <div class="row">
-                                    <div class="col-sm-4"><strong>Nombre:</strong></div>
+                                    <div class="col-sm-4"><strong>{% translate "Nombre:" %}</strong></div>
                                     <div class="col-sm-8">{{ submission.nombre }} {{ submission.apellido }}</div>
                                 </div>
                                 <hr>
                                 <div class="row">
-                                    <div class="col-sm-4"><strong>Email:</strong></div>
+                                    <div class="col-sm-4"><strong>{% translate "Email:" %}</strong></div>
                                     <div class="col-sm-8">
                                         <a href="mailto:{{ submission.email }}">{{ submission.email }}</a>
                                     </div>
@@ -104,7 +105,7 @@
                                 {% if submission.telefono %}
                                 <hr>
                                 <div class="row">
-                                    <div class="col-sm-4"><strong>Teléfono:</strong></div>
+                                    <div class="col-sm-4"><strong>{% translate "Teléfono:" %}</strong></div>
                                     <div class="col-sm-8">
                                         <a href="tel:{{ submission.telefono }}">{{ submission.telefono }}</a>
                                     </div>
@@ -112,18 +113,18 @@
                                 {% endif %}
                                 <hr>
                                 <div class="row">
-                                    <div class="col-sm-4"><strong>Empresa:</strong></div>
+                                    <div class="col-sm-4"><strong>{% translate "Empresa:" %}</strong></div>
                                     <div class="col-sm-8">{{ submission.empresa }}</div>
                                 </div>
                                 <hr>
                                 <div class="row">
-                                    <div class="col-sm-4"><strong>Landing Page:</strong></div>
+                                    <div class="col-sm-4"><strong>{% translate "Landing Page:" %}</strong></div>
                                     <div class="col-sm-8">{{ submission.landing_page.nombre_producto }}</div>
                                 </div>
                                 {% if submission.ip_address %}
                                 <hr>
                                 <div class="row">
-                                    <div class="col-sm-4"><strong>IP:</strong></div>
+                                    <div class="col-sm-4"><strong>{% translate "IP:" %}</strong></div>
                                     <div class="col-sm-8"><code>{{ submission.ip_address }}</code></div>
                                 </div>
                                 {% endif %}
@@ -132,23 +133,23 @@
                             <!-- UTM Parameters -->
                             {% if submission.utm_source or submission.utm_medium or submission.utm_campaign %}
                             <div class="mt-4">
-                                <h6><i class="fas fa-chart-line"></i> Parámetros UTM</h6>
+                                <h6><i class="fas fa-chart-line"></i> {% translate "Parámetros UTM" %}</h6>
                                 <div class="row">
                                     {% if submission.utm_source %}
                                     <div class="col-md-4">
-                                        <small class="text-muted">Source:</small><br>
+                                        <small class="text-muted">{% translate "Source:" %}</small><br>
                                         <span class="badge bg-info">{{ submission.utm_source }}</span>
                                     </div>
                                     {% endif %}
                                     {% if submission.utm_medium %}
                                     <div class="col-md-4">
-                                        <small class="text-muted">Medium:</small><br>
+                                        <small class="text-muted">{% translate "Medium:" %}</small><br>
                                         <span class="badge bg-info">{{ submission.utm_medium }}</span>
                                     </div>
                                     {% endif %}
                                     {% if submission.utm_campaign %}
                                     <div class="col-md-4">
-                                        <small class="text-muted">Campaign:</small><br>
+                                        <small class="text-muted">{% translate "Campaign:" %}</small><br>
                                         <span class="badge bg-info">{{ submission.utm_campaign }}</span>
                                     </div>
                                     {% endif %}
@@ -165,7 +166,7 @@
                         <div class="card-header">
                             <h5 class="mb-0">
                                 <i class="fas fa-comment-dots text-success"></i>
-                                Mensaje / Proyecto
+                                {% translate "Mensaje / Proyecto" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -176,7 +177,7 @@
                             {% else %}
                             <p class="text-muted text-center py-4">
                                 <i class="fas fa-comment-slash fa-2x"></i><br>
-                                Sin mensaje
+                                {% translate "Sin mensaje" %}
                             </p>
                             {% endif %}
                         </div>
@@ -197,10 +198,10 @@
                                     {% else %}score-low{% endif %}">
                                     {{ submission.ai_overall_score|floatformat:1 }}
                                 </div>
-                                <small>Puntuación General</small>
+                                <small>{% translate "Puntuación General" %}</small>
                             </div>
                             <div class="col-md-10">
-                                <h5><i class="fas fa-robot"></i> Evaluación de IA</h5>
+                                <h5><i class="fas fa-robot"></i> {% translate "Evaluación de IA" %}</h5>
                                 <p class="mb-2">
                                     <small>Evaluado el {{ submission.ai_evaluation_date|date:"d/m/Y H:i" }}</small>
                                 </p>
@@ -216,15 +217,15 @@
                                 <!-- Puntuaciones detalladas -->
                                 <div class="row mb-3">
                                     <div class="col-md-4 text-center">
-                                        <h6>Empresa</h6>
+                                        <h6>{% translate "Empresa" %}</h6>
                                         <span class="badge bg-light text-dark fs-6">{{ submission.ai_company_score }}/10</span>
                                     </div>
                                     <div class="col-md-4 text-center">
-                                        <h6>Contacto</h6>
+                                        <h6>{% translate "Contacto" %}</h6>
                                         <span class="badge bg-light text-dark fs-6">{{ submission.ai_contact_score }}/10</span>
                                     </div>
                                     <div class="col-md-4 text-center">
-                                        <h6>Proyecto</h6>
+                                        <h6>{% translate "Proyecto" %}</h6>
                                         <span class="badge bg-light text-dark fs-6">{{ submission.ai_project_score }}/10</span>
                                     </div>
                                 </div>
@@ -242,7 +243,7 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="fas fa-clipboard-list text-primary"></i>
-                                Resumen de Evaluación
+                                {% translate "Resumen de Evaluación" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -258,7 +259,7 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="fas fa-lightbulb text-warning"></i>
-                                Recomendaciones
+                                {% translate "Recomendaciones" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -277,12 +278,12 @@
                     <div class="card">
                         <div class="card-body text-center py-5">
                             <i class="fas fa-robot fa-3x text-muted mb-3"></i>
-                            <h5 class="text-muted">Sin Evaluación de IA</h5>
-                            <p class="text-muted">Este envío aún no ha sido evaluado por la inteligencia artificial.</p>
+                            <h5 class="text-muted">{% translate "Sin Evaluación de IA" %}</h5>
+                            <p class="text-muted">{% translate "Este envío aún no ha sido evaluado por la inteligencia artificial." %}</p>
                             <form method="post" action="{% url 'evaluate_submission_ai' submission.id %}">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-success btn-lg">
-                                    <i class="fas fa-robot"></i> Evaluar Ahora
+                                    <i class="fas fa-robot"></i> {% translate "Evaluar Ahora" %}
                                 </button>
                             </form>
                         </div>
@@ -298,7 +299,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <a href="{% url 'landing_submissions_list' %}" class="btn btn-secondary">
-                                    <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
+                                    <i class="fas fa-arrow-left me-2"></i>{% translate "Volver a la Lista" %}
                                 </a>
                                 
                                 <div class="btn-group">
@@ -306,19 +307,19 @@
                                     <form method="post" action="{% url 'evaluate_submission_ai' submission.id %}" style="display: inline;">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-success me-2">
-                                            <i class="fas fa-robot me-2"></i>Evaluar con IA
+                                            <i class="fas fa-robot me-2"></i>{% translate "Evaluar con IA" %}
                                         </button>
                                     </form>
                                     {% endif %}
                                     
                                     <a href="{% url 'create_contact_from_submission' submission.id %}" class="btn btn-primary me-2">
-                                        <i class="fas fa-user-plus me-2"></i>Crear Contacto
+                                        <i class="fas fa-user-plus me-2"></i>{% translate "Crear Contacto" %}
                                     </a>
                                     
                                     <button type="button" 
                                             class="btn btn-danger"
                                             onclick="deleteSubmission({{ submission.id }})">
-                                        <i class="fas fa-trash me-2"></i>Eliminar
+                                        <i class="fas fa-trash me-2"></i>{% translate "Eliminar" %}
                                     </button>
                                 </div>
                             </div>

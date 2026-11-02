@@ -1,9 +1,10 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear Gestión de Tareas - TicketProo</title>
+    <title>{% translate "Crear Gestión de Tareas - TicketProo" %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
 </head>
@@ -11,7 +12,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-success">
         <div class="container">
             <span class="navbar-brand">
-                <i class="bi bi-ticket-perforated"></i> TicketProo - Acceso Público
+                <i class="bi bi-ticket-perforated"></i> {% translate "TicketProo - Acceso Público" %}
             </span>
             <span class="navbar-text text-white">
                 <i class="bi bi-person"></i> {{ user.get_full_name|default:user.username }}
@@ -33,10 +34,10 @@
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2>
-                        <i class="bi bi-calendar-plus"></i> Crear Gestión de Tareas
+                        <i class="bi bi-calendar-plus"></i> {% translate "Crear Gestión de Tareas" %}
                     </h2>
                     <a href="{% url 'public_task_view' token %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver a Mis Tareas
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver a Mis Tareas" %}
                     </a>
                 </div>
             </div>
@@ -51,13 +52,13 @@
                         <div class="card">
                             <div class="card-header">
                                 <h5 class="mb-0">
-                                    <i class="bi bi-gear"></i> Configuración de la Gestión
+                                    <i class="bi bi-gear"></i> {% translate "Configuración de la Gestión" %}
                                 </h5>
                             </div>
                             <div class="card-body">
                                 <div class="mb-3">
                                     <label for="date" class="form-label">
-                                        <i class="bi bi-calendar"></i> Fecha de la gestión
+                                        <i class="bi bi-calendar"></i> {% translate "Fecha de la gestión" %}
                                     </label>
                                     <input type="date" 
                                            class="form-control" 
@@ -69,7 +70,7 @@
                                 
                                 <div class="mb-3">
                                     <label for="notes" class="form-label">
-                                        <i class="bi bi-journal-text"></i> Notas (opcional)
+                                        <i class="bi bi-journal-text"></i> {% translate "Notas (opcional)" %}
                                     </label>
                                     <textarea class="form-control" 
                                               id="notes" 
@@ -85,26 +86,26 @@
                         <div class="card">
                             <div class="card-header">
                                 <h5 class="mb-0">
-                                    <i class="bi bi-info-circle"></i> Información
+                                    <i class="bi bi-info-circle"></i> {% translate "Información" %}
                                 </h5>
                             </div>
                             <div class="card-body">
                                 <div class="alert alert-info">
-                                    <h6><i class="bi bi-lightbulb"></i> ¿Cómo funciona?</h6>
+                                    <h6><i class="bi bi-lightbulb"></i> {% translate "¿Cómo funciona?" %}</h6>
                                     <ul class="mb-0">
-                                        <li>Selecciona las tareas que quieres gestionar</li>
-                                        <li>Se creará una lista de verificación</li>
-                                        <li>Podrás marcar tareas como completadas</li>
-                                        <li>Seguir tu progreso durante el día</li>
+                                        <li>{% translate "Selecciona las tareas que quieres gestionar" %}</li>
+                                        <li>{% translate "Se creará una lista de verificación" %}</li>
+                                        <li>{% translate "Podrás marcar tareas como completadas" %}</li>
+                                        <li>{% translate "Seguir tu progreso durante el día" %}</li>
                                     </ul>
                                 </div>
                                 
                                 <div class="text-center">
                                     <p class="text-muted mb-2">
-                                        <strong>{{ tasks|length }}</strong> tareas disponibles
+                                        <strong>{{ tasks|length }}</strong> {% translate "tareas disponibles" %}
                                     </p>
                                     <p class="text-muted small">
-                                        Seleccionadas: <span id="selectedCount" class="fw-bold text-primary">0</span>
+                                        {% translate "Seleccionadas:" %} <span id="selectedCount" class="fw-bold text-primary">0</span>
                                     </p>
                                 </div>
                             </div>
@@ -119,14 +120,14 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">
                                         <i class="bi bi-check-square"></i> 
-                                        Seleccionar Tareas para la Gestión
+                                        {% translate "Seleccionar Tareas para la Gestión" %}
                                     </h5>
                                     <div>
                                         <button type="button" class="btn btn-outline-primary btn-sm" onclick="selectAll()">
-                                            <i class="bi bi-check-all"></i> Seleccionar Todas
+                                            <i class="bi bi-check-all"></i> {% translate "Seleccionar Todas" %}
                                         </button>
                                         <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectNone()">
-                                            <i class="bi bi-x-square"></i> Deseleccionar Todas
+                                            <i class="bi bi-x-square"></i> {% translate "Deseleccionar Todas" %}
                                         </button>
                                     </div>
                                 </div>
@@ -173,7 +174,7 @@
                                                                     {% if task.due_date %}
                                                                         {{ task.due_date|date:"d/m" }}
                                                                     {% else %}
-                                                                        Sin fecha
+                                                                        {% translate "Sin fecha" %}
                                                                     {% endif %}
                                                                 </small>
                                                             </div>
@@ -202,10 +203,10 @@
                     <div class="col-12 text-center">
                         <button type="submit" class="btn btn-success btn-lg" id="submitBtn" disabled>
                             <i class="bi bi-calendar-check"></i> 
-                            Crear Gestión de Tareas
+                            {% translate "Crear Gestión de Tareas" %}
                         </button>
                         <p class="text-muted mt-2">
-                            Selecciona al menos una tarea para continuar
+                            {% translate "Selecciona al menos una tarea para continuar" %}
                         </p>
                     </div>
                 </div>
@@ -216,12 +217,12 @@
                     <div class="card">
                         <div class="card-body text-center py-5">
                             <i class="bi bi-list-task display-1 text-muted"></i>
-                            <h4 class="mt-3">No tienes tareas disponibles</h4>
+                            <h4 class="mt-3">{% translate "No tienes tareas disponibles" %}</h4>
                             <p class="text-muted">
-                                No hay tareas asignadas para crear una gestión.
+                                {% translate "No hay tareas asignadas para crear una gestión." %}
                             </p>
                             <a href="{% url 'public_task_view' token %}" class="btn btn-primary">
-                                <i class="bi bi-arrow-left"></i> Volver
+                                <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                             </a>
                         </div>
                     </div>

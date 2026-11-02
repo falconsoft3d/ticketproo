@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - Vista Pública{% endblock %}
@@ -8,9 +9,9 @@
     <!-- Header público -->
     <div class="row mb-4">
         <div class="col-md-12 text-center">
-            <div class="badge bg-success mb-2">Vista Pública</div>
+            <div class="badge bg-success mb-2">{% translate "Vista Pública" %}</div>
             <h2>
-                <i class="bi bi-plus-circle me-2"></i>Crear Nueva Orden
+                <i class="bi bi-plus-circle me-2"></i>{% translate "Crear Nueva Orden" %}
             </h2>
             <p class="text-muted">{{ original_work_order.company.name }}</p>
             
@@ -18,15 +19,15 @@
             <div class="btn-group mt-3" role="group">
                 <a href="{% url 'public_work_order' original_work_order.public_share_token %}" 
                    class="btn btn-outline-primary">
-                    <i class="bi bi-info-circle me-1"></i>Información
+                    <i class="bi bi-info-circle me-1"></i>{% translate "Información" %}
                 </a>
                 <a href="{% url 'public_work_order_tasks' original_work_order.public_share_token %}" 
                    class="btn btn-outline-info">
-                    <i class="bi bi-list-task me-1"></i>Tareas
+                    <i class="bi bi-list-task me-1"></i>{% translate "Tareas" %}
                 </a>
                 <a href="{% url 'public_work_order_create' original_work_order.public_share_token %}" 
                    class="btn btn-outline-success active">
-                    <i class="bi bi-plus-circle me-1"></i>Crear Orden
+                    <i class="bi bi-plus-circle me-1"></i>{% translate "Crear Orden" %}
                 </a>
             </div>
         </div>
@@ -38,15 +39,14 @@
             <div class="card mb-4">
                 <div class="card-header bg-success text-white">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-plus-circle me-2"></i>Nueva Orden de Trabajo
+                        <i class="bi bi-plus-circle me-2"></i>{% translate "Nueva Orden de Trabajo" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle me-2"></i>
-                        <strong>¿Necesitas algo más?</strong><br>
-                        Completa este formulario para crear una nueva orden de trabajo. 
-                        Te contactaremos pronto para comenzar el trabajo.
+                        <strong>{% translate "¿Necesitas algo más?" %}</strong><br>
+                        {% translate "Completa este formulario para crear una nueva orden de trabajo. Te contactaremos pronto para comenzar el trabajo." %}
                     </div>
 
                     <form method="post" class="needs-validation" novalidate>
@@ -65,7 +65,7 @@
                                 </div>
                             {% endif %}
                             <small class="text-muted">
-                                Describe brevemente lo que necesitas en pocas palabras.
+                                {% translate "Describe brevemente lo que necesitas en pocas palabras." %}
                             </small>
                         </div>
 
@@ -82,8 +82,7 @@
                                 </div>
                             {% endif %}
                             <small class="text-muted">
-                                Proporciona todos los detalles importantes sobre lo que necesitas. 
-                                Mientras más información proporciones, mejor podremos ayudarte.
+                                {% translate "Proporciona todos los detalles importantes sobre lo que necesitas. Mientras más información proporciones, mejor podremos ayudarte." %}
                             </small>
                         </div>
 
@@ -100,14 +99,14 @@
                                 </div>
                             {% endif %}
                             <small class="text-muted">
-                                Selecciona la urgencia de tu solicitud.
+                                {% translate "Selecciona la urgencia de tu solicitud." %}
                             </small>
                         </div>
 
                         <!-- Información de la empresa -->
                         <div class="alert alert-light border">
                             <h6 class="mb-2">
-                                <i class="bi bi-building me-1"></i>Empresa:
+                                <i class="bi bi-building me-1"></i>{% translate "Empresa:" %}
                             </h6>
                             <div class="d-flex align-items-center">
                                 <span class="badge rounded-pill me-2" 
@@ -117,7 +116,7 @@
                                 <strong>{{ original_work_order.company.name }}</strong>
                             </div>
                             <small class="text-muted mt-2 d-block">
-                                Esta orden se asociará automáticamente a tu empresa.
+                                {% translate "Esta orden se asociará automáticamente a tu empresa." %}
                             </small>
                         </div>
 
@@ -125,10 +124,10 @@
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                             <a href="{% url 'public_work_order' original_work_order.public_share_token %}" 
                                class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                                <i class="bi bi-x-circle me-1"></i>{% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-success">
-                                <i class="bi bi-check-circle me-1"></i>Crear Orden de Trabajo
+                                <i class="bi bi-check-circle me-1"></i>{% translate "Crear Orden de Trabajo" %}
                             </button>
                         </div>
                     </form>
@@ -139,13 +138,13 @@
             <div class="card">
                 <div class="card-body">
                     <h6 class="mb-3">
-                        <i class="bi bi-question-circle me-1"></i>¿Qué sucede después?
+                        <i class="bi bi-question-circle me-1"></i>{% translate "¿Qué sucede después?" %}
                     </h6>
                     <ol class="mb-0">
-                        <li class="mb-2">Tu orden se creará en estado <span class="badge bg-secondary">Borrador</span></li>
-                        <li class="mb-2">Nuestro equipo revisará tu solicitud</li>
-                        <li class="mb-2">Te contactaremos para confirmar los detalles</li>
-                        <li>Una vez aprobada, comenzaremos a trabajar en tu orden</li>
+                        <li class="mb-2">{% translate "Tu orden se creará en estado" %} <span class="badge bg-secondary">{% translate "Borrador" %}</span></li>
+                        <li class="mb-2">{% translate "Nuestro equipo revisará tu solicitud" %}</li>
+                        <li class="mb-2">{% translate "Te contactaremos para confirmar los detalles" %}</li>
+                        <li>{% translate "Una vez aprobada, comenzaremos a trabajar en tu orden" %}</li>
                     </ol>
                 </div>
             </div>

@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 {% load tickets_tags %}
 <!DOCTYPE html>
@@ -98,7 +99,7 @@
         <!-- Logo/Branding -->
         <div class="text-center mb-4">
             <h2 class="text-white">
-                <i class="bi bi-ticket-perforated"></i> Red Social Interna
+                <i class="bi bi-ticket-perforated"></i> {% translate "Red Social Interna" %}
             </h2>
         </div>
 
@@ -131,7 +132,7 @@
                 <div class="ratio ratio-16x9 mb-3">
                     <iframe 
                         src="{{ embed_url }}" 
-                        title="YouTube video player" 
+                        title="{% translate 'YouTube video player' %}" 
                         frameborder="0" 
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                         referrerpolicy="strict-origin-when-cross-origin"
@@ -167,7 +168,7 @@
 
                 <!-- Sección de comentarios -->
                 <div class="border-top pt-3">
-                    <h6 class="mb-3"><i class="bi bi-chat-dots"></i> Comentarios</h6>
+                    <h6 class="mb-3"><i class="bi bi-chat-dots"></i> {% translate "Comentarios" %}</h6>
                     
                     <!-- Lista de comentarios -->
                     <div class="comments-list mb-3" id="commentsList">
@@ -185,13 +186,13 @@
                         </div>
                         {% endif %}
                         {% empty %}
-                        <p class="text-muted text-center py-3">Aún no hay comentarios. ¡Sé el primero!</p>
+                        <p class="text-muted text-center py-3">{% translate "Aún no hay comentarios. ¡Sé el primero!" %}</p>
                         {% endfor %}
                     </div>
 
                     <!-- Formulario para nuevos comentarios -->
                     <div class="border-top pt-3">
-                        <h6 class="mb-3">Deja tu comentario</h6>
+                        <h6 class="mb-3">{% translate "Deja tu comentario" %}</h6>
                         <form id="commentForm">
                             <div class="row g-2 mb-2">
                                 <div class="col-md-6">
@@ -199,7 +200,7 @@
                                         type="text" 
                                         class="form-control" 
                                         id="guestName" 
-                                        placeholder="Tu nombre *"
+                                        placeholder="{% translate 'Tu nombre *' %}"
                                         required
                                     >
                                 </div>
@@ -208,7 +209,7 @@
                                         type="email" 
                                         class="form-control" 
                                         id="guestEmail" 
-                                        placeholder="Tu email *"
+                                        placeholder="{% translate 'Tu email *' %}"
                                         required
                                     >
                                 </div>
@@ -223,7 +224,7 @@
                                 ></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-send"></i> Enviar comentario
+                                <i class="bi bi-send"></i> {% translate "Enviar comentario" %}
                             </button>
                         </form>
                     </div>
@@ -233,18 +234,18 @@
             <!-- Footer con CTA -->
             <div class="card-footer text-center bg-light">
                 <p class="mb-2">
-                    <i class="bi bi-info-circle"></i> Esta publicación fue compartida desde TicketProo
+                    <i class="bi bi-info-circle"></i> {% translate "Esta publicación fue compartida desde TicketProo" %}
                 </p>
                 <a href="{% url 'login' %}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-box-arrow-in-right"></i> Inicia sesión para unirte a nuestra comunidad
+                    <i class="bi bi-box-arrow-in-right"></i> {% translate "Inicia sesión para unirte a nuestra comunidad" %}
                 </a>
             </div>
         </div>
 
         <!-- Branding footer -->
         <div class="branding">
-            <p>Powered by <strong>TicketProo</strong></p>
-            <small>Sistema de Gestión Empresarial</small>
+            <p>{% translate "Powered by" %} <strong>TicketProo</strong></p>
+            <small>{% translate "Sistema de Gestión Empresarial" %}</small>
         </div>
     </div>
 

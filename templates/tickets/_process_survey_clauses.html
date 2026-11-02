@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 {# Partial: encabezado del contrato (título + fecha) y lista de cláusulas #}
 <div class="p-3 p-md-4" id="clauses-container">
@@ -5,11 +6,11 @@
   {# ── Encabezado del contrato ───────────────────────────────────── #}
   <div class="card border mb-4 shadow-sm">
     <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between" style="background:#f8f9fa;">
-      <span class="fw-semibold small"><i class="bi bi-card-heading me-1 text-primary"></i>Encabezado del contrato</span>
+      <span class="fw-semibold small"><i class="bi bi-card-heading me-1 text-primary"></i>{% translate "Encabezado del contrato" %}</span>
       <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-2"
               style="font-size:.75rem;" onclick="toggleContractHeader()"
               id="contract-header-toggle">
-        <i class="bi bi-pencil me-1"></i>Editar
+        <i class="bi bi-pencil me-1"></i>{% translate "Editar" %}
       </button>
     </div>
 
@@ -19,7 +20,7 @@
         {% if survey.contract_title %}
           <p class="fw-bold fs-5 mb-1">{{ survey.contract_title }}</p>
         {% else %}
-          <p class="text-muted fst-italic mb-1">Sin título</p>
+          <p class="text-muted fst-italic mb-1">{% translate "Sin título" %}</p>
         {% endif %}
         {% if survey.contract_date %}
           <p class="text-muted small mb-0"><i class="bi bi-calendar3 me-1"></i>{{ survey.contract_date|date:"d/m/Y" }}</p>
@@ -28,13 +29,13 @@
           <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i>Vence el {{ survey.contract_expiration_date|date:"d/m/Y" }}</p>
         {% endif %}
       {% else %}
-        <p class="text-muted small mb-0 fst-italic">Sin título ni fecha asignados.</p>
+        <p class="text-muted small mb-0 fst-italic">{% translate "Sin título ni fecha asignados." %}</p>
       {% endif %}
       <div class="mt-2">
         {% if survey.is_public_contract %}
-          <span class="badge bg-success"><i class="bi bi-globe2 me-1"></i>Contrato público</span>
+          <span class="badge bg-success"><i class="bi bi-globe2 me-1"></i>{% translate "Contrato público" %}</span>
         {% else %}
-          <span class="badge bg-secondary"><i class="bi bi-lock me-1"></i>Contrato privado</span>
+          <span class="badge bg-secondary"><i class="bi bi-lock me-1"></i>{% translate "Contrato privado" %}</span>
         {% endif %}
       </div>
     </div>
@@ -45,18 +46,18 @@
         {% csrf_token %}
         <div class="row g-3 mb-3">
           <div class="col-md-8">
-            <label class="form-label small fw-semibold mb-1">Título del contrato</label>
+            <label class="form-label small fw-semibold mb-1">{% translate "Título del contrato" %}</label>
             <input type="text" name="contract_title" class="form-control form-control-sm"
                    value="{{ survey.contract_title }}"
-                   placeholder="Ej: Contrato de Servicios de Desarrollo de Software">
+                   placeholder="{% translate 'Ej: Contrato de Servicios de Desarrollo de Software' %}">
           </div>
           <div class="col-md-4">
-            <label class="form-label small fw-semibold mb-1">Fecha</label>
+            <label class="form-label small fw-semibold mb-1">{% translate "Fecha" %}</label>
             <input type="date" name="contract_date" class="form-control form-control-sm"
                    value="{{ survey.contract_date|date:'Y-m-d' }}">
           </div>
           <div class="col-md-4">
-            <label class="form-label small fw-semibold mb-1">Vencimiento</label>
+            <label class="form-label small fw-semibold mb-1">{% translate "Vencimiento" %}</label>
             <input type="date" name="contract_expiration_date" class="form-control form-control-sm"
                    value="{{ survey.contract_expiration_date|date:'Y-m-d' }}">
           </div>
@@ -65,17 +66,17 @@
               <input class="form-check-input" type="checkbox" name="is_public_contract" value="1"
                      id="id_is_public_contract" {% if survey.is_public_contract %}checked{% endif %}>
               <label class="form-check-label small" for="id_is_public_contract">
-                <i class="bi bi-globe2 me-1"></i><strong>Contrato público</strong>
-                <span class="text-muted">(el enlace compartido permite ver y firmar el contrato)</span>
+                <i class="bi bi-globe2 me-1"></i><strong>{% translate "Contrato público" %}</strong>
+                <span class="text-muted">{% translate "(el enlace compartido permite ver y firmar el contrato)" %}</span>
               </label>
             </div>
           </div>
         </div>
         <div class="d-flex justify-content-end gap-2">
           <button type="button" class="btn btn-outline-secondary btn-sm"
-                  onclick="toggleContractHeader()">Cancelar</button>
+                  onclick="toggleContractHeader()">{% translate "Cancelar" %}</button>
           <button type="submit" class="btn btn-success btn-sm">
-            <i class="bi bi-floppy me-1"></i> Guardar
+            <i class="bi bi-floppy me-1"></i> {% translate "Guardar" %}
           </button>
         </div>
       </form>
@@ -86,12 +87,12 @@
   {% if survey.client_signature_image %}
   <div class="card border mb-4 shadow-sm">
     <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between" style="background:#f8f9fa;">
-      <span class="fw-semibold small text-success"><i class="bi bi-pen me-1"></i>Firma del cliente</span>
+      <span class="fw-semibold small text-success"><i class="bi bi-pen me-1"></i>{% translate "Firma del cliente" %}</span>
       <form method="post" action="{% url 'process_survey_client_signature_delete' survey.pk %}"
             onsubmit="return confirm('¿Eliminar la firma del cliente? Esta acción no se puede deshacer.')">
         {% csrf_token %}
         <button type="submit" class="btn btn-outline-danger btn-xs py-0 px-2" style="font-size:.75rem;">
-          <i class="bi bi-trash me-1"></i>Eliminar firma
+          <i class="bi bi-trash me-1"></i>{% translate "Eliminar firma" %}
         </button>
       </form>
     </div>
@@ -117,11 +118,11 @@
   <div class="card border mb-4 shadow-sm">
     <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between" style="background:#f8f9fa;">
       <span class="fw-semibold small text-warning">
-        <i class="bi bi-people me-1"></i>Visitantes registrados
+        <i class="bi bi-people me-1"></i>{% translate "Visitantes registrados" %}
         {% if visitor_count %}<span class="badge bg-warning text-dark ms-1">{{ visitor_count }}</span>{% endif %}
       </span>
       <a href="{% url 'process_survey_contract_visitors' survey.pk %}" class="btn btn-outline-secondary btn-xs py-0 px-2" style="font-size:.75rem;">
-        <i class="bi bi-box-arrow-up-right me-1"></i>Ver todos
+        <i class="bi bi-box-arrow-up-right me-1"></i>{% translate "Ver todos" %}
       </a>
     </div>
     {% if visitor_count %}
@@ -130,11 +131,11 @@
         <table class="table table-sm table-hover mb-0" style="font-size:.82rem;">
           <thead class="table-light">
             <tr>
-              <th class="ps-3">Nombre</th>
-              <th>Email</th>
-              <th>Teléfono</th>
-              <th>Empresa</th>
-              <th class="pe-3">Fecha</th>
+              <th class="ps-3">{% translate "Nombre" %}</th>
+              <th>{% translate "Email" %}</th>
+              <th>{% translate "Teléfono" %}</th>
+              <th>{% translate "Empresa" %}</th>
+              <th class="pe-3">{% translate "Fecha" %}</th>
             </tr>
           </thead>
           <tbody>
@@ -153,7 +154,7 @@
     </div>
     {% else %}
     <div class="card-body py-3 px-3">
-      <p class="text-muted small mb-0 fst-italic"><i class="bi bi-hourglass me-1"></i>Nadie ha accedido todavía al formulario de entrada.</p>
+      <p class="text-muted small mb-0 fst-italic"><i class="bi bi-hourglass me-1"></i>{% translate "Nadie ha accedido todavía al formulario de entrada." %}</p>
     </div>
     {% endif %}
   </div>
@@ -163,10 +164,10 @@
   {# ── Identificación de partes ──────────────────────────────────── #}
   <div class="card border mb-4 shadow-sm">
     <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between" style="background:#f8f9fa;">
-      <span class="fw-semibold small"><i class="bi bi-people me-1 text-primary"></i>Identificación de las partes</span>
+      <span class="fw-semibold small"><i class="bi bi-people me-1 text-primary"></i>{% translate "Identificación de las partes" %}</span>
       <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-2"
               style="font-size:.75rem;" onclick="togglePartiesForm()" id="parties-toggle-btn">
-        <i class="bi bi-pencil me-1"></i>Editar
+        <i class="bi bi-pencil me-1"></i>{% translate "Editar" %}
       </button>
     </div>
 
@@ -175,7 +176,7 @@
       {% if survey.provider_nif or survey.provider_nationality or survey.client_rep_name %}
         <div class="row g-2 small">
           <div class="col-md-6">
-            <p class="fw-semibold text-uppercase text-muted mb-1" style="font-size:.7rem;">EL EJECUTOR</p>
+            <p class="fw-semibold text-uppercase text-muted mb-1" style="font-size:.7rem;">{% translate "EL EJECUTOR" %}</p>
             {% if survey.created_by %}<p class="mb-0"><strong>{{ survey.created_by.get_full_name|default:survey.created_by.username }}</strong></p>{% endif %}
             {% if survey.provider_nif %}<p class="mb-0 text-muted">NIF: {{ survey.provider_nif }}</p>{% endif %}
             {% if survey.provider_nationality %}<p class="mb-0 text-muted">Nacionalidad: {{ survey.provider_nationality }}</p>{% endif %}
@@ -184,14 +185,14 @@
             {% if survey.provider_address %}<p class="mb-0 text-muted">{{ survey.provider_address }}</p>{% endif %}
           </div>
           <div class="col-md-6">
-            <p class="fw-semibold text-uppercase text-muted mb-1" style="font-size:.7rem;">EL CLIENTE</p>
+            <p class="fw-semibold text-uppercase text-muted mb-1" style="font-size:.7rem;">{% translate "EL CLIENTE" %}</p>
             {% if survey.company %}<p class="mb-0"><strong>{{ survey.company.name }}</strong>{% if survey.company.tax_id %} · {{ survey.company.tax_id }}{% endif %}</p>{% endif %}
             {% if survey.client_rep_name %}<p class="mb-0 text-muted">Rep.: {{ survey.client_rep_name }}{% if survey.client_rep_id %} ({{ survey.client_rep_id }}){% endif %}</p>{% endif %}
             {% if survey.client_rep_role %}<p class="mb-0 text-muted">{{ survey.client_rep_role }}</p>{% endif %}
           </div>
         </div>
       {% else %}
-        <p class="text-muted small mb-0 fst-italic">Sin datos de las partes. Haz clic en <strong>Editar</strong> para completarlos.</p>
+        <p class="text-muted small mb-0 fst-italic">{% translate "Sin datos de las partes. Haz clic en" %} <strong>{% translate "Editar" %}</strong> {% translate "para completarlos." %}</p>
       {% endif %}
     </div>
 
@@ -199,47 +200,47 @@
     <div class="card-body py-3 px-3 d-none" id="parties-form">
       <form method="post" action="{% url 'process_survey_parties_save' survey.pk %}">
         {% csrf_token %}
-        <p class="fw-semibold small text-uppercase text-muted mb-2">EL EJECUTOR (proveedor)</p>
+        <p class="fw-semibold small text-uppercase text-muted mb-2">{% translate "EL EJECUTOR (proveedor)" %}</p>
         <div class="row g-2 mb-3">
           <div class="col-md-4">
-            <label class="form-label small mb-1">NIF / DNI / Pasaporte</label>
-            <input type="text" name="provider_nif" class="form-control form-control-sm" value="{{ survey.provider_nif }}" placeholder="13310091Z">
+            <label class="form-label small mb-1">{% translate "NIF / DNI / Pasaporte" %}</label>
+            <input type="text" name="provider_nif" class="form-control form-control-sm" value="{{ survey.provider_nif }}" placeholder="{% translate '13310091Z' %}">
           </div>
           <div class="col-md-4">
-            <label class="form-label small mb-1">Nacionalidad</label>
-            <input type="text" name="provider_nationality" class="form-control form-control-sm" value="{{ survey.provider_nationality }}" placeholder="española">
+            <label class="form-label small mb-1">{% translate "Nacionalidad" %}</label>
+            <input type="text" name="provider_nationality" class="form-control form-control-sm" value="{{ survey.provider_nationality }}" placeholder="{% translate 'española' %}">
           </div>
           <div class="col-md-4">
-            <label class="form-label small mb-1">Estado civil</label>
-            <input type="text" name="provider_civil_status" class="form-control form-control-sm" value="{{ survey.provider_civil_status }}" placeholder="casado / soltero…">
+            <label class="form-label small mb-1">{% translate "Estado civil" %}</label>
+            <input type="text" name="provider_civil_status" class="form-control form-control-sm" value="{{ survey.provider_civil_status }}" placeholder="{% translate 'casado / soltero…' %}">
           </div>
           <div class="col-md-4">
-            <label class="form-label small mb-1">Ocupación</label>
-            <input type="text" name="provider_occupation" class="form-control form-control-sm" value="{{ survey.provider_occupation }}" placeholder="Autónomo">
+            <label class="form-label small mb-1">{% translate "Ocupación" %}</label>
+            <input type="text" name="provider_occupation" class="form-control form-control-sm" value="{{ survey.provider_occupation }}" placeholder="{% translate 'Autónomo' %}">
           </div>
           <div class="col-md-8">
-            <label class="form-label small mb-1">Domicilio</label>
-            <input type="text" name="provider_address" class="form-control form-control-sm" value="{{ survey.provider_address }}" placeholder="Benifairó de les Valls, Valencia, España">
+            <label class="form-label small mb-1">{% translate "Domicilio" %}</label>
+            <input type="text" name="provider_address" class="form-control form-control-sm" value="{{ survey.provider_address }}" placeholder="{% translate 'Benifairó de les Valls, Valencia, España' %}">
           </div>
         </div>
-        <p class="fw-semibold small text-uppercase text-muted mb-2">EL CLIENTE (empresa)</p>
+        <p class="fw-semibold small text-uppercase text-muted mb-2">{% translate "EL CLIENTE (empresa)" %}</p>
         <div class="row g-2 mb-3">
           <div class="col-md-5">
-            <label class="form-label small mb-1">Nombre del representante</label>
-            <input type="text" name="client_rep_name" class="form-control form-control-sm" value="{{ survey.client_rep_name }}" placeholder="Nombre y apellidos">
+            <label class="form-label small mb-1">{% translate "Nombre del representante" %}</label>
+            <input type="text" name="client_rep_name" class="form-control form-control-sm" value="{{ survey.client_rep_name }}" placeholder="{% translate 'Nombre y apellidos' %}">
           </div>
           <div class="col-md-3">
-            <label class="form-label small mb-1">ID / NUE / Pasaporte</label>
+            <label class="form-label small mb-1">{% translate "ID / NUE / Pasaporte" %}</label>
             <input type="text" name="client_rep_id" class="form-control form-control-sm" value="{{ survey.client_rep_id }}" placeholder="759000">
           </div>
           <div class="col-md-4">
-            <label class="form-label small mb-1">Cargo en la empresa</label>
-            <input type="text" name="client_rep_role" class="form-control form-control-sm" value="{{ survey.client_rep_role }}" placeholder="Director General">
+            <label class="form-label small mb-1">{% translate "Cargo en la empresa" %}</label>
+            <input type="text" name="client_rep_role" class="form-control form-control-sm" value="{{ survey.client_rep_role }}" placeholder="{% translate 'Director General' %}">
           </div>
         </div>
         <div class="d-flex justify-content-end gap-2">
-          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="togglePartiesForm()">Cancelar</button>
-          <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-floppy me-1"></i>Guardar</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="togglePartiesForm()">{% translate "Cancelar" %}</button>
+          <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-floppy me-1"></i>{% translate "Guardar" %}</button>
         </div>
       </form>
     </div>
@@ -248,11 +249,11 @@
   {# ── Lista de cláusulas ────────────────────────────────────────── #}
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h6 class="mb-0 text-muted small fw-semibold text-uppercase">
-      <i class="bi bi-file-earmark-text me-1"></i> Cláusulas
+      <i class="bi bi-file-earmark-text me-1"></i> {% translate "Cláusulas" %}
     </h6>
     <button class="btn btn-primary btn-sm" type="button"
             data-bs-toggle="collapse" data-bs-target="#add-clause-form" aria-expanded="false">
-      <i class="bi bi-plus-lg me-1"></i> Agregar cláusula
+      <i class="bi bi-plus-lg me-1"></i> {% translate "Agregar cláusula" %}
     </button>
   </div>
 
@@ -260,18 +261,18 @@
   <div class="collapse mb-4" id="add-clause-form">
     <div class="card border-primary border-opacity-50">
       <div class="card-header bg-primary bg-opacity-10 py-2">
-        <span class="fw-semibold small"><i class="bi bi-plus-circle me-1 text-primary"></i>Nueva cláusula</span>
+        <span class="fw-semibold small"><i class="bi bi-plus-circle me-1 text-primary"></i>{% translate "Nueva cláusula" %}</span>
       </div>
       <div class="card-body">
         <form method="post" action="{% url 'process_survey_clause_add' survey.pk %}" class="clause-add-form">
           {% csrf_token %}
           <div class="mb-2">
-            <label class="form-label small fw-semibold mb-1">Título <span class="text-muted fw-normal">(opcional, ej: Objeto del contrato)</span></label>
+            <label class="form-label small fw-semibold mb-1">{% translate "Título" %} <span class="text-muted fw-normal">{% translate "(opcional, ej: Objeto del contrato)" %}</span></label>
             <input type="text" name="title" id="new-clause-title" class="form-control form-control-sm"
-                   placeholder="Ej: Confidencialidad, Vigencia, Pago…" maxlength="300">
+                   placeholder="{% translate 'Ej: Confidencialidad, Vigencia, Pago…' %}" maxlength="300">
           </div>
           <div class="mb-2">
-            <label class="form-label small fw-semibold mb-1">Texto de la cláusula <span class="text-danger">*</span></label>
+            <label class="form-label small fw-semibold mb-1">{% translate "Texto de la cláusula" %} <span class="text-danger">*</span></label>
             <textarea name="body" id="new-clause-body" class="form-control form-control-sm font-monospace"
                       rows="5" required
                       placeholder="Escribe el texto completo de la cláusula…"></textarea>
@@ -282,36 +283,36 @@
               <input class="form-check-input" type="checkbox" name="is_hidden_public" value="1"
                      id="id_new_hidden_public">
               <label class="form-check-label small text-muted" for="id_new_hidden_public">
-                <i class="bi bi-eye-slash me-1"></i>No visible en público (saldrá borrosa)
+                <i class="bi bi-eye-slash me-1"></i>{% translate "No visible en público (saldrá borrosa)" %}
               </label>
             </div>
           </div>
 
           {# ── Asistente IA para nueva cláusula ── #}
           <div class="border rounded p-3 mb-3" style="background:#f0f4ff;">
-            <p class="fw-semibold small text-primary mb-2"><i class="bi bi-stars me-1"></i>Asistir con IA</p>
+            <p class="fw-semibold small text-primary mb-2"><i class="bi bi-stars me-1"></i>{% translate "Asistir con IA" %}</p>
             <textarea id="new-clause-ai-instruction" class="form-control form-control-sm mb-2" rows="2"
                       placeholder="Ej: Redacta una cláusula de confidencialidad estándar, Crea una cláusula de pago con 50% anticipo y 50% al finalizar…"></textarea>
             <div class="d-flex gap-2 mb-2">
               <button type="button" class="btn btn-primary btn-sm" onclick="runNewClauseAI()">
                 <span id="new-ai-spinner" class="spinner-border spinner-border-sm d-none me-1"></span>
-                <i class="bi bi-stars me-1" id="new-ai-icon"></i>Generar con IA
+                <i class="bi bi-stars me-1" id="new-ai-icon"></i>{% translate "Generar con IA" %}
               </button>
             </div>
             <div id="new-ai-preview" class="d-none">
-              <label class="form-label small fw-semibold mb-1 text-success"><i class="bi bi-check2-circle me-1"></i>Propuesta</label>
+              <label class="form-label small fw-semibold mb-1 text-success"><i class="bi bi-check2-circle me-1"></i>{% translate "Propuesta" %}</label>
               <textarea id="new-ai-result" class="form-control form-control-sm font-monospace mb-2" rows="5" readonly></textarea>
               <button type="button" class="btn btn-success btn-sm" onclick="applyNewClauseAI()">
-                <i class="bi bi-check-lg me-1"></i>Usar este texto
+                <i class="bi bi-check-lg me-1"></i>{% translate "Usar este texto" %}
               </button>
             </div>
           </div>
 
           <div class="d-flex justify-content-end gap-2">
             <button type="button" class="btn btn-outline-secondary btn-sm"
-                    data-bs-toggle="collapse" data-bs-target="#add-clause-form">Cancelar</button>
+                    data-bs-toggle="collapse" data-bs-target="#add-clause-form">{% translate "Cancelar" %}</button>
             <button type="submit" class="btn btn-primary btn-sm">
-              <i class="bi bi-check-lg me-1"></i> Guardar cláusula
+              <i class="bi bi-check-lg me-1"></i> {% translate "Guardar cláusula" %}
             </button>
           </div>
         </form>
@@ -328,10 +329,10 @@
         <div class="d-flex align-items-center gap-2 flex-grow-1">
           <span class="badge bg-secondary" style="font-size:.7rem;min-width:28px;">{{ forloop.counter }}</span>
           <span class="fw-semibold clause-title-display">
-            {% if clause.title %}{{ clause.title }}{% else %}<span class="text-muted fst-italic">Sin título</span>{% endif %}
+            {% if clause.title %}{{ clause.title }}{% else %}<span class="text-muted fst-italic">{% translate "Sin título" %}</span>{% endif %}
           </span>
           {% if clause.is_hidden_public %}
-            <span class="badge bg-warning text-dark" style="font-size:.65rem;" title="No visible en público">
+            <span class="badge bg-warning text-dark" style="font-size:.65rem;" title="{% translate 'No visible en público' %}">
               <i class="bi bi-eye-slash"></i>
             </span>
           {% endif %}
@@ -339,12 +340,12 @@
         <div class="d-flex gap-1 flex-shrink-0">
           <button class="btn btn-outline-secondary btn-xs py-0 px-2" style="font-size:.75rem;"
                   type="button" onclick="editClause({{ clause.pk }})"
-                  title="Editar">
+                  title="{% translate 'Editar' %}">
             <i class="bi bi-pencil"></i>
           </button>
           <button class="btn btn-outline-primary btn-xs py-0 px-2" style="font-size:.75rem;"
                   type="button" onclick="openClauseAI({{ clause.pk }})"
-                  title="Mejorar con IA">
+                  title="{% translate 'Mejorar con IA' %}">
             <i class="bi bi-stars"></i>
           </button>
           <form method="post" action="{% url 'process_survey_clause_delete' clause.pk %}"
@@ -352,7 +353,7 @@
                 onsubmit="return confirm('¿Eliminar esta cláusula?')">
             {% csrf_token %}
             <button type="submit" class="btn btn-outline-danger btn-xs py-0 px-2"
-                    style="font-size:.75rem;" title="Eliminar">
+                    style="font-size:.75rem;" title="{% translate 'Eliminar' %}">
               <i class="bi bi-trash"></i>
             </button>
           </form>
@@ -376,12 +377,12 @@
               class="clause-edit-form">
           {% csrf_token %}
           <div class="mb-2">
-            <label class="form-label small fw-semibold mb-1">Título</label>
+            <label class="form-label small fw-semibold mb-1">{% translate "Título" %}</label>
             <input type="text" name="title" class="form-control form-control-sm"
                    value="{{ clause.title }}" maxlength="300">
           </div>
           <div class="mb-2">
-            <label class="form-label small fw-semibold mb-1">Texto <span class="text-danger">*</span></label>
+            <label class="form-label small fw-semibold mb-1">{% translate "Texto" %} <span class="text-danger">*</span></label>
             <textarea name="body" class="form-control form-control-sm font-monospace"
                       rows="6" required>{{ clause.body }}</textarea>
           </div>
@@ -389,14 +390,14 @@
             <input class="form-check-input" type="checkbox" name="is_hidden_public" value="1"
                    id="id_hidden_public_{{ clause.pk }}" {% if clause.is_hidden_public %}checked{% endif %}>
             <label class="form-check-label small text-muted" for="id_hidden_public_{{ clause.pk }}">
-              <i class="bi bi-eye-slash me-1"></i>No visible en público (saldrá borrosa)
+              <i class="bi bi-eye-slash me-1"></i>{% translate "No visible en público (saldrá borrosa)" %}
             </label>
           </div>
           <div class="d-flex justify-content-end gap-2 mt-2">
             <button type="button" class="btn btn-outline-secondary btn-sm"
-                    onclick="cancelEdit({{ clause.pk }})">Cancelar</button>
+                    onclick="cancelEdit({{ clause.pk }})">{% translate "Cancelar" %}</button>
             <button type="submit" class="btn btn-success btn-sm">
-              <i class="bi bi-floppy me-1"></i> Guardar
+              <i class="bi bi-floppy me-1"></i> {% translate "Guardar" %}
             </button>
           </div>
         </form>
@@ -407,25 +408,25 @@
            id="clause-ai-{{ clause.pk }}" style="background:#f0f4ff;">
         <p class="fw-semibold small text-primary mb-2"><i class="bi bi-stars me-1"></i>Asistente IA — Cláusula {{ forloop.counter }}</p>
         <div class="mb-2">
-          <label class="form-label small mb-1">¿Qué quieres hacer con esta cláusula?</label>
+          <label class="form-label small mb-1">{% translate "¿Qué quieres hacer con esta cláusula?" %}</label>
           <textarea id="ai-instruction-{{ clause.pk }}" class="form-control form-control-sm" rows="2"
                     placeholder="Ej: Hazla más formal, amplía el plazo a 6 meses, añade una penalización del 10%, tradúcela al inglés…"></textarea>
         </div>
         <div class="mb-2 d-none" id="ai-preview-{{ clause.pk }}">
-          <label class="form-label small fw-semibold mb-1 text-success"><i class="bi bi-check2-circle me-1"></i>Propuesta de la IA</label>
+          <label class="form-label small fw-semibold mb-1 text-success"><i class="bi bi-check2-circle me-1"></i>{% translate "Propuesta de la IA" %}</label>
           <textarea id="ai-result-{{ clause.pk }}" class="form-control form-control-sm font-monospace" rows="6" readonly></textarea>
         </div>
         <div class="d-flex gap-2 flex-wrap">
           <button type="button" class="btn btn-primary btn-sm" onclick="runClauseAI({{ clause.pk }})">
             <span id="ai-spinner-{{ clause.pk }}" class="spinner-border spinner-border-sm d-none me-1"></span>
-            <i class="bi bi-stars me-1" id="ai-icon-{{ clause.pk }}"></i>Generar
+            <i class="bi bi-stars me-1" id="ai-icon-{{ clause.pk }}"></i>{% translate "Generar" %}
           </button>
           <button type="button" class="btn btn-success btn-sm d-none" id="ai-apply-{{ clause.pk }}"
                   onclick="applyClauseAI({{ clause.pk }})">
-            <i class="bi bi-check-lg me-1"></i>Aplicar y editar
+            <i class="bi bi-check-lg me-1"></i>{% translate "Aplicar y editar" %}
           </button>
           <button type="button" class="btn btn-outline-secondary btn-sm" onclick="closeClauseAI({{ clause.pk }})">
-            Cerrar
+            {% translate "Cerrar" %}
           </button>
         </div>
       </div>
@@ -435,7 +436,7 @@
   {% else %}
   <div class="text-center text-muted py-5" id="clauses-empty">
     <i class="bi bi-file-earmark-x fs-2 opacity-50"></i>
-    <p class="mt-2 mb-0 small">No hay cláusulas todavía.<br>Usa el botón <strong>Agregar cláusula</strong> para comenzar.</p>
+    <p class="mt-2 mb-0 small">{% translate "No hay cláusulas todavía." %}<br>{% translate "Usa el botón" %} <strong>{% translate "Agregar cláusula" %}</strong> {% translate "para comenzar." %}</p>
   </div>
   {% endif %}
 

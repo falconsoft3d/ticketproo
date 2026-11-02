@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -191,74 +192,74 @@
 <body>
     <!-- Botón de imprimir (se oculta al imprimir) -->
     <button class="print-button no-print" onclick="window.print()">
-        <i class="fas fa-print"></i> Imprimir
+        <i class="fas fa-print"></i> {% translate "Imprimir" %}
     </button>
 
     <!-- Encabezado -->
     <div class="header">
-        <h1>REPORTE DE REUNIÓN</h1>
+        <h1>{% translate "REPORTE DE REUNIÓN" %}</h1>
         <h2>{{ meeting.title }}</h2>
     </div>
 
     <!-- Información de la reunión -->
     <div class="meeting-info">
-        <h3>Información General</h3>
+        <h3>{% translate "Información General" %}</h3>
         <div class="info-row">
-            <span class="info-label">Título:</span>
+            <span class="info-label">{% translate "Título:" %}</span>
             {{ meeting.title }}
         </div>
         {% if meeting.description %}
         <div class="info-row">
-            <span class="info-label">Descripción:</span>
+            <span class="info-label">{% translate "Descripción:" %}</span>
             <div style="margin-top: 8px; padding: 10px; background-color: #fff; border: 1px solid #e9ecef; border-radius: 3px; line-height: 1.5;">
                 {{ meeting.description|linebreaks }}
             </div>
         </div>
         {% else %}
         <div class="info-row">
-            <span class="info-label">Descripción:</span>
-            <em style="color: #6c757d;">Sin descripción</em>
+            <span class="info-label">{% translate "Descripción:" %}</span>
+            <em style="color: #6c757d;">{% translate "Sin descripción" %}</em>
         </div>
         {% endif %}
         <div class="info-row">
-            <span class="info-label">Fecha:</span>
+            <span class="info-label">{% translate "Fecha:" %}</span>
             {{ meeting.date|date:"d/m/Y" }}
         </div>
         <div class="info-row">
-            <span class="info-label">Hora:</span>
+            <span class="info-label">{% translate "Hora:" %}</span>
             {{ meeting.time|time:"H:i" }}
         </div>
         {% if meeting.company %}
         <div class="info-row">
-            <span class="info-label">Empresa:</span>
+            <span class="info-label">{% translate "Empresa:" %}</span>
             {{ meeting.company.name }}
         </div>
         {% endif %}
         <div class="info-row">
-            <span class="info-label">Organizador:</span>
+            <span class="info-label">{% translate "Organizador:" %}</span>
             {{ meeting.organizer.first_name }} {{ meeting.organizer.last_name }} ({{ meeting.organizer.email }})
         </div>
         <div class="info-row">
-            <span class="info-label">Creada:</span>
+            <span class="info-label">{% translate "Creada:" %}</span>
             {{ meeting.created_at|date:"d/m/Y H:i" }}
         </div>
     </div>
 
     <!-- Estadísticas -->
     <div class="section">
-        <h3>Estadísticas</h3>
+        <h3>{% translate "Estadísticas" %}</h3>
         <div class="statistics">
             <div class="stat-item">
                 <span class="stat-number">{{ stats.total_attendees }}</span>
-                <span class="stat-label">Asistentes</span>
+                <span class="stat-label">{% translate "Asistentes" %}</span>
             </div>
             <div class="stat-item">
                 <span class="stat-number">{{ stats.total_questions }}</span>
-                <span class="stat-label">Preguntas</span>
+                <span class="stat-label">{% translate "Preguntas" %}</span>
             </div>
             <div class="stat-item">
                 <span class="stat-number">{{ stats.answered_questions }}</span>
-                <span class="stat-label">Respondidas</span>
+                <span class="stat-label">{% translate "Respondidas" %}</span>
             </div>
         </div>
     </div>
@@ -274,7 +275,7 @@
             </div>
             {% endfor %}
         {% else %}
-            <p>No hay asistentes registrados.</p>
+            <p>{% translate "No hay asistentes registrados." %}</p>
         {% endif %}
     </div>
 
@@ -291,16 +292,16 @@
                 </div>
                 
                 <div class="question-text">
-                    <strong>Pregunta:</strong><br>
+                    <strong>{% translate "Pregunta:" %}</strong><br>
                     {{ question.question }}
                 </div>
                 
                 {% if question.answer %}
                 <div class="answer-text">
-                    <div class="answer-label">Respuesta:</div>
+                    <div class="answer-label">{% translate "Respuesta:" %}</div>
                     {{ question.answer }}
                     <div style="font-size: 0.9em; color: #6c757d; margin-top: 8px; font-style: italic;">
-                        — Respondida por 
+                        {% translate "— Respondida por" %} 
                         {% if question.answered_by.first_name or question.answered_by.last_name %}
                             {{ question.answered_by.first_name }} {{ question.answered_by.last_name }}
                         {% else %}
@@ -311,20 +312,20 @@
                 </div>
                 {% else %}
                 <div style="color: #dc3545; font-style: italic; margin-top: 10px;">
-                    Sin responder
+                    {% translate "Sin responder" %}
                 </div>
                 {% endif %}
             </div>
             {% endfor %}
         {% else %}
-            <p>No hay preguntas registradas.</p>
+            <p>{% translate "No hay preguntas registradas." %}</p>
         {% endif %}
     </div>
 
     <!-- Pie de página -->
     <div class="footer">
         <p>Reporte generado el {{ "now"|date:"d/m/Y H:i" }} por el Sistema de Gestión de Reuniones</p>
-        <p>Link público de la reunión: <strong>{{ request.build_absolute_uri }}</strong></p>
+        <p>{% translate "Link público de la reunión:" %} <strong>{{ request.build_absolute_uri }}</strong></p>
     </div>
 
     <!-- Font Awesome para iconos -->

@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -8,10 +9,10 @@
     <!-- Breadcrumb -->
     <div class="row mb-4">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'public_image_prompts' %}">Prompts IA</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">{% translate "Inicio" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'public_image_prompts' %}">{% translate "Prompts IA" %}</a></li>
                     <li class="breadcrumb-item active">{{ image_prompt.title }}</li>
                 </ol>
             </nav>
@@ -60,13 +61,13 @@
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-header bg-success text-white">
                         <h5 class="mb-0">
-                            <i class="bi bi-pencil-square"></i> Prompt Personalizado
+                            <i class="bi bi-pencil-square"></i> {% translate "Prompt Personalizado" %}
                         </h5>
                     </div>
                     <div class="card-body">
                         <p class="card-text mb-3" style="white-space: pre-wrap;">{{ image_prompt.custom_prompt }}</p>
                         <button class="btn btn-success w-100" onclick="copyToClipboard('{{ image_prompt.custom_prompt|escapejs }}', 'custom')">
-                            <i class="bi bi-clipboard"></i> <span id="copy-text-custom">Copiar Prompt Personalizado</span>
+                            <i class="bi bi-clipboard"></i> <span id="copy-text-custom">{% translate "Copiar Prompt Personalizado" %}</span>
                         </button>
                     </div>
                 </div>
@@ -76,13 +77,13 @@
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-magic"></i> Prompt Generado por IA
+                        <i class="bi bi-magic"></i> {% translate "Prompt Generado por IA" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <p class="card-text mb-3" style="white-space: pre-wrap;">{{ image_prompt.generated_prompt }}</p>
                     <button class="btn btn-primary w-100" onclick="copyToClipboard('{{ image_prompt.generated_prompt|escapejs }}', 'generated')">
-                        <i class="bi bi-clipboard"></i> <span id="copy-text-generated">Copiar Prompt Generado</span>
+                        <i class="bi bi-clipboard"></i> <span id="copy-text-generated">{% translate "Copiar Prompt Generado" %}</span>
                     </button>
                 </div>
             </div>
@@ -91,26 +92,26 @@
             <div class="card shadow-sm border-0 bg-light">
                 <div class="card-body">
                     <h6 class="card-title">
-                        <i class="bi bi-info-circle"></i> Información
+                        <i class="bi bi-info-circle"></i> {% translate "Información" %}
                     </h6>
                     <ul class="list-unstyled mb-0">
                         <li class="mb-2">
                             <i class="bi bi-person text-primary"></i> 
-                            <strong>Autor:</strong> {{ image_prompt.user.username }}
+                            <strong>{% translate "Autor:" %}</strong> {{ image_prompt.user.username }}
                         </li>
                         <li class="mb-2">
                             <i class="bi bi-calendar-event text-primary"></i> 
-                            <strong>Fecha de creación:</strong> {{ image_prompt.created_at|date:"d/m/Y H:i" }}
+                            <strong>{% translate "Fecha de creación:" %}</strong> {{ image_prompt.created_at|date:"d/m/Y H:i" }}
                         </li>
                         {% if image_prompt.updated_at != image_prompt.created_at %}
                             <li class="mb-2">
                                 <i class="bi bi-pencil text-primary"></i> 
-                                <strong>Última actualización:</strong> {{ image_prompt.updated_at|date:"d/m/Y H:i" }}
+                                <strong>{% translate "Última actualización:" %}</strong> {{ image_prompt.updated_at|date:"d/m/Y H:i" }}
                             </li>
                         {% endif %}
                         <li class="mb-2">
                             <i class="bi bi-cpu text-primary"></i> 
-                            <strong>Tokens usados:</strong> {{ image_prompt.tokens_used }}
+                            <strong>{% translate "Tokens usados:" %}</strong> {{ image_prompt.tokens_used }}
                         </li>
                     </ul>
                 </div>
@@ -119,7 +120,7 @@
             <!-- Botón Volver -->
             <div class="mt-4">
                 <a href="{% url 'public_image_prompts' %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Volver a Prompts
+                    <i class="bi bi-arrow-left"></i> {% translate "Volver a Prompts" %}
                 </a>
             </div>
         </div>

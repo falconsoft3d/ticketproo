@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -8,14 +9,14 @@
             <div class="card shadow">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">
-                        <i class="bi bi-star-fill"></i> Calificaciones QA
+                        <i class="bi bi-star-fill"></i> {% translate "Calificaciones QA" %}
                     </h4>
                     <div>
-                        <button class="btn btn-light btn-sm me-2" onclick="copyPublicUrl(event)" title="Copiar URL pública">
-                            <i class="bi bi-link-45deg"></i> URL Pública
+                        <button class="btn btn-light btn-sm me-2" onclick="copyPublicUrl(event)" title="{% translate 'Copiar URL pública' %}">
+                            <i class="bi bi-link-45deg"></i> {% translate "URL Pública" %}
                         </button>
                         <a href="{% url 'qa_rating_create' %}" class="btn btn-light btn-sm">
-                            <i class="bi bi-plus-circle"></i> Nueva Calificación
+                            <i class="bi bi-plus-circle"></i> {% translate "Nueva Calificación" %}
                         </a>
                     </div>
                 </div>
@@ -23,9 +24,9 @@
                     <!-- URL Pública para compartir -->
                     <div class="alert alert-info alert-dismissible fade show" role="alert">
                         <h6 class="alert-heading mb-2">
-                            <i class="bi bi-share"></i> URL Pública para Evaluaciones
+                            <i class="bi bi-share"></i> {% translate "URL Pública para Evaluaciones" %}
                         </h6>
-                        <p class="mb-2">Comparte esta URL con tus clientes para que puedan evaluar el servicio sin necesidad de registrarse:</p>
+                        <p class="mb-2">{% translate "Comparte esta URL con tus clientes para que puedan evaluar el servicio sin necesidad de registrarse:" %}</p>
                         <div class="input-group">
                             <input 
                                 type="text" 
@@ -35,7 +36,7 @@
                                 readonly
                             >
                             <button class="btn btn-primary" type="button" onclick="copyPublicUrl(event)">
-                                <i class="bi bi-clipboard"></i> Copiar
+                                <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                             </button>
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -44,9 +45,9 @@
                     <!-- API Pública - Documentación -->
                     <div class="alert alert-secondary alert-dismissible fade show" role="alert">
                         <h6 class="alert-heading mb-2">
-                            <i class="bi bi-code-slash"></i> API Pública de Calificaciones
+                            <i class="bi bi-code-slash"></i> {% translate "API Pública de Calificaciones" %}
                         </h6>
-                        <p class="mb-2 small">Consume las calificaciones en formato JSON desde cualquier sitio web, sin autenticación:</p>
+                        <p class="mb-2 small">{% translate "Consume las calificaciones en formato JSON desde cualquier sitio web, sin autenticación:" %}</p>
                         <div class="input-group mb-2">
                             <input 
                                 type="text" 
@@ -56,14 +57,14 @@
                                 readonly
                             >
                             <button class="btn btn-secondary" type="button" onclick="copyApiUrl()">
-                                <i class="bi bi-clipboard"></i> Copiar
+                                <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                             </button>
                             <a href="{% url 'qa_ratings_public_api' %}" target="_blank" class="btn btn-outline-secondary">
-                                <i class="bi bi-box-arrow-up-right"></i> Abrir
+                                <i class="bi bi-box-arrow-up-right"></i> {% translate "Abrir" %}
                             </a>
                         </div>
                         <div class="small text-muted">
-                            <strong>Parámetros opcionales:</strong>
+                            <strong>{% translate "Parámetros opcionales:" %}</strong>
                             <code class="ms-1">?rating=happy</code> — solo Felices &nbsp;|&nbsp;
                             <code>?rating=neutral</code> — solo Neutrales &nbsp;|&nbsp;
                             <code>?rating=sad</code> — solo Tristes &nbsp;|&nbsp;
@@ -79,7 +80,7 @@
                             <div class="card bg-info text-white">
                                 <div class="card-body">
                                     <h3 class="mb-0">{{ total_ratings }}</h3>
-                                    <small>Total Calificaciones</small>
+                                    <small>{% translate "Total Calificaciones" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -87,7 +88,7 @@
                             <div class="card bg-success text-white">
                                 <div class="card-body">
                                     <h3 class="mb-0">😊 {{ happy_count }}</h3>
-                                    <small>Felices</small>
+                                    <small>{% translate "Felices" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -95,7 +96,7 @@
                             <div class="card bg-warning text-dark">
                                 <div class="card-body">
                                     <h3 class="mb-0">😐 {{ neutral_count }}</h3>
-                                    <small>Neutrales</small>
+                                    <small>{% translate "Neutrales" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -103,7 +104,7 @@
                             <div class="card bg-danger text-white">
                                 <div class="card-body">
                                     <h3 class="mb-0">😞 {{ sad_count }}</h3>
-                                    <small>Tristes</small>
+                                    <small>{% translate "Tristes" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -114,7 +115,7 @@
                         <div class="row g-3">
                             <div class="col-md-3">
                                 <select name="rating" class="form-select" onchange="this.form.submit()">
-                                    <option value="">Todas las calificaciones</option>
+                                    <option value="">{% translate "Todas las calificaciones" %}</option>
                                     {% for value, label in rating_choices %}
                                     <option value="{{ value }}" {% if rating_filter == value %}selected{% endif %}>
                                         {{ label }}
@@ -124,7 +125,7 @@
                             </div>
                             <div class="col-md-3">
                                 <select name="company" class="form-select" onchange="this.form.submit()">
-                                    <option value="">Todas las empresas</option>
+                                    <option value="">{% translate "Todas las empresas" %}</option>
                                     {% for company in companies %}
                                     <option value="{{ company.pk }}" {% if company_filter == company.pk|stringformat:"s" %}selected{% endif %}>
                                         {{ company.name }}
@@ -137,13 +138,13 @@
                                     type="text" 
                                     name="search" 
                                     class="form-control" 
-                                    placeholder="Buscar por nombre, email u opinión..."
+                                    placeholder="{% translate 'Buscar por nombre, email u opinión...' %}"
                                     value="{{ search }}"
                                 >
                             </div>
                             <div class="col-md-2">
                                 <button type="submit" class="btn btn-primary w-100">
-                                    <i class="bi bi-search"></i> Buscar
+                                    <i class="bi bi-search"></i> {% translate "Buscar" %}
                                 </button>
                             </div>
                         </div>
@@ -154,13 +155,13 @@
                         <table class="table table-hover">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Calificación</th>
-                                    <th>Nombre/Email</th>
-                                    <th>Opinión</th>
-                                    <th>Empresa</th>
-                                    <th>Fecha</th>
-                                    <th>Público</th>
-                                    <th>Acciones</th>
+                                    <th>{% translate "Calificación" %}</th>
+                                    <th>{% translate "Nombre/Email" %}</th>
+                                    <th>{% translate "Opinión" %}</th>
+                                    <th>{% translate "Empresa" %}</th>
+                                    <th>{% translate "Fecha" %}</th>
+                                    <th>{% translate "Público" %}</th>
+                                    <th>{% translate "Acciones" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -179,7 +180,7 @@
                                         {% elif rating.name %}
                                             {{ rating.name }}
                                         {% else %}
-                                            <span class="text-muted">Anónimo</span>
+                                            <span class="text-muted">{% translate "Anónimo" %}</span>
                                         {% endif %}
                                         <br>
                                         {% if rating.email %}
@@ -219,12 +220,12 @@
                                         <div class="btn-group btn-group-sm">
                                             <a href="{% url 'qa_rating_detail' rating.pk %}" 
                                                class="btn btn-info" 
-                                               title="Ver detalle">
+                                               title="{% translate 'Ver detalle' %}">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             <a href="{% url 'qa_rating_delete' rating.pk %}" 
                                                class="btn btn-danger" 
-                                               title="Eliminar">
+                                               title="{% translate 'Eliminar' %}">
                                                 <i class="bi bi-trash"></i>
                                             </a>
                                         </div>
@@ -233,7 +234,7 @@
                                 {% empty %}
                                 <tr>
                                     <td colspan="7" class="text-center text-muted">
-                                        <i class="bi bi-inbox"></i> No hay calificaciones registradas
+                                        <i class="bi bi-inbox"></i> {% translate "No hay calificaciones registradas" %}
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -248,7 +249,7 @@
                             {% if ratings.has_previous %}
                             <li class="page-item">
                                 <a class="page-link" href="?page={{ ratings.previous_page_number }}{% if rating_filter %}&rating={{ rating_filter }}{% endif %}{% if company_filter %}&company={{ company_filter }}{% endif %}{% if search %}&search={{ search }}{% endif %}">
-                                    Anterior
+                                    {% translate "Anterior" %}
                                 </a>
                             </li>
                             {% endif %}
@@ -262,7 +263,7 @@
                             {% if ratings.has_next %}
                             <li class="page-item">
                                 <a class="page-link" href="?page={{ ratings.next_page_number }}{% if rating_filter %}&rating={{ rating_filter }}{% endif %}{% if company_filter %}&company={{ company_filter }}{% endif %}{% if search %}&search={{ search }}{% endif %}">
-                                    Siguiente
+                                    {% translate "Siguiente" %}
                                 </a>
                             </li>
                             {% endif %}

@@ -1,19 +1,20 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% block title %}Backup Base de Datos - {{ connection.name }} - Ticket System{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="col-lg-6 offset-lg-3">
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">Conexiones</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">{% translate "Conexiones" %}</a></li>
                 <li class="breadcrumb-item active">Backup de {{ connection.name }}</li>
             </ol>
         </nav>
 
         <div class="card shadow">
             <div class="card-header bg-warning text-dark">
-                <h4 class="mb-0"><i class="bi bi-database-down"></i> Backup de Base de Datos</h4>
+                <h4 class="mb-0"><i class="bi bi-database-down"></i> {% translate "Backup de Base de Datos" %}</h4>
             </div>
             <div class="card-body">
                 {% if messages %}
@@ -26,18 +27,17 @@
                 {% endif %}
 
                 <div class="alert alert-info">
-                    <h5><i class="bi bi-info-circle"></i> Información:</h5>
+                    <h5><i class="bi bi-info-circle"></i> {% translate "Información:" %}</h5>
                     <ul class="mb-0">
-                        <li><strong>Conexión:</strong> {{ connection.name }}</li>
-                        <li><strong>Base de datos:</strong> <code>{{ connection.database }}</code></li>
-                        <li><strong>Servidor:</strong> {{ connection.url }}{% if connection.port %}:{{ connection.port }}{% endif %}</li>
+                        <li><strong>{% translate "Conexión:" %}</strong> {{ connection.name }}</li>
+                        <li><strong>{% translate "Base de datos:" %}</strong> <code>{{ connection.database }}</code></li>
+                        <li><strong>{% translate "Servidor:" %}</strong> {{ connection.url }}{% if connection.port %}:{{ connection.port }}{% endif %}</li>
                     </ul>
                 </div>
 
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <strong>Importante:</strong> Necesitas el <strong>master password</strong> de Odoo para crear un backup de la base de datos.
-                    Este es diferente a la contraseña de usuario.
+                    <strong>{% translate "Importante:" %}</strong> {% translate "Necesitas el" %} <strong>{% translate "master password" %}</strong> {% translate "de Odoo para crear un backup de la base de datos. Este es diferente a la contraseña de usuario." %}
                 </div>
 
                 <form method="post" id="backupForm">
@@ -45,25 +45,25 @@
                     
                     <div class="mb-3">
                         <label for="master_password" class="form-label">
-                            <i class="bi bi-key-fill"></i> Master Password de Odoo
+                            <i class="bi bi-key-fill"></i> {% translate "Master Password de Odoo" %}
                         </label>
                         <input type="password" class="form-control" id="master_password" name="master_password" 
-                               required placeholder="Ingresa el master password">
+                               required placeholder="{% translate 'Ingresa el master password' %}">
                         <small class="form-text text-muted">
-                            Este password se encuentra en el archivo de configuración de Odoo (odoo.conf)
+                            {% translate "Este password se encuentra en el archivo de configuración de Odoo (odoo.conf)" %}
                         </small>
                     </div>
 
                     <div class="mb-3">
                         <label for="backup_format" class="form-label">
-                            <i class="bi bi-file-earmark-zip"></i> Formato del Backup
+                            <i class="bi bi-file-earmark-zip"></i> {% translate "Formato del Backup" %}
                         </label>
                         <select class="form-select" id="backup_format" name="backup_format">
-                            <option value="zip" selected>ZIP (Recomendado)</option>
-                            <option value="dump">SQL Dump</option>
+                            <option value="zip" selected>{% translate "ZIP (Recomendado)" %}</option>
+                            <option value="dump">{% translate "SQL Dump" %}</option>
                         </select>
                         <small class="form-text text-muted">
-                            El formato ZIP incluye la base de datos y los archivos adjuntos
+                            {% translate "El formato ZIP incluye la base de datos y los archivos adjuntos" %}
                         </small>
                     </div>
 
@@ -71,7 +71,7 @@
                     <div id="progressContainer" class="mb-3" style="display: none;">
                         <div class="card">
                             <div class="card-header bg-info text-white">
-                                <h6 class="mb-0"><i class="bi bi-clock-history"></i> Progreso del Backup</h6>
+                                <h6 class="mb-0"><i class="bi bi-clock-history"></i> {% translate "Progreso del Backup" %}</h6>
                             </div>
                             <div class="card-body">
                                 <div class="progress mb-3">
@@ -88,10 +88,10 @@
 
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'odoo_connection_list' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Cancelar
+                            <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                         </a>
                         <button type="submit" class="btn btn-warning" id="backupBtn">
-                            <i class="bi bi-database-down"></i> Crear Backup
+                            <i class="bi bi-database-down"></i> {% translate "Crear Backup" %}
                         </button>
                     </div>
                 </form>
@@ -100,22 +100,22 @@
 
         <div class="card mt-3">
             <div class="card-header">
-                <h6 class="mb-0"><i class="bi bi-question-circle"></i> Ayuda</h6>
+                <h6 class="mb-0"><i class="bi bi-question-circle"></i> {% translate "Ayuda" %}</h6>
             </div>
             <div class="card-body">
-                <h6>¿Dónde encuentro el master password?</h6>
-                <p class="mb-2">El master password se encuentra en el archivo de configuración de Odoo:</p>
+                <h6>{% translate "¿Dónde encuentro el master password?" %}</h6>
+                <p class="mb-2">{% translate "El master password se encuentra en el archivo de configuración de Odoo:" %}</p>
                 <ul>
                     <li><code>/etc/odoo/odoo.conf</code> (Linux)</li>
                     <li><code>C:\Program Files\Odoo\server\odoo.conf</code> (Windows)</li>
                 </ul>
-                <p class="mb-2">Busca la línea:</p>
+                <p class="mb-2">{% translate "Busca la línea:" %}</p>
                 <pre class="bg-dark text-light p-2 rounded"><code>admin_passwd = tu_master_password</code></pre>
                 
-                <h6 class="mt-3">Formatos de backup:</h6>
+                <h6 class="mt-3">{% translate "Formatos de backup:" %}</h6>
                 <ul class="mb-0">
-                    <li><strong>ZIP:</strong> Incluye base de datos y filestore (archivos adjuntos). Recomendado para backup completo.</li>
-                    <li><strong>SQL Dump:</strong> Solo la base de datos PostgreSQL. Más rápido pero sin archivos adjuntos.</li>
+                    <li><strong>{% translate "ZIP:" %}</strong> {% translate "Incluye base de datos y filestore (archivos adjuntos). Recomendado para backup completo." %}</li>
+                    <li><strong>{% translate "SQL Dump:" %}</strong> {% translate "Solo la base de datos PostgreSQL. Más rápido pero sin archivos adjuntos." %}</li>
                 </ul>
             </div>
         </div>

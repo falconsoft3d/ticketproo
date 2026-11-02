@@ -1,18 +1,19 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Mis APIs - Tester{% endblock %}
+{% block title %}{% translate "Mis APIs - Tester" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row mb-4">
         <div class="col">
-            <h2><i class="bi bi-code-square"></i> Mis APIs Guardadas</h2>
-            <p class="text-muted">Gestiona y prueba tus configuraciones de API guardadas</p>
+            <h2><i class="bi bi-code-square"></i> {% translate "Mis APIs Guardadas" %}</h2>
+            <p class="text-muted">{% translate "Gestiona y prueba tus configuraciones de API guardadas" %}</p>
         </div>
         <div class="col-auto">
             <button class="btn btn-primary" onclick="showCreateModal()">
-                <i class="bi bi-plus-circle"></i> Nueva Prueba de API
+                <i class="bi bi-plus-circle"></i> {% translate "Nueva Prueba de API" %}
             </button>
         </div>
     </div>
@@ -33,9 +34,9 @@
                     <div id="savedApisList">
                         <div class="text-center py-5">
                             <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Cargando...</span>
+                                <span class="visually-hidden">{% translate "Cargando..." %}</span>
                             </div>
-                            <p class="mt-2 text-muted">Cargando APIs guardadas...</p>
+                            <p class="mt-2 text-muted">{% translate "Cargando APIs guardadas..." %}</p>
                         </div>
                     </div>
                 </div>
@@ -49,26 +50,26 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Nueva Prueba de API</h5>
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> {% translate "Nueva Prueba de API" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="createForm">
                     <div class="mb-3">
-                        <label class="form-label">Nombre de la API <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="createTitle" required autofocus placeholder="Ej: API de Clientes">
-                        <small class="text-muted">Dale un nombre descriptivo para identificarla fácilmente</small>
+                        <label class="form-label">{% translate "Nombre de la API" %} <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="createTitle" required autofocus placeholder="{% translate 'Ej: API de Clientes' %}">
+                        <small class="text-muted">{% translate "Dale un nombre descriptivo para identificarla fácilmente" %}</small>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Descripción (opcional)</label>
+                        <label class="form-label">{% translate "Descripción (opcional)" %}</label>
                         <textarea class="form-control" id="createDescription" rows="2" placeholder="Descripción breve de para qué sirve esta API"></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                 <button type="button" class="btn btn-primary" onclick="createAndOpenApi()">
-                    <i class="bi bi-arrow-right-circle"></i> Crear y Configurar
+                    <i class="bi bi-arrow-right-circle"></i> {% translate "Crear y Configurar" %}
                 </button>
             </div>
         </div>
@@ -80,7 +81,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar API</h5>
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> {% translate "Editar API" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -88,12 +89,12 @@
                     <input type="hidden" id="editApiId">
                     
                     <div class="mb-3">
-                        <label class="form-label">Título <span class="text-danger">*</span></label>
+                        <label class="form-label">{% translate "Título" %} <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="editTitle" required>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Descripción</label>
+                        <label class="form-label">{% translate "Descripción" %}</label>
                         <textarea class="form-control" id="editDescription" rows="2"></textarea>
                     </div>
 
@@ -103,7 +104,7 @@
                             <input type="url" class="form-control" id="editUrl" required>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Método</label>
+                            <label class="form-label">{% translate "Método" %}</label>
                             <select class="form-select" id="editMethod">
                                 <option value="GET">GET</option>
                                 <option value="POST">POST</option>
@@ -115,33 +116,33 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Headers personalizados</label>
+                        <label class="form-label">{% translate "Headers personalizados" %}</label>
                         <textarea class="form-control font-monospace" id="editHeaders" rows="3" placeholder="Header-Name: value"></textarea>
-                        <small class="text-muted">Un header por línea en formato: Nombre: Valor</small>
+                        <small class="text-muted">{% translate "Un header por línea en formato: Nombre: Valor" %}</small>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Token de autenticación</label>
-                        <input type="text" class="form-control" id="editToken" placeholder="Bearer token, API key, etc.">
+                        <label class="form-label">{% translate "Token de autenticación" %}</label>
+                        <input type="text" class="form-control" id="editToken" placeholder="{% translate 'Bearer token, API key, etc.' %}">
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Body (JSON)</label>
+                        <label class="form-label">{% translate "Body (JSON)" %}</label>
                         <textarea class="form-control font-monospace" id="editBody" rows="6"></textarea>
                     </div>
 
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="editIsFavorite">
                         <label class="form-check-label" for="editIsFavorite">
-                            <i class="bi bi-star"></i> Marcar como favorito
+                            <i class="bi bi-star"></i> {% translate "Marcar como favorito" %}
                         </label>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                 <button type="button" class="btn btn-primary" onclick="saveEditedApi()">
-                    <i class="bi bi-save"></i> Guardar Cambios
+                    <i class="bi bi-save"></i> {% translate "Guardar Cambios" %}
                 </button>
             </div>
         </div>

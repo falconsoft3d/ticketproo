@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}Calculadora - Herramientas{% endblock %}
+{% block title %}{% translate "Calculadora - Herramientas" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -12,15 +13,15 @@
                 <div>
                     <h1 class="h3 mb-0">
                         <i class="bi bi-calculator text-primary"></i>
-                        Calculadora
+                        {% translate "Calculadora" %}
                     </h1>
-                    <p class="text-muted mb-0">Calculadora científica con historial de operaciones</p>
+                    <p class="text-muted mb-0">{% translate "Calculadora científica con historial de operaciones" %}</p>
                 </div>
-                <nav aria-label="breadcrumb">
+                <nav aria-label="{% translate 'breadcrumb' %}">
                     <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                        <li class="breadcrumb-item">Herramientas</li>
-                        <li class="breadcrumb-item active">Calculadora</li>
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                        <li class="breadcrumb-item">{% translate "Herramientas" %}</li>
+                        <li class="breadcrumb-item active">{% translate "Calculadora" %}</li>
                     </ol>
                 </nav>
             </div>
@@ -33,7 +34,7 @@
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0">
                                 <i class="bi bi-calculator"></i>
-                                Calculadora Científica
+                                {% translate "Calculadora Científica" %}
                             </h5>
                         </div>
                         <div class="card-body p-4">
@@ -65,7 +66,7 @@
                                         <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('sqrt')">√</button>
                                     </div>
                                     <div class="col-2">
-                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('pow')">x²</button>
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('pow')">{% translate "x²" %}</button>
                                     </div>
                                 </div>
 
@@ -84,10 +85,10 @@
                                         <button class="btn btn-outline-primary btn-calc w-100" onclick="appendOperation('*')">×</button>
                                     </div>
                                     <div class="col-2">
-                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('sin')">sin</button>
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('sin')">{% translate "sin" %}</button>
                                     </div>
                                     <div class="col-2">
-                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('cos')">cos</button>
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('cos')">{% translate "cos" %}</button>
                                     </div>
                                 </div>
 
@@ -106,10 +107,10 @@
                                         <button class="btn btn-outline-primary btn-calc w-100" onclick="appendOperation('-')">−</button>
                                     </div>
                                     <div class="col-2">
-                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('tan')">tan</button>
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('tan')">{% translate "tan" %}</button>
                                     </div>
                                     <div class="col-2">
-                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('log')">log</button>
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('log')">{% translate "log" %}</button>
                                     </div>
                                 </div>
 
@@ -128,7 +129,7 @@
                                         <button class="btn btn-outline-primary btn-calc w-100" onclick="appendOperation('+')">+</button>
                                     </div>
                                     <div class="col-2">
-                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('ln')">ln</button>
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('ln')">{% translate "ln" %}</button>
                                     </div>
                                     <div class="col-2">
                                         <button class="btn btn-outline-success btn-calc w-100" onclick="insertConstant('pi')">π</button>
@@ -147,7 +148,7 @@
                                         <button class="btn btn-success btn-calc w-100" onclick="calculate()">=</button>
                                     </div>
                                     <div class="col-2">
-                                        <button class="btn btn-outline-success btn-calc w-100" onclick="insertConstant('e')">e</button>
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="insertConstant('e')">{% translate "e" %}</button>
                                     </div>
                                     <div class="col-2">
                                         <button class="btn btn-outline-secondary btn-calc w-100" onclick="toggleSign()">±</button>
@@ -163,16 +164,16 @@
                                         <button class="btn btn-outline-info btn-calc w-100" onclick="appendOperation(')')">)</button>
                                     </div>
                                     <div class="col-2">
-                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('factorial')">n!</button>
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('factorial')">{% translate "n!" %}</button>
                                     </div>
                                     <div class="col-2">
                                         <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('percent')">%</button>
                                     </div>
                                     <div class="col-2">
-                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('inverse')">1/x</button>
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('inverse')">{% translate "1/x" %}</button>
                                     </div>
                                     <div class="col-2">
-                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('abs')">|x|</button>
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('abs')">{% translate "|x|" %}</button>
                                     </div>
                                 </div>
                             </div>
@@ -186,18 +187,18 @@
                         <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
                                 <i class="bi bi-clock-history"></i>
-                                Historial
+                                {% translate "Historial" %}
                             </h5>
                             <button class="btn btn-sm btn-outline-light" onclick="clearHistory()">
-                                <i class="bi bi-trash"></i> Limpiar
+                                <i class="bi bi-trash"></i> {% translate "Limpiar" %}
                             </button>
                         </div>
                         <div class="card-body p-0">
                             <div class="history-container" id="historyContainer">
                                 <div class="text-center p-4 text-muted">
                                     <i class="bi bi-calculator display-6"></i>
-                                    <p class="mt-2 mb-0">Sin cálculos aún</p>
-                                    <small>Los resultados aparecerán aquí</small>
+                                    <p class="mt-2 mb-0">{% translate "Sin cálculos aún" %}</p>
+                                    <small>{% translate "Los resultados aparecerán aquí" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -208,32 +209,32 @@
                         <div class="card-header bg-info bg-opacity-10">
                             <h6 class="mb-0">
                                 <i class="bi bi-info-circle text-info"></i>
-                                Funciones disponibles
+                                {% translate "Funciones disponibles" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-6">
                                     <ul class="list-unstyled small">
-                                        <li><strong>Básicas:</strong> +, −, ×, ÷</li>
-                                        <li><strong>Potencias:</strong> x²</li>
-                                        <li><strong>Raíz:</strong> √x</li>
-                                        <li><strong>Trigonométricas:</strong> sin, cos, tan</li>
+                                        <li><strong>{% translate "Básicas:" %}</strong> +, −, ×, ÷</li>
+                                        <li><strong>{% translate "Potencias:" %}</strong> {% translate "x²" %}</li>
+                                        <li><strong>{% translate "Raíz:" %}</strong> {% translate "√x" %}</li>
+                                        <li><strong>{% translate "Trigonométricas:" %}</strong> {% translate "sin, cos, tan" %}</li>
                                     </ul>
                                 </div>
                                 <div class="col-6">
                                     <ul class="list-unstyled small">
-                                        <li><strong>Logaritmos:</strong> log, ln</li>
-                                        <li><strong>Constantes:</strong> π, e</li>
-                                        <li><strong>Factorial:</strong> n!</li>
-                                        <li><strong>Porcentaje:</strong> %</li>
+                                        <li><strong>{% translate "Logaritmos:" %}</strong> {% translate "log, ln" %}</li>
+                                        <li><strong>{% translate "Constantes:" %}</strong> {% translate "π, e" %}</li>
+                                        <li><strong>{% translate "Factorial:" %}</strong> {% translate "n!" %}</li>
+                                        <li><strong>{% translate "Porcentaje:" %}</strong> %</li>
                                     </ul>
                                 </div>
                             </div>
                             <div class="mt-2">
                                 <small class="text-muted">
                                     <i class="bi bi-lightbulb"></i>
-                                    Haz clic en cualquier resultado del historial para reutilizarlo.
+                                    {% translate "Haz clic en cualquier resultado del historial para reutilizarlo." %}
                                 </small>
                             </div>
                         </div>

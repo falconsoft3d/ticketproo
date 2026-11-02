@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Reporte QA: {{ complaint.title }}{% endblock %}
@@ -192,11 +193,11 @@
                 <div class="d-flex gap-2 justify-content-end">
                     {% if user.is_staff or user.is_superuser %}
                         <a href="{% url 'qa_complaint_edit' complaint.pk %}" class="btn btn-light btn-sm">
-                            <i class="fas fa-edit"></i> Editar
+                            <i class="fas fa-edit"></i> {% translate "Editar" %}
                         </a>
                     {% endif %}
                     <a href="{% url 'qa_complaint_list' %}" class="btn btn-outline-light btn-sm">
-                        <i class="fas fa-list"></i> Lista
+                        <i class="fas fa-list"></i> {% translate "Lista" %}
                     </a>
                 </div>
             </div>
@@ -210,7 +211,7 @@
             <div class="card info-card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="fas fa-file-alt text-primary"></i> Descripción Detallada
+                        <i class="fas fa-file-alt text-primary"></i> {% translate "Descripción Detallada" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -221,7 +222,7 @@
                     {% if complaint.attachment %}
                         <hr>
                         <div class="attachment-section">
-                            <h6><i class="fas fa-paperclip"></i> Archivo Adjunto</h6>
+                            <h6><i class="fas fa-paperclip"></i> {% translate "Archivo Adjunto" %}</h6>
                             <div class="d-flex align-items-center">
                                 {% if complaint.attachment.url|slice:"-4:" == ".jpg" or complaint.attachment.url|slice:"-5:" == ".jpeg" or complaint.attachment.url|slice:"-4:" == ".png" %}
                                     <img src="{{ complaint.attachment.url }}" alt="Adjunto" class="attachment-preview me-3">
@@ -231,7 +232,7 @@
                                 <div>
                                     <strong>{{ complaint.attachment.name }}</strong><br>
                                     <a href="{{ complaint.attachment.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                        <i class="fas fa-download"></i> Descargar
+                                        <i class="fas fa-download"></i> {% translate "Descargar" %}
                                     </a>
                                 </div>
                             </div>
@@ -245,7 +246,7 @@
                 <div class="card info-card mb-4">
                     <div class="card-header bg-success text-white">
                         <h5 class="mb-0">
-                            <i class="fas fa-check-circle"></i> Resolución
+                            <i class="fas fa-check-circle"></i> {% translate "Resolución" %}
                         </h5>
                     </div>
                     <div class="card-body">
@@ -266,7 +267,7 @@
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="fas fa-comments text-primary"></i> 
-                        Historial de Comentarios
+                        {% translate "Historial de Comentarios" %}
                         <span class="badge bg-secondary">{{ complaint.comments.count }}</span>
                     </h5>
                 </div>
@@ -279,7 +280,7 @@
                                         <div>
                                             <strong>{{ comment.author.get_full_name|default:comment.author.username }}</strong>
                                             {% if comment.is_internal %}
-                                                <span class="badge bg-warning text-dark ms-2">Interno</span>
+                                                <span class="badge bg-warning text-dark ms-2">{% translate "Interno" %}</span>
                                             {% endif %}
                                         </div>
                                         <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
@@ -291,7 +292,7 @@
                     {% else %}
                         <div class="text-center py-4">
                             <i class="fas fa-comments fa-2x text-muted mb-2"></i>
-                            <p class="text-muted">No hay comentarios aún.</p>
+                            <p class="text-muted">{% translate "No hay comentarios aún." %}</p>
                         </div>
                     {% endif %}
                 </div>
@@ -299,7 +300,7 @@
 
             <!-- Formulario de Comentarios -->
             <div class="comment-form">
-                <h6><i class="fas fa-plus-circle text-primary"></i> Agregar Comentario</h6>
+                <h6><i class="fas fa-plus-circle text-primary"></i> {% translate "Agregar Comentario" %}</h6>
                 <form method="POST" id="commentForm">
                     {% csrf_token %}
                     <input type="hidden" name="add_comment" value="1">
@@ -315,12 +316,12 @@
                             <input class="form-check-input" type="checkbox" 
                                    name="is_internal" id="is_internal">
                             <label class="form-check-label" for="is_internal">
-                                <i class="fas fa-lock"></i> Comentario interno
+                                <i class="fas fa-lock"></i> {% translate "Comentario interno" %}
                             </label>
                         </div>
                         
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> Enviar Comentario
+                            <i class="fas fa-paper-plane"></i> {% translate "Enviar Comentario" %}
                         </button>
                     </div>
                 </form>
@@ -333,13 +334,13 @@
                 <!-- Acciones Rápidas -->
                 {% if user.is_staff or user.is_superuser %}
                     <div class="quick-actions">
-                        <h6><i class="fas fa-bolt text-warning"></i> Acciones Rápidas</h6>
+                        <h6><i class="fas fa-bolt text-warning"></i> {% translate "Acciones Rápidas" %}</h6>
                         
                         <!-- Asignación -->
                         <div class="mb-3">
-                            <label class="form-label">Asignar a:</label>
+                            <label class="form-label">{% translate "Asignar a:" %}</label>
                             <select class="form-select form-select-sm" id="assignSelect">
-                                <option value="">Sin asignar</option>
+                                <option value="">{% translate "Sin asignar" %}</option>
                                 {% if users %}
                                     {% for user in users %}
                                         <option value="{{ user.id }}" 
@@ -355,7 +356,7 @@
                         {% if complaint.status != 'resolved' %}
                             <button class="btn btn-success btn-sm w-100 mb-2" 
                                     data-bs-toggle="modal" data-bs-target="#resolveModal">
-                                <i class="fas fa-check"></i> Marcar como Resuelto
+                                <i class="fas fa-check"></i> {% translate "Marcar como Resuelto" %}
                             </button>
                         {% endif %}
                     </div>
@@ -365,13 +366,13 @@
                 <div class="card info-card mb-4">
                     <div class="card-header">
                         <h6 class="mb-0">
-                            <i class="fas fa-info-circle text-info"></i> Información
+                            <i class="fas fa-info-circle text-info"></i> {% translate "Información" %}
                         </h6>
                     </div>
                     <div class="card-body">
                         <div class="row g-2">
                             <div class="col-6">
-                                <small class="text-muted">Tipo:</small><br>
+                                <small class="text-muted">{% translate "Tipo:" %}</small><br>
                                 <span class="badge 
                                            {% if complaint.type == 'complaint' %}bg-danger
                                            {% elif complaint.type == 'suggestion' %}bg-info
@@ -382,23 +383,23 @@
                                 </span>
                             </div>
                             <div class="col-6">
-                                <small class="text-muted">Estado:</small><br>
+                                <small class="text-muted">{% translate "Estado:" %}</small><br>
                                 <span class="status-{{ complaint.status }}">
                                     {{ complaint.get_status_display }}
                                 </span>
                             </div>
                             <div class="col-12 mt-2">
-                                <small class="text-muted">Prioridad:</small><br>
+                                <small class="text-muted">{% translate "Prioridad:" %}</small><br>
                                 <span class="priority-{{ complaint.priority }}">
                                     {{ complaint.get_priority_display }}
                                 </span>
                             </div>
                             <div class="col-12 mt-2">
-                                <small class="text-muted">Asignado a:</small><br>
+                                <small class="text-muted">{% translate "Asignado a:" %}</small><br>
                                 {% if complaint.assigned_to %}
                                     <strong>{{ complaint.assigned_to.get_full_name|default:complaint.assigned_to.username }}</strong>
                                 {% else %}
-                                    <span class="text-muted">Sin asignar</span>
+                                    <span class="text-muted">{% translate "Sin asignar" %}</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -410,19 +411,19 @@
                     <div class="card info-card mb-4">
                         <div class="card-header">
                             <h6 class="mb-0">
-                                <i class="fas fa-address-book text-success"></i> Contacto
+                                <i class="fas fa-address-book text-success"></i> {% translate "Contacto" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             {% if complaint.contact_email %}
                                 <div class="mb-2">
-                                    <small class="text-muted">Email:</small><br>
+                                    <small class="text-muted">{% translate "Email:" %}</small><br>
                                     <a href="mailto:{{ complaint.contact_email }}">{{ complaint.contact_email }}</a>
                                 </div>
                             {% endif %}
                             {% if complaint.contact_phone %}
                                 <div>
-                                    <small class="text-muted">Teléfono:</small><br>
+                                    <small class="text-muted">{% translate "Teléfono:" %}</small><br>
                                     <a href="tel:{{ complaint.contact_phone }}">{{ complaint.contact_phone }}</a>
                                 </div>
                             {% endif %}
@@ -434,21 +435,21 @@
                 <div class="card info-card">
                     <div class="card-header">
                         <h6 class="mb-0">
-                            <i class="fas fa-calendar text-primary"></i> Fechas
+                            <i class="fas fa-calendar text-primary"></i> {% translate "Fechas" %}
                         </h6>
                     </div>
                     <div class="card-body">
                         <div class="mb-2">
-                            <small class="text-muted">Creado:</small><br>
+                            <small class="text-muted">{% translate "Creado:" %}</small><br>
                             {{ complaint.created_at|date:"d/m/Y H:i" }}
                         </div>
                         <div class="mb-2">
-                            <small class="text-muted">Actualizado:</small><br>
+                            <small class="text-muted">{% translate "Actualizado:" %}</small><br>
                             {{ complaint.updated_at|date:"d/m/Y H:i" }}
                         </div>
                         {% if complaint.resolution_date %}
                             <div>
-                                <small class="text-muted">Resuelto:</small><br>
+                                <small class="text-muted">{% translate "Resuelto:" %}</small><br>
                                 {{ complaint.resolution_date|date:"d/m/Y H:i" }}
                             </div>
                         {% endif %}
@@ -466,7 +467,7 @@
             <div class="modal-header">
                 <h5 class="modal-title">
                     <i class="fas fa-check-circle text-success"></i> 
-                    Resolver Reporte QA
+                    {% translate "Resolver Reporte QA" %}
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -474,7 +475,7 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="resolution" class="form-label">
-                            Descripción de la Resolución <span class="text-danger">*</span>
+                            {% translate "Descripción de la Resolución" %} <span class="text-danger">*</span>
                         </label>
                         <textarea class="form-control" id="resolution" name="resolution" 
                                   rows="4" placeholder="Describe cómo se resolvió el reporte..." required></textarea>
@@ -482,10 +483,10 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        Cancelar
+                        {% translate "Cancelar" %}
                     </button>
                     <button type="submit" class="btn btn-success">
-                        <i class="fas fa-check"></i> Marcar como Resuelto
+                        <i class="fas fa-check"></i> {% translate "Marcar como Resuelto" %}
                     </button>
                 </div>
             </form>

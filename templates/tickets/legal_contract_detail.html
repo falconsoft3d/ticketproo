@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ contract.name }}{% endblock %}
@@ -6,10 +7,10 @@
 {% block content %}
 <div class="container-fluid mt-4">
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb">
+    <nav aria-label="{% translate 'breadcrumb' %}">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'legal_contract_list' %}">Contratos Legales</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'legal_contract_list' %}">{% translate "Contratos Legales" %}</a></li>
             <li class="breadcrumb-item active" aria-current="page">{{ contract.name }}</li>
         </ol>
     </nav>
@@ -25,26 +26,26 @@
             <form method="POST" action="{% url 'legal_contract_generate' contract.pk %}" class="d-inline">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-success">
-                    <i class="bi bi-magic"></i> Generar con IA
+                    <i class="bi bi-magic"></i> {% translate "Generar con IA" %}
                 </button>
             </form>
             {% endif %}
             
             {% if contract.generated_content %}
             <a href="{% url 'legal_contract_download_pdf' contract.pk %}" class="btn btn-primary">
-                <i class="bi bi-download"></i> Descargar PDF
+                <i class="bi bi-download"></i> {% translate "Descargar PDF" %}
             </a>
             {% endif %}
             
             <a href="{% url 'legal_contract_edit' contract.pk %}" class="btn btn-outline-secondary">
-                <i class="bi bi-pencil"></i> Editar
+                <i class="bi bi-pencil"></i> {% translate "Editar" %}
             </a>
             
             <form method="POST" action="{% url 'legal_contract_toggle_public' contract.pk %}" class="d-inline">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-outline-{% if contract.is_public %}success{% else %}secondary{% endif %}">
                     <i class="bi bi-{% if contract.is_public %}globe-americas{% else %}lock{% endif %}"></i>
-                    {% if contract.is_public %}Público{% else %}Privado{% endif %}
+                    {% if contract.is_public %}{% translate "Público" %}{% else %}{% translate "Privado" %}{% endif %}
                 </button>
             </form>
             
@@ -59,36 +60,36 @@
         <div class="col-md-8">
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información del Contrato</h5>
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> {% translate "Información del Contrato" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <strong>Tipo de Contrato:</strong><br>
+                            <strong>{% translate "Tipo de Contrato:" %}</strong><br>
                             <span class="badge bg-info">{{ contract.contract_type }}</span>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <strong>Estado:</strong><br>
+                            <strong>{% translate "Estado:" %}</strong><br>
                             <span class="badge bg-{{ contract.get_status_badge }}">{{ contract.get_status_display }}</span>
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <strong>Objetivo del Contrato:</strong><br>
+                        <strong>{% translate "Objetivo del Contrato:" %}</strong><br>
                         <p class="text-muted mt-2">{{ contract.objective_prompt }}</p>
                     </div>
                     
                     <div class="row">
                         {% if contract.start_date %}
                         <div class="col-md-6 mb-3">
-                            <strong>Fecha de Inicio:</strong><br>
+                            <strong>{% translate "Fecha de Inicio:" %}</strong><br>
                             {{ contract.start_date|date:"d/m/Y" }}
                         </div>
                         {% endif %}
                         
                         {% if contract.end_date %}
                         <div class="col-md-6 mb-3">
-                            <strong>Fecha de Finalización:</strong><br>
+                            <strong>{% translate "Fecha de Finalización:" %}</strong><br>
                             {{ contract.end_date|date:"d/m/Y" }}
                         </div>
                         {% endif %}
@@ -96,7 +97,7 @@
                     
                     {% if contract.amount %}
                     <div class="mb-3">
-                        <strong>Monto:</strong><br>
+                        <strong>{% translate "Monto:" %}</strong><br>
                         <span class="badge bg-success fs-6">{{ contract.amount }} {{ contract.currency }}</span>
                     </div>
                     {% endif %}
@@ -119,13 +120,13 @@
             <!-- Partes del Contrato -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="bi bi-building"></i> Partes Contratantes</h5>
+                    <h5 class="mb-0"><i class="bi bi-building"></i> {% translate "Partes Contratantes" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <div class="border-start border-4 border-primary ps-3">
-                                <h6 class="text-primary">PROVEEDOR</h6>
+                                <h6 class="text-primary">{% translate "PROVEEDOR" %}</h6>
                                 <p class="mb-1"><strong>{{ contract.company.name }}</strong></p>
                                 {% if contract.company.address %}
                                 <p class="mb-1 small"><i class="bi bi-geo-alt"></i> {{ contract.company.address }}</p>
@@ -141,7 +142,7 @@
                         
                         <div class="col-md-6 mb-3">
                             <div class="border-start border-4 border-success ps-3">
-                                <h6 class="text-success">CLIENTE</h6>
+                                <h6 class="text-success">{% translate "CLIENTE" %}</h6>
                                 <p class="mb-1"><strong>{{ contract.client_company.name }}</strong></p>
                                 {% if contract.client_company.address %}
                                 <p class="mb-1 small"><i class="bi bi-geo-alt"></i> {{ contract.client_company.address }}</p>
@@ -162,9 +163,9 @@
             {% if contract.generated_content %}
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-file-text"></i> Contenido del Contrato</h5>
+                    <h5 class="mb-0"><i class="bi bi-file-text"></i> {% translate "Contenido del Contrato" %}</h5>
                     <button type="button" class="btn btn-sm btn-light" id="toggleEditBtn" onclick="toggleEditMode()">
-                        <i class="bi bi-pencil"></i> Editar Contenido
+                        <i class="bi bi-pencil"></i> {% translate "Editar Contenido" %}
                     </button>
                 </div>
                 <div class="card-body">
@@ -180,10 +181,10 @@
                             <textarea class="form-control" name="generated_content" rows="20" id="contentTextarea">{{ contract.generated_content }}</textarea>
                             <div class="mt-3 d-flex gap-2">
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-check-circle"></i> Guardar Cambios
+                                    <i class="bi bi-check-circle"></i> {% translate "Guardar Cambios" %}
                                 </button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit()">
-                                    <i class="bi bi-x-circle"></i> Cancelar
+                                    <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                                 </button>
                             </div>
                         </form>
@@ -199,10 +200,9 @@
             </div>
             {% else %}
             <div class="alert alert-info">
-                <h5><i class="bi bi-info-circle"></i> Contrato no generado</h5>
+                <h5><i class="bi bi-info-circle"></i> {% translate "Contrato no generado" %}</h5>
                 <p class="mb-0">
-                    Este contrato aún no ha sido generado con IA. 
-                    Haz clic en el botón "Generar con IA" para crear el contenido automáticamente.
+                    {% translate 'Este contrato aún no ha sido generado con IA. Haz clic en el botón "Generar con IA" para crear el contenido automáticamente.' %}
                 </p>
             </div>
             {% endif %}
@@ -214,10 +214,10 @@
             {% if contract.is_public %}
             <div class="card shadow-sm mb-4 border-success">
                 <div class="card-header bg-success text-white">
-                    <h6 class="mb-0"><i class="bi bi-globe"></i> Acceso Público</h6>
+                    <h6 class="mb-0"><i class="bi bi-globe"></i> {% translate "Acceso Público" %}</h6>
                 </div>
                 <div class="card-body">
-                    <p class="small mb-2">Comparte este enlace para que otros vean el contrato:</p>
+                    <p class="small mb-2">{% translate "Comparte este enlace para que otros vean el contrato:" %}</p>
                     <div class="input-group input-group-sm">
                         <input type="text" class="form-control" id="publicUrl" 
                                value="{{ request.scheme }}://{{ request.get_host }}{% url 'legal_contract_public' contract.public_token %}" 
@@ -229,7 +229,7 @@
                     <a href="{% url 'legal_contract_public' contract.public_token %}" 
                        target="_blank" 
                        class="btn btn-sm btn-success mt-2 w-100">
-                        <i class="bi bi-box-arrow-up-right"></i> Abrir vista pública
+                        <i class="bi bi-box-arrow-up-right"></i> {% translate "Abrir vista pública" %}
                     </a>
                 </div>
             </div>
@@ -239,7 +239,7 @@
             {% if contract.notes %}
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-warning">
-                    <h6 class="mb-0"><i class="bi bi-sticky"></i> Notas Internas</h6>
+                    <h6 class="mb-0"><i class="bi bi-sticky"></i> {% translate "Notas Internas" %}</h6>
                 </div>
                 <div class="card-body">
                     <p class="small mb-0">{{ contract.notes|linebreaks }}</p>
@@ -250,7 +250,7 @@
             <!-- Historial -->
             <div class="card shadow-sm">
                 <div class="card-header bg-secondary text-white">
-                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> Historial</h6>
+                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> {% translate "Historial" %}</h6>
                 </div>
                 <div class="card-body">
                     <ul class="list-unstyled mb-0">

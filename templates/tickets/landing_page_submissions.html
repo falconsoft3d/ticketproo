@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -18,10 +19,10 @@
                 </h1>
                 <div class="btn-group" role="group">
                     <a href="{% url 'landing_page_detail' landing_page.pk %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left"></i> Volver
+                        <i class="fas fa-arrow-left"></i> {% translate "Volver" %}
                     </a>
                     <button class="btn btn-outline-success" onclick="exportToCSV()">
-                        <i class="fas fa-download"></i> Exportar CSV
+                        <i class="fas fa-download"></i> {% translate "Exportar CSV" %}
                     </button>
                 </div>
             </div>
@@ -32,7 +33,7 @@
                     <div class="card text-center">
                         <div class="card-body">
                             <div class="h3 text-primary">{{ landing_page.total_views }}</div>
-                            <div class="text-muted">Vistas Totales</div>
+                            <div class="text-muted">{% translate "Vistas Totales" %}</div>
                         </div>
                     </div>
                 </div>
@@ -40,7 +41,7 @@
                     <div class="card text-center">
                         <div class="card-body">
                             <div class="h3 text-success">{{ submissions.count }}</div>
-                            <div class="text-muted">Envíos Totales</div>
+                            <div class="text-muted">{% translate "Envíos Totales" %}</div>
                         </div>
                     </div>
                 </div>
@@ -48,7 +49,7 @@
                     <div class="card text-center">
                         <div class="card-body">
                             <div class="h3 text-info">{{ landing_page.conversion_rate|floatformat:1 }}%</div>
-                            <div class="text-muted">Tasa de Conversión</div>
+                            <div class="text-muted">{% translate "Tasa de Conversión" %}</div>
                         </div>
                     </div>
                 </div>
@@ -62,7 +63,7 @@
                                     -
                                 {% endif %}
                             </div>
-                            <div class="text-muted">Último Envío</div>
+                            <div class="text-muted">{% translate "Último Envío" %}</div>
                         </div>
                     </div>
                 </div>
@@ -71,15 +72,15 @@
             <!-- Tabla de Envíos -->
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5><i class="fas fa-list"></i> Lista de Envíos</h5>
+                    <h5><i class="fas fa-list"></i> {% translate "Lista de Envíos" %}</h5>
                     <div class="d-flex gap-2">
-                        <input type="search" class="form-control form-control-sm" placeholder="Buscar..." id="searchInput" style="width: 200px;">
+                        <input type="search" class="form-control form-control-sm" placeholder="{% translate 'Buscar...' %}" id="searchInput" style="width: 200px;">
                         <select class="form-select form-select-sm" id="filterSource" style="width: 150px;">
-                            <option value="">Todas las fuentes</option>
-                            <option value="google">Google</option>
+                            <option value="">{% translate "Todas las fuentes" %}</option>
+                            <option value="google">{% translate "Google" %}</option>
                             <option value="facebook">Facebook</option>
-                            <option value="email">Email</option>
-                            <option value="direct">Directo</option>
+                            <option value="email">{% translate "Email" %}</option>
+                            <option value="direct">{% translate "Directo" %}</option>
                         </select>
                     </div>
                 </div>
@@ -90,17 +91,17 @@
                                 <thead>
                                     <tr>
                                         <th>
-                                            <input type="checkbox" id="selectAll" title="Seleccionar todos">
+                                            <input type="checkbox" id="selectAll" title="{% translate 'Seleccionar todos' %}">
                                         </th>
-                                        <th>Contactado</th>
-                                        <th>Nombre Completo</th>
-                                        <th>Email</th>
-                                        <th>Teléfono</th>
-                                        <th>Empresa</th>
-                                        <th>Mensaje</th>
-                                        <th>Fecha</th>
+                                        <th>{% translate "Contactado" %}</th>
+                                        <th>{% translate "Nombre Completo" %}</th>
+                                        <th>{% translate "Email" %}</th>
+                                        <th>{% translate "Teléfono" %}</th>
+                                        <th>{% translate "Empresa" %}</th>
+                                        <th>{% translate "Mensaje" %}</th>
+                                        <th>{% translate "Fecha" %}</th>
                                         <th>IP</th>
-                                        <th>Acciones</th>
+                                        <th>{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -148,7 +149,7 @@
                                                             <small class="text-muted d-block">
                                                                 <i class="fas fa-eye" style="cursor: pointer;" 
                                                                    onclick="showFullMessage('{{ submission.mensaje|escapejs }}')"></i>
-                                                                Ver completo
+                                                                {% translate "Ver completo" %}
                                                             </small>
                                                         {% endif %}
                                                     </div>
@@ -169,7 +170,7 @@
                                                 </small>
                                             </td>
                                             <td>
-                                                <a href="{% url 'landing_page_submission_detail' submission.id %}" class="btn btn-outline-primary btn-sm" title="Ver detalle">
+                                                <a href="{% url 'landing_page_submission_detail' submission.id %}" class="btn btn-outline-primary btn-sm" title="{% translate 'Ver detalle' %}">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                             </td>
@@ -182,13 +183,13 @@
                         <!-- Acciones en lote -->
                         <div class="mt-3 d-none" id="batchActions">
                             <div class="alert alert-info">
-                                <span id="selectedCount">0</span> envíos seleccionados.
+                                <span id="selectedCount">0</span> {% translate "envíos seleccionados." %}
                                 <div class="btn-group btn-group-sm ms-3" role="group">
                                     <button class="btn btn-outline-primary" onclick="createContactsBatch()">
-                                        <i class="fas fa-users"></i> Crear Contactos
+                                        <i class="fas fa-users"></i> {% translate "Crear Contactos" %}
                                     </button>
                                     <button class="btn btn-outline-success" onclick="exportSelected()">
-                                        <i class="fas fa-download"></i> Exportar Seleccionados
+                                        <i class="fas fa-download"></i> {% translate "Exportar Seleccionados" %}
                                     </button>
                                 </div>
                             </div>
@@ -196,12 +197,12 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-                            <h4 class="text-muted">No hay envíos aún</h4>
+                            <h4 class="text-muted">{% translate "No hay envíos aún" %}</h4>
                             <p class="text-muted">
-                                Los envíos del formulario aparecerán aquí cuando los visitantes completen la landing page.
+                                {% translate "Los envíos del formulario aparecerán aquí cuando los visitantes completen la landing page." %}
                             </p>
                             <a href="{% url 'landing_page_public' landing_page.slug %}" class="btn btn-primary" target="_blank">
-                                <i class="fas fa-external-link-alt"></i> Ver Landing Page
+                                <i class="fas fa-external-link-alt"></i> {% translate "Ver Landing Page" %}
                             </a>
                         </div>
                     {% endif %}

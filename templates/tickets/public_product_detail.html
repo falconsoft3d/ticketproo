@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ product.name }}{% endblock %}
@@ -7,10 +8,10 @@
 <div class="container py-5">
 
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb" class="mb-4">
+    <nav aria-label="{% translate 'breadcrumb' %}" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/">Inicio</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'public_app_catalogs' %}">Catálogos</a></li>
+            <li class="breadcrumb-item"><a href="/">{% translate "Inicio" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'public_app_catalogs' %}">{% translate "Catálogos" %}</a></li>
             <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
         </ol>
     </nav>
@@ -35,10 +36,10 @@
                     </div>
 
                     {% if product.sku %}
-                    <p class="small text-muted"><strong>SKU:</strong> {{ product.sku }}</p>
+                    <p class="small text-muted"><strong>{% translate "SKU:" %}</strong> {{ product.sku }}</p>
                     {% endif %}
                     {% if product.technical_name %}
-                    <p class="small text-muted"><strong><i class="bi bi-code-slash"></i> Nombre Técnico:</strong> <code>{{ product.technical_name }}</code></p>
+                    <p class="small text-muted"><strong><i class="bi bi-code-slash"></i> {% translate "Nombre Técnico:" %}</strong> <code>{{ product.technical_name }}</code></p>
                     {% endif %}
 
                     <!-- Agregar al carrito -->
@@ -46,12 +47,12 @@
                         {% csrf_token %}
                         <input type="hidden" name="next" value="{{ request.path }}">
                         <button type="submit" class="btn btn-primary w-100 fw-bold">
-                            <i class="bi bi-cart-plus"></i> Agregar al carrito
+                            <i class="bi bi-cart-plus"></i> {% translate "Agregar al carrito" %}
                         </button>
                     </form>
 
                     <a href="{% url 'public_app_catalogs' %}" class="btn btn-outline-secondary w-100 mt-2">
-                        <i class="bi bi-arrow-left"></i> Volver a catálogos
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver a catálogos" %}
                     </a>
                 </div>
             </div>
@@ -60,7 +61,7 @@
         <!-- Videos del producto -->
         <div class="col-lg-8">
             <h3 class="fw-bold mb-4">
-                <i class="bi bi-play-circle-fill text-danger"></i> Videos
+                <i class="bi bi-play-circle-fill text-danger"></i> {% translate "Videos" %}
             </h3>
 
             {% if videos %}
@@ -91,9 +92,9 @@
                             <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
                                 <i class="bi bi-link-45deg fs-3 text-primary"></i>
                                 <div>
-                                    <p class="mb-1 text-muted small">Enlace externo</p>
+                                    <p class="mb-1 text-muted small">{% translate "Enlace externo" %}</p>
                                     <a href="{{ video.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-danger">
-                                        <i class="bi bi-play-circle"></i> Ver video
+                                        <i class="bi bi-play-circle"></i> {% translate "Ver video" %}
                                     </a>
                                 </div>
                             </div>
@@ -107,7 +108,7 @@
             {% else %}
             <div class="text-center py-5 bg-light rounded">
                 <i class="bi bi-camera-video display-3 text-muted mb-3 d-block"></i>
-                <p class="text-muted">Este producto no tiene videos disponibles.</p>
+                <p class="text-muted">{% translate "Este producto no tiene videos disponibles." %}</p>
             </div>
             {% endif %}
         </div>
@@ -116,8 +117,8 @@
 
 {% if related_products %}
 <div class="container py-5">
-    <h5 class="fw-bold mb-4"><i class="bi bi-grid"></i> Otros productos del catálogo
-        {% if catalog %}<a href="{% url 'public_app_catalogs' %}" class="btn btn-sm btn-outline-secondary ms-2">Ver todos</a>{% endif %}
+    <h5 class="fw-bold mb-4"><i class="bi bi-grid"></i> {% translate "Otros productos del catálogo" %}
+        {% if catalog %}<a href="{% url 'public_app_catalogs' %}" class="btn btn-sm btn-outline-secondary ms-2">{% translate "Ver todos" %}</a>{% endif %}
     </h5>
     <div class="row g-3">
         {% for line in related_products %}
@@ -167,13 +168,13 @@
                     {% endwith %}
 
                     <a href="{% url 'public_product_detail' line.product.pk %}" class="btn btn-outline-secondary btn-sm w-100 mb-2">
-                        <i class="bi bi-eye"></i> Ver detalle
+                        <i class="bi bi-eye"></i> {% translate "Ver detalle" %}
                     </a>
                     <form method="post" action="{% url 'cart_add' line.product.pk %}">
                         {% csrf_token %}
                         <input type="hidden" name="next" value="{{ request.path }}">
                         <button type="submit" class="btn btn-primary btn-sm w-100">
-                            <i class="bi bi-cart-plus"></i> Agregar al carrito
+                            <i class="bi bi-cart-plus"></i> {% translate "Agregar al carrito" %}
                         </button>
                     </form>
                 </div>

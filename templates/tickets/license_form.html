@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -28,11 +29,11 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2><i class="bi bi-key text-primary"></i> {{ title }}</h2>
-                    <p class="text-muted">Información de la licencia del producto</p>
+                    <p class="text-muted">{% translate "Información de la licencia del producto" %}</p>
                 </div>
                 <div>
                     <a href="{% url 'license_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver a Licencias
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver a Licencias" %}
                     </a>
                 </div>
             </div>
@@ -47,7 +48,7 @@
                         <div class="row mb-3">
                             <div class="col-md-12">
                                 <label for="license_key" class="form-label">
-                                    <i class="bi bi-key"></i> Clave de Licencia
+                                    <i class="bi bi-key"></i> {% translate "Clave de Licencia" %}
                                 </label>
                                 <div class="key-generator">
                                     <div class="d-flex align-items-center mb-2">
@@ -56,15 +57,15 @@
                                                name="license_key" 
                                                id="license_key"
                                                maxlength="12"
-                                               placeholder="AUTO-GENERADA"
+                                               placeholder="{% translate 'AUTO-GENERADA' %}"
                                                value="{% if license %}{{ license.license_key }}{% endif %}">
                                         <button type="button" class="btn btn-outline-primary" onclick="generateKey()">
-                                            <i class="bi bi-arrow-clockwise"></i> Generar
+                                            <i class="bi bi-arrow-clockwise"></i> {% translate "Generar" %}
                                         </button>
                                     </div>
                                     <small class="text-muted">
                                         <i class="bi bi-info-circle"></i> 
-                                        Deja vacío para generar automáticamente o ingresa una clave personalizada de 12 caracteres alfanuméricos.
+                                        {% translate "Deja vacío para generar automáticamente o ingresa una clave personalizada de 12 caracteres alfanuméricos." %}
                                     </small>
                                 </div>
                             </div>
@@ -74,10 +75,10 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="company" class="form-label">
-                                    <i class="bi bi-building"></i> Empresa *
+                                    <i class="bi bi-building"></i> {% translate "Empresa *" %}
                                 </label>
                                 <select class="form-select" name="company" id="company" required>
-                                    <option value="">Seleccionar empresa...</option>
+                                    <option value="">{% translate "Seleccionar empresa..." %}</option>
                                     {% for company in companies %}
                                         <option value="{{ company.pk }}" 
                                                 {% if license and license.company.pk == company.pk %}selected{% endif %}>
@@ -88,14 +89,14 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="product" class="form-label">
-                                    <i class="bi bi-box-seam"></i> Producto *
+                                    <i class="bi bi-box-seam"></i> {% translate "Producto *" %}
                                 </label>
                                 <input type="text" 
                                        class="form-control" 
                                        name="product" 
                                        id="product"
                                        value="{% if license %}{{ license.product }}{% endif %}"
-                                       placeholder="Nombre del producto..."
+                                       placeholder="{% translate 'Nombre del producto...' %}"
                                        required>
                             </div>
                         </div>
@@ -104,7 +105,7 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="start_date" class="form-label">
-                                    <i class="bi bi-calendar-check"></i> Fecha de Inicio *
+                                    <i class="bi bi-calendar-check"></i> {% translate "Fecha de Inicio *" %}
                                 </label>
                                 <input type="date" 
                                        class="form-control" 
@@ -115,7 +116,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="end_date" class="form-label">
-                                    <i class="bi bi-calendar-x"></i> Fecha de Vencimiento *
+                                    <i class="bi bi-calendar-x"></i> {% translate "Fecha de Vencimiento *" %}
                                 </label>
                                 <input type="date" 
                                        class="form-control" 
@@ -131,13 +132,13 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label for="status" class="form-label">
-                                        <i class="bi bi-flag"></i> Estado
+                                        <i class="bi bi-flag"></i> {% translate "Estado" %}
                                     </label>
                                     <select class="form-select" name="status" id="status">
-                                        <option value="active" {% if license.status == "active" %}selected{% endif %}>Activa</option>
-                                        <option value="expired" {% if license.status == "expired" %}selected{% endif %}>Expirada</option>
-                                        <option value="suspended" {% if license.status == "suspended" %}selected{% endif %}>Suspendida</option>
-                                        <option value="revoked" {% if license.status == "revoked" %}selected{% endif %}>Revocada</option>
+                                        <option value="active" {% if license.status == "active" %}selected{% endif %}>{% translate "Activa" %}</option>
+                                        <option value="expired" {% if license.status == "expired" %}selected{% endif %}>{% translate "Expirada" %}</option>
+                                        <option value="suspended" {% if license.status == "suspended" %}selected{% endif %}>{% translate "Suspendida" %}</option>
+                                        <option value="revoked" {% if license.status == "revoked" %}selected{% endif %}>{% translate "Revocada" %}</option>
                                     </select>
                                 </div>
                             </div>
@@ -147,7 +148,7 @@
                         <div class="row mb-4">
                             <div class="col-md-12">
                                 <label for="notes" class="form-label">
-                                    <i class="bi bi-chat-text"></i> Notas
+                                    <i class="bi bi-chat-text"></i> {% translate "Notas" %}
                                 </label>
                                 <textarea class="form-control" 
                                           name="notes" 
@@ -162,11 +163,11 @@
                             <div class="col-12">
                                 <div class="d-flex justify-content-between">
                                     <a href="{% url 'license_list' %}" class="btn btn-secondary">
-                                        <i class="bi bi-x-circle"></i> Cancelar
+                                        <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                                     </a>
                                     <button type="submit" class="btn btn-primary">
                                         <i class="bi bi-check-circle"></i> 
-                                        {% if license %}Actualizar{% else %}Crear{% endif %} Licencia
+                                        {% if license %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Licencia" %}
                                     </button>
                                 </div>
                             </div>

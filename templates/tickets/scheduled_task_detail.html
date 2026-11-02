@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load project_extras %}
 
 {% block title %}{{ task.name }} - Tareas Programadas{% endblock %}
@@ -12,34 +13,34 @@
                 <i class="bi bi-clock-history text-primary"></i>
                 {{ task.name }}
                 {% if task.is_active %}
-                    <span class="badge bg-success ms-2">Activa</span>
+                    <span class="badge bg-success ms-2">{% translate "Activa" %}</span>
                 {% else %}
-                    <span class="badge bg-secondary ms-2">Inactiva</span>
+                    <span class="badge bg-secondary ms-2">{% translate "Inactiva" %}</span>
                 {% endif %}
             </h2>
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'scheduled_task_list' %}">Tareas Programadas</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'scheduled_task_list' %}">{% translate "Tareas Programadas" %}</a></li>
                     <li class="breadcrumb-item active">{{ task.name }}</li>
                 </ol>
             </nav>
         </div>
         <div class="btn-group" role="group">
             <a href="{% url 'scheduled_task_edit' task.pk %}" class="btn btn-warning">
-                <i class="bi bi-pencil"></i> Editar
+                <i class="bi bi-pencil"></i> {% translate "Editar" %}
             </a>
             <a href="{% url 'scheduled_task_toggle_active' task.pk %}" 
                class="btn btn-{% if task.is_active %}secondary{% else %}success{% endif %}">
                 <i class="bi bi-{% if task.is_active %}pause{% else %}play{% endif %}-fill"></i> 
-                {% if task.is_active %}Desactivar{% else %}Activar{% endif %}
+                {% if task.is_active %}{% translate "Desactivar" %}{% else %}{% translate "Activar" %}{% endif %}
             </a>
             <form method="post" action="{% url 'scheduled_task_execute' task.pk %}" 
                   style="display: inline;" 
                   onsubmit="return confirm('¿Ejecutar esta tarea manualmente?')">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-info">
-                    <i class="bi bi-play-circle"></i> Ejecutar
+                    <i class="bi bi-play-circle"></i> {% translate "Ejecutar" %}
                 </button>
             </form>
         </div>
@@ -51,41 +52,41 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-info-circle"></i> Información de la Tarea
+                        <i class="bi bi-info-circle"></i> {% translate "Información de la Tarea" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Configuración</h6>
+                            <h6>{% translate "Configuración" %}</h6>
                             <ul class="list-unstyled">
-                                <li><strong>Frecuencia:</strong> {{ task.frequency }} {{ task.get_frequency_unit_display|lower }}</li>
-                                <li><strong>Estado:</strong> 
+                                <li><strong>{% translate "Frecuencia:" %}</strong> {{ task.frequency }} {{ task.get_frequency_unit_display|lower }}</li>
+                                <li><strong>{% translate "Estado:" %}</strong> 
                                     {% if task.is_active %}
-                                        <span class="badge bg-success">Activa</span>
+                                        <span class="badge bg-success">{% translate "Activa" %}</span>
                                     {% else %}
-                                        <span class="badge bg-secondary">Inactiva</span>
+                                        <span class="badge bg-secondary">{% translate "Inactiva" %}</span>
                                     {% endif %}
                                 </li>
-                                <li><strong>Creada por:</strong> {{ task.created_by.get_full_name|default:task.created_by.username }}</li>
-                                <li><strong>Fecha de creación:</strong> {{ task.created_at|date:"d/m/Y H:i" }}</li>
+                                <li><strong>{% translate "Creada por:" %}</strong> {{ task.created_by.get_full_name|default:task.created_by.username }}</li>
+                                <li><strong>{% translate "Fecha de creación:" %}</strong> {{ task.created_at|date:"d/m/Y H:i" }}</li>
                             </ul>
                         </div>
                         <div class="col-md-6">
-                            <h6>Ejecuciones</h6>
+                            <h6>{% translate "Ejecuciones" %}</h6>
                             <ul class="list-unstyled">
-                                <li><strong>Última ejecución:</strong> 
+                                <li><strong>{% translate "Última ejecución:" %}</strong> 
                                     {% if task.last_execution %}
                                         {{ task.last_execution|date:"d/m/Y H:i" }}
                                     {% else %}
-                                        <span class="text-muted">Nunca</span>
+                                        <span class="text-muted">{% translate "Nunca" %}</span>
                                     {% endif %}
                                 </li>
                                 {% if next_execution %}
-                                    <li><strong>Próxima ejecución:</strong> {{ next_execution|date:"d/m/Y H:i" }}</li>
+                                    <li><strong>{% translate "Próxima ejecución:" %}</strong> {{ next_execution|date:"d/m/Y H:i" }}</li>
                                 {% endif %}
-                                <li><strong>Exitosas:</strong> <span class="badge bg-success">{{ task.success_count }}</span></li>
-                                <li><strong>Con errores:</strong> <span class="badge bg-danger">{{ task.error_count }}</span></li>
+                                <li><strong>{% translate "Exitosas:" %}</strong> <span class="badge bg-success">{{ task.success_count }}</span></li>
+                                <li><strong>{% translate "Con errores:" %}</strong> <span class="badge bg-danger">{{ task.error_count }}</span></li>
                             </ul>
                         </div>
                     </div>
@@ -96,7 +97,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-code-slash"></i> Código de la Tarea
+                        <i class="bi bi-code-slash"></i> {% translate "Código de la Tarea" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -109,7 +110,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-terminal"></i> Último Resultado
+                        <i class="bi bi-terminal"></i> {% translate "Último Resultado" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -125,31 +126,31 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="mb-0">
-                        <i class="bi bi-lightning"></i> Acciones Rápidas
+                        <i class="bi bi-lightning"></i> {% translate "Acciones Rápidas" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         <a href="{% url 'scheduled_task_edit' task.pk %}" class="btn btn-outline-warning btn-sm">
-                            <i class="bi bi-pencil"></i> Editar Tarea
+                            <i class="bi bi-pencil"></i> {% translate "Editar Tarea" %}
                         </a>
                         <a href="{% url 'scheduled_task_toggle_active' task.pk %}" 
                            class="btn btn-outline-{% if task.is_active %}secondary{% else %}success{% endif %} btn-sm">
                             <i class="bi bi-{% if task.is_active %}pause{% else %}play{% endif %}-fill"></i> 
-                            {% if task.is_active %}Desactivar{% else %}Activar{% endif %}
+                            {% if task.is_active %}{% translate "Desactivar" %}{% else %}{% translate "Activar" %}{% endif %}
                         </a>
                         <form method="post" action="{% url 'scheduled_task_execute' task.pk %}" 
                               onsubmit="return confirm('¿Ejecutar esta tarea manualmente?')">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-outline-info btn-sm w-100">
-                                <i class="bi bi-play-circle"></i> Ejecutar Ahora
+                                <i class="bi bi-play-circle"></i> {% translate "Ejecutar Ahora" %}
                             </button>
                         </form>
                         <hr>
                         <a href="{% url 'scheduled_task_delete' task.pk %}" 
                            class="btn btn-outline-danger btn-sm"
                            onclick="return confirm('¿Estás seguro de eliminar esta tarea?')">
-                            <i class="bi bi-trash"></i> Eliminar
+                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                         </a>
                     </div>
                 </div>
@@ -159,14 +160,14 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="mb-0">
-                        <i class="bi bi-graph-up"></i> Estadísticas
+                        <i class="bi bi-graph-up"></i> {% translate "Estadísticas" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     {% with total_executions=task.success_count|add:task.error_count %}
                         <div class="text-center mb-3">
                             <h4 class="text-primary">{{ total_executions }}</h4>
-                            <small class="text-muted">Total de ejecuciones</small>
+                            <small class="text-muted">{% translate "Total de ejecuciones" %}</small>
                         </div>
                         
                         {% if total_executions > 0 %}
@@ -183,14 +184,14 @@
                                 <div class="text-success">
                                     <i class="bi bi-check-circle"></i><br>
                                     <strong>{{ task.success_count }}</strong><br>
-                                    <small>Exitosas</small>
+                                    <small>{% translate "Exitosas" %}</small>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="text-danger">
                                     <i class="bi bi-x-circle"></i><br>
                                     <strong>{{ task.error_count }}</strong><br>
-                                    <small>Errores</small>
+                                    <small>{% translate "Errores" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -205,7 +206,7 @@
     <div class="card">
         <div class="card-header">
             <h5 class="mb-0">
-                <i class="bi bi-clock-history"></i> Historial de Ejecuciones (Últimas 20)
+                <i class="bi bi-clock-history"></i> {% translate "Historial de Ejecuciones (Últimas 20)" %}
             </h5>
         </div>
         <div class="card-body">
@@ -213,10 +214,10 @@
                 <table class="table table-sm">
                     <thead>
                         <tr>
-                            <th>Fecha y Hora</th>
-                            <th>Estado</th>
-                            <th>Tiempo</th>
-                            <th>Resultado</th>
+                            <th>{% translate "Fecha y Hora" %}</th>
+                            <th>{% translate "Estado" %}</th>
+                            <th>{% translate "Tiempo" %}</th>
+                            <th>{% translate "Resultado" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -225,11 +226,11 @@
                             <td>{{ execution.executed_at|date:"d/m/Y H:i:s" }}</td>
                             <td>
                                 {% if execution.status == 'success' %}
-                                    <span class="badge bg-success">Exitosa</span>
+                                    <span class="badge bg-success">{% translate "Exitosa" %}</span>
                                 {% elif execution.status == 'error' %}
-                                    <span class="badge bg-danger">Error</span>
+                                    <span class="badge bg-danger">{% translate "Error" %}</span>
                                 {% elif execution.status == 'timeout' %}
-                                    <span class="badge bg-warning">Timeout</span>
+                                    <span class="badge bg-warning">{% translate "Timeout" %}</span>
                                 {% endif %}
                             </td>
                             <td>

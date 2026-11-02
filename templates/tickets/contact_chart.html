@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% block title %}{{ page_title }}{% endblock %}
 {% block content %}
 <div class="container py-4">
@@ -6,7 +7,7 @@
         <div class="col">
             <h2><i class="bi bi-bar-chart-line text-info"></i> {{ page_title }}</h2>
             <a href="{% url 'contact_list' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver a contactos
+                <i class="bi bi-arrow-left"></i> {% translate "Volver a contactos" %}
             </a>
         </div>
     </div>
@@ -17,20 +18,20 @@
             <div class="card shadow-sm">
                 <div class="card-header bg-white text-dark">
                     <h5 class="mb-0">
-                        <i class="bi bi-graph-up text-primary"></i> Actividad de Creación de Contactos
+                        <i class="bi bi-graph-up text-primary"></i> {% translate "Actividad de Creación de Contactos" %}
                     </h5>
                     <small class="text-muted">{{ activity_total }} contacto{{ activity_total|pluralize }} creado{{ activity_total|pluralize }} en el último año</small>
                 </div>
                 <div class="card-body">
                     <div class="contribution-graph-wrapper">
                         <div class="contribution-legend mb-2 d-flex justify-content-end align-items-center">
-                            <span class="text-muted small me-2">Menos</span>
-                            <span class="contribution-cell level-0" title="0 contactos"></span>
-                            <span class="contribution-cell level-1" title="1-2 contactos"></span>
-                            <span class="contribution-cell level-2" title="3-4 contactos"></span>
-                            <span class="contribution-cell level-3" title="5-6 contactos"></span>
-                            <span class="contribution-cell level-4" title="7+ contactos"></span>
-                            <span class="text-muted small ms-2">Más</span>
+                            <span class="text-muted small me-2">{% translate "Menos" %}</span>
+                            <span class="contribution-cell level-0" title="{% translate '0 contactos' %}"></span>
+                            <span class="contribution-cell level-1" title="{% translate '1-2 contactos' %}"></span>
+                            <span class="contribution-cell level-2" title="{% translate '3-4 contactos' %}"></span>
+                            <span class="contribution-cell level-3" title="{% translate '5-6 contactos' %}"></span>
+                            <span class="contribution-cell level-4" title="{% translate '7+ contactos' %}"></span>
+                            <span class="text-muted small ms-2">{% translate "Más" %}</span>
                         </div>
                         <div class="position-relative">
                             <!-- Etiquetas de meses -->
@@ -39,11 +40,11 @@
                             <div class="d-flex">
                                 <div class="contribution-days me-2">
                                     <div class="day-label"></div>
-                                    <div class="day-label">Lun</div>
+                                    <div class="day-label">{% translate "Lun" %}</div>
                                     <div class="day-label"></div>
-                                    <div class="day-label">Mié</div>
+                                    <div class="day-label">{% translate "Mié" %}</div>
                                     <div class="day-label"></div>
-                                    <div class="day-label">Vie</div>
+                                    <div class="day-label">{% translate "Vie" %}</div>
                                     <div class="day-label"></div>
                                 </div>
                                 <div class="contribution-graph" id="contribution-graph">
@@ -62,24 +63,24 @@
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-calendar-range"></i> Contactos creados
+                        <i class="bi bi-calendar-range"></i> {% translate "Contactos creados" %}
                     </h5>
                     <div class="d-flex gap-2">
                         <form method="get" class="d-inline-block">
                             <input type="hidden" name="time_range" value="{{ time_range|default:'week' }}">
                             <select name="group_by" class="form-select form-select-sm" onchange="this.form.submit()">
-                                <option value="hour" {% if group_by == 'hour' %}selected{% endif %}>Por hora</option>
-                                <option value="day" {% if group_by == 'day' %}selected{% endif %}>Por día</option>
-                                <option value="month" {% if group_by == 'month' %}selected{% endif %}>Por mes</option>
+                                <option value="hour" {% if group_by == 'hour' %}selected{% endif %}>{% translate "Por hora" %}</option>
+                                <option value="day" {% if group_by == 'day' %}selected{% endif %}>{% translate "Por día" %}</option>
+                                <option value="month" {% if group_by == 'month' %}selected{% endif %}>{% translate "Por mes" %}</option>
                             </select>
                         </form>
                         <form method="get" class="d-inline-block">
                             <input type="hidden" name="group_by" value="{{ group_by|default:'day' }}">
                             <select name="time_range" class="form-select form-select-sm" onchange="this.form.submit()">
-                                <option value="week" {% if time_range == 'week' %}selected{% endif %}>Última semana</option>
-                                <option value="month" {% if time_range == 'month' %}selected{% endif %}>Último mes</option>
-                                <option value="year" {% if time_range == 'year' %}selected{% endif %}>Último año</option>
-                                <option value="all" {% if time_range == 'all' %}selected{% endif %}>Todo</option>
+                                <option value="week" {% if time_range == 'week' %}selected{% endif %}>{% translate "Última semana" %}</option>
+                                <option value="month" {% if time_range == 'month' %}selected{% endif %}>{% translate "Último mes" %}</option>
+                                <option value="year" {% if time_range == 'year' %}selected{% endif %}>{% translate "Último año" %}</option>
+                                <option value="all" {% if time_range == 'all' %}selected{% endif %}>{% translate "Todo" %}</option>
                             </select>
                         </form>
                     </div>
@@ -97,7 +98,7 @@
             <div class="card shadow-sm">
                 <div class="card-header bg-white">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-calendar-check text-purple"></i> Reuniones por mes - Comparativa anual
+                        <i class="bi bi-calendar-check text-purple"></i> {% translate "Reuniones por mes - Comparativa anual" %}
                     </h5>
                     <small class="text-muted">
                         <span class="badge bg-primary">{{ current_year }}: {{ total_meetings_current }} reunión{{ total_meetings_current|pluralize:"es" }}</span>

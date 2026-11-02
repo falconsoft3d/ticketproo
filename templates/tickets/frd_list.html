@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -13,11 +14,11 @@
                     <h2>
                         <i class="bi bi-file-earmark-ruled me-2"></i>{{ page_title }}
                     </h2>
-                    <p class="text-muted">Gestiona los Documentos de Requerimientos Funcionales</p>
+                    <p class="text-muted">{% translate "Gestiona los Documentos de Requerimientos Funcionales" %}</p>
                 </div>
                 <div>
                     <a href="{% url 'frd_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle me-1"></i>Nuevo DRF
+                        <i class="bi bi-plus-circle me-1"></i>{% translate "Nuevo DRF" %}
                     </a>
                 </div>
             </div>
@@ -34,15 +35,15 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Secuencia</th>
-                                    <th>Título</th>
-                                    <th>Empresa</th>
-                                    <th>Estado</th>
-                                    <th>Requerimientos</th>
-                                    <th>Aprobación</th>
-                                    <th>Creado por</th>
-                                    <th>Fecha</th>
-                                    <th>Acciones</th>
+                                    <th>{% translate "Secuencia" %}</th>
+                                    <th>{% translate "Título" %}</th>
+                                    <th>{% translate "Empresa" %}</th>
+                                    <th>{% translate "Estado" %}</th>
+                                    <th>{% translate "Requerimientos" %}</th>
+                                    <th>{% translate "Aprobación" %}</th>
+                                    <th>{% translate "Creado por" %}</th>
+                                    <th>{% translate "Fecha" %}</th>
+                                    <th>{% translate "Acciones" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -67,15 +68,15 @@
                                     <td>
                                         {% if document.is_document_accepted %}
                                             <span class="badge bg-success">
-                                                <i class="bi bi-check-circle-fill me-1"></i>Aceptado
+                                                <i class="bi bi-check-circle-fill me-1"></i>{% translate "Aceptado" %}
                                             </span>
                                         {% elif document.is_document_rejected %}
                                             <span class="badge bg-danger">
-                                                <i class="bi bi-x-circle-fill me-1"></i>Rechazado
+                                                <i class="bi bi-x-circle-fill me-1"></i>{% translate "Rechazado" %}
                                             </span>
                                         {% else %}
                                             <span class="badge bg-warning text-dark">
-                                                <i class="bi bi-hourglass-split me-1"></i>Pendiente
+                                                <i class="bi bi-hourglass-split me-1"></i>{% translate "Pendiente" %}
                                             </span>
                                         {% endif %}
                                     </td>
@@ -105,19 +106,19 @@
                                         <div class="btn-group btn-group-sm">
                                             <a href="{% url 'frd_detail' document.pk %}" 
                                                class="btn btn-outline-primary"
-                                               title="Ver detalles">
+                                               title="{% translate 'Ver detalles' %}">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             <a href="{% url 'public_frd' document.public_share_token %}" 
                                                class="btn btn-outline-success"
                                                target="_blank"
-                                               title="Vista pública">
+                                               title="{% translate 'Vista pública' %}">
                                                 <i class="bi bi-share"></i>
                                             </a>
                                             <button type="button" 
                                                     class="btn btn-outline-secondary"
                                                     onclick="copyToClipboard('{{ request.scheme }}://{{ request.get_host }}{% url 'public_frd' document.public_share_token %}')"
-                                                    title="Copiar URL pública">
+                                                    title="{% translate 'Copiar URL pública' %}">
                                                 <i class="bi bi-clipboard"></i>
                                             </button>
                                         </div>
@@ -133,10 +134,10 @@
             <div class="card">
                 <div class="card-body text-center py-5">
                     <i class="bi bi-file-earmark-ruled text-muted" style="font-size: 4rem;"></i>
-                    <h4 class="mt-3 text-muted">No hay documentos DRF</h4>
-                    <p class="text-muted">Comienza creando tu primer Documento de Requerimientos Funcionales</p>
+                    <h4 class="mt-3 text-muted">{% translate "No hay documentos DRF" %}</h4>
+                    <p class="text-muted">{% translate "Comienza creando tu primer Documento de Requerimientos Funcionales" %}</p>
                     <a href="{% url 'frd_create' %}" class="btn btn-primary mt-3">
-                        <i class="bi bi-plus-circle me-1"></i>Crear Primer DRF
+                        <i class="bi bi-plus-circle me-1"></i>{% translate "Crear Primer DRF" %}
                     </a>
                 </div>
             </div>

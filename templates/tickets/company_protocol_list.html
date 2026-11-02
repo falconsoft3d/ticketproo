@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -6,23 +7,23 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
                     <a href="{% url 'dashboard' %}">
-                        <i class="bi bi-house"></i> Dashboard
+                        <i class="bi bi-house"></i> {% translate "Dashboard" %}
                     </a>
                 </li>
                 <li class="breadcrumb-item active">{{ page_title }}</li>
             </ol>
         </nav>
         <h2><i class="bi bi-file-text"></i> {{ page_title }}</h2>
-        <p class="text-muted">Gestión de protocolos y políticas empresariales</p>
+        <p class="text-muted">{% translate "Gestión de protocolos y políticas empresariales" %}</p>
     </div>
     
     <div class="btn-group" role="group">
         <a href="{% url 'company_protocol_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Nuevo Protocolo
+            <i class="bi bi-plus-circle"></i> {% translate "Nuevo Protocolo" %}
         </a>
     </div>
 </div>
@@ -35,7 +36,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h4 class="mb-0">{{ protocols.count }}</h4>
-                        <small>Total de protocolos</small>
+                        <small>{% translate "Total de protocolos" %}</small>
                     </div>
                     <i class="bi bi-file-text" style="font-size: 2rem; opacity: 0.7;"></i>
                 </div>
@@ -48,7 +49,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h4 class="mb-0" id="public-protocols-count">-</h4>
-                        <small>Protocolos públicos</small>
+                        <small>{% translate "Protocolos públicos" %}</small>
                     </div>
                     <i class="bi bi-globe" style="font-size: 2rem; opacity: 0.7;"></i>
                 </div>
@@ -61,7 +62,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h4 class="mb-0" id="total-public-views">-</h4>
-                        <small>Vistas públicas totales</small>
+                        <small>{% translate "Vistas públicas totales" %}</small>
                     </div>
                     <i class="bi bi-eye" style="font-size: 2rem; opacity: 0.7;"></i>
                 </div>
@@ -74,7 +75,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h4 class="mb-0" id="avg-views-per-protocol">-</h4>
-                        <small>Promedio vistas/protocolo</small>
+                        <small>{% translate "Promedio vistas/protocolo" %}</small>
                     </div>
                     <i class="bi bi-bar-chart" style="font-size: 2rem; opacity: 0.7;"></i>
                 </div>
@@ -87,27 +88,27 @@
 <div class="card mb-4">
     <div class="card-header">
         <h6 class="mb-0">
-            <i class="bi bi-funnel"></i> Filtros y Búsqueda
+            <i class="bi bi-funnel"></i> {% translate "Filtros y Búsqueda" %}
         </h6>
     </div>
     <div class="card-body">
         <form method="get" class="row g-3">
             <div class="col-md-6">
-                <label for="search" class="form-label">Buscar</label>
+                <label for="search" class="form-label">{% translate "Buscar" %}</label>
                 <input type="text" class="form-control" id="search" name="search" 
-                       value="{{ search }}" placeholder="Buscar por título o contenido...">
+                       value="{{ search }}" placeholder="{% translate 'Buscar por título o contenido...' %}">
             </div>
             <div class="col-md-4">
-                <label for="active" class="form-label">Estado</label>
+                <label for="active" class="form-label">{% translate "Estado" %}</label>
                 <select class="form-select" id="active" name="active">
-                    <option value="all" {% if active_filter == 'all' %}selected{% endif %}>Todos</option>
-                    <option value="active" {% if active_filter == 'active' %}selected{% endif %}>Activos</option>
-                    <option value="inactive" {% if active_filter == 'inactive' %}selected{% endif %}>Inactivos</option>
+                    <option value="all" {% if active_filter == 'all' %}selected{% endif %}>{% translate "Todos" %}</option>
+                    <option value="active" {% if active_filter == 'active' %}selected{% endif %}>{% translate "Activos" %}</option>
+                    <option value="inactive" {% if active_filter == 'inactive' %}selected{% endif %}>{% translate "Inactivos" %}</option>
                 </select>
             </div>
             <div class="col-md-2 d-flex align-items-end">
                 <button type="submit" class="btn btn-outline-primary w-100">
-                    <i class="bi bi-search"></i> Buscar
+                    <i class="bi bi-search"></i> {% translate "Buscar" %}
                 </button>
             </div>
         </form>
@@ -146,14 +147,14 @@
                     <div><i class="bi bi-file-word"></i> {{ protocol.get_word_count }} palabras</div>
                     {% if protocol.is_public %}
                         <div class="text-success">
-                            <i class="bi bi-globe"></i> Público 
+                            <i class="bi bi-globe"></i> {% translate "Público" %} 
                             <span class="badge bg-success ms-1">
                                 <i class="bi bi-eye"></i> {{ protocol.public_views_count }}
                             </span>
                         </div>
                     {% elif protocol.public_views_count > 0 %}
                         <div class="text-muted">
-                            <i class="bi bi-lock"></i> Privado 
+                            <i class="bi bi-lock"></i> {% translate "Privado" %} 
                             <span class="badge bg-secondary ms-1">
                                 <i class="bi bi-eye"></i> {{ protocol.public_views_count }} (histórico)
                             </span>
@@ -163,26 +164,26 @@
                 
                 {% if not protocol.is_active %}
                 <div class="alert alert-warning alert-sm py-1 px-2 mb-3">
-                    <small><i class="bi bi-exclamation-triangle"></i> Protocolo inactivo</small>
+                    <small><i class="bi bi-exclamation-triangle"></i> {% translate "Protocolo inactivo" %}</small>
                 </div>
                 {% endif %}
             </div>
             <div class="card-footer">
                 <div class="btn-group w-100" role="group">
                     <a href="{% url 'company_protocol_detail' protocol.pk %}" 
-                       class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                       class="btn btn-sm btn-outline-primary" title="{% translate 'Ver detalle' %}">
                         <i class="bi bi-eye"></i>
                     </a>
                     <a href="{% url 'company_protocol_edit' protocol.pk %}" 
-                       class="btn btn-sm btn-outline-secondary" title="Editar">
+                       class="btn btn-sm btn-outline-secondary" title="{% translate 'Editar' %}">
                         <i class="bi bi-pencil"></i>
                     </a>
                     <a href="{% url 'company_protocol_print_pdf' protocol.pk %}" 
-                       class="btn btn-sm btn-outline-success" title="Imprimir PDF">
+                       class="btn btn-sm btn-outline-success" title="{% translate 'Imprimir PDF' %}">
                         <i class="bi bi-printer"></i>
                     </a>
                     <button type="button" class="btn btn-sm btn-outline-danger" 
-                            onclick="confirmDelete({{ protocol.pk }}, '{{ protocol.title|escapejs }}')" title="Eliminar">
+                            onclick="confirmDelete({{ protocol.pk }}, '{{ protocol.title|escapejs }}')" title="{% translate 'Eliminar' %}">
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
@@ -193,7 +194,7 @@
 </div>
 
 <!-- Paginación si es necesaria -->
-<nav aria-label="Paginación de protocolos" class="mt-4">
+<nav aria-label="{% translate 'Paginación de protocolos' %}" class="mt-4">
     <div class="d-flex justify-content-center">
         <small class="text-muted">Mostrando {{ protocols.count }} protocolo{{ protocols.count|pluralize }}</small>
     </div>
@@ -202,10 +203,10 @@
 {% else %}
 <div class="text-center py-5">
     <i class="bi bi-file-text" style="font-size: 4rem; color: #ddd;"></i>
-    <h4 class="mt-3">No hay protocolos registrados</h4>
-    <p class="text-muted">Comienza creando tu primer protocolo empresarial.</p>
+    <h4 class="mt-3">{% translate "No hay protocolos registrados" %}</h4>
+    <p class="text-muted">{% translate "Comienza creando tu primer protocolo empresarial." %}</p>
     <a href="{% url 'company_protocol_create' %}" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Crear Primer Protocolo
+        <i class="bi bi-plus-circle"></i> {% translate "Crear Primer Protocolo" %}
     </a>
 </div>
 {% endif %}
@@ -215,16 +216,16 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <h5 class="modal-title">{% translate "Confirmar Eliminación" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>¿Estás seguro de que deseas eliminar el protocolo <strong id="protocolName"></strong>?</p>
-                <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
+                <p>{% translate "¿Estás seguro de que deseas eliminar el protocolo" %} <strong id="protocolName"></strong>?</p>
+                <p class="text-danger"><small>{% translate "Esta acción no se puede deshacer." %}</small></p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <a href="#" id="deleteConfirmBtn" class="btn btn-danger">Eliminar</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
+                <a href="#" id="deleteConfirmBtn" class="btn btn-danger">{% translate "Eliminar" %}</a>
             </div>
         </div>
     </div>

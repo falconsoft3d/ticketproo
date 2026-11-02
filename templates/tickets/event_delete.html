@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -16,23 +17,23 @@
                 <div class="card-body">
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-circle"></i>
-                        ¿Estás seguro de que deseas eliminar este evento?
+                        {% translate "¿Estás seguro de que deseas eliminar este evento?" %}
                     </div>
 
                     <div class="card mb-3">
                         <div class="card-body">
                             <h5 class="card-title">{{ event.title }}</h5>
                             <p class="card-text">
-                                <strong><i class="bi bi-calendar"></i> Fecha:</strong> {{ event.event_date|date:"d/m/Y H:i" }}
+                                <strong><i class="bi bi-calendar"></i> {% translate "Fecha:" %}</strong> {{ event.event_date|date:"d/m/Y H:i" }}
                             </p>
                             {% if event.location %}
                             <p class="card-text">
-                                <strong><i class="bi bi-geo-alt"></i> Ubicación:</strong> {{ event.location }}
+                                <strong><i class="bi bi-geo-alt"></i> {% translate "Ubicación:" %}</strong> {{ event.location }}
                             </p>
                             {% endif %}
                             {% if event.description %}
                             <p class="card-text">
-                                <strong><i class="bi bi-file-text"></i> Descripción:</strong><br>
+                                <strong><i class="bi bi-file-text"></i> {% translate "Descripción:" %}</strong><br>
                                 {{ event.description|truncatewords:30 }}
                             </p>
                             {% endif %}
@@ -43,10 +44,10 @@
                         {% csrf_token %}
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'event_calendar' %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Confirmar Eliminación
+                                <i class="bi bi-trash"></i> {% translate "Confirmar Eliminación" %}
                             </button>
                         </div>
                     </form>

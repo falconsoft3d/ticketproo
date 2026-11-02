@@ -1,10 +1,11 @@
+{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subir Factura OCR</title>
+    <title>{% translate "Subir Factura OCR" %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <style>
@@ -61,8 +62,8 @@
 <body>
     <div class="upload-container">
         <div class="text-center mb-4">
-            <h2><i class="bi bi-receipt"></i> Subir Factura</h2>
-            <p class="text-muted">Escanea o selecciona la imagen de tu factura</p>
+            <h2><i class="bi bi-receipt"></i> {% translate "Subir Factura" %}</h2>
+            <p class="text-muted">{% translate "Escanea o selecciona la imagen de tu factura" %}</p>
         </div>
 
         {% if messages %}
@@ -81,28 +82,28 @@
                 <input type="file" name="image" id="image" accept="image/*" capture="environment" required onchange="previewImage(this)">
                 <label for="image" class="file-input-label">
                     <i class="bi bi-camera-fill camera-icon"></i>
-                    <p class="mb-0 mt-2"><strong>Toca para escanear o seleccionar</strong></p>
-                    <small class="text-muted">Acepta imágenes JPG, PNG</small>
+                    <p class="mb-0 mt-2"><strong>{% translate "Toca para escanear o seleccionar" %}</strong></p>
+                    <small class="text-muted">{% translate "Acepta imágenes JPG, PNG" %}</small>
                 </label>
             </div>
 
             <div id="imagePreview" class="text-center" style="display: none;">
                 <img id="preview" class="preview-image" alt="Vista previa">
                 <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="clearImage()">
-                    <i class="bi bi-x-circle"></i> Cambiar imagen
+                    <i class="bi bi-x-circle"></i> {% translate "Cambiar imagen" %}
                 </button>
             </div>
 
             <div class="d-grid gap-2 mt-3">
                 <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="bi bi-cloud-upload"></i> Subir Factura
+                    <i class="bi bi-cloud-upload"></i> {% translate "Subir Factura" %}
                 </button>
             </div>
         </form>
 
         {% if invoice.image %}
         <div class="mt-4">
-            <h6>Factura Actual:</h6>
+            <h6>{% translate "Factura Actual:" %}</h6>
             <img src="{{ invoice.image.url }}" class="preview-image" alt="Factura actual">
         </div>
         {% endif %}

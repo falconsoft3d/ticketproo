@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -32,20 +33,20 @@
             <h2><i class="bi bi-{% if asset %}pencil{% else %}plus-circle{% endif %} text-primary"></i> {{ title }}</h2>
             <p class="text-muted">
                 {% if asset %}
-                    Editar información del activo existente
+                    {% translate "Editar información del activo existente" %}
                 {% else %}
-                    Agregar un nuevo activo al sistema
+                    {% translate "Agregar un nuevo activo al sistema" %}
                 {% endif %}
             </p>
         </div>
         <div>
             {% if asset %}
                 <a href="{% url 'asset_detail' asset.pk %}" class="btn btn-outline-secondary me-2">
-                    <i class="bi bi-arrow-left"></i> Volver al Detalle
+                    <i class="bi bi-arrow-left"></i> {% translate "Volver al Detalle" %}
                 </a>
             {% endif %}
             <a href="{% url 'asset_list' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-list"></i> Lista de Activos
+                <i class="bi bi-list"></i> {% translate "Lista de Activos" %}
             </a>
         </div>
     </div>
@@ -58,7 +59,7 @@
                     
                     <!-- Información Básica -->
                     <h5 class="section-header">
-                        <i class="bi bi-info-circle"></i> Información Básica
+                        <i class="bi bi-info-circle"></i> {% translate "Información Básica" %}
                     </h5>
                     
                     <div class="row">
@@ -106,7 +107,7 @@
                                 {% if form.serial_number.errors %}
                                     <div class="text-danger small">{{ form.serial_number.errors }}</div>
                                 {% endif %}
-                                <div class="form-text">Debe ser único en el sistema</div>
+                                <div class="form-text">{% translate "Debe ser único en el sistema" %}</div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -124,7 +125,7 @@
 
                     <!-- Estado y Asignación -->
                     <h5 class="section-header">
-                        <i class="bi bi-gear"></i> Estado y Asignación
+                        <i class="bi bi-gear"></i> {% translate "Estado y Asignación" %}
                     </h5>
 
                     <div class="row">
@@ -148,14 +149,14 @@
                                 {% if form.assigned_to.errors %}
                                     <div class="text-danger small">{{ form.assigned_to.errors }}</div>
                                 {% endif %}
-                                <div class="form-text">Solo empleados activos</div>
+                                <div class="form-text">{% translate "Solo empleados activos" %}</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Información Financiera -->
                     <h5 class="section-header">
-                        <i class="bi bi-currency-dollar"></i> Información Financiera
+                        <i class="bi bi-currency-dollar"></i> {% translate "Información Financiera" %}
                     </h5>
 
                     <div class="row">
@@ -199,7 +200,7 @@
 
                     <!-- Notas Adicionales -->
                     <h5 class="section-header">
-                        <i class="bi bi-chat-text"></i> Información Adicional
+                        <i class="bi bi-chat-text"></i> {% translate "Información Adicional" %}
                     </h5>
 
                     <div class="mb-4">
@@ -210,7 +211,7 @@
                         {% if form.notes.errors %}
                             <div class="text-danger small">{{ form.notes.errors }}</div>
                         {% endif %}
-                        <div class="form-text">Información adicional sobre el activo</div>
+                        <div class="form-text">{% translate "Información adicional sobre el activo" %}</div>
                     </div>
 
                     <!-- Errores no de campo -->
@@ -224,7 +225,7 @@
                     <div class="d-flex justify-content-end gap-2">
                         <a href="{% if asset %}{% url 'asset_detail' asset.pk %}{% else %}{% url 'asset_list' %}{% endif %}" 
                            class="btn btn-outline-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
+                            <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                         </a>
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-{% if asset %}check-circle{% else %}plus-circle{% endif %}"></i> 

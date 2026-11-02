@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -279,71 +280,69 @@
         
         <h1 class="success-title">¡Gracias, {{ submission.nombre }}!</h1>
         <p class="success-subtitle">
-            Hemos recibido tu solicitud de información sobre <strong>{{ landing_page.nombre_producto }}</strong>. 
-            Nuestro equipo se pondrá en contacto contigo muy pronto.
+            {% translate "Hemos recibido tu solicitud de información sobre" %} <strong>{{ landing_page.nombre_producto }}</strong>{% translate ". Nuestro equipo se pondrá en contacto contigo muy pronto." %}
         </p>
         
         <div class="customer-info">
-            <h5><i class="fas fa-user-check me-2"></i>Información Recibida</h5>
+            <h5><i class="fas fa-user-check me-2"></i>{% translate "Información Recibida" %}</h5>
             <div class="info-item">
-                <span class="info-label">Nombre:</span>
+                <span class="info-label">{% translate "Nombre:" %}</span>
                 <span class="info-value">{{ submission.nombre }} {{ submission.apellido }}</span>
             </div>
             <div class="info-item">
-                <span class="info-label">Email:</span>
+                <span class="info-label">{% translate "Email:" %}</span>
                 <span class="info-value">{{ submission.email }}</span>
             </div>
             {% if submission.telefono %}
             <div class="info-item">
-                <span class="info-label">Teléfono:</span>
+                <span class="info-label">{% translate "Teléfono:" %}</span>
                 <span class="info-value">{{ submission.telefono }}</span>
             </div>
             {% endif %}
             {% if submission.empresa %}
             <div class="info-item">
-                <span class="info-label">Empresa:</span>
+                <span class="info-label">{% translate "Empresa:" %}</span>
                 <span class="info-value">{{ submission.empresa }}</span>
             </div>
             {% endif %}
             <div class="info-item">
-                <span class="info-label">Fecha:</span>
+                <span class="info-label">{% translate "Fecha:" %}</span>
                 <span class="info-value">{{ submission.created_at|date:"d/m/Y H:i" }}</span>
             </div>
         </div>
         
         <div class="next-steps">
-            <h5><i class="fas fa-route me-2"></i>Próximos Pasos</h5>
+            <h5><i class="fas fa-route me-2"></i>{% translate "Próximos Pasos" %}</h5>
             <ul>
-                <li>Revisaremos tu solicitud en las próximas 2 horas</li>
-                <li>Te contactaremos por email o teléfono</li>
-                <li>Te enviaremos información detallada personalizada</li>
-                <li>Programaremos una demo si es necesario</li>
+                <li>{% translate "Revisaremos tu solicitud en las próximas 2 horas" %}</li>
+                <li>{% translate "Te contactaremos por email o teléfono" %}</li>
+                <li>{% translate "Te enviaremos información detallada personalizada" %}</li>
+                <li>{% translate "Programaremos una demo si es necesario" %}</li>
             </ul>
         </div>
         
         <div class="alert alert-info">
             <i class="fas fa-envelope me-2"></i>
-            <strong>Revisa tu bandeja de entrada:</strong> Te hemos enviado un email de confirmación. 
-            Si no lo ves, revisa tu carpeta de spam.
+            <strong>{% translate "Revisa tu bandeja de entrada:" %}</strong> {% translate "Te hemos enviado un email de confirmación. Si no lo ves, revisa tu carpeta de spam." %}
         </div>
         
         <div class="social-share">
-            <h6><i class="fas fa-share-alt me-2"></i>¿Conoces a alguien que pueda estar interesado?</h6>
+            <h6><i class="fas fa-share-alt me-2"></i>{% translate "¿Conoces a alguien que pueda estar interesado?" %}</h6>
             <div class="social-buttons">
                 <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" 
-                   class="social-btn facebook" target="_blank" title="Compartir en Facebook">
+                   class="social-btn facebook" target="_blank" title="{% translate 'Compartir en Facebook' %}">
                     <i class="fab fa-facebook-f"></i>
                 </a>
                 <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text=Descubrí {{ landing_page.nombre_producto }}" 
-                   class="social-btn twitter" target="_blank" title="Compartir en Twitter">
+                   class="social-btn twitter" target="_blank" title="{% translate 'Compartir en Twitter' %}">
                     <i class="fab fa-twitter"></i>
                 </a>
                 <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}" 
-                   class="social-btn linkedin" target="_blank" title="Compartir en LinkedIn">
+                   class="social-btn linkedin" target="_blank" title="{% translate 'Compartir en LinkedIn' %}">
                     <i class="fab fa-linkedin-in"></i>
                 </a>
                 <a href="https://wa.me/?text=Te recomiendo {{ landing_page.nombre_producto }} - {{ request.build_absolute_uri }}" 
-                   class="social-btn whatsapp" target="_blank" title="Compartir en WhatsApp">
+                   class="social-btn whatsapp" target="_blank" title="{% translate 'Compartir en WhatsApp' %}">
                     <i class="fab fa-whatsapp"></i>
                 </a>
             </div>
@@ -352,7 +351,7 @@
         <div class="mt-4 text-muted">
             <small>
                 <i class="fas fa-shield-alt me-1"></i>
-                Tus datos están seguros y no serán compartidos con terceros.
+                {% translate "Tus datos están seguros y no serán compartidos con terceros." %}
             </small>
         </div>
     </div>

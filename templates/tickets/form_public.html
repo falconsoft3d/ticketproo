@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -258,19 +259,19 @@
                                 <div class="mb-4">
                                     <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
                                 </div>
-                                <h2 class="text-success mb-3">¡Formulario Enviado Exitosamente!</h2>
+                                <h2 class="text-success mb-3">{% translate "¡Formulario Enviado Exitosamente!" %}</h2>
                                 <p class="lead text-muted mb-4">
-                                    Gracias por su participación. Sus respuestas han sido registradas correctamente.
+                                    {% translate "Gracias por su participación. Sus respuestas han sido registradas correctamente." %}
                                 </p>
                                 <div class="alert alert-info d-inline-block">
-                                    <i class="bi bi-info-circle"></i> ¡Respuesta registrada exitosamente!
+                                    <i class="bi bi-info-circle"></i> {% translate "¡Respuesta registrada exitosamente!" %}
                                 </div>
                                 <div class="mt-4 d-flex gap-2 justify-content-center">
                                     <a href="{% url 'form_public' form_obj.public_token %}" class="btn btn-primary btn-submit">
-                                        <i class="bi bi-arrow-clockwise"></i> Responder Nuevamente
+                                        <i class="bi bi-arrow-clockwise"></i> {% translate "Responder Nuevamente" %}
                                     </a>
                                     <button onclick="reloadPage()" class="btn btn-outline-primary">
-                                        <i class="bi bi-arrow-repeat"></i> Recargar Página
+                                        <i class="bi bi-arrow-repeat"></i> {% translate "Recargar Página" %}
                                     </button>
                                 </div>
                             </div>
@@ -280,14 +281,14 @@
                                 {% csrf_token %}
                                 <!-- Información del encuestado -->
                                 <div class="question-card p-4 mb-4">
-                                    <h5 class="mb-3"><i class="bi bi-person"></i> Información Personal</h5>
+                                    <h5 class="mb-3"><i class="bi bi-person"></i> {% translate "Información Personal" %}</h5>
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label fw-bold">{{ form.respondent_name.label }}</label>
                                             <input type="text" name="{{ form.respondent_name.name }}" 
                                                    class="form-control required" 
                                                    value="{{ form.respondent_name.value|default:'' }}"
-                                                   placeholder="Tu nombre completo">
+                                                   placeholder="{% translate 'Tu nombre completo' %}">
                                             {% if form.respondent_name.errors %}
                                                 <div class="text-danger small mt-1">{{ form.respondent_name.errors }}</div>
                                             {% endif %}
@@ -332,14 +333,14 @@
                                                    class="form-control form-control-lg mt-2" 
                                                    value="{{ field.value|default:'' }}"
                                                    {% if field.field.required %}required{% endif %}
-                                                   placeholder="Ingresa un número">
+                                                   placeholder="{% translate 'Ingresa un número' %}">
                                         {% elif field.field.widget.input_type == 'text' %}
                                             <input type="text" 
                                                    name="{{ field.name }}" 
                                                    class="form-control form-control-lg mt-2" 
                                                    value="{{ field.value|default:'' }}"
                                                    {% if field.field.required %}required{% endif %}
-                                                   placeholder="Escribe tu respuesta">
+                                                   placeholder="{% translate 'Escribe tu respuesta' %}">
                                         {% elif field.field.widget.input_type == 'textarea' or 'Textarea' in field|field_type %}
                                             <textarea name="{{ field.name }}" 
                                                       class="form-control form-control-lg mt-2" 
@@ -365,15 +366,15 @@
                                 {% endfor %}
                                 <div class="text-center">
                                     <button type="submit" class="btn btn-primary btn-submit">
-                                        <i class="bi bi-send"></i> Enviar Respuestas
+                                        <i class="bi bi-send"></i> {% translate "Enviar Respuestas" %}
                                     </button>
                                 </div>
                             </form>
                         {% else %}
                             <div class="text-center py-5">
                                 <i class="bi bi-exclamation-triangle display-4 text-warning"></i>
-                                <h4 class="text-warning mt-3">Formulario en Construcción</h4>
-                                <p class="text-muted">Este formulario aún no tiene preguntas configuradas.</p>
+                                <h4 class="text-warning mt-3">{% translate "Formulario en Construcción" %}</h4>
+                                <p class="text-muted">{% translate "Este formulario aún no tiene preguntas configuradas." %}</p>
                             </div>
                         {% endif %}
                     </div>
@@ -381,7 +382,7 @@
                     <!-- Footer -->
                     <div class="bg-light p-3 text-center">
                         <small class="text-muted">
-                            <i class="bi bi-shield-check"></i> Sus respuestas son confidenciales y seguras
+                            <i class="bi bi-shield-check"></i> {% translate "Sus respuestas son confidenciales y seguras" %}
                         </small>
                     </div>
                 </div>

@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load crm_tags %}
 
-{% block title %}{% if opportunity %}Editar{% else %}Nueva{% endif %} Oportunidad - TicketProo{% endblock %}
+{% block title %}{% if opportunity %}{% translate "Editar" %}{% else %}{% translate "Nueva" %}{% endif %} {% translate "Oportunidad - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -11,7 +12,7 @@
                 <div class="card-header">
                     <h4 class="mb-0">
                         <i class="bi bi-{% if opportunity %}pencil{% else %}plus-circle{% endif %} text-primary"></i>
-                        {% if opportunity %}Editar Oportunidad{% else %}Nueva Oportunidad{% endif %}
+                        {% if opportunity %}{% translate "Editar Oportunidad" %}{% else %}{% translate "Nueva Oportunidad" %}{% endif %}
                     </h4>
                 </div>
                 <div class="card-body">
@@ -21,7 +22,7 @@
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label for="name" class="form-label">
-                                    <i class="bi bi-card-text"></i> Nombre de la Oportunidad *
+                                    <i class="bi bi-card-text"></i> {% translate "Nombre de la Oportunidad *" %}
                                 </label>
                                 <input type="text" class="form-control" id="name" name="name" 
                                        value="{{ opportunity.name|default:'' }}" required>
@@ -31,10 +32,10 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="company" class="form-label">
-                                    <i class="bi bi-building"></i> Empresa *
+                                    <i class="bi bi-building"></i> {% translate "Empresa *" %}
                                 </label>
                                 <select class="form-select" id="company" name="company" required>
-                                    <option value="">Seleccionar empresa...</option>
+                                    <option value="">{% translate "Seleccionar empresa..." %}</option>
                                     {% for company in companies %}
                                     <option value="{{ company.pk }}" 
                                             {% if opportunity %}
@@ -49,10 +50,10 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="status" class="form-label">
-                                    <i class="bi bi-kanban"></i> Estado *
+                                    <i class="bi bi-kanban"></i> {% translate "Estado *" %}
                                 </label>
                                 <select class="form-select" id="status" name="status" required>
-                                    <option value="">Seleccionar estado...</option>
+                                    <option value="">{% translate "Seleccionar estado..." %}</option>
                                     {% for status in statuses %}
                                     <option value="{{ status.pk }}" 
                                             {% if opportunity %}
@@ -71,7 +72,7 @@
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label for="description" class="form-label">
-                                    <i class="bi bi-text-paragraph"></i> Descripción
+                                    <i class="bi bi-text-paragraph"></i> {% translate "Descripción" %}
                                 </label>
                                 <textarea class="form-control" id="description" name="description" 
                                           rows="3">{{ opportunity.description|default:'' }}</textarea>
@@ -81,29 +82,29 @@
                         <div class="row">
                             <div class="col-md-3 mb-3">
                                 <label for="contact_name" class="form-label">
-                                    <i class="bi bi-person"></i> Contacto Principal *
+                                    <i class="bi bi-person"></i> {% translate "Contacto Principal *" %}
                                 </label>
                                 <input type="text" class="form-control" id="contact_name" name="contact_name" 
                                        value="{% if opportunity %}{{ opportunity.contact_name }}{% else %}{{ contact_data.contact_name|default:'' }}{% endif %}" required>
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="contact_position" class="form-label">
-                                    <i class="bi bi-briefcase"></i> Cargo del Contacto
+                                    <i class="bi bi-briefcase"></i> {% translate "Cargo del Contacto" %}
                                 </label>
                                 <input type="text" class="form-control" id="contact_position" name="contact_position" 
                                        value="{% if opportunity %}{{ opportunity.contact_position }}{% else %}{{ contact_data.contact_position|default:'' }}{% endif %}" 
-                                       placeholder="Director, Gerente, etc.">
+                                       placeholder="{% translate 'Director, Gerente, etc.' %}">
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="contact_email" class="form-label">
-                                    <i class="bi bi-envelope"></i> Email de Contacto
+                                    <i class="bi bi-envelope"></i> {% translate "Email de Contacto" %}
                                 </label>
                                 <input type="email" class="form-control" id="contact_email" name="contact_email" 
                                        value="{% if opportunity %}{{ opportunity.contact_email }}{% else %}{{ contact_data.contact_email|default:'' }}{% endif %}">
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="contact_phone" class="form-label">
-                                    <i class="bi bi-telephone"></i> Teléfono de Contacto
+                                    <i class="bi bi-telephone"></i> {% translate "Teléfono de Contacto" %}
                                 </label>
                                 <input type="tel" class="form-control" id="contact_phone" name="contact_phone" 
                                        value="{% if opportunity %}{{ opportunity.contact_phone }}{% else %}{{ contact_data.contact_phone|default:'' }}{% endif %}">
@@ -113,7 +114,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="value" class="form-label">
-                                    {% get_currency_icon %} Valor Estimado *
+                                    {% get_currency_icon %} {% translate "Valor Estimado *" %}
                                 </label>
                                 <div class="input-group">
                                     <span class="input-group-text">{% get_currency_symbol %}</span>
@@ -124,7 +125,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="probability" class="form-label">
-                                    <i class="bi bi-percent"></i> Probabilidad de Cierre
+                                    <i class="bi bi-percent"></i> {% translate "Probabilidad de Cierre" %}
                                 </label>
                                 <select class="form-select" id="probability" name="probability">
                                     {% for value, label in probability_choices %}
@@ -145,17 +146,17 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="expected_close_date" class="form-label">
-                                    <i class="bi bi-calendar-event"></i> Fecha Estimada de Cierre *
+                                    <i class="bi bi-calendar-event"></i> {% translate "Fecha Estimada de Cierre *" %}
                                 </label>
                                 <input type="date" class="form-control" id="expected_close_date" name="expected_close_date" 
                                        value="{% if opportunity %}{{ opportunity.expected_close_date|date:'Y-m-d' }}{% else %}{{ default_close_date }}{% endif %}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="assigned_to" class="form-label">
-                                    <i class="bi bi-person-check"></i> Asignado a
+                                    <i class="bi bi-person-check"></i> {% translate "Asignado a" %}
                                 </label>
                                 <select class="form-select" id="assigned_to" name="assigned_to">
-                                    <option value="">Sin asignar</option>
+                                    <option value="">{% translate "Sin asignar" %}</option>
                                     {% for user in users %}
                                     <option value="{{ user.pk }}" 
                                             {% if opportunity %}
@@ -173,11 +174,11 @@
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label for="source" class="form-label">
-                                    <i class="bi bi-arrow-down-circle"></i> Fuente/Origen
+                                    <i class="bi bi-arrow-down-circle"></i> {% translate "Fuente/Origen" %}
                                 </label>
                                 <input type="text" class="form-control" id="source" name="source" 
                                        value="{% if opportunity %}{{ opportunity.source }}{% else %}{{ contact_data.source|default:'' }}{% endif %}" 
-                                       placeholder="¿Cómo se originó esta oportunidad?">
+                                       placeholder="{% translate '¿Cómo se originó esta oportunidad?' %}">
                             </div>
                         </div>
 
@@ -186,7 +187,7 @@
                         <div class="row" id="status-comment-section" style="display: none;">
                             <div class="col-md-12 mb-3">
                                 <label for="status_comment" class="form-label">
-                                    <i class="bi bi-chat-square-text"></i> Comentario del Cambio de Estado
+                                    <i class="bi bi-chat-square-text"></i> {% translate "Comentario del Cambio de Estado" %}
                                 </label>
                                 <textarea class="form-control" id="status_comment" name="status_comment" 
                                           rows="2" placeholder="Razón del cambio de estado (opcional)"></textarea>
@@ -197,11 +198,11 @@
                         <div class="d-flex justify-content-between">
                             <a href="{% if opportunity %}{% url 'opportunity_detail' opportunity.pk %}{% else %}{% url 'opportunity_list' %}{% endif %}" 
                                class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i>
-                                {% if opportunity %}Actualizar{% else %}Crear{% endif %} Oportunidad
+                                {% if opportunity %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Oportunidad" %}
                             </button>
                         </div>
                     </form>

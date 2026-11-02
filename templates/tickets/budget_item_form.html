@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -20,7 +21,7 @@
                         
                         <div class="mb-3">
                             <label for="{{ form.name.id_for_label }}" class="form-label">
-                                <i class="bi bi-tag me-1"></i>Nombre de la Partida
+                                <i class="bi bi-tag me-1"></i>{% translate "Nombre de la Partida" %}
                             </label>
                             {{ form.name }}
                             {% if form.name.errors %}
@@ -32,7 +33,7 @@
                         
                         <div class="mb-3">
                             <label for="{{ form.budgeted_amount.id_for_label }}" class="form-label">
-                                <i class="bi bi-currency-dollar me-1"></i>Monto Presupuestado
+                                <i class="bi bi-currency-dollar me-1"></i>{% translate "Monto Presupuestado" %}
                             </label>
                             {{ form.budgeted_amount }}
                             {% if form.budgeted_amount.errors %}
@@ -40,12 +41,12 @@
                                     {{ form.budgeted_amount.errors }}
                                 </div>
                             {% endif %}
-                            <small class="form-text text-muted">Ingresa el monto que esperas {% if item_type == 'ingreso' %}recibir{% else %}gastar{% endif %}</small>
+                            <small class="form-text text-muted">{% translate "Ingresa el monto que esperas" %} {% if item_type == 'ingreso' %}{% translate "recibir" %}{% else %}{% translate "gastar" %}{% endif %}</small>
                         </div>
                         
                         <div class="mb-3">
                             <label for="{{ form.order.id_for_label }}" class="form-label">
-                                <i class="bi bi-sort-numeric-down me-1"></i>Orden
+                                <i class="bi bi-sort-numeric-down me-1"></i>{% translate "Orden" %}
                             </label>
                             {{ form.order }}
                             {% if form.order.errors %}
@@ -53,15 +54,15 @@
                                     {{ form.order.errors }}
                                 </div>
                             {% endif %}
-                            <small class="form-text text-muted">Define el orden en que aparecerá en la lista (opcional)</small>
+                            <small class="form-text text-muted">{% translate "Define el orden en que aparecerá en la lista (opcional)" %}</small>
                         </div>
                         
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'budget_detail' budget.pk %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                <i class="bi bi-arrow-left me-1"></i>{% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn {% if item_type == 'ingreso' %}btn-success{% else %}btn-danger{% endif %}">
-                                <i class="bi bi-save me-1"></i>Guardar
+                                <i class="bi bi-save me-1"></i>{% translate "Guardar" %}
                             </button>
                         </div>
                     </form>

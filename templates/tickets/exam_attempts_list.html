@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Intentos de Exámenes - Gestión{% endblock %}
+{% block title %}{% translate "Intentos de Exámenes - Gestión" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -64,12 +65,12 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2><i class="bi bi-clipboard-data"></i> Intentos de Exámenes</h2>
-                    <p class="text-muted mb-0">Gestión y seguimiento de todos los intentos de examen</p>
+                    <h2><i class="bi bi-clipboard-data"></i> {% translate "Intentos de Exámenes" %}</h2>
+                    <p class="text-muted mb-0">{% translate "Gestión y seguimiento de todos los intentos de examen" %}</p>
                 </div>
                 <div>
                     <a href="{% url 'exam_list' %}" class="btn btn-outline-primary">
-                        <i class="bi bi-arrow-left"></i> Volver a Exámenes
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver a Exámenes" %}
                     </a>
                 </div>
             </div>
@@ -83,7 +84,7 @@
                 <div class="card-body">
                     <i class="bi bi-clipboard-check fs-1 text-primary mb-2"></i>
                     <h4 class="card-title">{{ stats.total_attempts }}</h4>
-                    <p class="card-text text-muted">Total Intentos</p>
+                    <p class="card-text text-muted">{% translate "Total Intentos" %}</p>
                 </div>
             </div>
         </div>
@@ -92,7 +93,7 @@
                 <div class="card-body">
                     <i class="bi bi-check-circle fs-1 text-success mb-2"></i>
                     <h4 class="card-title text-success">{{ stats.passed_attempts }}</h4>
-                    <p class="card-text text-muted">Aprobados</p>
+                    <p class="card-text text-muted">{% translate "Aprobados" %}</p>
                 </div>
             </div>
         </div>
@@ -101,7 +102,7 @@
                 <div class="card-body">
                     <i class="bi bi-x-circle fs-1 text-danger mb-2"></i>
                     <h4 class="card-title text-danger">{{ stats.failed_attempts }}</h4>
-                    <p class="card-text text-muted">Reprobados</p>
+                    <p class="card-text text-muted">{% translate "Reprobados" %}</p>
                 </div>
             </div>
         </div>
@@ -110,7 +111,7 @@
                 <div class="card-body">
                     <i class="bi bi-percent fs-1 text-info mb-2"></i>
                     <h4 class="card-title text-info">{{ stats.pass_rate|floatformat:1 }}%</h4>
-                    <p class="card-text text-muted">Tasa Aprobación</p>
+                    <p class="card-text text-muted">{% translate "Tasa Aprobación" %}</p>
                 </div>
             </div>
         </div>
@@ -123,9 +124,9 @@
                 <div class="card-body">
                     <form method="GET" class="row g-3">
                         <div class="col-md-3">
-                            <label for="exam" class="form-label">Examen</label>
+                            <label for="exam" class="form-label">{% translate "Examen" %}</label>
                             <select class="form-select" id="exam" name="exam">
-                                <option value="">Todos los exámenes</option>
+                                <option value="">{% translate "Todos los exámenes" %}</option>
                                 {% for exam in exams %}
                                 <option value="{{ exam.id }}" {% if current_filters.exam == exam.id|stringformat:"s" %}selected{% endif %}>
                                     {{ exam.title }}
@@ -134,25 +135,25 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label for="status" class="form-label">Estado</label>
+                            <label for="status" class="form-label">{% translate "Estado" %}</label>
                             <select class="form-select" id="status" name="status">
-                                <option value="">Todos</option>
-                                <option value="passed" {% if current_filters.status == "passed" %}selected{% endif %}>Aprobados</option>
-                                <option value="failed" {% if current_filters.status == "failed" %}selected{% endif %}>Reprobados</option>
+                                <option value="">{% translate "Todos" %}</option>
+                                <option value="passed" {% if current_filters.status == "passed" %}selected{% endif %}>{% translate "Aprobados" %}</option>
+                                <option value="failed" {% if current_filters.status == "failed" %}selected{% endif %}>{% translate "Reprobados" %}</option>
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label for="date_from" class="form-label">Desde</label>
+                            <label for="date_from" class="form-label">{% translate "Desde" %}</label>
                             <input type="date" class="form-control" id="date_from" name="date_from" value="{{ current_filters.date_from }}">
                         </div>
                         <div class="col-md-2">
-                            <label for="date_to" class="form-label">Hasta</label>
+                            <label for="date_to" class="form-label">{% translate "Hasta" %}</label>
                             <input type="date" class="form-control" id="date_to" name="date_to" value="{{ current_filters.date_to }}">
                         </div>
                         <div class="col-md-2">
-                            <label for="search" class="form-label">Buscar</label>
+                            <label for="search" class="form-label">{% translate "Buscar" %}</label>
                             <input type="text" class="form-control" id="search" name="search" 
-                                   placeholder="Nombre, email..." value="{{ current_filters.search }}">
+                                   placeholder="{% translate 'Nombre, email...' %}" value="{{ current_filters.search }}">
                         </div>
                         <div class="col-md-1 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary w-100">
@@ -163,7 +164,7 @@
                     {% if current_filters.exam or current_filters.status or current_filters.date_from or current_filters.date_to or current_filters.search %}
                     <div class="mt-3">
                         <a href="{% url 'exam_attempts_list' %}" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-x-circle"></i> Limpiar Filtros
+                            <i class="bi bi-x-circle"></i> {% translate "Limpiar Filtros" %}
                         </a>
                     </div>
                     {% endif %}
@@ -178,7 +179,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-table"></i> Listado de Intentos
+                        <i class="bi bi-table"></i> {% translate "Listado de Intentos" %}
                         <span class="badge bg-primary ms-2">{{ page_obj.paginator.count }} total</span>
                     </h5>
                 </div>
@@ -188,14 +189,14 @@
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Participante</th>
-                                    <th>Email</th>
-                                    <th>Examen</th>
-                                    <th>Puntuación</th>
-                                    <th>Estado</th>
-                                    <th>Fecha</th>
-                                    <th>Tiempo</th>
-                                    <th>Acciones</th>
+                                    <th>{% translate "Participante" %}</th>
+                                    <th>{% translate "Email" %}</th>
+                                    <th>{% translate "Examen" %}</th>
+                                    <th>{% translate "Puntuación" %}</th>
+                                    <th>{% translate "Estado" %}</th>
+                                    <th>{% translate "Fecha" %}</th>
+                                    <th>{% translate "Tiempo" %}</th>
+                                    <th>{% translate "Acciones" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -209,9 +210,9 @@
                                             <div>
                                                 <strong class="text-dark">{{ attempt.participant_name }}</strong>
                                                 {% if attempt.user %}
-                                                <br><small class="text-muted">Usuario registrado</small>
+                                                <br><small class="text-muted">{% translate "Usuario registrado" %}</small>
                                                 {% else %}
-                                                <br><small class="text-muted">Usuario público</small>
+                                                <br><small class="text-muted">{% translate "Usuario público" %}</small>
                                                 {% endif %}
                                             </div>
                                         </div>
@@ -223,9 +224,9 @@
                                         <div>
                                             <strong class="text-dark">{{ attempt.exam.title }}</strong>
                                             {% if attempt.exam.is_public %}
-                                            <br><span class="badge bg-info">Público</span>
+                                            <br><span class="badge bg-info">{% translate "Público" %}</span>
                                             {% else %}
-                                            <br><span class="badge bg-secondary">Privado</span>
+                                            <br><span class="badge bg-secondary">{% translate "Privado" %}</span>
                                             {% endif %}
                                         </div>
                                     </td>
@@ -238,11 +239,11 @@
                                     <td>
                                         {% if attempt.passed %}
                                         <span class="badge bg-success status-badge">
-                                            <i class="bi bi-check-circle"></i> Aprobado
+                                            <i class="bi bi-check-circle"></i> {% translate "Aprobado" %}
                                         </span>
                                         {% else %}
                                         <span class="badge bg-danger status-badge">
-                                            <i class="bi bi-x-circle"></i> Reprobado
+                                            <i class="bi bi-x-circle"></i> {% translate "Reprobado" %}
                                         </span>
                                         {% endif %}
                                     </td>
@@ -261,18 +262,18 @@
                                         <div class="action-buttons">
                                             <a href="{% url 'exam_results' attempt.id %}" 
                                                class="btn btn-sm btn-outline-primary" 
-                                               title="Ver Resultados">
+                                               title="{% translate 'Ver Resultados' %}">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             {% if attempt.passed and attempt.certificate_token %}
                                             <a href="{% url 'download_certificate' attempt.id %}" 
                                                class="btn btn-sm btn-outline-success" 
-                                               title="Descargar Certificado">
+                                               title="{% translate 'Descargar Certificado' %}">
                                                 <i class="bi bi-download"></i>
                                             </a>
                                             <a href="{% url 'verify_certificate' attempt.certificate_token %}" 
                                                class="btn btn-sm btn-outline-info" 
-                                               title="Verificar Certificado" 
+                                               title="{% translate 'Verificar Certificado' %}" 
                                                target="_blank">
                                                 <i class="bi bi-qr-code"></i>
                                             </a>
@@ -287,8 +288,8 @@
                     {% else %}
                     <div class="text-center py-5">
                         <i class="bi bi-clipboard-x fs-1 text-muted mb-3"></i>
-                        <h5 class="text-muted">No se encontraron intentos de examen</h5>
-                        <p class="text-muted">Los intentos aparecerán aquí cuando los usuarios completen exámenes.</p>
+                        <h5 class="text-muted">{% translate "No se encontraron intentos de examen" %}</h5>
+                        <p class="text-muted">{% translate "Los intentos aparecerán aquí cuando los usuarios completen exámenes." %}</p>
                     </div>
                     {% endif %}
                 </div>
@@ -300,7 +301,7 @@
     {% if page_obj.has_other_pages %}
     <div class="row mt-4">
         <div class="col-12">
-            <nav aria-label="Paginación de intentos">
+            <nav aria-label="{% translate 'Paginación de intentos' %}">
                 <ul class="pagination justify-content-center">
                     {% if page_obj.has_previous %}
                     <li class="page-item">

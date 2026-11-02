@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="container-fluid">
@@ -8,7 +9,7 @@
         </div>
         <div class="col-md-6 text-end">
             <a href="{% url 'chatbot_detail' chatbot.pk %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Volver al Chatbot
+                <i class="fas fa-arrow-left"></i> {% translate "Volver al Chatbot" %}
             </a>
         </div>
     </div>
@@ -20,14 +21,14 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>Sesión</th>
-                            <th>Nombre</th>
-                            <th>País / Ciudad</th>
+                            <th>{% translate "Sesión" %}</th>
+                            <th>{% translate "Nombre" %}</th>
+                            <th>{% translate "País / Ciudad" %}</th>
                             <th>IP</th>
-                            <th>Inicio</th>
-                            <th>Última actividad</th>
-                            <th>Mensajes</th>
-                            <th>Acciones</th>
+                            <th>{% translate "Inicio" %}</th>
+                            <th>{% translate "Última actividad" %}</th>
+                            <th>{% translate "Mensajes" %}</th>
+                            <th>{% translate "Acciones" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -40,7 +41,7 @@
                                 {% if conversation.user_name %}
                                     <i class="fas fa-user"></i> {{ conversation.user_name }}
                                 {% else %}
-                                    <span class="text-muted">Sin nombre</span>
+                                    <span class="text-muted">{% translate "Sin nombre" %}</span>
                                 {% endif %}
                             </td>
                             <td>
@@ -63,13 +64,13 @@
                             <td>
                                 <span class="badge bg-primary">{{ conversation.messages.count }}</span>
                                 {% if conversation.hide_chat %}
-                                <span class="badge bg-danger ms-1" title="Chat oculto para este usuario">
-                                    <i class="fas fa-eye-slash"></i> Oculto
+                                <span class="badge bg-danger ms-1" title="{% translate 'Chat oculto para este usuario' %}">
+                                    <i class="fas fa-eye-slash"></i> {% translate "Oculto" %}
                                 </span>
                                 {% endif %}
                                 {% if conversation.reviewed %}
                                 <span class="badge bg-success ms-1" title="Revisada el {{ conversation.reviewed_at|date:'d/m/Y H:i' }} por {{ conversation.reviewed_by }}">
-                                    <i class="fas fa-check-circle"></i> Revisada
+                                    <i class="fas fa-check-circle"></i> {% translate "Revisada" %}
                                 </span>
                                 {% endif %}
                             </td>
@@ -77,7 +78,7 @@
                                 <div class="btn-group" role="group">
                                     <a href="{% url 'chatbot_conversation_detail' chatbot.pk conversation.pk %}" 
                                        class="btn btn-sm btn-info"
-                                       title="Ver conversación">
+                                       title="{% translate 'Ver conversación' %}">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     
@@ -90,7 +91,7 @@
                                     
                                     <a href="{% url 'chatbot_conversation_delete' chatbot.pk conversation.pk %}" 
                                        class="btn btn-sm btn-danger"
-                                       title="Eliminar conversación"
+                                       title="{% translate 'Eliminar conversación' %}"
                                        onclick="return confirm('¿Estás seguro de eliminar esta conversación? Esta acción no se puede deshacer.')">
                                         <i class="fas fa-trash"></i>
                                     </a>
@@ -103,7 +104,7 @@
             </div>
             {% else %}
             <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> No hay conversaciones registradas aún.
+                <i class="fas fa-info-circle"></i> {% translate "No hay conversaciones registradas aún." %}
             </div>
             {% endif %}
         </div>

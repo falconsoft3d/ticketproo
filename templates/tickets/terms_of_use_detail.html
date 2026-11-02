@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
 
@@ -7,9 +8,9 @@
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <!-- Breadcrumb -->
-            <nav aria-label="breadcrumb" class="mb-4">
+            <nav aria-label="{% translate 'breadcrumb' %}" class="mb-4">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'terms_of_use_list' %}">Condiciones de Uso</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'terms_of_use_list' %}">{% translate "Condiciones de Uso" %}</a></li>
                     <li class="breadcrumb-item active" aria-current="page">{{ term.title }}</li>
                 </ol>
             </nav>
@@ -25,9 +26,9 @@
                                     <span class="badge bg-info">{{ term.version }}</span>
                                 {% endif %}
                                 {% if term.is_active %}
-                                    <span class="badge bg-success">Activo</span>
+                                    <span class="badge bg-success">{% translate "Activo" %}</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Inactivo</span>
+                                    <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                                 {% endif %}
                                 <span class="badge bg-light text-dark">
                                     <i class="bi bi-calendar3"></i>
@@ -37,10 +38,10 @@
                         </div>
                         <div>
                             <a href="{% url 'terms_of_use_edit' term.pk %}" class="btn btn-outline-primary me-2">
-                                <i class="bi bi-pencil"></i> Editar
+                                <i class="bi bi-pencil"></i> {% translate "Editar" %}
                             </a>
                             <a href="{% url 'terms_of_use_list' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Volver
+                                <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                             </a>
                         </div>
                     </div>
@@ -52,7 +53,7 @@
                 <div class="card-header bg-light">
                     <h5 class="mb-0">
                         <i class="bi bi-file-text"></i>
-                        Contenido de las Condiciones de Uso
+                        {% translate "Contenido de las Condiciones de Uso" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -67,26 +68,26 @@
                 <div class="card-header bg-light">
                     <h5 class="mb-0">
                         <i class="bi bi-info-circle"></i>
-                        Información del Sistema
+                        {% translate "Información del Sistema" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Creado por:</label>
+                                <label class="form-label fw-bold">{% translate "Creado por:" %}</label>
                                 <p class="mb-0">{{ term.created_by.get_full_name|default:term.created_by.username }}</p>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Fecha de creación:</label>
+                                <label class="form-label fw-bold">{% translate "Fecha de creación:" %}</label>
                                 <p class="mb-0">{{ term.created_at|date:"d/m/Y H:i" }}</p>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Última actualización:</label>
+                                <label class="form-label fw-bold">{% translate "Última actualización:" %}</label>
                                 <p class="mb-0">{{ term.updated_at|date:"d/m/Y H:i" }}</p>
                             </div>
                         </div>
@@ -97,10 +98,10 @@
             <!-- Acciones -->
             <div class="card mt-4">
                 <div class="card-body">
-                    <h6 class="card-title">Acciones</h6>
+                    <h6 class="card-title">{% translate "Acciones" %}</h6>
                     <div class="d-flex gap-2">
                         <a href="{% url 'terms_of_use_edit' term.pk %}" class="btn btn-outline-primary">
-                            <i class="bi bi-pencil"></i> Editar
+                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                         </a>
                         <form method="post" 
                               action="{% url 'terms_of_use_toggle' term.pk %}" 
@@ -110,11 +111,11 @@
                             <button type="submit" 
                                     class="btn btn-outline-{% if term.is_active %}warning{% else %}success{% endif %}">
                                 <i class="bi bi-toggle-{% if term.is_active %}on{% else %}off{% endif %}"></i>
-                                {% if term.is_active %}Desactivar{% else %}Activar{% endif %}
+                                {% if term.is_active %}{% translate "Desactivar" %}{% else %}{% translate "Activar" %}{% endif %}
                             </button>
                         </form>
                         <a href="{% url 'terms_of_use_delete' term.pk %}" class="btn btn-outline-danger">
-                            <i class="bi bi-trash"></i> Eliminar
+                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                         </a>
                     </div>
                 </div>

@@ -1,30 +1,31 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% block content %}
 <div class="container py-4">
     <div class="card shadow-lg border-0 mb-4">
         <div class="card-header bg-primary text-white d-flex align-items-center">
             <i class="bi bi-clipboard-data me-2 fs-4"></i>
-            <h2 class="mb-0 fs-4">Respuestas del Formulario: <span class="fw-bold">{{ form.title }}</span></h2>
+            <h2 class="mb-0 fs-4">{% translate "Respuestas del Formulario:" %} <span class="fw-bold">{{ form.title }}</span></h2>
         </div>
         <div class="card-body">
             <div class="row mb-3">
                 <div class="col-md-4">
                     <div class="bg-light rounded p-3 mb-2">
                         <i class="bi bi-people-fill text-primary"></i>
-                        <strong>Total de respuestas:</strong> <span class="fs-5">{{ total_responses }}</span>
+                        <strong>{% translate "Total de respuestas:" %}</strong> <span class="fs-5">{{ total_responses }}</span>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="bg-light rounded p-3 mb-2">
                         <i class="bi bi-bar-chart-fill text-success"></i>
-                        <strong>Puntuación promedio:</strong> <span class="fs-5">{{ average_score }}</span>
+                        <strong>{% translate "Puntuación promedio:" %}</strong> <span class="fs-5">{{ average_score }}</span>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="d-grid">
                         <button type="button" class="btn btn-success btn-sm" onclick="analyzeWithAI()" 
-                                {% if total_responses == 0 %}disabled title="Necesitas al menos una respuesta para el análisis"{% endif %}>
-                            <i class="bi bi-robot"></i> Análisis con IA
+                                {% if total_responses == 0 %}disabled title="{% translate 'Necesitas al menos una respuesta para el análisis' %}"{% endif %}>
+                            <i class="bi bi-robot"></i> {% translate "Análisis con IA" %}
                         </button>
                     </div>
                 </div>
@@ -33,7 +34,7 @@
             <!-- Sección de análisis de IA -->
             <div id="aiAnalysisSection" class="alert alert-info" style="display: none;">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0"><i class="bi bi-robot text-success"></i> Análisis y Mejoras Sugeridas por IA</h5>
+                    <h5 class="mb-0"><i class="bi bi-robot text-success"></i> {% translate "Análisis y Mejoras Sugeridas por IA" %}</h5>
                     <button type="button" class="btn-close" onclick="closeAIAnalysis()"></button>
                 </div>
                 <div id="aiAnalysisContent">
@@ -44,11 +45,11 @@
                 <table class="table table-hover align-middle border rounded shadow-sm">
                     <thead class="table-primary">
                         <tr>
-                            <th><i class="bi bi-calendar-event"></i> Fecha</th>
-                            <th><i class="bi bi-person"></i> Nombre</th>
-                            <th><i class="bi bi-envelope"></i> Email</th>
-                            <th><i class="bi bi-star-fill text-warning"></i> Puntuación</th>
-                            <th><i class="bi bi-eye"></i> Acciones</th>
+                            <th><i class="bi bi-calendar-event"></i> {% translate "Fecha" %}</th>
+                            <th><i class="bi bi-person"></i> {% translate "Nombre" %}</th>
+                            <th><i class="bi bi-envelope"></i> {% translate "Email" %}</th>
+                            <th><i class="bi bi-star-fill text-warning"></i> {% translate "Puntuación" %}</th>
+                            <th><i class="bi bi-eye"></i> {% translate "Acciones" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -61,13 +62,13 @@
                             <td>
                                 <a href="{% url 'form_response_detail' form.pk response.pk %}" 
                                    class="btn btn-outline-primary btn-sm">
-                                    <i class="bi bi-eye"></i> Ver detalle
+                                    <i class="bi bi-eye"></i> {% translate "Ver detalle" %}
                                 </a>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5" class="text-center text-muted">No hay respuestas registradas.</td>
+                            <td colspan="5" class="text-center text-muted">{% translate "No hay respuestas registradas." %}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -76,11 +77,11 @@
         </div>
         <div class="card-footer bg-white border-0 d-flex justify-content-center">
             {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline-primary me-2"><i class="bi bi-arrow-left"></i> Anterior</a>
+                <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline-primary me-2"><i class="bi bi-arrow-left"></i> {% translate "Anterior" %}</a>
             {% endif %}
             <span class="align-self-center mx-2">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
             {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline-primary ms-2">Siguiente <i class="bi bi-arrow-right"></i></a>
+                <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline-primary ms-2">{% translate "Siguiente" %} <i class="bi bi-arrow-right"></i></a>
             {% endif %}
         </div>
     </div>

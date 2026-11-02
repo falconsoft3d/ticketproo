@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -8,7 +9,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="bi bi-graph-up"></i> {{ page_title }}</h2>
         <a href="{% url 'multi_measurement_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Nueva Medición
+            <i class="bi bi-plus-circle"></i> {% translate "Nueva Medición" %}
         </a>
     </div>
 
@@ -28,12 +29,12 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Número</th>
-                                <th>Título</th>
-                                <th>Fecha de Creación</th>
-                                <th>Registros</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
+                                <th>{% translate "Número" %}</th>
+                                <th>{% translate "Título" %}</th>
+                                <th>{% translate "Fecha de Creación" %}</th>
+                                <th>{% translate "Registros" %}</th>
+                                <th>{% translate "Estado" %}</th>
+                                <th>{% translate "Acciones" %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -49,22 +50,22 @@
                                     </td>
                                     <td>
                                         {% if measurement.is_active %}
-                                            <span class="badge bg-success">Activo</span>
+                                            <span class="badge bg-success">{% translate "Activo" %}</span>
                                         {% else %}
-                                            <span class="badge bg-secondary">Inactivo</span>
+                                            <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         <a href="{% url 'multi_measurement_detail' measurement.pk %}" 
-                                           class="btn btn-sm btn-info" title="Ver Detalle">
+                                           class="btn btn-sm btn-info" title="{% translate 'Ver Detalle' %}">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                         <a href="{% url 'multi_measurement_edit' measurement.pk %}" 
-                                           class="btn btn-sm btn-warning" title="Editar">
+                                           class="btn btn-sm btn-warning" title="{% translate 'Editar' %}">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <a href="{% url 'multi_measurement_delete' measurement.pk %}" 
-                                           class="btn btn-sm btn-danger" title="Eliminar">
+                                           class="btn btn-sm btn-danger" title="{% translate 'Eliminar' %}">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                     </td>
@@ -76,9 +77,9 @@
             {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-graph-up" style="font-size: 3rem; color: #ccc;"></i>
-                    <p class="text-muted mt-3">No hay mediciones creadas aún</p>
+                    <p class="text-muted mt-3">{% translate "No hay mediciones creadas aún" %}</p>
                     <a href="{% url 'multi_measurement_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear Primera Medición
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Primera Medición" %}
                     </a>
                 </div>
             {% endif %}

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -14,7 +15,7 @@
                         {{ page_title }}
                     </h4>
                     <a href="{% url 'work_order_task_list' work_order.pk %}" class="btn btn-secondary btn-sm">
-                        <i class="fas fa-arrow-left"></i> Volver a Tareas
+                        <i class="fas fa-arrow-left"></i> {% translate "Volver a Tareas" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -54,7 +55,7 @@
                                     {% endfor %}
                                 </div>
                             {% endif %}
-                            <small class="form-text text-muted">Descripción detallada de la tarea</small>
+                            <small class="form-text text-muted">{% translate "Descripción detallada de la tarea" %}</small>
                         </div>
 
                         <div class="row">
@@ -86,7 +87,7 @@
                                             {% endfor %}
                                         </div>
                                     {% endif %}
-                                    <small class="form-text text-muted">Tiempo estimado en horas</small>
+                                    <small class="form-text text-muted">{% translate "Tiempo estimado en horas" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -103,7 +104,7 @@
                                     {% endfor %}
                                 </div>
                             {% endif %}
-                            <small class="form-text text-muted">Orden de ejecución (número mayor = mayor prioridad)</small>
+                            <small class="form-text text-muted">{% translate "Orden de ejecución (número mayor = mayor prioridad)" %}</small>
                         </div>
 
                         <!-- Errores generales del formulario -->
@@ -119,10 +120,10 @@
                         <div class="form-group">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> 
-                                {% if task %}Actualizar{% else %}Crear{% endif %} Tarea
+                                {% if task %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Tarea" %}
                             </button>
                             <a href="{% url 'work_order_task_list' work_order.pk %}" class="btn btn-secondary ml-2">
-                                <i class="fas fa-times"></i> Cancelar
+                                <i class="fas fa-times"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>

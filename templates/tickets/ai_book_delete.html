@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}Eliminar Libro - {{ book.title }} - TicketProo{% endblock %}
 
@@ -10,16 +11,16 @@
                 <div class="card-header bg-danger text-white">
                     <h4 class="mb-0">
                         <i class="bi bi-exclamation-triangle-fill"></i> 
-                        Confirmar Eliminación
+                        {% translate "Confirmar Eliminación" %}
                     </h4>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-danger mb-4">
                         <i class="bi bi-exclamation-circle-fill"></i>
-                        <strong>¡Atención!</strong> Esta acción es permanente y no se puede deshacer.
+                        <strong>{% translate "¡Atención!" %}</strong> {% translate "Esta acción es permanente y no se puede deshacer." %}
                     </div>
                     
-                    <h5 class="mb-3">¿Estás seguro que deseas eliminar este libro?</h5>
+                    <h5 class="mb-3">{% translate "¿Estás seguro que deseas eliminar este libro?" %}</h5>
                     
                     <div class="card bg-light mb-4">
                         <div class="card-body">
@@ -27,7 +28,7 @@
                                 <i class="bi bi-book"></i> {{ book.title }}
                             </h6>
                             <p class="card-text text-muted small mb-2">
-                                <i class="bi bi-lightbulb"></i> <strong>Tema:</strong> {{ book.topic|truncatechars:100 }}
+                                <i class="bi bi-lightbulb"></i> <strong>{% translate "Tema:" %}</strong> {{ book.topic|truncatechars:100 }}
                             </p>
                             <p class="card-text mb-2">
                                 <span class="badge {{ book.get_status_badge_class }}">
@@ -49,12 +50,12 @@
                     </div>
                     
                     <div class="mb-4">
-                        <h6>Se eliminará:</h6>
+                        <h6>{% translate "Se eliminará:" %}</h6>
                         <ul>
-                            <li>El libro y toda su información</li>
+                            <li>{% translate "El libro y toda su información" %}</li>
                             <li>Todos los capítulos ({{ book.get_total_chapters }})</li>
-                            <li>Todo el contenido generado</li>
-                            <li>Resúmenes y contenido de todos los capítulos</li>
+                            <li>{% translate "Todo el contenido generado" %}</li>
+                            <li>{% translate "Resúmenes y contenido de todos los capítulos" %}</li>
                         </ul>
                     </div>
                     
@@ -62,10 +63,10 @@
                         {% csrf_token %}
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'ai_book_detail' book.pk %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash-fill"></i> Sí, eliminar permanentemente
+                                <i class="bi bi-trash-fill"></i> {% translate "Sí, eliminar permanentemente" %}
                             </button>
                         </div>
                     </form>

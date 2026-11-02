@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block extra_css %}
@@ -88,19 +89,19 @@
             <div class="opinion-form">
                 <h4 class="mb-4">
                     <i class="bi bi-chat-square-text"></i> 
-                    Opinión de Reunión de Contratación
+                    {% translate "Opinión de Reunión de Contratación" %}
                 </h4>
 
                 <!-- Pautas para la evaluación -->
                 <div class="guidelines">
-                    <h6><i class="bi bi-lightbulb"></i> Pautas para la evaluación:</h6>
+                    <h6><i class="bi bi-lightbulb"></i> {% translate "Pautas para la evaluación:" %}</h6>
                     <ul class="mb-0">
-                        <li><strong>Impresión general:</strong> ¿Cómo fue la primera impresión y la química general?</li>
-                        <li><strong>Competencias técnicas:</strong> ¿Demostró las habilidades requeridas para el puesto?</li>
-                        <li><strong>Fit cultural:</strong> ¿Se alinea con los valores y cultura de la empresa?</li>
-                        <li><strong>Motivación:</strong> ¿Mostró interés genuino en el puesto y la empresa?</li>
-                        <li><strong>Comunicación:</strong> ¿Se expresó claramente y escuchó activamente?</li>
-                        <li><strong>Recomendación:</strong> ¿Cuál es su recomendación para la decisión final?</li>
+                        <li><strong>{% translate "Impresión general:" %}</strong> {% translate "¿Cómo fue la primera impresión y la química general?" %}</li>
+                        <li><strong>{% translate "Competencias técnicas:" %}</strong> {% translate "¿Demostró las habilidades requeridas para el puesto?" %}</li>
+                        <li><strong>{% translate "Fit cultural:" %}</strong> {% translate "¿Se alinea con los valores y cultura de la empresa?" %}</li>
+                        <li><strong>{% translate "Motivación:" %}</strong> {% translate "¿Mostró interés genuino en el puesto y la empresa?" %}</li>
+                        <li><strong>{% translate "Comunicación:" %}</strong> {% translate "¿Se expresó claramente y escuchó activamente?" %}</li>
+                        <li><strong>{% translate "Recomendación:" %}</strong> {% translate "¿Cuál es su recomendación para la decisión final?" %}</li>
                     </ul>
                 </div>
 
@@ -109,7 +110,7 @@
                     
                     {% if form.errors %}
                         <div class="alert alert-danger">
-                            <h6><i class="bi bi-exclamation-triangle"></i> Por favor, corrige los siguientes errores:</h6>
+                            <h6><i class="bi bi-exclamation-triangle"></i> {% translate "Por favor, corrige los siguientes errores:" %}</h6>
                             {{ form.errors }}
                         </div>
                     {% endif %}
@@ -133,26 +134,26 @@
 
                     <div class="d-flex gap-3">
                         <button type="submit" class="btn btn-primary btn-save">
-                            <i class="bi bi-check-lg"></i> Guardar Opinión
+                            <i class="bi bi-check-lg"></i> {% translate "Guardar Opinión" %}
                         </button>
                         
                         {% if employee.status in 'candidate,in_process' %}
                             <a href="{% url 'candidate_detail' employee.pk %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Volver al Perfil
+                                <i class="bi bi-arrow-left"></i> {% translate "Volver al Perfil" %}
                             </a>
                         {% else %}
                             <a href="{% url 'active_employee_detail' employee.pk %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Volver al Perfil
+                                <i class="bi bi-arrow-left"></i> {% translate "Volver al Perfil" %}
                             </a>
                         {% endif %}
                         
                         {% if employee.status == 'candidate' %}
                             <a href="{% url 'candidate_list' %}" class="btn btn-outline-info">
-                                <i class="bi bi-list"></i> Lista de Candidatos
+                                <i class="bi bi-list"></i> {% translate "Lista de Candidatos" %}
                             </a>
                         {% elif employee.status == 'employee' %}
                             <a href="{% url 'active_employee_list' %}" class="btn btn-outline-info">
-                                <i class="bi bi-list"></i> Lista de Empleados
+                                <i class="bi bi-list"></i> {% translate "Lista de Empleados" %}
                             </a>
                         {% endif %}
                     </div>
@@ -161,7 +162,7 @@
                 <!-- Vista previa de la opinión actual -->
                 {% if employee.hiring_meeting_opinion %}
                 <div class="mt-4 pt-4 border-top">
-                    <h6><i class="bi bi-eye"></i> Opinión Actual:</h6>
+                    <h6><i class="bi bi-eye"></i> {% translate "Opinión Actual:" %}</h6>
                     <div class="bg-white p-3 border rounded">
                         <div style="white-space: pre-wrap;">{{ employee.hiring_meeting_opinion }}</div>
                     </div>

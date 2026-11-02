@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Consultas SQL{% endblock %}
+{% block title %}{% translate "Consultas SQL" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -9,18 +10,18 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2><i class="bi bi-database"></i> Consultas SQL</h2>
-                    <p class="text-muted">Ejecuta consultas SELECT sobre la base de datos</p>
+                    <h2><i class="bi bi-database"></i> {% translate "Consultas SQL" %}</h2>
+                    <p class="text-muted">{% translate "Ejecuta consultas SELECT sobre la base de datos" %}</p>
                 </div>
                 <a href="{% url 'sql_query_list' %}" class="btn btn-outline-primary">
-                    <i class="bi bi-list"></i> Ver Guardadas
+                    <i class="bi bi-list"></i> {% translate "Ver Guardadas" %}
                 </a>
             </div>
 
             <!-- Alerta de seguridad -->
             <div class="alert alert-info">
                 <i class="bi bi-info-circle"></i>
-                <strong>Nota:</strong> Solo se permiten consultas SELECT. No se pueden ejecutar comandos que modifiquen datos (INSERT, UPDATE, DELETE, etc.)
+                <strong>{% translate "Nota:" %}</strong> {% translate "Solo se permiten consultas SELECT. No se pueden ejecutar comandos que modifiquen datos (INSERT, UPDATE, DELETE, etc.)" %}
             </div>
 
             <!-- Formulario de consulta -->
@@ -32,36 +33,36 @@
                         <div class="row mb-3">
                             <div class="col-md-8">
                                 <label for="name" class="form-label">
-                                    Nombre de la Consulta 
+                                    {% translate "Nombre de la Consulta" %} 
                                     <span class="text-danger" id="name-required" style="display:none;">*</span>
-                                    <small class="text-muted">(requerido si marcas "Guardar")</small>
+                                    <small class="text-muted">{% translate '(requerido si marcas "Guardar")' %}</small>
                                 </label>
                                 <input type="text" class="form-control" id="name" name="name" 
-                                       placeholder="Ej: Tickets del último mes">
+                                       placeholder="{% translate 'Ej: Tickets del último mes' %}">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label d-block">&nbsp;</label>
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="save_query" name="save_query" role="switch">
                                     <label class="form-check-label fw-bold" for="save_query">
-                                        <i class="bi bi-save"></i> Guardar esta consulta
+                                        <i class="bi bi-save"></i> {% translate "Guardar esta consulta" %}
                                     </label>
                                 </div>
-                                <small class="text-muted">Activa para guardar en tu historial</small>
+                                <small class="text-muted">{% translate "Activa para guardar en tu historial" %}</small>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="query" class="form-label">Consulta SQL</label>
+                            <label for="query" class="form-label">{% translate "Consulta SQL" %}</label>
                             <textarea class="form-control font-monospace" id="query" name="query" rows="10" 
                                       placeholder="{{ default_query }}" required>{{ default_query }}</textarea>
                             <small class="text-muted">
-                                Escribe tu consulta SELECT aquí. Usa LIMIT para limitar resultados.
+                                {% translate "Escribe tu consulta SELECT aquí. Usa LIMIT para limitar resultados." %}
                             </small>
                         </div>
 
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-play-fill"></i> Ejecutar Consulta
+                            <i class="bi bi-play-fill"></i> {% translate "Ejecutar Consulta" %}
                         </button>
                     </form>
                 </div>
@@ -71,7 +72,7 @@
             {% if result %}
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-success text-white">
-                    <i class="bi bi-check-circle"></i> Resultado
+                    <i class="bi bi-check-circle"></i> {% translate "Resultado" %}
                     <span class="badge bg-light text-dark ms-2">{{ result.row_count }} filas</span>
                     <span class="badge bg-light text-dark">{{ result.execution_time }}s</span>
                 </div>
@@ -104,14 +105,14 @@
             {% if error %}
             <div class="alert alert-danger">
                 <i class="bi bi-exclamation-triangle"></i>
-                <strong>Error:</strong> {{ error }}
+                <strong>{% translate "Error:" %}</strong> {{ error }}
             </div>
             {% endif %}
 
             <!-- Tablas disponibles -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
-                    <i class="bi bi-table"></i> Tablas Disponibles
+                    <i class="bi bi-table"></i> {% translate "Tablas Disponibles" %}
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -131,7 +132,7 @@
             {% if recent_queries %}
             <div class="card shadow-sm">
                 <div class="card-header">
-                    <i class="bi bi-clock-history"></i> Consultas Recientes
+                    <i class="bi bi-clock-history"></i> {% translate "Consultas Recientes" %}
                 </div>
                 <div class="card-body">
                     <div class="list-group list-group-flush">

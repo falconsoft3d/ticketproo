@@ -1,22 +1,23 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}Grabaciones - TicketProo{% endblock %}
+{% block title %}{% translate "Grabaciones - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-mic"></i> Grabaciones</h2>
+                <h2><i class="bi bi-mic"></i> {% translate "Grabaciones" %}</h2>
                 <div>
                     {% if is_agent %}
                     <a href="{% url 'recordings_stats' %}" class="btn btn-outline-info me-2">
-                        <i class="bi bi-graph-up"></i> Estadísticas
+                        <i class="bi bi-graph-up"></i> {% translate "Estadísticas" %}
                     </a>
                     {% endif %}
                     <a href="{% url 'recording_upload' %}" class="btn btn-primary">
-                        <i class="bi bi-mic-fill"></i> Subir Grabación
+                        <i class="bi bi-mic-fill"></i> {% translate "Subir Grabación" %}
                     </a>
                 </div>
             </div>
@@ -36,13 +37,13 @@
                                     <ul class="dropdown-menu">
                                         <li>
                                             <a class="dropdown-item" href="{% url 'recording_detail' recording.id %}">
-                                                <i class="bi bi-eye"></i> Ver detalles
+                                                <i class="bi bi-eye"></i> {% translate "Ver detalles" %}
                                             </a>
                                         </li>
                                         {% if is_agent %}
                                         <li>
                                             <a class="dropdown-item text-danger" href="{% url 'recording_delete' recording.id %}">
-                                                <i class="bi bi-trash"></i> Eliminar
+                                                <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                                             </a>
                                         </li>
                                         {% endif %}
@@ -60,7 +61,7 @@
                                     {% if recording.company %}
                                         {{ recording.company.name }}
                                     {% else %}
-                                        Sin empresa
+                                        {% translate "Sin empresa" %}
                                     {% endif %}
                                 </small>
                                 <small class="text-muted d-block">
@@ -68,7 +69,7 @@
                                     {% if recording.uploaded_by %}
                                         {{ recording.uploaded_by.get_full_name|default:recording.uploaded_by.username }}
                                     {% else %}
-                                        Usuario anónimo
+                                        {% translate "Usuario anónimo" %}
                                     {% endif %}
                                 </small>
                                 <small class="text-muted d-block">
@@ -78,30 +79,30 @@
                             
                             <div class="row text-center mb-3">
                                 <div class="col-4">
-                                    <small class="text-muted d-block">Tamaño</small>
+                                    <small class="text-muted d-block">{% translate "Tamaño" %}</small>
                                     <strong>{{ recording.get_file_size_display }}</strong>
                                 </div>
                                 <div class="col-4">
-                                    <small class="text-muted d-block">Duración</small>
+                                    <small class="text-muted d-block">{% translate "Duración" %}</small>
                                     <strong>{{ recording.get_duration_display }}</strong>
                                 </div>
                                 <div class="col-4">
-                                    <small class="text-muted d-block">Transcripción</small>
+                                    <small class="text-muted d-block">{% translate "Transcripción" %}</small>
                                     {% if recording.transcription_status == 'completed' %}
-                                        <span class="badge bg-success">Completada</span>
+                                        <span class="badge bg-success">{% translate "Completada" %}</span>
                                     {% elif recording.transcription_status == 'processing' %}
-                                        <span class="badge bg-warning">Procesando</span>
+                                        <span class="badge bg-warning">{% translate "Procesando" %}</span>
                                     {% elif recording.transcription_status == 'failed' %}
-                                        <span class="badge bg-danger">Fallida</span>
+                                        <span class="badge bg-danger">{% translate "Fallida" %}</span>
                                     {% else %}
-                                        <span class="badge bg-secondary">Pendiente</span>
+                                        <span class="badge bg-secondary">{% translate "Pendiente" %}</span>
                                     {% endif %}
                                 </div>
                             </div>
                             
                             <div class="d-grid">
                                 <a href="{% url 'recording_detail' recording.id %}" class="btn btn-primary">
-                                    <i class="bi bi-play-circle"></i> Reproducir
+                                    <i class="bi bi-play-circle"></i> {% translate "Reproducir" %}
                                 </a>
                             </div>
                         </div>
@@ -110,9 +111,9 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <small class="text-muted">
                                     {% if recording.is_public %}
-                                        <i class="bi bi-globe text-success"></i> Público
+                                        <i class="bi bi-globe text-success"></i> {% translate "Público" %}
                                     {% else %}
-                                        <i class="bi bi-lock text-warning"></i> Privado
+                                        <i class="bi bi-lock text-warning"></i> {% translate "Privado" %}
                                     {% endif %}
                                 </small>
                                 <small class="text-muted">
@@ -127,14 +128,14 @@
 
             <!-- Paginación -->
             {% if recordings.has_other_pages %}
-            <nav aria-label="Paginación de grabaciones">
+            <nav aria-label="{% translate 'Paginación de grabaciones' %}">
                 <ul class="pagination justify-content-center">
                     {% if recordings.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page=1">&laquo; Primera</a>
+                            <a class="page-link" href="?page=1">&laquo; {% translate "Primera" %}</a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ recordings.previous_page_number }}">Anterior</a>
+                            <a class="page-link" href="?page={{ recordings.previous_page_number }}">{% translate "Anterior" %}</a>
                         </li>
                     {% endif %}
 
@@ -152,10 +153,10 @@
 
                     {% if recordings.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ recordings.next_page_number }}">Siguiente</a>
+                            <a class="page-link" href="?page={{ recordings.next_page_number }}">{% translate "Siguiente" %}</a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ recordings.paginator.num_pages }}">Última &raquo;</a>
+                            <a class="page-link" href="?page={{ recordings.paginator.num_pages }}">{% translate "Última &raquo;" %}</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -166,10 +167,10 @@
             <!-- Estado vacío -->
             <div class="text-center py-5">
                 <i class="bi bi-mic display-1 text-muted"></i>
-                <h3 class="mt-3">No hay grabaciones</h3>
-                <p class="text-muted">Aún no se han subido grabaciones al sistema.</p>
+                <h3 class="mt-3">{% translate "No hay grabaciones" %}</h3>
+                <p class="text-muted">{% translate "Aún no se han subido grabaciones al sistema." %}</p>
                 <a href="{% url 'recording_upload' %}" class="btn btn-primary">
-                    <i class="bi bi-mic-fill"></i> Subir primera grabación
+                    <i class="bi bi-mic-fill"></i> {% translate "Subir primera grabación" %}
                 </a>
             </div>
             {% endif %}

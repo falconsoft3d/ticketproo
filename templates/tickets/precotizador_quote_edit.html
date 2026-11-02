@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -124,11 +125,11 @@
                 <div class="edit-form-section">
                     <h4 class="section-title">
                         <i class="bi bi-chat-dots"></i>
-                        Solicitud del Cliente
+                        {% translate "Solicitud del Cliente" %}
                     </h4>
                     <div class="mb-3">
                         <label for="client_request" class="form-label">
-                            Describe detalladamente lo que necesita el cliente:
+                            {% translate "Describe detalladamente lo que necesita el cliente:" %}
                         </label>
                         <textarea class="form-control" 
                                   id="client_request" 
@@ -138,7 +139,7 @@
                                   maxlength="2000"
                                   placeholder="Ejemplo: El cliente necesita un sistema web para gestionar inventarios, con módulos de productos, proveedores, ventas y reportes...">{{ quote.client_request }}</textarea>
                         <div class="character-count">
-                            <span id="client_request_count">{{ quote.client_request|length }}</span>/2000 caracteres
+                            <span id="client_request_count">{{ quote.client_request|length }}</span>{% translate "/2000 caracteres" %}
                         </div>
                     </div>
                 </div>
@@ -147,11 +148,11 @@
                 <div class="edit-form-section">
                     <h4 class="section-title">
                         <i class="bi bi-gear"></i>
-                        Análisis y Descripción del Trabajo
+                        {% translate "Análisis y Descripción del Trabajo" %}
                     </h4>
                     <div class="mb-3">
                         <label for="ai_detailed_description" class="form-label">
-                            Descripción técnica detallada del proyecto:
+                            {% translate "Descripción técnica detallada del proyecto:" %}
                         </label>
                         <textarea class="form-control" 
                                   id="ai_detailed_description" 
@@ -161,7 +162,7 @@
                                   maxlength="5000"
                                   placeholder="Desarrollaremos un sistema web completo utilizando Django como framework backend...">{{ quote.ai_detailed_description }}</textarea>
                         <div class="character-count">
-                            <span id="ai_detailed_description_count">{{ quote.ai_detailed_description|length }}</span>/5000 caracteres
+                            <span id="ai_detailed_description_count">{{ quote.ai_detailed_description|length }}</span>{% translate "/5000 caracteres" %}
                         </div>
                     </div>
                 </div>
@@ -170,11 +171,11 @@
                 <div class="edit-form-section">
                     <h4 class="section-title">
                         <i class="bi bi-lightbulb"></i>
-                        Razonamiento de la Estimación
+                        {% translate "Razonamiento de la Estimación" %}
                     </h4>
                     <div class="mb-3">
                         <label for="ai_reasoning" class="form-label">
-                            Justificación de las horas estimadas (opcional):
+                            {% translate "Justificación de las horas estimadas (opcional):" %}
                         </label>
                         <textarea class="form-control" 
                                   id="ai_reasoning" 
@@ -183,7 +184,7 @@
                                   maxlength="3000"
                                   placeholder="La estimación se basa en la complejidad de los módulos requeridos, considerando...">{{ quote.ai_reasoning }}</textarea>
                         <div class="character-count">
-                            <span id="ai_reasoning_count">{{ quote.ai_reasoning|length }}</span>/3000 caracteres
+                            <span id="ai_reasoning_count">{{ quote.ai_reasoning|length }}</span>{% translate "/3000 caracteres" %}
                         </div>
                     </div>
                 </div>
@@ -192,42 +193,41 @@
                 <div class="edit-form-section">
                     <h4 class="section-title">
                         <i class="bi bi-gear-fill"></i>
-                        Estado de Aprobación
+                        {% translate "Estado de Aprobación" %}
                     </h4>
                     <div class="row">
                         <div class="col-md-6">
                             <label for="status" class="form-label">
-                                Estado actual de la cotización:
+                                {% translate "Estado actual de la cotización:" %}
                             </label>
                             <select class="form-select" id="status" name="status" required>
                                 <option value="pending" {% if quote.status == 'pending' %}selected{% endif %}>
-                                    🕐 Pendiente - El cliente puede responder
+                                    {% translate "🕐 Pendiente - El cliente puede responder" %}
                                 </option>
                                 <option value="accepted" {% if quote.status == 'accepted' %}selected{% endif %}>
-                                    ✅ Aceptada - Cliente aprobó la cotización
+                                    {% translate "✅ Aceptada - Cliente aprobó la cotización" %}
                                 </option>
                                 <option value="rejected" {% if quote.status == 'rejected' %}selected{% endif %}>
-                                    ❌ Rechazada - Cliente rechazó la cotización
+                                    {% translate "❌ Rechazada - Cliente rechazó la cotización" %}
                                 </option>
                             </select>
                             <div class="form-text">
                                 <small class="text-muted">
                                     <i class="bi bi-info-circle"></i>
-                                    <strong>Importante:</strong> Si cambias a "Pendiente", el cliente podrá responder nuevamente 
-                                    y se borrarán sus comentarios anteriores.
+                                    <strong>{% translate "Importante:" %}</strong> {% translate 'Si cambias a "Pendiente", el cliente podrá responder nuevamente y se borrarán sus comentarios anteriores.' %}
                                 </small>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="current-status-info mt-4 p-3 border rounded">
-                                <strong>Estado Actual:</strong>
+                                <strong>{% translate "Estado Actual:" %}</strong>
                                 {% if quote.status == 'pending' %}
-                                    <span class="badge bg-warning fs-6">🕐 Pendiente</span>
+                                    <span class="badge bg-warning fs-6">{% translate "🕐 Pendiente" %}</span>
                                     <p class="small text-muted mt-2 mb-0">
-                                        El cliente puede aceptar o rechazar esta cotización.
+                                        {% translate "El cliente puede aceptar o rechazar esta cotización." %}
                                     </p>
                                 {% elif quote.status == 'accepted' %}
-                                    <span class="badge bg-success fs-6">✅ Aceptada</span>
+                                    <span class="badge bg-success fs-6">{% translate "✅ Aceptada" %}</span>
                                     <p class="small text-muted mt-2 mb-0">
                                         Aceptada el {{ quote.client_response_date|date:"d/m/Y H:i" }}
                                         {% if quote.client_comments %}
@@ -235,7 +235,7 @@
                                         {% endif %}
                                     </p>
                                 {% elif quote.status == 'rejected' %}
-                                    <span class="badge bg-danger fs-6">❌ Rechazada</span>
+                                    <span class="badge bg-danger fs-6">{% translate "❌ Rechazada" %}</span>
                                     <p class="small text-muted mt-2 mb-0">
                                         Rechazada el {{ quote.client_response_date|date:"d/m/Y H:i" }}
                                         {% if quote.client_comments %}
@@ -252,11 +252,11 @@
                 <div class="text-center mb-4">
                     <button type="submit" class="btn btn-success btn-save me-3">
                         <i class="bi bi-check-circle"></i>
-                        Guardar Cambios
+                        {% translate "Guardar Cambios" %}
                     </button>
                     <a href="{% url 'precotizador_quote_detail' quote.pk %}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left"></i>
-                        Cancelar
+                        {% translate "Cancelar" %}
                     </a>
                 </div>
             </form>

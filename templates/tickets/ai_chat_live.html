@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 <!-- NUEVO DISEÑO WHATSAPP ACTUALIZADO 2025-10-07 23:22 -->
@@ -412,14 +413,14 @@ body, html {
                         {% empty %}
                         <div class="text-center text-muted py-5" id="empty-state" style="color: #667781 !important;">
                             <i class="bi bi-chat-text" style="font-size: 4rem; color: #ccc;"></i>
-                            <h5 class="mt-3" style="color: #667781;">¡Hola! 👋</h5>
-                            <p style="color: #999;">Soy tu asistente de IA. ¿En qué puedo ayudarte hoy?</p>
+                            <h5 class="mt-3" style="color: #667781;">{% translate "¡Hola! 👋" %}</h5>
+                            <p style="color: #999;">{% translate "Soy tu asistente de IA. ¿En qué puedo ayudarte hoy?" %}</p>
                         </div>
                         {% endfor %}
                     </div>
 
                     <!-- Indicador de scroll -->
-                    <div class="scroll-indicator" id="scroll-indicator" title="Ir al final">
+                    <div class="scroll-indicator" id="scroll-indicator" title="{% translate 'Ir al final' %}">
                         <i class="bi bi-chevron-down"></i>
                     </div>
 
@@ -441,7 +442,7 @@ body, html {
                                 </button>
                             </div>
                             <div class="d-flex justify-content-between chat-stats">
-                                <small class="text-muted">Ctrl+Enter para enviar</small>
+                                <small class="text-muted">{% translate "Ctrl+Enter para enviar" %}</small>
                                 <small class="text-muted">{{ messages_list|length }} mensajes</small>
                             </div>
                         </form>

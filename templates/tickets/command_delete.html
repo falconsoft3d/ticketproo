@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Eliminar Comando - Biblioteca de Comandos{% endblock %}
+{% block title %}{% translate "Eliminar Comando - Biblioteca de Comandos" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -10,14 +11,14 @@
             <div class="text-center mb-4">
                 <h1 class="h3 text-danger">
                     <i class="bi bi-exclamation-triangle-fill"></i>
-                    Eliminar Comando
+                    {% translate "Eliminar Comando" %}
                 </h1>
-                <nav aria-label="breadcrumb">
+                <nav aria-label="{% translate 'breadcrumb' %}">
                     <ol class="breadcrumb justify-content-center">
-                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'command_library' %}">Comandos</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'command_library' %}">{% translate "Comandos" %}</a></li>
                         <li class="breadcrumb-item"><a href="{% url 'command_detail' command.pk %}">{{ command.title|truncatechars:30 }}</a></li>
-                        <li class="breadcrumb-item active">Eliminar</li>
+                        <li class="breadcrumb-item active">{% translate "Eliminar" %}</li>
                     </ol>
                 </nav>
             </div>
@@ -27,8 +28,8 @@
                 <div class="d-flex align-items-center mb-3">
                     <i class="bi bi-exclamation-triangle-fill display-6 me-3"></i>
                     <div>
-                        <h4 class="alert-heading mb-1">⚠️ Confirmación requerida</h4>
-                        <p class="mb-0">Esta acción no se puede deshacer. El comando será eliminado permanentemente.</p>
+                        <h4 class="alert-heading mb-1">{% translate "⚠️ Confirmación requerida" %}</h4>
+                        <p class="mb-0">{% translate "Esta acción no se puede deshacer. El comando será eliminado permanentemente." %}</p>
                     </div>
                 </div>
             </div>
@@ -38,7 +39,7 @@
                 <div class="card-header bg-light">
                     <h5 class="mb-0">
                         <i class="bi bi-info-circle"></i>
-                        Comando a eliminar
+                        {% translate "Comando a eliminar" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -57,7 +58,7 @@
                             
                             <!-- Comando -->
                             <div class="command-preview mb-3">
-                                <small class="text-muted">Comando:</small>
+                                <small class="text-muted">{% translate "Comando:" %}</small>
                                 <div class="bg-dark text-light p-2 rounded font-monospace small">
                                     {{ command.command|truncatechars:100 }}
                                 </div>
@@ -66,7 +67,7 @@
                             <!-- Etiquetas -->
                             {% if command.tags %}
                             <div class="mb-2">
-                                <small class="text-muted">Etiquetas:</small>
+                                <small class="text-muted">{% translate "Etiquetas:" %}</small>
                                 <div class="mt-1">
                                     {% for tag in command.get_tags_list %}
                                     <span class="badge bg-light text-dark me-1"># {{ tag }}</span>
@@ -78,7 +79,7 @@
                         <div class="col-md-4">
                             <table class="table table-sm table-borderless">
                                 <tr>
-                                    <td class="text-muted small"><i class="bi bi-tags"></i> Categoría:</td>
+                                    <td class="text-muted small"><i class="bi bi-tags"></i> {% translate "Categoría:" %}</td>
                                     <td class="small">
                                         <span class="badge bg-{{ command.category }}">
                                             {{ command.get_category_display }}
@@ -86,19 +87,19 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="text-muted small"><i class="bi bi-person"></i> Creado por:</td>
+                                    <td class="text-muted small"><i class="bi bi-person"></i> {% translate "Creado por:" %}</td>
                                     <td class="small">{{ command.created_by.username }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="text-muted small"><i class="bi bi-calendar"></i> Fecha:</td>
+                                    <td class="text-muted small"><i class="bi bi-calendar"></i> {% translate "Fecha:" %}</td>
                                     <td class="small">{{ command.created_at|date:"d/m/Y" }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="text-muted small"><i class="bi bi-eye"></i> Vistas:</td>
+                                    <td class="text-muted small"><i class="bi bi-eye"></i> {% translate "Vistas:" %}</td>
                                     <td class="small">{{ command.view_count }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="text-muted small"><i class="bi bi-clipboard"></i> Copias:</td>
+                                    <td class="text-muted small"><i class="bi bi-clipboard"></i> {% translate "Copias:" %}</td>
                                     <td class="small">{{ command.usage_count }}</td>
                                 </tr>
                             </table>
@@ -112,30 +113,30 @@
                 <div class="card-header bg-warning bg-opacity-10">
                     <h6 class="mb-0">
                         <i class="bi bi-info-circle text-warning"></i>
-                        ¿Qué pasará cuando elimines este comando?
+                        {% translate "¿Qué pasará cuando elimines este comando?" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <ul class="list-unstyled mb-0">
                         <li class="mb-2">
                             <i class="bi bi-check-circle text-success"></i>
-                            El comando será eliminado permanentemente de la base de datos
+                            {% translate "El comando será eliminado permanentemente de la base de datos" %}
                         </li>
                         <li class="mb-2">
                             <i class="bi bi-check-circle text-success"></i>
-                            Ya no aparecerá en los resultados de búsqueda
+                            {% translate "Ya no aparecerá en los resultados de búsqueda" %}
                         </li>
                         <li class="mb-2">
                             <i class="bi bi-check-circle text-success"></i>
-                            Los enlaces directos al comando dejarán de funcionar
+                            {% translate "Los enlaces directos al comando dejarán de funcionar" %}
                         </li>
                         <li class="mb-2">
                             <i class="bi bi-x-circle text-warning"></i>
-                            No se pueden recuperar comandos eliminados
+                            {% translate "No se pueden recuperar comandos eliminados" %}
                         </li>
                         <li class="mb-0">
                             <i class="bi bi-x-circle text-warning"></i>
-                            Las estadísticas de uso se perderán permanentemente
+                            {% translate "Las estadísticas de uso se perderán permanentemente" %}
                         </li>
                     </ul>
                 </div>
@@ -146,7 +147,7 @@
                 <div class="card-header bg-danger text-white">
                     <h6 class="mb-0">
                         <i class="bi bi-trash"></i>
-                        Confirmación de eliminación
+                        {% translate "Confirmación de eliminación" %}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -157,7 +158,7 @@
                         <div class="form-check mb-4">
                             <input class="form-check-input" type="checkbox" id="confirmDelete" required>
                             <label class="form-check-label fw-bold" for="confirmDelete">
-                                Entiendo que esta acción no se puede deshacer y quiero eliminar permanentemente este comando
+                                {% translate "Entiendo que esta acción no se puede deshacer y quiero eliminar permanentemente este comando" %}
                             </label>
                         </div>
 
@@ -167,9 +168,9 @@
                             <div class="d-flex align-items-center">
                                 <i class="bi bi-exclamation-triangle me-2"></i>
                                 <div>
-                                    <strong>Comando importante detectado</strong><br>
+                                    <strong>{% translate "Comando importante detectado" %}</strong><br>
                                     <small>
-                                        {% if command.is_favorite %}• Este comando está marcado como favorito<br>{% endif %}
+                                        {% if command.is_favorite %}{% translate "• Este comando está marcado como favorito" %}<br>{% endif %}
                                         {% if command.usage_count > 10 %}• Este comando ha sido copiado {{ command.usage_count }} veces<br>{% endif %}
                                         {% if command.view_count > 50 %}• Este comando ha sido visto {{ command.view_count }} veces<br>{% endif %}
                                     </small>
@@ -179,9 +180,9 @@
 
                         <div class="mb-4">
                             <label for="confirmText" class="form-label fw-bold">
-                                Para continuar, escribe "<span class="text-danger">eliminar comando</span>" en el campo de abajo:
+                                {% translate 'Para continuar, escribe "' %}<span class="text-danger">{% translate "eliminar comando" %}</span>{% translate '" en el campo de abajo:' %}
                             </label>
-                            <input type="text" class="form-control" id="confirmText" placeholder="eliminar comando" required>
+                            <input type="text" class="form-control" id="confirmText" placeholder="{% translate 'eliminar comando' %}" required>
                         </div>
                         {% endif %}
 
@@ -189,15 +190,15 @@
                         <div class="d-flex gap-2 justify-content-end">
                             <a href="{% url 'command_detail' command.pk %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left"></i>
-                                Cancelar
+                                {% translate "Cancelar" %}
                             </a>
                             <a href="{% url 'command_library' %}" class="btn btn-outline-info">
                                 <i class="bi bi-list"></i>
-                                Ir a la biblioteca
+                                {% translate "Ir a la biblioteca" %}
                             </a>
                             <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
                                 <i class="bi bi-trash"></i>
-                                Eliminar comando
+                                {% translate "Eliminar comando" %}
                             </button>
                         </div>
                     </form>
@@ -209,7 +210,7 @@
                 <div class="card-header bg-info bg-opacity-10">
                     <h6 class="mb-0">
                         <i class="bi bi-lightbulb text-info"></i>
-                        ¿Estás seguro? Considera estas alternativas
+                        {% translate "¿Estás seguro? Considera estas alternativas" %}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -217,24 +218,24 @@
                         <div class="col-md-6">
                             <h6 class="mb-2">
                                 <i class="bi bi-pencil text-primary"></i>
-                                Editar en lugar de eliminar
+                                {% translate "Editar en lugar de eliminar" %}
                             </h6>
-                            <p class="small text-muted mb-3">Puedes actualizar la información del comando si contiene errores o necesita mejoras.</p>
+                            <p class="small text-muted mb-3">{% translate "Puedes actualizar la información del comando si contiene errores o necesita mejoras." %}</p>
                             <a href="{% url 'command_edit' command.pk %}" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-pencil"></i>
-                                Editar comando
+                                {% translate "Editar comando" %}
                             </a>
                         </div>
                         <div class="col-md-6">
                             <h6 class="mb-2">
                                 <i class="bi bi-star text-warning"></i>
-                                Quitar de favoritos
+                                {% translate "Quitar de favoritos" %}
                             </h6>
-                            <p class="small text-muted mb-3">Si el comando está en favoritos pero ya no lo necesitas, puedes simplemente quitarlo de favoritos.</p>
+                            <p class="small text-muted mb-3">{% translate "Si el comando está en favoritos pero ya no lo necesitas, puedes simplemente quitarlo de favoritos." %}</p>
                             {% if command.is_favorite %}
                             <button class="btn btn-outline-warning btn-sm" onclick="toggleFavorite({{ command.pk }})">
                                 <i class="bi bi-star"></i>
-                                Quitar de favoritos
+                                {% translate "Quitar de favoritos" %}
                             </button>
                             {% endif %}
                         </div>

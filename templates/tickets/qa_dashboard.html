@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Dashboard QA{% endblock %}
+{% block title %}{% translate "Dashboard QA" %}{% endblock %}
 
 {% block extra_head %}
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -397,22 +398,22 @@
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <h1 class="dashboard-title">
-                        <i class="fas fa-chart-line me-3"></i>Dashboard QA
+                        <i class="fas fa-chart-line me-3"></i>{% translate "Dashboard QA" %}
                     </h1>
                     <p class="dashboard-subtitle mb-0">
-                        Panel de control para gestión de quejas y sugerencias
+                        {% translate "Panel de control para gestión de quejas y sugerencias" %}
                     </p>
                 </div>
                 <div class="col-md-4">
                     <div class="header-actions text-end">
                         <a href="{% url 'qa_rating_public' %}" class="action-btn" target="_blank">
-                            <i class="fas fa-star me-2"></i>URL Pública Evaluación
+                            <i class="fas fa-star me-2"></i>{% translate "URL Pública Evaluación" %}
                         </a>
                         <a href="{% url 'qa_complaint_create' %}" class="action-btn">
-                            <i class="fas fa-plus me-2"></i>Nuevo Reporte
+                            <i class="fas fa-plus me-2"></i>{% translate "Nuevo Reporte" %}
                         </a>
                         <a href="{% url 'qa_complaint_list' %}" class="action-btn">
-                            <i class="fas fa-list me-2"></i>Ver Todos
+                            <i class="fas fa-list me-2"></i>{% translate "Ver Todos" %}
                         </a>
                     </div>
                 </div>
@@ -428,7 +429,7 @@
                     </div>
                 </div>
                 <div class="metric-number">{{ total_complaints|default:0 }}</div>
-                <div class="metric-label">Total de Reportes</div>
+                <div class="metric-label">{% translate "Total de Reportes" %}</div>
             </div>
             
             <div class="metric-card danger">
@@ -438,12 +439,12 @@
                     </div>
                 </div>
                 <div class="metric-number">{{ open_complaints|default:0 }}</div>
-                <div class="metric-label">Reportes Abiertos</div>
+                <div class="metric-label">{% translate "Reportes Abiertos" %}</div>
                 {% if open_complaints > 0 and total_complaints > 0 %}
                     <div class="metric-progress">
                         <div class="metric-progress-bar" style="width: {% widthratio open_complaints total_complaints 100 %}%"></div>
                     </div>
-                    <div class="metric-percentage">{% widthratio open_complaints total_complaints 100 %}% del total</div>
+                    <div class="metric-percentage">{% widthratio open_complaints total_complaints 100 %}{% translate "% del total" %}</div>
                 {% endif %}
             </div>
             
@@ -454,12 +455,12 @@
                     </div>
                 </div>
                 <div class="metric-number">{{ resolved_complaints|default:0 }}</div>
-                <div class="metric-label">Reportes Resueltos</div>
+                <div class="metric-label">{% translate "Reportes Resueltos" %}</div>
                 {% if resolved_complaints > 0 and total_complaints > 0 %}
                     <div class="metric-progress">
                         <div class="metric-progress-bar" style="width: {% widthratio resolved_complaints total_complaints 100 %}%"></div>
                     </div>
-                    <div class="metric-percentage">{% widthratio resolved_complaints total_complaints 100 %}% del total</div>
+                    <div class="metric-percentage">{% widthratio resolved_complaints total_complaints 100 %}{% translate "% del total" %}</div>
                 {% endif %}
             </div>
             
@@ -470,8 +471,8 @@
                     </div>
                 </div>
                 <div class="metric-number">{{ overdue_complaints|default:0 }}</div>
-                <div class="metric-label">Reportes Atrasados</div>
-                <div class="metric-percentage">Más de 7 días sin resolver</div>
+                <div class="metric-label">{% translate "Reportes Atrasados" %}</div>
+                <div class="metric-percentage">{% translate "Más de 7 días sin resolver" %}</div>
             </div>
         </div>
 
@@ -484,9 +485,9 @@
                     </div>
                 </div>
                 <div class="metric-number">{{ total_ratings|default:0 }}</div>
-                <div class="metric-label">Total Calificaciones</div>
+                <div class="metric-label">{% translate "Total Calificaciones" %}</div>
                 <a href="{% url 'qa_rating_list' %}" class="btn btn-light btn-sm mt-2">
-                    Ver todas <i class="fas fa-arrow-right"></i>
+                    {% translate "Ver todas" %} <i class="fas fa-arrow-right"></i>
                 </a>
             </div>
             
@@ -497,12 +498,12 @@
                     </div>
                 </div>
                 <div class="metric-number">{{ happy_ratings|default:0 }}</div>
-                <div class="metric-label">Clientes Felices</div>
+                <div class="metric-label">{% translate "Clientes Felices" %}</div>
                 {% if total_ratings > 0 %}
                     <div class="metric-progress">
                         <div class="metric-progress-bar" style="width: {% widthratio happy_ratings total_ratings 100 %}%; background: rgba(255,255,255,0.5);"></div>
                     </div>
-                    <div class="metric-percentage">{% widthratio happy_ratings total_ratings 100 %}% del total</div>
+                    <div class="metric-percentage">{% widthratio happy_ratings total_ratings 100 %}{% translate "% del total" %}</div>
                 {% endif %}
             </div>
             
@@ -513,12 +514,12 @@
                     </div>
                 </div>
                 <div class="metric-number">{{ neutral_ratings|default:0 }}</div>
-                <div class="metric-label">Clientes Neutrales</div>
+                <div class="metric-label">{% translate "Clientes Neutrales" %}</div>
                 {% if total_ratings > 0 %}
                     <div class="metric-progress">
                         <div class="metric-progress-bar" style="width: {% widthratio neutral_ratings total_ratings 100 %}%; background: rgba(255,255,255,0.5);"></div>
                     </div>
-                    <div class="metric-percentage">{% widthratio neutral_ratings total_ratings 100 %}% del total</div>
+                    <div class="metric-percentage">{% widthratio neutral_ratings total_ratings 100 %}{% translate "% del total" %}</div>
                 {% endif %}
             </div>
             
@@ -529,12 +530,12 @@
                     </div>
                 </div>
                 <div class="metric-number">{{ sad_ratings|default:0 }}</div>
-                <div class="metric-label">Clientes Tristes</div>
+                <div class="metric-label">{% translate "Clientes Tristes" %}</div>
                 {% if total_ratings > 0 %}
                     <div class="metric-progress">
                         <div class="metric-progress-bar" style="width: {% widthratio sad_ratings total_ratings 100 %}%; background: rgba(255,255,255,0.5);"></div>
                     </div>
-                    <div class="metric-percentage">{% widthratio sad_ratings total_ratings 100 %}% del total</div>
+                    <div class="metric-percentage">{% widthratio sad_ratings total_ratings 100 %}{% translate "% del total" %}</div>
                 {% endif %}
             </div>
         </div>
@@ -544,20 +545,20 @@
         <div class="chart-card mt-4">
             <div class="chart-header">
                 <h3 class="chart-title">
-                    <i class="fas fa-star me-2"></i>Calificaciones Recientes
+                    <i class="fas fa-star me-2"></i>{% translate "Calificaciones Recientes" %}
                 </h3>
                 <a href="{% url 'qa_rating_list' %}" class="btn btn-primary btn-sm">
-                    Ver todas
+                    {% translate "Ver todas" %}
                 </a>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>Calificación</th>
-                            <th>Usuario</th>
-                            <th>Opinión</th>
-                            <th>Fecha</th>
+                            <th>{% translate "Calificación" %}</th>
+                            <th>{% translate "Usuario" %}</th>
+                            <th>{% translate "Opinión" %}</th>
+                            <th>{% translate "Fecha" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -572,7 +573,7 @@
                                 {% elif rating.name %}
                                     {{ rating.name }}
                                 {% else %}
-                                    <span class="text-muted">Anónimo</span>
+                                    <span class="text-muted">{% translate "Anónimo" %}</span>
                                 {% endif %}
                             </td>
                             <td>{{ rating.opinion|truncatewords:15 }}</td>
@@ -593,7 +594,7 @@
             <div class="chart-card">
                 <div class="chart-header">
                     <h3 class="chart-title">
-                        <i class="fas fa-chart-pie me-2"></i>Reportes por Tipo
+                        <i class="fas fa-chart-pie me-2"></i>{% translate "Reportes por Tipo" %}
                     </h3>
                 </div>
                 {% if type_stats %}
@@ -601,10 +602,10 @@
                         <div class="stats-item">
                             <div class="stats-label">
                                 <i class="fas fa-tag me-2"></i>
-                                {% if stat.type == 'complaint' %}Quejas
-                                {% elif stat.type == 'suggestion' %}Sugerencias  
-                                {% elif stat.type == 'feedback' %}Comentarios
-                                {% elif stat.type == 'improvement' %}Mejoras
+                                {% if stat.type == 'complaint' %}{% translate "Quejas" %}
+                                {% elif stat.type == 'suggestion' %}{% translate "Sugerencias" %}  
+                                {% elif stat.type == 'feedback' %}{% translate "Comentarios" %}
+                                {% elif stat.type == 'improvement' %}{% translate "Mejoras" %}
                                 {% else %}{{ stat.get_type_display }}{% endif %}
                             </div>
                             <div class="stats-value">{{ stat.count }}</div>
@@ -624,8 +625,8 @@
                         <div class="empty-icon">
                             <i class="fas fa-chart-pie"></i>
                         </div>
-                        <h5>No hay datos disponibles</h5>
-                        <p>Los datos aparecerán cuando haya reportes.</p>
+                        <h5>{% translate "No hay datos disponibles" %}</h5>
+                        <p>{% translate "Los datos aparecerán cuando haya reportes." %}</p>
                     </div>
                 {% endif %}
             </div>
@@ -634,7 +635,7 @@
             <div class="recent-activity">
                 <div class="activity-header">
                     <h3 class="chart-title">
-                        <i class="fas fa-clock me-2"></i>Actividad Reciente
+                        <i class="fas fa-clock me-2"></i>{% translate "Actividad Reciente" %}
                     </h3>
                 </div>
                 {% if recent_complaints %}
@@ -671,7 +672,7 @@
                     {% endfor %}
                     <div class="text-center mt-3">
                         <a href="{% url 'qa_complaint_list' %}" class="btn btn-primary btn-sm">
-                            Ver Todos los Reportes
+                            {% translate "Ver Todos los Reportes" %}
                         </a>
                     </div>
                 {% else %}
@@ -679,10 +680,10 @@
                         <div class="empty-icon">
                             <i class="fas fa-inbox"></i>
                         </div>
-                        <h6>No hay reportes recientes</h6>
-                        <p>Los nuevos reportes aparecerán aquí.</p>
+                        <h6>{% translate "No hay reportes recientes" %}</h6>
+                        <p>{% translate "Los nuevos reportes aparecerán aquí." %}</p>
                         <a href="{% url 'qa_complaint_create' %}" class="btn btn-primary btn-sm">
-                            <i class="fas fa-plus me-1"></i>Crear Primer Reporte
+                            <i class="fas fa-plus me-1"></i>{% translate "Crear Primer Reporte" %}
                         </a>
                     </div>
                 {% endif %}
@@ -691,7 +692,7 @@
     </div>
 
     <!-- Botón Flotante -->
-    <a href="{% url 'qa_complaint_create' %}" class="floating-action" title="Crear Nuevo Reporte">
+    <a href="{% url 'qa_complaint_create' %}" class="floating-action" title="{% translate 'Crear Nuevo Reporte' %}">
         <i class="fas fa-plus"></i>
     </a>
 </div>

@@ -1,3 +1,4 @@
+{% load i18n %}
 <div class="container-fluid">
     {% if day.description %}
     <div class="alert alert-info mb-4">
@@ -12,7 +13,7 @@
                     <i class="bi bi-list-check"></i> {{ tasks.count }} tarea{{ tasks.count|pluralize:",s" }}
                 </h6>
                 <a href="{% url 'task_plan_item_create' day.id %}" class="btn btn-sm btn-primary">
-                    <i class="bi bi-plus-circle"></i> Agregar Tarea
+                    <i class="bi bi-plus-circle"></i> {% translate "Agregar Tarea" %}
                 </a>
             </div>
         </div>
@@ -40,10 +41,10 @@
                                     {{ task.title }}
                                 </h5>
                                 <div class="d-flex gap-1">
-                                    <a href="{% url 'task_plan_item_edit' task.id %}" class="btn btn-sm btn-outline-secondary" title="Editar">
+                                    <a href="{% url 'task_plan_item_edit' task.id %}" class="btn btn-sm btn-outline-secondary" title="{% translate 'Editar' %}">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <a href="{% url 'task_plan_item_delete' task.id %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                    <a href="{% url 'task_plan_item_delete' task.id %}" class="btn btn-sm btn-outline-danger" title="{% translate 'Eliminar' %}">
                                         <i class="bi bi-trash"></i>
                                     </a>
                                 </div>
@@ -56,19 +57,19 @@
                             <div class="d-flex gap-2 flex-wrap">
                                 {% if task.priority == 'critical' %}
                                     <span class="badge bg-danger">
-                                        <i class="bi bi-exclamation-triangle-fill"></i> Prioridad Crítica
+                                        <i class="bi bi-exclamation-triangle-fill"></i> {% translate "Prioridad Crítica" %}
                                     </span>
                                 {% elif task.priority == 'high' %}
                                     <span class="badge bg-warning text-dark">
-                                        <i class="bi bi-arrow-up-circle-fill"></i> Prioridad Alta
+                                        <i class="bi bi-arrow-up-circle-fill"></i> {% translate "Prioridad Alta" %}
                                     </span>
                                 {% elif task.priority == 'medium' %}
                                     <span class="badge bg-info">
-                                        <i class="bi bi-dash-circle-fill"></i> Prioridad Media
+                                        <i class="bi bi-dash-circle-fill"></i> {% translate "Prioridad Media" %}
                                     </span>
                                 {% else %}
                                     <span class="badge bg-secondary">
-                                        <i class="bi bi-arrow-down-circle-fill"></i> Prioridad Baja
+                                        <i class="bi bi-arrow-down-circle-fill"></i> {% translate "Prioridad Baja" %}
                                     </span>
                                 {% endif %}
                                 
@@ -94,10 +95,10 @@
     {% else %}
     <div class="text-center text-muted py-5">
         <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-        <h5>Sin tareas en este día</h5>
-        <p class="mb-3">Agrega tu primera tarea para comenzar</p>
+        <h5>{% translate "Sin tareas en este día" %}</h5>
+        <p class="mb-3">{% translate "Agrega tu primera tarea para comenzar" %}</p>
         <a href="{% url 'task_plan_item_create' day.id %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Agregar Primera Tarea
+            <i class="bi bi-plus-circle"></i> {% translate "Agregar Primera Tarea" %}
         </a>
     </div>
     {% endif %}

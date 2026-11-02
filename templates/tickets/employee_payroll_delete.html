@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block extra_css %}
@@ -123,13 +124,13 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <h1><i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación</h1>
+                    <h1><i class="bi bi-exclamation-triangle"></i> {% translate "Confirmar Eliminación" %}</h1>
                     <h4>Nómina {{ payroll.get_period_display }}</h4>
                     <p class="mb-0">{{ employee.get_full_name }} - {{ employee.position }}</p>
                 </div>
                 <div class="col-md-4 text-end">
                     <a href="{% url 'employee_payroll_detail' employee.pk payroll.pk %}" class="btn btn-light">
-                        <i class="bi bi-arrow-left"></i> Volver al Detalle
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver al Detalle" %}
                     </a>
                 </div>
             </div>
@@ -144,34 +145,34 @@
                     <div class="warning-icon mb-3">
                         <i class="bi bi-exclamation-triangle-fill"></i>
                     </div>
-                    <h2 class="text-danger mb-3">¡ATENCIÓN!</h2>
-                    <h5 class="mb-4">Estás a punto de eliminar permanentemente esta nómina</h5>
-                    <p class="text-muted">Esta acción no se puede deshacer. Todos los archivos asociados serán eliminados del sistema.</p>
+                    <h2 class="text-danger mb-3">{% translate "¡ATENCIÓN!" %}</h2>
+                    <h5 class="mb-4">{% translate "Estás a punto de eliminar permanentemente esta nómina" %}</h5>
+                    <p class="text-muted">{% translate "Esta acción no se puede deshacer. Todos los archivos asociados serán eliminados del sistema." %}</p>
                 </div>
             </div>
 
             <!-- Información de la nómina a eliminar -->
             <div class="payroll-info-card mb-4">
                 <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información de la Nómina a Eliminar</h5>
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> {% translate "Información de la Nómina a Eliminar" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="info-grid mb-4">
                         <div class="info-item">
-                            <div class="info-label">Empleado</div>
+                            <div class="info-label">{% translate "Empleado" %}</div>
                             <div class="info-value">{{ employee.get_full_name }}</div>
                         </div>
                         <div class="info-item">
-                            <div class="info-label">Período</div>
+                            <div class="info-label">{% translate "Período" %}</div>
                             <div class="info-value">{{ payroll.get_period_display }}</div>
                         </div>
                         <div class="info-item">
-                            <div class="info-label">Fecha de registro</div>
+                            <div class="info-label">{% translate "Fecha de registro" %}</div>
                             <div class="info-value">{{ payroll.created_at|date:"d/m/Y H:i" }}</div>
                         </div>
                         {% if payroll.created_by %}
                         <div class="info-item">
-                            <div class="info-label">Creado por</div>
+                            <div class="info-label">{% translate "Creado por" %}</div>
                             <div class="info-value">{{ payroll.created_by.get_full_name }}</div>
                         </div>
                         {% endif %}
@@ -183,7 +184,7 @@
                         {% if payroll.gross_salary %}
                         <div class="col-md-6">
                             <div class="info-item">
-                                <div class="info-label">Salario Bruto</div>
+                                <div class="info-label">{% translate "Salario Bruto" %}</div>
                                 <div class="info-value text-primary">€{{ payroll.gross_salary|floatformat:2 }}</div>
                             </div>
                         </div>
@@ -191,7 +192,7 @@
                         {% if payroll.net_salary %}
                         <div class="col-md-6">
                             <div class="info-item">
-                                <div class="info-label">Salario Neto</div>
+                                <div class="info-label">{% translate "Salario Neto" %}</div>
                                 <div class="info-value text-success">€{{ payroll.net_salary|floatformat:2 }}</div>
                             </div>
                         </div>
@@ -201,7 +202,7 @@
 
                     <!-- Archivos que serán eliminados -->
                     <h6 class="text-danger mb-3">
-                        <i class="bi bi-files"></i> Archivos que serán eliminados:
+                        <i class="bi bi-files"></i> {% translate "Archivos que serán eliminados:" %}
                     </h6>
                     <div class="row">
                         <!-- Nómina PDF -->
@@ -210,7 +211,7 @@
                                 <div class="file-icon text-danger">
                                     <i class="bi bi-file-earmark-pdf"></i>
                                 </div>
-                                <strong>Nómina PDF</strong>
+                                <strong>{% translate "Nómina PDF" %}</strong>
                                 <div class="text-muted small">{{ payroll.payroll_pdf.name|cut:"payrolls/" }}</div>
                             </div>
                         </div>
@@ -226,13 +227,13 @@
                                             <i class="bi bi-image"></i>
                                         {% endif %}
                                     </div>
-                                    <strong>Comprobante de Pago</strong>
+                                    <strong>{% translate "Comprobante de Pago" %}</strong>
                                     <div class="text-muted small">{{ payroll.payment_receipt.name|cut:"payment_receipts/" }}</div>
                                 {% else %}
                                     <div class="file-icon text-muted">
                                         <i class="bi bi-file-x"></i>
                                     </div>
-                                    <strong class="text-muted">No hay comprobante</strong>
+                                    <strong class="text-muted">{% translate "No hay comprobante" %}</strong>
                                 {% endif %}
                             </div>
                         </div>
@@ -243,19 +244,19 @@
             <!-- Lista de consecuencias -->
             <div class="danger-list mb-4">
                 <h6 class="text-danger mb-3">
-                    <i class="bi bi-exclamation-circle"></i> Al confirmar la eliminación:
+                    <i class="bi bi-exclamation-circle"></i> {% translate "Al confirmar la eliminación:" %}
                 </h6>
                 <ul>
                     <li>Se eliminará permanentemente el registro de nómina del {{ payroll.get_period_display }}</li>
-                    <li>Se borrará el archivo PDF de la nómina del servidor</li>
+                    <li>{% translate "Se borrará el archivo PDF de la nómina del servidor" %}</li>
                     {% if payroll.payment_receipt %}
-                        <li>Se eliminará el comprobante de pago adjunto</li>
+                        <li>{% translate "Se eliminará el comprobante de pago adjunto" %}</li>
                     {% endif %}
-                    <li>Se perderá toda la información salarial registrada</li>
+                    <li>{% translate "Se perderá toda la información salarial registrada" %}</li>
                     {% if payroll.notes %}
-                        <li>Se perderán las notas asociadas a esta nómina</li>
+                        <li>{% translate "Se perderán las notas asociadas a esta nómina" %}</li>
                     {% endif %}
-                    <li>Esta acción <strong>NO SE PUEDE DESHACER</strong></li>
+                    <li>{% translate "Esta acción" %} <strong>{% translate "NO SE PUEDE DESHACER" %}</strong></li>
                 </ul>
             </div>
 
@@ -264,14 +265,14 @@
                 <div class="row">
                     <div class="col-md-6">
                         <a href="{% url 'employee_payroll_detail' employee.pk payroll.pk %}" class="btn btn-outline-secondary btn-cancel w-100">
-                            <i class="bi bi-x-circle"></i> Cancelar
+                            <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                         </a>
                     </div>
                     <div class="col-md-6">
                         <form method="post" style="display: inline;" id="deleteForm">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger btn-confirm-delete w-100" id="confirmDelete">
-                                <i class="bi bi-trash"></i> Confirmar Eliminación
+                                <i class="bi bi-trash"></i> {% translate "Confirmar Eliminación" %}
                             </button>
                         </form>
                     </div>

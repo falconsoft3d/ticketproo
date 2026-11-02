@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}GetPDFPage - Herramientas PDF{% endblock %}
+{% block title %}{% translate "GetPDFPage - Herramientas PDF" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -12,15 +13,15 @@
                 <div>
                     <h1 class="h3 mb-0">
                         <i class="bi bi-file-earmark-pdf text-primary"></i>
-                        GetPDFPage
+                        {% translate "GetPDFPage" %}
                     </h1>
-                    <p class="text-muted mb-0">Extrae páginas específicas de un archivo PDF</p>
+                    <p class="text-muted mb-0">{% translate "Extrae páginas específicas de un archivo PDF" %}</p>
                 </div>
-                <nav aria-label="breadcrumb">
+                <nav aria-label="{% translate 'breadcrumb' %}">
                     <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                        <li class="breadcrumb-item">Herramientas</li>
-                        <li class="breadcrumb-item active">GetPDFPage</li>
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                        <li class="breadcrumb-item">{% translate "Herramientas" %}</li>
+                        <li class="breadcrumb-item active">{% translate "GetPDFPage" %}</li>
                     </ol>
                 </nav>
             </div>
@@ -32,20 +33,20 @@
                         <div class="card-header bg-info bg-opacity-10">
                             <h5 class="mb-0">
                                 <i class="bi bi-info-circle text-info"></i>
-                                Cómo usar esta herramienta
+                                {% translate "Cómo usar esta herramienta" %}
                             </h5>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <h6><i class="bi bi-1-circle"></i> Selecciona un archivo PDF</h6>
-                                    <p class="text-muted small mb-3">Sube el archivo PDF del cual quieres extraer páginas específicas.</p>
+                                    <h6><i class="bi bi-1-circle"></i> {% translate "Selecciona un archivo PDF" %}</h6>
+                                    <p class="text-muted small mb-3">{% translate "Sube el archivo PDF del cual quieres extraer páginas específicas." %}</p>
                                     
-                                    <h6><i class="bi bi-2-circle"></i> Especifica las páginas</h6>
-                                    <p class="text-muted small mb-3">Indica qué páginas quieres extraer usando el formato descrito.</p>
+                                    <h6><i class="bi bi-2-circle"></i> {% translate "Especifica las páginas" %}</h6>
+                                    <p class="text-muted small mb-3">{% translate "Indica qué páginas quieres extraer usando el formato descrito." %}</p>
                                 </div>
                                 <div class="col-md-6">
-                                    <h6><i class="bi bi-card-list"></i> Formatos de páginas válidos:</h6>
+                                    <h6><i class="bi bi-card-list"></i> {% translate "Formatos de páginas válidos:" %}</h6>
                                     <ul class="list-unstyled text-muted small">
                                         <li><code>1</code> - Solo la página 1</li>
                                         <li><code>1,3,5</code> - Páginas 1, 3 y 5</li>
@@ -62,26 +63,26 @@
                         <div class="card-header bg-success bg-opacity-10">
                             <h6 class="mb-0">
                                 <i class="bi bi-check-circle text-success"></i>
-                                Características
+                                {% translate "Características" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <ul class="list-unstyled mb-0">
                                 <li class="mb-2">
                                     <i class="bi bi-lightning text-warning"></i>
-                                    <small>Procesamiento rápido</small>
+                                    <small>{% translate "Procesamiento rápido" %}</small>
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-shield-check text-success"></i>
-                                    <small>Seguro y privado</small>
+                                    <small>{% translate "Seguro y privado" %}</small>
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-download text-primary"></i>
-                                    <small>Descarga inmediata</small>
+                                    <small>{% translate "Descarga inmediata" %}</small>
                                 </li>
                                 <li class="mb-0">
                                     <i class="bi bi-file-earmark-pdf text-danger"></i>
-                                    <small>Mantiene calidad original</small>
+                                    <small>{% translate "Mantiene calidad original" %}</small>
                                 </li>
                             </ul>
                         </div>
@@ -96,7 +97,7 @@
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0">
                                 <i class="bi bi-upload"></i>
-                                Subir PDF y extraer páginas
+                                {% translate "Subir PDF y extraer páginas" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -107,7 +108,7 @@
                                 <div class="mb-4">
                                     <label for="pdf_file" class="form-label fw-bold">
                                         <i class="bi bi-file-earmark-arrow-up"></i>
-                                        Archivo PDF
+                                        {% translate "Archivo PDF" %}
                                     </label>
                                     <input type="file" 
                                            class="form-control form-control-lg" 
@@ -117,7 +118,7 @@
                                            required>
                                     <div class="form-text">
                                         <i class="bi bi-info-circle"></i>
-                                        Solo archivos PDF. Tamaño máximo recomendado: 50MB
+                                        {% translate "Solo archivos PDF. Tamaño máximo recomendado: 50MB" %}
                                     </div>
                                 </div>
 
@@ -125,13 +126,13 @@
                                 <div class="mb-4">
                                     <label for="pages" class="form-label fw-bold">
                                         <i class="bi bi-card-list"></i>
-                                        Páginas a extraer
+                                        {% translate "Páginas a extraer" %}
                                     </label>
                                     <input type="text" 
                                            class="form-control form-control-lg" 
                                            id="pages" 
                                            name="pages" 
-                                           placeholder="Ej: 1,3,5-7,10" 
+                                           placeholder="{% translate 'Ej: 1,3,5-7,10' %}" 
                                            required>
                                     <div class="form-text">
                                         <i class="bi bi-lightbulb"></i>
@@ -143,11 +144,11 @@
                                 <div class="d-grid gap-2 d-md-flex justify-content-md-center">
                                     <button type="submit" class="btn btn-primary btn-lg px-5" id="processBtn">
                                         <i class="bi bi-gear-fill me-2"></i>
-                                        Procesar PDF
+                                        {% translate "Procesar PDF" %}
                                     </button>
                                     <button type="reset" class="btn btn-outline-secondary btn-lg px-4">
                                         <i class="bi bi-arrow-clockwise me-2"></i>
-                                        Limpiar
+                                        {% translate "Limpiar" %}
                                     </button>
                                 </div>
                             </form>
@@ -163,7 +164,7 @@
                         <div class="card-header">
                             <h5 class="mb-0">
                                 <i class="bi bi-example"></i>
-                                Ejemplo visual
+                                {% translate "Ejemplo visual" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -171,22 +172,22 @@
                                 <div class="col-md-4">
                                     <div class="mb-3">
                                         <i class="bi bi-file-earmark-pdf display-4 text-danger"></i>
-                                        <h6 class="mt-2">PDF Original</h6>
-                                        <p class="text-muted small">10 páginas</p>
+                                        <h6 class="mt-2">{% translate "PDF Original" %}</h6>
+                                        <p class="text-muted small">{% translate "10 páginas" %}</p>
                                     </div>
                                 </div>
                                 <div class="col-md-4 d-flex align-items-center justify-content-center">
                                     <div class="text-center">
                                         <i class="bi bi-arrow-right display-4 text-primary"></i>
-                                        <p class="mt-2 mb-0"><strong>Páginas: 1,3,5-7</strong></p>
-                                        <small class="text-muted">Se extraen páginas 1, 3, 5, 6, 7</small>
+                                        <p class="mt-2 mb-0"><strong>{% translate "Páginas: 1,3,5-7" %}</strong></p>
+                                        <small class="text-muted">{% translate "Se extraen páginas 1, 3, 5, 6, 7" %}</small>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
                                         <i class="bi bi-file-earmark-pdf display-4 text-success"></i>
-                                        <h6 class="mt-2">PDF Resultante</h6>
-                                        <p class="text-muted small">5 páginas seleccionadas</p>
+                                        <h6 class="mt-2">{% translate "PDF Resultante" %}</h6>
+                                        <p class="text-muted small">{% translate "5 páginas seleccionadas" %}</p>
                                     </div>
                                 </div>
                             </div>

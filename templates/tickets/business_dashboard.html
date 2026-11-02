@@ -1,414 +1,292 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4" id="dashboard-container">
-    
-    <!-- Header -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
+<div class="ap-biz" id="dashboard-container">
+
+    <!-- Cabecera -->
+    <div class="ap-biz-head">
+        <div>
+            <div class="ap-biz-date">{% now "l, j \d\e F" %}</div>
+            <h1>{% translate "Dashboard empresarial" %}</h1>
+            <p>{% translate "KPIs principales del negocio · comparativa de hoy frente a ayer" %}</p>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            {% if not is_public %}
+            <button class="ap-biz-btn" id="shareButton">
+                <i class="fas fa-share-alt"></i> {% translate "Compartir" %}
+            </button>
+            {% endif %}
+            <span class="badge ap-biz-today"><i class="fas fa-calendar-day"></i> {% translate "Hoy:" %} {% now "d/m/Y" %}</span>
+        </div>
+    </div>
+
+    <!-- Totales generales -->
+    <h2 class="ap-biz-section">{% translate "Totales" %}</h2>
+    <div class="ap-biz-grid ap-biz-grid-5">
+        <a href="{% url 'contact_list' %}" class="ap-biz-card ap-biz-link ap-biz-total">
+            <span class="ap-biz-chip c-blue"><i class="fas fa-users"></i></span>
+            <span class="display-6 ap-biz-num">{{ total_contacts }}</span>
+            <small>{% translate "Contactos" %}</small>
+        </a>
+        <a href="{% url 'ticket_list' %}" class="ap-biz-card ap-biz-link ap-biz-total">
+            <span class="ap-biz-chip c-green"><i class="fas fa-ticket-alt"></i></span>
+            <span class="display-6 ap-biz-num">{{ total_tickets }}</span>
+            <small>{% translate "Tickets" %}</small>
+        </a>
+        <a href="{% url 'support_meeting_list' %}" class="ap-biz-card ap-biz-link ap-biz-total">
+            <span class="ap-biz-chip c-orange"><i class="fas fa-calendar-check"></i></span>
+            <span class="display-6 ap-biz-num">{{ total_meetings }}</span>
+            <small>{% translate "Reuniones" %}</small>
+        </a>
+        <a href="{% url 'work_order_list' %}" class="ap-biz-card ap-biz-link ap-biz-total">
+            <span class="ap-biz-chip c-teal"><i class="fas fa-clipboard-list{% if workorders_today > 0 %} rotate-icon{% endif %}"></i></span>
+            <span class="display-6 ap-biz-num">{{ total_workorders }}</span>
+            <small>{% translate "Órdenes" %}</small>
+        </a>
+        <div class="ap-biz-card ap-biz-off ap-biz-total">
+            <span class="ap-biz-chip c-red"><i class="fas fa-star"></i></span>
+            <span class="display-6 ap-biz-num">{{ total_evaluations }}</span>
+            <small>{% translate "Evaluaciones" %}</small>
+        </div>
+    </div>
+
+    <!-- Comparativa hoy vs ayer -->
+    <h2 class="ap-biz-section">{% translate "Hoy vs ayer" %}</h2>
+    <div class="ap-biz-grid ap-biz-grid-3">
+        <a href="{% url 'contact_list' %}" class="ap-biz-card ap-biz-link">
+            <div class="ap-biz-card-head">
+                <span class="ap-biz-chip c-blue"><i class="fas fa-users"></i></span>
+                <h3>{% translate "Contactos creados" %}</h3>
+            </div>
+            <div class="ap-biz-split">
+                <div><span class="display-5 ap-biz-num ap-biz-num-muted">{{ contacts_yesterday }}</span><small>{% translate "Ayer" %}</small></div>
+                <div><span class="display-5 ap-biz-num">{{ contacts_today }}</span><small>{% translate "Hoy" %}</small></div>
+            </div>
+            <div class="ap-biz-var">
+                {% if contacts_variation > 0 %}
+                    <span class="badge ap-var-up"><i class="fas fa-arrow-up"></i> +{{ contacts_variation|floatformat:1 }}%</span>
+                {% elif contacts_variation < 0 %}
+                    <span class="badge ap-var-down"><i class="fas fa-arrow-down"></i> {{ contacts_variation|floatformat:1 }}%</span>
+                {% else %}
+                    <span class="badge ap-var-flat"><i class="fas fa-minus"></i> 0%</span>
+                {% endif %}
+                <small>{% translate "vs ayer" %}</small>
+            </div>
+        </a>
+        <a href="{% url 'ticket_list' %}" class="ap-biz-card ap-biz-link">
+            <div class="ap-biz-card-head">
+                <span class="ap-biz-chip c-green"><i class="fas fa-ticket-alt"></i></span>
+                <h3>{% translate "Tickets creados" %}</h3>
+            </div>
+            <div class="ap-biz-split">
+                <div><span class="display-5 ap-biz-num ap-biz-num-muted">{{ tickets_yesterday }}</span><small>{% translate "Ayer" %}</small></div>
+                <div><span class="display-5 ap-biz-num">{{ tickets_today }}</span><small>{% translate "Hoy" %}</small></div>
+            </div>
+            <div class="ap-biz-var">
+                {% if tickets_variation > 0 %}
+                    <span class="badge ap-var-up"><i class="fas fa-arrow-up"></i> +{{ tickets_variation|floatformat:1 }}%</span>
+                {% elif tickets_variation < 0 %}
+                    <span class="badge ap-var-down"><i class="fas fa-arrow-down"></i> {{ tickets_variation|floatformat:1 }}%</span>
+                {% else %}
+                    <span class="badge ap-var-flat"><i class="fas fa-minus"></i> 0%</span>
+                {% endif %}
+                <small>{% translate "vs ayer" %}</small>
+            </div>
+        </a>
+        <a href="{% url 'support_meeting_list' %}" class="ap-biz-card ap-biz-link">
+            <div class="ap-biz-card-head">
+                <span class="ap-biz-chip c-orange"><i class="fas fa-calendar-check"></i></span>
+                <h3>{% translate "Reuniones de soporte" %}</h3>
+            </div>
+            <div class="ap-biz-split">
+                <div><span class="display-5 ap-biz-num ap-biz-num-muted">{{ meetings_yesterday }}</span><small>{% translate "Ayer" %}</small></div>
+                <div><span class="display-5 ap-biz-num">{{ meetings_today }}</span><small>{% translate "Hoy" %}</small></div>
+            </div>
+            <div class="ap-biz-var">
+                {% if meetings_variation > 0 %}
+                    <span class="badge ap-var-up"><i class="fas fa-arrow-up"></i> +{{ meetings_variation|floatformat:1 }}%</span>
+                {% elif meetings_variation < 0 %}
+                    <span class="badge ap-var-down"><i class="fas fa-arrow-down"></i> {{ meetings_variation|floatformat:1 }}%</span>
+                {% else %}
+                    <span class="badge ap-var-flat"><i class="fas fa-minus"></i> 0%</span>
+                {% endif %}
+                <small>{% translate "vs ayer" %}</small>
+            </div>
+        </a>
+        <a href="{% url 'work_order_list' %}" class="ap-biz-card ap-biz-link">
+            <div class="ap-biz-card-head">
+                <span class="ap-biz-chip c-teal"><i class="fas fa-clipboard-list{% if workorders_today > 0 %} rotate-icon{% endif %}"></i></span>
+                <h3>{% translate "Órdenes de trabajo" %}</h3>
+            </div>
+            <div class="ap-biz-split">
+                <div><span class="display-5 ap-biz-num ap-biz-num-muted">{{ workorders_yesterday }}</span><small>{% translate "Ayer" %}</small></div>
+                <div><span class="display-5 ap-biz-num">{{ workorders_today }}</span><small>{% translate "Hoy" %}</small></div>
+            </div>
+            <div class="ap-biz-var">
+                {% if workorders_variation > 0 %}
+                    <span class="badge ap-var-up"><i class="fas fa-arrow-up"></i> +{{ workorders_variation|floatformat:1 }}%</span>
+                {% elif workorders_variation < 0 %}
+                    <span class="badge ap-var-down"><i class="fas fa-arrow-down"></i> {{ workorders_variation|floatformat:1 }}%</span>
+                {% else %}
+                    <span class="badge ap-var-flat"><i class="fas fa-minus"></i> 0%</span>
+                {% endif %}
+                <small>{% translate "vs ayer" %}</small>
+            </div>
+        </a>
+        <div class="ap-biz-card ap-biz-off">
+            <div class="ap-biz-card-head">
+                <span class="ap-biz-chip c-red"><i class="fas fa-star"></i></span>
+                <h3>{% translate "Evaluaciones" %}</h3>
+            </div>
+            <div class="ap-biz-split">
+                <div><span class="display-5 ap-biz-num ap-biz-num-muted">{{ evaluations_yesterday }}</span><small>{% translate "Ayer" %}</small></div>
+                <div><span class="display-5 ap-biz-num">{{ evaluations_today }}</span><small>{% translate "Hoy" %}</small></div>
+            </div>
+            <div class="ap-biz-var">
+                {% if evaluations_variation > 0 %}
+                    <span class="badge ap-var-up"><i class="fas fa-arrow-up"></i> +{{ evaluations_variation|floatformat:1 }}%</span>
+                {% elif evaluations_variation < 0 %}
+                    <span class="badge ap-var-down"><i class="fas fa-arrow-down"></i> {{ evaluations_variation|floatformat:1 }}%</span>
+                {% else %}
+                    <span class="badge ap-var-flat"><i class="fas fa-minus"></i> 0%</span>
+                {% endif %}
+                <small>{% translate "vs ayer" %}</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contactos positivos vs negativos -->
+    <h2 class="ap-biz-section">{% translate "Sentimiento de contactos" %}</h2>
+    <div class="ap-biz-card">
+        <div class="ap-biz-sent">
+            <div class="ap-biz-sent-side">
+                <span class="ap-biz-chip c-red"><i class="fas fa-frown"></i></span>
                 <div>
-                    <h2 class="mb-1">
-                        <i class="fas fa-chart-line text-primary"></i> Dashboard Empresarial
-                    </h2>
-                    <p class="text-muted mb-0">KPIs principales del negocio</p>
+                    <span class="display-5 ap-biz-num">{{ contacts_negative }}</span>
+                    <small>{% translate "Negativos" %}</small>
                 </div>
+                <span class="badge ap-var-down ms-auto">{{ negative_percentage|floatformat:1 }}%</span>
+            </div>
+            <div class="ap-biz-sent-side">
+                <span class="ap-biz-chip c-green"><i class="fas fa-smile"></i></span>
                 <div>
-                    {% if not is_public %}
-                    <button class="btn btn-outline-primary me-2" id="shareButton">
-                        <i class="fas fa-share-alt"></i> Compartir Dashboard
-                    </button>
-                    {% endif %}
-                    <span class="badge bg-info">
-                        <i class="fas fa-calendar-day"></i> Hoy: {{ "now"|date:"d/m/Y" }}
-                    </span>
+                    <span class="display-5 ap-biz-num">{{ contacts_positive }}</span>
+                    <small>{% translate "Positivos" %}</small>
                 </div>
+                <span class="badge ap-var-up ms-auto">{{ positive_percentage|floatformat:1 }}%</span>
             </div>
+        </div>
+        <div class="ap-biz-bar" aria-hidden="true">
+            <span class="neg" style="width: {{ negative_percentage|stringformat:'.1f' }}%"></span>
+            <span class="pos" style="width: {{ positive_percentage|stringformat:'.1f' }}%"></span>
         </div>
     </div>
-    
-    <!-- Totales Generales -->
-    <div class="row mb-4">
-        <div class="col-md-4 mb-3">
-            <a href="{% url 'contact_list' %}" class="text-decoration-none">
-                <div class="card shadow-sm border-primary hover-card">
-                    <div class="card-body text-center">
-                        <i class="fas fa-users fa-3x text-primary mb-3"></i>
-                        <h3 class="display-6 mb-0">{{ total_contacts }}</h3>
-                        <p class="text-muted text-uppercase small mb-0">Total Contactos</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        
-        <div class="col-md-4 mb-3">
-            <a href="{% url 'ticket_list' %}" class="text-decoration-none">
-                <div class="card shadow-sm border-success hover-card">
-                    <div class="card-body text-center">
-                        <i class="fas fa-ticket-alt fa-3x text-success mb-3"></i>
-                        <h3 class="display-6 mb-0">{{ total_tickets }}</h3>
-                        <p class="text-muted text-uppercase small mb-0">Total Tickets</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        
-        <div class="col-md-4 mb-3">
-            <a href="{% url 'support_meeting_list' %}" class="text-decoration-none">
-                <div class="card shadow-sm border-warning hover-card">
-                    <div class="card-body text-center">
-                        <i class="fas fa-calendar-check fa-3x text-warning mb-3"></i>
-                        <h3 class="display-6 mb-0">{{ total_meetings }}</h3>
-                        <p class="text-muted text-uppercase small mb-0">Total Reuniones</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </div>
-    
-    <!-- KPI Cards - Comparativa Hoy vs Ayer -->
-    <div class="row mb-4">
-        <!-- Contactos Creados -->
-        <div class="col-md-4 mb-3">
-            <a href="{% url 'contact_list' %}" class="text-decoration-none">
-                <div class="card shadow-sm h-100 hover-card">
-                    <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-muted text-uppercase mb-0">Contactos Creados</h6>
-                        <div class="icon-shape bg-primary text-white rounded-circle">
-                            <i class="fas fa-users fa-2x p-3"></i>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h2 class="display-5 text-secondary mb-0">{{ contacts_yesterday }}</h2>
-                                <small class="text-muted">Ayer</small>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h2 class="display-5 text-primary mb-0">{{ contacts_today }}</h2>
-                                <small class="text-muted">Hoy</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-3 text-center">
-                        {% if contacts_variation > 0 %}
-                            <span class="badge bg-success fs-6 p-2">
-                                <i class="fas fa-arrow-up"></i> +{{ contacts_variation|floatformat:1 }}%
-                            </span>
-                        {% elif contacts_variation < 0 %}
-                            <span class="badge bg-danger fs-6 p-2">
-                                <i class="fas fa-arrow-down"></i> {{ contacts_variation|floatformat:1 }}%
-                            </span>
-                        {% else %}
-                            <span class="badge bg-secondary fs-6 p-2">
-                                <i class="fas fa-minus"></i> 0%
-                            </span>
-                        {% endif %}
-                        <small class="text-muted ms-2">vs ayer</small>
-                    </div>
-                </div>
-            </div>
-            </a>
-        </div>
-        
-        <!-- Tickets Creados -->
-        <div class="col-md-4 mb-3">
-            <a href="{% url 'ticket_list' %}" class="text-decoration-none">
-                <div class="card shadow-sm h-100 hover-card">
-                    <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-muted text-uppercase mb-0">Tickets Creados</h6>
-                        <div class="icon-shape bg-success text-white rounded-circle">
-                            <i class="fas fa-ticket-alt fa-2x p-3"></i>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h2 class="display-5 text-secondary mb-0">{{ tickets_yesterday }}</h2>
-                                <small class="text-muted">Ayer</small>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h2 class="display-5 text-success mb-0">{{ tickets_today }}</h2>
-                                <small class="text-muted">Hoy</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-3 text-center">
-                        {% if tickets_variation > 0 %}
-                            <span class="badge bg-success fs-6 p-2">
-                                <i class="fas fa-arrow-up"></i> +{{ tickets_variation|floatformat:1 }}%
-                            </span>
-                        {% elif tickets_variation < 0 %}
-                            <span class="badge bg-danger fs-6 p-2">
-                                <i class="fas fa-arrow-down"></i> {{ tickets_variation|floatformat:1 }}%
-                            </span>
-                        {% else %}
-                            <span class="badge bg-secondary fs-6 p-2">
-                                <i class="fas fa-minus"></i> 0%
-                            </span>
-                        {% endif %}
-                        <small class="text-muted ms-2">vs ayer</small>
-                    </div>
-                </div>
-            </div>
-            </a>
-        </div>
-        
-        <!-- Reuniones de Soporte -->
-        <div class="col-md-4 mb-3">
-            <a href="{% url 'support_meeting_list' %}" class="text-decoration-none">
-                <div class="card shadow-sm h-100 hover-card">
-                    <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-muted text-uppercase mb-0">Reuniones Soporte</h6>
-                        <div class="icon-shape bg-warning text-white rounded-circle">
-                            <i class="fas fa-calendar-check fa-2x p-3"></i>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h2 class="display-5 text-secondary mb-0">{{ meetings_yesterday }}</h2>
-                                <small class="text-muted">Ayer</small>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h2 class="display-5 text-warning mb-0">{{ meetings_today }}</h2>
-                                <small class="text-muted">Hoy</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-3 text-center">
-                        {% if meetings_variation > 0 %}
-                            <span class="badge bg-success fs-6 p-2">
-                                <i class="fas fa-arrow-up"></i> +{{ meetings_variation|floatformat:1 }}%
-                            </span>
-                        {% elif meetings_variation < 0 %}
-                            <span class="badge bg-danger fs-6 p-2">
-                                <i class="fas fa-arrow-down"></i> {{ meetings_variation|floatformat:1 }}%
-                            </span>
-                        {% else %}
-                            <span class="badge bg-secondary fs-6 p-2">
-                                <i class="fas fa-minus"></i> 0%
-                            </span>
-                        {% endif %}
-                        <small class="text-muted ms-2">vs ayer</small>
-                    </div>
-                </div>
-            </div>
-            </a>
-        </div>
-    </div>
-    
-    <!-- Segunda fila KPIs -->
-    <div class="row mb-4">
-        <!-- Órdenes de Trabajo -->
-        <div class="col-md-6 mb-3">
-            <a href="{% url 'work_order_list' %}" class="text-decoration-none">
-                <div class="card shadow-sm h-100 hover-card">
-                    <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-muted text-uppercase mb-0">Órdenes de Trabajo</h6>
-                        <div class="icon-shape bg-info text-white rounded-circle">
-                            <i class="fas fa-clipboard-list fa-2x p-3 {% if workorders_today > 0 %}rotate-icon{% endif %}"></i>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h2 class="display-5 text-secondary mb-0">{{ workorders_yesterday }}</h2>
-                                <small class="text-muted">Ayer</small>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h2 class="display-5 text-info mb-0">{{ workorders_today }}</h2>
-                                <small class="text-muted">Hoy</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-3 text-center">
-                        {% if workorders_variation > 0 %}
-                            <span class="badge bg-success fs-6 p-2">
-                                <i class="fas fa-arrow-up"></i> +{{ workorders_variation|floatformat:1 }}%
-                            </span>
-                        {% elif workorders_variation < 0 %}
-                            <span class="badge bg-danger fs-6 p-2">
-                                <i class="fas fa-arrow-down"></i> {{ workorders_variation|floatformat:1 }}%
-                            </span>
-                        {% else %}
-                            <span class="badge bg-secondary fs-6 p-2">
-                                <i class="fas fa-minus"></i> 0%
-                            </span>
-                        {% endif %}
-                        <small class="text-muted ms-2">vs ayer</small>
-                    </div>
-                </div>
-            </div>
-            </a>
-        </div>
-        
-        <!-- Evaluaciones -->
-        <div class="col-md-6 mb-3">
-            <div class="card shadow-sm h-100 hover-card-disabled">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-muted text-uppercase mb-0">Evaluaciones</h6>
-                        <div class="icon-shape bg-danger text-white rounded-circle">
-                            <i class="fas fa-star fa-2x p-3"></i>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h2 class="display-5 text-secondary mb-0">{{ evaluations_yesterday }}</h2>
-                                <small class="text-muted">Ayer</small>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h2 class="display-5 text-danger mb-0">{{ evaluations_today }}</h2>
-                                <small class="text-muted">Hoy</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-3 text-center">
-                        {% if evaluations_variation > 0 %}
-                            <span class="badge bg-success fs-6 p-2">
-                                <i class="fas fa-arrow-up"></i> +{{ evaluations_variation|floatformat:1 }}%
-                            </span>
-                        {% elif evaluations_variation < 0 %}
-                            <span class="badge bg-danger fs-6 p-2">
-                                <i class="fas fa-arrow-down"></i> {{ evaluations_variation|floatformat:1 }}%
-                            </span>
-                        {% else %}
-                            <span class="badge bg-secondary fs-6 p-2">
-                                <i class="fas fa-minus"></i> 0%
-                            </span>
-                        {% endif %}
-                        <small class="text-muted ms-2">vs ayer</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Contactos Positivos vs Negativos -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h6 class="text-muted text-uppercase mb-4">
-                        <i class="fas fa-balance-scale"></i> Contactos Positivos vs Negativos
-                    </h6>
-                    <div class="row">
-                        <div class="col-md-5">
-                            <div class="text-center p-4 bg-danger bg-opacity-10 rounded">
-                                <i class="fas fa-frown fa-3x text-danger mb-3"></i>
-                                <h2 class="display-5 text-danger mb-0">{{ contacts_negative }}</h2>
-                                <p class="text-muted mb-2">Negativos</p>
-                                <span class="badge bg-danger fs-6 p-2">{{ negative_percentage|floatformat:1 }}%</span>
-                            </div>
-                        </div>
-                        <div class="col-md-2 d-flex align-items-center justify-content-center">
-                            <div class="text-center">
-                                <i class="fas fa-exchange-alt fa-2x text-secondary"></i>
-                            </div>
-                        </div>
-                        <div class="col-md-5">
-                            <div class="text-center p-4 bg-success bg-opacity-10 rounded">
-                                <i class="fas fa-smile fa-3x text-success mb-3"></i>
-                                <h2 class="display-5 text-success mb-0">{{ contacts_positive }}</h2>
-                                <p class="text-muted mb-2">Positivos</p>
-                                <span class="badge bg-success fs-6 p-2">{{ positive_percentage|floatformat:1 }}%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Totales de Órdenes y Evaluaciones -->
-    <div class="row mb-4">
-        <div class="col-md-6 mb-3">
-            <a href="{% url 'work_order_list' %}" class="text-decoration-none">
-                <div class="card shadow-sm border-info hover-card">
-                    <div class="card-body text-center">
-                        <i class="fas fa-clipboard-list fa-3x text-info mb-3 {% if workorders_today > 0 %}rotate-icon{% endif %}"></i>
-                        <h3 class="display-6 mb-0">{{ total_workorders }}</h3>
-                        <p class="text-muted text-uppercase small mb-0">Total Órdenes</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        
-        <div class="col-md-6 mb-3">
-            <div class="card shadow-sm border-danger hover-card-disabled">
-                <div class="card-body text-center">
-                    <i class="fas fa-star fa-3x text-danger mb-3"></i>
-                    <h3 class="display-6 mb-0">{{ total_evaluations }}</h3>
-                    <p class="text-muted text-uppercase small mb-0">Total Evaluaciones</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
+
 </div>
 
 <style>
-    .icon-shape {
-        width: 60px;
-        height: 60px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    body { background: var(--ap-bg) !important; }
+    .ap-biz { padding: .5rem 0 3rem; }
+    .ap-biz-head {
+        display: flex; justify-content: space-between; align-items: flex-end;
+        flex-wrap: wrap; gap: 1rem; margin-bottom: 1.75rem;
     }
-    
-    .hover-card {
-        transition: all 0.3s ease;
-        cursor: pointer;
+    .ap-biz-date {
+        font-size: .78rem; font-weight: 600; text-transform: uppercase;
+        letter-spacing: .06em; color: var(--ap-ink-3); margin-bottom: .25rem;
     }
-    
-    .hover-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    .ap-biz-head h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); font-weight: 700; letter-spacing: -0.03em; margin: 0; }
+    .ap-biz-head p { color: var(--ap-ink-2); margin: .35rem 0 0; }
+    .ap-biz-btn {
+        display: inline-flex; align-items: center; gap: .45rem;
+        border: none; border-radius: 980px; background: var(--ap-fill); color: var(--ap-ink);
+        font-size: .9rem; font-weight: 500; padding: .55rem 1.1rem;
+        transition: background .15s ease;
     }
-    
-    .hover-card-disabled {
-        opacity: 0.8;
-        cursor: not-allowed;
+    .ap-biz-btn:hover { background: var(--ap-fill-3); }
+    .ap-biz .ap-biz-today {
+        background: var(--ap-surface); color: var(--ap-ink-2); font-size: .82rem; font-weight: 500;
+        padding: .55rem .9rem; border-radius: 980px;
     }
-    
-    {% if not is_public %}
-    a.text-decoration-none:hover .hover-card {
-        background-color: #f8f9fa;
+    .ap-biz-section {
+        font-size: 1.15rem; font-weight: 600; letter-spacing: -0.02em;
+        margin: 2rem 0 .9rem;
     }
-    {% endif %}
-    
-    /* Animación de rotación para alarma */
-    @keyframes rotate360 {
-        from {
-            transform: rotate(0deg);
-        }
-        to {
-            transform: rotate(360deg);
-        }
+    .ap-biz-grid { display: grid; gap: 1rem; }
+    .ap-biz-grid-5 { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+    .ap-biz-grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+
+    .ap-biz-card {
+        display: flex; flex-direction: column;
+        background: var(--ap-surface); border-radius: 22px; padding: 1.35rem 1.4rem;
+        color: var(--ap-ink); text-decoration: none;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .03);
+        transition: transform .3s cubic-bezier(.2, .8, .2, 1), box-shadow .3s ease;
     }
-    
-    .rotate-icon {
-        animation: rotate360 2s linear infinite;
-        display: inline-block;
+    .ap-biz-link:hover { color: var(--ap-ink); transform: translateY(-3px); box-shadow: 0 14px 34px -14px rgba(0, 0, 0, .18); }
+    .ap-biz-off { cursor: default; }
+
+    .ap-biz-chip {
+        width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+        color: #fff; font-size: .95rem;
+    }
+    .c-blue { background: #0a84ff; } .c-green { background: #30d158; }
+    .c-orange { background: #ff9f0a; } .c-teal { background: #40c8e0; }
+    .c-red { background: #ff453a; }
+
+    .ap-biz .ap-biz-num {
+        display: block; font-size: 2.1rem; font-weight: 700;
+        letter-spacing: -0.035em; line-height: 1; color: var(--ap-ink);
+        font-variant-numeric: tabular-nums;
+    }
+    .ap-biz .ap-biz-num-muted { color: var(--ap-ink-3); }
+    .ap-biz-card small { color: var(--ap-ink-2); font-size: .85rem; }
+
+    .ap-biz-total { gap: .9rem; }
+    .ap-biz-total small { margin-top: -.55rem; }
+
+    .ap-biz-card-head { display: flex; align-items: center; gap: .7rem; margin-bottom: 1.25rem; }
+    .ap-biz-card-head h3 { font-size: 1rem; font-weight: 600; letter-spacing: -0.015em; margin: 0; }
+    .ap-biz-split { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .ap-biz-split small { display: block; margin-top: .4rem; }
+    .ap-biz-var {
+        display: flex; align-items: center; gap: .5rem;
+        margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--ap-line-soft);
+    }
+    .ap-biz .badge.ap-var-up { background: var(--ap-soft-green); color: #1a7f37; }
+    .ap-biz .badge.ap-var-down { background: var(--ap-soft-red); color: #c4271d; }
+    .ap-biz .badge.ap-var-flat { background: var(--ap-fill-2); color: var(--ap-ink-2); }
+    .ap-biz .badge { font-size: .78rem; font-weight: 600; padding: .38em .75em; }
+    .ap-biz .badge i { font-size: .7em; margin-right: .15em; }
+
+    .ap-biz-sent { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .ap-biz-sent-side {
+        display: flex; align-items: center; gap: 1rem;
+        background: var(--ap-fill-2); border-radius: 16px; padding: 1rem 1.2rem;
+    }
+    .ap-biz-sent-side small { display: block; margin-top: .3rem; }
+    .ap-biz-bar {
+        display: flex; height: 8px; border-radius: 8px; overflow: hidden;
+        background: var(--ap-line-soft); margin-top: 1.1rem;
+    }
+    .ap-biz-bar .neg { background: #ff453a; }
+    .ap-biz-bar .pos { background: #30d158; }
+
+    @keyframes rotate360 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .rotate-icon { animation: rotate360 2s linear infinite; display: inline-block; }
+
+    @media (max-width: 575px) {
+        .ap-biz-grid-5 { grid-template-columns: repeat(2, 1fr); }
+        .ap-biz-sent { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .ap-biz-link:hover { transform: none; }
+        .rotate-icon { animation: none; }
     }
 </style>
 

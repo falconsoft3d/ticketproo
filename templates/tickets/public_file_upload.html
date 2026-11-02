@@ -1,7 +1,8 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}Subir Archivo Público - TicketProo{% endblock %}
+{% block title %}{% translate "Subir Archivo Público - TicketProo" %}{% endblock %}
 
 {% block content %}
 <!-- Toast de confirmación -->
@@ -9,11 +10,11 @@
     <div id="uploadSuccessToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="toast-header bg-success text-white">
             <i class="bi bi-check-circle-fill me-2"></i>
-            <strong class="me-auto">¡Archivo Subido!</strong>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            <strong class="me-auto">{% translate "¡Archivo Subido!" %}</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="{% translate 'Close' %}"></button>
         </div>
         <div class="toast-body bg-light">
-            <span id="toastMessage">Archivo subido exitosamente.</span>
+            <span id="toastMessage">{% translate "Archivo subido exitosamente." %}</span>
         </div>
     </div>
 </div>
@@ -23,8 +24,8 @@
         <div class="col-md-8">
             <div class="text-center mb-4">
                 <h2><i class="bi bi-cloud-upload text-primary"></i></h2>
-                <h3>Subir Archivo Público</h3>
-                <p class="text-muted">Comparte archivos de forma pública con nuestro sistema</p>
+                <h3>{% translate "Subir Archivo Público" %}</h3>
+                <p class="text-muted">{% translate "Comparte archivos de forma pública con nuestro sistema" %}</p>
             </div>
             
             <div class="card shadow">
@@ -44,7 +45,7 @@
                         
                         <div class="d-grid mt-4">
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-cloud-upload"></i> Subir Archivo
+                                <i class="bi bi-cloud-upload"></i> {% translate "Subir Archivo" %}
                             </button>
                         </div>
                     </form>
@@ -56,22 +57,22 @@
                 <div class="col-md-4">
                     <div class="text-center">
                         <i class="bi bi-shield-check display-4 text-success"></i>
-                        <h5 class="mt-3">Seguro</h5>
-                        <p class="text-muted small">Tus archivos están protegidos y solo son accesibles por la empresa seleccionada.</p>
+                        <h5 class="mt-3">{% translate "Seguro" %}</h5>
+                        <p class="text-muted small">{% translate "Tus archivos están protegidos y solo son accesibles por la empresa seleccionada." %}</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="text-center">
                         <i class="bi bi-lightning display-4 text-warning"></i>
-                        <h5 class="mt-3">Rápido</h5>
-                        <p class="text-muted small">Subida inmediata con notificación automática a la empresa.</p>
+                        <h5 class="mt-3">{% translate "Rápido" %}</h5>
+                        <p class="text-muted small">{% translate "Subida inmediata con notificación automática a la empresa." %}</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="text-center">
                         <i class="bi bi-check-circle display-4 text-info"></i>
-                        <h5 class="mt-3">Fácil</h5>
-                        <p class="text-muted small">Sin necesidad de registro. Solo completa el formulario y sube tu archivo.</p>
+                        <h5 class="mt-3">{% translate "Fácil" %}</h5>
+                        <p class="text-muted small">{% translate "Sin necesidad de registro. Solo completa el formulario y sube tu archivo." %}</p>
                     </div>
                 </div>
             </div>
@@ -79,53 +80,51 @@
             <!-- Información técnica -->
             <div class="card mt-4">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información importante</h6>
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> {% translate "Información importante" %}</h6>
                 </div>
                 <div class="card-body">
                         <div class="col-md-6">
-                            <h6>Límites y condiciones:</h6>
+                            <h6>{% translate "Límites y condiciones:" %}</h6>
                             <ul class="small">
-                                <li>Tamaño máximo: 50 MB por archivo</li>
-                                <li>Los archivos son revisados por los agentes</li>
-                                <li>Conservamos tu información de contacto para seguimiento</li>
-                                <li>El archivo será visible según tu empresa asignada</li>
+                                <li>{% translate "Tamaño máximo: 50 MB por archivo" %}</li>
+                                <li>{% translate "Los archivos son revisados por los agentes" %}</li>
+                                <li>{% translate "Conservamos tu información de contacto para seguimiento" %}</li>
+                                <li>{% translate "El archivo será visible según tu empresa asignada" %}</li>
                             </ul>
                         </div>
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Archivos permitidos:</h6>
+                            <h6>{% translate "Archivos permitidos:" %}</h6>
                             <ul class="small">
-                                <li>Documentos: PDF, Word, Excel, PowerPoint</li>
-                                <li>Imágenes: JPG, PNG, GIF</li>
-                                <li>Archivos comprimidos: ZIP, RAR, 7Z</li>
-                                <li>Texto: TXT</li>
+                                <li>{% translate "Documentos: PDF, Word, Excel, PowerPoint" %}</li>
+                                <li>{% translate "Imágenes: JPG, PNG, GIF" %}</li>
+                                <li>{% translate "Archivos comprimidos: ZIP, RAR, 7Z" %}</li>
+                                <li>{% translate "Texto: TXT" %}</li>
                             </ul>
                         </div>
                         <div class="col-md-6">
-                            <h6>Límites y condiciones:</h6>
+                            <h6>{% translate "Límites y condiciones:" %}</h6>
                             <ul class="small">
-                                <li>Tamaño máximo: 50 MB por archivo</li>
-                                <li>Los archivos son revisados por los agentes</li>
-                                <li>Conservamos tu información de contacto para seguimiento</li>
-                                <li>El archivo será visible según tu empresa asignada</li>
+                                <li>{% translate "Tamaño máximo: 50 MB por archivo" %}</li>
+                                <li>{% translate "Los archivos son revisados por los agentes" %}</li>
+                                <li>{% translate "Conservamos tu información de contacto para seguimiento" %}</li>
+                                <li>{% translate "El archivo será visible según tu empresa asignada" %}</li>
                             </ul>
                         </div>
                         <div class="col-md-6">
-                            <h6>Asignación de empresa:</h6>
+                            <h6>{% translate "Asignación de empresa:" %}</h6>
                             <ul class="small">
-                                <li>Si ya tienes cuenta, se asignará a tu empresa automáticamente</li>
-                                <li>Si no tienes cuenta, el archivo quedará sin empresa asignada</li>
-                                <li>Los agentes pueden ver todos los archivos</li>
-                                <li>Se notificará sobre el nuevo archivo</li>
+                                <li>{% translate "Si ya tienes cuenta, se asignará a tu empresa automáticamente" %}</li>
+                                <li>{% translate "Si no tienes cuenta, el archivo quedará sin empresa asignada" %}</li>
+                                <li>{% translate "Los agentes pueden ver todos los archivos" %}</li>
+                                <li>{% translate "Se notificará sobre el nuevo archivo" %}</li>
                             </ul>
                         </div>
                     </div>
                     
                     <div class="alert alert-primary mt-3">
                         <i class="bi bi-lightbulb"></i>
-                        <strong>Importante:</strong> Si ya tienes cuenta en el sistema, ingresa el mismo email 
-                        que usas para tu cuenta y el archivo se asignará automáticamente a tu empresa. 
-                        Si no tienes cuenta, el archivo quedará disponible para revisión de los agentes.
+                        <strong>{% translate "Importante:" %}</strong> {% translate "Si ya tienes cuenta en el sistema, ingresa el mismo email que usas para tu cuenta y el archivo se asignará automáticamente a tu empresa. Si no tienes cuenta, el archivo quedará disponible para revisión de los agentes." %}
                     </div>
                 </div>
             </div>

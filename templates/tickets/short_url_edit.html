@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Editar URL Corta{% endblock %}
+{% block title %}{% translate "Editar URL Corta" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -10,10 +11,10 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-pencil"></i> Editar URL Corta
+                        <i class="bi bi-pencil"></i> {% translate "Editar URL Corta" %}
                     </h5>
                     <a href="{% url 'short_url_list' %}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -24,14 +25,14 @@
                                 
                                 <div class="mb-3">
                                     <label for="id_title" class="form-label">
-                                        <i class="bi bi-card-heading"></i> Título
+                                        <i class="bi bi-card-heading"></i> {% translate "Título" %}
                                     </label>
                                     <input type="text" 
                                            class="form-control {% if form.title.errors %}is-invalid{% endif %}" 
                                            id="id_title" 
                                            name="title" 
                                            value="{{ form.title.value|default:'' }}"
-                                           placeholder="Mi URL para proyecto X"
+                                           placeholder="{% translate 'Mi URL para proyecto X' %}"
                                            maxlength="200">
                                     {% if form.title.errors %}
                                         <div class="invalid-feedback">
@@ -39,13 +40,13 @@
                                         </div>
                                     {% endif %}
                                     <div class="form-text">
-                                        Dale un título descriptivo a esta URL para identificarla fácilmente.
+                                        {% translate "Dale un título descriptivo a esta URL para identificarla fácilmente." %}
                                     </div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="id_original_url" class="form-label">
-                                        <i class="bi bi-link"></i> URL Original
+                                        <i class="bi bi-link"></i> {% translate "URL Original" %}
                                     </label>
                                     <input type="url" 
                                            class="form-control {% if form.original_url.errors %}is-invalid{% endif %}" 
@@ -60,13 +61,13 @@
                                         </div>
                                     {% endif %}
                                     <div class="form-text">
-                                        Ingresa la URL completa que quieres acortar.
+                                        {% translate "Ingresa la URL completa que quieres acortar." %}
                                     </div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="id_short_code" class="form-label">
-                                        <i class="bi bi-scissors"></i> Código Corto
+                                        <i class="bi bi-scissors"></i> {% translate "Código Corto" %}
                                     </label>
                                     <div class="input-group">
                                         <span class="input-group-text">{{ request.scheme }}://{{ request.get_host }}/s/</span>
@@ -82,7 +83,7 @@
                                         <button class="btn btn-outline-secondary" 
                                                 type="button" 
                                                 onclick="generateRandomCode()"
-                                                title="Generar código aleatorio">
+                                                title="{% translate 'Generar código aleatorio' %}">
                                             <i class="bi bi-arrow-clockwise"></i>
                                         </button>
                                     </div>
@@ -92,13 +93,13 @@
                                         </div>
                                     {% endif %}
                                     <div class="form-text">
-                                        Puedes configurarlo manualmente o generar uno aleatorio. Solo letras, números y guiones.
+                                        {% translate "Puedes configurarlo manualmente o generar uno aleatorio. Solo letras, números y guiones." %}
                                     </div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="id_expires_at" class="form-label">
-                                        <i class="bi bi-calendar-event"></i> Fecha de Expiración (Opcional)
+                                        <i class="bi bi-calendar-event"></i> {% translate "Fecha de Expiración (Opcional)" %}
                                     </label>
                                     <input type="datetime-local" 
                                            class="form-control {% if form.expires_at.errors %}is-invalid{% endif %}" 
@@ -111,7 +112,7 @@
                                         </div>
                                     {% endif %}
                                     <div class="form-text">
-                                        Si no especificas una fecha, la URL no expirará nunca.
+                                        {% translate "Si no especificas una fecha, la URL no expirará nunca." %}
                                     </div>
                                 </div>
 
@@ -123,10 +124,10 @@
                                                name="is_sales_kpi"
                                                {% if object.is_sales_kpi %}checked{% endif %}>
                                         <label class="form-check-label" for="id_is_sales_kpi">
-                                            <i class="bi bi-graph-up-arrow"></i> <strong>KPI de Ventas</strong>
+                                            <i class="bi bi-graph-up-arrow"></i> <strong>{% translate "KPI de Ventas" %}</strong>
                                         </label>
                                         <div class="form-text">
-                                            Marca esta casilla si esta URL forma parte del seguimiento de KPIs de ventas.
+                                            {% translate "Marca esta casilla si esta URL forma parte del seguimiento de KPIs de ventas." %}
                                         </div>
                                     </div>
                                 </div>
@@ -141,10 +142,10 @@
 
                                 <div class="d-flex justify-content-between">
                                     <a href="{% url 'short_url_list' %}" class="btn btn-secondary">
-                                        <i class="bi bi-x-circle"></i> Cancelar
+                                        <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                                     </a>
                                     <button type="submit" class="btn btn-primary">
-                                        <i class="bi bi-check-circle"></i> Actualizar URL
+                                        <i class="bi bi-check-circle"></i> {% translate "Actualizar URL" %}
                                     </button>
                                 </div>
                             </form>
@@ -154,36 +155,36 @@
                             <div class="card bg-light">
                                 <div class="card-body">
                                     <h6 class="card-title">
-                                        <i class="bi bi-info-circle"></i> Información Actual
+                                        <i class="bi bi-info-circle"></i> {% translate "Información Actual" %}
                                     </h6>
                                     <table class="table table-sm table-borderless mb-0">
                                         <tr>
-                                            <td><strong>Creada:</strong></td>
+                                            <td><strong>{% translate "Creada:" %}</strong></td>
                                             <td>{{ object.created_at|date:"d/m/Y H:i" }}</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Clics:</strong></td>
+                                            <td><strong>{% translate "Clics:" %}</strong></td>
                                             <td>
                                                 <span class="badge bg-info">{{ object.clicks }}</span>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Último clic:</strong></td>
+                                            <td><strong>{% translate "Último clic:" %}</strong></td>
                                             <td>
                                                 {% if object.last_accessed %}
                                                     {{ object.last_accessed|date:"d/m/Y H:i" }}
                                                 {% else %}
-                                                    <span class="text-muted">Nunca</span>
+                                                    <span class="text-muted">{% translate "Nunca" %}</span>
                                                 {% endif %}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Estado:</strong></td>
+                                            <td><strong>{% translate "Estado:" %}</strong></td>
                                             <td>
                                                 {% if object.is_expired %}
-                                                    <span class="badge bg-danger">Expirada</span>
+                                                    <span class="badge bg-danger">{% translate "Expirada" %}</span>
                                                 {% else %}
-                                                    <span class="badge bg-success">Activa</span>
+                                                    <span class="badge bg-success">{% translate "Activa" %}</span>
                                                 {% endif %}
                                             </td>
                                         </tr>
@@ -194,7 +195,7 @@
                             <div class="card bg-light mt-3">
                                 <div class="card-body">
                                     <h6 class="card-title">
-                                        <i class="bi bi-link-45deg"></i> URL Corta
+                                        <i class="bi bi-link-45deg"></i> {% translate "URL Corta" %}
                                     </h6>
                                     <div class="input-group mb-2">
                                         <input type="text" 
@@ -205,16 +206,16 @@
                                         <button class="btn btn-outline-secondary btn-sm" 
                                                 type="button" 
                                                 onclick="copyToClipboard('currentUrl')"
-                                                title="Copiar URL">
+                                                title="{% translate 'Copiar URL' %}">
                                             <i class="bi bi-clipboard"></i>
                                         </button>
                                     </div>
                                     <a href="{{ request.scheme }}://{{ request.get_host }}/s/{{ object.short_code }}" 
                                        target="_blank" 
                                        class="btn btn-primary btn-sm w-100">
-                                        <i class="bi bi-box-arrow-up-right"></i> Ir a la URL
+                                        <i class="bi bi-box-arrow-up-right"></i> {% translate "Ir a la URL" %}
                                     </a>
-                                    <small class="text-muted d-block mt-2">Esta es tu URL corta actual</small>
+                                    <small class="text-muted d-block mt-2">{% translate "Esta es tu URL corta actual" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -225,7 +226,7 @@
                     <div class="row mt-4">
                         <div class="col-12">
                             <h5 class="mb-3">
-                                <i class="bi bi-graph-up"></i> Estadísticas de Clics
+                                <i class="bi bi-graph-up"></i> {% translate "Estadísticas de Clics" %}
                             </h5>
                         </div>
                         
@@ -233,7 +234,7 @@
                         <div class="col-md-4 mb-3">
                             <div class="card">
                                 <div class="card-header bg-primary text-white">
-                                    <h6 class="mb-0"><i class="bi bi-calendar-month"></i> Clics por Mes</h6>
+                                    <h6 class="mb-0"><i class="bi bi-calendar-month"></i> {% translate "Clics por Mes" %}</h6>
                                 </div>
                                 <div class="card-body">
                                     <canvas id="clicksByMonthChart" height="250"></canvas>
@@ -244,7 +245,7 @@
                         <div class="col-md-4 mb-3">
                             <div class="card">
                                 <div class="card-header bg-success text-white">
-                                    <h6 class="mb-0"><i class="bi bi-calendar-day"></i> Clics por Día</h6>
+                                    <h6 class="mb-0"><i class="bi bi-calendar-day"></i> {% translate "Clics por Día" %}</h6>
                                 </div>
                                 <div class="card-body">
                                     <canvas id="clicksByDayChart" height="250"></canvas>
@@ -255,7 +256,7 @@
                         <div class="col-md-4 mb-3">
                             <div class="card">
                                 <div class="card-header bg-info text-white">
-                                    <h6 class="mb-0"><i class="bi bi-clock"></i> Clics por Hora</h6>
+                                    <h6 class="mb-0"><i class="bi bi-clock"></i> {% translate "Clics por Hora" %}</h6>
                                 </div>
                                 <div class="card-body">
                                     <canvas id="clicksByHourChart" height="250"></canvas>
@@ -267,21 +268,21 @@
                         <div class="col-md-6 mb-3">
                             <div class="card">
                                 <div class="card-header bg-warning">
-                                    <h6 class="mb-0"><i class="bi bi-flag"></i> Top Países</h6>
+                                    <h6 class="mb-0"><i class="bi bi-flag"></i> {% translate "Top Países" %}</h6>
                                 </div>
                                 <div class="card-body">
                                     <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
                                         <table class="table table-sm table-hover mb-0">
                                             <thead class="table-light sticky-top">
                                                 <tr>
-                                                    <th>País</th>
-                                                    <th class="text-end">Clics</th>
+                                                    <th>{% translate "País" %}</th>
+                                                    <th class="text-end">{% translate "Clics" %}</th>
                                                     <th class="text-end">%</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="countryStats">
                                                 <tr>
-                                                    <td colspan="3" class="text-center text-muted">Cargando...</td>
+                                                    <td colspan="3" class="text-center text-muted">{% translate "Cargando..." %}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -293,21 +294,21 @@
                         <div class="col-md-6 mb-3">
                             <div class="card">
                                 <div class="card-header bg-secondary text-white">
-                                    <h6 class="mb-0"><i class="bi bi-building"></i> Top Ciudades</h6>
+                                    <h6 class="mb-0"><i class="bi bi-building"></i> {% translate "Top Ciudades" %}</h6>
                                 </div>
                                 <div class="card-body">
                                     <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
                                         <table class="table table-sm table-hover mb-0">
                                             <thead class="table-light sticky-top">
                                                 <tr>
-                                                    <th>Ciudad</th>
-                                                    <th class="text-end">Clics</th>
+                                                    <th>{% translate "Ciudad" %}</th>
+                                                    <th class="text-end">{% translate "Clics" %}</th>
                                                     <th class="text-end">%</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="cityStats">
                                                 <tr>
-                                                    <td colspan="3" class="text-center text-muted">Cargando...</td>
+                                                    <td colspan="3" class="text-center text-muted">{% translate "Cargando..." %}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -320,23 +321,23 @@
                         <div class="col-12 mb-3">
                             <div class="card">
                                 <div class="card-header bg-dark text-white">
-                                    <h6 class="mb-0"><i class="bi bi-list-ul"></i> Registro Detallado de Clics</h6>
+                                    <h6 class="mb-0"><i class="bi bi-list-ul"></i> {% translate "Registro Detallado de Clics" %}</h6>
                                 </div>
                                 <div class="card-body">
                                     <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                                         <table class="table table-sm table-striped table-hover mb-0">
                                             <thead class="table-dark sticky-top">
                                                 <tr>
-                                                    <th>Fecha y Hora</th>
+                                                    <th>{% translate "Fecha y Hora" %}</th>
                                                     <th>IP</th>
-                                                    <th>País</th>
-                                                    <th>Ciudad</th>
-                                                    <th>Referer</th>
+                                                    <th>{% translate "País" %}</th>
+                                                    <th>{% translate "Ciudad" %}</th>
+                                                    <th>{% translate "Referer" %}</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="clickDetails">
                                                 <tr>
-                                                    <td colspan="5" class="text-center text-muted">Cargando...</td>
+                                                    <td colspan="5" class="text-center text-muted">{% translate "Cargando..." %}</td>
                                                 </tr>
                                             </tbody>
                                         </table>

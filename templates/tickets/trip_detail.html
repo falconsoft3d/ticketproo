@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -36,18 +37,18 @@
                 </h2>
                 <div>
                     <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#aiGenerateModal">
-                        <i class="bi bi-stars"></i> Generar con IA
+                        <i class="bi bi-stars"></i> {% translate "Generar con IA" %}
                     </button>
                     {% if trip.is_public %}
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#shareModal">
-                        <i class="bi bi-share"></i> Compartir
+                        <i class="bi bi-share"></i> {% translate "Compartir" %}
                     </button>
                     {% endif %}
                     <a href="{% url 'trip_edit' trip.pk %}" class="btn btn-outline-primary">
-                        <i class="bi bi-pencil"></i> Editar
+                        <i class="bi bi-pencil"></i> {% translate "Editar" %}
                     </a>
                     <a href="{% url 'trip_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                 </div>
             </div>
@@ -67,18 +68,18 @@
                         {% if trip.start_date %}
                         <div>
                             <i class="bi bi-calendar"></i>
-                            <strong>Inicio:</strong> {{ trip.start_date|date:"d/m/Y" }}
+                            <strong>{% translate "Inicio:" %}</strong> {{ trip.start_date|date:"d/m/Y" }}
                         </div>
                         {% endif %}
                         {% if trip.end_date %}
                         <div>
                             <i class="bi bi-calendar-check"></i>
-                            <strong>Fin:</strong> {{ trip.end_date|date:"d/m/Y" }}
+                            <strong>{% translate "Fin:" %}</strong> {{ trip.end_date|date:"d/m/Y" }}
                         </div>
                         {% endif %}
                         <div>
                             <i class="bi bi-pin-map"></i>
-                            <strong>Paradas:</strong> {{ stops.count }}
+                            <strong>{% translate "Paradas:" %}</strong> {{ stops.count }}
                         </div>
                     </div>
                 </div>
@@ -88,7 +89,7 @@
 
     <div class="row">
         <div class="col-md-12">
-            <h4 class="mb-3"><i class="bi bi-map"></i> Itinerario</h4>
+            <h4 class="mb-3"><i class="bi bi-map"></i> {% translate "Itinerario" %}</h4>
             
             {% if stops %}
                 {% for stop in stops %}
@@ -142,7 +143,7 @@
                                 
                                 {% if stop.notes %}
                                 <div class="alert alert-info alert-sm mb-2">
-                                    <small><strong>Notas:</strong> {{ stop.notes }}</small>
+                                    <small><strong>{% translate "Notas:" %}</strong> {{ stop.notes }}</small>
                                 </div>
                                 {% endif %}
                                 
@@ -150,7 +151,7 @@
                                 <div class="card bg-light mb-3">
                                     <div class="card-body">
                                         <h6 class="card-title">
-                                            <i class="bi bi-book"></i> Historia e Información
+                                            <i class="bi bi-book"></i> {% translate "Historia e Información" %}
                                         </h6>
                                         <p class="card-text text-muted" style="text-align: justify;">{{ stop.historical_info }}</p>
                                     </div>
@@ -160,14 +161,14 @@
                                 <div class="mt-2">
                                     {% if stop.get_google_maps_url %}
                                     <a href="{{ stop.get_google_maps_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-map"></i> Ver en Google Maps
+                                        <i class="bi bi-map"></i> {% translate "Ver en Google Maps" %}
                                     </a>
                                     {% endif %}
                                     <button type="button" class="btn btn-sm btn-outline-info" onclick="regenerateStop({{ stop.id }}, '{{ stop.name|escapejs }}')">
-                                        <i class="bi bi-stars"></i> Sugerir Alternativa
+                                        <i class="bi bi-stars"></i> {% translate "Sugerir Alternativa" %}
                                     </button>
                                     <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteStop({{ stop.id }}, '{{ stop.name|escapejs }}')">
-                                        <i class="bi bi-trash"></i> Eliminar
+                                        <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                                     </button>
                                 </div>
                             </div>
@@ -178,9 +179,9 @@
             {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-pin-map" style="font-size: 4rem; color: #ccc;"></i>
-                    <p class="text-muted mt-3">No hay paradas en este viaje</p>
+                    <p class="text-muted mt-3">{% translate "No hay paradas en este viaje" %}</p>
                     <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#aiGenerateModal">
-                        <i class="bi bi-stars"></i> Generar con IA
+                        <i class="bi bi-stars"></i> {% translate "Generar con IA" %}
                     </button>
                 </div>
             {% endif %}
@@ -194,24 +195,24 @@
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title">
-                    <i class="bi bi-share"></i> Compartir Viaje
+                    <i class="bi bi-share"></i> {% translate "Compartir Viaje" %}
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Comparte este viaje con quien quieras. El enlace es público y optimizado para móviles:</p>
+                <p>{% translate "Comparte este viaje con quien quieras. El enlace es público y optimizado para móviles:" %}</p>
                 <div class="input-group mb-3">
                     <input type="text" class="form-control" id="shareUrl" readonly value="{{ request.scheme }}://{{ request.get_host }}{% url 'trip_public' trip.public_token %}">
                     <button class="btn btn-outline-success" type="button" onclick="copyShareUrl()">
-                        <i class="bi bi-clipboard"></i> Copiar
+                        <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                     </button>
                 </div>
                 <div id="copySuccess" class="alert alert-success d-none">
-                    <i class="bi bi-check-circle"></i> ¡Enlace copiado al portapapeles!
+                    <i class="bi bi-check-circle"></i> {% translate "¡Enlace copiado al portapapeles!" %}
                 </div>
                 <div class="d-grid gap-2">
                     <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'trip_public' trip.public_token %}" target="_blank" class="btn btn-outline-primary">
-                        <i class="bi bi-eye"></i> Ver Vista Previa
+                        <i class="bi bi-eye"></i> {% translate "Ver Vista Previa" %}
                     </a>
                 </div>
             </div>
@@ -225,7 +226,7 @@
         <div class="modal-content">
             <div class="modal-header bg-info text-white">
                 <h5 class="modal-title">
-                    <i class="bi bi-stars"></i> Generar Paradas con IA
+                    <i class="bi bi-stars"></i> {% translate "Generar Paradas con IA" %}
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -234,7 +235,7 @@
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="aiPrompt" class="form-label">
-                            <i class="bi bi-chat-left-text"></i> Describe qué lugares quieres visitar
+                            <i class="bi bi-chat-left-text"></i> {% translate "Describe qué lugares quieres visitar" %}
                         </label>
                         <textarea 
                             class="form-control" 
@@ -244,12 +245,12 @@
                             required
                         ></textarea>
                         <div class="form-text">
-                            La IA generará lugares de interés con coordenadas y descripciones.
+                            {% translate "La IA generará lugares de interés con coordenadas y descripciones." %}
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="numStops" class="form-label">
-                            <i class="bi bi-pin-map"></i> Número de paradas
+                            <i class="bi bi-pin-map"></i> {% translate "Número de paradas" %}
                         </label>
                         <input 
                             type="number" 
@@ -263,16 +264,16 @@
                     <div id="aiProgress" class="alert alert-info d-none">
                         <div class="d-flex align-items-center">
                             <div class="spinner-border spinner-border-sm me-2"></div>
-                            <span>Generando paradas con IA...</span>
+                            <span>{% translate "Generando paradas con IA..." %}</span>
                         </div>
                     </div>
                     <div id="aiResult" class="alert d-none"></div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                 <button type="button" class="btn btn-info" onclick="generateStopsWithAI()">
-                    <i class="bi bi-stars"></i> Generar Paradas
+                    <i class="bi bi-stars"></i> {% translate "Generar Paradas" %}
                 </button>
             </div>
         </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -77,19 +78,19 @@
         <h2><i class="bi bi-clock-history"></i> {{ title }}</h2>
         <div class="row mt-3">
             <div class="col-md-3">
-                <strong>Nombre:</strong><br>
+                <strong>{% translate "Nombre:" %}</strong><br>
                 {{ asset.name }}
             </div>
             <div class="col-md-3">
-                <strong>Fabricante:</strong><br>
+                <strong>{% translate "Fabricante:" %}</strong><br>
                 {{ asset.manufacturer }}
             </div>
             <div class="col-md-3">
-                <strong>Serie:</strong><br>
+                <strong>{% translate "Serie:" %}</strong><br>
                 <code>{{ asset.serial_number }}</code>
             </div>
             <div class="col-md-3">
-                <strong>Estado:</strong><br>
+                <strong>{% translate "Estado:" %}</strong><br>
                 <span class="badge bg-{{ asset.get_status_display_color }} fs-6">
                     {{ asset.get_status_display }}
                 </span>
@@ -97,10 +98,10 @@
         </div>
         <div class="mt-3">
             <a href="{% url 'asset_detail' asset.pk %}" class="btn btn-light">
-                <i class="bi bi-arrow-left"></i> Volver al Detalle
+                <i class="bi bi-arrow-left"></i> {% translate "Volver al Detalle" %}
             </a>
             <a href="{% url 'asset_list' %}" class="btn btn-outline-light">
-                <i class="bi bi-list"></i> Lista de Activos
+                <i class="bi bi-list"></i> {% translate "Lista de Activos" %}
             </a>
         </div>
     </div>
@@ -111,7 +112,7 @@
                 {% if history %}
                     <h5 class="mb-4">
                         <i class="bi bi-journal-text text-primary"></i> 
-                        Historial Completo de Actividades
+                        {% translate "Historial Completo de Actividades" %}
                         <small class="text-muted">({{ history.paginator.count }} registro{{ history.paginator.count|pluralize }})</small>
                     </h5>
 
@@ -149,59 +150,59 @@
 
                                         <div class="history-content">
                                             {% if item.action == 'created' %}
-                                                <strong>Activo creado en el sistema</strong>
+                                                <strong>{% translate "Activo creado en el sistema" %}</strong>
                                                 {% if item.new_status %}
-                                                    <br><small>Estado inicial: <span class="badge bg-secondary">{{ item.get_new_status_display }}</span></small>
+                                                    <br><small>{% translate "Estado inicial:" %} <span class="badge bg-secondary">{{ item.get_new_status_display }}</span></small>
                                                 {% endif %}
                                                 
                                             {% elif item.action == 'assigned' %}
-                                                <strong>Activo asignado a empleado</strong>
+                                                <strong>{% translate "Activo asignado a empleado" %}</strong>
                                                 {% if item.new_employee %}
-                                                    <br><small><i class="bi bi-person-circle"></i> Asignado a: <strong>{{ item.new_employee.name }}</strong></small>
+                                                    <br><small><i class="bi bi-person-circle"></i> {% translate "Asignado a:" %} <strong>{{ item.new_employee.name }}</strong></small>
                                                 {% endif %}
                                                 
                                             {% elif item.action == 'transferred' %}
-                                                <strong>Activo transferido entre empleados</strong>
+                                                <strong>{% translate "Activo transferido entre empleados" %}</strong>
                                                 {% if item.previous_employee and item.new_employee %}
                                                     <br><small>
                                                         <i class="bi bi-arrow-right"></i> 
-                                                        De: <strong>{{ item.previous_employee.name }}</strong> 
-                                                        → A: <strong>{{ item.new_employee.name }}</strong>
+                                                        {% translate "De:" %} <strong>{{ item.previous_employee.name }}</strong> 
+                                                        {% translate "→ A:" %} <strong>{{ item.new_employee.name }}</strong>
                                                     </small>
                                                 {% endif %}
                                                 
                                             {% elif item.action == 'unassigned' %}
-                                                <strong>Activo desasignado</strong>
+                                                <strong>{% translate "Activo desasignado" %}</strong>
                                                 {% if item.previous_employee %}
-                                                    <br><small><i class="bi bi-person-x"></i> Desasignado de: <strong>{{ item.previous_employee.name }}</strong></small>
+                                                    <br><small><i class="bi bi-person-x"></i> {% translate "Desasignado de:" %} <strong>{{ item.previous_employee.name }}</strong></small>
                                                 {% endif %}
                                                 
                                             {% elif item.action == 'maintenance' %}
-                                                <strong>Enviado a mantenimiento</strong>
+                                                <strong>{% translate "Enviado a mantenimiento" %}</strong>
                                                 {% if item.previous_employee %}
-                                                    <br><small><i class="bi bi-person-x"></i> Desasignado de: <strong>{{ item.previous_employee.name }}</strong></small>
+                                                    <br><small><i class="bi bi-person-x"></i> {% translate "Desasignado de:" %} <strong>{{ item.previous_employee.name }}</strong></small>
                                                 {% endif %}
                                                 
                                             {% elif item.action == 'returned' %}
-                                                <strong>Devuelto de mantenimiento</strong>
+                                                <strong>{% translate "Devuelto de mantenimiento" %}</strong>
                                                 
                                             {% elif item.action == 'retired' %}
-                                                <strong>Activo dado de baja</strong>
+                                                <strong>{% translate "Activo dado de baja" %}</strong>
                                                 
                                             {% elif item.action == 'status_changed' %}
-                                                <strong>Estado modificado</strong>
+                                                <strong>{% translate "Estado modificado" %}</strong>
                                                 {% if item.previous_status and item.new_status %}
                                                     <br><small>
                                                         <i class="bi bi-arrow-right"></i> 
-                                                        De: <span class="badge bg-secondary">{{ item.get_previous_status_display }}</span> 
-                                                        → A: <span class="badge bg-{{ asset.get_status_display_color }}">{{ item.get_new_status_display }}</span>
+                                                        {% translate "De:" %} <span class="badge bg-secondary">{{ item.get_previous_status_display }}</span> 
+                                                        {% translate "→ A:" %} <span class="badge bg-{{ asset.get_status_display_color }}">{{ item.get_new_status_display }}</span>
                                                     </small>
                                                 {% endif %}
                                             {% endif %}
 
                                             {% if item.reason %}
                                                 <div class="mt-2 p-2 bg-light rounded">
-                                                    <small><i class="bi bi-chat-quote"></i> <strong>Motivo:</strong> {{ item.reason }}</small>
+                                                    <small><i class="bi bi-chat-quote"></i> <strong>{% translate "Motivo:" %}</strong> {{ item.reason }}</small>
                                                 </div>
                                             {% endif %}
                                         </div>
@@ -218,12 +219,12 @@
 
                     <!-- Paginación -->
                     {% if history.has_other_pages %}
-                        <nav aria-label="Navegación del historial" class="mt-4">
+                        <nav aria-label="{% translate 'Navegación del historial' %}" class="mt-4">
                             <ul class="pagination justify-content-center">
                                 {% if history.has_previous %}
                                     <li class="page-item">
                                         <a class="page-link" href="?page={{ history.previous_page_number }}">
-                                            <i class="bi bi-chevron-left"></i> Anterior
+                                            <i class="bi bi-chevron-left"></i> {% translate "Anterior" %}
                                         </a>
                                     </li>
                                 {% endif %}
@@ -243,7 +244,7 @@
                                 {% if history.has_next %}
                                     <li class="page-item">
                                         <a class="page-link" href="?page={{ history.next_page_number }}">
-                                            Siguiente <i class="bi bi-chevron-right"></i>
+                                            {% translate "Siguiente" %} <i class="bi bi-chevron-right"></i>
                                         </a>
                                     </li>
                                 {% endif %}
@@ -254,12 +255,12 @@
                 {% else %}
                     <div class="text-center py-5">
                         <i class="bi bi-clock-history display-1 text-muted"></i>
-                        <h4 class="mt-3">Sin historial</h4>
+                        <h4 class="mt-3">{% translate "Sin historial" %}</h4>
                         <p class="text-muted">
-                            Este activo aún no tiene actividades registradas en el historial.
+                            {% translate "Este activo aún no tiene actividades registradas en el historial." %}
                         </p>
                         <a href="{% url 'asset_assign' asset.pk %}" class="btn btn-primary">
-                            <i class="bi bi-person-plus"></i> Asignar Activo
+                            <i class="bi bi-person-plus"></i> {% translate "Asignar Activo" %}
                         </a>
                     </div>
                 {% endif %}

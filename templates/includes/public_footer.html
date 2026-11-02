@@ -1,3 +1,4 @@
+{% load i18n %}
 <!-- Footer público reutilizable -->
 <footer class="bg-dark text-light py-5">
     <div class="container">
@@ -7,7 +8,7 @@
                     <i class="bi bi-ticket-perforated me-2"></i>
                     TicketProo
                 </h5>
-                <p class="text-white">La plataforma profesional para gestionar tus solicitudes de soporte y proyectos. Código Abierto. Desarrollada por Marlon Falcón Hernández</p>
+                <p class="text-white">{% translate "La plataforma profesional para gestionar tus solicitudes de soporte y proyectos." %} {% translate "Código abierto." %} {% translate "Desarrollada por" %} Marlon Falcón Hernández</p>
                 <div class="d-flex gap-3">
                     
                     <a href="https://www.facebook.com/falconsoft.sa" class="text-light">
@@ -31,19 +32,19 @@
                 </div>
             </div>
             <div class="col-lg-2 col-md-6 mb-4">
-                <h6 class="text-uppercase fw-bold mb-3">Enlaces Rápidos</h6>
+                <h6 class="text-uppercase fw-bold mb-3">{% translate "Enlaces Rápidos" %}</h6>
                 <ul class="list-unstyled">
-                    <li><a href="{% url 'home' %}" class="text-light text-decoration-none">Inicio</a></li>
-                    <li><a href="{% url 'blog_list' %}" class="text-light text-decoration-none">Blog</a></li>
-                    <li><a href="{% url 'public_app_catalogs' %}" class="text-light text-decoration-none">Catálogos</a></li>
-                    <li><a href="{% url 'public_concepts' %}" class="text-light text-decoration-none">Conceptos</a></li>
-                    <li><a href="{% url 'alcance_publico_list' %}" class="text-light text-decoration-none">Alcance</a></li>
-                    <li><a href="{% url 'contacto_web' %}" class="text-light text-decoration-none">Contacto</a></li>
+                    <li><a href="{% url 'home' %}" class="text-light text-decoration-none">{% translate "Inicio" %}</a></li>
+                    <li><a href="{% url 'blog_list' %}" class="text-light text-decoration-none">{% translate "Blog" %}</a></li>
+                    <li><a href="{% url 'public_app_catalogs' %}" class="text-light text-decoration-none">{% translate "Catálogos" %}</a></li>
+                    <li><a href="{% url 'public_concepts' %}" class="text-light text-decoration-none">{% translate "Conceptos" %}</a></li>
+                    <li><a href="{% url 'alcance_publico_list' %}" class="text-light text-decoration-none">{% translate "Alcance" %}</a></li>
+                    <li><a href="{% url 'contacto_web' %}" class="text-light text-decoration-none">{% translate "Contacto" %}</a></li>
                 </ul>
             </div>
             <div class="col-lg-3 col-md-6 mb-4">
                 <h6 class="text-uppercase fw-bold mb-3">
-                    Categorías
+                    {% translate "Categorías" %}
                 </h6>
                 <ul class="list-unstyled">
                     {% if blog_categories %}
@@ -59,17 +60,17 @@
                         </li>
                         {% endfor %}
                     {% else %}
-                        <li><a href="{% url 'blog_list' %}" class="text-light text-decoration-none">Blog</a></li>
-                        <li><a href="{% url 'login' %}" class="text-light text-decoration-none">Iniciar Sesión</a></li>
-                        <li><a href="{% url 'register' %}" class="text-light text-decoration-none">Registrarse</a></li>
+                        <li><a href="{% url 'blog_list' %}" class="text-light text-decoration-none">{% translate "Blog" %}</a></li>
+                        <li><a href="{% url 'login' %}" class="text-light text-decoration-none">{% translate "Iniciar Sesión" %}</a></li>
+                        <li><a href="{% url 'register' %}" class="text-light text-decoration-none">{% translate "Registrarse" %}</a></li>
                         {% if user.is_authenticated %}
-                            <li><a href="{% url 'dashboard' %}" class="text-light text-decoration-none">Dashboard</a></li>
+                            <li><a href="{% url 'dashboard' %}" class="text-light text-decoration-none">{% translate "Dashboard" %}</a></li>
                         {% endif %}
                     {% endif %}
                 </ul>
             </div>
             <div class="col-lg-3 col-md-6 mb-4">
-                <h6 class="text-uppercase fw-bold mb-3">Contacto</h6>
+                <h6 class="text-uppercase fw-bold mb-3">{% translate "Contacto" %}</h6>
                 <ul class="list-unstyled text-white">
                     <li><i class="bi bi-envelope me-2"></i>mfalconsoft@gmail.com</li>
                     <li><a href="https://www.marlonfalcon.com" class="text-white text-decoration-none"><i class="bi bi-website me-2"></i>www.marlonfalcon.com</a></li>
@@ -77,18 +78,18 @@
                     <li><i class="bi bi-telephone me-2"></i>+34 662 47 06 45</li>
                     <!-- https://api.whatsapp.com/send/?phone=34662470645&text&type=phone_number&app_absent=0 -->
                     <li><a href="https://api.whatsapp.com/send/?phone=34662470645&text&type=phone_number&app_absent=0" class="text-white text-decoration-none"><i class="bi bi-whatsapp me-2"></i>WhatsApp</a></li>
-                    <li><i class="bi bi-geo-alt me-2"></i>España</li>
+                    <li><i class="bi bi-geo-alt me-2"></i>{% translate "España" %}</li>
                 </ul>
             </div>
         </div>
         <hr class="my-4">
         <div class="row align-items-center">
             <div class="col-md-6">
-                <p class="text-white mb-0">&copy; 2025 TicketProo. Todos los derechos reservados.</p>
+                <p class="text-white mb-0">&copy; 2025 TicketProo. {% translate "Todos los derechos reservados." %}</p>
             </div>
             <div class="col-md-6 text-md-end">
-                <a href="#" class="text-white  text-decoration-none me-3">Política de Privacidad</a>
-                <a href="#" class="text-white  text-decoration-none">Términos de Uso</a>
+                <a href="#" class="text-white  text-decoration-none me-3">{% translate "Política de Privacidad" %}</a>
+                <a href="#" class="text-white  text-decoration-none">{% translate "Términos de Uso" %}</a>
             </div>
         </div>
     </div>

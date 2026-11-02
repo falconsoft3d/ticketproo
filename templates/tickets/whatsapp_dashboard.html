@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}WhatsApp - Dashboard{% endblock %}
+{% block title %}{% translate "WhatsApp - Dashboard" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -9,7 +10,7 @@
         <div class="d-flex align-items-center">
             <i class="fas fa-info-circle fa-2x me-3"></i>
             <div>
-                <h5 class="alert-heading mb-1">Servidor WhatsApp</h5>
+                <h5 class="alert-heading mb-1">{% translate "Servidor WhatsApp" %}</h5>
                 <p class="mb-0" id="serverStatusMessage"></p>
             </div>
         </div>
@@ -19,28 +20,28 @@
     <!-- Encabezado -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2><i class="fab fa-whatsapp text-success"></i> WhatsApp Dashboard</h2>
-            <p class="text-muted mb-0">Gestiona tus mensajes automatizados de WhatsApp</p>
+            <h2><i class="fab fa-whatsapp text-success"></i> {% translate "WhatsApp Dashboard" %}</h2>
+            <p class="text-muted mb-0">{% translate "Gestiona tus mensajes automatizados de WhatsApp" %}</p>
         </div>
         <div>
             <span id="connectionStatus" class="badge fs-6 me-2">
                 {% if connection.status == 'connected' %}
-                    <span class="bg-success"><i class="fas fa-circle"></i> Conectado</span>
+                    <span class="bg-success"><i class="fas fa-circle"></i> {% translate "Conectado" %}</span>
                 {% elif connection.status == 'connecting' or connection.status == 'qr_pending' %}
-                    <span class="bg-warning"><i class="fas fa-circle"></i> Conectando...</span>
+                    <span class="bg-warning"><i class="fas fa-circle"></i> {% translate "Conectando..." %}</span>
                 {% elif connection.status == 'error' %}
-                    <span class="bg-danger"><i class="fas fa-circle"></i> Error</span>
+                    <span class="bg-danger"><i class="fas fa-circle"></i> {% translate "Error" %}</span>
                 {% else %}
-                    <span class="bg-secondary"><i class="fas fa-circle"></i> Desconectado</span>
+                    <span class="bg-secondary"><i class="fas fa-circle"></i> {% translate "Desconectado" %}</span>
                 {% endif %}
             </span>
             {% if connection.status == 'connected' %}
                 <a href="{% url 'whatsapp_disconnect' %}" class="btn btn-outline-danger" id="disconnectBtn">
-                    <i class="fas fa-unlink"></i> Desconectar
+                    <i class="fas fa-unlink"></i> {% translate "Desconectar" %}
                 </a>
             {% else %}
                 <a href="{% url 'whatsapp_connect' %}" class="btn btn-success" id="connectBtn">
-                    <i class="fas fa-qrcode"></i> Conectar
+                    <i class="fas fa-qrcode"></i> {% translate "Conectar" %}
                 </a>
             {% endif %}
         </div>
@@ -52,25 +53,25 @@
             <div class="card border-warning">
                 <div class="card-header bg-warning text-dark">
                     <h5 class="mb-0">
-                        <i class="fas fa-qrcode"></i> Escanea el Código QR con WhatsApp
+                        <i class="fas fa-qrcode"></i> {% translate "Escanea el Código QR con WhatsApp" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i> 
-                        <strong>Instrucciones:</strong> Abre WhatsApp en tu teléfono → Menú → Dispositivos vinculados → Vincular un dispositivo → Escanea este código
+                        <strong>{% translate "Instrucciones:" %}</strong> {% translate "Abre WhatsApp en tu teléfono → Menú → Dispositivos vinculados → Vincular un dispositivo → Escanea este código" %}
                     </div>
                     
                     <div class="text-center" id="qrCodeContainer">
                         <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando QR...</span>
+                            <span class="visually-hidden">{% translate "Cargando QR..." %}</span>
                         </div>
-                        <p class="text-muted mt-2">Generando código QR...</p>
+                        <p class="text-muted mt-2">{% translate "Generando código QR..." %}</p>
                     </div>
                     
                     <div class="text-center mt-3">
                         <a href="{% url 'whatsapp_disconnect' %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-times"></i> Cancelar
+                            <i class="fas fa-times"></i> {% translate "Cancelar" %}
                         </a>
                     </div>
                 </div>
@@ -84,7 +85,7 @@
         <div class="col-12">
             <div class="alert alert-success">
                 <i class="fas fa-check-circle"></i> 
-                <strong>Conectado:</strong> {{ connection.phone_number }}
+                <strong>{% translate "Conectado:" %}</strong> {{ connection.phone_number }}
             </div>
         </div>
     </div>
@@ -97,7 +98,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-1">Total Mensajes</h6>
+                            <h6 class="text-muted mb-1">{% translate "Total Mensajes" %}</h6>
                             <h3 class="mb-0">{{ total_messages }}</h3>
                         </div>
                         <div class="text-primary" style="font-size: 2rem;">
@@ -112,7 +113,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-1">Auto-respuestas</h6>
+                            <h6 class="text-muted mb-1">{% translate "Auto-respuestas" %}</h6>
                             <h3 class="mb-0">{{ auto_replies }}</h3>
                         </div>
                         <div class="text-success" style="font-size: 2rem;">
@@ -127,7 +128,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-1">Palabras Clave</h6>
+                            <h6 class="text-muted mb-1">{% translate "Palabras Clave" %}</h6>
                             <h3 class="mb-0">{{ total_keywords }}</h3>
                         </div>
                         <div class="text-warning" style="font-size: 2rem;">
@@ -142,7 +143,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-1">Activas</h6>
+                            <h6 class="text-muted mb-1">{% translate "Activas" %}</h6>
                             <h3 class="mb-0">{{ active_keywords }}</h3>
                         </div>
                         <div class="text-info" style="font-size: 2rem;">
@@ -160,9 +161,9 @@
         <div class="col-lg-6 mb-4">
             <div class="card h-100">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-key"></i> Palabras Clave</h5>
+                    <h5 class="mb-0"><i class="fas fa-key"></i> {% translate "Palabras Clave" %}</h5>
                     <a href="{% url 'whatsapp_keyword_create' %}" class="btn btn-light btn-sm">
-                        <i class="fas fa-plus"></i> Nueva
+                        <i class="fas fa-plus"></i> {% translate "Nueva" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -171,11 +172,11 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Palabra</th>
-                                        <th>Respuesta</th>
-                                        <th>Usos</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
+                                        <th>{% translate "Palabra" %}</th>
+                                        <th>{% translate "Respuesta" %}</th>
+                                        <th>{% translate "Usos" %}</th>
+                                        <th>{% translate "Estado" %}</th>
+                                        <th>{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -184,7 +185,7 @@
                                         <td>
                                             <strong>{{ keyword.keyword }}</strong>
                                             {% if keyword.priority > 0 %}
-                                                <span class="badge bg-warning text-dark" title="Prioridad">{{ keyword.priority }}</span>
+                                                <span class="badge bg-warning text-dark" title="{% translate 'Prioridad' %}">{{ keyword.priority }}</span>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -195,16 +196,16 @@
                                         </td>
                                         <td>
                                             {% if keyword.is_active %}
-                                                <span class="badge bg-success">Activa</span>
+                                                <span class="badge bg-success">{% translate "Activa" %}</span>
                                             {% else %}
-                                                <span class="badge bg-secondary">Inactiva</span>
+                                                <span class="badge bg-secondary">{% translate "Inactiva" %}</span>
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <a href="{% url 'whatsapp_keyword_edit' keyword.pk %}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                            <a href="{% url 'whatsapp_keyword_edit' keyword.pk %}" class="btn btn-sm btn-outline-primary" title="{% translate 'Editar' %}">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="{% url 'whatsapp_keyword_delete' keyword.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <a href="{% url 'whatsapp_keyword_delete' keyword.pk %}" class="btn btn-sm btn-outline-danger" title="{% translate 'Eliminar' %}">
                                                 <i class="fas fa-trash"></i>
                                             </a>
                                         </td>
@@ -221,9 +222,9 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="fas fa-key text-muted" style="font-size: 3rem;"></i>
-                            <p class="text-muted mt-3">No hay palabras clave configuradas</p>
+                            <p class="text-muted mt-3">{% translate "No hay palabras clave configuradas" %}</p>
                             <a href="{% url 'whatsapp_keyword_create' %}" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Crear Primera Palabra Clave
+                                <i class="fas fa-plus"></i> {% translate "Crear Primera Palabra Clave" %}
                             </a>
                         </div>
                     {% endif %}
@@ -235,9 +236,9 @@
         <div class="col-lg-6 mb-4">
             <div class="card h-100">
                 <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-comments"></i> Mensajes Recientes</h5>
+                    <h5 class="mb-0"><i class="fas fa-comments"></i> {% translate "Mensajes Recientes" %}</h5>
                     <a href="{% url 'whatsapp_messages' %}" class="btn btn-light btn-sm">
-                        <i class="fas fa-list"></i> Ver Todos
+                        <i class="fas fa-list"></i> {% translate "Ver Todos" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -246,10 +247,10 @@
                             <table class="table table-hover table-sm">
                                 <thead>
                                     <tr>
-                                        <th>Fecha</th>
-                                        <th>De</th>
-                                        <th>Mensaje</th>
-                                        <th>Tipo</th>
+                                        <th>{% translate "Fecha" %}</th>
+                                        <th>{% translate "De" %}</th>
+                                        <th>{% translate "Mensaje" %}</th>
+                                        <th>{% translate "Tipo" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -260,11 +261,11 @@
                                         <td><small class="text-muted">{{ msg.message_text|truncatewords:5 }}</small></td>
                                         <td>
                                             {% if msg.message_type == 'received' %}
-                                                <span class="badge bg-primary">Recibido</span>
+                                                <span class="badge bg-primary">{% translate "Recibido" %}</span>
                                             {% elif msg.message_type == 'auto_reply' %}
-                                                <span class="badge bg-success">Auto-respuesta</span>
+                                                <span class="badge bg-success">{% translate "Auto-respuesta" %}</span>
                                             {% else %}
-                                                <span class="badge bg-info">Enviado</span>
+                                                <span class="badge bg-info">{% translate "Enviado" %}</span>
                                             {% endif %}
                                         </td>
                                     </tr>
@@ -275,7 +276,7 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="fas fa-inbox text-muted" style="font-size: 3rem;"></i>
-                            <p class="text-muted mt-3">No hay mensajes aún</p>
+                            <p class="text-muted mt-3">{% translate "No hay mensajes aún" %}</p>
                         </div>
                     {% endif %}
                 </div>
@@ -288,16 +289,16 @@
         <div class="col-12">
             <div class="card border-info">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0"><i class="fas fa-question-circle"></i> ¿Cómo usar esta integración?</h5>
+                    <h5 class="mb-0"><i class="fas fa-question-circle"></i> {% translate "¿Cómo usar esta integración?" %}</h5>
                 </div>
                 <div class="card-body">
                     <ol class="mb-0">
-                        <li><strong>Inicia el Servidor:</strong> Ejecuta <code>cd whatsapp_server && npm start</code> en una terminal</li>
-                        <li><strong>Conecta tu WhatsApp:</strong> Haz clic en "Conectar" y escanea el código QR con tu teléfono</li>
-                        <li><strong>Crea Palabras Clave:</strong> Define palabras o frases que activarán respuestas automáticas</li>
-                        <li><strong>Configura Respuestas:</strong> Establece qué mensaje se enviará cuando alguien escriba una palabra clave</li>
-                        <li><strong>Ajusta Prioridades:</strong> Las palabras con mayor prioridad se evalúan primero</li>
-                        <li><strong>Monitorea Mensajes:</strong> Revisa el historial de mensajes y auto-respuestas enviadas</li>
+                        <li><strong>{% translate "Inicia el Servidor:" %}</strong> Ejecuta <code>cd whatsapp_server && npm start</code> en una terminal</li>
+                        <li><strong>{% translate "Conecta tu WhatsApp:" %}</strong> {% translate 'Haz clic en "Conectar" y escanea el código QR con tu teléfono' %}</li>
+                        <li><strong>{% translate "Crea Palabras Clave:" %}</strong> {% translate "Define palabras o frases que activarán respuestas automáticas" %}</li>
+                        <li><strong>{% translate "Configura Respuestas:" %}</strong> {% translate "Establece qué mensaje se enviará cuando alguien escriba una palabra clave" %}</li>
+                        <li><strong>{% translate "Ajusta Prioridades:" %}</strong> {% translate "Las palabras con mayor prioridad se evalúan primero" %}</li>
+                        <li><strong>{% translate "Monitorea Mensajes:" %}</strong> {% translate "Revisa el historial de mensajes y auto-respuestas enviadas" %}</li>
                     </ol>
                 </div>
             </div>

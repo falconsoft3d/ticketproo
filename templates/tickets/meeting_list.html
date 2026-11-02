@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Gestión de Reuniones{% endblock %}
+{% block title %}{% translate "Gestión de Reuniones" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -9,9 +10,9 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="mb-0"><i class="fas fa-calendar-alt"></i> Gestión de Reuniones</h3>
+                    <h3 class="mb-0"><i class="fas fa-calendar-alt"></i> {% translate "Gestión de Reuniones" %}</h3>
                     <a href="{% url 'meeting_create' %}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Nueva Reunión
+                        <i class="fas fa-plus"></i> {% translate "Nueva Reunión" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -20,14 +21,14 @@
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
-                                        <th>Título</th>
-                                        <th>Fecha</th>
-                                        <th>Empresa</th>
-                                        <th>Estado</th>
-                                        <th>Asistentes</th>
-                                        <th>Preguntas</th>
-                                        <th>Link Público</th>
-                                        <th>Acciones</th>
+                                        <th>{% translate "Título" %}</th>
+                                        <th>{% translate "Fecha" %}</th>
+                                        <th>{% translate "Empresa" %}</th>
+                                        <th>{% translate "Estado" %}</th>
+                                        <th>{% translate "Asistentes" %}</th>
+                                        <th>{% translate "Preguntas" %}</th>
+                                        <th>{% translate "Link Público" %}</th>
+                                        <th>{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -54,13 +55,13 @@
                                         </td>
                                         <td>
                                             {% if meeting.status == 'scheduled' %}
-                                                <span class="badge bg-info text-dark">Programada</span>
+                                                <span class="badge bg-info text-dark">{% translate "Programada" %}</span>
                                             {% elif meeting.status == 'in_progress' %}
-                                                <span class="badge bg-warning text-dark">En Progreso</span>
+                                                <span class="badge bg-warning text-dark">{% translate "En Progreso" %}</span>
                                             {% elif meeting.status == 'finished' %}
-                                                <span class="badge bg-success text-white">Finalizada</span>
+                                                <span class="badge bg-success text-white">{% translate "Finalizada" %}</span>
                                             {% elif meeting.status == 'cancelled' %}
-                                                <span class="badge bg-danger text-white">Cancelada</span>
+                                                <span class="badge bg-danger text-white">{% translate "Cancelada" %}</span>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -85,15 +86,15 @@
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
                                                 <a href="{% url 'meeting_detail' meeting.id %}" 
-                                                   class="btn btn-outline-info" title="Ver">
+                                                   class="btn btn-outline-info" title="{% translate 'Ver' %}">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                                 <a href="{% url 'meeting_edit' meeting.id %}" 
-                                                   class="btn btn-outline-warning" title="Editar">
+                                                   class="btn btn-outline-warning" title="{% translate 'Editar' %}">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 <a href="{% url 'meeting_delete' meeting.id %}" 
-                                                   class="btn btn-outline-danger" title="Eliminar">
+                                                   class="btn btn-outline-danger" title="{% translate 'Eliminar' %}">
                                                     <i class="fas fa-trash"></i>
                                                 </a>
                                             </div>
@@ -106,10 +107,10 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
-                            <h4 class="text-muted">No hay reuniones registradas</h4>
-                            <p class="text-muted">Crea tu primera reunión para comenzar</p>
+                            <h4 class="text-muted">{% translate "No hay reuniones registradas" %}</h4>
+                            <p class="text-muted">{% translate "Crea tu primera reunión para comenzar" %}</p>
                             <a href="{% url 'meeting_create' %}" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Crear Primera Reunión
+                                <i class="fas fa-plus"></i> {% translate "Crear Primera Reunión" %}
                             </a>
                         </div>
                     {% endif %}

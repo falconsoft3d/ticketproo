@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load project_extras %}
 
-{% block title %}Tareas Programadas - TicketProo{% endblock %}
+{% block title %}{% translate "Tareas Programadas - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -10,12 +11,12 @@
         <div>
             <h2>
                 <i class="bi bi-clock-history text-primary"></i>
-                Tareas Programadas
+                {% translate "Tareas Programadas" %}
             </h2>
-            <p class="text-muted mb-0">Sistema de automatización de tareas</p>
+            <p class="text-muted mb-0">{% translate "Sistema de automatización de tareas" %}</p>
         </div>
         <a href="{% url 'scheduled_task_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Nueva Tarea
+            <i class="bi bi-plus-circle"></i> {% translate "Nueva Tarea" %}
         </a>
     </div>
 
@@ -24,25 +25,25 @@
         <div class="card-body">
             <form method="get" class="row g-3">
                 <div class="col-md-4">
-                    <label for="search" class="form-label">Buscar</label>
+                    <label for="search" class="form-label">{% translate "Buscar" %}</label>
                     <input type="text" class="form-control" id="search" name="search" 
-                           value="{{ search }}" placeholder="Nombre o código...">
+                           value="{{ search }}" placeholder="{% translate 'Nombre o código...' %}">
                 </div>
                 <div class="col-md-3">
-                    <label for="is_active" class="form-label">Estado</label>
+                    <label for="is_active" class="form-label">{% translate "Estado" %}</label>
                     <select class="form-select" id="is_active" name="is_active">
-                        <option value="">Todos</option>
-                        <option value="true" {% if is_active == 'true' %}selected{% endif %}>Activas</option>
-                        <option value="false" {% if is_active == 'false' %}selected{% endif %}>Inactivas</option>
+                        <option value="">{% translate "Todos" %}</option>
+                        <option value="true" {% if is_active == 'true' %}selected{% endif %}>{% translate "Activas" %}</option>
+                        <option value="false" {% if is_active == 'false' %}selected{% endif %}>{% translate "Inactivas" %}</option>
                     </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <div class="d-flex gap-1 w-100">
                         <button type="submit" class="btn btn-primary btn-sm">
-                            <i class="bi bi-search"></i> Buscar
+                            <i class="bi bi-search"></i> {% translate "Buscar" %}
                         </button>
                         <a href="{% url 'scheduled_task_list' %}" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-arrow-clockwise"></i> Limpiar
+                            <i class="bi bi-arrow-clockwise"></i> {% translate "Limpiar" %}
                         </a>
                     </div>
                 </div>
@@ -53,7 +54,7 @@
     <!-- Lista de tareas -->
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Tareas</h5>
+            <h5 class="mb-0">{% translate "Tareas" %}</h5>
             <span class="badge bg-secondary">{{ page_obj.paginator.count }} total</span>
         </div>
         <div class="card-body">
@@ -62,13 +63,13 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Tarea</th>
-                                <th>Frecuencia</th>
-                                <th>Estado</th>
-                                <th>Última Ejecución</th>
-                                <th>Próxima Ejecución</th>
-                                <th>Estadísticas</th>
-                                <th>Acciones</th>
+                                <th>{% translate "Tarea" %}</th>
+                                <th>{% translate "Frecuencia" %}</th>
+                                <th>{% translate "Estado" %}</th>
+                                <th>{% translate "Última Ejecución" %}</th>
+                                <th>{% translate "Próxima Ejecución" %}</th>
+                                <th>{% translate "Estadísticas" %}</th>
+                                <th>{% translate "Acciones" %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -95,11 +96,11 @@
                                 <td>
                                     {% if task.is_active %}
                                         <span class="badge bg-success">
-                                            <i class="bi bi-play-fill"></i> Activa
+                                            <i class="bi bi-play-fill"></i> {% translate "Activa" %}
                                         </span>
                                     {% else %}
                                         <span class="badge bg-secondary">
-                                            <i class="bi bi-pause-fill"></i> Inactiva
+                                            <i class="bi bi-pause-fill"></i> {% translate "Inactiva" %}
                                         </span>
                                     {% endif %}
                                 </td>
@@ -110,7 +111,7 @@
                                             <br><small class="text-muted">{{ task.last_execution|time:"H:i" }}</small>
                                         </div>
                                     {% else %}
-                                        <span class="text-muted">Nunca</span>
+                                        <span class="text-muted">{% translate "Nunca" %}</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -127,10 +128,10 @@
                                 </td>
                                 <td>
                                     <div class="d-flex gap-1">
-                                        <span class="badge bg-success" title="Ejecuciones exitosas">
+                                        <span class="badge bg-success" title="{% translate 'Ejecuciones exitosas' %}">
                                             ✓ {{ task.success_count }}
                                         </span>
-                                        <span class="badge bg-danger" title="Ejecuciones con error">
+                                        <span class="badge bg-danger" title="{% translate 'Ejecuciones con error' %}">
                                             ✗ {{ task.error_count }}
                                         </span>
                                     </div>
@@ -138,11 +139,11 @@
                                 <td>
                                     <div class="btn-group" role="group">
                                         <a href="{% url 'scheduled_task_detail' task.pk %}" 
-                                           class="btn btn-outline-primary btn-sm" title="Ver">
+                                           class="btn btn-outline-primary btn-sm" title="{% translate 'Ver' %}">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                         <a href="{% url 'scheduled_task_edit' task.pk %}" 
-                                           class="btn btn-outline-warning btn-sm" title="Editar">
+                                           class="btn btn-outline-warning btn-sm" title="{% translate 'Editar' %}">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <a href="{% url 'scheduled_task_toggle_active' task.pk %}" 
@@ -154,12 +155,12 @@
                                               style="display: inline;" 
                                               onsubmit="return confirm('¿Ejecutar esta tarea manualmente?')">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-outline-info btn-sm" title="Ejecutar">
+                                            <button type="submit" class="btn btn-outline-info btn-sm" title="{% translate 'Ejecutar' %}">
                                                 <i class="bi bi-play-circle"></i>
                                             </button>
                                         </form>
                                         <a href="{% url 'scheduled_task_delete' task.pk %}" 
-                                           class="btn btn-outline-danger btn-sm" title="Eliminar">
+                                           class="btn btn-outline-danger btn-sm" title="{% translate 'Eliminar' %}">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                     </div>
@@ -172,14 +173,14 @@
 
                 <!-- Paginación -->
                 {% if page_obj.has_other_pages %}
-                <nav aria-label="Paginación de tareas">
+                <nav aria-label="{% translate 'Paginación de tareas' %}">
                     <ul class="pagination justify-content-center mt-4">
                         {% if page_obj.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if is_active %}&is_active={{ is_active }}{% endif %}">Primera</a>
+                                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if is_active %}&is_active={{ is_active }}{% endif %}">{% translate "Primera" %}</a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if is_active %}&is_active={{ is_active }}{% endif %}">Anterior</a>
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if is_active %}&is_active={{ is_active }}{% endif %}">{% translate "Anterior" %}</a>
                             </li>
                         {% endif %}
                         
@@ -189,10 +190,10 @@
                         
                         {% if page_obj.has_next %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if is_active %}&is_active={{ is_active }}{% endif %}">Siguiente</a>
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if is_active %}&is_active={{ is_active }}{% endif %}">{% translate "Siguiente" %}</a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if is_active %}&is_active={{ is_active }}{% endif %}">Última</a>
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if is_active %}&is_active={{ is_active }}{% endif %}">{% translate "Última" %}</a>
                             </li>
                         {% endif %}
                     </ul>
@@ -201,10 +202,10 @@
             {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-clock-history text-muted" style="font-size: 3rem;"></i>
-                    <h4 class="text-muted mt-3">No hay tareas programadas</h4>
-                    <p class="text-muted">Crea tu primera tarea programada para automatizar procesos.</p>
+                    <h4 class="text-muted mt-3">{% translate "No hay tareas programadas" %}</h4>
+                    <p class="text-muted">{% translate "Crea tu primera tarea programada para automatizar procesos." %}</p>
                     <a href="{% url 'scheduled_task_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear Primera Tarea
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Primera Tarea" %}
                     </a>
                 </div>
             {% endif %}

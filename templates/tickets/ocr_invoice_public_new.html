@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -127,7 +128,7 @@
         <div class="text-center">
             <i class="bi bi-receipt-cutoff upload-icon"></i>
             <h2 class="mb-2">{{ page_title }}</h2>
-            <p class="text-muted mb-4">Escanea tu factura con la cámara del móvil</p>
+            <p class="text-muted mb-4">{% translate "Escanea tu factura con la cámara del móvil" %}</p>
         </div>
 
         {% if messages %}
@@ -144,8 +145,8 @@
             
             <label for="imageInput" class="file-label">
                 <i class="bi bi-camera-fill"></i>
-                <p>Toca para tomar foto</p>
-                <small class="text-muted">o seleccionar imagen</small>
+                <p>{% translate "Toca para tomar foto" %}</p>
+                <small class="text-muted">{% translate "o seleccionar imagen" %}</small>
             </label>
             
             <input type="file" 
@@ -159,19 +160,19 @@
                 <img id="imagePreview" class="image-preview" alt="Preview">
                 <div class="text-center">
                     <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="changeImage()">
-                        <i class="bi bi-arrow-clockwise"></i> Cambiar imagen
+                        <i class="bi bi-arrow-clockwise"></i> {% translate "Cambiar imagen" %}
                     </button>
                 </div>
             </div>
             
             <button type="submit" class="btn btn-upload" id="submitBtn" style="display: none;">
-                <i class="bi bi-cloud-upload me-2"></i> Subir Factura
+                <i class="bi bi-cloud-upload me-2"></i> {% translate "Subir Factura" %}
             </button>
         </form>
 
         <div class="text-center mt-4">
             <small class="text-muted">
-                <i class="bi bi-shield-check"></i> Conexión segura • Procesamiento automático con IA
+                <i class="bi bi-shield-check"></i> {% translate "Conexión segura • Procesamiento automático con IA" %}
             </small>
         </div>
     </div>

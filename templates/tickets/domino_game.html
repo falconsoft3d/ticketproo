@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Dominó - {{ game.name }} - TicketProo{% endblock %}
@@ -636,7 +637,7 @@
 {% block content %}
 <div class="domino-game">
     <a href="{% url 'domino_lobby' %}" class="back-button">
-        <i class="bi bi-arrow-left"></i> Volver al Lobby
+        <i class="bi bi-arrow-left"></i> {% translate "Volver al Lobby" %}
     </a>
 
     <div class="game-container">
@@ -666,18 +667,18 @@
             <div class="waiting-state">
                 <div class="waiting-content">
                     <i class="bi bi-hourglass-split waiting-icon"></i>
-                    <h3>Esperando más jugadores...</h3>
-                    <p>Se necesitan al menos 2 jugadores para iniciar</p>
+                    <h3>{% translate "Esperando más jugadores..." %}</h3>
+                    <p>{% translate "Se necesitan al menos 2 jugadores para iniciar" %}</p>
                     
                     {% if game.created_by == user %}
                         {% if game.can_start %}
                             <a href="{% url 'domino_start_game' game.id %}" class="btn btn-domino btn-lg">
-                                <i class="bi bi-play"></i> Iniciar Partida
+                                <i class="bi bi-play"></i> {% translate "Iniciar Partida" %}
                             </a>
                         {% else %}
                             <div class="alert alert-info">
                                 <i class="bi bi-info-circle"></i>
-                                Esperando más jugadores para poder iniciar
+                                {% translate "Esperando más jugadores para poder iniciar" %}
                             </div>
                         {% endif %}
                     {% endif %}
@@ -689,27 +690,27 @@
             <div class="game-finished">
                 <div class="results-header">
                     <i class="bi bi-trophy-fill trophy-icon"></i>
-                    <h2>¡Partida Terminada!</h2>
+                    <h2>{% translate "¡Partida Terminada!" %}</h2>
                     {% if winner %}
-                        <h3>🎉 ¡Ganador: <strong>{{ winner.user.username }}</strong>! 🎉</h3>
+                        <h3>{% translate "🎉 ¡Ganador:" %} <strong>{{ winner.user.username }}</strong>! 🎉</h3>
                     {% else %}
-                        <h3>🤝 ¡Empate! 🤝</h3>
+                        <h3>{% translate "🤝 ¡Empate! 🤝" %}</h3>
                     {% endif %}
                 </div>
                 
                 <!-- Tabla de Resultados Finales -->
                 {% if final_results %}
                     <div class="results-table">
-                        <h4><i class="bi bi-list-ol"></i> Clasificación Final</h4>
+                        <h4><i class="bi bi-list-ol"></i> {% translate "Clasificación Final" %}</h4>
                         <div class="table-responsive">
                             <table class="table table-bordered table-striped">
                                 <thead class="table-success">
                                     <tr>
-                                        <th>Posición</th>
-                                        <th>Jugador</th>
-                                        <th>Puntuación Final</th>
-                                        <th>Fichas Restantes</th>
-                                        <th>Estado</th>
+                                        <th>{% translate "Posición" %}</th>
+                                        <th>{% translate "Jugador" %}</th>
+                                        <th>{% translate "Puntuación Final" %}</th>
+                                        <th>{% translate "Fichas Restantes" %}</th>
+                                        <th>{% translate "Estado" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -729,10 +730,10 @@
                                             <td>
                                                 <strong>{{ result.username }}</strong>
                                                 {% if result.player.user == user %}
-                                                    <span class="badge bg-primary">TÚ</span>
+                                                    <span class="badge bg-primary">{% translate "TÚ" %}</span>
                                                 {% endif %}
                                                 {% if result.is_winner %}
-                                                    <span class="badge bg-success">GANADOR</span>
+                                                    <span class="badge bg-success">{% translate "GANADOR" %}</span>
                                                 {% endif %}
                                             </td>
                                             <td>
@@ -741,7 +742,7 @@
                                             <td>{{ result.remaining_tiles }}</td>
                                             <td>
                                                 {% if result.final_score == 0 %}
-                                                    <span class="badge bg-success">Sin fichas</span>
+                                                    <span class="badge bg-success">{% translate "Sin fichas" %}</span>
                                                 {% else %}
                                                     <span class="badge bg-info">{{ result.final_score }} pts</span>
                                                 {% endif %}
@@ -760,21 +761,21 @@
                         <div class="col-md-4">
                             <div class="stat-card">
                                 <i class="bi bi-calendar3"></i>
-                                <h5>Duración</h5>
+                                <h5>{% translate "Duración" %}</h5>
                                 <p>{{ game.started_at|timesince:game.finished_at }}</p>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="stat-card">
                                 <i class="bi bi-people"></i>
-                                <h5>Jugadores</h5>
+                                <h5>{% translate "Jugadores" %}</h5>
                                 <p>{{ players.count }} participantes</p>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="stat-card">
                                 <i class="bi bi-joystick"></i>
-                                <h5>Jugadas</h5>
+                                <h5>{% translate "Jugadas" %}</h5>
                                 <p>{{ recent_moves.count }} movimientos</p>
                             </div>
                         </div>
@@ -784,7 +785,7 @@
                 <!-- Estado Final del Tablero -->
                 {% if board_tiles %}
                     <div class="final-board mt-4">
-                        <h4><i class="bi bi-grid-3x3"></i> Tablero Final</h4>
+                        <h4><i class="bi bi-grid-3x3"></i> {% translate "Tablero Final" %}</h4>
                         <div class="game-board">
                             <div class="board-center">
                                 {% for tile in board_tiles %}
@@ -801,15 +802,15 @@
                 <div class="post-game-actions mt-4">
                     <div class="d-flex gap-3 justify-content-center">
                         <a href="{% url 'domino_lobby' %}" class="btn btn-domino btn-lg">
-                            <i class="bi bi-arrow-left"></i> Volver al Lobby
+                            <i class="bi bi-arrow-left"></i> {% translate "Volver al Lobby" %}
                         </a>
                         {% if game.created_by == user %}
                             <button onclick="createNewGame()" class="btn btn-success btn-lg">
-                                <i class="bi bi-plus-circle"></i> Nueva Partida
+                                <i class="bi bi-plus-circle"></i> {% translate "Nueva Partida" %}
                             </button>
                         {% endif %}
                         <button onclick="shareResults()" class="btn btn-info btn-lg">
-                            <i class="bi bi-share"></i> Compartir Resultados
+                            <i class="bi bi-share"></i> {% translate "Compartir Resultados" %}
                         </button>
                     </div>
                 </div>
@@ -825,7 +826,7 @@
                     {% if current_player %}
                         <div class="turn-indicator {% if current_player.user == user %}my-turn{% else %}other-turn{% endif %}">
                             {% if current_player.user == user %}
-                                <i class="bi bi-arrow-right-circle"></i> ¡Es tu turno!
+                                <i class="bi bi-arrow-right-circle"></i> {% translate "¡Es tu turno!" %}
                             {% else %}
                                 <i class="bi bi-hourglass"></i> Turno de {{ current_player.user.username }}
                             {% endif %}
@@ -848,8 +849,8 @@
                                 {% endfor %}
                             {% else %}
                                 <div class="text-center">
-                                    <h4><i class="bi bi-circle"></i> Mesa Vacía</h4>
-                                    <p>El primer jugador puede colocar cualquier ficha</p>
+                                    <h4><i class="bi bi-circle"></i> {% translate "Mesa Vacía" %}</h4>
+                                    <p>{% translate "El primer jugador puede colocar cualquier ficha" %}</p>
                                 </div>
                             {% endif %}
                         </div>
@@ -860,23 +861,23 @@
                         <div class="game-controls">
                             <button id="pass-turn" class="btn btn-domino btn-pass" 
                                     {% if can_play %}disabled{% endif %}>
-                                <i class="bi bi-skip-forward"></i> Pasar Turno
+                                <i class="bi bi-skip-forward"></i> {% translate "Pasar Turno" %}
                             </button>
                             <button onclick="location.reload()" class="btn btn-domino" style="background: linear-gradient(45deg, #17a2b8, #138496);">
-                                <i class="bi bi-arrow-clockwise"></i> Refrescar
+                                <i class="bi bi-arrow-clockwise"></i> {% translate "Refrescar" %}
                             </button>
                             <small class="text-muted d-block mt-2">
                                 {% if can_play %}
-                                    Selecciona una ficha de tu mano para jugar
+                                    {% translate "Selecciona una ficha de tu mano para jugar" %}
                                 {% else %}
-                                    No puedes jugar ninguna ficha, debes pasar tu turno
+                                    {% translate "No puedes jugar ninguna ficha, debes pasar tu turno" %}
                                 {% endif %}
                             </small>
                         </div>
                     {% else %}
                         <div class="game-controls">
                             <button onclick="location.reload()" class="btn btn-domino" style="background: linear-gradient(45deg, #17a2b8, #138496);">
-                                <i class="bi bi-arrow-clockwise"></i> Refrescar Juego
+                                <i class="bi bi-arrow-clockwise"></i> {% translate "Refrescar Juego" %}
                             </button>
                             {% if current_player %}
                                 <small class="text-muted d-block mt-2">
@@ -916,7 +917,7 @@
                     {% else %}
                         <div class="alert alert-warning">
                             <i class="bi bi-exclamation-triangle"></i>
-                            No estás registrado como jugador en esta partida.
+                            {% translate "No estás registrado como jugador en esta partida." %}
                         </div>
                     {% endif %}
                 </div>
@@ -935,7 +936,7 @@
                                     <div class="player-name">
                                         <i class="bi bi-person-circle"></i>
                                         {{ player.user.username }}
-                                        {% if player.user == user %}<span class="badge bg-primary">TÚ</span>{% endif %}
+                                        {% if player.user == user %}<span class="badge bg-primary">{% translate "TÚ" %}</span>{% endif %}
                                         {% if player == current_player %}<span class="badge bg-warning">TURNO</span>{% endif %}
                                     </div>
                                     <div class="player-stats">
@@ -943,7 +944,7 @@
                                         <i class="bi bi-star"></i> Puntos: {{ player.score }}<br>
                                         <i class="bi bi-clock-history"></i> 
                                         {% if player.user == user %}
-                                            Última conexión: Ahora
+                                            {% translate "Última conexión: Ahora" %}
                                         {% else %}
                                             Última conexión: {{ player.last_seen|timesince }} ago
                                         {% endif %}
@@ -956,7 +957,7 @@
                     <!-- Mensajes del Juego -->
                     <div class="game-card mt-3">
                         <div class="game-card-header">
-                            <i class="bi bi-chat-dots"></i> Historial de Jugadas
+                            <i class="bi bi-chat-dots"></i> {% translate "Historial de Jugadas" %}
                         </div>
                         <div class="game-card-body">
                             <div class="game-messages">
@@ -967,13 +968,13 @@
                                             {% if move.tile %}
                                                 Jugó [{{ move.tile.left }}|{{ move.tile.right }}]
                                             {% else %}
-                                                Pasó su turno
+                                                {% translate "Pasó su turno" %}
                                             {% endif %}
                                             <small class="text-muted d-block">({{ move.created_at|timesince }} ago)</small>
                                         </div>
                                     {% empty %}
                                         <div class="message system">
-                                            <em>No hay jugadas registradas aún</em>
+                                            <em>{% translate "No hay jugadas registradas aún" %}</em>
                                         </div>
                                     {% endfor %}
                                 </div>

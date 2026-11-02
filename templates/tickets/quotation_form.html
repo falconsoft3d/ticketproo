@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -15,7 +16,7 @@
                         <i class="bi bi-file-earmark-text text-primary"></i>
                         {{ page_title }}
                     </h1>
-                    <p class="text-muted mb-0">Complete la información de la cotización</p>
+                    <p class="text-muted mb-0">{% translate "Complete la información de la cotización" %}</p>
                 </div>
             </div>
 
@@ -24,7 +25,7 @@
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
                         <i class="bi bi-file-earmark-plus"></i>
-                        Datos de la Cotización
+                        {% translate "Datos de la Cotización" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -36,10 +37,10 @@
                             <div class="col-md-6 mb-3">
                                 <label for="company" class="form-label">
                                     <i class="bi bi-building text-primary"></i>
-                                    Empresa <span class="text-danger">*</span>
+                                    {% translate "Empresa" %} <span class="text-danger">*</span>
                                 </label>
                                 <select class="form-select" id="company" name="company" required>
-                                    <option value="">Seleccionar empresa...</option>
+                                    <option value="">{% translate "Seleccionar empresa..." %}</option>
                                     {% for company in companies %}
                                         <option value="{{ company.id }}" 
                                                 {% if quotation and quotation.company.id == company.id %}selected{% endif %}>
@@ -53,10 +54,10 @@
                             <div class="col-md-6 mb-3">
                                 <label for="salesperson" class="form-label">
                                     <i class="bi bi-person text-primary"></i>
-                                    Vendedor <span class="text-danger">*</span>
+                                    {% translate "Vendedor" %} <span class="text-danger">*</span>
                                 </label>
                                 <select class="form-select" id="salesperson" name="salesperson" required>
-                                    <option value="">Seleccionar vendedor...</option>
+                                    <option value="">{% translate "Seleccionar vendedor..." %}</option>
                                     {% for person in salespeople %}
                                         <option value="{{ person.id }}" 
                                                 {% if quotation and quotation.salesperson.id == person.id %}selected{% elif not quotation and person == user %}selected{% endif %}>
@@ -72,7 +73,7 @@
                             <div class="col-md-3 mb-3">
                                 <label for="date" class="form-label">
                                     <i class="bi bi-calendar text-primary"></i>
-                                    Fecha <span class="text-danger">*</span>
+                                    {% translate "Fecha" %} <span class="text-danger">*</span>
                                 </label>
                                 <input type="date" class="form-control" id="date" name="date" 
                                        value="{% if quotation %}{{ quotation.date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}" required>
@@ -82,24 +83,24 @@
                             <div class="col-md-3 mb-3">
                                 <label for="sequence" class="form-label">
                                     <i class="bi bi-hash text-primary"></i>
-                                    Código <span class="text-danger">*</span>
+                                    {% translate "Código" %} <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" class="form-control" id="sequence" name="sequence" 
                                        value="{% if quotation %}{{ quotation.sequence }}{% endif %}" 
-                                       placeholder="COT-2025-0001" required>
-                                <small class="text-muted">Código único de la cotización</small>
+                                       placeholder="{% translate 'COT-2025-0001' %}" required>
+                                <small class="text-muted">{% translate "Código único de la cotización" %}</small>
                             </div>
 
                             <!-- Fecha de Vencimiento -->
                             <div class="col-md-3 mb-3">
                                 <label for="expiry_date" class="form-label">
                                     <i class="bi bi-hourglass-split text-warning"></i>
-                                    Fecha de Vencimiento
+                                    {% translate "Fecha de Vencimiento" %}
                                 </label>
                                 <input type="date" class="form-control" id="expiry_date" name="expiry_date" 
                                        value="{% if quotation.expiry_date %}{{ quotation.expiry_date|date:'Y-m-d' }}{% endif %}">
                                 <div class="form-text">
-                                    <small class="text-muted">Si se deja vacía, se calculará automáticamente (30 días después de la fecha)</small>
+                                    <small class="text-muted">{% translate "Si se deja vacía, se calculará automáticamente (30 días después de la fecha)" %}</small>
                                 </div>
                             </div>
 
@@ -107,23 +108,23 @@
                             <div class="col-md-3 mb-3">
                                 <label for="status" class="form-label">
                                     <i class="bi bi-flag text-primary"></i>
-                                    Estado Interno <span class="text-danger">*</span>
+                                    {% translate "Estado Interno" %} <span class="text-danger">*</span>
                                 </label>
                                 <select class="form-select" id="status" name="status" required>
                                     <option value="draft" {% if not quotation or quotation.status == 'draft' %}selected{% endif %}>
-                                        Borrador
+                                        {% translate "Borrador" %}
                                     </option>
                                     <option value="sent" {% if quotation and quotation.status == 'sent' %}selected{% endif %}>
-                                        Enviada
+                                        {% translate "Enviada" %}
                                     </option>
                                     <option value="approved" {% if quotation and quotation.status == 'approved' %}selected{% endif %}>
-                                        Aprobada
+                                        {% translate "Aprobada" %}
                                     </option>
                                     <option value="rejected" {% if quotation and quotation.status == 'rejected' %}selected{% endif %}>
-                                        Rechazada
+                                        {% translate "Rechazada" %}
                                     </option>
                                     <option value="expired" {% if quotation and quotation.status == 'expired' %}selected{% endif %}>
-                                        Expirada
+                                        {% translate "Expirada" %}
                                     </option>
                                 </select>
                             </div>
@@ -134,17 +135,17 @@
                             <div class="col-md-6 mb-3">
                                 <label for="client_status" class="form-label">
                                     <i class="bi bi-person-check text-primary"></i>
-                                    Estado del Cliente
+                                    {% translate "Estado del Cliente" %}
                                 </label>
                                 <select class="form-select" id="client_status" name="client_status">
                                     <option value="pending" {% if not quotation or quotation.client_status == 'pending' %}selected{% endif %}>
-                                        Pendiente de Respuesta
+                                        {% translate "Pendiente de Respuesta" %}
                                     </option>
                                     <option value="accepted" {% if quotation and quotation.client_status == 'accepted' %}selected{% endif %}>
-                                        Aceptada por Cliente
+                                        {% translate "Aceptada por Cliente" %}
                                     </option>
                                     <option value="rejected" {% if quotation and quotation.client_status == 'rejected' %}selected{% endif %}>
-                                        Rechazada por Cliente
+                                        {% translate "Rechazada por Cliente" %}
                                     </option>
                                 </select>
                             </div>
@@ -153,7 +154,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="description" class="form-label">
                                     <i class="bi bi-text-paragraph text-primary"></i>
-                                    Descripción
+                                    {% translate "Descripción" %}
                                 </label>
                                 <textarea class="form-control" id="description" name="description" rows="3" 
                                           placeholder="Descripción adicional de la cotización...">{% if quotation %}{{ quotation.description }}{% endif %}</textarea>
@@ -165,24 +166,24 @@
                             <div class="col-md-6 mb-3">
                                 <label for="service_start_date" class="form-label">
                                     <i class="bi bi-calendar-check text-success"></i>
-                                    Fecha de Inicio del Servicio
+                                    {% translate "Fecha de Inicio del Servicio" %}
                                 </label>
                                 <input type="date" class="form-control" id="service_start_date" name="service_start_date" 
                                        value="{% if quotation.service_start_date %}{{ quotation.service_start_date|date:'Y-m-d' }}{% endif %}">
                                 <div class="form-text">
-                                    <small class="text-muted">Fecha en que comenzará el servicio (opcional)</small>
+                                    <small class="text-muted">{% translate "Fecha en que comenzará el servicio (opcional)" %}</small>
                                 </div>
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <label for="service_end_date" class="form-label">
                                     <i class="bi bi-calendar-x text-danger"></i>
-                                    Fecha de Fin del Servicio
+                                    {% translate "Fecha de Fin del Servicio" %}
                                 </label>
                                 <input type="date" class="form-control" id="service_end_date" name="service_end_date" 
                                        value="{% if quotation.service_end_date %}{{ quotation.service_end_date|date:'Y-m-d' }}{% endif %}">
                                 <div class="form-text">
-                                    <small class="text-muted">Fecha estimada de finalización del servicio (opcional)</small>
+                                    <small class="text-muted">{% translate "Fecha estimada de finalización del servicio (opcional)" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -191,11 +192,11 @@
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i>
-                                {% if quotation %}Actualizar{% else %}Crear{% endif %} Cotización
+                                {% if quotation %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Cotización" %}
                             </button>
                             <a href="{% url 'quotation_list' %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle"></i>
-                                Cancelar
+                                {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>
@@ -208,21 +209,21 @@
                 <div class="card-header bg-info text-white">
                     <h6 class="mb-0">
                         <i class="bi bi-person-check"></i>
-                        Información de Respuesta del Cliente
+                        {% translate "Información de Respuesta del Cliente" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <strong>Cliente:</strong> {{ quotation.client_response_name }}<br>
+                            <strong>{% translate "Cliente:" %}</strong> {{ quotation.client_response_name }}<br>
                             {% if quotation.client_response_email %}
-                                <strong>Email:</strong> {{ quotation.client_response_email }}<br>
+                                <strong>{% translate "Email:" %}</strong> {{ quotation.client_response_email }}<br>
                             {% endif %}
-                            <strong>Fecha de Respuesta:</strong> {{ quotation.client_response_date|date:"d/m/Y H:i" }}
+                            <strong>{% translate "Fecha de Respuesta:" %}</strong> {{ quotation.client_response_date|date:"d/m/Y H:i" }}
                         </div>
                         <div class="col-md-6">
                             {% if quotation.client_response_comments %}
-                                <strong>Comentarios:</strong><br>
+                                <strong>{% translate "Comentarios:" %}</strong><br>
                                 <div class="border p-2 rounded bg-light">
                                     <small>{{ quotation.client_response_comments }}</small>
                                 </div>
@@ -239,7 +240,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">
                         <i class="bi bi-list-ul"></i>
-                        Líneas de Cotización
+                        {% translate "Líneas de Cotización" %}
                     </h6>
                     <span class="badge bg-primary" id="totalAmount">
                         Total: {{ currency_symbol }}<span id="totalValue">{{ quotation.get_total_amount|floatformat:2 }}</span>
@@ -261,15 +262,15 @@
                 <div class="card-header bg-primary text-white">
                     <h6 class="mb-0">
                         <i class="bi bi-plus-circle"></i>
-                        Agregar Productos
+                        {% translate "Agregar Productos" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <!-- Selección de productos -->
                     <div class="mb-3">
-                        <label for="productSelect" class="form-label">Producto</label>
+                        <label for="productSelect" class="form-label">{% translate "Producto" %}</label>
                         <select class="form-select" id="productSelect" onchange="selectProduct()">
-                            <option value="">-- Seleccionar producto --</option>
+                            <option value="">{% translate "-- Seleccionar producto --" %}</option>
                             {% for product in products %}
                             <option value="{{ product.id }}" data-price="{{ product.price|default:'0' }}">
                                 {{ product.name }} - {{ currency_symbol }}{{ product.price|default:'0'|floatformat:2 }}
@@ -281,36 +282,36 @@
                     <!-- Formulario para agregar línea -->
                     <div id="addLineForm" style="display: none;">
                         <div class="border-top pt-3">
-                            <h6 class="mb-3">Agregar Línea</h6>
+                            <h6 class="mb-3">{% translate "Agregar Línea" %}</h6>
                             
                             <input type="hidden" id="selectedProductId">
                             
                             <div class="mb-2">
-                                <label class="form-label">Producto Seleccionado</label>
+                                <label class="form-label">{% translate "Producto Seleccionado" %}</label>
                                 <div id="selectedProductName" class="fw-bold text-primary"></div>
                             </div>
 
                             <div class="row">
                                 <div class="col-6 mb-2">
-                                    <label for="lineQuantity" class="form-label">Cantidad</label>
+                                    <label for="lineQuantity" class="form-label">{% translate "Cantidad" %}</label>
                                     <input type="number" class="form-control form-control-sm" 
                                            id="lineQuantity" min="0.01" step="0.01" value="1">
                                 </div>
                                 <div class="col-6 mb-2">
-                                    <label for="lineUnitPrice" class="form-label">Precio Unit.</label>
+                                    <label for="lineUnitPrice" class="form-label">{% translate "Precio Unit." %}</label>
                                     <input type="number" class="form-control form-control-sm" 
                                            id="lineUnitPrice" min="0" step="0.01">
                                 </div>
                             </div>
 
                             <div class="mb-2">
-                                <label for="lineDiscount" class="form-label">Descuento (%)</label>
+                                <label for="lineDiscount" class="form-label">{% translate "Descuento (%)" %}</label>
                                 <input type="number" class="form-control form-control-sm" 
                                        id="lineDiscount" min="0" max="100" step="0.01" value="0">
                             </div>
 
                             <div class="mb-3">
-                                <label for="lineDescription" class="form-label">Descripción</label>
+                                <label for="lineDescription" class="form-label">{% translate "Descripción" %}</label>
                                 <textarea class="form-control form-control-sm" 
                                           id="lineDescription" rows="2" 
                                           placeholder="Descripción adicional (opcional)"></textarea>
@@ -319,11 +320,11 @@
                             <div class="d-grid gap-2">
                                 <button type="button" class="btn btn-success btn-sm" onclick="addLineToQuotation()">
                                     <i class="bi bi-plus-circle"></i>
-                                    Agregar Línea
+                                    {% translate "Agregar Línea" %}
                                 </button>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="cancelAddLine()">
                                     <i class="bi bi-x-circle"></i>
-                                    Cancelar
+                                    {% translate "Cancelar" %}
                                 </button>
                             </div>
                         </div>
@@ -335,9 +336,9 @@
             <div class="card">
                 <div class="card-body text-center">
                     <i class="bi bi-info-circle display-4 text-muted"></i>
-                    <h5 class="mt-3">Agregar Productos</h5>
+                    <h5 class="mt-3">{% translate "Agregar Productos" %}</h5>
                     <p class="text-muted">
-                        Primero cree la cotización para poder agregar productos y líneas.
+                        {% translate "Primero cree la cotización para poder agregar productos y líneas." %}
                     </p>
                 </div>
             </div>
@@ -348,21 +349,21 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="bi bi-info-circle"></i>
-                        Información
+                        {% translate "Información" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <ul class="mb-0">
-                        <li><strong>Secuencia:</strong> Se genera automáticamente al crear la cotización</li>
-                        <li><strong>Líneas:</strong> Agregue productos usando el panel lateral</li>
-                        <li><strong>Total:</strong> Se calcula automáticamente sumando las líneas</li>
-                        <li><strong>Estados:</strong>
+                        <li><strong>{% translate "Secuencia:" %}</strong> {% translate "Se genera automáticamente al crear la cotización" %}</li>
+                        <li><strong>{% translate "Líneas:" %}</strong> {% translate "Agregue productos usando el panel lateral" %}</li>
+                        <li><strong>{% translate "Total:" %}</strong> {% translate "Se calcula automáticamente sumando las líneas" %}</li>
+                        <li><strong>{% translate "Estados:" %}</strong>
                             <ul>
-                                <li><span class="badge bg-secondary">Borrador</span> - En preparación</li>
-                                <li><span class="badge bg-primary">Enviada</span> - Enviada al cliente</li>
-                                <li><span class="badge bg-success">Aprobada</span> - Aceptada por el cliente</li>
-                                <li><span class="badge bg-danger">Rechazada</span> - Rechazada por el cliente</li>
-                                <li><span class="badge bg-warning">Expirada</span> - Tiempo de validez vencido</li>
+                                <li><span class="badge bg-secondary">{% translate "Borrador" %}</span> {% translate "- En preparación" %}</li>
+                                <li><span class="badge bg-primary">{% translate "Enviada" %}</span> {% translate "- Enviada al cliente" %}</li>
+                                <li><span class="badge bg-success">{% translate "Aprobada" %}</span> {% translate "- Aceptada por el cliente" %}</li>
+                                <li><span class="badge bg-danger">{% translate "Rechazada" %}</span> {% translate "- Rechazada por el cliente" %}</li>
+                                <li><span class="badge bg-warning">{% translate "Expirada" %}</span> {% translate "- Tiempo de validez vencido" %}</li>
                             </ul>
                         </li>
                     </ul>

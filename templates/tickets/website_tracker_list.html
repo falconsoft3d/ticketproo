@@ -1,18 +1,19 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Rastreador Web{% endblock %}
+{% block title %}{% translate "Rastreador Web" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2><i class="bi bi-radar text-primary"></i> Rastreador Web</h2>
-            <p class="text-muted mb-0">Analiza URLs, IPs, DNS y conectividad</p>
+            <h2><i class="bi bi-radar text-primary"></i> {% translate "Rastreador Web" %}</h2>
+            <p class="text-muted mb-0">{% translate "Analiza URLs, IPs, DNS y conectividad" %}</p>
         </div>
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newTrackerModal">
-            <i class="bi bi-plus-circle"></i> Nuevo Rastreo
+            <i class="bi bi-plus-circle"></i> {% translate "Nuevo Rastreo" %}
         </button>
     </div>
 
@@ -23,26 +24,26 @@
                 <div class="card-body">
                     <form method="GET" class="row g-3">
                         <div class="col-md-4">
-                            <input type="text" name="search" class="form-control" placeholder="Buscar por URL o IP..." value="{{ request.GET.search }}">
+                            <input type="text" name="search" class="form-control" placeholder="{% translate 'Buscar por URL o IP...' %}" value="{{ request.GET.search }}">
                         </div>
                         <div class="col-md-3">
                             <select name="status" class="form-select">
-                                <option value="">Todos los estados</option>
-                                <option value="online" {% if request.GET.status == 'online' %}selected{% endif %}>En línea</option>
-                                <option value="offline" {% if request.GET.status == 'offline' %}selected{% endif %}>Fuera de línea</option>
-                                <option value="error" {% if request.GET.status == 'error' %}selected{% endif %}>Error</option>
+                                <option value="">{% translate "Todos los estados" %}</option>
+                                <option value="online" {% if request.GET.status == 'online' %}selected{% endif %}>{% translate "En línea" %}</option>
+                                <option value="offline" {% if request.GET.status == 'offline' %}selected{% endif %}>{% translate "Fuera de línea" %}</option>
+                                <option value="error" {% if request.GET.status == 'error' %}selected{% endif %}>{% translate "Error" %}</option>
                             </select>
                         </div>
                         <div class="col-md-3">
                             <select name="order" class="form-select">
-                                <option value="-created_at" {% if request.GET.order == '-created_at' %}selected{% endif %}>Más recientes</option>
-                                <option value="created_at" {% if request.GET.order == 'created_at' %}selected{% endif %}>Más antiguos</option>
-                                <option value="target" {% if request.GET.order == 'target' %}selected{% endif %}>Por nombre (A-Z)</option>
+                                <option value="-created_at" {% if request.GET.order == '-created_at' %}selected{% endif %}>{% translate "Más recientes" %}</option>
+                                <option value="created_at" {% if request.GET.order == 'created_at' %}selected{% endif %}>{% translate "Más antiguos" %}</option>
+                                <option value="target" {% if request.GET.order == 'target' %}selected{% endif %}>{% translate "Por nombre (A-Z)" %}</option>
                             </select>
                         </div>
                         <div class="col-md-2">
                             <button type="submit" class="btn btn-success w-100">
-                                <i class="bi bi-search"></i> Filtrar
+                                <i class="bi bi-search"></i> {% translate "Filtrar" %}
                             </button>
                         </div>
                     </form>
@@ -63,15 +64,15 @@
                     </h6>
                     {% if tracker.is_online %}
                         <span class="badge bg-success">
-                            <i class="bi bi-check-circle"></i> Online
+                            <i class="bi bi-check-circle"></i> {% translate "Online" %}
                         </span>
                     {% elif tracker.status == 'error' %}
                         <span class="badge bg-danger">
-                            <i class="bi bi-x-circle"></i> Error
+                            <i class="bi bi-x-circle"></i> {% translate "Error" %}
                         </span>
                     {% else %}
                         <span class="badge bg-secondary">
-                            <i class="bi bi-dash-circle"></i> Offline
+                            <i class="bi bi-dash-circle"></i> {% translate "Offline" %}
                         </span>
                     {% endif %}
                 </div>
@@ -79,7 +80,7 @@
                     <!-- IP Address -->
                     {% if tracker.ip_address %}
                     <div class="mb-2">
-                        <small class="text-muted">IP:</small>
+                        <small class="text-muted">{% translate "IP:" %}</small>
                         <strong class="ms-2">{{ tracker.ip_address }}</strong>
                     </div>
                     {% endif %}
@@ -87,7 +88,7 @@
                     <!-- Response Time -->
                     {% if tracker.response_time %}
                     <div class="mb-2">
-                        <small class="text-muted">Tiempo de respuesta:</small>
+                        <small class="text-muted">{% translate "Tiempo de respuesta:" %}</small>
                         <span class="badge bg-info ms-2">{{ tracker.response_time }} ms</span>
                     </div>
                     {% endif %}
@@ -95,7 +96,7 @@
                     <!-- HTTP Status -->
                     {% if tracker.http_status_code %}
                     <div class="mb-2">
-                        <small class="text-muted">HTTP Status:</small>
+                        <small class="text-muted">{% translate "HTTP Status:" %}</small>
                         <span class="badge {% if tracker.http_status_code < 300 %}bg-success{% elif tracker.http_status_code < 400 %}bg-warning{% else %}bg-danger{% endif %} ms-2">
                             {{ tracker.http_status_code }}
                         </span>
@@ -105,7 +106,7 @@
                     <!-- Server -->
                     {% if tracker.server_info %}
                     <div class="mb-2">
-                        <small class="text-muted">Servidor:</small>
+                        <small class="text-muted">{% translate "Servidor:" %}</small>
                         <span class="ms-2">{{ tracker.server_info|truncatechars:25 }}</span>
                     </div>
                     {% endif %}
@@ -113,7 +114,7 @@
                     <!-- Technologies -->
                     {% if tracker.technologies %}
                     <div class="mb-2">
-                        <small class="text-muted">Tecnologías:</small>
+                        <small class="text-muted">{% translate "Tecnologías:" %}</small>
                         <div class="mt-1">
                             {% for tech in tracker.technologies|slice:":3" %}
                                 <span class="badge bg-secondary me-1">{{ tech }}</span>
@@ -130,10 +131,10 @@
                 <div class="card-footer bg-transparent">
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'website_tracker_detail' tracker.pk %}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye"></i> Ver Detalles
+                            <i class="bi bi-eye"></i> {% translate "Ver Detalles" %}
                         </a>
                         <button type="button" class="btn btn-sm btn-outline-success" onclick="reTrace('{{ tracker.target }}')">
-                            <i class="bi bi-arrow-clockwise"></i> Re-rastrear
+                            <i class="bi bi-arrow-clockwise"></i> {% translate "Re-rastrear" %}
                         </button>
                     </div>
                 </div>
@@ -144,14 +145,14 @@
 
     <!-- Paginación -->
     {% if is_paginated %}
-    <nav aria-label="Page navigation">
+    <nav aria-label="{% translate 'Page navigation' %}">
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Primera</a>
+                    <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{% translate "Primera" %}</a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Anterior</a>
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{% translate "Anterior" %}</a>
                 </li>
             {% endif %}
 
@@ -161,10 +162,10 @@
 
             {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Siguiente</a>
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{% translate "Siguiente" %}</a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Última</a>
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{% translate "Última" %}</a>
                 </li>
             {% endif %}
         </ul>
@@ -175,10 +176,10 @@
     <!-- Estado vacío -->
     <div class="text-center py-5">
         <i class="bi bi-radar" style="font-size: 5rem; color: #ccc;"></i>
-        <h4 class="mt-3 text-muted">No hay rastreos aún</h4>
-        <p class="text-muted">Comienza analizando tu primera URL o IP</p>
+        <h4 class="mt-3 text-muted">{% translate "No hay rastreos aún" %}</h4>
+        <p class="text-muted">{% translate "Comienza analizando tu primera URL o IP" %}</p>
         <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#newTrackerModal">
-            <i class="bi bi-plus-circle"></i> Crear Primer Rastreo
+            <i class="bi bi-plus-circle"></i> {% translate "Crear Primer Rastreo" %}
         </button>
     </div>
     {% endif %}
@@ -190,7 +191,7 @@
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">
-                    <i class="bi bi-radar"></i> Nuevo Rastreo Web
+                    <i class="bi bi-radar"></i> {% translate "Nuevo Rastreo Web" %}
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -198,35 +199,35 @@
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="target" class="form-label">URL o Dirección IP</label>
+                        <label for="target" class="form-label">{% translate "URL o Dirección IP" %}</label>
                         <input type="text" class="form-control" id="target" name="target" required 
-                               placeholder="Ejemplo: google.com, 8.8.8.8, https://example.com">
+                               placeholder="{% translate 'Ejemplo: google.com, 8.8.8.8, https://example.com' %}">
                         <div class="form-text">
-                            Puedes ingresar una URL completa, un dominio o una dirección IP
+                            {% translate "Puedes ingresar una URL completa, un dominio o una dirección IP" %}
                         </div>
                     </div>
 
                     <div class="alert alert-info mb-0">
                         <h6 class="alert-heading">
-                            <i class="bi bi-info-circle"></i> Información que se obtendrá:
+                            <i class="bi bi-info-circle"></i> {% translate "Información que se obtendrá:" %}
                         </h6>
                         <ul class="mb-0 small">
-                            <li>Dirección IP y conectividad (ping)</li>
-                            <li>Registros DNS (A, CNAME, TXT, MX)</li>
-                            <li>Headers HTTP y código de estado</li>
-                            <li>Información del servidor</li>
-                            <li>Tecnologías detectadas</li>
-                            <li>Certificado SSL (si aplica)</li>
-                            <li>Tiempo de respuesta</li>
+                            <li>{% translate "Dirección IP y conectividad (ping)" %}</li>
+                            <li>{% translate "Registros DNS (A, CNAME, TXT, MX)" %}</li>
+                            <li>{% translate "Headers HTTP y código de estado" %}</li>
+                            <li>{% translate "Información del servidor" %}</li>
+                            <li>{% translate "Tecnologías detectadas" %}</li>
+                            <li>{% translate "Certificado SSL (si aplica)" %}</li>
+                            <li>{% translate "Tiempo de respuesta" %}</li>
                         </ul>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        Cancelar
+                        {% translate "Cancelar" %}
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-search"></i> Iniciar Rastreo
+                        <i class="bi bi-search"></i> {% translate "Iniciar Rastreo" %}
                     </button>
                 </div>
             </form>

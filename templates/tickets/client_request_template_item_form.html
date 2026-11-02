@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -8,11 +9,11 @@
             <div class="d-flex justify-content-between align-items-center">
                 <h2>
                     <i class="bi bi-{% if item %}pencil{% else %}plus-circle{% endif %} me-2"></i>
-                    {% if item %}Editar Item{% else %}Agregar Item{% endif %}
+                    {% if item %}{% translate "Editar Item" %}{% else %}{% translate "Agregar Item" %}{% endif %}
                 </h2>
                 <a href="{% url 'client_request_template_detail' template.pk %}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-2"></i>
-                    Volver
+                    {% translate "Volver" %}
                 </a>
             </div>
         </div>
@@ -66,7 +67,7 @@
                             {% if form.order.errors %}
                                 <div class="text-danger small mt-1">{{ form.order.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">Orden en que aparecerá este item</div>
+                            <div class="form-text">{% translate "Orden en que aparecerá este item" %}</div>
                         </div>
 
                         <div class="mb-3">
@@ -86,16 +87,16 @@
                                 </small>
                             </div>
                             {% endif %}
-                            <div class="form-text">Este archivo se copiará a cada solicitud creada</div>
+                            <div class="form-text">{% translate "Este archivo se copiará a cada solicitud creada" %}</div>
                         </div>
 
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'client_request_template_detail' template.pk %}" class="btn btn-secondary">
-                                Cancelar
+                                {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save me-2"></i>
-                                {% if item %}Actualizar{% else %}Agregar{% endif %} Item
+                                {% if item %}{% translate "Actualizar" %}{% else %}{% translate "Agregar" %}{% endif %} {% translate "Item" %}
                             </button>
                         </div>
                     </form>
@@ -108,16 +109,16 @@
                 <div class="card-body">
                     <h6 class="card-title">
                         <i class="bi bi-info-circle me-2"></i>
-                        Información
+                        {% translate "Información" %}
                     </h6>
                     <p class="card-text small">
-                        Cada item representa una solicitud individual que se creará cuando ejecutes la plantilla.
+                        {% translate "Cada item representa una solicitud individual que se creará cuando ejecutes la plantilla." %}
                     </p>
                     <ul class="small mb-0">
-                        <li>Define el título y descripción claros</li>
-                        <li>Indica a quién se solicita</li>
-                        <li>El orden determina la secuencia</li>
-                        <li>El archivo adjunto es opcional</li>
+                        <li>{% translate "Define el título y descripción claros" %}</li>
+                        <li>{% translate "Indica a quién se solicita" %}</li>
+                        <li>{% translate "El orden determina la secuencia" %}</li>
+                        <li>{% translate "El archivo adjunto es opcional" %}</li>
                     </ul>
                 </div>
             </div>

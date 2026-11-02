@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
 
@@ -7,13 +8,13 @@
     <div class="col">
         <div class="d-flex justify-content-between align-items-center">
             <div>
-                <nav aria-label="breadcrumb">
+                <nav aria-label="{% translate 'breadcrumb' %}">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item">
-                            <a href="{% url 'absence_type_list' %}">Tipos de Ausencias</a>
+                            <a href="{% url 'absence_type_list' %}">{% translate "Tipos de Ausencias" %}</a>
                         </li>
                         <li class="breadcrumb-item active" aria-current="page">
-                            {% if absence_type %}Editar{% else %}Crear{% endif %}
+                            {% if absence_type %}{% translate "Editar" %}{% else %}{% translate "Crear" %}{% endif %}
                         </li>
                     </ol>
                 </nav>
@@ -22,7 +23,7 @@
                 </h1>
             </div>
             <a href="{% url 'absence_type_list' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+                <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
             </a>
         </div>
     </div>
@@ -33,7 +34,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-form"></i> Información del Tipo de Ausencia
+                    <i class="bi bi-form"></i> {% translate "Información del Tipo de Ausencia" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -183,7 +184,7 @@
                     <!-- Botones -->
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'absence_type_list' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
+                            <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                         </a>
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-{% if absence_type %}arrow-clockwise{% else %}plus-circle{% endif %}"></i> 
@@ -199,42 +200,42 @@
         <div class="card">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-info-circle"></i> Ayuda
+                    <i class="bi bi-info-circle"></i> {% translate "Ayuda" %}
                 </h6>
             </div>
             <div class="card-body">
-                <h6>Tipos de Ausencias Comunes:</h6>
+                <h6>{% translate "Tipos de Ausencias Comunes:" %}</h6>
                 <ul class="list-unstyled">
                     <li class="mb-2">
                         <span class="badge bg-success me-2">💰</span>
-                        <strong>Vacaciones:</strong> Remuneradas, sin documentación
+                        <strong>{% translate "Vacaciones:" %}</strong> {% translate "Remuneradas, sin documentación" %}
                     </li>
                     <li class="mb-2">
                         <span class="badge bg-warning me-2">🏥</span>
-                        <strong>Enfermedad:</strong> Remuneradas, requiere certificado médico
+                        <strong>{% translate "Enfermedad:" %}</strong> {% translate "Remuneradas, requiere certificado médico" %}
                     </li>
                     <li class="mb-2">
                         <span class="badge bg-info me-2">👤</span>
-                        <strong>Permiso Personal:</strong> Sin remuneración
+                        <strong>{% translate "Permiso Personal:" %}</strong> {% translate "Sin remuneración" %}
                     </li>
                     <li class="mb-2">
                         <span class="badge bg-primary me-2">👶</span>
-                        <strong>Maternidad/Paternidad:</strong> Remuneradas, requiere documentación
+                        <strong>{% translate "Maternidad/Paternidad:" %}</strong> {% translate "Remuneradas, requiere documentación" %}
                     </li>
                     <li class="mb-2">
                         <span class="badge bg-secondary me-2">😔</span>
-                        <strong>Duelo:</strong> Remuneradas, límite de días
+                        <strong>{% translate "Duelo:" %}</strong> {% translate "Remuneradas, límite de días" %}
                     </li>
                 </ul>
 
                 <hr>
 
-                <h6>Consideraciones:</h6>
+                <h6>{% translate "Consideraciones:" %}</h6>
                 <ul class="text-sm">
-                    <li>El <strong>color</strong> se usa en calendarios y reportes</li>
-                    <li>Los tipos <strong>inactivos</strong> no aparecen al crear ausencias</li>
-                    <li>El <strong>límite anual</strong> es opcional pero recomendado para vacaciones</li>
-                    <li>La <strong>documentación</strong> es obligatoria cuando está marcada</li>
+                    <li>{% translate "El" %} <strong>{% translate "color" %}</strong> {% translate "se usa en calendarios y reportes" %}</li>
+                    <li>{% translate "Los tipos" %} <strong>{% translate "inactivos" %}</strong> {% translate "no aparecen al crear ausencias" %}</li>
+                    <li>{% translate "El" %} <strong>{% translate "límite anual" %}</strong> {% translate "es opcional pero recomendado para vacaciones" %}</li>
+                    <li>{% translate "La" %} <strong>{% translate "documentación" %}</strong> {% translate "es obligatoria cuando está marcada" %}</li>
                 </ul>
             </div>
         </div>
@@ -243,13 +244,13 @@
         <div class="card mt-3">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-bar-chart"></i> Estadísticas de Uso
+                    <i class="bi bi-bar-chart"></i> {% translate "Estadísticas de Uso" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="text-center">
                     <h4 class="text-primary">{{ absence_type.get_usage_count }}</h4>
-                    <p class="text-muted mb-0">Ausencias registradas</p>
+                    <p class="text-muted mb-0">{% translate "Ausencias registradas" %}</p>
                 </div>
                 <hr>
                 <small class="text-muted">

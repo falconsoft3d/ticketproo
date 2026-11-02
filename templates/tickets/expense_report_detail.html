@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -43,18 +44,18 @@
                     </div>
                     <div class="d-flex gap-2">
                         {% if expense_report.status == 'draft' %}
-                            <span class="badge bg-secondary status-badge">Borrador</span>
+                            <span class="badge bg-secondary status-badge">{% translate "Borrador" %}</span>
                         {% elif expense_report.status == 'submitted' %}
-                            <span class="badge bg-warning status-badge">Enviado</span>
+                            <span class="badge bg-warning status-badge">{% translate "Enviado" %}</span>
                         {% elif expense_report.status == 'approved' %}
-                            <span class="badge bg-success status-badge">Aprobado</span>
+                            <span class="badge bg-success status-badge">{% translate "Aprobado" %}</span>
                         {% elif expense_report.status == 'rejected' %}
-                            <span class="badge bg-danger status-badge">Rechazado</span>
+                            <span class="badge bg-danger status-badge">{% translate "Rechazado" %}</span>
                         {% elif expense_report.status == 'paid' %}
-                            <span class="badge bg-info status-badge">Pagado</span>
+                            <span class="badge bg-info status-badge">{% translate "Pagado" %}</span>
                         {% endif %}
                         <a href="{% url 'expense_report_list' %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left"></i> Volver
+                            <i class="fas fa-arrow-left"></i> {% translate "Volver" %}
                         </a>
                     </div>
                 </div>
@@ -63,28 +64,28 @@
                     <div class="row">
                         <div class="col-md-8">
                             {% if expense_report.description %}
-                            <h6>Descripción:</h6>
+                            <h6>{% translate "Descripción:" %}</h6>
                             <p class="text-muted">{{ expense_report.description }}</p>
                             {% endif %}
                             
                             <div class="row">
                                 <div class="col-md-6">
-                                    <strong>Propósito:</strong> {{ expense_report.get_purpose_display }}
+                                    <strong>{% translate "Propósito:" %}</strong> {{ expense_report.get_purpose_display }}
                                 </div>
                                 <div class="col-md-6">
-                                    <strong>Período:</strong> 
+                                    <strong>{% translate "Período:" %}</strong> 
                                     {% if expense_report.start_date %}
                                         {{ expense_report.start_date|date:"d/m/Y" }}
                                         {% if expense_report.end_date %} - {{ expense_report.end_date|date:"d/m/Y" }}{% endif %}
                                     {% else %}
-                                        No especificado
+                                        {% translate "No especificado" %}
                                     {% endif %}
                                 </div>
                             </div>
                             
                             {% if expense_report.rejection_reason %}
                             <div class="alert alert-danger mt-3">
-                                <strong>Motivo de rechazo:</strong> {{ expense_report.rejection_reason }}
+                                <strong>{% translate "Motivo de rechazo:" %}</strong> {{ expense_report.rejection_reason }}
                             </div>
                             {% endif %}
                         </div>
@@ -93,21 +94,21 @@
                             <div class="card bg-light">
                                 <div class="card-body text-center">
                                     <h2 class="text-primary mb-0">${{ expense_report.total_amount|floatformat:2 }}</h2>
-                                    <small class="text-muted">Total de gastos</small>
+                                    <small class="text-muted">{% translate "Total de gastos" %}</small>
                                     <div class="mt-2">
                                         <small class="text-muted">{{ expense_items.paginator.count }} gasto{{ expense_items.paginator.count|pluralize }}</small>
                                     </div>
                                     {% if funds %}
                                     <hr class="my-2">
                                     <h5 class="text-success mb-0">${{ total_funds|floatformat:2 }}</h5>
-                                    <small class="text-muted">Fondos recibidos</small>
+                                    <small class="text-muted">{% translate "Fondos recibidos" %}</small>
                                     <hr class="my-2">
                                     {% if balance >= 0 %}
                                     <h5 class="text-info mb-0">${{ balance|floatformat:2 }}</h5>
-                                    <small class="text-muted">Saldo restante</small>
+                                    <small class="text-muted">{% translate "Saldo restante" %}</small>
                                     {% else %}
                                     <h5 class="text-danger mb-0">-${{ balance|floatformat:2|cut:"-" }}</h5>
-                                    <small class="text-danger">Déficit</small>
+                                    <small class="text-danger">{% translate "Déficit" %}</small>
                                     {% endif %}
                                     {% endif %}
                                 </div>
@@ -119,40 +120,40 @@
                     <div class="mt-3 d-flex gap-2 flex-wrap">
                         {% if can_edit %}
                         <a href="{% url 'expense_report_edit' expense_report.pk %}" class="btn btn-outline-primary">
-                            <i class="fas fa-edit"></i> Editar
+                            <i class="fas fa-edit"></i> {% translate "Editar" %}
                         </a>
                         <a href="{% url 'expense_item_create' expense_report.pk %}" class="btn btn-outline-success">
-                            <i class="fas fa-plus"></i> Agregar Gasto
+                            <i class="fas fa-plus"></i> {% translate "Agregar Gasto" %}
                         </a>
                         <a href="{% url 'expense_fund_create' expense_report.pk %}" class="btn btn-outline-info">
-                            <i class="fas fa-wallet"></i> Agregar Fondo
+                            <i class="fas fa-wallet"></i> {% translate "Agregar Fondo" %}
                         </a>
                         {% endif %}
                         
                         {% if can_submit %}
                         <a href="{% url 'expense_report_submit' expense_report.pk %}" class="btn btn-warning">
-                            <i class="fas fa-paper-plane"></i> Enviar para Aprobación
+                            <i class="fas fa-paper-plane"></i> {% translate "Enviar para Aprobación" %}
                         </a>
                         {% endif %}
                         
                         {% if can_approve %}
                         <a href="{% url 'expense_report_approve' expense_report.pk %}" class="btn btn-success">
-                            <i class="fas fa-check"></i> Aprobar
+                            <i class="fas fa-check"></i> {% translate "Aprobar" %}
                         </a>
                         <a href="{% url 'expense_report_reject' expense_report.pk %}" class="btn btn-danger">
-                            <i class="fas fa-times"></i> Rechazar
+                            <i class="fas fa-times"></i> {% translate "Rechazar" %}
                         </a>
                         {% endif %}
                         
                         {% if expense_report.status == 'approved' and is_agent %}
                         <a href="{% url 'expense_report_mark_paid' expense_report.pk %}" class="btn btn-info">
-                            <i class="fas fa-dollar-sign"></i> Marcar como Pagado
+                            <i class="fas fa-dollar-sign"></i> {% translate "Marcar como Pagado" %}
                         </a>
                         {% endif %}
                         
                         {% if can_edit %}
                         <a href="{% url 'expense_report_delete' expense_report.pk %}" class="btn btn-outline-danger">
-                            <i class="fas fa-trash"></i> Eliminar
+                            <i class="fas fa-trash"></i> {% translate "Eliminar" %}
                         </a>
                         {% endif %}
                     </div>
@@ -163,12 +164,12 @@
             <div class="card mb-4" id="gastos">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        Gastos Detallados
+                        {% translate "Gastos Detallados" %}
                         <small class="text-muted fw-normal ms-2">({{ expense_items.paginator.count }} en total)</small>
                     </h5>
                     {% if can_edit %}
                     <a href="{% url 'expense_item_create' expense_report.pk %}" class="btn btn-sm btn-primary">
-                        <i class="fas fa-plus"></i> Agregar Gasto
+                        <i class="fas fa-plus"></i> {% translate "Agregar Gasto" %}
                     </a>
                     {% endif %}
                 </div>
@@ -179,13 +180,13 @@
                         <table class="table table-hover table-sm align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Fecha</th>
-                                    <th>Descripción</th>
-                                    <th>Categoría</th>
-                                    <th>Proveedor</th>
-                                    <th class="text-end">Monto</th>
-                                    <th class="text-center">Comprobante</th>
-                                    {% if can_edit %}<th class="text-end">Acciones</th>{% endif %}
+                                    <th>{% translate "Fecha" %}</th>
+                                    <th>{% translate "Descripción" %}</th>
+                                    <th>{% translate "Categoría" %}</th>
+                                    <th>{% translate "Proveedor" %}</th>
+                                    <th class="text-end">{% translate "Monto" %}</th>
+                                    <th class="text-center">{% translate "Comprobante" %}</th>
+                                    {% if can_edit %}<th class="text-end">{% translate "Acciones" %}</th>{% endif %}
                                 </tr>
                             </thead>
                             <tbody>
@@ -206,7 +207,7 @@
                                     <td class="text-end fw-bold text-primary text-nowrap">{% if item.currency == 'EUR' %}€{% else %}${% endif %}{{ item.amount|floatformat:2 }} <span class="text-muted small fw-normal">{{ item.currency }}</span></td>
                                     <td class="text-center">
                                         {% if item.receipt_file %}
-                                        <a href="{{ item.receipt_file.url }}" target="_blank" class="btn btn-sm btn-outline-info py-0 px-1" title="Ver comprobante">
+                                        <a href="{{ item.receipt_file.url }}" target="_blank" class="btn btn-sm btn-outline-info py-0 px-1" title="{% translate 'Ver comprobante' %}">
                                             <i class="fas fa-receipt"></i>
                                         </a>
                                         {% else %}
@@ -216,10 +217,10 @@
                                     {% if can_edit %}
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'expense_item_edit' item.pk %}" class="btn btn-outline-secondary py-0" title="Editar">
+                                            <a href="{% url 'expense_item_edit' item.pk %}" class="btn btn-outline-secondary py-0" title="{% translate 'Editar' %}">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="{% url 'expense_item_delete' item.pk %}" class="btn btn-outline-danger py-0" title="Eliminar">
+                                            <a href="{% url 'expense_item_delete' item.pk %}" class="btn btn-outline-danger py-0" title="{% translate 'Eliminar' %}">
                                                 <i class="fas fa-trash"></i>
                                             </a>
                                         </div>
@@ -274,11 +275,11 @@
                     {% else %}
                     <div class="text-center py-4">
                         <i class="fas fa-receipt fa-2x text-muted mb-3"></i>
-                        <h6 class="text-muted">No hay gastos registrados</h6>
-                        <p class="text-muted">Agrega los gastos de esta rendición.</p>
+                        <h6 class="text-muted">{% translate "No hay gastos registrados" %}</h6>
+                        <p class="text-muted">{% translate "Agrega los gastos de esta rendición." %}</p>
                         {% if can_edit %}
                         <a href="{% url 'expense_item_create' expense_report.pk %}" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Agregar Primer Gasto
+                            <i class="fas fa-plus"></i> {% translate "Agregar Primer Gasto" %}
                         </a>
                         {% endif %}
                     </div>
@@ -289,10 +290,10 @@
             <!-- Fondos Recibidos -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-wallet me-2 text-success"></i>Fondos Recibidos</h5>
+                    <h5 class="mb-0"><i class="fas fa-wallet me-2 text-success"></i>{% translate "Fondos Recibidos" %}</h5>
                     {% if can_edit %}
                     <a href="{% url 'expense_fund_create' expense_report.pk %}" class="btn btn-sm btn-success">
-                        <i class="fas fa-plus"></i> Agregar Fondo
+                        <i class="fas fa-plus"></i> {% translate "Agregar Fondo" %}
                     </a>
                     {% endif %}
                 </div>
@@ -302,13 +303,13 @@
                         <table class="table table-sm table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Fecha</th>
-                                    <th>Fuente / Banco</th>
-                                    <th>Tipo</th>
-                                    <th>Referencia</th>
-                                    <th class="text-end">Monto</th>
+                                    <th>{% translate "Fecha" %}</th>
+                                    <th>{% translate "Fuente / Banco" %}</th>
+                                    <th>{% translate "Tipo" %}</th>
+                                    <th>{% translate "Referencia" %}</th>
+                                    <th class="text-end">{% translate "Monto" %}</th>
                                     {% if can_edit %}
-                                    <th class="text-end">Acciones</th>
+                                    <th class="text-end">{% translate "Acciones" %}</th>
                                     {% endif %}
                                 </tr>
                             </thead>
@@ -329,10 +330,10 @@
                                     {% if can_edit %}
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'expense_fund_edit' fund.pk %}" class="btn btn-outline-secondary" title="Editar">
+                                            <a href="{% url 'expense_fund_edit' fund.pk %}" class="btn btn-outline-secondary" title="{% translate 'Editar' %}">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="{% url 'expense_fund_delete' fund.pk %}" class="btn btn-outline-danger" title="Eliminar">
+                                            <a href="{% url 'expense_fund_delete' fund.pk %}" class="btn btn-outline-danger" title="{% translate 'Eliminar' %}">
                                                 <i class="fas fa-trash"></i>
                                             </a>
                                         </div>
@@ -343,7 +344,7 @@
                             </tbody>
                             <tfoot class="table-light fw-bold">
                                 <tr>
-                                    <td colspan="{% if can_edit %}4{% else %}3{% endif %}">Total fondos</td>
+                                    <td colspan="{% if can_edit %}4{% else %}3{% endif %}">{% translate "Total fondos" %}</td>
                                     <td class="text-end text-success">${{ total_funds|floatformat:2 }}</td>
                                     {% if can_edit %}<td></td>{% endif %}
                                 </tr>
@@ -353,15 +354,15 @@
                     {% if funds %}
                     <div class="mt-3 d-flex justify-content-end gap-4">
                         <div class="text-center">
-                            <span class="text-muted small">Total gastos</span><br>
+                            <span class="text-muted small">{% translate "Total gastos" %}</span><br>
                             <strong class="text-primary">${{ expense_report.total_amount|floatformat:2 }}</strong>
                         </div>
                         <div class="text-center">
-                            <span class="text-muted small">Fondos recibidos</span><br>
+                            <span class="text-muted small">{% translate "Fondos recibidos" %}</span><br>
                             <strong class="text-success">${{ total_funds|floatformat:2 }}</strong>
                         </div>
                         <div class="text-center">
-                            <span class="text-muted small">Saldo</span><br>
+                            <span class="text-muted small">{% translate "Saldo" %}</span><br>
                             {% if balance >= 0 %}
                             <strong class="text-info">${{ balance|floatformat:2 }}</strong>
                             {% else %}
@@ -373,11 +374,11 @@
                     {% else %}
                     <div class="text-center py-4">
                         <i class="fas fa-wallet fa-2x text-muted mb-3"></i>
-                        <h6 class="text-muted">No hay fondos registrados</h6>
-                        <p class="text-muted small">Registra el dinero que usarás para cubrir los gastos (ej. 500 de BBVA).</p>
+                        <h6 class="text-muted">{% translate "No hay fondos registrados" %}</h6>
+                        <p class="text-muted small">{% translate "Registra el dinero que usarás para cubrir los gastos (ej. 500 de BBVA)." %}</p>
                         {% if can_edit %}
                         <a href="{% url 'expense_fund_create' expense_report.pk %}" class="btn btn-success btn-sm">
-                            <i class="fas fa-plus"></i> Agregar Fondo
+                            <i class="fas fa-plus"></i> {% translate "Agregar Fondo" %}
                         </a>
                         {% endif %}
                     </div>
@@ -387,7 +388,7 @@
 
             <!-- Comentarios -->            <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Comentarios</h5>
+                    <h5 class="mb-0">{% translate "Comentarios" %}</h5>
                 </div>
                 
                 <div class="card-body">
@@ -400,7 +401,7 @@
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
                                 <button type="submit" class="btn btn-primary w-100">
-                                    <i class="fas fa-comment"></i> Comentar
+                                    <i class="fas fa-comment"></i> {% translate "Comentar" %}
                                 </button>
                             </div>
                         </div>
@@ -422,7 +423,7 @@
                                     <h6 class="mb-1">
                                         {{ comment.user.get_full_name|default:comment.user.username }}
                                         {% if comment.is_internal %}
-                                        <span class="badge bg-warning ms-2">Interno</span>
+                                        <span class="badge bg-warning ms-2">{% translate "Interno" %}</span>
                                         {% endif %}
                                     </h6>
                                     <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
@@ -434,7 +435,7 @@
                     {% endfor %}
                     {% else %}
                     <div class="text-center py-3">
-                        <p class="text-muted">No hay comentarios aún.</p>
+                        <p class="text-muted">{% translate "No hay comentarios aún." %}</p>
                     </div>
                     {% endif %}
                 </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Tomar Examen: {{ exam.title }}{% endblock %}
@@ -110,7 +111,7 @@
                                                name="question_{{ question.id }}" value="A" 
                                                id="q{{ question.id }}_a" required>
                                         <label class="form-check-label w-100" for="q{{ question.id }}_a">
-                                            <strong>A)</strong> {{ question.option_a }}
+                                            <strong>{% translate "A)" %}</strong> {{ question.option_a }}
                                         </label>
                                     </div>
                                 </div>
@@ -122,7 +123,7 @@
                                                name="question_{{ question.id }}" value="B" 
                                                id="q{{ question.id }}_b" required>
                                         <label class="form-check-label w-100" for="q{{ question.id }}_b">
-                                            <strong>B)</strong> {{ question.option_b }}
+                                            <strong>{% translate "B)" %}</strong> {{ question.option_b }}
                                         </label>
                                     </div>
                                 </div>
@@ -134,7 +135,7 @@
                                                name="question_{{ question.id }}" value="C" 
                                                id="q{{ question.id }}_c" required>
                                         <label class="form-check-label w-100" for="q{{ question.id }}_c">
-                                            <strong>C)</strong> {{ question.option_c }}
+                                            <strong>{% translate "C)" %}</strong> {{ question.option_c }}
                                         </label>
                                     </div>
                                 </div>
@@ -147,12 +148,12 @@
                 <!-- Botón de envío -->
                 <div class="card border-success">
                     <div class="card-body text-center">
-                        <h5>¿Listo para enviar tu examen?</h5>
+                        <h5>{% translate "¿Listo para enviar tu examen?" %}</h5>
                         <p class="text-muted">
-                            Revisa tus respuestas antes de enviar. Una vez enviado, no podrás modificar las respuestas.
+                            {% translate "Revisa tus respuestas antes de enviar. Una vez enviado, no podrás modificar las respuestas." %}
                         </p>
                         <button type="button" class="btn btn-success btn-lg" onclick="submitExam()">
-                            <i class="bi bi-check-circle"></i> Enviar Examen
+                            <i class="bi bi-check-circle"></i> {% translate "Enviar Examen" %}
                         </button>
                     </div>
                 </div>
@@ -164,7 +165,7 @@
                     <!-- Progreso -->
                     <div class="card mb-3">
                         <div class="card-header">
-                            <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Progreso</h6>
+                            <h6 class="mb-0"><i class="bi bi-bar-chart"></i> {% translate "Progreso" %}</h6>
                         </div>
                         <div class="card-body">
                             <div class="progress mb-2">
@@ -180,19 +181,19 @@
                     <!-- Información del examen -->
                     <div class="card mb-3">
                         <div class="card-header">
-                            <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información</h6>
+                            <h6 class="mb-0"><i class="bi bi-info-circle"></i> {% translate "Información" %}</h6>
                         </div>
                         <div class="card-body">
                             <div class="small">
                                 <div class="mb-2">
-                                    <strong>Total preguntas:</strong> {{ questions.count }}
+                                    <strong>{% translate "Total preguntas:" %}</strong> {{ questions.count }}
                                 </div>
                                 <div class="mb-2">
-                                    <strong>Mínimo para aprobar:</strong> {{ exam.passing_score }}%
+                                    <strong>{% translate "Mínimo para aprobar:" %}</strong> {{ exam.passing_score }}%
                                 </div>
                                 {% if exam.time_limit %}
                                 <div class="mb-2">
-                                    <strong>Tiempo límite:</strong> {{ exam.time_limit }} minutos
+                                    <strong>{% translate "Tiempo límite:" %}</strong> {{ exam.time_limit }} minutos
                                 </div>
                                 {% endif %}
                             </div>
@@ -202,7 +203,7 @@
                     <!-- Navegación rápida -->
                     <div class="card">
                         <div class="card-header">
-                            <h6 class="mb-0"><i class="bi bi-list-ol"></i> Navegación</h6>
+                            <h6 class="mb-0"><i class="bi bi-list-ol"></i> {% translate "Navegación" %}</h6>
                         </div>
                         <div class="card-body question-nav">
                             <div class="row g-2">
@@ -228,21 +229,21 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Confirmar Envío</h5>
+                <h5 class="modal-title">{% translate "Confirmar Envío" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>¿Estás seguro de que deseas enviar el examen?</p>
+                <p>{% translate "¿Estás seguro de que deseas enviar el examen?" %}</p>
                 <div id="unansweredWarning" class="alert alert-warning" style="display: none;">
                     <i class="bi bi-exclamation-triangle"></i>
-                    Aún tienes <span id="unansweredCount"></span> pregunta(s) sin responder.
+                    {% translate "Aún tienes" %} <span id="unansweredCount"></span> {% translate "pregunta(s) sin responder." %}
                 </div>
-                <p class="small text-muted">Una vez enviado, no podrás modificar tus respuestas.</p>
+                <p class="small text-muted">{% translate "Una vez enviado, no podrás modificar tus respuestas." %}</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
                 <button type="button" class="btn btn-success" onclick="confirmSubmit()">
-                    <i class="bi bi-check-circle"></i> Sí, Enviar
+                    <i class="bi bi-check-circle"></i> {% translate "Sí, Enviar" %}
                 </button>
             </div>
         </div>

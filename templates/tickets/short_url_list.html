@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load project_extras %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -10,10 +11,10 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1>
                     <i class="fas fa-link text-primary"></i> 
-                    Acortador de URLs
+                    {% translate "Acortador de URLs" %}
                 </h1>
                 <a href="{% url 'short_url_create' %}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Nueva URL Corta
+                    <i class="fas fa-plus"></i> {% translate "Nueva URL Corta" %}
                 </a>
             </div>
 
@@ -23,7 +24,7 @@
                     <div class="card text-center">
                         <div class="card-body">
                             <div class="h3 text-primary">{{ short_urls.count }}</div>
-                            <div class="text-muted">URLs Creadas</div>
+                            <div class="text-muted">{% translate "URLs Creadas" %}</div>
                         </div>
                     </div>
                 </div>
@@ -33,7 +34,7 @@
                             <div class="h3 text-success">
                                 {% for url in short_urls %}{{ url.clicks|add:0 }}{% if not forloop.last %}+{% endif %}{% endfor %}
                             </div>
-                            <div class="text-muted">Clics Totales</div>
+                            <div class="text-muted">{% translate "Clics Totales" %}</div>
                         </div>
                     </div>
                 </div>
@@ -41,7 +42,7 @@
                     <div class="card text-center">
                         <div class="card-body">
                             <div class="h3 text-info">{{ short_urls|length }}</div>
-                            <div class="text-muted">URLs Activas</div>
+                            <div class="text-muted">{% translate "URLs Activas" %}</div>
                         </div>
                     </div>
                 </div>
@@ -55,7 +56,7 @@
                                     -
                                 {% endif %}
                             </div>
-                            <div class="text-muted">Última Creada</div>
+                            <div class="text-muted">{% translate "Última Creada" %}</div>
                         </div>
                     </div>
                 </div>
@@ -64,7 +65,7 @@
             <!-- Tabla de URLs -->
             <div class="card">
                 <div class="card-header">
-                    <h5><i class="fas fa-list"></i> Mis URLs Cortas</h5>
+                    <h5><i class="fas fa-list"></i> {% translate "Mis URLs Cortas" %}</h5>
                 </div>
                 <div class="card-body">
                     {% if short_urls %}
@@ -72,13 +73,13 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>URL Corta</th>
-                                        <th>URL Original</th>
-                                        <th>Título</th>
-                                        <th>Clics</th>
-                                        <th>Estado</th>
-                                        <th>Fecha</th>
-                                        <th>Acciones</th>
+                                        <th>{% translate "URL Corta" %}</th>
+                                        <th>{% translate "URL Original" %}</th>
+                                        <th>{% translate "Título" %}</th>
+                                        <th>{% translate "Clics" %}</th>
+                                        <th>{% translate "Estado" %}</th>
+                                        <th>{% translate "Fecha" %}</th>
+                                        <th>{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -87,7 +88,7 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <code class="me-2">{% short_url short_url %}</code>
-                                                    <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('{% short_url short_url %}')" title="Copiar URL">
+                                                    <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('{% short_url short_url %}')" title="{% translate 'Copiar URL' %}">
                                                         <i class="fas fa-copy"></i>
                                                     </button>
                                                 </div>
@@ -101,7 +102,7 @@
                                                 {% if short_url.title %}
                                                     {{ short_url.title }}
                                                 {% else %}
-                                                    <span class="text-muted">Sin título</span>
+                                                    <span class="text-muted">{% translate "Sin título" %}</span>
                                                 {% endif %}
                                             </td>
                                             <td>
@@ -109,11 +110,11 @@
                                             </td>
                                             <td>
                                                 {% if not short_url.is_active %}
-                                                    <span class="badge bg-secondary">Inactiva</span>
+                                                    <span class="badge bg-secondary">{% translate "Inactiva" %}</span>
                                                 {% elif short_url.is_expired %}
-                                                    <span class="badge bg-warning">Expirada</span>
+                                                    <span class="badge bg-warning">{% translate "Expirada" %}</span>
                                                 {% else %}
-                                                    <span class="badge bg-success">Activa</span>
+                                                    <span class="badge bg-success">{% translate "Activa" %}</span>
                                                 {% endif %}
                                             </td>
                                             <td>
@@ -125,16 +126,16 @@
                                             </td>
                                             <td>
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    <a href="{% short_url short_url %}" class="btn btn-outline-success" target="_blank" title="Probar URL">
+                                                    <a href="{% short_url short_url %}" class="btn btn-outline-success" target="_blank" title="{% translate 'Probar URL' %}">
                                                         <i class="fas fa-external-link-alt"></i>
                                                     </a>
-                                                    <a href="{% url 'short_url_stats' short_url.pk %}" class="btn btn-outline-info" title="Estadísticas">
+                                                    <a href="{% url 'short_url_stats' short_url.pk %}" class="btn btn-outline-info" title="{% translate 'Estadísticas' %}">
                                                         <i class="fas fa-chart-bar"></i>
                                                     </a>
-                                                    <a href="{% url 'short_url_edit' short_url.pk %}" class="btn btn-outline-primary" title="Editar">
+                                                    <a href="{% url 'short_url_edit' short_url.pk %}" class="btn btn-outline-primary" title="{% translate 'Editar' %}">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
-                                                    <a href="{% url 'short_url_delete' short_url.pk %}" class="btn btn-outline-danger" title="Eliminar">
+                                                    <a href="{% url 'short_url_delete' short_url.pk %}" class="btn btn-outline-danger" title="{% translate 'Eliminar' %}">
                                                         <i class="fas fa-trash"></i>
                                                     </a>
                                                 </div>
@@ -147,12 +148,12 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="fas fa-link fa-4x text-muted mb-3"></i>
-                            <h4 class="text-muted">No hay URLs cortas aún</h4>
+                            <h4 class="text-muted">{% translate "No hay URLs cortas aún" %}</h4>
                             <p class="text-muted">
-                                Crea tu primera URL corta para comenzar a acortar enlaces largos.
+                                {% translate "Crea tu primera URL corta para comenzar a acortar enlaces largos." %}
                             </p>
                             <a href="{% url 'short_url_create' %}" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Crear Primera URL
+                                <i class="fas fa-plus"></i> {% translate "Crear Primera URL" %}
                             </a>
                         </div>
                     {% endif %}

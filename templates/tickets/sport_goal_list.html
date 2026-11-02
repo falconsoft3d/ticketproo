@@ -1,17 +1,18 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Objetivos Deportivos{% endblock %}
+{% block title %}{% translate "Objetivos Deportivos" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row mb-4">
         <div class="col-md-6">
-            <h2><i class="bi bi-trophy"></i> Objetivos Deportivos</h2>
+            <h2><i class="bi bi-trophy"></i> {% translate "Objetivos Deportivos" %}</h2>
         </div>
         <div class="col-md-6 text-end">
             <a href="{% url 'sport_goal_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Crear Objetivo
+                <i class="bi bi-plus-circle"></i> {% translate "Crear Objetivo" %}
             </a>
         </div>
     </div>
@@ -21,13 +22,13 @@
         <div class="card-body">
             <form method="get" class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label">Filtrar por jugador</label>
+                    <label class="form-label">{% translate "Filtrar por jugador" %}</label>
                     <input type="text" class="form-control" name="player" value="{{ player_filter }}" 
-                           placeholder="Nombre del jugador">
+                           placeholder="{% translate 'Nombre del jugador' %}">
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-secondary w-100">
-                        <i class="bi bi-filter"></i> Filtrar
+                        <i class="bi bi-filter"></i> {% translate "Filtrar" %}
                     </button>
                 </div>
             </form>
@@ -42,16 +43,16 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Título</th>
-                                <th>Jugador</th>
-                                <th>Objetivo Tiempo</th>
-                                <th>Objetivo Distancia</th>
-                                <th>Mejor Tiempo</th>
-                                <th>Mejor Distancia</th>
-                                <th>Progreso</th>
-                                <th>Registros</th>
-                                <th>Creado</th>
-                                <th>Acciones</th>
+                                <th>{% translate "Título" %}</th>
+                                <th>{% translate "Jugador" %}</th>
+                                <th>{% translate "Objetivo Tiempo" %}</th>
+                                <th>{% translate "Objetivo Distancia" %}</th>
+                                <th>{% translate "Mejor Tiempo" %}</th>
+                                <th>{% translate "Mejor Distancia" %}</th>
+                                <th>{% translate "Progreso" %}</th>
+                                <th>{% translate "Registros" %}</th>
+                                <th>{% translate "Creado" %}</th>
+                                <th>{% translate "Acciones" %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -89,7 +90,7 @@
                                                 {{ goal.get_best_time|date:"i:s" }}
                                             </span>
                                         {% else %}
-                                            <span class="text-muted">Sin datos</span>
+                                            <span class="text-muted">{% translate "Sin datos" %}</span>
                                         {% endif %}
                                     </td>
                                     <td>
@@ -98,7 +99,7 @@
                                                 {{ goal.get_best_distance }} km
                                             </span>
                                         {% else %}
-                                            <span class="text-muted">Sin datos</span>
+                                            <span class="text-muted">{% translate "Sin datos" %}</span>
                                         {% endif %}
                                     </td>
                                     <td>
@@ -120,11 +121,11 @@
                                     <td>{{ goal.created_at|date:"d/m/Y" }}</td>
                                     <td>
                                         <a href="{% url 'sport_goal_detail' goal.pk %}" 
-                                           class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                                           class="btn btn-sm btn-outline-primary" title="{% translate 'Ver detalle' %}">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                         <a href="{% url 'sport_goal_delete' goal.pk %}" 
-                                           class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                           class="btn btn-sm btn-outline-danger" title="{% translate 'Eliminar' %}">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                     </td>
@@ -140,10 +141,10 @@
                         <ul class="pagination justify-content-center">
                             {% if page_obj.has_previous %}
                                 <li class="page-item">
-                                    <a class="page-link" href="?page=1{% if player_filter %}&player={{ player_filter }}{% endif %}">Primera</a>
+                                    <a class="page-link" href="?page=1{% if player_filter %}&player={{ player_filter }}{% endif %}">{% translate "Primera" %}</a>
                                 </li>
                                 <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if player_filter %}&player={{ player_filter }}{% endif %}">Anterior</a>
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if player_filter %}&player={{ player_filter }}{% endif %}">{% translate "Anterior" %}</a>
                                 </li>
                             {% endif %}
 
@@ -155,10 +156,10 @@
 
                             {% if page_obj.has_next %}
                                 <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if player_filter %}&player={{ player_filter }}{% endif %}">Siguiente</a>
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if player_filter %}&player={{ player_filter }}{% endif %}">{% translate "Siguiente" %}</a>
                                 </li>
                                 <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if player_filter %}&player={{ player_filter }}{% endif %}">Última</a>
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if player_filter %}&player={{ player_filter }}{% endif %}">{% translate "Última" %}</a>
                                 </li>
                             {% endif %}
                         </ul>
@@ -166,8 +167,8 @@
                 {% endif %}
             {% else %}
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> No hay objetivos deportivos creados.
-                    <a href="{% url 'sport_goal_create' %}" class="alert-link">Crear el primero</a>
+                    <i class="bi bi-info-circle"></i> {% translate "No hay objetivos deportivos creados." %}
+                    <a href="{% url 'sport_goal_create' %}" class="alert-link">{% translate "Crear el primero" %}</a>
                 </div>
             {% endif %}
         </div>

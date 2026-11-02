@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -6,11 +7,11 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
                     <a href="{% url 'ai_recommendation_list' %}">
-                        <i class="bi bi-lightbulb"></i> Recomendaciones IA
+                        <i class="bi bi-lightbulb"></i> {% translate "Recomendaciones IA" %}
                     </a>
                 </li>
                 <li class="breadcrumb-item active">{{ page_title }}</li>
@@ -27,43 +28,43 @@
         <div class="card">
             <div class="card-header bg-danger text-white">
                 <h5 class="mb-0">
-                    <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                    <i class="bi bi-exclamation-triangle"></i> {% translate "Confirmar Eliminación" %}
                 </h5>
             </div>
             <div class="card-body">
                 <div class="alert alert-warning" role="alert">
                     <h6 class="alert-heading">
-                        <i class="bi bi-exclamation-triangle"></i> ¡Atención!
+                        <i class="bi bi-exclamation-triangle"></i> {% translate "¡Atención!" %}
                     </h6>
-                    <p>Estás a punto de eliminar la siguiente recomendación IA:</p>
+                    <p>{% translate "Estás a punto de eliminar la siguiente recomendación IA:" %}</p>
                     <hr>
                     <div class="mb-3">
-                        <strong>Título:</strong> {{ recommendation.title }}
+                        <strong>{% translate "Título:" %}</strong> {{ recommendation.title }}
                     </div>
                     <div class="mb-3">
-                        <strong>Contexto:</strong><br>
+                        <strong>{% translate "Contexto:" %}</strong><br>
                         <div class="bg-light p-2 rounded mt-1">
                             {{ recommendation.context_text|truncatechars:200 }}
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
-                            <strong>Creado por:</strong> {{ recommendation.created_by.get_full_name|default:recommendation.created_by.username }}
+                            <strong>{% translate "Creado por:" %}</strong> {{ recommendation.created_by.get_full_name|default:recommendation.created_by.username }}
                         </div>
                         <div class="col-md-6">
-                            <strong>Fecha:</strong> {{ recommendation.created_at|date:"d/m/Y H:i" }}
+                            <strong>{% translate "Fecha:" %}</strong> {{ recommendation.created_at|date:"d/m/Y H:i" }}
                         </div>
                     </div>
                     {% if recommendation.get_usage_count > 0 %}
                     <div class="mt-3">
-                        <strong>Usos registrados:</strong> {{ recommendation.get_usage_count }}
+                        <strong>{% translate "Usos registrados:" %}</strong> {{ recommendation.get_usage_count }}
                     </div>
                     {% endif %}
                     <hr>
                     <p class="mb-0">
-                        <strong>Esta acción no se puede deshacer.</strong> 
+                        <strong>{% translate "Esta acción no se puede deshacer." %}</strong> 
                         {% if recommendation.get_usage_count > 0 %}
-                        También se eliminarán todos los registros de uso asociados.
+                        {% translate "También se eliminarán todos los registros de uso asociados." %}
                         {% endif %}
                     </p>
                 </div>
@@ -72,13 +73,13 @@
                     {% csrf_token %}
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-trash"></i> Sí, eliminar recomendación
+                            <i class="bi bi-trash"></i> {% translate "Sí, eliminar recomendación" %}
                         </button>
                         <a href="{% url 'ai_recommendation_list' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Cancelar
+                            <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                         </a>
                         <a href="{% url 'ai_recommendation_detail' recommendation.pk %}" class="btn btn-outline-primary">
-                            <i class="bi bi-eye"></i> Ver detalle
+                            <i class="bi bi-eye"></i> {% translate "Ver detalle" %}
                         </a>
                     </div>
                 </form>

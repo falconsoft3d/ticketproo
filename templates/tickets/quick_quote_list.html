@@ -1,15 +1,16 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row mb-4">
         <div class="col-md-8">
-            <h2><i class="bi bi-lightning-charge"></i> Cotizaciones Rápidas</h2>
+            <h2><i class="bi bi-lightning-charge"></i> {% translate "Cotizaciones Rápidas" %}</h2>
         </div>
         <div class="col-md-4 text-end">
             <a href="{% url 'quick_quote_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Nueva Cotización
+                <i class="bi bi-plus-circle"></i> {% translate "Nueva Cotización" %}
             </a>
         </div>
     </div>
@@ -19,7 +20,7 @@
         <div class="col-md-2">
             <div class="card text-center">
                 <div class="card-body">
-                    <h6 class="text-muted mb-1">Total</h6>
+                    <h6 class="text-muted mb-1">{% translate "Total" %}</h6>
                     <h3 class="mb-0">{{ total_quotes }}</h3>
                 </div>
             </div>
@@ -27,7 +28,7 @@
         <div class="col-md-2">
             <div class="card text-center border-warning">
                 <div class="card-body">
-                    <h6 class="text-muted mb-1">Pendientes</h6>
+                    <h6 class="text-muted mb-1">{% translate "Pendientes" %}</h6>
                     <h3 class="mb-0 text-warning">{{ pending_quotes }}</h3>
                 </div>
             </div>
@@ -35,7 +36,7 @@
         <div class="col-md-2">
             <div class="card text-center border-success">
                 <div class="card-body">
-                    <h6 class="text-muted mb-1">Aceptadas</h6>
+                    <h6 class="text-muted mb-1">{% translate "Aceptadas" %}</h6>
                     <h3 class="mb-0 text-success">{{ accepted_quotes }}</h3>
                 </div>
             </div>
@@ -43,7 +44,7 @@
         <div class="col-md-2">
             <div class="card text-center border-danger">
                 <div class="card-body">
-                    <h6 class="text-muted mb-1">Rechazadas</h6>
+                    <h6 class="text-muted mb-1">{% translate "Rechazadas" %}</h6>
                     <h3 class="mb-0 text-danger">{{ rejected_quotes }}</h3>
                 </div>
             </div>
@@ -51,7 +52,7 @@
         <div class="col-md-2">
             <div class="card text-center bg-success text-white">
                 <div class="card-body">
-                    <h6 class="mb-1">Facturado</h6>
+                    <h6 class="mb-1">{% translate "Facturado" %}</h6>
                     <h3 class="mb-0">€{{ total_revenue }}</h3>
                 </div>
             </div>
@@ -59,7 +60,7 @@
         <div class="col-md-2">
             <div class="card text-center bg-info text-white">
                 <div class="card-body">
-                    <h6 class="mb-1">Pendiente</h6>
+                    <h6 class="mb-1">{% translate "Pendiente" %}</h6>
                     <h3 class="mb-0">€{{ total_pending }}</h3>
                 </div>
             </div>
@@ -71,19 +72,19 @@
         <div class="card-body">
             <form method="get" class="row g-3">
                 <div class="col-md-3">
-                    <label class="form-label">Estado</label>
+                    <label class="form-label">{% translate "Estado" %}</label>
                     <select name="status" class="form-select" onchange="this.form.submit()">
-                        <option value="">Todos</option>
-                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pendiente</option>
-                        <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Aceptado</option>
-                        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rechazado</option>
-                        <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expirado</option>
+                        <option value="">{% translate "Todos" %}</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>{% translate "Pendiente" %}</option>
+                        <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>{% translate "Aceptado" %}</option>
+                        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>{% translate "Rechazado" %}</option>
+                        <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>{% translate "Expirado" %}</option>
                     </select>
                 </div>
                 <div class="col-md-9 d-flex align-items-end">
                     {% if status_filter %}
                         <a href="{% url 'quick_quote_list' %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Limpiar Filtros
+                            <i class="bi bi-x-circle"></i> {% translate "Limpiar Filtros" %}
                         </a>
                     {% endif %}
                 </div>
@@ -98,16 +99,16 @@
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
-                            <th>Número</th>
-                            <th>Título</th>
-                            <th>Cliente</th>
-                            <th>Horas</th>
-                            <th>Costo/Hora</th>
-                            <th>Total</th>
-                            <th>Estado</th>
-                            <th>Fecha</th>
-                            <th>Válido Hasta</th>
-                            <th>Acciones</th>
+                            <th>{% translate "Número" %}</th>
+                            <th>{% translate "Título" %}</th>
+                            <th>{% translate "Cliente" %}</th>
+                            <th>{% translate "Horas" %}</th>
+                            <th>{% translate "Costo/Hora" %}</th>
+                            <th>{% translate "Total" %}</th>
+                            <th>{% translate "Estado" %}</th>
+                            <th>{% translate "Fecha" %}</th>
+                            <th>{% translate "Válido Hasta" %}</th>
+                            <th>{% translate "Acciones" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -144,21 +145,21 @@
                             <td>
                                 <small>{{ quote.valid_until|date:"d/m/Y" }}</small>
                                 {% if quote.is_expired %}
-                                    <br><span class="badge bg-danger">Expirado</span>
+                                    <br><span class="badge bg-danger">{% translate "Expirado" %}</span>
                                 {% endif %}
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm" role="group">
-                                    <a href="{% url 'quick_quote_detail' quote.pk %}" class="btn btn-outline-primary" title="Ver">
+                                    <a href="{% url 'quick_quote_detail' quote.pk %}" class="btn btn-outline-primary" title="{% translate 'Ver' %}">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a href="{% url 'quick_quote_edit' quote.pk %}" class="btn btn-outline-secondary" title="Editar">
+                                    <a href="{% url 'quick_quote_edit' quote.pk %}" class="btn btn-outline-secondary" title="{% translate 'Editar' %}">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <a href="{% url 'quick_quote_duplicate' quote.pk %}" class="btn btn-outline-info" title="Duplicar">
+                                    <a href="{% url 'quick_quote_duplicate' quote.pk %}" class="btn btn-outline-info" title="{% translate 'Duplicar' %}">
                                         <i class="bi bi-files"></i>
                                     </a>
-                                    <a href="{% url 'quick_quote_delete' quote.pk %}" class="btn btn-outline-danger" title="Eliminar">
+                                    <a href="{% url 'quick_quote_delete' quote.pk %}" class="btn btn-outline-danger" title="{% translate 'Eliminar' %}">
                                         <i class="bi bi-trash"></i>
                                     </a>
                                 </div>
@@ -171,8 +172,8 @@
         </div>
     {% else %}
         <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i> No hay cotizaciones disponibles.
-            <a href="{% url 'quick_quote_create' %}">Crear la primera cotización</a>
+            <i class="bi bi-info-circle"></i> {% translate "No hay cotizaciones disponibles." %}
+            <a href="{% url 'quick_quote_create' %}">{% translate "Crear la primera cotización" %}</a>
         </div>
     {% endif %}
 </div>

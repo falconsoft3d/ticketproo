@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ group.title }} - {{ block.super }}{% endblock %}
@@ -29,9 +30,9 @@
 <div class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'access_group_list' %}">Grupos de Accesos</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'access_group_list' %}">{% translate "Grupos de Accesos" %}</a></li>
                     <li class="breadcrumb-item active">{{ group.title }}</li>
                 </ol>
             </nav>
@@ -52,9 +53,9 @@
                         <div>
                             <span class="badge {% if group.is_public %}bg-success{% else %}bg-secondary{% endif %} fs-6">
                                 {% if group.is_public %}
-                                    <i class="bi bi-globe"></i> Público
+                                    <i class="bi bi-globe"></i> {% translate "Público" %}
                                 {% else %}
-                                    <i class="bi bi-lock"></i> Privado
+                                    <i class="bi bi-lock"></i> {% translate "Privado" %}
                                 {% endif %}
                             </span>
                         </div>
@@ -62,37 +63,37 @@
 
                     <div class="d-flex gap-2 mt-3">
                         <a href="{% url 'access_link_create' group.id %}" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Agregar Enlace
+                            <i class="bi bi-plus-circle"></i> {% translate "Agregar Enlace" %}
                         </a>
                         <a href="{% url 'access_group_edit' group.id %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-pencil"></i> Editar Grupo
+                            <i class="bi bi-pencil"></i> {% translate "Editar Grupo" %}
                         </a>
                         <form method="post" action="{% url 'access_group_toggle_public' group.id %}" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-outline-{% if group.is_public %}warning{% else %}success{% endif %}">
                                 <i class="bi bi-{% if group.is_public %}lock{% else %}globe{% endif %}"></i>
-                                {% if group.is_public %}Hacer Privado{% else %}Hacer Público{% endif %}
+                                {% if group.is_public %}{% translate "Hacer Privado" %}{% else %}{% translate "Hacer Público" %}{% endif %}
                             </button>
                         </form>
                         <a href="{% url 'access_group_delete' group.id %}" class="btn btn-outline-danger">
-                            <i class="bi bi-trash"></i> Eliminar
+                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                         </a>
                     </div>
 
                     {% if group.is_public %}
                     <div class="mt-4 p-3 bg-light rounded">
                         <label class="form-label fw-bold">
-                            <i class="bi bi-link-45deg"></i> URL Pública:
+                            <i class="bi bi-link-45deg"></i> {% translate "URL Pública:" %}
                         </label>
                         <div class="input-group">
                             <input type="text" class="form-control" readonly 
                                    value="{{ request.scheme }}://{{ request.get_host }}{{ group.get_public_url }}"
                                    id="public-url">
                             <button class="btn btn-outline-secondary" type="button" onclick="copyPublicUrl()">
-                                <i class="bi bi-clipboard"></i> Copiar
+                                <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                             </button>
                             <a href="{{ group.get_public_url }}" target="_blank" class="btn btn-outline-primary">
-                                <i class="bi bi-eye"></i> Vista Previa
+                                <i class="bi bi-eye"></i> {% translate "Vista Previa" %}
                             </a>
                         </div>
                     </div>
@@ -131,7 +132,7 @@
                             </div>
                             <div class="mt-3 d-flex gap-2">
                                 <a href="{% url 'access_link_edit' link.id %}" class="btn btn-sm btn-outline-secondary flex-fill">
-                                    <i class="bi bi-pencil"></i> Editar
+                                    <i class="bi bi-pencil"></i> {% translate "Editar" %}
                                 </a>
                                 <a href="{% url 'access_link_delete' link.id %}" class="btn btn-sm btn-outline-danger">
                                     <i class="bi bi-trash"></i>
@@ -145,10 +146,10 @@
             {% else %}
             <div class="alert alert-info text-center">
                 <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
-                <h5>No hay enlaces en este grupo</h5>
-                <p>Agrega tu primer enlace para comenzar</p>
+                <h5>{% translate "No hay enlaces en este grupo" %}</h5>
+                <p>{% translate "Agrega tu primer enlace para comenzar" %}</p>
                 <a href="{% url 'access_link_create' group.id %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Agregar Primer Enlace
+                    <i class="bi bi-plus-circle"></i> {% translate "Agregar Primer Enlace" %}
                 </a>
             </div>
             {% endif %}

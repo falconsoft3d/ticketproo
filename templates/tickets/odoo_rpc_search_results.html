@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load tickets_tags %}
 {% block title %}Resultados de Búsqueda - {{ table.name }} - Ticket System{% endblock %}
 {% block extra_head %}
@@ -65,12 +66,12 @@
 {% endblock %}
 {% block content %}
 <div class="container-fluid mt-4">
-    <nav aria-label="breadcrumb">
+    <nav aria-label="{% translate 'breadcrumb' %}">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">Conexiones</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">{% translate "Conexiones" %}</a></li>
             <li class="breadcrumb-item"><a href="{% url 'odoo_rpc_table_list' table.connection.id %}">{{ table.connection.name }}</a></li>
             <li class="breadcrumb-item"><a href="{% url 'odoo_rpc_table_detail' table.id %}">{{ table.name }}</a></li>
-            <li class="breadcrumb-item active">Resultados</li>
+            <li class="breadcrumb-item active">{% translate "Resultados" %}</li>
         </ol>
     </nav>
 
@@ -83,29 +84,29 @@
             <div>
                 {% if from_database %}
                 <a href="{% url 'odoo_rpc_data_export_all' table.id %}" class="btn btn-success">
-                    <i class="bi bi-file-earmark-excel"></i> Exportar Todos
+                    <i class="bi bi-file-earmark-excel"></i> {% translate "Exportar Todos" %}
                 </a>
                 {% else %}
                 <a href="{% url 'odoo_rpc_export_odoo_data' table.id %}" class="btn btn-success">
-                    <i class="bi bi-file-earmark-excel"></i> Exportar Resultados
+                    <i class="bi bi-file-earmark-excel"></i> {% translate "Exportar Resultados" %}
                 </a>
                 {% endif %}
                 <a href="{% url 'odoo_rpc_search_odoo' table.id %}" class="btn btn-warning">
-                    <i class="bi bi-search"></i> Nueva Búsqueda
+                    <i class="bi bi-search"></i> {% translate "Nueva Búsqueda" %}
                 </a>
                 <a href="{% url 'odoo_rpc_table_detail' table.id %}" class="btn btn-primary">
-                    <i class="bi bi-arrow-left"></i> Volver
+                    <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                 </a>
             </div>
         </div>
         <div class="card-body">
             {% if from_database %}
             <div class="alert alert-info">
-                <i class="bi bi-database"></i> Mostrando <strong>{{ count }}</strong> registros guardados en el sistema
+                <i class="bi bi-database"></i> {% translate "Mostrando" %} <strong>{{ count }}</strong> {% translate "registros guardados en el sistema" %}
             </div>
             {% else %}
             <div class="alert alert-success">
-                <i class="bi bi-check-circle"></i> Se encontraron <strong>{{ count }}</strong> registros en Odoo
+                <i class="bi bi-check-circle"></i> {% translate "Se encontraron" %} <strong>{{ count }}</strong> {% translate "registros en Odoo" %}
             </div>
             {% endif %}
 
@@ -114,11 +115,11 @@
                 <table class="table table-hover table-sm align-middle" id="resultsTable">
                     <thead class="table-dark">
                         <tr>
-                            <th style="width: 100px;" class="text-center">ID Odoo</th>
+                            <th style="width: 100px;" class="text-center">{% translate "ID Odoo" %}</th>
                             {% for field in fields %}
                             <th>{{ field.name }}</th>
                             {% endfor %}
-                            <th style="width: 100px;" class="text-center">Acciones</th>
+                            <th style="width: 100px;" class="text-center">{% translate "Acciones" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -142,7 +143,7 @@
                             </td>
                             {% endfor %}
                             <td class="text-center">
-                                <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detailModal{{ forloop.counter }}" title="Ver detalles">
+                                <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detailModal{{ forloop.counter }}" title="{% translate 'Ver detalles' %}">
                                     <i class="bi bi-eye-fill"></i>
                                 </button>
                             </td>
@@ -163,7 +164,7 @@
                                             <li class="nav-item" role="presentation">
                                                 <button class="nav-link active" id="fields-tab{{ forloop.counter }}" data-bs-toggle="tab" 
                                                         data-bs-target="#fields{{ forloop.counter }}" type="button" role="tab">
-                                                    <i class="bi bi-list-ul"></i> Campos
+                                                    <i class="bi bi-list-ul"></i> {% translate "Campos" %}
                                                 </button>
                                             </li>
                                             <li class="nav-item" role="presentation">
@@ -186,11 +187,11 @@
                                                             <div class="card-body">
                                                                 {% with record|get_item:field.odoo_field_name as value %}
                                                                     {% if value is False %}
-                                                                        <span class="badge bg-secondary">False</span>
+                                                                        <span class="badge bg-secondary">{% translate "False" %}</span>
                                                                     {% elif value %}
                                                                         <div style="word-break: break-word;">{{ value }}</div>
                                                                     {% else %}
-                                                                        <span class="text-muted fst-italic">Sin datos</span>
+                                                                        <span class="text-muted fst-italic">{% translate "Sin datos" %}</span>
                                                                     {% endif %}
                                                                 {% endwith %}
                                                             </div>
@@ -206,7 +207,7 @@
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                            <i class="bi bi-x-circle"></i> Cerrar
+                                            <i class="bi bi-x-circle"></i> {% translate "Cerrar" %}
                                         </button>
                                     </div>
                                 </div>
@@ -218,7 +219,7 @@
             </div>
             {% else %}
             <div class="alert alert-warning">
-                <i class="bi bi-exclamation-triangle"></i> No se encontraron registros
+                <i class="bi bi-exclamation-triangle"></i> {% translate "No se encontraron registros" %}
             </div>
             {% endif %}
         </div>

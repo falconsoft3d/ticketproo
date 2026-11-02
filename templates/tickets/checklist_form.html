@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - {{ block.super }}{% endblock %}
@@ -7,14 +8,14 @@
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'checklist_list' %}">Checklists</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'checklist_list' %}">{% translate "Checklists" %}</a></li>
                     {% if checklist %}
                     <li class="breadcrumb-item"><a href="{% url 'checklist_detail' checklist.id %}">{{ checklist.title }}</a></li>
-                    <li class="breadcrumb-item active">Editar</li>
+                    <li class="breadcrumb-item active">{% translate "Editar" %}</li>
                     {% else %}
-                    <li class="breadcrumb-item active">Nuevo</li>
+                    <li class="breadcrumb-item active">{% translate "Nuevo" %}</li>
                     {% endif %}
                 </ol>
             </nav>
@@ -58,7 +59,7 @@
                             {% if form.assigned_user.errors %}
                                 <div class="text-danger small mt-1">{{ form.assigned_user.errors }}</div>
                             {% endif %}
-                            <div class="form-text text-muted">Si asignas un usuario, solo ese usuario y los agentes podrán ver este checklist.</div>
+                            <div class="form-text text-muted">{% translate "Si asignas un usuario, solo ese usuario y los agentes podrán ver este checklist." %}</div>
                         </div>
 
                         <div class="mb-3">
@@ -68,7 +69,7 @@
                                     <i class="bi bi-toggles"></i> {{ form.public_can_toggle.label }}
                                 </label>
                             </div>
-                            <div class="form-text text-muted">Si está desactivado, los visitantes de la URL pública solo podrán ver el checklist pero no modificarlo.</div>
+                            <div class="form-text text-muted">{% translate "Si está desactivado, los visitantes de la URL pública solo podrán ver el checklist pero no modificarlo." %}</div>
                         </div>
 
                         <div class="mb-3">
@@ -83,10 +84,10 @@
 
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Guardar
+                                <i class="bi bi-save"></i> {% translate "Guardar" %}
                             </button>
                             <a href="{% if checklist %}{% url 'checklist_detail' checklist.id %}{% else %}{% url 'checklist_list' %}{% endif %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>

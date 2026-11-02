@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -36,14 +37,14 @@
             <div class="col-12">
                 <div class="d-flex align-items-center">
                     <a href="{% url 'product_list' %}" class="btn btn-outline-secondary me-3">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                     <div>
                         <h2><i class="bi bi-box-seam"></i> {{ page_title }}</h2>
                         {% if product %}
-                            <p class="text-muted mb-0">Editando producto: <strong>{{ product.name }}</strong></p>
+                            <p class="text-muted mb-0">{% translate "Editando producto:" %} <strong>{{ product.name }}</strong></p>
                         {% else %}
-                            <p class="text-muted mb-0">Agrega un nuevo producto a tu catálogo</p>
+                            <p class="text-muted mb-0">{% translate "Agrega un nuevo producto a tu catálogo" %}</p>
                         {% endif %}
                     </div>
                 </div>
@@ -55,7 +56,7 @@
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">
                     <i class="bi bi-{% if product %}pencil{% else %}plus-circle{% endif %}"></i>
-                    {% if product %}Editar Producto{% else %}Nuevo Producto{% endif %}
+                    {% if product %}{% translate "Editar Producto" %}{% else %}{% translate "Nuevo Producto" %}{% endif %}
                 </h5>
             </div>
             <div class="card-body">
@@ -114,7 +115,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">
-                                <i class="bi bi-info-circle"></i> Vista previa del precio
+                                <i class="bi bi-info-circle"></i> {% translate "Vista previa del precio" %}
                             </label>
                             <div class="card bg-light">
                                 <div class="card-body text-center">
@@ -139,7 +140,7 @@
                             {% endif %}
                             <div class="form-text">{{ form.description.help_text }}</div>
                             <div class="text-muted small mt-1">
-                                <span id="char-count">0</span>/1000 caracteres
+                                <span id="char-count">0</span>{% translate "/1000 caracteres" %}
                             </div>
                         </div>
                     </div>
@@ -152,7 +153,7 @@
                             </label>
                             <div class="d-flex gap-2">
                                 {{ form.category }}
-                                <a href="{% url 'product_category_create' %}" class="btn btn-outline-secondary btn-sm" target="_blank" title="Crear nueva categoría">
+                                <a href="{% url 'product_category_create' %}" class="btn btn-outline-secondary btn-sm" target="_blank" title="{% translate 'Crear nueva categoría' %}">
                                     <i class="bi bi-plus-lg"></i>
                                 </a>
                             </div>
@@ -200,17 +201,17 @@
                         <div class="col-12">
                             <div class="card bg-light">
                                 <div class="card-body">
-                                    <h6 class="card-title"><i class="bi bi-info-circle"></i> Información del Producto</h6>
+                                    <h6 class="card-title"><i class="bi bi-info-circle"></i> {% translate "Información del Producto" %}</h6>
                                     <div class="row">
                                         <div class="col-md-6">
                                             <small class="text-muted">
-                                                <strong>Creado por:</strong> {{ product.created_by.get_full_name|default:product.created_by.username }}<br>
-                                                <strong>Fecha de creación:</strong> {{ product.created_at|date:"d/m/Y H:i" }}
+                                                <strong>{% translate "Creado por:" %}</strong> {{ product.created_by.get_full_name|default:product.created_by.username }}<br>
+                                                <strong>{% translate "Fecha de creación:" %}</strong> {{ product.created_at|date:"d/m/Y H:i" }}
                                             </small>
                                         </div>
                                         <div class="col-md-6">
                                             <small class="text-muted">
-                                                <strong>Última actualización:</strong> {{ product.updated_at|date:"d/m/Y H:i" }}
+                                                <strong>{% translate "Última actualización:" %}</strong> {{ product.updated_at|date:"d/m/Y H:i" }}
                                             </small>
                                         </div>
                                     </div>
@@ -225,11 +226,11 @@
                         <div class="col-12">
                             <div class="d-flex justify-content-between">
                                 <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
-                                    <i class="bi bi-x-circle"></i> Cancelar
+                                    <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                                 </a>
                                 <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-{% if product %}check-circle{% else %}plus-circle{% endif %}"></i>
-                                    {% if product %}Actualizar Producto{% else %}Crear Producto{% endif %}
+                                    {% if product %}{% translate "Actualizar Producto" %}{% else %}{% translate "Crear Producto" %}{% endif %}
                                 </button>
                             </div>
                         </div>
@@ -241,14 +242,14 @@
         <!-- Información de ayuda -->
         <div class="card mt-4">
             <div class="card-header bg-info text-white">
-                <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Consejos</h6>
+                <h6 class="mb-0"><i class="bi bi-lightbulb"></i> {% translate "Consejos" %}</h6>
             </div>
             <div class="card-body">
                 <ul class="mb-0">
-                    <li><strong>Nombre:</strong> Usa un nombre descriptivo y fácil de recordar</li>
-                    <li><strong>Precio:</strong> Establece un precio competitivo para tu mercado objetivo</li>
-                    <li><strong>Descripción:</strong> Incluye características principales, beneficios y especificaciones</li>
-                    <li><strong>Estado:</strong> Solo productos "Activos" serán visibles para los clientes</li>
+                    <li><strong>{% translate "Nombre:" %}</strong> {% translate "Usa un nombre descriptivo y fácil de recordar" %}</li>
+                    <li><strong>{% translate "Precio:" %}</strong> {% translate "Establece un precio competitivo para tu mercado objetivo" %}</li>
+                    <li><strong>{% translate "Descripción:" %}</strong> {% translate "Incluye características principales, beneficios y especificaciones" %}</li>
+                    <li><strong>{% translate "Estado:" %}</strong> {% translate 'Solo productos "Activos" serán visibles para los clientes' %}</li>
                 </ul>
             </div>
         </div>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -7,7 +8,7 @@
         <div class="col-md-12">
             <h2 class="text-center">
                 <i class="bi bi-exclamation-triangle text-warning me-2"></i>
-                Confirmar Eliminación
+                {% translate "Confirmar Eliminación" %}
             </h2>
         </div>
     </div>
@@ -18,11 +19,11 @@
                 <div class="card-header bg-danger text-white">
                     <h5 class="mb-0">
                         <i class="bi bi-trash me-2"></i>
-                        Eliminar Plantilla
+                        {% translate "Eliminar Plantilla" %}
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p class="lead">¿Estás seguro que deseas eliminar esta plantilla?</p>
+                    <p class="lead">{% translate "¿Estás seguro que deseas eliminar esta plantilla?" %}</p>
                     
                     <div class="alert alert-warning">
                         <h6><strong>{{ template.name }}</strong></h6>
@@ -37,7 +38,7 @@
 
                     <div class="alert alert-danger mb-0">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Esta acción no se puede deshacer.</strong> Se eliminarán la plantilla y todos sus items.
+                        <strong>{% translate "Esta acción no se puede deshacer." %}</strong> {% translate "Se eliminarán la plantilla y todos sus items." %}
                     </div>
                 </div>
                 <div class="card-footer">
@@ -46,11 +47,11 @@
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'client_request_template_detail' template.pk %}" class="btn btn-secondary">
                                 <i class="bi bi-x-circle me-2"></i>
-                                Cancelar
+                                {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
                                 <i class="bi bi-trash me-2"></i>
-                                Sí, Eliminar Plantilla
+                                {% translate "Sí, Eliminar Plantilla" %}
                             </button>
                         </div>
                     </form>

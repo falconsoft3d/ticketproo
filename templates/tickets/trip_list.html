@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -13,7 +14,7 @@
                 </h2>
                 <div>
                     <a href="{% url 'trip_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Nuevo Viaje
+                        <i class="bi bi-plus-circle"></i> {% translate "Nuevo Viaje" %}
                     </a>
                 </div>
             </div>
@@ -53,7 +54,7 @@
                             </span>
                             {% if trip.is_public %}
                             <span class="badge bg-success">
-                                <i class="bi bi-eye"></i> Público
+                                <i class="bi bi-eye"></i> {% translate "Público" %}
                             </span>
                             {% endif %}
                         </div>
@@ -61,10 +62,10 @@
                     <div class="card-footer bg-transparent">
                         <div class="btn-group w-100" role="group">
                             <a href="{% url 'trip_detail' trip.pk %}" class="btn btn-sm btn-outline-info">
-                                <i class="bi bi-eye"></i> Ver
+                                <i class="bi bi-eye"></i> {% translate "Ver" %}
                             </a>
                             <a href="{% url 'trip_edit' trip.pk %}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-pencil"></i> Editar
+                                <i class="bi bi-pencil"></i> {% translate "Editar" %}
                             </a>
                             <a href="{% url 'trip_delete' trip.pk %}" class="btn btn-sm btn-outline-danger">
                                 <i class="bi bi-trash"></i>
@@ -78,9 +79,9 @@
             <div class="col-md-12">
                 <div class="text-center py-5">
                     <i class="bi bi-airplane" style="font-size: 4rem; color: #ccc;"></i>
-                    <p class="text-muted mt-3">No tienes viajes registrados</p>
+                    <p class="text-muted mt-3">{% translate "No tienes viajes registrados" %}</p>
                     <a href="{% url 'trip_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear Primer Viaje
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Primer Viaje" %}
                     </a>
                 </div>
             </div>

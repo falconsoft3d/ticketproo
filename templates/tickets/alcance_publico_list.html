@@ -1,70 +1,152 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="container mt-5">
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="display-5 fw-bold text-primary">
-                <i class="bi bi-bullseye"></i> Alcances Públicos
-            </h1>
-            <p class="lead text-muted">Conoce el alcance de nuestros servicios y capacidades</p>
+{% extends 'public_base.html' %}
+{% load i18n %}
+
+{% block title %}{% translate "Alcance" %} - TicketProo{% endblock %}
+
+{% block extra_css %}
+    .ap-alc-hero { padding: 72px 0 8px; text-align: center; }
+    .ap-alc-hero h1 { font-size: clamp(2.4rem, 6vw, 4rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; margin-bottom: .6rem; }
+    .ap-alc-hero p { font-size: clamp(1.05rem, 2vw, 1.35rem); color: var(--ap-ink-2); max-width: 680px; margin: 0 auto; }
+    .ap-filter-search {
+        max-width: 560px; margin: 2rem auto 0;
+        display: flex; align-items: center; gap: .5rem;
+        background: var(--ap-surface); border: 1px solid var(--ap-line);
+        border-radius: 980px; padding: 6px 18px;
+        box-shadow: 0 12px 32px -16px var(--ap-shadow);
+    }
+    .ap-filter-search i { color: var(--ap-ink-3); }
+    .ap-filter-search input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; color: var(--ap-ink); font-size: 1.02rem; padding: .6rem .2rem; }
+    .ap-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin-top: 1.25rem; }
+    .ap-chip-btn {
+        border: none; border-radius: 980px; padding: .4rem .95rem;
+        background: var(--ap-fill); color: var(--ap-ink); font-size: .85rem; font-weight: 500;
+        transition: background .15s ease, color .15s ease;
+    }
+    .ap-chip-btn:hover { background: var(--ap-fill-3); }
+    .ap-chip-btn.on { background: var(--ap-contrast-bg); color: var(--ap-contrast-fg); }
+    .ap-alc-hero p.ap-count { font-size: .85rem; max-width: none; }
+    .ap-count { text-align: center; color: var(--ap-ink-3); font-size: .85rem; margin-top: 1rem; }
+
+    .ap-alc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+    .ap-alc {
+        position: relative;
+        background: var(--ap-fill-2); border-radius: 24px; padding: 28px 28px 24px;
+        display: flex; flex-direction: column;
+        transition: transform .3s cubic-bezier(.2, .8, .2, 1), box-shadow .3s ease;
+    }
+    .ap-alc:hover { transform: translateY(-4px); box-shadow: 0 20px 44px -22px var(--ap-shadow); }
+    .ap-alc-icon {
+        width: 44px; height: 44px; border-radius: 13px;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 1.2rem; margin-bottom: 1.1rem;
+        background: linear-gradient(160deg, #5ac8fa, #0071e3);
+    }
+    .ap-alc:nth-child(5n+2) .ap-alc-icon { background: linear-gradient(160deg, #d68bff, #8e3bdb); }
+    .ap-alc:nth-child(5n+3) .ap-alc-icon { background: linear-gradient(160deg, #ffb340, #ff6b00); }
+    .ap-alc:nth-child(5n+4) .ap-alc-icon { background: linear-gradient(160deg, #6be585, #1fa64a); }
+    .ap-alc:nth-child(5n+5) .ap-alc-icon { background: linear-gradient(160deg, #ff7a8a, #e0254a); }
+    .ap-alc-cat { font-size: .7rem; font-weight: 600; color: #bf4800; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .45rem; }
+    html[data-theme="dark"] .ap-alc-cat { color: #ff9f5a; }
+    .ap-alc h3 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em; margin-bottom: .6rem; }
+    .ap-alc p { color: var(--ap-ink-2); font-size: .93rem; line-height: 1.6; flex-grow: 1; margin-bottom: 0; }
+    .ap-alc-foot {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--ap-line);
+        font-size: .82rem; color: var(--ap-ink-3);
+    }
+    .ap-alc-foot a { color: var(--ap-link); text-decoration: none; font-size: .9rem; font-weight: 500; }
+    .ap-alc-foot a:hover { text-decoration: underline; }
+    .ap-empty-state { text-align: center; padding: 4rem 1rem; color: var(--ap-ink-2); }
+    .ap-empty-state i { font-size: 2.6rem; color: var(--ap-line-strong); display: block; margin-bottom: .8rem; }
+    [hidden] { display: none !important; }
+    @media (prefers-reduced-motion: reduce) { .ap-alc:hover { transform: none; } }
+{% endblock %}
+
+{% block hero_section %}
+<section class="ap-alc-hero">
+    <div class="container">
+        <h1>{% translate "Alcance de TicketProo." %}</h1>
+        <p>{% translate "Conoce el alcance de nuestros servicios y capacidades." %}</p>
+        {% if alcances %}
+        <label class="ap-filter-search">
+            <i class="bi bi-search"></i>
+            <input type="search" id="alc-search" placeholder="{% translate 'Buscar en el alcance' %}" aria-label="{% translate 'Buscar en el alcance' %}" autocomplete="off">
+        </label>
+        <div class="ap-chips" id="alc-chips">
+            <button type="button" class="ap-chip-btn on" data-cat="">{% translate "Todas" %}</button>
+            {% regroup alcances|dictsort:"categoria" by categoria as by_category %}
+            {% for group in by_category %}{% if group.grouper %}
+            <button type="button" class="ap-chip-btn" data-cat="{{ group.grouper }}">{{ group.grouper }}</button>
+            {% endif %}{% endfor %}
         </div>
+        <p class="ap-count">{% translate "Resultados" %}: <span id="alc-count">{{ alcances|length }}</span></p>
+        {% endif %}
     </div>
-    
-    <div class="row">
-        <div class="col-12">
-            {% if alcances %}
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped mb-0">
-                            <thead class="table-primary">
-                                <tr>
-                                    <th class="py-3 text-center" style="width: 60px;">#</th>
-                                    <th class="py-3"><i class="bi bi-card-heading"></i> Título</th>
-                                    <th class="py-3"><i class="bi bi-tag"></i> Categoría</th>
-                                    <th class="py-3"><i class="bi bi-file-text"></i> Descripción</th>
-                                    <th class="py-3 text-center"><i class="bi bi-calendar"></i> Fecha</th>
-                                    <th class="py-3 text-center" style="width: 120px;"><i class="bi bi-link-45deg"></i> Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            {% for alcance in alcances %}
-                                <tr>
-                                    <td class="align-middle text-center fw-bold text-primary">
-                                        {{ forloop.counter }}
-                                    </td>
-                                    <td class="align-middle fw-bold">
-                                         {{ alcance.titulo }}
-                                    </td>
-                                    <td class="align-middle">
-                                        <span class="badge bg-info">{{ alcance.categoria }}</span>
-                                    </td>
-                                    <td class="align-middle">{{ alcance.descripcion|linebreaksbr }}</td>
-                                    <td class="align-middle text-center">
-                                        <small class="text-muted">{{ alcance.creado_en|date:'d M Y' }}</small>
-                                    </td>
-                                    <td class="align-middle text-center">
-                                        {% if alcance.url %}
-                                            <a href="{{ alcance.url }}" target="_blank" class="btn btn-sm btn-primary">
-                                                <i class="bi bi-box-arrow-up-right"></i> Ver más
-                                            </a>
-                                        {% else %}
-                                            <span class="text-muted small">-</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            {% else %}
-            <div class="alert alert-info shadow-sm">
-                <i class="bi bi-info-circle"></i> No hay alcances públicos disponibles en este momento.
-            </div>
+</section>
+{% endblock %}
+
+{% block content %}
+{% if alcances %}
+<div class="ap-alc-grid" id="alc-list">
+    {% for alcance in alcances %}
+    <article class="ap-alc" data-cat="{{ alcance.categoria }}" data-text="{{ alcance.titulo|lower }} {{ alcance.descripcion|lower }}">
+        <span class="ap-alc-icon"><i class="bi bi-bullseye"></i></span>
+        {% if alcance.categoria %}<span class="ap-alc-cat">{{ alcance.categoria }}</span>{% endif %}
+        <h3>{{ alcance.titulo }}</h3>
+        <p>{{ alcance.descripcion|linebreaksbr }}</p>
+        <div class="ap-alc-foot">
+            <span>{{ alcance.creado_en|date:'d M Y' }}</span>
+            {% if alcance.url %}
+            <a href="{{ alcance.url }}" target="_blank" rel="noopener">{% translate "Ver más" %} ›</a>
             {% endif %}
         </div>
-    </div>
+    </article>
+    {% endfor %}
 </div>
+<div class="ap-empty-state" id="alc-empty" hidden>
+    <i class="bi bi-search"></i>
+    {% translate "No hay resultados para esta búsqueda." %}
+</div>
+{% else %}
+<div class="ap-empty-state">
+    <i class="bi bi-info-circle"></i>
+    {% translate "No hay alcances públicos disponibles en este momento." %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var search = document.getElementById('alc-search');
+    if (!search) return;
+    var cards = Array.prototype.slice.call(document.querySelectorAll('.ap-alc'));
+    var chips = document.querySelectorAll('#alc-chips .ap-chip-btn');
+    var count = document.getElementById('alc-count');
+    var empty = document.getElementById('alc-empty');
+    var category = '';
+
+    function apply() {
+        var q = search.value.trim().toLowerCase();
+        var visible = 0;
+        cards.forEach(function (card) {
+            var show = (!category || card.dataset.cat === category) && (!q || card.dataset.text.indexOf(q) !== -1);
+            card.hidden = !show;
+            if (show) visible++;
+        });
+        count.textContent = visible;
+        empty.hidden = visible !== 0;
+    }
+
+    search.addEventListener('input', apply);
+    chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            chips.forEach(function (c) { c.classList.remove('on'); });
+            chip.classList.add('on');
+            category = chip.dataset.cat;
+            apply();
+        });
+    });
+})();
+</script>
 {% endblock %}

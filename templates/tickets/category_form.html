@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -14,7 +15,7 @@
                             <i class="fas fa-tag me-2"></i>{{ form_title }}
                         </h4>
                         <a href="{% url 'category_list' %}" class="btn btn-outline-secondary btn-sm">
-                            <i class="fas fa-arrow-left me-1"></i>Volver
+                            <i class="fas fa-arrow-left me-1"></i>{% translate "Volver" %}
                         </a>
                     </div>
                 </div>
@@ -44,7 +45,7 @@
                                     {{ form.description.errors.0 }}
                                 </div>
                             {% endif %}
-                            <div class="form-text">Descripción opcional para esta categoría.</div>
+                            <div class="form-text">{% translate "Descripción opcional para esta categoría." %}</div>
                         </div>
 
                         <div class="mb-3">
@@ -77,12 +78,12 @@
                                     {{ form.is_active.errors.0 }}
                                 </div>
                             {% endif %}
-                            <div class="form-text">Las categorías inactivas no aparecerán disponibles para nuevos tickets.</div>
+                            <div class="form-text">{% translate "Las categorías inactivas no aparecerán disponibles para nuevos tickets." %}</div>
                         </div>
 
                         <!-- Vista previa del color -->
                         <div class="mb-4">
-                            <label class="form-label">Vista Previa</label>
+                            <label class="form-label">{% translate "Vista Previa" %}</label>
                             <div class="border rounded p-3">
                                 <span id="color-preview" class="badge" style="background-color: {{ form.color.value|default:'#007bff' }}; color: white; font-size: 0.9rem;">
                                     <i class="fas fa-tag me-1"></i>
@@ -93,11 +94,11 @@
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'category_list' %}" class="btn btn-secondary me-md-2">
-                                <i class="fas fa-times me-1"></i>Cancelar
+                                <i class="fas fa-times me-1"></i>{% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save me-1"></i>
-                                {% if category %}Actualizar{% else %}Crear{% endif %} Categoría
+                                {% if category %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Categoría" %}
                             </button>
                         </div>
                     </form>

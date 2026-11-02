@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -8,11 +9,11 @@
             <div class="d-flex justify-content-between align-items-center">
                 <h2>
                     <i class="bi bi-files me-2"></i>
-                    Plantillas de Solicitudes
+                    {% translate "Plantillas de Solicitudes" %}
                 </h2>
                 <a href="{% url 'client_request_template_create' %}" class="btn btn-primary">
                     <i class="bi bi-plus-circle me-2"></i>
-                    Nueva Plantilla
+                    {% translate "Nueva Plantilla" %}
                 </a>
             </div>
         </div>
@@ -28,7 +29,7 @@
                         <h5 class="card-title mb-0">
                             {{ template.name }}
                             {% if not template.is_active %}
-                                <span class="badge bg-secondary ms-2">Inactiva</span>
+                                <span class="badge bg-secondary ms-2">{% translate "Inactiva" %}</span>
                             {% endif %}
                         </h5>
                         <div class="dropdown">
@@ -38,25 +39,25 @@
                             <ul class="dropdown-menu">
                                 <li>
                                     <a class="dropdown-item" href="{% url 'client_request_template_detail' template.pk %}">
-                                        <i class="bi bi-eye me-2"></i>Ver Detalle
+                                        <i class="bi bi-eye me-2"></i>{% translate "Ver Detalle" %}
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="{% url 'client_request_template_edit' template.pk %}">
-                                        <i class="bi bi-pencil me-2"></i>Editar
+                                        <i class="bi bi-pencil me-2"></i>{% translate "Editar" %}
                                     </a>
                                 </li>
                                 {% if template.is_active and template.items.count > 0 %}
                                 <li>
                                     <a class="dropdown-item text-success" href="{% url 'client_request_template_execute' template.pk %}">
-                                        <i class="bi bi-play-circle me-2"></i>Ejecutar
+                                        <i class="bi bi-play-circle me-2"></i>{% translate "Ejecutar" %}
                                     </a>
                                 </li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item text-danger" href="{% url 'client_request_template_delete' template.pk %}">
-                                        <i class="bi bi-trash me-2"></i>Eliminar
+                                        <i class="bi bi-trash me-2"></i>{% translate "Eliminar" %}
                                     </a>
                                 </li>
                             </ul>
@@ -81,7 +82,7 @@
                 <div class="card-footer bg-transparent">
                     <a href="{% url 'client_request_template_detail' template.pk %}" class="btn btn-sm btn-outline-primary w-100">
                         <i class="bi bi-arrow-right-circle me-2"></i>
-                        Ver Plantilla
+                        {% translate "Ver Plantilla" %}
                     </a>
                 </div>
             </div>
@@ -95,11 +96,11 @@
                 <div class="d-flex align-items-center">
                     <i class="bi bi-info-circle fs-3 me-3"></i>
                     <div>
-                        <h5 class="alert-heading mb-1">No hay plantillas creadas</h5>
-                        <p class="mb-2">Las plantillas te permiten crear múltiples solicitudes al cliente de forma rápida.</p>
+                        <h5 class="alert-heading mb-1">{% translate "No hay plantillas creadas" %}</h5>
+                        <p class="mb-2">{% translate "Las plantillas te permiten crear múltiples solicitudes al cliente de forma rápida." %}</p>
                         <a href="{% url 'client_request_template_create' %}" class="btn btn-sm btn-primary">
                             <i class="bi bi-plus-circle me-2"></i>
-                            Crear Primera Plantilla
+                            {% translate "Crear Primera Plantilla" %}
                         </a>
                     </div>
                 </div>

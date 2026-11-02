@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - {{ block.super }}{% endblock %}
@@ -7,11 +8,11 @@
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'checklist_list' %}">Checklists</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'checklist_list' %}">{% translate "Checklists" %}</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'checklist_detail' checklist.id %}">{{ checklist.title }}</a></li>
-                    <li class="breadcrumb-item active">{% if item %}Editar{% else %}Nueva{% endif %} Tarea</li>
+                    <li class="breadcrumb-item active">{% if item %}{% translate "Editar" %}{% else %}{% translate "Nueva" %}{% endif %} {% translate "Tarea" %}</li>
                 </ol>
             </nav>
 
@@ -64,7 +65,7 @@
                             {% if form.url.errors %}
                                 <div class="text-danger small mt-1">{{ form.url.errors }}</div>
                             {% endif %}
-                            <small class="text-muted">Deja en blanco si no aplica</small>
+                            <small class="text-muted">{% translate "Deja en blanco si no aplica" %}</small>
                         </div>
 
                         <div class="mb-3">
@@ -78,15 +79,15 @@
                             {% if form.cost.errors %}
                                 <div class="text-danger small mt-1">{{ form.cost.errors }}</div>
                             {% endif %}
-                            <small class="text-muted">Deja en blanco si la tarea no tiene costo</small>
+                            <small class="text-muted">{% translate "Deja en blanco si la tarea no tiene costo" %}</small>
                         </div>
 
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Guardar
+                                <i class="bi bi-save"></i> {% translate "Guardar" %}
                             </button>
                             <a href="{% url 'checklist_detail' checklist.id %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>

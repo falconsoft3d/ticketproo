@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 
 {% block title %}{{ upload_url.title }} - TicketProo{% endblock %}
 
@@ -8,7 +9,7 @@
     {% if upload_url.description %}
         {{ upload_url.description }}
     {% else %}
-        Sube tu documento de forma rápida y segura
+        {% translate "Sube tu documento de forma rápida y segura" %}
     {% endif %}
 {% endblock %}
 
@@ -56,7 +57,7 @@
                     <i class="bi bi-building display-6 me-3"></i>
                     <div>
                         <h5 class="alert-heading mb-1">{{ upload_url.company.name }}</h5>
-                        <p class="mb-0">Este documento se asociará automáticamente a esta empresa</p>
+                        <p class="mb-0">{% translate "Este documento se asociará automáticamente a esta empresa" %}</p>
                     </div>
                 </div>
             </div>
@@ -78,7 +79,7 @@
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0">
                     <i class="bi bi-upload me-2"></i>
-                    Subir Documento
+                    {% translate "Subir Documento" %}
                 </h5>
             </div>
             <div class="card-body p-4">
@@ -89,22 +90,22 @@
                     <div class="mb-4">
                         <label for="title" class="form-label fw-bold">
                             <i class="bi bi-type me-1"></i>
-                            Título del documento *
+                            {% translate "Título del documento *" %}
                         </label>
                         <input type="text" 
                                class="form-control form-control-lg" 
                                id="title" 
                                name="title" 
-                               placeholder="ej: Contrato firmado, Factura, etc."
+                               placeholder="{% translate 'ej: Contrato firmado, Factura, etc.' %}"
                                required>
-                        <div class="form-text">Proporciona un nombre descriptivo para el documento</div>
+                        <div class="form-text">{% translate "Proporciona un nombre descriptivo para el documento" %}</div>
                     </div>
 
                     <!-- Descripción opcional -->
                     <div class="mb-4">
                         <label for="description" class="form-label fw-bold">
                             <i class="bi bi-text-paragraph me-1"></i>
-                            Descripción (opcional)
+                            {% translate "Descripción (opcional)" %}
                         </label>
                         <textarea class="form-control" 
                                   id="description" 
@@ -117,7 +118,7 @@
                     <div class="mb-4">
                         <label class="form-label fw-bold">
                             <i class="bi bi-file-earmark me-1"></i>
-                            Archivo *
+                            {% translate "Archivo *" %}
                         </label>
                         <div class="upload-area" id="uploadArea">
                             <input type="file" 
@@ -129,16 +130,16 @@
                             
                             <div id="uploadPrompt">
                                 <i class="bi bi-cloud-upload display-1 text-primary mb-3"></i>
-                                <h5>Arrastra tu archivo aquí</h5>
-                                <p class="text-muted mb-3">o haz clic para seleccionar</p>
+                                <h5>{% translate "Arrastra tu archivo aquí" %}</h5>
+                                <p class="text-muted mb-3">{% translate "o haz clic para seleccionar" %}</p>
                                 <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('file').click()">
                                     <i class="bi bi-folder2-open me-1"></i>
-                                    Seleccionar Archivo
+                                    {% translate "Seleccionar Archivo" %}
                                 </button>
                                 <div class="mt-3">
                                     <small class="text-muted">
-                                        Formatos admitidos: PDF, Word, Excel, imágenes, ZIP, TXT
-                                        <br>Tamaño máximo: 50MB
+                                        {% translate "Formatos admitidos: PDF, Word, Excel, imágenes, ZIP, TXT" %}
+                                        <br>{% translate "Tamaño máximo: 50MB" %}
                                     </small>
                                 </div>
                             </div>
@@ -169,12 +170,12 @@
                     <div class="alert alert-light">
                         <h6 class="alert-heading">
                             <i class="bi bi-shield-check me-1"></i>
-                            Tu información está segura
+                            {% translate "Tu información está segura" %}
                         </h6>
                         <ul class="mb-0 small">
-                            <li>El archivo se subirá de forma segura y encriptada</li>
-                            <li>Solo las personas autorizadas podrán acceder al documento</li>
-                            <li>Recibirás una confirmación una vez completada la subida</li>
+                            <li>{% translate "El archivo se subirá de forma segura y encriptada" %}</li>
+                            <li>{% translate "Solo las personas autorizadas podrán acceder al documento" %}</li>
+                            <li>{% translate "Recibirás una confirmación una vez completada la subida" %}</li>
                         </ul>
                     </div>
 
@@ -182,7 +183,7 @@
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
                             <i class="bi bi-upload me-2"></i>
-                            Subir Documento
+                            {% translate "Subir Documento" %}
                         </button>
                     </div>
                 </form>
@@ -198,7 +199,7 @@
                             <i class="bi bi-files text-primary me-2"></i>
                             <div>
                                 <div class="fw-bold">{{ upload_url.upload_count }}</div>
-                                <small class="text-muted">Documentos subidos</small>
+                                <small class="text-muted">{% translate "Documentos subidos" %}</small>
                             </div>
                         </div>
                     </div>
@@ -207,7 +208,7 @@
                             <i class="bi bi-shield-check text-success me-2"></i>
                             <div>
                                 <div class="fw-bold">100%</div>
-                                <small class="text-muted">Seguro</small>
+                                <small class="text-muted">{% translate "Seguro" %}</small>
                             </div>
                         </div>
                     </div>
@@ -215,8 +216,8 @@
                         <div class="d-flex align-items-center justify-content-center">
                             <i class="bi bi-clock text-info me-2"></i>
                             <div>
-                                <div class="fw-bold">Rápido</div>
-                                <small class="text-muted">Subida instantánea</small>
+                                <div class="fw-bold">{% translate "Rápido" %}</div>
+                                <small class="text-muted">{% translate "Subida instantánea" %}</small>
                             </div>
                         </div>
                     </div>

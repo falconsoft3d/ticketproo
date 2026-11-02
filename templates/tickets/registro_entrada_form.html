@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load project_extras %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -9,13 +10,13 @@
         <div class="col-12 col-md-8 col-lg-6">
 
             <!-- Breadcrumb -->
-            <nav aria-label="breadcrumb" class="mb-3">
+            <nav aria-label="{% translate 'breadcrumb' %}" class="mb-3">
                 <ol class="breadcrumb mb-0 small">
                     <li class="breadcrumb-item">
-                        <a href="{% url 'registro_entrada_list' %}">Registro de Entrada</a>
+                        <a href="{% url 'registro_entrada_list' %}">{% translate "Registro de Entrada" %}</a>
                     </li>
                     <li class="breadcrumb-item active">
-                        {% if action == 'edit' %}Editar{% else %}Nuevo{% endif %}
+                        {% if action == 'edit' %}{% translate "Editar" %}{% else %}{% translate "Nuevo" %}{% endif %}
                     </li>
                 </ol>
             </nav>
@@ -34,7 +35,7 @@
                             <!-- Nombre -->
                             <div class="col-12 col-sm-6">
                                 <label class="form-label fw-semibold">
-                                    Nombre <span class="text-danger">*</span>
+                                    {% translate "Nombre" %} <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" name="nombre" class="form-control {% if errors.nombre %}is-invalid{% endif %}"
                                        value="{{ registro.nombre|default:post_data.nombre }}">
@@ -44,7 +45,7 @@
                             <!-- Apellido -->
                             <div class="col-12 col-sm-6">
                                 <label class="form-label fw-semibold">
-                                    Apellido <span class="text-danger">*</span>
+                                    {% translate "Apellido" %} <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" name="apellido" class="form-control {% if errors.apellido %}is-invalid{% endif %}"
                                        value="{{ registro.apellido|default:post_data.apellido }}">
@@ -54,7 +55,7 @@
                             <!-- Tipo documento -->
                             <div class="col-12 col-sm-5">
                                 <label class="form-label fw-semibold">
-                                    Tipo de documento <span class="text-danger">*</span>
+                                    {% translate "Tipo de documento" %} <span class="text-danger">*</span>
                                 </label>
                                 <select name="tipo_documento" class="form-select">
                                     {% for value, label in documento_choices %}
@@ -69,7 +70,7 @@
                             <!-- Número documento -->
                             <div class="col-12 col-sm-7">
                                 <label class="form-label fw-semibold">
-                                    Número <span class="text-danger">*</span>
+                                    {% translate "Número" %} <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" name="numero_documento"
                                        class="form-control {% if errors.numero_documento %}is-invalid{% endif %}"
@@ -80,7 +81,7 @@
                             <!-- Qué hará -->
                             <div class="col-12">
                                 <label class="form-label fw-semibold">
-                                    ¿Qué hará en la visita? <span class="text-danger">*</span>
+                                    {% translate "¿Qué hará en la visita?" %} <span class="text-danger">*</span>
                                 </label>
                                 <textarea name="que_hara" rows="2"
                                           class="form-control {% if errors.que_hara %}is-invalid{% endif %}"
@@ -91,7 +92,7 @@
                             <!-- Teléfono -->
                             <div class="col-12 col-sm-6">
                                 <label class="form-label fw-semibold">
-                                    Teléfono <span class="text-danger">*</span>
+                                    {% translate "Teléfono" %} <span class="text-danger">*</span>
                                 </label>
                                 <input type="tel" name="telefono"
                                        class="form-control {% if errors.telefono %}is-invalid{% endif %}"
@@ -101,10 +102,10 @@
 
                             <!-- Dirección -->
                             <div class="col-12 col-sm-6">
-                                <label class="form-label fw-semibold">Dirección</label>
+                                <label class="form-label fw-semibold">{% translate "Dirección" %}</label>
                                 <input type="text" name="direccion" class="form-control"
                                        value="{{ registro.direccion|default:post_data.direccion }}"
-                                       placeholder="Opcional">
+                                       placeholder="{% translate 'Opcional' %}">
                             </div>
                         </div>
 
@@ -112,10 +113,10 @@
                         <div class="d-flex gap-2 mt-4">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-lg me-1"></i>
-                                {% if action == 'edit' %}Guardar cambios{% else %}Crear registro{% endif %}
+                                {% if action == 'edit' %}{% translate "Guardar cambios" %}{% else %}{% translate "Crear registro" %}{% endif %}
                             </button>
                             <a href="{% url 'registro_entrada_list' %}" class="btn btn-outline-secondary">
-                                Cancelar
+                                {% translate "Cancelar" %}
                             </a>
                         </div>
 

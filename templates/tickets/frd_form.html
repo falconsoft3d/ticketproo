@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -11,7 +12,7 @@
             <h2>
                 <i class="bi bi-plus-circle me-2"></i>{{ page_title }}
             </h2>
-            <p class="text-muted">Crea un nuevo Documento de Requerimientos Funcionales</p>
+            <p class="text-muted">{% translate "Crea un nuevo Documento de Requerimientos Funcionales" %}</p>
         </div>
     </div>
 
@@ -60,7 +61,7 @@
 
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle me-1"></i>
-                            <strong>Nota:</strong> Debe seleccionar una empresa del listado <strong>o</strong> escribir un nombre de empresa.
+                            <strong>{% translate "Nota:" %}</strong> {% translate "Debe seleccionar una empresa del listado" %} <strong>{% translate "o" %}</strong> {% translate "escribir un nombre de empresa." %}
                         </div>
 
                         <!-- Título -->
@@ -81,17 +82,17 @@
                         <div class="mb-4">
                             <div class="alert alert-success">
                                 <i class="bi bi-magic me-1"></i>
-                                <strong>Secuencia automática:</strong> Se generará automáticamente en formato DRF-YYYY-NNN
+                                <strong>{% translate "Secuencia automática:" %}</strong> {% translate "Se generará automáticamente en formato DRF-YYYY-NNN" %}
                             </div>
                         </div>
 
                         <!-- Botones -->
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                             <a href="{% url 'frd_list' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                                <i class="bi bi-x-circle me-1"></i>{% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-1"></i>Crear Documento
+                                <i class="bi bi-check-circle me-1"></i>{% translate "Crear Documento" %}
                             </button>
                         </div>
                     </form>
@@ -104,20 +105,19 @@
             <div class="card bg-light">
                 <div class="card-body">
                     <h6 class="card-title">
-                        <i class="bi bi-info-circle me-1"></i>Información
+                        <i class="bi bi-info-circle me-1"></i>{% translate "Información" %}
                     </h6>
                     <p class="card-text small">
-                        Un <strong>Documento de Requerimientos Funcionales (DRF)</strong> es un documento que contiene 
-                        todos los alcances y requerimientos de un proyecto.
+                        {% translate "Un" %} <strong>{% translate "Documento de Requerimientos Funcionales (DRF)" %}</strong> {% translate "es un documento que contiene todos los alcances y requerimientos de un proyecto." %}
                     </p>
                     <hr>
-                    <h6>Características:</h6>
+                    <h6>{% translate "Características:" %}</h6>
                     <ul class="small mb-0">
-                        <li>Asociado a una empresa específica</li>
-                        <li>Identificador único (secuencia)</li>
-                        <li>URL pública para compartir con clientes</li>
-                        <li>Los clientes pueden aprobar o editar cada requerimiento</li>
-                        <li>Seguimiento de aprobaciones con nombre, email y fecha</li>
+                        <li>{% translate "Asociado a una empresa específica" %}</li>
+                        <li>{% translate "Identificador único (secuencia)" %}</li>
+                        <li>{% translate "URL pública para compartir con clientes" %}</li>
+                        <li>{% translate "Los clientes pueden aprobar o editar cada requerimiento" %}</li>
+                        <li>{% translate "Seguimiento de aprobaciones con nombre, email y fecha" %}</li>
                     </ul>
                 </div>
             </div>

@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Tareas - {{ work_order.order_number }}{% endblock %}
@@ -19,7 +20,7 @@
                         </div>
                         <div class="col-md-4 text-right">
                             <a href="{% url 'public_work_order' work_order.public_share_token %}" class="btn btn-light btn-sm">
-                                <i class="fas fa-arrow-left"></i> Volver a la Orden
+                                <i class="fas fa-arrow-left"></i> {% translate "Volver a la Orden" %}
                             </a>
                         </div>
                     </div>
@@ -36,7 +37,7 @@
                                     <div class="card bg-light">
                                         <div class="card-body p-2">
                                             <h6 class="mb-1">{{ tasks|length }}</h6>
-                                            <small class="text-muted">Tareas</small>
+                                            <small class="text-muted">{% translate "Tareas" %}</small>
                                         </div>
                                     </div>
                                 </div>
@@ -44,7 +45,7 @@
                                     <div class="card bg-light">
                                         <div class="card-body p-2">
                                             <h6 class="mb-1">{{ total_estimated_hours|floatformat:1 }}h</h6>
-                                            <small class="text-muted">Estimado</small>
+                                            <small class="text-muted">{% translate "Estimado" %}</small>
                                         </div>
                                     </div>
                                 </div>
@@ -52,7 +53,7 @@
                                     <div class="card bg-light">
                                         <div class="card-body p-2">
                                             <h6 class="mb-1">{{ total_logged_hours|floatformat:1 }}h</h6>
-                                            <small class="text-muted">Trabajado</small>
+                                            <small class="text-muted">{% translate "Trabajado" %}</small>
                                         </div>
                                     </div>
                                 </div>
@@ -71,7 +72,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="fas fa-list"></i> Lista de Tareas
+                        <i class="fas fa-list"></i> {% translate "Lista de Tareas" %}
                     </h5>
                 </div>
                 <div class="card-body p-0">
@@ -111,11 +112,11 @@
                                                 {% elif task.status == 'in_progress' %}badge-warning
                                                 {% else %}badge-success{% endif %}">
                                                 {% if task.status == 'pending' %}
-                                                    <i class="fas fa-clock"></i> Pendiente
+                                                    <i class="fas fa-clock"></i> {% translate "Pendiente" %}
                                                 {% elif task.status == 'in_progress' %}
-                                                    <i class="fas fa-play"></i> En Progreso
+                                                    <i class="fas fa-play"></i> {% translate "En Progreso" %}
                                                 {% else %}
-                                                    <i class="fas fa-check"></i> Completada
+                                                    <i class="fas fa-check"></i> {% translate "Completada" %}
                                                 {% endif %}
                                             </span>
                                         </div>
@@ -125,12 +126,12 @@
                                         <div class="btn-group-vertical btn-group-sm w-100">
                                             <!-- Botón de tiempo -->
                                             {% if task.has_active_time_entry %}
-                                                <button class="btn btn-danger btn-sm mb-1 w-100" onclick="stopTaskTime({{ task.id }})" title="Detener tiempo">
-                                                    <i class="fas fa-stop"></i> Detener Tiempo
+                                                <button class="btn btn-danger btn-sm mb-1 w-100" onclick="stopTaskTime({{ task.id }})" title="{% translate 'Detener tiempo' %}">
+                                                    <i class="fas fa-stop"></i> {% translate "Detener Tiempo" %}
                                                 </button>
                                             {% else %}
-                                                <button class="btn btn-success btn-sm mb-1 w-100" onclick="startTaskTime({{ task.id }})" title="Iniciar tiempo">
-                                                    <i class="fas fa-play"></i> Iniciar Tiempo
+                                                <button class="btn btn-success btn-sm mb-1 w-100" onclick="startTaskTime({{ task.id }})" title="{% translate 'Iniciar tiempo' %}">
+                                                    <i class="fas fa-play"></i> {% translate "Iniciar Tiempo" %}
                                                 </button>
                                             {% endif %}
                                             
@@ -144,7 +145,7 @@
                                                     <input type="hidden" name="task_id" value="{{ task.id }}">
                                                     <input type="hidden" name="status" value="pending">
                                                     <button type="submit" class="btn btn-outline-secondary btn-sm mb-1 w-100">
-                                                        <i class="fas fa-undo"></i> Pendiente
+                                                        <i class="fas fa-undo"></i> {% translate "Pendiente" %}
                                                     </button>
                                                 </form>
                                             {% endif %}
@@ -155,7 +156,7 @@
                                                     <input type="hidden" name="task_id" value="{{ task.id }}">
                                                     <input type="hidden" name="status" value="in_progress">
                                                     <button type="submit" class="btn btn-outline-warning btn-sm mb-1 w-100">
-                                                        <i class="fas fa-play"></i> En Progreso
+                                                        <i class="fas fa-play"></i> {% translate "En Progreso" %}
                                                     </button>
                                                 </form>
                                             {% endif %}
@@ -166,7 +167,7 @@
                                                     <input type="hidden" name="task_id" value="{{ task.id }}">
                                                     <input type="hidden" name="status" value="completed">
                                                     <button type="submit" class="btn btn-outline-success btn-sm w-100">
-                                                        <i class="fas fa-check"></i> Completar
+                                                        <i class="fas fa-check"></i> {% translate "Completar" %}
                                                     </button>
                                                 </form>
                                             {% endif %}
@@ -188,7 +189,7 @@
                                     </div>
                                     <small class="text-muted">
                                         Progreso: {{ progress|floatformat:0 }}%
-                                        {% if progress > 100 %} (Excedido){% endif %}
+                                        {% if progress > 100 %} {% translate "(Excedido)" %}{% endif %}
                                     </small>
                                     {% endwith %}
                                 {% endif %}
@@ -198,8 +199,8 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
-                            <h5 class="text-muted">No hay tareas registradas</h5>
-                            <p class="text-muted">Esta orden de trabajo aún no tiene tareas asignadas.</p>
+                            <h5 class="text-muted">{% translate "No hay tareas registradas" %}</h5>
+                            <p class="text-muted">{% translate "Esta orden de trabajo aún no tiene tareas asignadas." %}</p>
                         </div>
                     {% endif %}
                 </div>
@@ -211,7 +212,7 @@
                     <div class="row text-center">
                         <div class="col-md-3">
                             <h5 class="text-primary">{{ tasks|length }}</h5>
-                            <small class="text-muted">Total Tareas</small>
+                            <small class="text-muted">{% translate "Total Tareas" %}</small>
                         </div>
                         <div class="col-md-3">
                             <h5 class="text-success">
@@ -221,15 +222,15 @@
                                     {% empty %}0{% endfor %}
                                 {% endwith %}
                             </h5>
-                            <small class="text-muted">Completadas</small>
+                            <small class="text-muted">{% translate "Completadas" %}</small>
                         </div>
                         <div class="col-md-3">
                             <h5 class="text-info">{{ total_estimated_hours|floatformat:1 }}h</h5>
-                            <small class="text-muted">Tiempo Estimado</small>
+                            <small class="text-muted">{% translate "Tiempo Estimado" %}</small>
                         </div>
                         <div class="col-md-3">
                             <h5 class="text-warning">{{ total_logged_hours|floatformat:1 }}h</h5>
-                            <small class="text-muted">Tiempo Trabajado</small>
+                            <small class="text-muted">{% translate "Tiempo Trabajado" %}</small>
                         </div>
                     </div>
                 </div>

@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}Mi Perfil - TicketProo{% endblock %}
+{% block title %}{% translate "Mi Perfil - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -10,7 +11,7 @@
         <div class="card mb-4">
             <div class="card-header">
                 <h4 class="mb-0">
-                    <i class="bi bi-person-circle"></i> Mi Perfil
+                    <i class="bi bi-person-circle"></i> {% translate "Mi Perfil" %}
                 </h4>
             </div>
             <div class="card-body">
@@ -65,7 +66,7 @@
                             </div>
                         {% endif %}
                         <div class="form-text">
-                            Opcional. Formato sugerido: +34 612 345 678
+                            {% translate "Opcional. Formato sugerido: +34 612 345 678" %}
                         </div>
                     </div>
                     
@@ -80,7 +81,7 @@
                             </div>
                         {% endif %}
                         <div class="form-text">
-                            Máximo 500 caracteres. Cuéntanos algo sobre ti.
+                            {% translate "Máximo 500 caracteres. Cuéntanos algo sobre ti." %}
                         </div>
                     </div>
                     
@@ -95,7 +96,7 @@
                             </div>
                         {% endif %}
                         <div class="form-text">
-                            Tu cargo o posición en la empresa.
+                            {% translate "Tu cargo o posición en la empresa." %}
                         </div>
                     </div>
                     
@@ -110,7 +111,7 @@
                             </div>
                         {% endif %}
                         <div class="form-text">
-                            Describe las responsabilidades y funciones de tu cargo.
+                            {% translate "Describe las responsabilidades y funciones de tu cargo." %}
                         </div>
                     </div>
                     
@@ -134,7 +135,7 @@
                     
                     <!-- Firma digital (canvas pad) -->
                     <div class="mb-3">
-                      <label class="form-label fw-semibold">Firma digital <span class="text-muted fw-normal small">(para contratos)</span></label>
+                      <label class="form-label fw-semibold">{% translate "Firma digital" %} <span class="text-muted fw-normal small">{% translate "(para contratos)" %}</span></label>
 
                       {% if user_profile.signature_image %}
                       <div class="mb-2 d-flex align-items-center gap-2">
@@ -142,7 +143,7 @@
                           <img src="{{ user_profile.signature_image.url }}" id="sigCurrentImg" alt="Firma actual"
                                style="max-height:70px;max-width:240px;object-fit:contain;display:block;">
                         </div>
-                        <span class="text-muted small">Firma guardada</span>
+                        <span class="text-muted small">{% translate "Firma guardada" %}</span>
                       </div>
                       {% endif %}
 
@@ -151,14 +152,14 @@
                                 style="display:block;cursor:crosshair;border-radius:4px;"></canvas>
                       </div>
                       <div class="mt-1 d-flex gap-2">
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="sigClear()"><i class="bi bi-eraser"></i> Limpiar</button>
-                        <button type="button" class="btn btn-success btn-sm" onclick="sigSave()"><i class="bi bi-check2"></i> Guardar firma</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="sigClear()"><i class="bi bi-eraser"></i> {% translate "Limpiar" %}</button>
+                        <button type="button" class="btn btn-success btn-sm" onclick="sigSave()"><i class="bi bi-check2"></i> {% translate "Guardar firma" %}</button>
                       </div>
-                      <div class="form-text">Dibuja tu firma con el ratón o el dedo. Haz clic en <strong>Guardar firma</strong> cuando termines.</div>
+                      <div class="form-text">{% translate "Dibuja tu firma con el ratón o el dedo. Haz clic en" %} <strong>{% translate "Guardar firma" %}</strong> {% translate "cuando termines." %}</div>
                     </div>
 
                     <button type="submit" name="update_profile" class="btn btn-primary">
-                        <i class="bi bi-check-circle"></i> Actualizar Perfil
+                        <i class="bi bi-check-circle"></i> {% translate "Actualizar Perfil" %}
                     </button>
                 </form>
             </div>
@@ -168,7 +169,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-shield-lock"></i> Cambiar Contraseña
+                    <i class="bi bi-shield-lock"></i> {% translate "Cambiar Contraseña" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -197,7 +198,7 @@
                             </div>
                         {% endif %}
                         <div class="form-text">
-                            Tu contraseña debe contener al menos 8 caracteres y no ser demasiado común.
+                            {% translate "Tu contraseña debe contener al menos 8 caracteres y no ser demasiado común." %}
                         </div>
                     </div>
                     
@@ -214,7 +215,7 @@
                     </div>
                     
                     <button type="submit" name="change_password" class="btn btn-warning">
-                        <i class="bi bi-key"></i> Cambiar Contraseña
+                        <i class="bi bi-key"></i> {% translate "Cambiar Contraseña" %}
                     </button>
                 </form>
             </div>
@@ -226,7 +227,7 @@
         <div class="card">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-info-circle"></i> Información de la Cuenta
+                    <i class="bi bi-info-circle"></i> {% translate "Información de la Cuenta" %}
                 </h6>
             </div>
             <div class="card-body">
@@ -241,38 +242,38 @@
                 <hr>
                 
                 <div class="row mb-2">
-                    <div class="col-5"><strong>Usuario:</strong></div>
+                    <div class="col-5"><strong>{% translate "Usuario:" %}</strong></div>
                     <div class="col-7">{{ user.username }}</div>
                 </div>
                 
                 <div class="row mb-2">
-                    <div class="col-5"><strong>Email:</strong></div>
+                    <div class="col-5"><strong>{% translate "Email:" %}</strong></div>
                     <div class="col-7">{{ user.email|default:"No especificado" }}</div>
                 </div>
                 
                 <div class="row mb-2">
-                    <div class="col-5"><strong>Teléfono:</strong></div>
+                    <div class="col-5"><strong>{% translate "Teléfono:" %}</strong></div>
                     <div class="col-7">{{ user_profile.phone|default:"No especificado" }}</div>
                 </div>
                 
                 <div class="row mb-2">
-                    <div class="col-5"><strong>Rol:</strong></div>
+                    <div class="col-5"><strong>{% translate "Rol:" %}</strong></div>
                     <div class="col-7">
                         {% if user.groups.all.0.name == 'Agentes' %}
-                            <span class="badge bg-primary">Agente</span>
+                            <span class="badge bg-primary">{% translate "Agente" %}</span>
                         {% else %}
-                            <span class="badge bg-secondary">Usuario</span>
+                            <span class="badge bg-secondary">{% translate "Usuario" %}</span>
                         {% endif %}
                     </div>
                 </div>
                 
                 <div class="row mb-2">
-                    <div class="col-5"><strong>Miembro desde:</strong></div>
+                    <div class="col-5"><strong>{% translate "Miembro desde:" %}</strong></div>
                     <div class="col-7">{{ user.date_joined|date:"d/m/Y" }}</div>
                 </div>
                 
                 <div class="row mb-2">
-                    <div class="col-5"><strong>Último acceso:</strong></div>
+                    <div class="col-5"><strong>{% translate "Último acceso:" %}</strong></div>
                     <div class="col-7">{{ user.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</div>
                 </div>
             </div>
@@ -282,14 +283,14 @@
         <div class="card mt-3">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-activity"></i> Actividad Reciente
+                    <i class="bi bi-activity"></i> {% translate "Actividad Reciente" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
                     <i class="bi bi-ticket-perforated text-primary me-2"></i>
                     <div>
-                        <div class="fw-bold">Tickets Creados</div>
+                        <div class="fw-bold">{% translate "Tickets Creados" %}</div>
                         <small class="text-muted">{{ user.created_tickets.count }} total</small>
                     </div>
                 </div>
@@ -297,7 +298,7 @@
                 <div class="d-flex align-items-center mb-2">
                     <i class="bi bi-chat-dots text-success me-2"></i>
                     <div>
-                        <div class="fw-bold">Comentarios</div>
+                        <div class="fw-bold">{% translate "Comentarios" %}</div>
                         <small class="text-muted">{{ user.ticketcomment_set.count }} total</small>
                     </div>
                 </div>
@@ -305,7 +306,7 @@
                 <div class="d-flex align-items-center mb-2">
                     <i class="bi bi-journal-text text-info me-2"></i>
                     <div>
-                        <div class="fw-bold">Notas Asociadas</div>
+                        <div class="fw-bold">{% translate "Notas Asociadas" %}</div>
                         <small class="text-muted">{{ user.notes.count }} total</small>
                     </div>
                 </div>
@@ -314,7 +315,7 @@
                 <div class="d-flex align-items-center mb-2">
                     <i class="bi bi-person-check text-warning me-2"></i>
                     <div>
-                        <div class="fw-bold">Tickets Asignados</div>
+                        <div class="fw-bold">{% translate "Tickets Asignados" %}</div>
                         <small class="text-muted">{{ user.assigned_tickets.count }} total</small>
                     </div>
                 </div>
@@ -322,7 +323,7 @@
                 <div class="d-flex align-items-center">
                     <i class="bi bi-journal-plus text-primary me-2"></i>
                     <div>
-                        <div class="fw-bold">Notas Creadas</div>
+                        <div class="fw-bold">{% translate "Notas Creadas" %}</div>
                         <small class="text-muted">{{ user.created_notes.count }} total</small>
                     </div>
                 </div>
@@ -335,21 +336,20 @@
         <div class="card mt-3">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-globe"></i> Acceso Público a Tareas
+                    <i class="bi bi-globe"></i> {% translate "Acceso Público a Tareas" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="alert alert-info">
-                    <h6><i class="bi bi-info-circle"></i> ¿Qué es esto?</h6>
+                    <h6><i class="bi bi-info-circle"></i> {% translate "¿Qué es esto?" %}</h6>
                     <p class="mb-0 small">
-                        Este enlace te permite acceder a tus tareas asignadas y crear gestiones de tareas 
-                        sin necesidad de iniciar sesión. Ideal para acceso rápido desde dispositivos móviles.
+                        {% translate "Este enlace te permite acceder a tus tareas asignadas y crear gestiones de tareas sin necesidad de iniciar sesión. Ideal para acceso rápido desde dispositivos móviles." %}
                     </p>
                 </div>
                 
                 <div class="mb-3">
                     <label class="form-label">
-                        <i class="bi bi-link-45deg"></i> Tu enlace personal
+                        <i class="bi bi-link-45deg"></i> {% translate "Tu enlace personal" %}
                     </label>
                     <div class="input-group">
                         <input type="url" 
@@ -360,12 +360,12 @@
                         <button class="btn btn-outline-secondary btn-sm" 
                                 type="button" 
                                 onclick="copyToClipboard('publicTaskUrl')"
-                                title="Copiar enlace">
+                                title="{% translate 'Copiar enlace' %}">
                             <i class="bi bi-clipboard"></i>
                         </button>
                     </div>
                     <small class="text-muted">
-                        Comparte este enlace solo con personas de confianza
+                        {% translate "Comparte este enlace solo con personas de confianza" %}
                     </small>
                 </div>
                 
@@ -373,7 +373,7 @@
                     <a href="{{ public_task_url }}" 
                        target="_blank" 
                        class="btn btn-success btn-sm">
-                        <i class="bi bi-box-arrow-up-right"></i> Probar Enlace
+                        <i class="bi bi-box-arrow-up-right"></i> {% translate "Probar Enlace" %}
                     </a>
                     
                     <form method="post" class="d-inline">
@@ -382,7 +382,7 @@
                                 name="regenerate_token" 
                                 class="btn btn-warning btn-sm"
                                 onclick="return confirm('¿Estás seguro? El enlace anterior dejará de funcionar.')">
-                            <i class="bi bi-arrow-clockwise"></i> Regenerar Enlace
+                            <i class="bi bi-arrow-clockwise"></i> {% translate "Regenerar Enlace" %}
                         </button>
                     </form>
                 </div>
@@ -396,7 +396,7 @@
             <div class="card-header">
                 <h5 class="mb-0">
                     <i class="bi bi-envelope-heart text-primary"></i>
-                    Formulario de Contacto Público
+                    {% translate "Formulario de Contacto Público" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -404,10 +404,9 @@
                     <div class="d-flex align-items-center">
                         <i class="bi bi-info-circle me-2"></i>
                         <div>
-                            <strong>¿Qué es esto?</strong><br>
+                            <strong>{% translate "¿Qué es esto?" %}</strong><br>
                             <small>
-                                Permite que visitantes envíen formularios de contacto para crear empresas en tu cuenta. 
-                                Ideal para freelancers y consultores que quieren automatizar la captura de leads.
+                                {% translate "Permite que visitantes envíen formularios de contacto para crear empresas en tu cuenta. Ideal para freelancers y consultores que quieren automatizar la captura de leads." %}
                             </small>
                         </div>
                     </div>
@@ -426,12 +425,12 @@
                             {% if user_profile.enable_public_contact_form %}
                                 <span class="text-success">
                                     <i class="bi bi-check-circle"></i>
-                                    Formulario de contacto activo
+                                    {% translate "Formulario de contacto activo" %}
                                 </span>
                             {% else %}
                                 <span class="text-muted">
                                     <i class="bi bi-x-circle"></i>
-                                    Formulario de contacto desactivado
+                                    {% translate "Formulario de contacto desactivado" %}
                                 </span>
                             {% endif %}
                         </label>
@@ -443,7 +442,7 @@
                 <div class="mb-3" id="contactFormSection">
                     <label class="form-label">
                         <i class="bi bi-link-45deg"></i> 
-                        URL de tu formulario de contacto
+                        {% translate "URL de tu formulario de contacto" %}
                     </label>
                     <div class="input-group">
                         <input type="url" 
@@ -454,12 +453,12 @@
                         <button class="btn btn-outline-secondary btn-sm" 
                                 type="button" 
                                 onclick="copyToClipboard('publicContactFormUrl')"
-                                title="Copiar enlace">
+                                title="{% translate 'Copiar enlace' %}">
                             <i class="bi bi-clipboard"></i>
                         </button>
                     </div>
                     <small class="text-muted">
-                        Comparte este enlace en tu sitio web, redes sociales o tarjetas de visita
+                        {% translate "Comparte este enlace en tu sitio web, redes sociales o tarjetas de visita" %}
                     </small>
                 </div>
                 
@@ -467,12 +466,12 @@
                     <a href="{{ public_contact_form_url }}" 
                        target="_blank" 
                        class="btn btn-primary btn-sm">
-                        <i class="bi bi-eye"></i> Ver Formulario
+                        <i class="bi bi-eye"></i> {% translate "Ver Formulario" %}
                     </a>
                     
                     <a href="{% url 'contact_submissions_list' %}" 
                        class="btn btn-info btn-sm">
-                        <i class="bi bi-inbox"></i> Ver Formularios Recibidos
+                        <i class="bi bi-inbox"></i> {% translate "Ver Formularios Recibidos" %}
                     </a>
                 </div>
                 {% endif %}
@@ -487,7 +486,7 @@
                                     <i class="bi bi-inbox-fill"></i>
                                 </div>
                                 <div class="fw-bold">{{ contact_form_stats.pending|default:0 }}</div>
-                                <small class="text-muted">Pendientes</small>
+                                <small class="text-muted">{% translate "Pendientes" %}</small>
                             </div>
                         </div>
                     </div>
@@ -498,7 +497,7 @@
                                     <i class="bi bi-check-circle-fill"></i>
                                 </div>
                                 <div class="fw-bold">{{ contact_form_stats.approved|default:0 }}</div>
-                                <small class="text-muted">Aprobados</small>
+                                <small class="text-muted">{% translate "Aprobados" %}</small>
                             </div>
                         </div>
                     </div>
@@ -509,7 +508,7 @@
                                     <i class="bi bi-building-fill"></i>
                                 </div>
                                 <div class="fw-bold">{{ contact_form_stats.company_created|default:0 }}</div>
-                                <small class="text-muted">Empresas Creadas</small>
+                                <small class="text-muted">{% translate "Empresas Creadas" %}</small>
                             </div>
                         </div>
                     </div>
@@ -524,26 +523,26 @@
         <div class="card mt-3">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-link-45deg"></i> Enlaces Rápidos
+                    <i class="bi bi-link-45deg"></i> {% translate "Enlaces Rápidos" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <a href="{% url 'dashboard' %}" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-speedometer2"></i> Dashboard
+                        <i class="bi bi-speedometer2"></i> {% translate "Dashboard" %}
                     </a>
                     <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-ticket-perforated"></i> Mis Tickets
+                        <i class="bi bi-ticket-perforated"></i> {% translate "Mis Tickets" %}
                     </a>
                     <a href="{% url 'ticket_create' %}" class="btn btn-outline-success btn-sm">
-                        <i class="bi bi-plus-circle"></i> Crear Ticket
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Ticket" %}
                     </a>
                     <a href="{% url 'my_notes' %}" class="btn btn-outline-info btn-sm">
-                        <i class="bi bi-journal-text"></i> Mis Notas
+                        <i class="bi bi-journal-text"></i> {% translate "Mis Notas" %}
                     </a>
                     {% if user.groups.all.0.name == 'Agentes' %}
                     <a href="{% url 'notes_list' %}" class="btn btn-outline-warning btn-sm">
-                        <i class="bi bi-journal-text"></i> Todas las Notas
+                        <i class="bi bi-journal-text"></i> {% translate "Todas las Notas" %}
                     </a>
                     {% endif %}
                 </div>

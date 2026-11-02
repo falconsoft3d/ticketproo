@@ -1,14 +1,15 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <nav aria-label="breadcrumb">
+    <nav aria-label="{% translate 'breadcrumb' %}">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'contact_generator_list' %}">Generadores de Contactos</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'contact_generator_list' %}">{% translate "Generadores de Contactos" %}</a></li>
             <li class="breadcrumb-item active" aria-current="page">{{ generator.title }}</li>
         </ol>
     </nav>
@@ -27,23 +28,23 @@
         <div class="btn-group">
             <a href="{% url 'contact_generator_edit' generator.pk %}" class="btn btn-primary">
                 <i class="bi bi-pencil me-1"></i>
-                Editar
+                {% translate "Editar" %}
             </a>
             <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown">
-                <span class="visually-hidden">Toggle Dropdown</span>
+                <span class="visually-hidden">{% translate "Toggle Dropdown" %}</span>
             </button>
             <ul class="dropdown-menu">
                 <li>
                     <a class="dropdown-item" href="{% url 'contact_generator_toggle_active' generator.pk %}">
                         <i class="bi bi-{% if generator.is_active %}pause{% else %}play{% endif %} me-1"></i>
-                        {% if generator.is_active %}Desactivar{% else %}Activar{% endif %}
+                        {% if generator.is_active %}{% translate "Desactivar" %}{% else %}{% translate "Activar" %}{% endif %}
                     </a>
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                     <a class="dropdown-item text-danger" href="{% url 'contact_generator_delete' generator.pk %}">
                         <i class="bi bi-trash me-1"></i>
-                        Eliminar
+                        {% translate "Eliminar" %}
                     </a>
                 </li>
             </ul>
@@ -54,7 +55,7 @@
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                 {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% translate 'Close' %}"></button>
             </div>
         {% endfor %}
     {% endif %}
@@ -66,7 +67,7 @@
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="bi bi-info-circle me-2"></i>
-                        Información General
+                        {% translate "Información General" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -76,34 +77,34 @@
 
                     <div class="row">
                         <div class="col-md-6">
-                            <h6 class="text-muted">Estado</h6>
+                            <h6 class="text-muted">{% translate "Estado" %}</h6>
                             <p>
                                 {% if generator.is_active %}
                                     <span class="badge bg-success">
                                         <i class="bi bi-check-circle me-1"></i>
-                                        Activo
+                                        {% translate "Activo" %}
                                     </span>
                                 {% else %}
                                     <span class="badge bg-danger">
                                         <i class="bi bi-x-circle me-1"></i>
-                                        Inactivo
+                                        {% translate "Inactivo" %}
                                     </span>
                                 {% endif %}
                             </p>
                         </div>
                         <div class="col-md-6">
-                            <h6 class="text-muted">Creado por</h6>
+                            <h6 class="text-muted">{% translate "Creado por" %}</h6>
                             <p>{{ generator.created_by.get_full_name|default:generator.created_by.username }}</p>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6">
-                            <h6 class="text-muted">Fecha de creación</h6>
+                            <h6 class="text-muted">{% translate "Fecha de creación" %}</h6>
                             <p>{{ generator.created_at|date:"d/m/Y H:i" }}</p>
                         </div>
                         <div class="col-md-6">
-                            <h6 class="text-muted">Última actualización</h6>
+                            <h6 class="text-muted">{% translate "Última actualización" %}</h6>
                             <p>{{ generator.updated_at|date:"d/m/Y H:i" }}</p>
                         </div>
                     </div>
@@ -116,7 +117,7 @@
                     <div class="card-header">
                         <h5 class="mb-0">
                             <i class="bi bi-link-45deg me-2"></i>
-                            URL Pública
+                            {% translate "URL Pública" %}
                         </h5>
                     </div>
                     <div class="card-body">
@@ -127,16 +128,16 @@
                             <button class="btn btn-outline-secondary" type="button" 
                                     onclick="copyToClipboard('public-url')">
                                 <i class="bi bi-clipboard"></i>
-                                Copiar
+                                {% translate "Copiar" %}
                             </button>
                             <a href="{{ generator.get_public_url }}" 
                                target="_blank" class="btn btn-outline-primary">
                                 <i class="bi bi-box-arrow-up-right"></i>
-                                Abrir
+                                {% translate "Abrir" %}
                             </a>
                         </div>
                         <small class="text-muted">
-                            Comparte esta URL para que las personas puedan contactarte
+                            {% translate "Comparte esta URL para que las personas puedan contactarte" %}
                         </small>
                     </div>
                 </div>
@@ -147,7 +148,7 @@
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="bi bi-collection me-2"></i>
-                        Campos Configurados
+                        {% translate "Campos Configurados" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -156,19 +157,19 @@
                             <ul class="list-unstyled">
                                 <li class="mb-2">
                                     <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                    Nombre (obligatorio)
+                                    {% translate "Nombre (obligatorio)" %}
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                    Email (obligatorio)
+                                    {% translate "Email (obligatorio)" %}
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-{% if generator.collect_phone %}check-circle-fill text-success{% else %}x-circle-fill text-muted{% endif %} me-2"></i>
-                                    Teléfono
+                                    {% translate "Teléfono" %}
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-{% if generator.collect_company %}check-circle-fill text-success{% else %}x-circle-fill text-muted{% endif %} me-2"></i>
-                                    Empresa
+                                    {% translate "Empresa" %}
                                 </li>
                             </ul>
                         </div>
@@ -176,11 +177,11 @@
                             <ul class="list-unstyled">
                                 <li class="mb-2">
                                     <i class="bi bi-{% if generator.collect_position %}check-circle-fill text-success{% else %}x-circle-fill text-muted{% endif %} me-2"></i>
-                                    Cargo/Posición
+                                    {% translate "Cargo/Posición" %}
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-{% if generator.collect_notes %}check-circle-fill text-success{% else %}x-circle-fill text-muted{% endif %} me-2"></i>
-                                    Notas adicionales
+                                    {% translate "Notas adicionales" %}
                                 </li>
                             </ul>
                         </div>
@@ -194,10 +195,10 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
                             <i class="bi bi-people me-2"></i>
-                            Contactos Recientes
+                            {% translate "Contactos Recientes" %}
                         </h5>
                         <a href="{% url 'contact_list' %}?source={{ generator.title|urlencode }}" class="btn btn-sm btn-outline-primary">
-                            Ver Todos
+                            {% translate "Ver Todos" %}
                         </a>
                     </div>
                     <div class="card-body">
@@ -205,10 +206,10 @@
                             <table class="table table-sm">
                                 <thead>
                                     <tr>
-                                        <th>Nombre</th>
-                                        <th>Email</th>
-                                        <th>Empresa</th>
-                                        <th>Fecha</th>
+                                        <th>{% translate "Nombre" %}</th>
+                                        <th>{% translate "Email" %}</th>
+                                        <th>{% translate "Empresa" %}</th>
+                                        <th>{% translate "Fecha" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -235,7 +236,7 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="bi bi-graph-up me-1"></i>
-                        Estadísticas
+                        {% translate "Estadísticas" %}
                     </h6>
                 </div>
                 <div class="card-body text-center">
@@ -244,7 +245,7 @@
                             <a href="{% url 'contact_list' %}?source={{ generator.title|urlencode }}" class="text-decoration-none">
                                 <div class="bg-primary text-white p-3 rounded mb-3 hover-shadow" style="transition: all 0.3s ease;">
                                     <h2 class="mb-0">{{ contacts_count }}</h2>
-                                    <small>Contactos Generados</small>
+                                    <small>{% translate "Contactos Generados" %}</small>
                                     <i class="bi bi-arrow-right-circle float-end"></i>
                                 </div>
                             </a>
@@ -258,12 +259,12 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="bi bi-palette me-1"></i>
-                        Configuración de Diseño
+                        {% translate "Configuración de Diseño" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label small text-muted">Color de fondo</label>
+                        <label class="form-label small text-muted">{% translate "Color de fondo" %}</label>
                         <div class="d-flex align-items-center">
                             <div class="rounded me-2" 
                                  style="width: 30px; height: 30px; background-color: {{ generator.background_color }};"></div>
@@ -278,16 +279,16 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="bi bi-chat-square-text me-1"></i>
-                        Mensajes
+                        {% translate "Mensajes" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <h6 class="small text-muted">Mensaje de Bienvenida</h6>
+                        <h6 class="small text-muted">{% translate "Mensaje de Bienvenida" %}</h6>
                         <p class="small">{{ generator.welcome_message }}</p>
                     </div>
                     <div>
-                        <h6 class="small text-muted">Mensaje de Éxito</h6>
+                        <h6 class="small text-muted">{% translate "Mensaje de Éxito" %}</h6>
                         <p class="small">{{ generator.success_message }}</p>
                     </div>
                 </div>

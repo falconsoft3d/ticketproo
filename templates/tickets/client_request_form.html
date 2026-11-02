@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -9,14 +10,14 @@
                 <h2>
                     <i class="bi bi-file-text me-2"></i>
                     {% if client_request %}
-                        Editar Solicitud
+                        {% translate "Editar Solicitud" %}
                     {% else %}
-                        Nueva Solicitud al Cliente
+                        {% translate "Nueva Solicitud al Cliente" %}
                     {% endif %}
                 </h2>
                 <a href="{% url 'client_request_list' %}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-2"></i>
-                    Volver
+                    {% translate "Volver" %}
                 </a>
             </div>
         </div>
@@ -37,7 +38,7 @@
                             {% if form.title.errors %}
                                 <div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">Título descriptivo de la solicitud</div>
+                            <div class="form-text">{% translate "Título descriptivo de la solicitud" %}</div>
                         </div>
 
                         <div class="mb-3">
@@ -48,7 +49,7 @@
                             {% if form.description.errors %}
                                 <div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">Describe detalladamente lo que necesitas del cliente</div>
+                            <div class="form-text">{% translate "Describe detalladamente lo que necesitas del cliente" %}</div>
                         </div>
 
                         <div class="mb-3">
@@ -59,7 +60,7 @@
                             {% if form.requested_to.errors %}
                                 <div class="text-danger small mt-1">{{ form.requested_to.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">Nombre de la persona a quien se solicita</div>
+                            <div class="form-text">{% translate "Nombre de la persona a quien se solicita" %}</div>
                         </div>
 
                         <div class="mb-3">
@@ -70,7 +71,7 @@
                             {% if form.company.errors %}
                                 <div class="text-danger small mt-1">{{ form.company.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">Empresa del cliente</div>
+                            <div class="form-text">{% translate "Empresa del cliente" %}</div>
                         </div>
 
                         <div class="mb-3">
@@ -84,17 +85,17 @@
                             {% endif %}
                             <div class="form-text">
                                 <i class="bi bi-info-circle me-1"></i>
-                                Puedes adjuntar documentos de referencia para el cliente (PDF, Word, Excel, imágenes, etc.)
+                                {% translate "Puedes adjuntar documentos de referencia para el cliente (PDF, Word, Excel, imágenes, etc.)" %}
                             </div>
                         </div>
 
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'client_request_list' %}" class="btn btn-secondary">
-                                Cancelar
+                                {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save me-2"></i>
-                                {% if client_request %}Actualizar{% else %}Crear{% endif %} Solicitud
+                                {% if client_request %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Solicitud" %}
                             </button>
                         </div>
                     </form>
@@ -107,16 +108,16 @@
                 <div class="card-body">
                     <h5 class="card-title">
                         <i class="bi bi-info-circle me-2"></i>
-                        Información
+                        {% translate "Información" %}
                     </h5>
                     <p class="card-text">
-                        Las solicitudes al cliente permiten solicitar información o documentos específicos.
+                        {% translate "Las solicitudes al cliente permiten solicitar información o documentos específicos." %}
                     </p>
                     <ul class="small">
-                        <li>La secuencia se genera automáticamente</li>
-                        <li>El cliente podrá responder con texto y adjuntos</li>
-                        <li>Los agentes ven todas las solicitudes</li>
-                        <li>Los clientes solo ven las de su empresa</li>
+                        <li>{% translate "La secuencia se genera automáticamente" %}</li>
+                        <li>{% translate "El cliente podrá responder con texto y adjuntos" %}</li>
+                        <li>{% translate "Los agentes ven todas las solicitudes" %}</li>
+                        <li>{% translate "Los clientes solo ven las de su empresa" %}</li>
                     </ul>
                 </div>
             </div>

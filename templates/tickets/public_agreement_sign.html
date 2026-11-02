@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block extra_css %}
@@ -242,7 +243,7 @@
                 <div class="col">
                     <h1><i class="bi bi-pen"></i> {{ agreement.title }}</h1>
                     <h4 class="mb-2">{{ agreement.company.name }}</h4>
-                    <p class="mb-0">Documento para firma digital</p>
+                    <p class="mb-0">{% translate "Documento para firma digital" %}</p>
                 </div>
             </div>
         </div>
@@ -256,14 +257,14 @@
                 <div class="col-md-3 mb-3">
                     <div class="meta-card">
                         <span class="meta-icon">📅</span>
-                        <h6>Fecha de Creación</h6>
+                        <h6>{% translate "Fecha de Creación" %}</h6>
                         <div class="fw-bold text-success">{{ agreement.created_at|date:"d/m/Y" }}</div>
                     </div>
                 </div>
                 <div class="col-md-3 mb-3">
                     <div class="meta-card">
                         <span class="meta-icon">👥</span>
-                        <h6>Progreso de Firmas</h6>
+                        <h6>{% translate "Progreso de Firmas" %}</h6>
                         <div class="fw-bold text-info">{{ agreement.signature_count }} / {{ agreement.max_signers }}</div>
                         <div class="progress mt-2" style="height: 8px;">
                             {% widthratio agreement.signature_count agreement.max_signers 100 as progress %}
@@ -274,13 +275,13 @@
                 <div class="col-md-3 mb-3">
                     <div class="meta-card">
                         <span class="meta-icon">🛡️</span>
-                        <h6>Estado del Acuerdo</h6>
+                        <h6>{% translate "Estado del Acuerdo" %}</h6>
                         {% if agreement.status == 'published' %}
-                            <div class="fw-bold text-success">✅ Abierto para firmas</div>
+                            <div class="fw-bold text-success">{% translate "✅ Abierto para firmas" %}</div>
                         {% elif agreement.status == 'completed' %}
-                            <div class="fw-bold text-primary">🎉 Completado</div>
+                            <div class="fw-bold text-primary">{% translate "🎉 Completado" %}</div>
                         {% elif agreement.status == 'expired' %}
-                            <div class="fw-bold text-danger">⏰ Vencido</div>
+                            <div class="fw-bold text-danger">{% translate "⏰ Vencido" %}</div>
                         {% endif %}
                         <div class="status-indicator"></div>
                     </div>
@@ -289,12 +290,12 @@
                     <div class="meta-card">
                         {% if agreement.expires_at %}
                             <span class="meta-icon">⏰</span>
-                            <h6>Válido hasta</h6>
+                            <h6>{% translate "Válido hasta" %}</h6>
                             <div class="fw-bold text-warning">{{ agreement.expires_at|date:"d/m/Y H:i" }}</div>
                         {% else %}
                             <span class="meta-icon">♾️</span>
-                            <h6>Vigencia</h6>
-                            <div class="fw-bold text-primary">Sin vencimiento</div>
+                            <h6>{% translate "Vigencia" %}</h6>
+                            <div class="fw-bold text-primary">{% translate "Sin vencimiento" %}</div>
                         {% endif %}
                     </div>
                 </div>
@@ -328,7 +329,7 @@
                                                      style="max-height: 60px; max-width: 150px;">
                                             {% else %}
                                                 <span class="text-muted">
-                                                    <i class="bi bi-pen"></i> Firma digital
+                                                    <i class="bi bi-pen"></i> {% translate "Firma digital" %}
                                                 </span>
                                             {% endif %}
                                         </div>
@@ -355,9 +356,9 @@
                 <div class="sticky-top" style="top: 2rem;">
                     {% if agreement.status == 'published' and agreement.signature_count < agreement.max_signers %}
                         <div class="signature-section">
-                            <h5><i class="bi bi-pen-fill"></i> Tu Firma Digital</h5>
+                            <h5><i class="bi bi-pen-fill"></i> {% translate "Tu Firma Digital" %}</h5>
                             <p class="text-muted">
-                                Completa tus datos y firma para aceptar este acuerdo
+                                {% translate "Completa tus datos y firma para aceptar este acuerdo" %}
                             </p>
 
                             <form method="post" id="signature-form">
@@ -387,7 +388,7 @@
                                 <div class="mb-4">
                                     <label class="form-label d-flex align-items-center">
                                         <span class="me-2">✍️</span>
-                                        <span>Firma Digital <span class="text-danger">*</span></span>
+                                        <span>{% translate "Firma Digital" %} <span class="text-danger">*</span></span>
                                     </label>
                                     <div class="position-relative">
                                         <canvas id="signature-pad" class="signature-canvas w-100" 
@@ -400,27 +401,27 @@
                                             <div class="col-md-8">
                                                 <div class="d-flex gap-2 flex-wrap">
                                                     <button type="button" id="clear-signature" class="btn btn-outline-secondary btn-sm">
-                                                        <i class="bi bi-eraser"></i> Limpiar Todo
+                                                        <i class="bi bi-eraser"></i> {% translate "Limpiar Todo" %}
                                                     </button>
                                                     <button type="button" id="undo-signature" class="btn btn-outline-secondary btn-sm">
-                                                        <i class="bi bi-arrow-counterclockwise"></i> Deshacer
+                                                        <i class="bi bi-arrow-counterclockwise"></i> {% translate "Deshacer" %}
                                                     </button>
                                                     <button type="button" class="btn btn-outline-info btn-sm" onclick="showSigningTips()">
-                                                        <i class="bi bi-question-circle"></i> Ayuda
+                                                        <i class="bi bi-question-circle"></i> {% translate "Ayuda" %}
                                                     </button>
                                                 </div>
                                             </div>
                                             <div class="col-md-4 text-end">
                                                 <small class="text-muted">
-                                                    <i class="bi bi-mouse2"></i> Mouse | 
-                                                    <i class="bi bi-phone"></i> Táctil
+                                                    <i class="bi bi-mouse2"></i> {% translate "Mouse |" %} 
+                                                    <i class="bi bi-phone"></i> {% translate "Táctil" %}
                                                 </small>
                                             </div>
                                         </div>
                                         <div class="mt-2 p-2 bg-light rounded">
                                             <small class="text-muted d-block">
                                                 <i class="bi bi-info-circle text-info me-1"></i>
-                                                <strong>Consejos:</strong> Firma de forma natural, usa trazos continuos y asegúrate de que sea legible.
+                                                <strong>{% translate "Consejos:" %}</strong> {% translate "Firma de forma natural, usa trazos continuos y asegúrate de que sea legible." %}
                                             </small>
                                         </div>
                                     </div>
@@ -430,7 +431,7 @@
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="accept-terms" required>
                                         <label class="form-check-label" for="accept-terms">
-                                            Acepto los términos y condiciones de este acuerdo <span class="text-danger">*</span>
+                                            {% translate "Acepto los términos y condiciones de este acuerdo" %} <span class="text-danger">*</span>
                                         </label>
                                     </div>
                                 </div>
@@ -438,7 +439,7 @@
                                 <div class="d-grid">
                                     <button type="submit" class="btn btn-success btn-lg position-relative" id="submit-signature" disabled>
                                         <i class="bi bi-pen-fill me-2"></i>
-                                        <span class="fw-bold">Firmar Acuerdo Digitalmente</span>
+                                        <span class="fw-bold">{% translate "Firmar Acuerdo Digitalmente" %}</span>
                                         <div class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning">
                                             🔒
                                         </div>
@@ -448,11 +449,11 @@
                                 <div class="text-center mt-3">
                                     <small class="text-muted d-block">
                                         <i class="bi bi-shield-lock-fill text-success me-1"></i>
-                                        <strong>Seguro y Legal:</strong> Tu firma es legalmente vinculante
+                                        <strong>{% translate "Seguro y Legal:" %}</strong> {% translate "Tu firma es legalmente vinculante" %}
                                     </small>
                                     <small class="text-muted d-block mt-1">
                                         <i class="bi bi-clock-history text-info me-1"></i>
-                                        Proceso completamente digital y rastreable
+                                        {% translate "Proceso completamente digital y rastreable" %}
                                     </small>
                                 </div>
                             </form>
@@ -460,20 +461,20 @@
                     {% elif agreement.status == 'completed' %}
                         <div class="alert alert-success text-center">
                             <i class="bi bi-check-circle display-4"></i>
-                            <h5 class="mt-2">Acuerdo Completado</h5>
-                            <p class="mb-0">Este acuerdo ha alcanzado el número máximo de firmas.</p>
+                            <h5 class="mt-2">{% translate "Acuerdo Completado" %}</h5>
+                            <p class="mb-0">{% translate "Este acuerdo ha alcanzado el número máximo de firmas." %}</p>
                         </div>
                     {% elif agreement.status == 'expired' %}
                         <div class="alert alert-danger text-center">
                             <i class="bi bi-clock-history display-4"></i>
-                            <h5 class="mt-2">Acuerdo Vencido</h5>
-                            <p class="mb-0">Este acuerdo ya no acepta nuevas firmas.</p>
+                            <h5 class="mt-2">{% translate "Acuerdo Vencido" %}</h5>
+                            <p class="mb-0">{% translate "Este acuerdo ya no acepta nuevas firmas." %}</p>
                         </div>
                     {% else %}
                         <div class="alert alert-warning text-center">
                             <i class="bi bi-pause-circle display-4"></i>
-                            <h5 class="mt-2">No Disponible</h5>
-                            <p class="mb-0">Este acuerdo no está abierto para firmas en este momento.</p>
+                            <h5 class="mt-2">{% translate "No Disponible" %}</h5>
+                            <p class="mb-0">{% translate "Este acuerdo no está abierto para firmas en este momento." %}</p>
                         </div>
                     {% endif %}
 
@@ -485,7 +486,7 @@
                                         type="button" 
                                         data-bs-toggle="dropdown" 
                                         aria-expanded="false">
-                                    <i class="bi bi-download"></i> Descargar PDF Firmado
+                                    <i class="bi bi-download"></i> {% translate "Descargar PDF Firmado" %}
                                 </button>
                                 <ul class="dropdown-menu w-100">
                                     {% for signature in agreement.signatures.all %}
@@ -501,7 +502,7 @@
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <span class="dropdown-item-text text-muted small">
-                                            <i class="bi bi-info-circle"></i> Selecciona una firma para descargar el PDF
+                                            <i class="bi bi-info-circle"></i> {% translate "Selecciona una firma para descargar el PDF" %}
                                         </span>
                                     </li>
                                 </ul>

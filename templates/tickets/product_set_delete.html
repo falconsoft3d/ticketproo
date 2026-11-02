@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Eliminar Conjunto de Productos{% endblock %}
+{% block title %}{% translate "Eliminar Conjunto de Productos" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -10,18 +11,18 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-trash"></i> Eliminar Conjunto de Productos
+                        <i class="bi bi-trash"></i> {% translate "Eliminar Conjunto de Productos" %}
                     </h5>
                     <a href="{% url 'product_set_detail' product_set.pk %}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-danger d-flex align-items-center" role="alert">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
                         <div>
-                            <strong>¿Estás seguro de que quieres eliminar este conjunto de productos?</strong>
-                            <br>Esta acción eliminará también todos los productos asociados y no se puede deshacer.
+                            <strong>{% translate "¿Estás seguro de que quieres eliminar este conjunto de productos?" %}</strong>
+                            <br>{% translate "Esta acción eliminará también todos los productos asociados y no se puede deshacer." %}
                         </div>
                     </div>
 
@@ -29,34 +30,34 @@
                         <div class="col-md-8">
                             <div class="card bg-light">
                                 <div class="card-body">
-                                    <h6 class="card-title">Detalles del Conjunto</h6>
+                                    <h6 class="card-title">{% translate "Detalles del Conjunto" %}</h6>
                                     <table class="table table-sm table-borderless mb-0">
                                         <tr>
-                                            <td><strong>Título:</strong></td>
+                                            <td><strong>{% translate "Título:" %}</strong></td>
                                             <td>{{ product_set.title }}</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Descripción:</strong></td>
+                                            <td><strong>{% translate "Descripción:" %}</strong></td>
                                             <td>{{ product_set.description|truncatechars:200 }}</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Productos:</strong></td>
+                                            <td><strong>{% translate "Productos:" %}</strong></td>
                                             <td>
                                                 <span class="badge bg-info">{{ product_set.product_count }}</span>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Estado:</strong></td>
+                                            <td><strong>{% translate "Estado:" %}</strong></td>
                                             <td>
                                                 {% if product_set.is_public %}
-                                                    <span class="badge bg-success">Público</span>
+                                                    <span class="badge bg-success">{% translate "Público" %}</span>
                                                 {% else %}
-                                                    <span class="badge bg-secondary">Privado</span>
+                                                    <span class="badge bg-secondary">{% translate "Privado" %}</span>
                                                 {% endif %}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Creado:</strong></td>
+                                            <td><strong>{% translate "Creado:" %}</strong></td>
                                             <td>{{ product_set.created_at|date:"d/m/Y H:i" }}</td>
                                         </tr>
                                     </table>
@@ -66,7 +67,7 @@
                             {% if product_set.product_count > 0 %}
                             <div class="card mt-3">
                                 <div class="card-header">
-                                    <h6 class="mb-0">Productos que se eliminarán</h6>
+                                    <h6 class="mb-0">{% translate "Productos que se eliminarán" %}</h6>
                                 </div>
                                 <div class="card-body">
                                     <div class="list-group">
@@ -81,7 +82,7 @@
                                             <p class="mb-1">{{ product.description|truncatechars:100 }}</p>
                                             {% if product.video_link %}
                                                 <small class="text-muted">
-                                                    <i class="bi bi-play-circle"></i> Con video
+                                                    <i class="bi bi-play-circle"></i> {% translate "Con video" %}
                                                 </small>
                                             {% endif %}
                                         </div>
@@ -95,12 +96,12 @@
 
                     <div class="d-flex justify-content-between mt-4">
                         <a href="{% url 'product_set_detail' product_set.pk %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
+                            <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                         </a>
                         <form method="post" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Confirmar Eliminación
+                                <i class="bi bi-trash"></i> {% translate "Confirmar Eliminación" %}
                             </button>
                         </form>
                     </div>

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy
 from django import forms
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
@@ -66,12 +67,12 @@ class CategoryForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre de la categoría'
+                'placeholder': gettext_lazy('Nombre de la categoría')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción de la categoría (opcional)'
+                'placeholder': gettext_lazy('Descripción de la categoría (opcional)')
             }),
             'color': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -83,10 +84,10 @@ class CategoryForm(forms.ModelForm):
             }),
         }
         labels = {
-            'name': 'Nombre',
-            'description': 'Descripción',
-            'color': 'Color',
-            'is_active': 'Activa',
+            'name': gettext_lazy('Nombre'),
+            'description': gettext_lazy('Descripción'),
+            'color': gettext_lazy('Color'),
+            'is_active': gettext_lazy('Activa'),
         }
 
 
@@ -99,12 +100,12 @@ class ProjectForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre del proyecto'
+                'placeholder': gettext_lazy('Nombre del proyecto')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción del proyecto (opcional)'
+                'placeholder': gettext_lazy('Descripción del proyecto (opcional)')
             }),
             'color': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -133,22 +134,22 @@ class ProjectForm(forms.ModelForm):
             }),
         }
         labels = {
-            'name': 'Nombre del Proyecto',
-            'description': 'Descripción',
-            'color': 'Color',
-            'status': 'Estado',
-            'start_date': 'Fecha de Inicio',
-            'end_date': 'Fecha de Fin',
-            'assigned_users': 'Usuarios Asignados',
-            'is_active': 'Activo',
+            'name': gettext_lazy('Nombre del Proyecto'),
+            'description': gettext_lazy('Descripción'),
+            'color': gettext_lazy('Color'),
+            'status': gettext_lazy('Estado'),
+            'start_date': gettext_lazy('Fecha de Inicio'),
+            'end_date': gettext_lazy('Fecha de Fin'),
+            'assigned_users': gettext_lazy('Usuarios Asignados'),
+            'is_active': gettext_lazy('Activo'),
         }
         help_texts = {
-            'name': 'Nombre único para identificar el proyecto',
-            'description': 'Descripción detallada del proyecto',
-            'color': 'Color que representará el proyecto en reportes',
-            'start_date': 'Fecha de inicio del proyecto (opcional)',
-            'end_date': 'Fecha estimada de finalización (opcional)',
-            'is_active': 'Si está marcado, el proyecto aparecerá en el registro de tiempo',
+            'name': gettext_lazy('Nombre único para identificar el proyecto'),
+            'description': gettext_lazy('Descripción detallada del proyecto'),
+            'color': gettext_lazy('Color que representará el proyecto en reportes'),
+            'start_date': gettext_lazy('Fecha de inicio del proyecto (opcional)'),
+            'end_date': gettext_lazy('Fecha estimada de finalización (opcional)'),
+            'is_active': gettext_lazy('Si está marcado, el proyecto aparecerá en el registro de tiempo'),
         }
     
     def clean(self):
@@ -179,15 +180,15 @@ class TicketForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Filtrar solo categorías activas
         self.fields['category'].queryset = Category.objects.filter(is_active=True)
-        self.fields['category'].empty_label = "Seleccionar categoría"
+        self.fields['category'].empty_label = gettext_lazy("Seleccionar categoría")
         
         # Configurar campo empresa
         self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
-        self.fields['company'].empty_label = "Seleccionar empresa (opcional)"
+        self.fields['company'].empty_label = gettext_lazy("Seleccionar empresa (opcional)")
         
         # Configurar campo proyecto
         self.fields['project'].queryset = Project.objects.filter(is_active=True).order_by('name')
-        self.fields['project'].empty_label = "Seleccionar proyecto (opcional)"
+        self.fields['project'].empty_label = gettext_lazy("Seleccionar proyecto (opcional)")
 
     class Meta:
         model = Ticket
@@ -195,12 +196,12 @@ class TicketForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ingresa el título del ticket'
+                'placeholder': gettext_lazy('Ingresa el título del ticket')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 5,
-                'placeholder': 'Describe detalladamente el problema o solicitud'
+                'placeholder': gettext_lazy('Describe detalladamente el problema o solicitud')
             }),
             'category': forms.Select(attrs={
                 'class': 'form-select'
@@ -216,7 +217,7 @@ class TicketForm(forms.ModelForm):
                 }),
             'hours': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: 2.5',
+                'placeholder': gettext_lazy('Ej: 2.5'),
                 'step': '0.5',
                 'min': '0'
             }),
@@ -228,15 +229,15 @@ class TicketForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción',
-            'category': 'Categoría',
-            'priority': 'Prioridad',
-            'status': 'Estado',
-                'ticket_type': 'Tipo de ticket',
-            'company': 'Empresa',
-            'project': 'Proyecto',
-            'hours': 'Horas estimadas/trabajadas',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción'),
+            'category': gettext_lazy('Categoría'),
+            'priority': gettext_lazy('Prioridad'),
+            'status': gettext_lazy('Estado'),
+                'ticket_type': gettext_lazy('Tipo de ticket'),
+            'company': gettext_lazy('Empresa'),
+            'project': gettext_lazy('Proyecto'),
+            'hours': gettext_lazy('Horas estimadas/trabajadas'),
         }
 
 
@@ -246,11 +247,11 @@ class UserTicketForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Filtrar solo categorías activas
         self.fields['category'].queryset = Category.objects.filter(is_active=True)
-        self.fields['category'].empty_label = "Seleccionar categoría"
+        self.fields['category'].empty_label = gettext_lazy("Seleccionar categoría")
         
         # Configurar campo empresa
         self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
-        self.fields['company'].empty_label = "Seleccionar empresa (opcional)"
+        self.fields['company'].empty_label = gettext_lazy("Seleccionar empresa (opcional)")
 
     class Meta:
         model = Ticket
@@ -258,12 +259,12 @@ class UserTicketForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ingresa el título del ticket'
+                'placeholder': gettext_lazy('Ingresa el título del ticket')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 5,
-                'placeholder': 'Describe detalladamente el problema o solicitud'
+                'placeholder': gettext_lazy('Describe detalladamente el problema o solicitud')
             }),
             'category': forms.Select(attrs={
                 'class': 'form-select'
@@ -279,12 +280,12 @@ class UserTicketForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción',
-            'category': 'Categoría',
-            'priority': 'Prioridad',
-            'ticket_type': 'Tipo de ticket',
-            'company': 'Empresa',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción'),
+            'category': gettext_lazy('Categoría'),
+            'priority': gettext_lazy('Prioridad'),
+            'ticket_type': gettext_lazy('Tipo de ticket'),
+            'company': gettext_lazy('Empresa'),
         }
 
 class UserTicketEditForm(forms.ModelForm):
@@ -293,11 +294,11 @@ class UserTicketEditForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Filtrar solo categorías activas
         self.fields['category'].queryset = Category.objects.filter(is_active=True)
-        self.fields['category'].empty_label = "Seleccionar categoría"
+        self.fields['category'].empty_label = gettext_lazy("Seleccionar categoría")
         
         # Configurar campo empresa
         self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
-        self.fields['company'].empty_label = "Seleccionar empresa (opcional)"
+        self.fields['company'].empty_label = gettext_lazy("Seleccionar empresa (opcional)")
 
     class Meta:
         model = Ticket
@@ -305,12 +306,12 @@ class UserTicketEditForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ingresa el título del ticket'
+                'placeholder': gettext_lazy('Ingresa el título del ticket')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 5,
-                'placeholder': 'Describe detalladamente el problema o solicitud'
+                'placeholder': gettext_lazy('Describe detalladamente el problema o solicitud')
             }),
             'category': forms.Select(attrs={
                 'class': 'form-select'
@@ -329,13 +330,13 @@ class UserTicketEditForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción',
-            'category': 'Categoría',
-            'priority': 'Prioridad',
-            'ticket_type': 'Tipo de ticket',
-            'company': 'Empresa',
-            'status': 'Estado',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción'),
+            'category': gettext_lazy('Categoría'),
+            'priority': gettext_lazy('Prioridad'),
+            'ticket_type': gettext_lazy('Tipo de ticket'),
+            'company': gettext_lazy('Empresa'),
+            'status': gettext_lazy('Estado'),
         }
 
 
@@ -354,15 +355,15 @@ class AgentTicketForm(forms.ModelForm):
         
         # Filtrar solo categorías activas
         self.fields['category'].queryset = Category.objects.filter(is_active=True)
-        self.fields['category'].empty_label = "Seleccionar categoría"
+        self.fields['category'].empty_label = gettext_lazy("Seleccionar categoría")
         
         # Filtrar solo empresas activas
         self.fields['company'].queryset = Company.objects.filter(is_active=True)
-        self.fields['company'].empty_label = "Seleccionar empresa (opcional)"
+        self.fields['company'].empty_label = gettext_lazy("Seleccionar empresa (opcional)")
         
         # Configurar campo proyecto
         self.fields['project'].queryset = Project.objects.filter(is_active=True).order_by('name')
-        self.fields['project'].empty_label = "Seleccionar proyecto (opcional)"
+        self.fields['project'].empty_label = gettext_lazy("Seleccionar proyecto (opcional)")
     
     class Meta:
         model = Ticket
@@ -370,12 +371,12 @@ class AgentTicketForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ingresa el título del ticket'
+                'placeholder': gettext_lazy('Ingresa el título del ticket')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 5,
-                'placeholder': 'Describe detalladamente el problema o solicitud'
+                'placeholder': gettext_lazy('Describe detalladamente el problema o solicitud')
             }),
             'category': forms.Select(attrs={
                 'class': 'form-select'
@@ -400,7 +401,7 @@ class AgentTicketForm(forms.ModelForm):
             }),
             'hours': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: 2.5',
+                'placeholder': gettext_lazy('Ej: 2.5'),
                 'step': '0.5',
                 'min': '0'
             }),
@@ -409,26 +410,26 @@ class AgentTicketForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción',
-            'category': 'Categoría',
-            'company': 'Empresa',
-            'project': 'Proyecto',
-            'priority': 'Prioridad',
-            'status': 'Estado',
-            'ticket_type': 'Tipo de ticket',
-            'assigned_to': 'Asignar a',
-            'hours': 'Horas estimadas/trabajadas',
-            'is_public_shareable': 'Permitir compartir públicamente',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción'),
+            'category': gettext_lazy('Categoría'),
+            'company': gettext_lazy('Empresa'),
+            'project': gettext_lazy('Proyecto'),
+            'priority': gettext_lazy('Prioridad'),
+            'status': gettext_lazy('Estado'),
+            'ticket_type': gettext_lazy('Tipo de ticket'),
+            'assigned_to': gettext_lazy('Asignar a'),
+            'hours': gettext_lazy('Horas estimadas/trabajadas'),
+            'is_public_shareable': gettext_lazy('Permitir compartir públicamente'),
         }
 
 class UserManagementForm(UserCreationForm):
     """Formulario para crear usuarios con selección de rol"""
     
     ROLE_CHOICES = [
-        ('Usuarios', 'Usuario'),
-        ('Agentes', 'Agente'),
-        ('Profesores', 'Profesor'),
+        ('Usuarios', gettext_lazy('Usuario')),
+        ('Agentes', gettext_lazy('Agente')),
+        ('Profesores', gettext_lazy('Profesor')),
     ]
     
     first_name = forms.CharField(
@@ -436,9 +437,9 @@ class UserManagementForm(UserCreationForm):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Nombre'
+            'placeholder': gettext_lazy('Nombre')
         }),
-        label='Nombre'
+        label=gettext_lazy('Nombre')
     )
     
     last_name = forms.CharField(
@@ -446,18 +447,18 @@ class UserManagementForm(UserCreationForm):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Apellido'
+            'placeholder': gettext_lazy('Apellido')
         }),
-        label='Apellido'
+        label=gettext_lazy('Apellido')
     )
     
     email = forms.EmailField(
         required=False,
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'correo@ejemplo.com'
+            'placeholder': gettext_lazy('correo@ejemplo.com')
         }),
-        label='Correo electrónico'
+        label=gettext_lazy('Correo electrónico')
     )
     
     role = forms.ChoiceField(
@@ -465,18 +466,18 @@ class UserManagementForm(UserCreationForm):
         widget=forms.Select(attrs={
             'class': 'form-select'
         }),
-        label='Rol del usuario',
+        label=gettext_lazy('Rol del usuario'),
         initial='Usuarios'
     )
     
     company = forms.ModelChoiceField(
         queryset=Company.objects.filter(is_active=True),
         required=False,
-        empty_label="Sin empresa asignada",
+        empty_label=gettext_lazy("Sin empresa asignada"),
         widget=forms.Select(attrs={
             'class': 'form-select'
         }),
-        label='Empresa'
+        label=gettext_lazy('Empresa')
     )
     
     precio_hora = forms.DecimalField(
@@ -489,8 +490,8 @@ class UserManagementForm(UserCreationForm):
             'step': '0.01',
             'min': '0'
         }),
-        label='Precio por hora (€)',
-        help_text='Precio de venta por hora de trabajo'
+        label=gettext_lazy('Precio por hora (€)'),
+        help_text=gettext_lazy('Precio de venta por hora de trabajo')
     )
     
     coste_hora = forms.DecimalField(
@@ -503,8 +504,8 @@ class UserManagementForm(UserCreationForm):
             'step': '0.01',
             'min': '0'
         }),
-        label='Coste por hora (€)',
-        help_text='Coste interno por hora de trabajo'
+        label=gettext_lazy('Coste por hora (€)'),
+        help_text=gettext_lazy('Coste interno por hora de trabajo')
     )
     
     class Meta:
@@ -513,11 +514,11 @@ class UserManagementForm(UserCreationForm):
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre de usuario'
+                'placeholder': gettext_lazy('Nombre de usuario')
             }),
         }
         labels = {
-            'username': 'Nombre de usuario',
+            'username': gettext_lazy('Nombre de usuario'),
         }
     
     def save(self, commit=True):
@@ -554,9 +555,9 @@ class UserEditForm(forms.ModelForm):
     """Formulario para editar usuarios existentes"""
     
     ROLE_CHOICES = [
-        ('Usuarios', 'Usuario'),
-        ('Agentes', 'Agente'),
-        ('Profesores', 'Profesor'),
+        ('Usuarios', gettext_lazy('Usuario')),
+        ('Agentes', gettext_lazy('Agente')),
+        ('Profesores', gettext_lazy('Profesor')),
     ]
     
     role = forms.ChoiceField(
@@ -564,17 +565,17 @@ class UserEditForm(forms.ModelForm):
         widget=forms.Select(attrs={
             'class': 'form-select'
         }),
-        label='Rol del usuario'
+        label=gettext_lazy('Rol del usuario')
     )
     
     company = forms.ModelChoiceField(
         queryset=Company.objects.filter(is_active=True),
         required=False,
-        empty_label="Sin empresa asignada",
+        empty_label=gettext_lazy("Sin empresa asignada"),
         widget=forms.Select(attrs={
             'class': 'form-select'
         }),
-        label='Empresa'
+        label=gettext_lazy('Empresa')
     )
     
     precio_hora = forms.DecimalField(
@@ -587,8 +588,8 @@ class UserEditForm(forms.ModelForm):
             'step': '0.01',
             'min': '0'
         }),
-        label='Precio por hora (€)',
-        help_text='Precio de venta por hora de trabajo'
+        label=gettext_lazy('Precio por hora (€)'),
+        help_text=gettext_lazy('Precio de venta por hora de trabajo')
     )
     
     coste_hora = forms.DecimalField(
@@ -601,8 +602,8 @@ class UserEditForm(forms.ModelForm):
             'step': '0.01',
             'min': '0'
         }),
-        label='Coste por hora (€)',
-        help_text='Coste interno por hora de trabajo'
+        label=gettext_lazy('Coste por hora (€)'),
+        help_text=gettext_lazy('Coste interno por hora de trabajo')
     )
     
     cargo = forms.CharField(
@@ -610,10 +611,10 @@ class UserEditForm(forms.ModelForm):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Ej: Diseñador, Desarrollador, Gerente...'
+            'placeholder': gettext_lazy('Ej: Diseñador, Desarrollador, Gerente...')
         }),
-        label='Cargo',
-        help_text='Cargo o posición del usuario en la empresa'
+        label=gettext_lazy('Cargo'),
+        help_text=gettext_lazy('Cargo o posición del usuario en la empresa')
     )
     
     descripcion_cargo = forms.CharField(
@@ -621,10 +622,10 @@ class UserEditForm(forms.ModelForm):
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 3,
-            'placeholder': 'Describe las responsabilidades del cargo...'
+            'placeholder': gettext_lazy('Describe las responsabilidades del cargo...')
         }),
-        label='Descripción del Cargo',
-        help_text='Descripción detallada de las responsabilidades del cargo'
+        label=gettext_lazy('Descripción del Cargo'),
+        help_text=gettext_lazy('Descripción detallada de las responsabilidades del cargo')
     )
     
     birth_date = forms.DateField(
@@ -637,8 +638,8 @@ class UserEditForm(forms.ModelForm):
             format='%Y-%m-%d'
         ),
         input_formats=['%Y-%m-%d'],
-        label='Fecha de cumpleaños',
-        help_text='Fecha de nacimiento del usuario'
+        label=gettext_lazy('Fecha de cumpleaños'),
+        help_text=gettext_lazy('Fecha de nacimiento del usuario')
     )
     
     quote_terms_conditions = forms.CharField(
@@ -646,10 +647,10 @@ class UserEditForm(forms.ModelForm):
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 6,
-            'placeholder': 'Términos y condiciones que aparecerán en las cotizaciones rápidas...'
+            'placeholder': gettext_lazy('Términos y condiciones que aparecerán en las cotizaciones rápidas...')
         }),
-        label='Términos y Condiciones de Cotizaciones',
-        help_text='Estos términos se mostrarán automáticamente en todas las cotizaciones rápidas'
+        label=gettext_lazy('Términos y Condiciones de Cotizaciones'),
+        help_text=gettext_lazy('Estos términos se mostrarán automáticamente en todas las cotizaciones rápidas')
     )
     
     # Campos para acceso público al control de horario
@@ -658,8 +659,8 @@ class UserEditForm(forms.ModelForm):
         widget=forms.CheckboxInput(attrs={
             'class': 'form-check-input'
         }),
-        label='Habilitar acceso público al control de horario',
-        help_text='Permite al usuario registrar entrada/salida sin iniciar sesión usando un enlace público'
+        label=gettext_lazy('Habilitar acceso público al control de horario'),
+        help_text=gettext_lazy('Permite al usuario registrar entrada/salida sin iniciar sesión usando un enlace público')
     )
 
     can_see_all_contacts = forms.BooleanField(
@@ -667,8 +668,8 @@ class UserEditForm(forms.ModelForm):
         widget=forms.CheckboxInput(attrs={
             'class': 'form-check-input'
         }),
-        label='Ver todos los contactos',
-        help_text='Permite al usuario ver los contactos de todos los usuarios. Si está desactivado, solo verá los contactos que creó o que tiene asignados.'
+        label=gettext_lazy('Ver todos los contactos'),
+        help_text=gettext_lazy('Permite al usuario ver los contactos de todos los usuarios. Si está desactivado, solo verá los contactos que creó o que tiene asignados.')
     )
     
     require_location = forms.BooleanField(
@@ -676,8 +677,8 @@ class UserEditForm(forms.ModelForm):
         widget=forms.CheckboxInput(attrs={
             'class': 'form-check-input'
         }),
-        label='Requerir ubicación',
-        help_text='Registra la ubicación GPS al marcar entrada/salida'
+        label=gettext_lazy('Requerir ubicación'),
+        help_text=gettext_lazy('Registra la ubicación GPS al marcar entrada/salida')
     )
     
     allowed_ip_addresses = forms.CharField(
@@ -685,10 +686,10 @@ class UserEditForm(forms.ModelForm):
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 3,
-            'placeholder': 'Ej: 192.168.1.1, 10.0.0.1\nSeparar con comas'
+            'placeholder': gettext_lazy('Ej: 192.168.1.1, 10.0.0.1\nSeparar con comas')
         }),
-        label='IPs permitidas (opcional)',
-        help_text='Lista de IPs permitidas separadas por comas. Dejar vacío para permitir cualquier IP.'
+        label=gettext_lazy('IPs permitidas (opcional)'),
+        help_text=gettext_lazy('Lista de IPs permitidas separadas por comas. Dejar vacío para permitir cualquier IP.')
     )
 
     error_401 = forms.BooleanField(
@@ -696,8 +697,8 @@ class UserEditForm(forms.ModelForm):
         widget=forms.CheckboxInput(attrs={
             'class': 'form-check-input'
         }),
-        label='Error 401',
-        help_text='Si está marcado, el usuario no podrá iniciar sesión y verá un mensaje de error 401. Sus intentos quedarán registrados.'
+        label=gettext_lazy('Error 401'),
+        help_text=gettext_lazy('Si está marcado, el usuario no podrá iniciar sesión y verá un mensaje de error 401. Sus intentos quedarán registrados.')
     )
     
     class Meta:
@@ -721,11 +722,11 @@ class UserEditForm(forms.ModelForm):
             }),
         }
         labels = {
-            'username': 'Nombre de usuario',
-            'first_name': 'Nombre',
-            'last_name': 'Apellido',
-            'email': 'Correo electrónico',
-            'is_active': 'Usuario activo',
+            'username': gettext_lazy('Nombre de usuario'),
+            'first_name': gettext_lazy('Nombre'),
+            'last_name': gettext_lazy('Apellido'),
+            'email': gettext_lazy('Correo electrónico'),
+            'is_active': gettext_lazy('Usuario activo'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -840,7 +841,7 @@ class TicketAttachmentForm(forms.ModelForm):
             })
         }
         labels = {
-            'file': 'Seleccionar archivo'
+            'file': gettext_lazy('Seleccionar archivo')
         }
     
     def clean_file(self):
@@ -866,7 +867,7 @@ class TicketWithAttachmentsForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Filtrar solo categorías activas
         self.fields['category'].queryset = Category.objects.filter(is_active=True)
-        self.fields['category'].empty_label = "Seleccionar categoría"
+        self.fields['category'].empty_label = gettext_lazy("Seleccionar categoría")
     
     class Meta:
         model = Ticket
@@ -874,12 +875,12 @@ class TicketWithAttachmentsForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ingresa el título del ticket'
+                'placeholder': gettext_lazy('Ingresa el título del ticket')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 5,
-                'placeholder': 'Describe detalladamente el problema o solicitud'
+                'placeholder': gettext_lazy('Describe detalladamente el problema o solicitud')
             }),
             'category': forms.Select(attrs={
                 'class': 'form-select'
@@ -889,10 +890,10 @@ class TicketWithAttachmentsForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción',
-            'category': 'Categoría',
-            'priority': 'Prioridad',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción'),
+            'category': gettext_lazy('Categoría'),
+            'priority': gettext_lazy('Prioridad'),
         }
 
 
@@ -907,12 +908,12 @@ class TicketCommentForm(forms.ModelForm):
             'content': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Escribe tu comentario aquí...',
+                'placeholder': gettext_lazy('Escribe tu comentario aquí...'),
                 'maxlength': '1000'
             }),
         }
         labels = {
-            'content': 'Nuevo comentario',
+            'content': gettext_lazy('Nuevo comentario'),
         }
     
     def clean_content(self):
@@ -935,7 +936,7 @@ class TicketHourLineForm(forms.ModelForm):
         widgets = {
             'description': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Descripción de la actividad realizada...',
+                'placeholder': gettext_lazy('Descripción de la actividad realizada...'),
                 'maxlength': '300',
             }),
             'user': forms.Select(attrs={
@@ -953,17 +954,17 @@ class TicketHourLineForm(forms.ModelForm):
             }),
         }
         labels = {
-            'description': 'Descripción',
-            'user': 'Usuario',
-            'hours': 'Horas',
-            'date': 'Fecha',
+            'description': gettext_lazy('Descripción'),
+            'user': gettext_lazy('Usuario'),
+            'hours': gettext_lazy('Horas'),
+            'date': gettext_lazy('Fecha'),
         }
 
     def __init__(self, *args, **kwargs):
         current_user = kwargs.pop('current_user', None)
         super().__init__(*args, **kwargs)
         self.fields['user'].queryset = User.objects.filter(is_active=True).order_by('first_name', 'username')
-        self.fields['user'].empty_label = 'Selecciona un usuario'
+        self.fields['user'].empty_label = gettext_lazy('Selecciona un usuario')
         # Prellenar con el usuario actual y la fecha de hoy si es un formulario nuevo
         if not self.instance.pk:
             from django.utils import timezone
@@ -987,9 +988,9 @@ class UserProfileForm(forms.ModelForm):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Nombre'
+            'placeholder': gettext_lazy('Nombre')
         }),
-        label='Nombre'
+        label=gettext_lazy('Nombre')
     )
     
     last_name = forms.CharField(
@@ -997,17 +998,17 @@ class UserProfileForm(forms.ModelForm):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Apellido'
+            'placeholder': gettext_lazy('Apellido')
         }),
-        label='Apellido'
+        label=gettext_lazy('Apellido')
     )
     
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'correo@ejemplo.com'
+            'placeholder': gettext_lazy('correo@ejemplo.com')
         }),
-        label='Correo Electrónico'
+        label=gettext_lazy('Correo Electrónico')
     )
     
     class Meta:
@@ -1021,16 +1022,16 @@ class UserProfileForm(forms.ModelForm):
             'bio': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Cuéntanos algo sobre ti...'
+                'placeholder': gettext_lazy('Cuéntanos algo sobre ti...')
             }),
             'cargo': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Diseñador, Desarrollador, Gerente...'
+                'placeholder': gettext_lazy('Ej: Diseñador, Desarrollador, Gerente...')
             }),
             'descripcion_cargo': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Describe las responsabilidades de tu cargo...'
+                'placeholder': gettext_lazy('Describe las responsabilidades de tu cargo...')
             }),
             'company': forms.Select(attrs={
                 'class': 'form-select'
@@ -1044,16 +1045,16 @@ class UserProfileForm(forms.ModelForm):
             }),
         }
         labels = {
-            'phone': 'Teléfono',
-            'bio': 'Biografía',
-            'cargo': 'Cargo',
-            'descripcion_cargo': 'Descripción del Cargo',
-            'company': 'Empresa',
-            'birth_date': 'Fecha de cumpleaños',
-            'enable_public_contact_form': 'Activar formulario de contacto público',
+            'phone': gettext_lazy('Teléfono'),
+            'bio': gettext_lazy('Biografía'),
+            'cargo': gettext_lazy('Cargo'),
+            'descripcion_cargo': gettext_lazy('Descripción del Cargo'),
+            'company': gettext_lazy('Empresa'),
+            'birth_date': gettext_lazy('Fecha de cumpleaños'),
+            'enable_public_contact_form': gettext_lazy('Activar formulario de contacto público'),
         }
         help_texts = {
-            'enable_public_contact_form': 'Permite que visitantes envíen formularios para crear empresas en tu cuenta',
+            'enable_public_contact_form': gettext_lazy('Permite que visitantes envíen formularios para crear empresas en tu cuenta'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -1062,7 +1063,7 @@ class UserProfileForm(forms.ModelForm):
         
         # Filtrar solo empresas activas
         self.fields['company'].queryset = Company.objects.filter(is_active=True)
-        self.fields['company'].empty_label = "Sin empresa asignada"
+        self.fields['company'].empty_label = gettext_lazy("Sin empresa asignada")
         
         if user:
             self.fields['first_name'].initial = user.first_name
@@ -1094,21 +1095,21 @@ class CustomPasswordChangeForm(PasswordChangeForm):
         # Personalizar widgets
         self.fields['old_password'].widget.attrs.update({
             'class': 'form-control',
-            'placeholder': 'Contraseña actual'
+            'placeholder': gettext_lazy('Contraseña actual')
         })
         self.fields['new_password1'].widget.attrs.update({
             'class': 'form-control',
-            'placeholder': 'Nueva contraseña'
+            'placeholder': gettext_lazy('Nueva contraseña')
         })
         self.fields['new_password2'].widget.attrs.update({
             'class': 'form-control',
-            'placeholder': 'Confirmar nueva contraseña'
+            'placeholder': gettext_lazy('Confirmar nueva contraseña')
         })
         
         # Personalizar labels
-        self.fields['old_password'].label = 'Contraseña Actual'
-        self.fields['new_password1'].label = 'Nueva Contraseña'
-        self.fields['new_password2'].label = 'Confirmar Nueva Contraseña'
+        self.fields['old_password'].label = gettext_lazy('Contraseña Actual')
+        self.fields['new_password1'].label = gettext_lazy('Nueva Contraseña')
+        self.fields['new_password2'].label = gettext_lazy('Confirmar Nueva Contraseña')
 
 
 class UserNoteForm(forms.ModelForm):
@@ -1144,7 +1145,7 @@ class UserNoteForm(forms.ModelForm):
         
         # Configurar queryset de empresas (mostrar todas las empresas activas)
         self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
-        self.fields['company'].empty_label = "Seleccionar empresa (opcional)"
+        self.fields['company'].empty_label = gettext_lazy("Seleccionar empresa (opcional)")
     
     class Meta:
         model = UserNote
@@ -1152,12 +1153,12 @@ class UserNoteForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título descriptivo de la nota'
+                'placeholder': gettext_lazy('Título descriptivo de la nota')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 6,
-                'placeholder': 'Descripción detallada de la interacción con el cliente...'
+                'placeholder': gettext_lazy('Descripción detallada de la interacción con el cliente...')
             }),
             'user': forms.Select(attrs={
                 'class': 'form-select',
@@ -1171,20 +1172,20 @@ class UserNoteForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título de la Nota',
-            'description': 'Descripción',
-            'user': 'Usuario Asociado',
-            'company': 'Empresa',
-            'tickets': 'Tickets Relacionados',
-            'is_private': 'Nota Privada',
+            'title': gettext_lazy('Título de la Nota'),
+            'description': gettext_lazy('Descripción'),
+            'user': gettext_lazy('Usuario Asociado'),
+            'company': gettext_lazy('Empresa'),
+            'tickets': gettext_lazy('Tickets Relacionados'),
+            'is_private': gettext_lazy('Nota Privada'),
         }
         help_texts = {
-            'title': 'Breve descripción del motivo de la nota',
-            'description': 'Detalle completo de la interacción, observaciones o comentarios internos',
-            'user': 'Usuario al que se asocia esta nota',
-            'company': 'Empresa asociada a esta nota (opcional)',
-            'tickets': 'Selecciona los tickets relacionados con esta nota (opcional)',
-            'is_private': 'Si está marcada, solo tú podrás ver, editar y eliminar esta nota',
+            'title': gettext_lazy('Breve descripción del motivo de la nota'),
+            'description': gettext_lazy('Detalle completo de la interacción, observaciones o comentarios internos'),
+            'user': gettext_lazy('Usuario al que se asocia esta nota'),
+            'company': gettext_lazy('Empresa asociada a esta nota (opcional)'),
+            'tickets': gettext_lazy('Selecciona los tickets relacionados con esta nota (opcional)'),
+            'is_private': gettext_lazy('Si está marcada, solo tú podrás ver, editar y eliminar esta nota'),
         }
     
     def clean_title(self):
@@ -1228,49 +1229,49 @@ class TimeEntryStartForm(forms.Form):
     
     project = forms.ModelChoiceField(
         queryset=Project.objects.filter(is_active=True, status='active'),
-        empty_label="Seleccionar proyecto (opcional)",
+        empty_label=gettext_lazy("Seleccionar proyecto (opcional)"),
         widget=forms.Select(attrs={
             'class': 'form-select',
             'required': False
         }),
-        label='Proyecto',
-        help_text='Selecciona el proyecto en el que vas a trabajar (opcional)',
+        label=gettext_lazy('Proyecto'),
+        help_text=gettext_lazy('Selecciona el proyecto en el que vas a trabajar (opcional)'),
         required=False
     )
     
     ticket = forms.ModelChoiceField(
         queryset=None,  # Se configurará en __init__
-        empty_label="Seleccionar ticket (opcional)",
+        empty_label=gettext_lazy("Seleccionar ticket (opcional)"),
         widget=forms.Select(attrs={
             'class': 'form-select',
             'required': False
         }),
-        label='Ticket',
-        help_text='Selecciona el ticket en el que vas a trabajar (opcional)',
+        label=gettext_lazy('Ticket'),
+        help_text=gettext_lazy('Selecciona el ticket en el que vas a trabajar (opcional)'),
         required=False
     )
     
     work_order = forms.ModelChoiceField(
         queryset=None,  # Se configurará en __init__
-        empty_label="Seleccionar orden de trabajo (opcional)",
+        empty_label=gettext_lazy("Seleccionar orden de trabajo (opcional)"),
         widget=forms.Select(attrs={
             'class': 'form-select',
             'required': False
         }),
-        label='Orden de Trabajo',
-        help_text='Selecciona la orden de trabajo en la que vas a trabajar (opcional)',
+        label=gettext_lazy('Orden de Trabajo'),
+        help_text=gettext_lazy('Selecciona la orden de trabajo en la que vas a trabajar (opcional)'),
         required=False
     )
     
     task = forms.ModelChoiceField(
         queryset=None,  # Se configurará en __init__
-        empty_label="Seleccionar tarea (opcional)",
+        empty_label=gettext_lazy("Seleccionar tarea (opcional)"),
         widget=forms.Select(attrs={
             'class': 'form-select',
             'required': False
         }),
-        label='Tarea',
-        help_text='Selecciona la tarea en la que vas a trabajar (opcional)',
+        label=gettext_lazy('Tarea'),
+        help_text=gettext_lazy('Selecciona la tarea en la que vas a trabajar (opcional)'),
         required=False
     )
     
@@ -1280,10 +1281,10 @@ class TimeEntryStartForm(forms.Form):
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 3,
-            'placeholder': 'Comentarios opcionales sobre el inicio de jornada...',
+            'placeholder': gettext_lazy('Comentarios opcionales sobre el inicio de jornada...'),
         }),
-        label='Notas de entrada (opcional)',
-        help_text='Puedes agregar comentarios sobre tareas a realizar, estado del proyecto, etc.'
+        label=gettext_lazy('Notas de entrada (opcional)'),
+        help_text=gettext_lazy('Puedes agregar comentarios sobre tareas a realizar, estado del proyecto, etc.')
     )
     
     def __init__(self, *args, **kwargs):
@@ -1358,15 +1359,15 @@ class TimeEntryEndForm(forms.Form):
     
     end_reason = forms.ChoiceField(
         choices=[
-            ('comer', 'Comer'),
-            ('fin_jornada', 'Fin de Jornada'),
-            ('otro', 'Otro'),
+            ('comer', gettext_lazy('Comer')),
+            ('fin_jornada', gettext_lazy('Fin de Jornada')),
+            ('otro', gettext_lazy('Otro')),
         ],
         widget=forms.Select(attrs={
             'class': 'form-select',
         }),
-        label='Causa de finalización',
-        help_text='Selecciona el motivo por el cual finalizas la jornada'
+        label=gettext_lazy('Causa de finalización'),
+        help_text=gettext_lazy('Selecciona el motivo por el cual finalizas la jornada')
     )
     
     notas_salida = forms.CharField(
@@ -1375,10 +1376,10 @@ class TimeEntryEndForm(forms.Form):
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 3,
-            'placeholder': 'Resumen de tareas realizadas, pendientes, etc...',
+            'placeholder': gettext_lazy('Resumen de tareas realizadas, pendientes, etc...'),
         }),
-        label='Resumen de la jornada (opcional)',
-        help_text='Describe brevemente las actividades realizadas durante la jornada'
+        label=gettext_lazy('Resumen de la jornada (opcional)'),
+        help_text=gettext_lazy('Describe brevemente las actividades realizadas durante la jornada')
     )
     
     def clean_notas_salida(self):
@@ -1399,7 +1400,7 @@ class TimeEntryEditForm(forms.ModelForm):
                 'class': 'form-control',
             }
         ),
-        label='Fecha y hora de entrada'
+        label=gettext_lazy('Fecha y hora de entrada')
     )
     
     fecha_salida = forms.DateTimeField(
@@ -1409,7 +1410,7 @@ class TimeEntryEditForm(forms.ModelForm):
                 'class': 'form-control',
             }
         ),
-        label='Fecha y hora de salida'
+        label=gettext_lazy('Fecha y hora de salida')
     )
     
     change_reason = forms.CharField(
@@ -1417,10 +1418,10 @@ class TimeEntryEditForm(forms.ModelForm):
         max_length=200,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Razón del cambio (opcional)'
+            'placeholder': gettext_lazy('Razón del cambio (opcional)')
         }),
-        label='Razón del cambio',
-        help_text='Opcional: Explica por qué modificas los horarios'
+        label=gettext_lazy('Razón del cambio'),
+        help_text=gettext_lazy('Opcional: Explica por qué modificas los horarios')
     )
     
     class Meta:
@@ -1442,24 +1443,24 @@ class TimeEntryEditForm(forms.ModelForm):
             'notas': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Comentarios sobre la jornada laboral...',
+                'placeholder': gettext_lazy('Comentarios sobre la jornada laboral...'),
             }),
         }
         labels = {
-            'project': 'Proyecto',
-            'ticket': 'Ticket',
-            'work_order': 'Orden de Trabajo',
-            'task': 'Tarea',
-            'notas': 'Notas de la jornada',
+            'project': gettext_lazy('Proyecto'),
+            'ticket': gettext_lazy('Ticket'),
+            'work_order': gettext_lazy('Orden de Trabajo'),
+            'task': gettext_lazy('Tarea'),
+            'notas': gettext_lazy('Notas de la jornada'),
         }
         help_texts = {
-            'project': 'Proyecto en el que se trabajó',
-            'ticket': 'Ticket en el que se trabajó',
-            'work_order': 'Orden de trabajo en la que se trabajó',
-            'task': 'Tarea en la que se trabajó',
-            'notas': 'Describe las actividades realizadas, observaciones o comentarios relevantes',
-            'fecha_entrada': 'Ajusta la fecha y hora de entrada si es necesario',
-            'fecha_salida': 'Ajusta la fecha y hora de salida si es necesario',
+            'project': gettext_lazy('Proyecto en el que se trabajó'),
+            'ticket': gettext_lazy('Ticket en el que se trabajó'),
+            'work_order': gettext_lazy('Orden de trabajo en la que se trabajó'),
+            'task': gettext_lazy('Tarea en la que se trabajó'),
+            'notas': gettext_lazy('Describe las actividades realizadas, observaciones o comentarios relevantes'),
+            'fecha_entrada': gettext_lazy('Ajusta la fecha y hora de entrada si es necesario'),
+            'fecha_salida': gettext_lazy('Ajusta la fecha y hora de salida si es necesario'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -1593,13 +1594,13 @@ class PublicTimeAccessForm(forms.ModelForm):
             'allowed_ip_addresses': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Ejemplo: 192.168.1.100, 10.0.0.50 (opcional)'
+                'placeholder': gettext_lazy('Ejemplo: 192.168.1.100, 10.0.0.50 (opcional)')
             }),
         }
         help_texts = {
-            'is_active': 'Permite que el usuario acceda al control de horario mediante URL pública',
-            'require_location': 'Registrará la ubicación GPS cuando marque entrada/salida',
-            'allowed_ip_addresses': 'Lista de direcciones IP permitidas, separadas por comas (opcional)',
+            'is_active': gettext_lazy('Permite que el usuario acceda al control de horario mediante URL pública'),
+            'require_location': gettext_lazy('Registrará la ubicación GPS cuando marque entrada/salida'),
+            'allowed_ip_addresses': gettext_lazy('Lista de direcciones IP permitidas, separadas por comas (opcional)'),
         }
 
 
@@ -1608,8 +1609,8 @@ class PublicTimeEntryForm(forms.Form):
     
     action = forms.ChoiceField(
         choices=[
-            ('entrada', 'Registrar Entrada'),
-            ('salida', 'Registrar Salida')
+            ('entrada', gettext_lazy('Registrar Entrada')),
+            ('salida', gettext_lazy('Registrar Salida'))
         ],
         widget=forms.HiddenInput(),
         required=True
@@ -1621,10 +1622,10 @@ class PublicTimeEntryForm(forms.Form):
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 3,
-            'placeholder': 'Notas opcionales sobre tu jornada...'
+            'placeholder': gettext_lazy('Notas opcionales sobre tu jornada...')
         }),
-        label='Notas (opcional)',
-        help_text='Puedes agregar comentarios sobre tu trabajo del día'
+        label=gettext_lazy('Notas (opcional)'),
+        help_text=gettext_lazy('Puedes agregar comentarios sobre tu trabajo del día')
     )
     
     # Campos ocultos para ubicación (si se requiere)
@@ -1675,21 +1676,21 @@ class CompanyForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre de la empresa'
+                'placeholder': gettext_lazy('Nombre de la empresa')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción de la empresa (opcional)'
+                'placeholder': gettext_lazy('Descripción de la empresa (opcional)')
             }),
             'business_objectives': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 5,
-                'placeholder': 'Define los objetivos, metas y KPIs estratégicos de la empresa...\n\nEjemplos:\n- Aumentar las ventas un 20% este año\n- Mejorar la satisfacción del cliente al 95%\n- Reducir costos operativos en un 15%\n- Lanzar 3 nuevos productos\n- Expandirse a 2 nuevos mercados'
+                'placeholder': gettext_lazy('Define los objetivos, metas y KPIs estratégicos de la empresa...\n\nEjemplos:\n- Aumentar las ventas un 20% este año\n- Mejorar la satisfacción del cliente al 95%\n- Reducir costos operativos en un 15%\n- Lanzar 3 nuevos productos\n- Expandirse a 2 nuevos mercados')
             }),
             'address': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Dirección completa'
+                'placeholder': gettext_lazy('Dirección completa')
             }),
             'phone': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -1697,16 +1698,16 @@ class CompanyForm(forms.ModelForm):
             }),
             'email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'contacto@empresa.com'
+                'placeholder': gettext_lazy('contacto@empresa.com')
             }),
             'website': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://www.empresa.com'
+                'placeholder': gettext_lazy('https://www.empresa.com')
             }),
             'color': forms.TextInput(attrs={
                 'class': 'form-control',
                 'type': 'color',
-                'title': 'Selecciona un color identificativo'
+                'title': gettext_lazy('Selecciona un color identificativo')
             }),
             'logo': forms.ClearableFileInput(attrs={
                 'class': 'form-control',
@@ -1714,82 +1715,82 @@ class CompanyForm(forms.ModelForm):
             }),
             'public_token': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Token público para enlaces (se genera automáticamente)'
+                'placeholder': gettext_lazy('Token público para enlaces (se genera automáticamente)')
             }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
             'tax_id': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'NIF/CIF'
+                'placeholder': gettext_lazy('NIF/CIF')
             }),
             'city': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ciudad'
+                'placeholder': gettext_lazy('Ciudad')
             }),
             'state': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Estado/Provincia'
+                'placeholder': gettext_lazy('Estado/Provincia')
             }),
             'postal_code': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Código Postal'
+                'placeholder': gettext_lazy('Código Postal')
             }),
             'country': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'País'
+                'placeholder': gettext_lazy('País')
             }),
             'bank_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre del banco'
+                'placeholder': gettext_lazy('Nombre del banco')
             }),
             'bank_url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://www.banco.com'
+                'placeholder': gettext_lazy('https://www.banco.com')
             }),
             'bank_account_holder': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Titular de la cuenta'
+                'placeholder': gettext_lazy('Titular de la cuenta')
             }),
             'bank_account': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'IBAN o número de cuenta'
+                'placeholder': gettext_lazy('IBAN o número de cuenta')
             }),
             'bank_swift': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'SWIFT/BIC'
+                'placeholder': gettext_lazy('SWIFT/BIC')
             }),
             'payment_terms': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Condiciones de pago generales...'
+                'placeholder': gettext_lazy('Condiciones de pago generales...')
             }),
         }
         labels = {
-            'name': 'Nombre de la Empresa',
-            'description': 'Descripción',
-            'business_objectives': 'Objetivos Empresariales',
-            'address': 'Dirección',
-            'phone': 'Teléfono',
-            'email': 'Email de Contacto',
-            'website': 'Sitio Web',
-            'color': 'Color Identificativo',
-            'public_token': 'Token Público',
-            'is_active': 'Empresa Activa',
-            'tax_id': 'NIF/CIF/Tax ID',
-            'city': 'Ciudad',
-            'state': 'Estado/Provincia',
-            'postal_code': 'Código Postal',
-            'country': 'País',
-            'bank_name': 'Nombre del Banco',
-            'bank_url': 'URL del Banco',
-            'bank_account_holder': 'Titular de la Cuenta',
-            'bank_account': 'Número de Cuenta',
-            'bank_swift': 'SWIFT/BIC',
-            'payment_terms': 'Condiciones de Pago',
+            'name': gettext_lazy('Nombre de la Empresa'),
+            'description': gettext_lazy('Descripción'),
+            'business_objectives': gettext_lazy('Objetivos Empresariales'),
+            'address': gettext_lazy('Dirección'),
+            'phone': gettext_lazy('Teléfono'),
+            'email': gettext_lazy('Email de Contacto'),
+            'website': gettext_lazy('Sitio Web'),
+            'color': gettext_lazy('Color Identificativo'),
+            'public_token': gettext_lazy('Token Público'),
+            'is_active': gettext_lazy('Empresa Activa'),
+            'tax_id': gettext_lazy('NIF/CIF/Tax ID'),
+            'city': gettext_lazy('Ciudad'),
+            'state': gettext_lazy('Estado/Provincia'),
+            'postal_code': gettext_lazy('Código Postal'),
+            'country': gettext_lazy('País'),
+            'bank_name': gettext_lazy('Nombre del Banco'),
+            'bank_url': gettext_lazy('URL del Banco'),
+            'bank_account_holder': gettext_lazy('Titular de la Cuenta'),
+            'bank_account': gettext_lazy('Número de Cuenta'),
+            'bank_swift': gettext_lazy('SWIFT/BIC'),
+            'payment_terms': gettext_lazy('Condiciones de Pago'),
         }
         help_texts = {
-            'business_objectives': 'Define los objetivos, metas y KPIs estratégicos. Estos serán considerados por los gerentes IA al generar resúmenes ejecutivos.',
+            'business_objectives': gettext_lazy('Define los objetivos, metas y KPIs estratégicos. Estos serán considerados por los gerentes IA al generar resúmenes ejecutivos.'),
         }
     
     def clean_name(self):
@@ -1860,7 +1861,7 @@ class SystemConfigurationForm(forms.ModelForm):
         widgets = {
             'site_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre del sitio'
+                'placeholder': gettext_lazy('Nombre del sitio')
             }),
             'allow_user_registration': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -1876,17 +1877,17 @@ class SystemConfigurationForm(forms.ModelForm):
             }),
             'openai_api_key': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'sk-...',
+                'placeholder': gettext_lazy('sk-...'),
                 'type': 'password'
             }),
             'openai_model': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'gpt-4o'
+                'placeholder': gettext_lazy('gpt-4o')
             }),
             'ai_employee_analysis_prompt': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 8,
-                'placeholder': 'Prompt personalizado para el análisis de empleados...'
+                'placeholder': gettext_lazy('Prompt personalizado para el análisis de empleados...')
             }),
             'paypal_enabled': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -1896,24 +1897,24 @@ class SystemConfigurationForm(forms.ModelForm):
             }),
             'paypal_client_id': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Client ID de PayPal',
+                'placeholder': gettext_lazy('Client ID de PayPal'),
                 'type': 'password'
             }),
             'paypal_client_secret': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Client Secret de PayPal',
+                'placeholder': gettext_lazy('Client Secret de PayPal'),
                 'type': 'password'
             }),
             'paypal_webhook_id': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Webhook ID (opcional)'
+                'placeholder': gettext_lazy('Webhook ID (opcional)')
             }),
             'enable_telegram_notifications': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
             'telegram_bot_token': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Token del bot de Telegram',
+                'placeholder': gettext_lazy('Token del bot de Telegram'),
                 'type': 'password'
             }),
             'telegram_chat_id': forms.TextInput(attrs={
@@ -1926,11 +1927,11 @@ class SystemConfigurationForm(forms.ModelForm):
             'notification_emails': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'admin@ejemplo.com\nsupport@ejemplo.com'
+                'placeholder': gettext_lazy('admin@ejemplo.com\nsupport@ejemplo.com')
             }),
             'email_host': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'smtp.gmail.com'
+                'placeholder': gettext_lazy('smtp.gmail.com')
             }),
             'email_port': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -1938,11 +1939,11 @@ class SystemConfigurationForm(forms.ModelForm):
             }),
             'email_host_user': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'tu-email@gmail.com'
+                'placeholder': gettext_lazy('tu-email@gmail.com')
             }),
             'email_host_password': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Contraseña o token de aplicación',
+                'placeholder': gettext_lazy('Contraseña o token de aplicación'),
                 'type': 'password'
             }),
             'email_use_tls': forms.CheckboxInput(attrs={
@@ -1953,74 +1954,74 @@ class SystemConfigurationForm(forms.ModelForm):
             }),
             'email_from': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'noreply@tu-dominio.com'
+                'placeholder': gettext_lazy('noreply@tu-dominio.com')
             }),
             'contact_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Departamento de Ventas'
+                'placeholder': gettext_lazy('Ej: Departamento de Ventas')
             }),
             'contact_email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'pagos@tu-dominio.com'
+                'placeholder': gettext_lazy('pagos@tu-dominio.com')
             }),
         }
         labels = {
-            'site_name': 'Nombre del sitio',
-            'allow_user_registration': 'Permitir registro de usuarios',
-            'default_ticket_priority': 'Prioridad por defecto de tickets',
-            'default_currency': 'Moneda por defecto',
-            'ai_chat_enabled': 'Habilitar Chat IA',
-            'openai_api_key': 'API Key de OpenAI',
-            'openai_model': 'Modelo de IA',
-            'ai_employee_analysis_prompt': 'Prompt para análisis de empleados',
-            'paypal_enabled': 'Habilitar PayPal',
-            'paypal_mode': 'Modo de PayPal',
-            'paypal_client_id': 'Client ID de PayPal',
-            'paypal_client_secret': 'Client Secret de PayPal',
-            'paypal_webhook_id': 'Webhook ID de PayPal',
-            'enable_telegram_notifications': 'Activar notificaciones de Telegram',
-            'telegram_bot_token': 'Token del Bot de Telegram',
-            'telegram_chat_id': 'ID del Chat/Grupo de Telegram',
-            'enable_email_notifications': 'Activar notificaciones por email',
-            'notification_emails': 'Emails de notificación',
-            'email_host': 'Servidor SMTP',
-            'email_port': 'Puerto SMTP',
-            'email_host_user': 'Usuario SMTP',
-            'email_host_password': 'Contraseña SMTP',
-            'email_use_tls': 'Usar TLS',
-            'email_use_ssl': 'Usar SSL',
-            'email_from': 'Email remitente',
-            'contact_name': 'Nombre de contacto',
-            'contact_email': 'Email de contacto para pagos',
+            'site_name': gettext_lazy('Nombre del sitio'),
+            'allow_user_registration': gettext_lazy('Permitir registro de usuarios'),
+            'default_ticket_priority': gettext_lazy('Prioridad por defecto de tickets'),
+            'default_currency': gettext_lazy('Moneda por defecto'),
+            'ai_chat_enabled': gettext_lazy('Habilitar Chat IA'),
+            'openai_api_key': gettext_lazy('API Key de OpenAI'),
+            'openai_model': gettext_lazy('Modelo de IA'),
+            'ai_employee_analysis_prompt': gettext_lazy('Prompt para análisis de empleados'),
+            'paypal_enabled': gettext_lazy('Habilitar PayPal'),
+            'paypal_mode': gettext_lazy('Modo de PayPal'),
+            'paypal_client_id': gettext_lazy('Client ID de PayPal'),
+            'paypal_client_secret': gettext_lazy('Client Secret de PayPal'),
+            'paypal_webhook_id': gettext_lazy('Webhook ID de PayPal'),
+            'enable_telegram_notifications': gettext_lazy('Activar notificaciones de Telegram'),
+            'telegram_bot_token': gettext_lazy('Token del Bot de Telegram'),
+            'telegram_chat_id': gettext_lazy('ID del Chat/Grupo de Telegram'),
+            'enable_email_notifications': gettext_lazy('Activar notificaciones por email'),
+            'notification_emails': gettext_lazy('Emails de notificación'),
+            'email_host': gettext_lazy('Servidor SMTP'),
+            'email_port': gettext_lazy('Puerto SMTP'),
+            'email_host_user': gettext_lazy('Usuario SMTP'),
+            'email_host_password': gettext_lazy('Contraseña SMTP'),
+            'email_use_tls': gettext_lazy('Usar TLS'),
+            'email_use_ssl': gettext_lazy('Usar SSL'),
+            'email_from': gettext_lazy('Email remitente'),
+            'contact_name': gettext_lazy('Nombre de contacto'),
+            'contact_email': gettext_lazy('Email de contacto para pagos'),
         }
         help_texts = {
-            'site_name': 'Nombre que aparece en el encabezado del sistema',
-            'allow_user_registration': 'Permite que nuevos usuarios se registren en el sistema',
-            'default_ticket_priority': 'Prioridad asignada automáticamente a nuevos tickets',
-            'default_currency': 'Moneda utilizada para mostrar valores en el sistema',
-            'ai_chat_enabled': 'Habilita la funcionalidad de chat con IA',
-            'openai_api_key': 'Clave de API de OpenAI para acceder a ChatGPT',
-            'openai_model': 'Modelo de IA a utilizar (ej: gpt-4o, gpt-3.5-turbo)',
-            'ai_employee_analysis_prompt': 'Plantilla del prompt que se enviará a la IA para analizar candidatos. Usa {datos} donde se insertarán los datos del candidato.',
-            'paypal_enabled': 'Habilita el sistema de pagos con PayPal',
-            'paypal_mode': 'Usa "sandbox" para pruebas o "live" para producción',
-            'paypal_client_id': 'Client ID obtenido desde https://developer.paypal.com',
-            'paypal_client_secret': 'Client Secret obtenido desde https://developer.paypal.com',
-            'paypal_webhook_id': 'ID del webhook para notificaciones avanzadas (opcional)',
-            'enable_telegram_notifications': 'Envía notificaciones cuando se crean nuevos tickets',
-            'telegram_bot_token': 'Token proporcionado por @BotFather al crear el bot',
-            'telegram_chat_id': 'ID del grupo donde enviar notificaciones (ej: -100123456789)',
-            'enable_email_notifications': 'Envía notificaciones por email cuando se reciben contactos desde la web',
-            'notification_emails': 'Direcciones de email donde enviar notificaciones (una por línea)',
-            'email_host': 'Servidor de correo saliente (ej: smtp.gmail.com, mail.tu-dominio.com)',
-            'email_port': 'Puerto del servidor SMTP (587 para TLS, 465 para SSL, 25 para sin cifrado)',
-            'email_host_user': 'Dirección de email para autenticación SMTP',
-            'email_host_password': 'Contraseña o token de aplicación para SMTP',
-            'email_use_tls': 'Activar cifrado TLS (recomendado para puerto 587)',
-            'email_use_ssl': 'Activar cifrado SSL (para puerto 465)',
-            'email_from': 'Dirección de email que aparecerá como remitente',
-            'contact_name': 'Nombre visible en la página de confirmación de cotización donde se indica al cliente a quién enviar el comprobante',
-            'contact_email': 'Correo al que los clientes deben enviar el comprobante de pago tras generar una cotización',
+            'site_name': gettext_lazy('Nombre que aparece en el encabezado del sistema'),
+            'allow_user_registration': gettext_lazy('Permite que nuevos usuarios se registren en el sistema'),
+            'default_ticket_priority': gettext_lazy('Prioridad asignada automáticamente a nuevos tickets'),
+            'default_currency': gettext_lazy('Moneda utilizada para mostrar valores en el sistema'),
+            'ai_chat_enabled': gettext_lazy('Habilita la funcionalidad de chat con IA'),
+            'openai_api_key': gettext_lazy('Clave de API de OpenAI para acceder a ChatGPT'),
+            'openai_model': gettext_lazy('Modelo de IA a utilizar (ej: gpt-4o, gpt-3.5-turbo)'),
+            'ai_employee_analysis_prompt': gettext_lazy('Plantilla del prompt que se enviará a la IA para analizar candidatos. Usa {datos} donde se insertarán los datos del candidato.'),
+            'paypal_enabled': gettext_lazy('Habilita el sistema de pagos con PayPal'),
+            'paypal_mode': gettext_lazy('Usa "sandbox" para pruebas o "live" para producción'),
+            'paypal_client_id': gettext_lazy('Client ID obtenido desde https://developer.paypal.com'),
+            'paypal_client_secret': gettext_lazy('Client Secret obtenido desde https://developer.paypal.com'),
+            'paypal_webhook_id': gettext_lazy('ID del webhook para notificaciones avanzadas (opcional)'),
+            'enable_telegram_notifications': gettext_lazy('Envía notificaciones cuando se crean nuevos tickets'),
+            'telegram_bot_token': gettext_lazy('Token proporcionado por @BotFather al crear el bot'),
+            'telegram_chat_id': gettext_lazy('ID del grupo donde enviar notificaciones (ej: -100123456789)'),
+            'enable_email_notifications': gettext_lazy('Envía notificaciones por email cuando se reciben contactos desde la web'),
+            'notification_emails': gettext_lazy('Direcciones de email donde enviar notificaciones (una por línea)'),
+            'email_host': gettext_lazy('Servidor de correo saliente (ej: smtp.gmail.com, mail.tu-dominio.com)'),
+            'email_port': gettext_lazy('Puerto del servidor SMTP (587 para TLS, 465 para SSL, 25 para sin cifrado)'),
+            'email_host_user': gettext_lazy('Dirección de email para autenticación SMTP'),
+            'email_host_password': gettext_lazy('Contraseña o token de aplicación para SMTP'),
+            'email_use_tls': gettext_lazy('Activar cifrado TLS (recomendado para puerto 587)'),
+            'email_use_ssl': gettext_lazy('Activar cifrado SSL (para puerto 465)'),
+            'email_from': gettext_lazy('Dirección de email que aparecerá como remitente'),
+            'contact_name': gettext_lazy('Nombre visible en la página de confirmación de cotización donde se indica al cliente a quién enviar el comprobante'),
+            'contact_email': gettext_lazy('Correo al que los clientes deben enviar el comprobante de pago tras generar una cotización'),
         }
     
     def clean_site_name(self):
@@ -2057,13 +2058,13 @@ class DocumentForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título del documento',
+                'placeholder': gettext_lazy('Título del documento'),
                 'maxlength': '200'
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción opcional del documento...',
+                'placeholder': gettext_lazy('Descripción opcional del documento...'),
                 'maxlength': '500'
             }),
             'file': forms.FileInput(attrs={
@@ -2075,7 +2076,7 @@ class DocumentForm(forms.ModelForm):
             }),
             'tags': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Etiquetas separadas por comas (ej: manual, tutorial, guía)',
+                'placeholder': gettext_lazy('Etiquetas separadas por comas (ej: manual, tutorial, guía)'),
                 'maxlength': '300'
             }),
             'is_public': forms.CheckboxInput(attrs={
@@ -2083,24 +2084,24 @@ class DocumentForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción',
-            'file': 'Archivo',
-            'company': 'Empresa/Cliente',
-            'tags': 'Etiquetas',
-            'is_public': 'Disponible públicamente',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción'),
+            'file': gettext_lazy('Archivo'),
+            'company': gettext_lazy('Empresa/Cliente'),
+            'tags': gettext_lazy('Etiquetas'),
+            'is_public': gettext_lazy('Disponible públicamente'),
         }
         help_texts = {
-            'file': 'Archivos permitidos: PDF, DOC, DOCX, TXT, imágenes, etc. Máximo 10MB',
-            'tags': 'Etiquetas para categorizar y buscar el documento',
-            'is_public': 'Si está marcado, el documento puede ser accedido sin autenticación',
+            'file': gettext_lazy('Archivos permitidos: PDF, DOC, DOCX, TXT, imágenes, etc. Máximo 10MB'),
+            'tags': gettext_lazy('Etiquetas para categorizar y buscar el documento'),
+            'is_public': gettext_lazy('Si está marcado, el documento puede ser accedido sin autenticación'),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Filtrar solo empresas activas
         self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
-        self.fields['company'].empty_label = "Sin empresa asociada"
+        self.fields['company'].empty_label = gettext_lazy("Sin empresa asociada")
     
     def clean_file(self):
         """Validar el archivo subido"""
@@ -2160,10 +2161,10 @@ class UrlManagerForm(forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Ingrese la contraseña (opcional)'
+            'placeholder': gettext_lazy('Ingrese la contraseña (opcional)')
         }),
-        label='Contraseña (opcional)',
-        help_text='La contraseña se almacenará de forma segura y encriptada',
+        label=gettext_lazy('Contraseña (opcional)'),
+        help_text=gettext_lazy('La contraseña se almacenará de forma segura y encriptada'),
         required=False
     )
     
@@ -2173,24 +2174,24 @@ class UrlManagerForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Panel de administración del servidor'
+                'placeholder': gettext_lazy('Ej: Panel de administración del servidor')
             }),
             'url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://ejemplo.com/admin'
+                'placeholder': gettext_lazy('https://ejemplo.com/admin')
             }),
             'username': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'nombre_usuario (opcional)'
+                'placeholder': gettext_lazy('nombre_usuario (opcional)')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción opcional de esta URL y sus credenciales...'
+                'placeholder': gettext_lazy('Descripción opcional de esta URL y sus credenciales...')
             }),
             'category': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Servidor, Base de datos, API, etc.'
+                'placeholder': gettext_lazy('Ej: Servidor, Base de datos, API, etc.')
             }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -2200,22 +2201,22 @@ class UrlManagerForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'url': 'URL',
-            'username': 'Usuario (opcional)',
-            'description': 'Descripción',
-            'category': 'Categoría',
-            'is_active': 'Activo',
-            'is_principal': 'URL Principal',
+            'title': gettext_lazy('Título'),
+            'url': gettext_lazy('URL'),
+            'username': gettext_lazy('Usuario (opcional)'),
+            'description': gettext_lazy('Descripción'),
+            'category': gettext_lazy('Categoría'),
+            'is_active': gettext_lazy('Activo'),
+            'is_principal': gettext_lazy('URL Principal'),
         }
         help_texts = {
-            'title': 'Nombre descriptivo para identificar esta URL',
-            'url': 'Dirección web completa (debe incluir http:// o https://)',
-            'username': 'Nombre de usuario para acceder a esta URL (opcional)',
-            'description': 'Información adicional sobre el propósito de esta URL',
-            'category': 'Categoría para organizar las URLs',
-            'is_active': 'Desmarcar si la URL ya no está en uso',
-            'is_principal': 'Marcar para mostrar esta URL en el dashboard principal',
+            'title': gettext_lazy('Nombre descriptivo para identificar esta URL'),
+            'url': gettext_lazy('Dirección web completa (debe incluir http:// o https://)'),
+            'username': gettext_lazy('Nombre de usuario para acceder a esta URL (opcional)'),
+            'description': gettext_lazy('Información adicional sobre el propósito de esta URL'),
+            'category': gettext_lazy('Categoría para organizar las URLs'),
+            'is_active': gettext_lazy('Desmarcar si la URL ya no está en uso'),
+            'is_principal': gettext_lazy('Marcar para mostrar esta URL en el dashboard principal'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -2228,7 +2229,7 @@ class UrlManagerForm(forms.ModelForm):
         
         # Si estamos editando, cambiar el help text de la contraseña
         if self.instance_pk and hasattr(self.instance_pk, 'pk'):
-            self.fields['password'].help_text = 'Dejar en blanco para mantener la contraseña actual'
+            self.fields['password'].help_text = gettext_lazy('Dejar en blanco para mantener la contraseña actual')
             self.fields['password'].required = False
     
     def clean_url(self):
@@ -2310,31 +2311,31 @@ class UrlManagerFilterForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Buscar por título, URL o descripción...'
+            'placeholder': gettext_lazy('Buscar por título, URL o descripción...')
         }),
-        label='Buscar'
+        label=gettext_lazy('Buscar')
     )
     
     category = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Filtrar por categoría...'
+            'placeholder': gettext_lazy('Filtrar por categoría...')
         }),
-        label='Categoría'
+        label=gettext_lazy('Categoría')
     )
     
     is_active = forms.ChoiceField(
         required=False,
         choices=[
-            ('', 'Todas'),
-            ('True', 'Solo activas'),
-            ('False', 'Solo inactivas'),
+            ('', gettext_lazy('Todas')),
+            ('True', gettext_lazy('Solo activas')),
+            ('False', gettext_lazy('Solo inactivas')),
         ],
         widget=forms.Select(attrs={
             'class': 'form-select'
         }),
-        label='Estado'
+        label=gettext_lazy('Estado')
     )
 
 
@@ -2347,32 +2348,32 @@ class ApiEndpointForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Estado de mantenimiento'
+                'placeholder': gettext_lazy('Ej: Estado de mantenimiento')
             }),
             'value': forms.Select(
-                choices=[(True, 'Verdadero'), (False, 'Falso')],
+                choices=[(True, gettext_lazy('Verdadero')), (False, gettext_lazy('Falso'))],
                 attrs={'class': 'form-select'}
             ),
             'text': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 6,
-                'placeholder': 'Texto largo que devolverá la API...'
+                'placeholder': gettext_lazy('Texto largo que devolverá la API...')
             }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
         }
         labels = {
-            'name': 'Nombre',
-            'value': 'Valor',
-            'text': 'Texto',
-            'is_active': 'Activa',
+            'name': gettext_lazy('Nombre'),
+            'value': gettext_lazy('Valor'),
+            'text': gettext_lazy('Texto'),
+            'is_active': gettext_lazy('Activa'),
         }
         help_texts = {
-            'name': 'Nombre descriptivo de la API',
-            'value': 'Valor booleano que devolverá la API',
-            'text': 'Contenido de texto largo que devolverá la API',
-            'is_active': 'Desmarcar para desactivar temporalmente la API',
+            'name': gettext_lazy('Nombre descriptivo de la API'),
+            'value': gettext_lazy('Valor booleano que devolverá la API'),
+            'text': gettext_lazy('Contenido de texto largo que devolverá la API'),
+            'is_active': gettext_lazy('Desmarcar para desactivar temporalmente la API'),
         }
 
     def clean_name(self):
@@ -2406,8 +2407,8 @@ class WorkOrderForm(forms.ModelForm):
     
     attachments = MultipleFileField(
         required=False,
-        label='Adjuntos',
-        help_text='Puede seleccionar múltiples archivos (PDF, DOC, TXT, imágenes, Excel, ZIP)',
+        label=gettext_lazy('Adjuntos'),
+        help_text=gettext_lazy('Puede seleccionar múltiples archivos (PDF, DOC, TXT, imágenes, Excel, ZIP)'),
         widget=MultipleFileInput(attrs={
             'class': 'form-control',
             'accept': '.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.xls,.xlsx,.zip,.rar'
@@ -2419,12 +2420,12 @@ class WorkOrderForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Filtrar solo empresas activas
         self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
-        self.fields['company'].empty_label = "Seleccionar empresa"
+        self.fields['company'].empty_label = gettext_lazy("Seleccionar empresa")
         self.fields['company'].required = False
         
         # Configurar campo proyecto
         self.fields['project'].queryset = Project.objects.filter(is_active=True).order_by('name')
-        self.fields['project'].empty_label = "Seleccionar proyecto (opcional)"
+        self.fields['project'].empty_label = gettext_lazy("Seleccionar proyecto (opcional)")
         
         # Configurar queryset para usuarios asignables (agentes)
         try:
@@ -2434,7 +2435,7 @@ class WorkOrderForm(forms.ModelForm):
         except Group.DoesNotExist:
             self.fields['assigned_to'].queryset = User.objects.filter(is_active=True)
         
-        self.fields['assigned_to'].empty_label = "Sin asignar"
+        self.fields['assigned_to'].empty_label = gettext_lazy("Sin asignar")
         
         # Si es una nueva orden (no tiene instance.pk)
         if not self.instance.pk:
@@ -2455,12 +2456,12 @@ class WorkOrderForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título descriptivo de la orden de trabajo'
+                'placeholder': gettext_lazy('Título descriptivo de la orden de trabajo')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 6,
-                'placeholder': 'Descripción detallada del trabajo a realizar...'
+                'placeholder': gettext_lazy('Descripción detallada del trabajo a realizar...')
             }),
             'company': forms.Select(attrs={
                 'class': 'form-select'
@@ -2476,13 +2477,13 @@ class WorkOrderForm(forms.ModelForm):
             }),
             'estimated_hours': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: 8.5',
+                'placeholder': gettext_lazy('Ej: 8.5'),
                 'step': '0.5',
                 'min': '0'
             }),
             'amount': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: 1500.00',
+                'placeholder': gettext_lazy('Ej: 1500.00'),
                 'step': '0.01',
                 'min': '0'
             }),
@@ -2497,29 +2498,29 @@ class WorkOrderForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción del trabajo',
-            'company': 'Empresa',
-            'project': 'Proyecto',
-            'status': 'Estado',
-            'due_date': 'Fecha de entrega',
-            'estimated_hours': 'Horas estimadas',
-            'amount': 'Importe',
-            'priority': 'Prioridad',
-            'assigned_to': 'Asignar a',
-            'is_public': 'Publicar públicamente',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción del trabajo'),
+            'company': gettext_lazy('Empresa'),
+            'project': gettext_lazy('Proyecto'),
+            'status': gettext_lazy('Estado'),
+            'due_date': gettext_lazy('Fecha de entrega'),
+            'estimated_hours': gettext_lazy('Horas estimadas'),
+            'amount': gettext_lazy('Importe'),
+            'priority': gettext_lazy('Prioridad'),
+            'assigned_to': gettext_lazy('Asignar a'),
+            'is_public': gettext_lazy('Publicar públicamente'),
         }
         help_texts = {
-            'title': 'Título descriptivo de la orden de trabajo',
-            'description': 'Descripción detallada de todo lo que se necesita realizar',
-            'company': 'Empresa a la que se dirige la orden de trabajo',
-            'project': 'Proyecto asociado a la orden de trabajo (opcional)',
-            'due_date': 'Fecha límite para completar la orden (opcional)',
-            'estimated_hours': 'Tiempo estimado para completar el trabajo',
-            'amount': 'Precio o costo de la orden de trabajo (opcional)',
-            'priority': 'Nivel de urgencia de la orden',
-            'assigned_to': 'Usuario responsable de ejecutar la orden',
-            'is_public': 'Permite que esta orden sea visible públicamente',
+            'title': gettext_lazy('Título descriptivo de la orden de trabajo'),
+            'description': gettext_lazy('Descripción detallada de todo lo que se necesita realizar'),
+            'company': gettext_lazy('Empresa a la que se dirige la orden de trabajo'),
+            'project': gettext_lazy('Proyecto asociado a la orden de trabajo (opcional)'),
+            'due_date': gettext_lazy('Fecha límite para completar la orden (opcional)'),
+            'estimated_hours': gettext_lazy('Tiempo estimado para completar el trabajo'),
+            'amount': gettext_lazy('Precio o costo de la orden de trabajo (opcional)'),
+            'priority': gettext_lazy('Nivel de urgencia de la orden'),
+            'assigned_to': gettext_lazy('Usuario responsable de ejecutar la orden'),
+            'is_public': gettext_lazy('Permite que esta orden sea visible públicamente'),
         }
     
     def clean_title(self):
@@ -2604,33 +2605,33 @@ class WorkOrderFilterForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Buscar por título o descripción...'
+            'placeholder': gettext_lazy('Buscar por título o descripción...')
         }),
-        label='Buscar'
+        label=gettext_lazy('Buscar')
     )
     
     company = forms.ModelChoiceField(
         queryset=Company.objects.filter(is_active=True),
         required=False,
-        empty_label="Todas las empresas",
+        empty_label=gettext_lazy("Todas las empresas"),
         widget=forms.Select(attrs={
             'class': 'form-select'
         }),
-        label='Empresa'
+        label=gettext_lazy('Empresa')
     )
     
     status = forms.ChoiceField(
         required=False,
-        choices=[('', 'Todos los estados')] + WorkOrder.STATUS_CHOICES,
+        choices=[('', gettext_lazy('Todos los estados'))] + WorkOrder.STATUS_CHOICES,
         widget=forms.Select(attrs={
             'class': 'form-select'
         }),
-        label='Estado'
+        label=gettext_lazy('Estado')
     )
     
     priority = forms.ChoiceField(
         required=False,
-        choices=[('', 'Todas las prioridades')] + [
+        choices=[('', gettext_lazy('Todas las prioridades'))] + [
             ('low', 'Baja'),
             ('medium', 'Media'),
             ('high', 'Alta'),
@@ -2639,17 +2640,17 @@ class WorkOrderFilterForm(forms.Form):
         widget=forms.Select(attrs={
             'class': 'form-select'
         }),
-        label='Prioridad'
+        label=gettext_lazy('Prioridad')
     )
     
     assigned_to = forms.ModelChoiceField(
         queryset=User.objects.filter(is_active=True),
         required=False,
-        empty_label="Todos los asignados",
+        empty_label=gettext_lazy("Todos los asignados"),
         widget=forms.Select(attrs={
             'class': 'form-select'
         }),
-        label='Asignado a'
+        label=gettext_lazy('Asignado a')
     )
     
     def __init__(self, *args, **kwargs):
@@ -2672,12 +2673,12 @@ class TaskForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la tarea'
+                'placeholder': gettext_lazy('Título de la tarea')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Descripción detallada de la tarea'
+                'placeholder': gettext_lazy('Descripción detallada de la tarea')
             }),
             'status': forms.Select(attrs={
                 'class': 'form-select'
@@ -2694,16 +2695,16 @@ class TaskForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción',
-            'status': 'Estado',
-            'priority': 'Prioridad',
-            'assigned_users': 'Usuarios Asignados',
-            'due_date': 'Fecha de Vencimiento',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción'),
+            'status': gettext_lazy('Estado'),
+            'priority': gettext_lazy('Prioridad'),
+            'assigned_users': gettext_lazy('Usuarios Asignados'),
+            'due_date': gettext_lazy('Fecha de Vencimiento'),
         }
         help_texts = {
-            'assigned_users': 'Selecciona uno o más usuarios para asignar a esta tarea',
-            'due_date': 'Fecha y hora límite para completar la tarea (opcional)',
+            'assigned_users': gettext_lazy('Selecciona uno o más usuarios para asignar a esta tarea'),
+            'due_date': gettext_lazy('Fecha y hora límite para completar la tarea (opcional)'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -2729,7 +2730,7 @@ class ChatMessageForm(forms.ModelForm):
         widgets = {
             'message': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Escribe un mensaje...',
+                'placeholder': gettext_lazy('Escribe un mensaje...'),
                 'autocomplete': 'off',
                 'maxlength': '1000'
             }),
@@ -2739,8 +2740,8 @@ class ChatMessageForm(forms.ModelForm):
             }),
         }
         labels = {
-            'message': 'Mensaje',
-            'attachment': 'Archivo adjunto',
+            'message': gettext_lazy('Mensaje'),
+            'attachment': gettext_lazy('Archivo adjunto'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -2766,7 +2767,7 @@ class ChatRoomForm(forms.ModelForm):
         queryset=User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username'),
         widget=forms.CheckboxSelectMultiple(),
         required=True,
-        label='Participantes'
+        label=gettext_lazy('Participantes')
     )
     
     class Meta:
@@ -2775,12 +2776,12 @@ class ChatRoomForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre del grupo (opcional)'
+                'placeholder': gettext_lazy('Nombre del grupo (opcional)')
             }),
         }
         labels = {
-            'name': 'Nombre del grupo',
-            'participants': 'Participantes',
+            'name': gettext_lazy('Nombre del grupo'),
+            'participants': gettext_lazy('Participantes'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -2820,34 +2821,34 @@ class CommandForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Buscar archivos por extensión'
+                'placeholder': gettext_lazy('Ej: Buscar archivos por extensión')
             }),
             'command': forms.Textarea(attrs={
                 'class': 'form-control font-monospace',
                 'rows': 3,
-                'placeholder': 'find . -name "*.txt" -type f'
+                'placeholder': gettext_lazy('find . -name "*.txt" -type f')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción detallada de lo que hace el comando'
+                'placeholder': gettext_lazy('Descripción detallada de lo que hace el comando')
             }),
             'category': forms.Select(attrs={
                 'class': 'form-select'
             }),
             'tags': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'buscar, archivos, find, linux'
+                'placeholder': gettext_lazy('buscar, archivos, find, linux')
             }),
             'example_usage': forms.Textarea(attrs={
                 'class': 'form-control font-monospace',
                 'rows': 3,
-                'placeholder': 'Ejemplo práctico de uso (opcional)'
+                'placeholder': gettext_lazy('Ejemplo práctico de uso (opcional)')
             }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': 'Notas adicionales, advertencias o tips (opcional)'
+                'placeholder': gettext_lazy('Notas adicionales, advertencias o tips (opcional)')
             }),
             'is_dangerous': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -2857,15 +2858,15 @@ class CommandForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'command': 'Comando',
-            'description': 'Descripción',
-            'category': 'Categoría',
-            'tags': 'Etiquetas',
-            'example_usage': 'Ejemplo de uso',
-            'notes': 'Notas adicionales',
-            'is_dangerous': 'Comando peligroso',
-            'is_favorite': 'Marcar como favorito',
+            'title': gettext_lazy('Título'),
+            'command': gettext_lazy('Comando'),
+            'description': gettext_lazy('Descripción'),
+            'category': gettext_lazy('Categoría'),
+            'tags': gettext_lazy('Etiquetas'),
+            'example_usage': gettext_lazy('Ejemplo de uso'),
+            'notes': gettext_lazy('Notas adicionales'),
+            'is_dangerous': gettext_lazy('Comando peligroso'),
+            'is_favorite': gettext_lazy('Marcar como favorito'),
         }
 
 
@@ -2877,13 +2878,13 @@ class CommandSearchForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control form-control-lg',
-            'placeholder': 'Buscar comandos... (título, descripción, etiquetas)',
+            'placeholder': gettext_lazy('Buscar comandos... (título, descripción, etiquetas)'),
             'autocomplete': 'off'
         })
     )
     
     category = forms.ChoiceField(
-        choices=[('', 'Todas las categorías')] + Command.CATEGORY_CHOICES,
+        choices=[('', gettext_lazy('Todas las categorías'))] + Command.CATEGORY_CHOICES,
         required=False,
         widget=forms.Select(attrs={
             'class': 'form-select'
@@ -2895,7 +2896,7 @@ class CommandSearchForm(forms.Form):
         widget=forms.CheckboxInput(attrs={
             'class': 'form-check-input'
         }),
-        label='Solo favoritos'
+        label=gettext_lazy('Solo favoritos')
     )
     
     dangerous_only = forms.BooleanField(
@@ -2903,7 +2904,7 @@ class CommandSearchForm(forms.Form):
         widget=forms.CheckboxInput(attrs={
             'class': 'form-check-input'
         }),
-        label='Solo comandos peligrosos'
+        label=gettext_lazy('Solo comandos peligrosos')
     )
 
 
@@ -2919,17 +2920,17 @@ class PublicContactForm(forms.ModelForm):
         widgets = {
             'company_name': forms.TextInput(attrs={
                 'class': 'form-control form-control-lg',
-                'placeholder': 'Nombre de su empresa',
+                'placeholder': gettext_lazy('Nombre de su empresa'),
                 'required': True
             }),
             'contact_name': forms.TextInput(attrs={
                 'class': 'form-control form-control-lg',
-                'placeholder': 'Su nombre completo',
+                'placeholder': gettext_lazy('Su nombre completo'),
                 'required': True
             }),
             'email': forms.EmailInput(attrs={
                 'class': 'form-control form-control-lg',
-                'placeholder': 'correo@empresa.com',
+                'placeholder': gettext_lazy('correo@empresa.com'),
                 'required': True
             }),
             'phone': forms.TextInput(attrs={
@@ -2938,33 +2939,33 @@ class PublicContactForm(forms.ModelForm):
             }),
             'website': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://www.empresa.com'
+                'placeholder': gettext_lazy('https://www.empresa.com')
             }),
             'address': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Dirección completa de la empresa'
+                'placeholder': gettext_lazy('Dirección completa de la empresa')
             }),
             'message': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Cuéntenos sobre su empresa y los servicios que necesita...'
+                'placeholder': gettext_lazy('Cuéntenos sobre su empresa y los servicios que necesita...')
             })
         }
         labels = {
-            'company_name': 'Nombre de la Empresa *',
-            'contact_name': 'Nombre del Contacto *',
-            'email': 'Correo Electrónico *',
-            'phone': 'Teléfono',
-            'website': 'Sitio Web',
-            'address': 'Dirección',
-            'message': 'Mensaje Adicional'
+            'company_name': gettext_lazy('Nombre de la Empresa *'),
+            'contact_name': gettext_lazy('Nombre del Contacto *'),
+            'email': gettext_lazy('Correo Electrónico *'),
+            'phone': gettext_lazy('Teléfono'),
+            'website': gettext_lazy('Sitio Web'),
+            'address': gettext_lazy('Dirección'),
+            'message': gettext_lazy('Mensaje Adicional')
         }
         help_texts = {
-            'email': 'Utilizaremos este correo para contactarle',
-            'phone': 'Número de teléfono de contacto',
-            'website': 'URL completa de su sitio web',
-            'address': 'Dirección física de su empresa',
-            'message': 'Información adicional sobre su empresa o servicios que necesita'
+            'email': gettext_lazy('Utilizaremos este correo para contactarle'),
+            'phone': gettext_lazy('Número de teléfono de contacto'),
+            'website': gettext_lazy('URL completa de su sitio web'),
+            'address': gettext_lazy('Dirección física de su empresa'),
+            'message': gettext_lazy('Información adicional sobre su empresa o servicios que necesita')
         }
 
 
@@ -2981,7 +2982,7 @@ class ContactFormManagementForm(forms.ModelForm):
             'admin_notes': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Notas internas sobre el procesamiento de esta solicitud...'
+                'placeholder': gettext_lazy('Notas internas sobre el procesamiento de esta solicitud...')
             })
         }
 
@@ -2999,7 +3000,7 @@ class CompanyFromContactForm(forms.ModelForm):
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción de la empresa...'
+                'placeholder': gettext_lazy('Descripción de la empresa...')
             }),
             'address': forms.TextInput(attrs={
                 'class': 'form-control'
@@ -3072,7 +3073,7 @@ class MeetingForm(forms.ModelForm):
             'class': 'form-control',
             'type': 'date'
         }, format='%Y-%m-%d'),
-        label='Fecha de la reunión',
+        label=gettext_lazy('Fecha de la reunión'),
         required=True,
         input_formats=['%Y-%m-%d']
     )
@@ -3082,7 +3083,7 @@ class MeetingForm(forms.ModelForm):
             'class': 'form-control',
             'type': 'time'
         }, format='%H:%M'),
-        label='Hora de la reunión',
+        label=gettext_lazy('Hora de la reunión'),
         required=True,
         input_formats=['%H:%M']
     )
@@ -3093,17 +3094,17 @@ class MeetingForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la reunión'
+                'placeholder': gettext_lazy('Título de la reunión')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Descripción de la reunión'
+                'placeholder': gettext_lazy('Descripción de la reunión')
             }),
             'spin_methodology': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 6,
-                'placeholder': 'Preguntas SPIN se generarán automáticamente aquí...',
+                'placeholder': gettext_lazy('Preguntas SPIN se generarán automáticamente aquí...'),
                 'readonly': True
             }),
             'company': forms.Select(attrs={
@@ -3121,7 +3122,7 @@ class MeetingForm(forms.ModelForm):
             }),
             'location': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ubicación o enlace de la reunión'
+                'placeholder': gettext_lazy('Ubicación o enlace de la reunión')
             }),
             'status': forms.Select(attrs={
                 'class': 'form-control'
@@ -3138,9 +3139,9 @@ class MeetingForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         self.fields['title'].required = True
-        self.fields['duration'].help_text = 'Duración en minutos'
-        self.fields['allow_questions'].help_text = 'Permitir que los asistentes hagan preguntas'
-        self.fields['require_email'].help_text = 'Requerir email para registrarse'
+        self.fields['duration'].help_text = gettext_lazy('Duración en minutos')
+        self.fields['allow_questions'].help_text = gettext_lazy('Permitir que los asistentes hagan preguntas')
+        self.fields['require_email'].help_text = gettext_lazy('Requerir email para registrarse')
         
         # Configurar producto disponible
         from .models import Company, Product
@@ -3153,7 +3154,7 @@ class MeetingForm(forms.ModelForm):
         product_choices = [('', '---------')] + [(p.id, f"{p.name} - {p.price_with_currency}") for p in products]
         self.fields['product'].choices = product_choices
         self.fields['product'].required = False
-        self.fields['product'].help_text = 'Selecciona el producto principal que se discutirá en la reunión'
+        self.fields['product'].help_text = gettext_lazy('Selecciona el producto principal que se discutirá en la reunión')
         
         # Establecer valores por defecto para fecha y hora
         from datetime import datetime, timedelta
@@ -3196,16 +3197,16 @@ class MeetingAttendeeForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Tu nombre completo',
+                'placeholder': gettext_lazy('Tu nombre completo'),
                 'required': True
             }),
             'email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'tu@email.com'
+                'placeholder': gettext_lazy('tu@email.com')
             }),
             'company': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Tu empresa (opcional)'
+                'placeholder': gettext_lazy('Tu empresa (opcional)')
             }),
         }
     
@@ -3236,16 +3237,16 @@ class MeetingQuestionForm(forms.ModelForm):
             'question': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': '¿Cuál es tu pregunta?',
+                'placeholder': gettext_lazy('¿Cuál es tu pregunta?'),
                 'required': True
             }),
             'asker_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Tu nombre (opcional)'
+                'placeholder': gettext_lazy('Tu nombre (opcional)')
             }),
             'asker_email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'tu@email.com (opcional)'
+                'placeholder': gettext_lazy('tu@email.com (opcional)')
             }),
         }
     
@@ -3264,7 +3265,7 @@ class MeetingAnswerForm(forms.ModelForm):
             'answer': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Respuesta a la pregunta'
+                'placeholder': gettext_lazy('Respuesta a la pregunta')
             }),
             'status': forms.Select(attrs={
                 'class': 'form-control'
@@ -3284,12 +3285,12 @@ class OpportunityActivityForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la actividad'
+                'placeholder': gettext_lazy('Título de la actividad')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción detallada de la actividad'
+                'placeholder': gettext_lazy('Descripción detallada de la actividad')
             }),
             'activity_type': forms.Select(attrs={
                 'class': 'form-control'
@@ -3306,12 +3307,12 @@ class OpportunityActivityForm(forms.ModelForm):
             }),
             'duration_minutes': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Duración en minutos',
+                'placeholder': gettext_lazy('Duración en minutos'),
                 'min': '1'
             }),
             'location': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ubicación (opcional)'
+                'placeholder': gettext_lazy('Ubicación (opcional)')
             }),
         }
     
@@ -3354,8 +3355,8 @@ class OpportunityActivityStandaloneForm(forms.ModelForm):
         widget=forms.Select(attrs={
             'class': 'form-control'
         }),
-        label='Oportunidad',
-        help_text='Selecciona la oportunidad para esta actividad (opcional)',
+        label=gettext_lazy('Oportunidad'),
+        help_text=gettext_lazy('Selecciona la oportunidad para esta actividad (opcional)'),
         required=False
     )
     
@@ -3364,8 +3365,8 @@ class OpportunityActivityStandaloneForm(forms.ModelForm):
         widget=forms.Select(attrs={
             'class': 'form-control'
         }),
-        label='Contacto',
-        help_text='Selecciona el contacto relacionado con esta actividad (opcional)',
+        label=gettext_lazy('Contacto'),
+        help_text=gettext_lazy('Selecciona el contacto relacionado con esta actividad (opcional)'),
         required=False
     )
     
@@ -3378,12 +3379,12 @@ class OpportunityActivityStandaloneForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la actividad'
+                'placeholder': gettext_lazy('Título de la actividad')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción detallada de la actividad'
+                'placeholder': gettext_lazy('Descripción detallada de la actividad')
             }),
             'activity_type': forms.Select(attrs={
                 'class': 'form-control'
@@ -3400,12 +3401,12 @@ class OpportunityActivityStandaloneForm(forms.ModelForm):
             }),
             'duration_minutes': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Duración en minutos',
+                'placeholder': gettext_lazy('Duración en minutos'),
                 'min': '1'
             }),
             'location': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ubicación (opcional)'
+                'placeholder': gettext_lazy('Ubicación (opcional)')
             }),
         }
     
@@ -3428,7 +3429,7 @@ class OpportunityActivityStandaloneForm(forms.ModelForm):
         
         # Filtrar contactos (todos los usuarios pueden ver todos los contactos)
         self.fields['contact'].queryset = Contact.objects.all().order_by('name')
-        self.fields['contact'].empty_label = "Seleccionar contacto (opcional)"
+        self.fields['contact'].empty_label = gettext_lazy("Seleccionar contacto (opcional)")
         
         # Filtrar usuarios a solo agentes activos
         if hasattr(User, 'groups'):
@@ -3456,7 +3457,7 @@ class OpportunityActivityStandaloneForm(forms.ModelForm):
             self.fields['scheduled_date'].initial = default_date.strftime('%Y-%m-%dT%H:%M')
         
         self.fields['assigned_to'].queryset = agent_users
-        self.fields['assigned_to'].empty_label = "Seleccionar agente"
+        self.fields['assigned_to'].empty_label = gettext_lazy("Seleccionar agente")
         
         # Establecer valores por defecto al crear nueva actividad
         if not self.instance.pk:
@@ -3474,14 +3475,14 @@ class OpportunityActivityStandaloneForm(forms.ModelForm):
             self.fields['duration_minutes'].initial = 5
         
         # Personalizar labels
-        self.fields['title'].label = 'Título de la Actividad'
-        self.fields['description'].label = 'Descripción'
-        self.fields['activity_type'].label = 'Tipo de Actividad'
-        self.fields['priority'].label = 'Prioridad'
-        self.fields['scheduled_date'].label = 'Fecha y Hora Programada'
-        self.fields['assigned_to'].label = 'Asignado a'
-        self.fields['duration_minutes'].label = 'Duración (minutos)'
-        self.fields['location'].label = 'Ubicación'
+        self.fields['title'].label = gettext_lazy('Título de la Actividad')
+        self.fields['description'].label = gettext_lazy('Descripción')
+        self.fields['activity_type'].label = gettext_lazy('Tipo de Actividad')
+        self.fields['priority'].label = gettext_lazy('Prioridad')
+        self.fields['scheduled_date'].label = gettext_lazy('Fecha y Hora Programada')
+        self.fields['assigned_to'].label = gettext_lazy('Asignado a')
+        self.fields['duration_minutes'].label = gettext_lazy('Duración (minutos)')
+        self.fields['location'].label = gettext_lazy('Ubicación')
 
 
 class OpportunityActivityCompleteForm(forms.ModelForm):
@@ -3494,7 +3495,7 @@ class OpportunityActivityCompleteForm(forms.ModelForm):
             'result': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Describe el resultado de la actividad...'
+                'placeholder': gettext_lazy('Describe el resultado de la actividad...')
             }),
             'status': forms.Select(attrs={
                 'class': 'form-control'
@@ -3506,12 +3507,12 @@ class OpportunityActivityCompleteForm(forms.ModelForm):
         
         # Solo permitir estados de finalización
         self.fields['status'].choices = [
-            ('completed', 'Completada'),
-            ('cancelled', 'Cancelada'),
+            ('completed', gettext_lazy('Completada')),
+            ('cancelled', gettext_lazy('Cancelada')),
         ]
         
-        self.fields['result'].label = 'Resultado de la Actividad'
-        self.fields['status'].label = 'Estado Final'
+        self.fields['result'].label = gettext_lazy('Resultado de la Actividad')
+        self.fields['status'].label = gettext_lazy('Estado Final')
 
 
 class ClientRequestForm(forms.ModelForm):
@@ -3523,17 +3524,17 @@ class ClientRequestForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la solicitud',
+                'placeholder': gettext_lazy('Título de la solicitud'),
                 'maxlength': 200
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Describe lo que necesitas del cliente...'
+                'placeholder': gettext_lazy('Describe lo que necesitas del cliente...')
             }),
             'requested_to': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre de la persona'
+                'placeholder': gettext_lazy('Nombre de la persona')
             }),
             'company': forms.Select(attrs={
                 'class': 'form-control'
@@ -3543,11 +3544,11 @@ class ClientRequestForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción',
-            'requested_to': 'Solicitado a',
-            'company': 'Empresa',
-            'attachment': 'Archivo adjunto (opcional)',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción'),
+            'requested_to': gettext_lazy('Solicitado a'),
+            'company': gettext_lazy('Empresa'),
+            'attachment': gettext_lazy('Archivo adjunto (opcional)'),
         }
 
 
@@ -3561,15 +3562,15 @@ class ClientRequestResponseForm(forms.ModelForm):
             'response_text': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 5,
-                'placeholder': 'Escribe tu respuesta aquí...'
+                'placeholder': gettext_lazy('Escribe tu respuesta aquí...')
             }),
             'attachment': forms.FileInput(attrs={
                 'class': 'form-control'
             }),
         }
         labels = {
-            'response_text': 'Respuesta',
-            'attachment': 'Adjunto (Opcional)',
+            'response_text': gettext_lazy('Respuesta'),
+            'attachment': gettext_lazy('Adjunto (Opcional)'),
         }
 
 
@@ -3582,21 +3583,21 @@ class ClientRequestTemplateForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Onboarding de Cliente, Cierre de Mes, etc.'
+                'placeholder': gettext_lazy('Ej: Onboarding de Cliente, Cierre de Mes, etc.')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Describe para qué sirve esta plantilla...'
+                'placeholder': gettext_lazy('Describe para qué sirve esta plantilla...')
             }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
         }
         labels = {
-            'name': 'Nombre de la Plantilla',
-            'description': 'Descripción',
-            'is_active': 'Activa',
+            'name': gettext_lazy('Nombre de la Plantilla'),
+            'description': gettext_lazy('Descripción'),
+            'is_active': gettext_lazy('Activa'),
         }
 
 
@@ -3609,16 +3610,16 @@ class ClientRequestTemplateItemForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la solicitud'
+                'placeholder': gettext_lazy('Título de la solicitud')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción de lo que se solicita...'
+                'placeholder': gettext_lazy('Descripción de lo que se solicita...')
             }),
             'requested_to': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre de la persona'
+                'placeholder': gettext_lazy('Nombre de la persona')
             }),
             'order': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -3629,11 +3630,11 @@ class ClientRequestTemplateItemForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción',
-            'requested_to': 'Solicitado a',
-            'order': 'Orden',
-            'attachment': 'Archivo adjunto (opcional)',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción'),
+            'requested_to': gettext_lazy('Solicitado a'),
+            'order': gettext_lazy('Orden'),
+            'attachment': gettext_lazy('Archivo adjunto (opcional)'),
         }
 
 
@@ -3645,8 +3646,8 @@ class ExecuteTemplateForm(forms.Form):
         widget=forms.Select(attrs={
             'class': 'form-control'
         }),
-        label='Empresa',
-        help_text='Selecciona la empresa para la cual crear las solicitudes'
+        label=gettext_lazy('Empresa'),
+        help_text=gettext_lazy('Selecciona la empresa para la cual crear las solicitudes')
     )
 
 
@@ -3659,41 +3660,41 @@ class CourseForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título del curso',
+                'placeholder': gettext_lazy('Título del curso'),
                 'maxlength': 200
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Descripción del curso...'
+                'placeholder': gettext_lazy('Descripción del curso...')
             }),
             'company': forms.Select(attrs={
                 'class': 'form-control'
             }),
             'access_url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://ejemplo.com'
+                'placeholder': gettext_lazy('https://ejemplo.com')
             }),
             'access_username': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Usuario'
+                'placeholder': gettext_lazy('Usuario')
             }),
             'access_password': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Contraseña'
+                'placeholder': gettext_lazy('Contraseña')
             }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
         }
         labels = {
-            'title': 'Título del Curso',
-            'description': 'Descripción',
-            'company': 'Empresa (Opcional)',
-            'access_url': 'URL de acceso (Opcional)',
-            'access_username': 'Usuario (Opcional)',
-            'access_password': 'Contraseña (Opcional)',
-            'is_active': 'Activo',
+            'title': gettext_lazy('Título del Curso'),
+            'description': gettext_lazy('Descripción'),
+            'company': gettext_lazy('Empresa (Opcional)'),
+            'access_url': gettext_lazy('URL de acceso (Opcional)'),
+            'access_username': gettext_lazy('Usuario (Opcional)'),
+            'access_password': gettext_lazy('Contraseña (Opcional)'),
+            'is_active': gettext_lazy('Activo'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -3702,7 +3703,7 @@ class CourseForm(forms.ModelForm):
         
         # Hacer el campo company opcional
         self.fields['company'].required = False
-        self.fields['company'].empty_label = "Todos los usuarios (público)"
+        self.fields['company'].empty_label = gettext_lazy("Todos los usuarios (público)")
         
         # Solo mostrar empresas activas
         self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
@@ -3717,17 +3718,17 @@ class CourseClassForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la clase',
+                'placeholder': gettext_lazy('Título de la clase'),
                 'maxlength': 200
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción de la clase...'
+                'placeholder': gettext_lazy('Descripción de la clase...')
             }),
             'video_url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://www.youtube.com/watch?v=...'
+                'placeholder': gettext_lazy('https://www.youtube.com/watch?v=...')
             }),
             'order': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -3743,12 +3744,12 @@ class CourseClassForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título de la Clase',
-            'description': 'Descripción',
-            'video_url': 'URL del Video',
-            'order': 'Orden',
-            'duration_minutes': 'Duración (minutos)',
-            'is_active': 'Activa',
+            'title': gettext_lazy('Título de la Clase'),
+            'description': gettext_lazy('Descripción'),
+            'video_url': gettext_lazy('URL del Video'),
+            'order': gettext_lazy('Orden'),
+            'duration_minutes': gettext_lazy('Duración (minutos)'),
+            'is_active': gettext_lazy('Activa'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -3774,11 +3775,11 @@ class ContactForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre completo del contacto'
+                'placeholder': gettext_lazy('Nombre completo del contacto')
             }),
             'email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'ejemplo@empresa.com'
+                'placeholder': gettext_lazy('ejemplo@empresa.com')
             }),
             'phone': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -3786,19 +3787,19 @@ class ContactForm(forms.ModelForm):
             }),
             'position': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Director, Gerente, etc.'
+                'placeholder': gettext_lazy('Director, Gerente, etc.')
             }),
             'company': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre de la empresa'
+                'placeholder': gettext_lazy('Nombre de la empresa')
             }),
             'country': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'España, México, Argentina, etc.'
+                'placeholder': gettext_lazy('España, México, Argentina, etc.')
             }),
             'erp': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'SAP, Odoo, Navision, etc.'
+                'placeholder': gettext_lazy('SAP, Odoo, Navision, etc.')
             }),
             'status': forms.Select(attrs={
                 'class': 'form-select'
@@ -3816,7 +3817,7 @@ class ContactForm(forms.ModelForm):
             }),
             'source': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'LinkedIn, referencia, evento, etc.'
+                'placeholder': gettext_lazy('LinkedIn, referencia, evento, etc.')
             }),
             'company_size': forms.Select(attrs={
                 'class': 'form-select'
@@ -3824,7 +3825,7 @@ class ContactForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Notas adicionales sobre la conversación...'
+                'placeholder': gettext_lazy('Notas adicionales sobre la conversación...')
             }),
             'contact_date': forms.DateTimeInput(attrs={
                 'class': 'form-control',
@@ -3846,7 +3847,7 @@ class ContactForm(forms.ModelForm):
             'contact_tracking_notes': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Notas sobre los contactos realizados...'
+                'placeholder': gettext_lazy('Notas sobre los contactos realizados...')
             }),
             'last_contact_date': forms.DateTimeInput(attrs={
                 'class': 'form-control',
@@ -3854,31 +3855,31 @@ class ContactForm(forms.ModelForm):
             }),
             'website': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://www.ejemplo.com'
+                'placeholder': gettext_lazy('https://www.ejemplo.com')
             }),
             'facebook_url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://facebook.com/empresa'
+                'placeholder': gettext_lazy('https://facebook.com/empresa')
             }),
             'linkedin_url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://linkedin.com/company/empresa'
+                'placeholder': gettext_lazy('https://linkedin.com/company/empresa')
             }),
             'twitter_url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://twitter.com/empresa'
+                'placeholder': gettext_lazy('https://twitter.com/empresa')
             }),
             'instagram_url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://instagram.com/empresa'
+                'placeholder': gettext_lazy('https://instagram.com/empresa')
             }),
             'youtube_url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://youtube.com/@empresa'
+                'placeholder': gettext_lazy('https://youtube.com/@empresa')
             }),
             'tiktok_url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://tiktok.com/@empresa'
+                'placeholder': gettext_lazy('https://tiktok.com/@empresa')
             }),
         }
     
@@ -3920,28 +3921,28 @@ class ContactForm(forms.ModelForm):
                 self.fields['last_contact_date'].initial = now.strftime('%Y-%m-%dT%H:%M')
         
         # Personalizar labels
-        self.fields['name'].label = 'Nombre Completo'
-        self.fields['email'].label = 'Email'
-        self.fields['phone'].label = 'Teléfono'
-        self.fields['position'].label = 'Cargo'
-        self.fields['company'].label = 'Empresa'
-        self.fields['status'].label = 'Estado del Contacto'
-        self.fields['source'].label = 'Fuente'
-        self.fields['notes'].label = 'Notas'
-        self.fields['contact_date'].label = 'Fecha y Hora de Contacto'
-        self.fields['contacted_by_phone'].label = 'Contactado por teléfono'
-        self.fields['contacted_by_web'].label = 'Contactado por web/email'
-        self.fields['had_meeting'].label = 'Reunión realizada'
-        self.fields['meeting_date'].label = 'Fecha de reunión'
-        self.fields['contact_tracking_notes'].label = 'Notas de seguimiento'
-        self.fields['last_contact_date'].label = 'Fecha del último contacto'
-        self.fields['website'].label = 'Sitio Web'
-        self.fields['facebook_url'].label = 'Facebook'
-        self.fields['linkedin_url'].label = 'LinkedIn'
-        self.fields['twitter_url'].label = 'Twitter/X'
-        self.fields['instagram_url'].label = 'Instagram'
-        self.fields['youtube_url'].label = 'YouTube'
-        self.fields['tiktok_url'].label = 'TikTok'
+        self.fields['name'].label = gettext_lazy('Nombre Completo')
+        self.fields['email'].label = gettext_lazy('Email')
+        self.fields['phone'].label = gettext_lazy('Teléfono')
+        self.fields['position'].label = gettext_lazy('Cargo')
+        self.fields['company'].label = gettext_lazy('Empresa')
+        self.fields['status'].label = gettext_lazy('Estado del Contacto')
+        self.fields['source'].label = gettext_lazy('Fuente')
+        self.fields['notes'].label = gettext_lazy('Notas')
+        self.fields['contact_date'].label = gettext_lazy('Fecha y Hora de Contacto')
+        self.fields['contacted_by_phone'].label = gettext_lazy('Contactado por teléfono')
+        self.fields['contacted_by_web'].label = gettext_lazy('Contactado por web/email')
+        self.fields['had_meeting'].label = gettext_lazy('Reunión realizada')
+        self.fields['meeting_date'].label = gettext_lazy('Fecha de reunión')
+        self.fields['contact_tracking_notes'].label = gettext_lazy('Notas de seguimiento')
+        self.fields['last_contact_date'].label = gettext_lazy('Fecha del último contacto')
+        self.fields['website'].label = gettext_lazy('Sitio Web')
+        self.fields['facebook_url'].label = gettext_lazy('Facebook')
+        self.fields['linkedin_url'].label = gettext_lazy('LinkedIn')
+        self.fields['twitter_url'].label = gettext_lazy('Twitter/X')
+        self.fields['instagram_url'].label = gettext_lazy('Instagram')
+        self.fields['youtube_url'].label = gettext_lazy('YouTube')
+        self.fields['tiktok_url'].label = gettext_lazy('TikTok')
 
 
 class SalesPlanForm(forms.ModelForm):
@@ -3956,22 +3957,22 @@ class SalesPlanForm(forms.ModelForm):
             }),
             'monthly_contact_goal': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: 50',
+                'placeholder': gettext_lazy('Ej: 50'),
                 'min': '0'
             }),
             'monthly_positive_contact_goal': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: 20',
+                'placeholder': gettext_lazy('Ej: 20'),
                 'min': '0'
             }),
             'monthly_meeting_goal': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: 10',
+                'placeholder': gettext_lazy('Ej: 10'),
                 'min': '0'
             }),
             'monthly_won_goal': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: 5',
+                'placeholder': gettext_lazy('Ej: 5'),
                 'min': '0'
             }),
             'is_active': forms.CheckboxInput(attrs={
@@ -3983,11 +3984,11 @@ class SalesPlanForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         # Personalizar labels
-        self.fields['user'].label = 'Usuario'
-        self.fields['monthly_contact_goal'].label = 'Objetivo de Contactos al Mes'
-        self.fields['monthly_positive_contact_goal'].label = 'Objetivo de Contactos Positivos al Mes'
-        self.fields['monthly_meeting_goal'].label = 'Objetivo de Reuniones Mensuales'
-        self.fields['is_active'].label = 'Plan Activo'
+        self.fields['user'].label = gettext_lazy('Usuario')
+        self.fields['monthly_contact_goal'].label = gettext_lazy('Objetivo de Contactos al Mes')
+        self.fields['monthly_positive_contact_goal'].label = gettext_lazy('Objetivo de Contactos Positivos al Mes')
+        self.fields['monthly_meeting_goal'].label = gettext_lazy('Objetivo de Reuniones Mensuales')
+        self.fields['is_active'].label = gettext_lazy('Plan Activo')
 
 
 class BlogCategoryForm(forms.ModelForm):
@@ -3999,12 +4000,12 @@ class BlogCategoryForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre de la categoría'
+                'placeholder': gettext_lazy('Nombre de la categoría')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción de la categoría...'
+                'placeholder': gettext_lazy('Descripción de la categoría...')
             }),
             'color': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -4017,10 +4018,10 @@ class BlogCategoryForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['name'].label = 'Nombre'
-        self.fields['description'].label = 'Descripción'
-        self.fields['color'].label = 'Color'
-        self.fields['is_active'].label = 'Activa'
+        self.fields['name'].label = gettext_lazy('Nombre')
+        self.fields['description'].label = gettext_lazy('Descripción')
+        self.fields['color'].label = gettext_lazy('Color')
+        self.fields['is_active'].label = gettext_lazy('Activa')
         
         # Establecer valor por defecto para el color si no existe
         if not self.instance.pk and not self.fields['color'].initial:
@@ -4043,18 +4044,18 @@ class BlogPostForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título del artículo'
+                'placeholder': gettext_lazy('Título del artículo')
             }),
             'excerpt': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Breve resumen del artículo...',
+                'placeholder': gettext_lazy('Breve resumen del artículo...'),
                 'maxlength': '300'
             }),
             'content': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 15,
-                'placeholder': 'Contenido del artículo...'
+                'placeholder': gettext_lazy('Contenido del artículo...')
             }),
             'featured_image': forms.ClearableFileInput(attrs={
                 'class': 'form-control'
@@ -4067,11 +4068,11 @@ class BlogPostForm(forms.ModelForm):
             }),
             'tags': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Etiquetas separadas por comas'
+                'placeholder': gettext_lazy('Etiquetas separadas por comas')
             }),
             'meta_description': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Descripción para SEO...',
+                'placeholder': gettext_lazy('Descripción para SEO...'),
                 'maxlength': '160'
             }),
             'is_featured': forms.CheckboxInput(attrs={
@@ -4086,15 +4087,15 @@ class BlogPostForm(forms.ModelForm):
         self.fields['category'].queryset = BlogCategory.objects.filter(is_active=True)
         
         # Personalizar labels
-        self.fields['title'].label = 'Título'
-        self.fields['excerpt'].label = 'Resumen'
-        self.fields['content'].label = 'Contenido'
-        self.fields['featured_image'].label = 'Imagen Principal'
-        self.fields['category'].label = 'Categoría'
-        self.fields['status'].label = 'Estado'
-        self.fields['tags'].label = 'Etiquetas'
-        self.fields['meta_description'].label = 'Meta Descripción (SEO)'
-        self.fields['is_featured'].label = 'Artículo Destacado'
+        self.fields['title'].label = gettext_lazy('Título')
+        self.fields['excerpt'].label = gettext_lazy('Resumen')
+        self.fields['content'].label = gettext_lazy('Contenido')
+        self.fields['featured_image'].label = gettext_lazy('Imagen Principal')
+        self.fields['category'].label = gettext_lazy('Categoría')
+        self.fields['status'].label = gettext_lazy('Estado')
+        self.fields['tags'].label = gettext_lazy('Etiquetas')
+        self.fields['meta_description'].label = gettext_lazy('Meta Descripción (SEO)')
+        self.fields['is_featured'].label = gettext_lazy('Artículo Destacado')
 
 
 class BlogCommentForm(forms.ModelForm):
@@ -4106,29 +4107,29 @@ class BlogCommentForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Tu nombre'
+                'placeholder': gettext_lazy('Tu nombre')
             }),
             'email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'tu@email.com'
+                'placeholder': gettext_lazy('tu@email.com')
             }),
             'website': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://tu-sitio-web.com (opcional)'
+                'placeholder': gettext_lazy('https://tu-sitio-web.com (opcional)')
             }),
             'content': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Escribe tu comentario...'
+                'placeholder': gettext_lazy('Escribe tu comentario...')
             }),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['name'].label = 'Nombre'
-        self.fields['email'].label = 'Email'
-        self.fields['website'].label = 'Sitio Web'
-        self.fields['content'].label = 'Comentario'
+        self.fields['name'].label = gettext_lazy('Nombre')
+        self.fields['email'].label = gettext_lazy('Email')
+        self.fields['website'].label = gettext_lazy('Sitio Web')
+        self.fields['content'].label = gettext_lazy('Comentario')
         self.fields['website'].required = False
 
 
@@ -4141,10 +4142,10 @@ class AIChatSessionForm(forms.ModelForm):
     
     # Definir las opciones de modelos disponibles
     MODEL_CHOICES = [
-        ('gpt-4o', 'GPT-4o (Recomendado)'),
-        ('gpt-4o-mini', 'GPT-4o Mini (Rápido)'),
-        ('gpt-3.5-turbo', 'GPT-3.5 Turbo (Económico)'),
-        ('gpt-4', 'GPT-4 (Avanzado)'),
+        ('gpt-4o', gettext_lazy('GPT-4o (Recomendado)')),
+        ('gpt-4o-mini', gettext_lazy('GPT-4o Mini (Rápido)')),
+        ('gpt-3.5-turbo', gettext_lazy('GPT-3.5 Turbo (Económico)')),
+        ('gpt-4', gettext_lazy('GPT-4 (Avanzado)')),
     ]
     
     ai_model = forms.ChoiceField(
@@ -4152,8 +4153,8 @@ class AIChatSessionForm(forms.ModelForm):
         widget=forms.Select(attrs={
             'class': 'form-select'
         }),
-        label='Modelo de IA',
-        help_text='Selecciona el modelo de IA que deseas utilizar',
+        label=gettext_lazy('Modelo de IA'),
+        help_text=gettext_lazy('Selecciona el modelo de IA que deseas utilizar'),
         initial='gpt-4o'
     )
     
@@ -4163,15 +4164,15 @@ class AIChatSessionForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la conversación',
+                'placeholder': gettext_lazy('Título de la conversación'),
                 'maxlength': '200'
             }),
         }
         labels = {
-            'title': 'Título de la conversación',
+            'title': gettext_lazy('Título de la conversación'),
         }
         help_texts = {
-            'title': 'Dale un nombre descriptivo a tu conversación',
+            'title': gettext_lazy('Dale un nombre descriptivo a tu conversación'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -4186,14 +4187,14 @@ class AIChatMessageForm(forms.Form):
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 3,
-            'placeholder': 'Escribe tu mensaje aquí...',
+            'placeholder': gettext_lazy('Escribe tu mensaje aquí...'),
             'maxlength': '4000',
             'name': 'message',
             'id': 'id_message'
         }),
-        label='Mensaje',
+        label=gettext_lazy('Mensaje'),
         max_length=4000,
-        help_text='Máximo 4000 caracteres',
+        help_text=gettext_lazy('Máximo 4000 caracteres'),
         required=True
     )
     
@@ -4218,38 +4219,38 @@ class ConceptForm(forms.ModelForm):
         widgets = {
             'term': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Término o concepto'
+                'placeholder': gettext_lazy('Término o concepto')
             }),
             'definition': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Definición del concepto',
+                'placeholder': gettext_lazy('Definición del concepto'),
                 'rows': 4
             }),
             'category': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Categoría (opcional)'
+                'placeholder': gettext_lazy('Categoría (opcional)')
             }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
             'order': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Orden de visualización'
+                'placeholder': gettext_lazy('Orden de visualización')
             }),
         }
         labels = {
-            'term': 'Término',
-            'definition': 'Definición',
-            'category': 'Categoría',
-            'is_active': 'Activo',
-            'order': 'Orden'
+            'term': gettext_lazy('Término'),
+            'definition': gettext_lazy('Definición'),
+            'category': gettext_lazy('Categoría'),
+            'is_active': gettext_lazy('Activo'),
+            'order': gettext_lazy('Orden')
         }
         help_texts = {
-            'term': 'Nombre del concepto o término',
-            'definition': 'Explicación clara y concisa del concepto',
-            'category': 'Categoría a la que pertenece (opcional)',
-            'is_active': 'Marcar si el concepto debe mostrarse',
-            'order': 'Número para ordenar los conceptos (menor = primero)'
+            'term': gettext_lazy('Nombre del concepto o término'),
+            'definition': gettext_lazy('Explicación clara y concisa del concepto'),
+            'category': gettext_lazy('Categoría a la que pertenece (opcional)'),
+            'is_active': gettext_lazy('Marcar si el concepto debe mostrarse'),
+            'order': gettext_lazy('Número para ordenar los conceptos (menor = primero)')
         }
 
 
@@ -4264,17 +4265,17 @@ class ContactoWebForm(forms.ModelForm):
             'class': 'form-control',
             'style': 'background-color: #f8f9fa; cursor: not-allowed;'
         }),
-        label='Verificación de seguridad',
+        label=gettext_lazy('Verificación de seguridad'),
         required=False
     )
     
     captcha_answer = forms.IntegerField(
         widget=forms.NumberInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Introduce el resultado',
+            'placeholder': gettext_lazy('Introduce el resultado'),
             'required': True
         }),
-        label='Resultado'
+        label=gettext_lazy('Resultado')
     )
     
     class Meta:
@@ -4283,41 +4284,41 @@ class ContactoWebForm(forms.ModelForm):
         widgets = {
             'nombre': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Tu nombre completo',
+                'placeholder': gettext_lazy('Tu nombre completo'),
                 'required': True
             }),
             'email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'tu@email.com',
+                'placeholder': gettext_lazy('tu@email.com'),
                 'required': True
             }),
             'telefono': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Tu número de teléfono (opcional)'
+                'placeholder': gettext_lazy('Tu número de teléfono (opcional)')
             }),
             'empresa': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre de tu empresa (opcional)'
+                'placeholder': gettext_lazy('Nombre de tu empresa (opcional)')
             }),
             'asunto': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '¿En qué podemos ayudarte?',
+                'placeholder': gettext_lazy('¿En qué podemos ayudarte?'),
                 'required': True
             }),
             'mensaje': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Describe tu consulta o requerimiento...',
+                'placeholder': gettext_lazy('Describe tu consulta o requerimiento...'),
                 'rows': 4,
                 'required': True
             }),
         }
         labels = {
-            'nombre': 'Nombre completo',
-            'email': 'Correo electrónico',
-            'telefono': 'Teléfono',
-            'empresa': 'Empresa',
-            'asunto': 'Asunto',
-            'mensaje': 'Mensaje'
+            'nombre': gettext_lazy('Nombre completo'),
+            'email': gettext_lazy('Correo electrónico'),
+            'telefono': gettext_lazy('Teléfono'),
+            'empresa': gettext_lazy('Empresa'),
+            'asunto': gettext_lazy('Asunto'),
+            'mensaje': gettext_lazy('Mensaje')
         }
     
     def clean_nombre(self):
@@ -4343,14 +4344,14 @@ class EmployeeHiringOpinionForm(forms.ModelForm):
             'hiring_meeting_opinion': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 6,
-                'placeholder': 'Escriba aquí la opinión sobre la reunión/entrevista de contratación...\n\nPuede incluir:\n- Impresión general del candidato\n- Puntos fuertes identificados\n- Áreas de mejora o preocupaciones\n- Recomendaciones para la decisión final\n- Comentarios sobre fit cultural',
+                'placeholder': gettext_lazy('Escriba aquí la opinión sobre la reunión/entrevista de contratación...\n\nPuede incluir:\n- Impresión general del candidato\n- Puntos fuertes identificados\n- Áreas de mejora o preocupaciones\n- Recomendaciones para la decisión final\n- Comentarios sobre fit cultural'),
             })
         }
         labels = {
-            'hiring_meeting_opinion': 'Opinión de Reunión de Contratación'
+            'hiring_meeting_opinion': gettext_lazy('Opinión de Reunión de Contratación')
         }
         help_texts = {
-            'hiring_meeting_opinion': 'Registre aquí sus comentarios y evaluación de la reunión/entrevista con el candidato.'
+            'hiring_meeting_opinion': gettext_lazy('Registre aquí sus comentarios y evaluación de la reunión/entrevista con el candidato.')
         }
 
 
@@ -4364,15 +4365,15 @@ class EmployeePayrollForm(forms.ModelForm):
             'period_month': forms.Select(attrs={
                 'class': 'form-select'
             }, choices=[
-                (1, 'Enero'), (2, 'Febrero'), (3, 'Marzo'), (4, 'Abril'),
-                (5, 'Mayo'), (6, 'Junio'), (7, 'Julio'), (8, 'Agosto'),
-                (9, 'Septiembre'), (10, 'Octubre'), (11, 'Noviembre'), (12, 'Diciembre')
+                (1, gettext_lazy('Enero')), (2, gettext_lazy('Febrero')), (3, gettext_lazy('Marzo')), (4, gettext_lazy('Abril')),
+                (5, gettext_lazy('Mayo')), (6, gettext_lazy('Junio')), (7, gettext_lazy('Julio')), (8, gettext_lazy('Agosto')),
+                (9, gettext_lazy('Septiembre')), (10, gettext_lazy('Octubre')), (11, gettext_lazy('Noviembre')), (12, gettext_lazy('Diciembre'))
             ]),
             'period_year': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': '2020',
                 'max': '2030',
-                'placeholder': 'Ej: 2025'
+                'placeholder': gettext_lazy('Ej: 2025')
             }),
             'payroll_pdf': forms.FileInput(attrs={
                 'class': 'form-control',
@@ -4397,26 +4398,26 @@ class EmployeePayrollForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Notas adicionales sobre esta nómina...'
+                'placeholder': gettext_lazy('Notas adicionales sobre esta nómina...')
             })
         }
         labels = {
-            'period_month': 'Mes',
-            'period_year': 'Año',
-            'payroll_pdf': 'Archivo de Nómina (PDF)',
-            'payment_receipt': 'Comprobante de Pago',
-            'gross_salary': 'Salario Bruto (€)',
-            'net_salary': 'Salario Neto (€)',
-            'notes': 'Notas'
+            'period_month': gettext_lazy('Mes'),
+            'period_year': gettext_lazy('Año'),
+            'payroll_pdf': gettext_lazy('Archivo de Nómina (PDF)'),
+            'payment_receipt': gettext_lazy('Comprobante de Pago'),
+            'gross_salary': gettext_lazy('Salario Bruto (€)'),
+            'net_salary': gettext_lazy('Salario Neto (€)'),
+            'notes': gettext_lazy('Notas')
         }
         help_texts = {
-            'period_month': 'Seleccione el mes de la nómina',
-            'period_year': 'Ingrese el año de la nómina',
-            'payroll_pdf': 'Archivo PDF de la nómina (requerido)',
-            'payment_receipt': 'Comprobante de pago (opcional) - PDF, JPG o PNG',
-            'gross_salary': 'Salario bruto antes de descuentos',
-            'net_salary': 'Salario neto después de descuentos',
-            'notes': 'Información adicional sobre esta nómina'
+            'period_month': gettext_lazy('Seleccione el mes de la nómina'),
+            'period_year': gettext_lazy('Ingrese el año de la nómina'),
+            'payroll_pdf': gettext_lazy('Archivo PDF de la nómina (requerido)'),
+            'payment_receipt': gettext_lazy('Comprobante de pago (opcional) - PDF, JPG o PNG'),
+            'gross_salary': gettext_lazy('Salario bruto antes de descuentos'),
+            'net_salary': gettext_lazy('Salario neto después de descuentos'),
+            'notes': gettext_lazy('Información adicional sobre esta nómina')
         }
     
     def clean(self):
@@ -4464,8 +4465,8 @@ class AgreementForm(forms.ModelForm):
         required=False,
         initial=False,
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        label='Generar contenido con IA',
-        help_text='Generar automáticamente el contenido del acuerdo basado en el título'
+        label=gettext_lazy('Generar contenido con IA'),
+        help_text=gettext_lazy('Generar automáticamente el contenido del acuerdo basado en el título')
     )
     
     ai_prompt_addition = forms.CharField(
@@ -4473,10 +4474,10 @@ class AgreementForm(forms.ModelForm):
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 3,
-            'placeholder': 'Instrucciones adicionales para la IA (opcional)...'
+            'placeholder': gettext_lazy('Instrucciones adicionales para la IA (opcional)...')
         }),
-        label='Instrucciones adicionales para IA',
-        help_text='Detalles específicos que quieres incluir en el acuerdo'
+        label=gettext_lazy('Instrucciones adicionales para IA'),
+        help_text=gettext_lazy('Detalles específicos que quieres incluir en el acuerdo')
     )
     
     class Meta:
@@ -4485,12 +4486,12 @@ class AgreementForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Acuerdo de Confidencialidad'
+                'placeholder': gettext_lazy('Ej: Acuerdo de Confidencialidad')
             }),
             'body': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 15,
-                'placeholder': 'Contenido completo del acuerdo...'
+                'placeholder': gettext_lazy('Contenido completo del acuerdo...')
             }),
             'status': forms.Select(attrs={
                 'class': 'form-select'
@@ -4509,20 +4510,20 @@ class AgreementForm(forms.ModelForm):
             })
         }
         labels = {
-            'title': 'Título del Acuerdo',
-            'body': 'Contenido del Acuerdo',
-            'status': 'Estado',
-            'expires_at': 'Fecha de Expiración',
-            'max_signers': 'Máximo de Firmantes',
-            'requires_approval': 'Requiere Aprobación'
+            'title': gettext_lazy('Título del Acuerdo'),
+            'body': gettext_lazy('Contenido del Acuerdo'),
+            'status': gettext_lazy('Estado'),
+            'expires_at': gettext_lazy('Fecha de Expiración'),
+            'max_signers': gettext_lazy('Máximo de Firmantes'),
+            'requires_approval': gettext_lazy('Requiere Aprobación')
         }
         help_texts = {
-            'title': 'Nombre descriptivo del acuerdo',
-            'body': 'Contenido completo del acuerdo/contrato',
-            'status': 'Estado actual del acuerdo',
-            'expires_at': 'Fecha límite para firmar (opcional)',
-            'max_signers': 'Número máximo de personas que pueden firmar',
-            'requires_approval': 'Las firmas necesitan aprobación manual'
+            'title': gettext_lazy('Nombre descriptivo del acuerdo'),
+            'body': gettext_lazy('Contenido completo del acuerdo/contrato'),
+            'status': gettext_lazy('Estado actual del acuerdo'),
+            'expires_at': gettext_lazy('Fecha límite para firmar (opcional)'),
+            'max_signers': gettext_lazy('Número máximo de personas que pueden firmar'),
+            'requires_approval': gettext_lazy('Las firmas necesitan aprobación manual')
         }
     
     def clean_expires_at(self):
@@ -4555,8 +4556,8 @@ class AgreementSignatureForm(forms.ModelForm):
     accept_terms = forms.BooleanField(
         required=True,
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        label='Acepto los términos y condiciones de este acuerdo',
-        help_text='Debes aceptar los términos para poder firmar'
+        label=gettext_lazy('Acepto los términos y condiciones de este acuerdo'),
+        help_text=gettext_lazy('Debes aceptar los términos para poder firmar')
     )
     
     class Meta:
@@ -4565,22 +4566,22 @@ class AgreementSignatureForm(forms.ModelForm):
         widgets = {
             'signer_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Tu nombre completo'
+                'placeholder': gettext_lazy('Tu nombre completo')
             }),
             'signer_email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'tu@email.com'
+                'placeholder': gettext_lazy('tu@email.com')
             }),
             'signature_data': forms.HiddenInput()
         }
         labels = {
-            'signer_name': 'Nombre Completo',
-            'signer_email': 'Correo Electrónico',
-            'signature_data': 'Firma'
+            'signer_name': gettext_lazy('Nombre Completo'),
+            'signer_email': gettext_lazy('Correo Electrónico'),
+            'signature_data': gettext_lazy('Firma')
         }
         help_texts = {
-            'signer_name': 'Tu nombre como aparecerá en el acuerdo',
-            'signer_email': 'Correo para notificaciones y descarga del PDF',
+            'signer_name': gettext_lazy('Tu nombre como aparecerá en el acuerdo'),
+            'signer_email': gettext_lazy('Correo para notificaciones y descarga del PDF'),
         }
     
     def clean_signer_email(self):
@@ -4612,16 +4613,16 @@ class AgreementPublicForm(forms.Form):
     confirm_publish = forms.BooleanField(
         required=True,
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        label='Confirmo que quiero publicar este acuerdo',
-        help_text='Una vez publicado, el acuerdo estará disponible para firmar'
+        label=gettext_lazy('Confirmo que quiero publicar este acuerdo'),
+        help_text=gettext_lazy('Una vez publicado, el acuerdo estará disponible para firmar')
     )
     
     send_notifications = forms.BooleanField(
         required=False,
         initial=True,
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        label='Enviar notificaciones por email',
-        help_text='Enviar el enlace del acuerdo por correo (si está configurado)'
+        label=gettext_lazy('Enviar notificaciones por email'),
+        help_text=gettext_lazy('Enviar el enlace del acuerdo por correo (si está configurado)')
     )
     
     email_list = forms.CharField(
@@ -4629,10 +4630,10 @@ class AgreementPublicForm(forms.Form):
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 3,
-            'placeholder': 'email1@ejemplo.com, email2@ejemplo.com'
+            'placeholder': gettext_lazy('email1@ejemplo.com, email2@ejemplo.com')
         }),
-        label='Lista de correos (opcional)',
-        help_text='Correos separados por comas para enviar el enlace del acuerdo'
+        label=gettext_lazy('Lista de correos (opcional)'),
+        help_text=gettext_lazy('Correos separados por comas para enviar el enlace del acuerdo')
     )
     
     def clean_email_list(self):
@@ -4674,19 +4675,19 @@ class LandingPageForm(forms.ModelForm):
         widgets = {
             'nombre_producto': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre del producto o servicio'
+                'placeholder': gettext_lazy('Nombre del producto o servicio')
             }),
             'descripcion': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Descripción del producto que aparecerá en la landing page'
+                'placeholder': gettext_lazy('Descripción del producto que aparecerá en la landing page')
             }),
             'imagen': forms.ClearableFileInput(attrs={
                 'class': 'form-control'
             }),
             'slug': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'mi-producto-2025'
+                'placeholder': gettext_lazy('mi-producto-2025')
             }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -4701,53 +4702,53 @@ class LandingPageForm(forms.ModelForm):
             }),
             'titulo_formulario': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'VEA TODAS LAS DEMOSTRACIONES'
+                'placeholder': gettext_lazy('VEA TODAS LAS DEMOSTRACIONES')
             }),
             'subtitulo_formulario': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción que aparecerá debajo del título del formulario'
+                'placeholder': gettext_lazy('Descripción que aparecerá debajo del título del formulario')
             }),
             'empresa_campana': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre de la empresa de la campaña'
+                'placeholder': gettext_lazy('Nombre de la empresa de la campaña')
             }),
             'telegram_bot_token': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '123456789:ABCdefGHIjklMNOpqrsTUVwxyz'
+                'placeholder': gettext_lazy('123456789:ABCdefGHIjklMNOpqrsTUVwxyz')
             }),
             'telegram_chat_id': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '-1001234567890 o @mi_canal'
+                'placeholder': gettext_lazy('-1001234567890 o @mi_canal')
             }),
             'meeting_url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://calendly.com/tu-usuario'
+                'placeholder': gettext_lazy('https://calendly.com/tu-usuario')
             })
         }
         labels = {
-            'nombre_producto': 'Nombre del Producto',
-            'descripcion': 'Descripción',
-            'imagen': 'Imagen Principal',
-            'slug': 'URL de la Landing Page',
-            'is_active': 'Página Activa',
-            'color_principal': 'Color Principal',
-            'color_secundario': 'Color Secundario',
-            'titulo_formulario': 'Título del Formulario',
-            'subtitulo_formulario': 'Subtítulo del Formulario',
-            'empresa_campana': 'Empresa de la Campaña',
-            'telegram_bot_token': 'Bot Token de Telegram',
-            'telegram_chat_id': 'Chat ID de Telegram',
-            'meeting_url': 'URL de Reunión'
+            'nombre_producto': gettext_lazy('Nombre del Producto'),
+            'descripcion': gettext_lazy('Descripción'),
+            'imagen': gettext_lazy('Imagen Principal'),
+            'slug': gettext_lazy('URL de la Landing Page'),
+            'is_active': gettext_lazy('Página Activa'),
+            'color_principal': gettext_lazy('Color Principal'),
+            'color_secundario': gettext_lazy('Color Secundario'),
+            'titulo_formulario': gettext_lazy('Título del Formulario'),
+            'subtitulo_formulario': gettext_lazy('Subtítulo del Formulario'),
+            'empresa_campana': gettext_lazy('Empresa de la Campaña'),
+            'telegram_bot_token': gettext_lazy('Bot Token de Telegram'),
+            'telegram_chat_id': gettext_lazy('Chat ID de Telegram'),
+            'meeting_url': gettext_lazy('URL de Reunión')
         }
         help_texts = {
-            'slug': 'URL única para acceder a la landing page (solo letras, números y guiones)',
-            'color_principal': 'Color principal usado en botones y elementos destacados',
-            'color_secundario': 'Color de fondo y elementos secundarios',
-            'is_active': 'Si está marcado, la landing page será visible públicamente',
-            'telegram_bot_token': 'Token del bot de Telegram para enviar notificaciones. Obtén uno creando un bot con @BotFather',
-            'telegram_chat_id': 'ID del chat o canal donde enviar notificaciones. Puedes usar @userinfobot para obtenerlo',
-            'meeting_url': 'URL donde los visitantes pueden agendar reuniones contigo (Calendly, Google Meet, etc.)'
+            'slug': gettext_lazy('URL única para acceder a la landing page (solo letras, números y guiones)'),
+            'color_principal': gettext_lazy('Color principal usado en botones y elementos destacados'),
+            'color_secundario': gettext_lazy('Color de fondo y elementos secundarios'),
+            'is_active': gettext_lazy('Si está marcado, la landing page será visible públicamente'),
+            'telegram_bot_token': gettext_lazy('Token del bot de Telegram para enviar notificaciones. Obtén uno creando un bot con @BotFather'),
+            'telegram_chat_id': gettext_lazy('ID del chat o canal donde enviar notificaciones. Puedes usar @userinfobot para obtenerlo'),
+            'meeting_url': gettext_lazy('URL donde los visitantes pueden agendar reuniones contigo (Calendly, Google Meet, etc.)')
         }
     
     def clean_slug(self):
@@ -4784,37 +4785,37 @@ class LandingPageSubmissionForm(forms.ModelForm):
         widgets = {
             'nombre': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre',
+                'placeholder': gettext_lazy('Nombre'),
                 'required': True
             }),
             'apellido': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Apellidos',
+                'placeholder': gettext_lazy('Apellidos'),
                 'required': True
             }),
             'email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Email',
+                'placeholder': gettext_lazy('Email'),
                 'required': True
             }),
             'telefono': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Teléfono',
+                'placeholder': gettext_lazy('Teléfono'),
                 'required': True
             }),
             'empresa': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Empresa',
+                'placeholder': gettext_lazy('Empresa'),
                 'required': True
             }),
             'cargo': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Cargo',
+                'placeholder': gettext_lazy('Cargo'),
                 'required': True
             }),
             'mensaje': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Cuéntanos sobre tu proyecto o necesidades...',
+                'placeholder': gettext_lazy('Cuéntanos sobre tu proyecto o necesidades...'),
                 'rows': 4,
                 'style': 'resize: vertical;',
                 'required': True
@@ -4824,14 +4825,14 @@ class LandingPageSubmissionForm(forms.ModelForm):
             })
         }
         labels = {
-            'nombre': 'Nombre',
-            'apellido': 'Apellidos',
-            'email': 'Email',
-            'telefono': 'Teléfono',
-            'empresa': 'Empresa',
-            'cargo': 'Cargo',
-            'mensaje': 'Mensaje o comentarios',
-            'preferred_contact_time': 'Cuándo prefieres que te contactemos'
+            'nombre': gettext_lazy('Nombre'),
+            'apellido': gettext_lazy('Apellidos'),
+            'email': gettext_lazy('Email'),
+            'telefono': gettext_lazy('Teléfono'),
+            'empresa': gettext_lazy('Empresa'),
+            'cargo': gettext_lazy('Cargo'),
+            'mensaje': gettext_lazy('Mensaje o comentarios'),
+            'preferred_contact_time': gettext_lazy('Cuándo prefieres que te contactemos')
         }
     
     def clean_email(self):
@@ -4851,18 +4852,18 @@ class PublicCompanyTicketForm(forms.ModelForm):
         required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Tu nombre completo'
+            'placeholder': gettext_lazy('Tu nombre completo')
         }),
-        label='Nombre'
+        label=gettext_lazy('Nombre')
     )
     
     customer_email = forms.EmailField(
         required=True,
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'tu@email.com'
+            'placeholder': gettext_lazy('tu@email.com')
         }),
-        label='Email de contacto'
+        label=gettext_lazy('Email de contacto')
     )
     
     customer_phone = forms.CharField(
@@ -4872,7 +4873,7 @@ class PublicCompanyTicketForm(forms.ModelForm):
             'class': 'form-control',
             'placeholder': '+34 123 456 789'
         }),
-        label='Teléfono (opcional)'
+        label=gettext_lazy('Teléfono (opcional)')
     )
     
     class Meta:
@@ -4881,21 +4882,21 @@ class PublicCompanyTicketForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Describe brevemente tu solicitud'
+                'placeholder': gettext_lazy('Describe brevemente tu solicitud')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 6,
-                'placeholder': 'Explica detalladamente tu problema o solicitud...'
+                'placeholder': gettext_lazy('Explica detalladamente tu problema o solicitud...')
             }),
             'priority': forms.Select(attrs={
                 'class': 'form-select'
             }),
         }
         labels = {
-            'title': 'Asunto',
-            'description': 'Descripción detallada',
-            'priority': 'Prioridad',
+            'title': gettext_lazy('Asunto'),
+            'description': gettext_lazy('Descripción detallada'),
+            'priority': gettext_lazy('Prioridad'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -4904,9 +4905,9 @@ class PublicCompanyTicketForm(forms.ModelForm):
         
         # Configurar las opciones de prioridad (excluir "urgent" para usuarios públicos)
         self.fields['priority'].choices = [
-            ('low', 'Baja'),
-            ('medium', 'Media'),
-            ('high', 'Alta'),
+            ('low', gettext_lazy('Baja')),
+            ('medium', gettext_lazy('Media')),
+            ('high', gettext_lazy('Alta')),
         ]
         self.fields['priority'].initial = 'medium'
     
@@ -4941,12 +4942,12 @@ class WorkOrderTaskForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la tarea'
+                'placeholder': gettext_lazy('Título de la tarea')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción de la tarea (opcional)'
+                'placeholder': gettext_lazy('Descripción de la tarea (opcional)')
             }),
             'estimated_hours': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -4960,10 +4961,10 @@ class WorkOrderTaskForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título de la Tarea',
-            'description': 'Descripción',
-            'estimated_hours': 'Horas Estimadas',
-            'order': 'Orden de Ejecución',
+            'title': gettext_lazy('Título de la Tarea'),
+            'description': gettext_lazy('Descripción'),
+            'estimated_hours': gettext_lazy('Horas Estimadas'),
+            'order': gettext_lazy('Orden de Ejecución'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -4992,7 +4993,7 @@ class WorkOrderTaskTimeEntryForm(forms.ModelForm):
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción del trabajo realizado (opcional)'
+                'placeholder': gettext_lazy('Descripción del trabajo realizado (opcional)')
             }),
             'date': forms.DateInput(attrs={
                 'class': 'form-control',
@@ -5000,9 +5001,9 @@ class WorkOrderTaskTimeEntryForm(forms.ModelForm):
             }),
         }
         labels = {
-            'hours': 'Horas Trabajadas',
-            'description': 'Descripción del Trabajo',
-            'date': 'Fecha',
+            'hours': gettext_lazy('Horas Trabajadas'),
+            'description': gettext_lazy('Descripción del Trabajo'),
+            'date': gettext_lazy('Fecha'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -5020,10 +5021,10 @@ class WorkOrderTaskBulkForm(forms.Form):
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 10,
-            'placeholder': 'Escribe una tarea por línea:\n\nTarea 1\nTarea 2\nTarea 3\n...'
+            'placeholder': gettext_lazy('Escribe una tarea por línea:\n\nTarea 1\nTarea 2\nTarea 3\n...')
         }),
-        label='Tareas',
-        help_text='Escribe una tarea por línea. Cada línea se convertirá en una tarea separada.'
+        label=gettext_lazy('Tareas'),
+        help_text=gettext_lazy('Escribe una tarea por línea. Cada línea se convertirá en una tarea separada.')
     )
     
     def clean_tasks_text(self):
@@ -5054,22 +5055,22 @@ class WorkOrderRatingForm(forms.ModelForm):
             'comment': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Cuéntanos sobre tu experiencia con este servicio...'
+                'placeholder': gettext_lazy('Cuéntanos sobre tu experiencia con este servicio...')
             }),
             'rated_by_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Tu nombre'
+                'placeholder': gettext_lazy('Tu nombre')
             }),
             'rated_by_email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'tu@email.com'
+                'placeholder': gettext_lazy('tu@email.com')
             }),
         }
         labels = {
-            'rating': '¿Cómo calificarías nuestro servicio?',
-            'comment': 'Comentario (opcional)',
-            'rated_by_name': 'Nombre',
-            'rated_by_email': 'Email',
+            'rating': gettext_lazy('¿Cómo calificarías nuestro servicio?'),
+            'comment': gettext_lazy('Comentario (opcional)'),
+            'rated_by_name': gettext_lazy('Nombre'),
+            'rated_by_email': gettext_lazy('Email'),
         }
 
 
@@ -5083,21 +5084,21 @@ class WorkOrderCommentForm(forms.ModelForm):
             'comment': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Escribe tu comentario o pregunta aquí...'
+                'placeholder': gettext_lazy('Escribe tu comentario o pregunta aquí...')
             }),
             'author_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Tu nombre'
+                'placeholder': gettext_lazy('Tu nombre')
             }),
             'author_email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'tu@email.com'
+                'placeholder': gettext_lazy('tu@email.com')
             }),
         }
         labels = {
-            'comment': 'Comentario',
-            'author_name': 'Nombre',
-            'author_email': 'Email',
+            'comment': gettext_lazy('Comentario'),
+            'author_name': gettext_lazy('Nombre'),
+            'author_email': gettext_lazy('Email'),
         }
 
 
@@ -5110,21 +5111,21 @@ class WorkOrderPublicCreateForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título descriptivo de tu solicitud'
+                'placeholder': gettext_lazy('Título descriptivo de tu solicitud')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 6,
-                'placeholder': 'Describe detalladamente lo que necesitas...'
+                'placeholder': gettext_lazy('Describe detalladamente lo que necesitas...')
             }),
             'priority': forms.Select(attrs={
                 'class': 'form-select'
             }),
         }
         labels = {
-            'title': 'Título de la solicitud',
-            'description': 'Descripción detallada',
-            'priority': 'Prioridad',
+            'title': gettext_lazy('Título de la solicitud'),
+            'description': gettext_lazy('Descripción detallada'),
+            'priority': gettext_lazy('Prioridad'),
         }
 
 
@@ -5137,12 +5138,12 @@ class SharedFileForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título del archivo'
+                'placeholder': gettext_lazy('Título del archivo')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción del archivo (opcional)'
+                'placeholder': gettext_lazy('Descripción del archivo (opcional)')
             }),
             'file': forms.FileInput(attrs={
                 'class': 'form-control',
@@ -5156,15 +5157,15 @@ class SharedFileForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título del Archivo',
-            'description': 'Descripción',
-            'file': 'Archivo',
-            'company': 'Empresa',
-            'is_public': 'Público para toda la empresa',
+            'title': gettext_lazy('Título del Archivo'),
+            'description': gettext_lazy('Descripción'),
+            'file': gettext_lazy('Archivo'),
+            'company': gettext_lazy('Empresa'),
+            'is_public': gettext_lazy('Público para toda la empresa'),
         }
         help_texts = {
-            'file': 'Archivos permitidos: PDF, Word, Excel, PowerPoint, imágenes, archivos comprimidos',
-            'is_public': 'Si está marcado, todos los usuarios de la empresa pueden ver este archivo',
+            'file': gettext_lazy('Archivos permitidos: PDF, Word, Excel, PowerPoint, imágenes, archivos comprimidos'),
+            'is_public': gettext_lazy('Si está marcado, todos los usuarios de la empresa pueden ver este archivo'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -5225,19 +5226,19 @@ class PublicSharedFileForm(forms.ModelForm):
     
     uploader_name = forms.CharField(
         max_length=100,
-        label='Tu Nombre',
+        label=gettext_lazy('Tu Nombre'),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Ingresa tu nombre'
+            'placeholder': gettext_lazy('Ingresa tu nombre')
         })
     )
     uploader_email = forms.EmailField(
-        label='Tu Email',
+        label=gettext_lazy('Tu Email'),
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'tu@email.com'
+            'placeholder': gettext_lazy('tu@email.com')
         }),
-        help_text='Si ya tienes cuenta en el sistema, se asignará automáticamente a tu empresa'
+        help_text=gettext_lazy('Si ya tienes cuenta en el sistema, se asignará automáticamente a tu empresa')
     )
     
     class Meta:
@@ -5246,12 +5247,12 @@ class PublicSharedFileForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título del archivo'
+                'placeholder': gettext_lazy('Título del archivo')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción del archivo (opcional)'
+                'placeholder': gettext_lazy('Descripción del archivo (opcional)')
             }),
             'file': forms.FileInput(attrs={
                 'class': 'form-control',
@@ -5259,12 +5260,12 @@ class PublicSharedFileForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título del Archivo',
-            'description': 'Descripción',
-            'file': 'Archivo',
+            'title': gettext_lazy('Título del Archivo'),
+            'description': gettext_lazy('Descripción'),
+            'file': gettext_lazy('Archivo'),
         }
         help_texts = {
-            'file': 'Archivos permitidos: PDF, Word, Excel, PowerPoint, imágenes, archivos comprimidos (máximo 50MB)',
+            'file': gettext_lazy('Archivos permitidos: PDF, Word, Excel, PowerPoint, imágenes, archivos comprimidos (máximo 50MB)'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -5338,25 +5339,25 @@ class RecordingForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la grabación',
+                'placeholder': gettext_lazy('Título de la grabación'),
                 'required': True
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción de la grabación (opcional)'
+                'placeholder': gettext_lazy('Descripción de la grabación (opcional)')
             }),
             'is_public': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
         }
         labels = {
-            'title': 'Título de la Grabación',
-            'description': 'Descripción',
-            'is_public': 'Público',
+            'title': gettext_lazy('Título de la Grabación'),
+            'description': gettext_lazy('Descripción'),
+            'is_public': gettext_lazy('Público'),
         }
         help_texts = {
-            'is_public': 'Si está marcado, todos los usuarios de tu empresa pueden escuchar esta grabación',
+            'is_public': gettext_lazy('Si está marcado, todos los usuarios de tu empresa pueden escuchar esta grabación'),
         }
     
     def clean_audio_data(self):
@@ -5371,21 +5372,21 @@ class PublicRecordingForm(forms.ModelForm):
     
     uploader_name = forms.CharField(
         max_length=100,
-        label='Tu Nombre',
+        label=gettext_lazy('Tu Nombre'),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Ingresa tu nombre',
+            'placeholder': gettext_lazy('Ingresa tu nombre'),
             'required': True
         })
     )
     uploader_email = forms.EmailField(
-        label='Tu Email',
+        label=gettext_lazy('Tu Email'),
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'tu@email.com',
+            'placeholder': gettext_lazy('tu@email.com'),
             'required': True
         }),
-        help_text='Si ya tienes cuenta en el sistema, se asignará automáticamente a tu empresa'
+        help_text=gettext_lazy('Si ya tienes cuenta en el sistema, se asignará automáticamente a tu empresa')
     )
     
     # Campo oculto para almacenar los datos de audio en base64
@@ -5397,18 +5398,18 @@ class PublicRecordingForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la grabación',
+                'placeholder': gettext_lazy('Título de la grabación'),
                 'required': True
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción de la grabación (opcional)'
+                'placeholder': gettext_lazy('Descripción de la grabación (opcional)')
             }),
         }
         labels = {
-            'title': 'Título de la Grabación',
-            'description': 'Descripción',
+            'title': gettext_lazy('Título de la Grabación'),
+            'description': gettext_lazy('Descripción'),
         }
     
     def clean_audio_data(self):
@@ -5460,15 +5461,15 @@ class TranscriptionEditForm(forms.ModelForm):
             'transcription_text': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 8,
-                'placeholder': 'La transcripción aparecerá aquí...',
+                'placeholder': gettext_lazy('La transcripción aparecerá aquí...'),
                 'style': 'font-family: monospace; font-size: 14px;'
             }),
         }
         labels = {
-            'transcription_text': 'Transcripción',
+            'transcription_text': gettext_lazy('Transcripción'),
         }
         help_texts = {
-            'transcription_text': 'Puedes editar manualmente la transcripción o regenerarla con IA',
+            'transcription_text': gettext_lazy('Puedes editar manualmente la transcripción o regenerarla con IA'),
         }
 
     def __init__(self, *args, **kwargs):
@@ -5483,9 +5484,9 @@ class TranscriptionActionForm(forms.Form):
     """Formulario para acciones de transcripción (generar, regenerar, etc.)"""
     
     ACTION_CHOICES = [
-        ('generate', 'Generar transcripción con IA'),
-        ('regenerate', 'Regenerar transcripción con IA'),
-        ('improve', 'Mejorar transcripción existente'),
+        ('generate', gettext_lazy('Generar transcripción con IA')),
+        ('regenerate', gettext_lazy('Regenerar transcripción con IA')),
+        ('improve', gettext_lazy('Mejorar transcripción existente')),
     ]
     
     action = forms.ChoiceField(
@@ -5493,7 +5494,7 @@ class TranscriptionActionForm(forms.Form):
         widget=forms.Select(attrs={
             'class': 'form-select'
         }),
-        label='Acción'
+        label=gettext_lazy('Acción')
     )
     
     context_hint = forms.CharField(
@@ -5501,10 +5502,10 @@ class TranscriptionActionForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Contexto adicional para mejorar la transcripción (opcional)'
+            'placeholder': gettext_lazy('Contexto adicional para mejorar la transcripción (opcional)')
         }),
-        label='Contexto adicional',
-        help_text='Información adicional que puede ayudar a mejorar la transcripción'
+        label=gettext_lazy('Contexto adicional'),
+        help_text=gettext_lazy('Información adicional que puede ayudar a mejorar la transcripción')
     )
     
     def __init__(self, *args, **kwargs):
@@ -5515,13 +5516,13 @@ class TranscriptionActionForm(forms.Form):
         if self.recording:
             if not self.recording.transcription_text:
                 # Solo permitir generar si no hay transcripción
-                self.fields['action'].choices = [('generate', 'Generar transcripción con IA')]
+                self.fields['action'].choices = [('generate', gettext_lazy('Generar transcripción con IA'))]
                 self.fields['action'].initial = 'generate'
             else:
                 # Si ya hay transcripción, permitir regenerar o mejorar
                 self.fields['action'].choices = [
-                    ('regenerate', 'Regenerar transcripción con IA'),
-                    ('improve', 'Mejorar transcripción existente'),
+                    ('regenerate', gettext_lazy('Regenerar transcripción con IA')),
+                    ('improve', gettext_lazy('Mejorar transcripción existente')),
                 ]
                 self.fields['action'].initial = 'improve'
 
@@ -5539,13 +5540,13 @@ class MultipleDocumentationForm(forms.ModelForm):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Contraseña de acceso',
+            'placeholder': gettext_lazy('Contraseña de acceso'),
             'maxlength': '100',
             'id': 'access_password_field',
             'type': 'text'  # Usar texto normal para mostrar el valor
         }),
-        label='Contraseña de acceso',
-        help_text='Contraseña que los usuarios deberán ingresar para acceder'
+        label=gettext_lazy('Contraseña de acceso'),
+        help_text=gettext_lazy('Contraseña que los usuarios deberán ingresar para acceder')
     )
     
     class Meta:
@@ -5554,13 +5555,13 @@ class MultipleDocumentationForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la documentación múltiple',
+                'placeholder': gettext_lazy('Título de la documentación múltiple'),
                 'maxlength': '200'
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción de qué contiene esta documentación...',
+                'placeholder': gettext_lazy('Descripción de qué contiene esta documentación...'),
                 'maxlength': '1000'
             }),
             'is_active': forms.CheckboxInput(attrs={
@@ -5572,16 +5573,16 @@ class MultipleDocumentationForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción', 
-            'is_active': 'Activo',
-            'password_protected': 'Protegido con contraseña',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción'), 
+            'is_active': gettext_lazy('Activo'),
+            'password_protected': gettext_lazy('Protegido con contraseña'),
         }
         help_texts = {
-            'title': 'Nombre descriptivo para identificar esta documentación',
-            'description': 'Descripción opcional de qué contiene esta documentación',
-            'is_active': 'Si está activo, se puede acceder públicamente',
-            'password_protected': 'Si está marcado, se requerirá una contraseña para acceder',
+            'title': gettext_lazy('Nombre descriptivo para identificar esta documentación'),
+            'description': gettext_lazy('Descripción opcional de qué contiene esta documentación'),
+            'is_active': gettext_lazy('Si está activo, se puede acceder públicamente'),
+            'password_protected': gettext_lazy('Si está marcado, se requerirá una contraseña para acceder'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -5621,11 +5622,11 @@ class DocumentationPasswordForm(forms.Form):
         max_length=100,
         widget=forms.PasswordInput(attrs={
             'class': 'form-control form-control-lg',
-            'placeholder': 'Ingrese la contraseña',
+            'placeholder': gettext_lazy('Ingrese la contraseña'),
             'autofocus': True,
             'autocomplete': 'off'
         }),
-        label='Contraseña de acceso'
+        label=gettext_lazy('Contraseña de acceso')
     )
     
     def __init__(self, *args, **kwargs):
@@ -5650,12 +5651,12 @@ class TaskScheduleForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título del cronograma'
+                'placeholder': gettext_lazy('Título del cronograma')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Descripción del cronograma'
+                'placeholder': gettext_lazy('Descripción del cronograma')
             }),
             'company': forms.Select(attrs={
                 'class': 'form-select'
@@ -5665,10 +5666,10 @@ class TaskScheduleForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción',
-            'company': 'Empresa',
-            'is_public': 'Hacer público',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción'),
+            'company': gettext_lazy('Empresa'),
+            'is_public': gettext_lazy('Hacer público'),
         }
     
     def save(self, commit=True):
@@ -5702,12 +5703,12 @@ class ScheduleTaskForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la tarea'
+                'placeholder': gettext_lazy('Título de la tarea')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción de la tarea'
+                'placeholder': gettext_lazy('Descripción de la tarea')
             }),
             'start_date': DateInput(attrs={
                 'class': 'form-control',
@@ -5732,14 +5733,14 @@ class ScheduleTaskForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción',
-            'start_date': 'Fecha de Inicio',
-            'end_date': 'Fecha de Fin',
-            'priority': 'Prioridad',
-            'assigned_to': 'Asignado a',
-            'is_completed': 'Completada',
-            'dependencies': 'Dependencias',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción'),
+            'start_date': gettext_lazy('Fecha de Inicio'),
+            'end_date': gettext_lazy('Fecha de Fin'),
+            'priority': gettext_lazy('Prioridad'),
+            'assigned_to': gettext_lazy('Asignado a'),
+            'is_completed': gettext_lazy('Completada'),
+            'dependencies': gettext_lazy('Dependencias'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -5806,11 +5807,11 @@ class ScheduleCommentForm(forms.ModelForm):
             'comment': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Escribe tu comentario aquí...'
+                'placeholder': gettext_lazy('Escribe tu comentario aquí...')
             }),
         }
         labels = {
-            'comment': 'Comentario',
+            'comment': gettext_lazy('Comentario'),
         }
 
 
@@ -5823,11 +5824,11 @@ class FinancialActionForm(forms.ModelForm):
         widgets = {
             'symbol': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: EUR/USD, AAPL, BTC/USD'
+                'placeholder': gettext_lazy('Ej: EUR/USD, AAPL, BTC/USD')
             }),
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre descriptivo'
+                'placeholder': gettext_lazy('Nombre descriptivo')
             }),
             'current_price': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -5844,13 +5845,13 @@ class FinancialActionForm(forms.ModelForm):
             'currency': forms.Select(attrs={
                 'class': 'form-select'
             }, choices=[
-                ('USD', 'USD - Dólar Estadounidense'),
-                ('EUR', 'EUR - Euro'),
-                ('GBP', 'GBP - Libra Esterlina'),
-                ('JPY', 'JPY - Yen Japonés'),
-                ('CAD', 'CAD - Dólar Canadiense'),
-                ('CHF', 'CHF - Franco Suizo'),
-                ('AUD', 'AUD - Dólar Australiano'),
+                ('USD', gettext_lazy('USD - Dólar Estadounidense')),
+                ('EUR', gettext_lazy('EUR - Euro')),
+                ('GBP', gettext_lazy('GBP - Libra Esterlina')),
+                ('JPY', gettext_lazy('JPY - Yen Japonés')),
+                ('CAD', gettext_lazy('CAD - Dólar Canadiense')),
+                ('CHF', gettext_lazy('CHF - Franco Suizo')),
+                ('AUD', gettext_lazy('AUD - Dólar Australiano')),
             ]),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -5861,19 +5862,19 @@ class FinancialActionForm(forms.ModelForm):
             }),
         }
         labels = {
-            'symbol': 'Símbolo',
-            'name': 'Nombre',
-            'current_price': 'Precio Actual',
-            'previous_price': 'Precio Anterior',
-            'currency': 'Moneda',
-            'is_active': 'Activa',
-            'order': 'Orden',
+            'symbol': gettext_lazy('Símbolo'),
+            'name': gettext_lazy('Nombre'),
+            'current_price': gettext_lazy('Precio Actual'),
+            'previous_price': gettext_lazy('Precio Anterior'),
+            'currency': gettext_lazy('Moneda'),
+            'is_active': gettext_lazy('Activa'),
+            'order': gettext_lazy('Orden'),
         }
         help_texts = {
-            'symbol': 'Símbolo de la acción (se convertirá a mayúsculas automáticamente)',
-            'current_price': 'Se actualiza automáticamente desde APIs externas',
-            'previous_price': 'Se actualiza automáticamente desde APIs externas',
-            'order': 'Orden de aparición en el ticker (menor número = primera posición)',
+            'symbol': gettext_lazy('Símbolo de la acción (se convertirá a mayúsculas automáticamente)'),
+            'current_price': gettext_lazy('Se actualiza automáticamente desde APIs externas'),
+            'previous_price': gettext_lazy('Se actualiza automáticamente desde APIs externas'),
+            'order': gettext_lazy('Orden de aparición en el ticker (menor número = primera posición)'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -5912,11 +5913,11 @@ class ProductForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre del producto'
+                'placeholder': gettext_lazy('Nombre del producto')
             }),
             'technical_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre técnico o código interno'
+                'placeholder': gettext_lazy('Nombre técnico o código interno')
             }),
             'price': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -5927,7 +5928,7 @@ class ProductForm(forms.ModelForm):
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Descripción detallada del producto'
+                'placeholder': gettext_lazy('Descripción detallada del producto')
             }),
             'category': forms.Select(attrs={
                 'class': 'form-select'
@@ -5940,22 +5941,22 @@ class ProductForm(forms.ModelForm):
             }),
         }
         labels = {
-            'name': 'Nombre del Producto',
-            'technical_name': 'Nombre Técnico',
-            'price': 'Precio',
-            'description': 'Descripción',
-            'category': 'Categoría',
-            'is_active': 'Producto Activo',
-            'is_public': 'Visible en catálogo público',
+            'name': gettext_lazy('Nombre del Producto'),
+            'technical_name': gettext_lazy('Nombre Técnico'),
+            'price': gettext_lazy('Precio'),
+            'description': gettext_lazy('Descripción'),
+            'category': gettext_lazy('Categoría'),
+            'is_active': gettext_lazy('Producto Activo'),
+            'is_public': gettext_lazy('Visible en catálogo público'),
         }
         help_texts = {
-            'name': 'Nombre identificativo del producto',
-            'technical_name': 'Nombre técnico o código interno del producto (opcional)',
-            'price': 'Precio del producto en la moneda base',
-            'description': 'Descripción completa del producto, características, beneficios, etc.',
-            'category': 'Categoría a la que pertenece el producto',
-            'is_active': 'Si está marcado, el producto estará disponible para su uso',
-            'is_public': 'Si está marcado, este producto podrá verse en los catálogos públicos',
+            'name': gettext_lazy('Nombre identificativo del producto'),
+            'technical_name': gettext_lazy('Nombre técnico o código interno del producto (opcional)'),
+            'price': gettext_lazy('Precio del producto en la moneda base'),
+            'description': gettext_lazy('Descripción completa del producto, características, beneficios, etc.'),
+            'category': gettext_lazy('Categoría a la que pertenece el producto'),
+            'is_active': gettext_lazy('Si está marcado, el producto estará disponible para su uso'),
+            'is_public': gettext_lazy('Si está marcado, este producto podrá verse en los catálogos públicos'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -5967,7 +5968,7 @@ class ProductForm(forms.ModelForm):
         
         # Poblar queryset de categoría
         self.fields['category'].queryset = ProductCategory.objects.all().order_by('name')
-        self.fields['category'].empty_label = '— Sin categoría —'
+        self.fields['category'].empty_label = gettext_lazy('— Sin categoría —')
         
         # Obtener la moneda configurada en el sistema
         config = SystemConfiguration.objects.first()
@@ -6013,7 +6014,7 @@ class ProductCategoryForm(forms.ModelForm):
         model = ProductCategory
         fields = ['name', 'description', 'color']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre de la categoría'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': gettext_lazy('Nombre de la categoría')}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'color': forms.TextInput(attrs={'class': 'form-control form-control-color', 'type': 'color'}),
         }
@@ -6026,14 +6027,14 @@ class ClientProjectAccessForm(forms.ModelForm):
     
     allowed_categories = forms.MultipleChoiceField(
         choices=[
-            ('capacitacion', 'Capacitación'),
-            ('pruebas', 'Pruebas'),
-            ('uso', 'Uso'),
+            ('capacitacion', gettext_lazy('Capacitación')),
+            ('pruebas', gettext_lazy('Pruebas')),
+            ('uso', gettext_lazy('Uso')),
         ],
         widget=forms.CheckboxSelectMultiple,
         required=False,
-        label='Categorías Permitidas',
-        help_text='Seleccione las categorías que los clientes podrán elegir'
+        label=gettext_lazy('Categorías Permitidas'),
+        help_text=gettext_lazy('Seleccione las categorías que los clientes podrán elegir')
     )
     
     class Meta:
@@ -6065,7 +6066,7 @@ class ClientProjectAccessForm(forms.ModelForm):
         
         # Configurar placeholder e instrucciones
         self.fields['instructions'].widget.attrs.update({
-            'placeholder': 'Instrucciones especiales para los clientes...'
+            'placeholder': gettext_lazy('Instrucciones especiales para los clientes...')
         })
         
         # Filtrar solo proyectos activos
@@ -6094,8 +6095,8 @@ class ClientTimeEntryForm(forms.ModelForm):
     
     entry_date = forms.DateField(
         widget=DateInput(attrs={'class': 'form-control'}),
-        label='Fecha de las Horas',
-        help_text='Fecha cuando realizó el trabajo'
+        label=gettext_lazy('Fecha de las Horas'),
+        help_text=gettext_lazy('Fecha cuando realizó el trabajo')
     )
     
     class Meta:
@@ -6105,11 +6106,11 @@ class ClientTimeEntryForm(forms.ModelForm):
         widgets = {
             'client_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Juan Pérez'
+                'placeholder': gettext_lazy('Juan Pérez')
             }),
             'client_email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'su.email@ejemplo.com'
+                'placeholder': gettext_lazy('su.email@ejemplo.com')
             }),
             'client_phone': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -6126,7 +6127,7 @@ class ClientTimeEntryForm(forms.ModelForm):
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción opcional del trabajo realizado...'
+                'placeholder': gettext_lazy('Descripción opcional del trabajo realizado...')
             }),
         }
     
@@ -6193,26 +6194,26 @@ class ProductSetForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Productos de Software 2024'
+                'placeholder': gettext_lazy('Ej: Productos de Software 2024')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Describe el conjunto de productos...'
+                'placeholder': gettext_lazy('Describe el conjunto de productos...')
             }),
             'is_public': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             })
         }
         labels = {
-            'title': 'Título del Conjunto',
-            'description': 'Descripción',
-            'is_public': 'Hacer público'
+            'title': gettext_lazy('Título del Conjunto'),
+            'description': gettext_lazy('Descripción'),
+            'is_public': gettext_lazy('Hacer público')
         }
         help_texts = {
-            'title': 'Nombre descriptivo del conjunto de productos',
-            'description': 'Descripción detallada del conjunto',
-            'is_public': 'Si está marcado, los clientes podrán ver este conjunto'
+            'title': gettext_lazy('Nombre descriptivo del conjunto de productos'),
+            'description': gettext_lazy('Descripción detallada del conjunto'),
+            'is_public': gettext_lazy('Si está marcado, los clientes podrán ver este conjunto')
         }
     
     def clean_title(self):
@@ -6229,12 +6230,12 @@ class ProductItemForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Sistema de Gestión de Inventario'
+                'placeholder': gettext_lazy('Ej: Sistema de Gestión de Inventario')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Describe las características del producto...'
+                'placeholder': gettext_lazy('Describe las características del producto...')
             }),
             'price': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -6244,7 +6245,7 @@ class ProductItemForm(forms.ModelForm):
             }),
             'video_link': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://youtube.com/watch?v=...'
+                'placeholder': gettext_lazy('https://youtube.com/watch?v=...')
             }),
             'order': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -6252,18 +6253,18 @@ class ProductItemForm(forms.ModelForm):
             })
         }
         labels = {
-            'name': 'Nombre del Producto',
-            'description': 'Descripción',
-            'price': 'Precio',
-            'video_link': 'Link del Video',
-            'order': 'Orden de Aparición'
+            'name': gettext_lazy('Nombre del Producto'),
+            'description': gettext_lazy('Descripción'),
+            'price': gettext_lazy('Precio'),
+            'video_link': gettext_lazy('Link del Video'),
+            'order': gettext_lazy('Orden de Aparición')
         }
         help_texts = {
-            'name': 'Nombre descriptivo del producto',
-            'description': 'Descripción detallada del producto',
-            'price': 'Precio del producto individual',
-            'video_link': 'URL del video demostrativo (opcional)',
-            'order': 'Número para ordenar la lista (menor número aparece primero)'
+            'name': gettext_lazy('Nombre descriptivo del producto'),
+            'description': gettext_lazy('Descripción detallada del producto'),
+            'price': gettext_lazy('Precio del producto individual'),
+            'video_link': gettext_lazy('URL del video demostrativo (opcional)'),
+            'order': gettext_lazy('Número para ordenar la lista (menor número aparece primero)')
         }
     
     def clean_name(self):
@@ -6303,12 +6304,12 @@ class PrecotizadorForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Desarrollos de Software para PyMEs'
+                'placeholder': gettext_lazy('Ej: Desarrollos de Software para PyMEs')
             }),
             'client_description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Describe el tipo de cliente, sector, necesidades típicas...'
+                'placeholder': gettext_lazy('Describe el tipo de cliente, sector, necesidades típicas...')
             }),
             'hourly_rate': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -6318,14 +6319,14 @@ class PrecotizadorForm(forms.ModelForm):
             })
         }
         labels = {
-            'title': 'Título del Precotizador',
-            'client_description': 'Descripción del Cliente',
-            'hourly_rate': 'Precio por Hora'
+            'title': gettext_lazy('Título del Precotizador'),
+            'client_description': gettext_lazy('Descripción del Cliente'),
+            'hourly_rate': gettext_lazy('Precio por Hora')
         }
         help_texts = {
-            'title': 'Nombre descriptivo del precotizador',
-            'client_description': 'Descripción detallada del tipo de cliente y sus necesidades',
-            'hourly_rate': 'Tu tarifa por hora para este tipo de trabajo'
+            'title': gettext_lazy('Nombre descriptivo del precotizador'),
+            'client_description': gettext_lazy('Descripción detallada del tipo de cliente y sus necesidades'),
+            'hourly_rate': gettext_lazy('Tu tarifa por hora para este tipo de trabajo')
         }
 
 
@@ -6339,7 +6340,7 @@ class PrecotizadorExampleForm(forms.ModelForm):
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Ej: Reporte en Excel de 10 columnas con gráficos'
+                'placeholder': gettext_lazy('Ej: Reporte en Excel de 10 columnas con gráficos')
             }),
             'estimated_hours': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -6353,14 +6354,14 @@ class PrecotizadorExampleForm(forms.ModelForm):
             })
         }
         labels = {
-            'description': 'Descripción del Caso',
-            'estimated_hours': 'Horas Estimadas',
-            'order': 'Orden'
+            'description': gettext_lazy('Descripción del Caso'),
+            'estimated_hours': gettext_lazy('Horas Estimadas'),
+            'order': gettext_lazy('Orden')
         }
         help_texts = {
-            'description': 'Descripción detallada del trabajo a realizar',
-            'estimated_hours': 'Número de horas estimadas para completar el trabajo',
-            'order': 'Orden de aparición en la lista'
+            'description': gettext_lazy('Descripción detallada del trabajo a realizar'),
+            'estimated_hours': gettext_lazy('Número de horas estimadas para completar el trabajo'),
+            'order': gettext_lazy('Orden de aparición en la lista')
         }
 
 
@@ -6374,14 +6375,14 @@ class PrecotizadorQuoteForm(forms.ModelForm):
             'client_request': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Describe el trabajo que necesita el cliente...'
+                'placeholder': gettext_lazy('Describe el trabajo que necesita el cliente...')
             })
         }
         labels = {
-            'client_request': 'Solicitud del Cliente'
+            'client_request': gettext_lazy('Solicitud del Cliente')
         }
         help_texts = {
-            'client_request': 'Descripción detallada del trabajo solicitado por el cliente'
+            'client_request': gettext_lazy('Descripción detallada del trabajo solicitado por el cliente')
         }
 
 
@@ -6411,12 +6412,12 @@ class CompanyDocumentationForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la documentación'
+                'placeholder': gettext_lazy('Título de la documentación')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Descripción opcional de la documentación'
+                'placeholder': gettext_lazy('Descripción opcional de la documentación')
             }),
             'company': forms.Select(attrs={
                 'class': 'form-select'
@@ -6426,10 +6427,10 @@ class CompanyDocumentationForm(forms.ModelForm):
             })
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción',
-            'company': 'Empresa',
-            'is_public': 'Hacer público'
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción'),
+            'company': gettext_lazy('Empresa'),
+            'is_public': gettext_lazy('Hacer público')
         }
 
     def __init__(self, *args, **kwargs):
@@ -6462,30 +6463,30 @@ class CompanyDocumentationURLForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título del enlace'
+                'placeholder': gettext_lazy('Título del enlace')
             }),
             'url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://ejemplo.com'
+                'placeholder': gettext_lazy('https://ejemplo.com')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción del enlace'
+                'placeholder': gettext_lazy('Descripción del enlace')
             }),
             'username': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Usuario (opcional)'
+                'placeholder': gettext_lazy('Usuario (opcional)')
             }),
             'password': forms.PasswordInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Contraseña (opcional)',
+                'placeholder': gettext_lazy('Contraseña (opcional)'),
                 'required': False
             }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': 'Notas adicionales'
+                'placeholder': gettext_lazy('Notas adicionales')
             }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -6496,14 +6497,14 @@ class CompanyDocumentationURLForm(forms.ModelForm):
             })
         }
         labels = {
-            'title': 'Título del enlace',
-            'url': 'URL',
-            'description': 'Descripción',
-            'username': 'Usuario (opcional)',
-            'password': 'Contraseña (opcional)',
-            'notes': 'Notas adicionales',
-            'is_active': 'Está activo',
-            'order': 'Orden'
+            'title': gettext_lazy('Título del enlace'),
+            'url': gettext_lazy('URL'),
+            'description': gettext_lazy('Descripción'),
+            'username': gettext_lazy('Usuario (opcional)'),
+            'password': gettext_lazy('Contraseña (opcional)'),
+            'notes': gettext_lazy('Notas adicionales'),
+            'is_active': gettext_lazy('Está activo'),
+            'order': gettext_lazy('Orden')
         }
     
     def __init__(self, *args, **kwargs):
@@ -6534,12 +6535,12 @@ class TermsOfUseForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de las condiciones de uso'
+                'placeholder': gettext_lazy('Título de las condiciones de uso')
             }),
             'content': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 15,
-                'placeholder': 'Contenido completo de las condiciones de uso...'
+                'placeholder': gettext_lazy('Contenido completo de las condiciones de uso...')
             }),
             'effective_date': forms.DateInput(attrs={
                 'class': 'form-control',
@@ -6547,21 +6548,21 @@ class TermsOfUseForm(forms.ModelForm):
             }),
             'version': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: v1.0, v2.0'
+                'placeholder': gettext_lazy('Ej: v1.0, v2.0')
             }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             })
         }
         labels = {
-            'title': 'Título',
-            'content': 'Contenido',
-            'effective_date': 'Fecha de vigencia',
-            'version': 'Versión',
-            'is_active': 'Está activo'
+            'title': gettext_lazy('Título'),
+            'content': gettext_lazy('Contenido'),
+            'effective_date': gettext_lazy('Fecha de vigencia'),
+            'version': gettext_lazy('Versión'),
+            'is_active': gettext_lazy('Está activo')
         }
         help_texts = {
-            'is_active': 'Solo puede haber una condición de uso activa a la vez'
+            'is_active': gettext_lazy('Solo puede haber una condición de uso activa a la vez')
         }
     
     def __init__(self, *args, **kwargs):
@@ -6582,12 +6583,12 @@ class ContactGeneratorForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Formulario de Contacto Principal'
+                'placeholder': gettext_lazy('Ej: Formulario de Contacto Principal')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción del generador de contactos'
+                'placeholder': gettext_lazy('Descripción del generador de contactos')
             }),
             'company': forms.Select(attrs={'class': 'form-select'}),
             'collect_phone': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
@@ -6636,30 +6637,30 @@ class PublicContactForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control form-control-lg',
-                'placeholder': 'Tu nombre completo',
+                'placeholder': gettext_lazy('Tu nombre completo'),
                 'required': True
             }),
             'email': forms.EmailInput(attrs={
                 'class': 'form-control form-control-lg',
-                'placeholder': 'tu@email.com',
+                'placeholder': gettext_lazy('tu@email.com'),
                 'required': True
             }),
             'phone': forms.TextInput(attrs={
                 'class': 'form-control form-control-lg',
-                'placeholder': 'Tu número de teléfono'
+                'placeholder': gettext_lazy('Tu número de teléfono')
             }),
             'position': forms.TextInput(attrs={
                 'class': 'form-control form-control-lg',
-                'placeholder': 'Tu cargo o posición'
+                'placeholder': gettext_lazy('Tu cargo o posición')
             }),
             'company': forms.TextInput(attrs={
                 'class': 'form-control form-control-lg',
-                'placeholder': 'Nombre de tu empresa (donde trabajas)'
+                'placeholder': gettext_lazy('Nombre de tu empresa (donde trabajas)')
             }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Comentarios adicionales (opcional)'
+                'placeholder': gettext_lazy('Comentarios adicionales (opcional)')
             })
         }
     
@@ -6732,8 +6733,8 @@ class PublicCompanyRequestForm(forms.ModelForm):
         model = CompanyRequest
         fields = ['text', 'url']
         widgets = {
-            'text': forms.Textarea(attrs={'class': 'form-control', 'rows': 6, 'placeholder': 'Describe tu solicitud...'}),
-            'url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'Enlace relacionado (opcional)'}),
+            'text': forms.Textarea(attrs={'class': 'form-control', 'rows': 6, 'placeholder': gettext_lazy('Describe tu solicitud...')}),
+            'url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': gettext_lazy('Enlace relacionado (opcional)')}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -6812,13 +6813,13 @@ class PublicFormResponseForm(forms.Form):
     respondent_name = forms.CharField(
         max_length=100,
         required=False,
-        label='Nombre completo',
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tu nombre (opcional)'})
+        label=gettext_lazy('Nombre completo'),
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': gettext_lazy('Tu nombre (opcional)')})
     )
     respondent_email = forms.EmailField(
         required=False,
-        label='Correo electrónico',
-        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Tu email (opcional)'})
+        label=gettext_lazy('Correo electrónico'),
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': gettext_lazy('Tu email (opcional)')})
     )
 
     def __init__(self, *args, **kwargs):
@@ -6859,27 +6860,27 @@ class EmployeeRequestForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la solicitud',
+                'placeholder': gettext_lazy('Título de la solicitud'),
                 'maxlength': '200'
             }),
             'text': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 5,
-                'placeholder': 'Descripción detallada de la solicitud...'
+                'placeholder': gettext_lazy('Descripción detallada de la solicitud...')
             }),
             'status': forms.Select(attrs={
                 'class': 'form-select'
             }),
         }
         labels = {
-            'title': 'Título',
-            'text': 'Descripción',
-            'status': 'Estado',
+            'title': gettext_lazy('Título'),
+            'text': gettext_lazy('Descripción'),
+            'status': gettext_lazy('Estado'),
         }
         help_texts = {
-            'title': 'Título descriptivo de la solicitud',
-            'text': 'Describe detalladamente la solicitud del empleado',
-            'status': 'Estado actual de la solicitud',
+            'title': gettext_lazy('Título descriptivo de la solicitud'),
+            'text': gettext_lazy('Describe detalladamente la solicitud del empleado'),
+            'status': gettext_lazy('Estado actual de la solicitud'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -6888,7 +6889,7 @@ class EmployeeRequestForm(forms.ModelForm):
         
         # Si es un usuario que no es agente/admin, solo puede crear borradores
         if user and not (user.is_staff or user.groups.filter(name='Agentes').exists()):
-            self.fields['status'].choices = [('draft', 'Borrador')]
+            self.fields['status'].choices = [('draft', gettext_lazy('Borrador'))]
             self.fields['status'].initial = 'draft'
         
         # Agregar clases CSS adicionales
@@ -6922,18 +6923,18 @@ class InternalAgreementForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título del acuerdo interno',
+                'placeholder': gettext_lazy('Título del acuerdo interno'),
                 'maxlength': '200'
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción breve del acuerdo...'
+                'placeholder': gettext_lazy('Descripción breve del acuerdo...')
             }),
             'content': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 8,
-                'placeholder': 'Contenido completo del acuerdo interno...'
+                'placeholder': gettext_lazy('Contenido completo del acuerdo interno...')
             }),
             'agreement_type': forms.Select(attrs={
                 'class': 'form-select'
@@ -6954,7 +6955,7 @@ class InternalAgreementForm(forms.ModelForm):
             }),
             'department': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Departamento al que aplica (opcional)',
+                'placeholder': gettext_lazy('Departamento al que aplica (opcional)'),
                 'maxlength': '100'
             }),
             'applies_to_all': forms.CheckboxInput(attrs={
@@ -6968,7 +6969,7 @@ class InternalAgreementForm(forms.ModelForm):
             }),
             'tags': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Etiquetas separadas por comas',
+                'placeholder': gettext_lazy('Etiquetas separadas por comas'),
                 'maxlength': '500'
             }),
             'version': forms.TextInput(attrs={
@@ -6978,33 +6979,33 @@ class InternalAgreementForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción',
-            'content': 'Contenido',
-            'agreement_type': 'Tipo de Acuerdo',
-            'status': 'Estado',
-            'priority': 'Prioridad',
-            'effective_date': 'Fecha de Vigencia',
-            'expiration_date': 'Fecha de Expiración',
-            'department': 'Departamento',
-            'applies_to_all': 'Aplica a todos los empleados',
-            'signer_1': 'Primer Firmante',
-            'signer_2': 'Segundo Firmante',
-            'tags': 'Etiquetas',
-            'version': 'Versión',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción'),
+            'content': gettext_lazy('Contenido'),
+            'agreement_type': gettext_lazy('Tipo de Acuerdo'),
+            'status': gettext_lazy('Estado'),
+            'priority': gettext_lazy('Prioridad'),
+            'effective_date': gettext_lazy('Fecha de Vigencia'),
+            'expiration_date': gettext_lazy('Fecha de Expiración'),
+            'department': gettext_lazy('Departamento'),
+            'applies_to_all': gettext_lazy('Aplica a todos los empleados'),
+            'signer_1': gettext_lazy('Primer Firmante'),
+            'signer_2': gettext_lazy('Segundo Firmante'),
+            'tags': gettext_lazy('Etiquetas'),
+            'version': gettext_lazy('Versión'),
         }
         help_texts = {
-            'title': 'Título descriptivo del acuerdo interno',
-            'description': 'Descripción breve del propósito del acuerdo',
-            'content': 'Contenido completo del acuerdo interno',
-            'effective_date': 'Fecha en que el acuerdo entra en vigencia',
-            'expiration_date': 'Fecha en que el acuerdo expira (opcional)',
-            'department': 'Departamento específico al que aplica (dejar vacío si aplica a toda la empresa)',
-            'applies_to_all': 'Marcar si el acuerdo aplica a todos los empleados de la empresa',
-            'signer_1': 'Usuario que debe firmar el acuerdo como primer firmante',
-            'signer_2': 'Usuario que debe firmar el acuerdo como segundo firmante',
-            'tags': 'Etiquetas para facilitar búsquedas, separadas por comas',
-            'version': 'Versión del acuerdo (ej: 1.0, 1.1, 2.0)',
+            'title': gettext_lazy('Título descriptivo del acuerdo interno'),
+            'description': gettext_lazy('Descripción breve del propósito del acuerdo'),
+            'content': gettext_lazy('Contenido completo del acuerdo interno'),
+            'effective_date': gettext_lazy('Fecha en que el acuerdo entra en vigencia'),
+            'expiration_date': gettext_lazy('Fecha en que el acuerdo expira (opcional)'),
+            'department': gettext_lazy('Departamento específico al que aplica (dejar vacío si aplica a toda la empresa)'),
+            'applies_to_all': gettext_lazy('Marcar si el acuerdo aplica a todos los empleados de la empresa'),
+            'signer_1': gettext_lazy('Usuario que debe firmar el acuerdo como primer firmante'),
+            'signer_2': gettext_lazy('Usuario que debe firmar el acuerdo como segundo firmante'),
+            'tags': gettext_lazy('Etiquetas para facilitar búsquedas, separadas por comas'),
+            'version': gettext_lazy('Versión del acuerdo (ej: 1.0, 1.1, 2.0)'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -7014,7 +7015,7 @@ class InternalAgreementForm(forms.ModelForm):
         # Si es un usuario que no es agente/admin, restringir algunos campos
         if self.user and not (self.user.is_staff or self.user.groups.filter(name='Agentes').exists()):
             # Los usuarios normales solo pueden crear borradores
-            self.fields['status'].choices = [('draft', 'Borrador')]
+            self.fields['status'].choices = [('draft', gettext_lazy('Borrador'))]
             self.fields['status'].initial = 'draft'
         
         # Configuración del campo applies_to_all
@@ -7031,8 +7032,8 @@ class InternalAgreementForm(forms.ModelForm):
         
         self.fields['signer_1'].queryset = eligible_signers
         self.fields['signer_2'].queryset = eligible_signers
-        self.fields['signer_1'].empty_label = "Seleccionar primer firmante..."
-        self.fields['signer_2'].empty_label = "Seleccionar segundo firmante..."
+        self.fields['signer_1'].empty_label = gettext_lazy("Seleccionar primer firmante...")
+        self.fields['signer_2'].empty_label = gettext_lazy("Seleccionar segundo firmante...")
         
         # Agregar clases CSS adicionales
         for field_name, field in self.fields.items():
@@ -7091,20 +7092,20 @@ class AssetForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre del activo'
+                'placeholder': gettext_lazy('Nombre del activo')
             }),
             'manufacturer': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Fabricante o marca'
+                'placeholder': gettext_lazy('Fabricante o marca')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción detallada del activo'
+                'placeholder': gettext_lazy('Descripción detallada del activo')
             }),
             'serial_number': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Número de serie único'
+                'placeholder': gettext_lazy('Número de serie único')
             }),
             'status': forms.Select(attrs={
                 'class': 'form-select'
@@ -7127,26 +7128,26 @@ class AssetForm(forms.ModelForm):
             }),
             'location': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ubicación física del activo'
+                'placeholder': gettext_lazy('Ubicación física del activo')
             }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Notas adicionales (opcional)'
+                'placeholder': gettext_lazy('Notas adicionales (opcional)')
             }),
         }
         labels = {
-            'name': 'Nombre del Activo',
-            'manufacturer': 'Fabricante',
-            'description': 'Descripción',
-            'serial_number': 'Número de Serie',
-            'status': 'Estado',
-            'assigned_to': 'Asignado a',
-            'purchase_date': 'Fecha de Compra',
-            'purchase_price': 'Precio de Compra',
-            'warranty_expiry': 'Vencimiento de Garantía',
-            'location': 'Ubicación',
-            'notes': 'Notas',
+            'name': gettext_lazy('Nombre del Activo'),
+            'manufacturer': gettext_lazy('Fabricante'),
+            'description': gettext_lazy('Descripción'),
+            'serial_number': gettext_lazy('Número de Serie'),
+            'status': gettext_lazy('Estado'),
+            'assigned_to': gettext_lazy('Asignado a'),
+            'purchase_date': gettext_lazy('Fecha de Compra'),
+            'purchase_price': gettext_lazy('Precio de Compra'),
+            'warranty_expiry': gettext_lazy('Vencimiento de Garantía'),
+            'location': gettext_lazy('Ubicación'),
+            'notes': gettext_lazy('Notas'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -7157,7 +7158,7 @@ class AssetForm(forms.ModelForm):
         ).order_by('first_name', 'last_name', 'username')
         
         # Hacer campo assigned_to opcional visualmente
-        self.fields['assigned_to'].empty_label = "-- Sin asignar --"
+        self.fields['assigned_to'].empty_label = gettext_lazy("-- Sin asignar --")
     
     def clean_serial_number(self):
         """Validar que el número de serie sea único"""
@@ -7199,9 +7200,9 @@ class AssetAssignForm(forms.ModelForm):
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 3,
-            'placeholder': 'Motivo de la asignación/reasignación (opcional)'
+            'placeholder': gettext_lazy('Motivo de la asignación/reasignación (opcional)')
         }),
-        label='Motivo'
+        label=gettext_lazy('Motivo')
     )
     
     class Meta:
@@ -7213,7 +7214,7 @@ class AssetAssignForm(forms.ModelForm):
             }),
         }
         labels = {
-            'assigned_to': 'Asignar a Usuario',
+            'assigned_to': gettext_lazy('Asignar a Usuario'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -7224,28 +7225,28 @@ class AssetAssignForm(forms.ModelForm):
         ).order_by('first_name', 'last_name', 'username')
         
         # Opción para desasignar
-        self.fields['assigned_to'].empty_label = "-- Desasignar activo --"
+        self.fields['assigned_to'].empty_label = gettext_lazy("-- Desasignar activo --")
 
 
 class AssetFilterForm(forms.Form):
     """Formulario para filtrar activos"""
     
     status = forms.ChoiceField(
-        choices=[('', 'Todos los estados')] + Asset.STATUS_CHOICES,
+        choices=[('', gettext_lazy('Todos los estados'))] + Asset.STATUS_CHOICES,
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'}),
-        label='Estado'
+        label=gettext_lazy('Estado')
     )
     
     assigned = forms.ChoiceField(
         choices=[
-            ('', 'Todos'),
-            ('assigned', 'Asignados'),
-            ('unassigned', 'Sin asignar')
+            ('', gettext_lazy('Todos')),
+            ('assigned', gettext_lazy('Asignados')),
+            ('unassigned', gettext_lazy('Sin asignar'))
         ],
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'}),
-        label='Asignación'
+        label=gettext_lazy('Asignación')
     )
     
     search = forms.CharField(
@@ -7253,9 +7254,9 @@ class AssetFilterForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Buscar por nombre, fabricante, serie...'
+            'placeholder': gettext_lazy('Buscar por nombre, fabricante, serie...')
         }),
-        label='Buscar'
+        label=gettext_lazy('Buscar')
     )
 
 
@@ -7275,27 +7276,27 @@ class AITutorForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título descriptivo de tu objetivo'
+                'placeholder': gettext_lazy('Título descriptivo de tu objetivo')
             }),
             'objective': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Describe claramente qué quieres lograr...'
+                'placeholder': gettext_lazy('Describe claramente qué quieres lograr...')
             }),
             'current_state': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Describe dónde estás ahora en relación a tu objetivo...'
+                'placeholder': gettext_lazy('Describe dónde estás ahora en relación a tu objetivo...')
             }),
             'context': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Proporciona contexto adicional: experiencia, recursos, limitaciones...'
+                'placeholder': gettext_lazy('Proporciona contexto adicional: experiencia, recursos, limitaciones...')
             }),
             'tutor_persona': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Ej: Un experimentado profesor de Django, un mentor senior de desarrollo web...'
+                'placeholder': gettext_lazy('Ej: Un experimentado profesor de Django, un mentor senior de desarrollo web...')
             }),
             'status': forms.Select(attrs={
                 'class': 'form-select'
@@ -7305,21 +7306,21 @@ class AITutorForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título del Objetivo',
-            'objective': 'Objetivo',
-            'current_state': 'Estado Actual',
-            'context': 'Contexto',
-            'tutor_persona': 'Tipo de Tutor',
-            'status': 'Estado',
-            'is_private': 'Tutor Privado',
+            'title': gettext_lazy('Título del Objetivo'),
+            'objective': gettext_lazy('Objetivo'),
+            'current_state': gettext_lazy('Estado Actual'),
+            'context': gettext_lazy('Contexto'),
+            'tutor_persona': gettext_lazy('Tipo de Tutor'),
+            'status': gettext_lazy('Estado'),
+            'is_private': gettext_lazy('Tutor Privado'),
         }
         help_texts = {
-            'title': 'Un título claro y descriptivo',
-            'objective': 'Sé específico sobre lo que quieres lograr',
-            'current_state': 'Honesto assessment de tu situación actual',
-            'context': 'Cualquier información relevante para personalizar la ayuda',
-            'tutor_persona': 'Define qué tipo de tutor quieres (profesor, mentor, coach, etc.)',
-            'is_private': 'Solo tú podrás ver este tutor si está marcado como privado'
+            'title': gettext_lazy('Un título claro y descriptivo'),
+            'objective': gettext_lazy('Sé específico sobre lo que quieres lograr'),
+            'current_state': gettext_lazy('Honesto assessment de tu situación actual'),
+            'context': gettext_lazy('Cualquier información relevante para personalizar la ayuda'),
+            'tutor_persona': gettext_lazy('Define qué tipo de tutor quieres (profesor, mentor, coach, etc.)'),
+            'is_private': gettext_lazy('Solo tú podrás ver este tutor si está marcado como privado')
         }
 
 
@@ -7333,21 +7334,21 @@ class AITutorProgressReportForm(forms.ModelForm):
             'progress_description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 5,
-                'placeholder': 'Describe qué has logrado desde tu último reporte...'
+                'placeholder': gettext_lazy('Describe qué has logrado desde tu último reporte...')
             }),
             'challenges': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Describe los obstáculos o dificultades que has enfrentado (opcional)...'
+                'placeholder': gettext_lazy('Describe los obstáculos o dificultades que has enfrentado (opcional)...')
             }),
         }
         labels = {
-            'progress_description': 'Descripción del Avance',
-            'challenges': 'Desafíos Encontrados',
+            'progress_description': gettext_lazy('Descripción del Avance'),
+            'challenges': gettext_lazy('Desafíos Encontrados'),
         }
         help_texts = {
-            'progress_description': 'Sé detallado sobre tus logros y acciones tomadas',
-            'challenges': 'Incluye cualquier dificultad para recibir ayuda específica'
+            'progress_description': gettext_lazy('Sé detallado sobre tus logros y acciones tomadas'),
+            'challenges': gettext_lazy('Incluye cualquier dificultad para recibir ayuda específica')
         }
 
 
@@ -7364,16 +7365,16 @@ class AITutorAttachmentForm(forms.ModelForm):
             }),
             'description': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Descripción opcional del archivo...'
+                'placeholder': gettext_lazy('Descripción opcional del archivo...')
             }),
         }
         labels = {
-            'file': 'Archivo',
-            'description': 'Descripción',
+            'file': gettext_lazy('Archivo'),
+            'description': gettext_lazy('Descripción'),
         }
         help_texts = {
-            'file': 'Sube documentos, imágenes o archivos relevantes para obtener recomendaciones',
-            'description': 'Explica brevemente qué contiene el archivo'
+            'file': gettext_lazy('Sube documentos, imágenes o archivos relevantes para obtener recomendaciones'),
+            'description': gettext_lazy('Explica brevemente qué contiene el archivo')
         }
     
     def clean_file(self):
@@ -7402,21 +7403,21 @@ class AITutorFilterForm(forms.Form):
     """Formulario para filtrar tutores IA"""
     
     status = forms.ChoiceField(
-        choices=[('', 'Todos los estados')] + AITutor.STATUS_CHOICES,
+        choices=[('', gettext_lazy('Todos los estados'))] + AITutor.STATUS_CHOICES,
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'}),
-        label='Estado'
+        label=gettext_lazy('Estado')
     )
     
     visibility = forms.ChoiceField(
         choices=[
-            ('', 'Todos'),
-            ('private', 'Solo mis tutores'),
-            ('public', 'Tutores públicos')
+            ('', gettext_lazy('Todos')),
+            ('private', gettext_lazy('Solo mis tutores')),
+            ('public', gettext_lazy('Tutores públicos'))
         ],
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'}),
-        label='Visibilidad'
+        label=gettext_lazy('Visibilidad')
     )
     
     search = forms.CharField(
@@ -7424,9 +7425,9 @@ class AITutorFilterForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Buscar por título u objetivo...'
+            'placeholder': gettext_lazy('Buscar por título u objetivo...')
         }),
-        label='Buscar'
+        label=gettext_lazy('Buscar')
     )
 
 
@@ -7439,12 +7440,12 @@ class ExpenseReportForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Gastos viaje de trabajo - Enero 2025'
+                'placeholder': gettext_lazy('Ej: Gastos viaje de trabajo - Enero 2025')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción general de los gastos...'
+                'placeholder': gettext_lazy('Descripción general de los gastos...')
             }),
             'start_date': forms.DateInput(attrs={
                 'class': 'form-control',
@@ -7456,10 +7457,10 @@ class ExpenseReportForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título de la rendición',
-            'description': 'Descripción',
-            'start_date': 'Fecha de inicio',
-            'end_date': 'Fecha de fin',
+            'title': gettext_lazy('Título de la rendición'),
+            'description': gettext_lazy('Descripción'),
+            'start_date': gettext_lazy('Fecha de inicio'),
+            'end_date': gettext_lazy('Fecha de fin'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -7487,11 +7488,11 @@ class ExpenseItemForm(forms.ModelForm):
     
     currency = forms.ChoiceField(
         choices=[
-            ('USD', '$ USD — Dólar'),
-            ('EUR', '€ EUR — Euro'),
+            ('USD', gettext_lazy('$ USD — Dólar')),
+            ('EUR', gettext_lazy('€ EUR — Euro')),
         ],
         widget=forms.RadioSelect(attrs={'class': 'currency-radio'}),
-        label='Moneda',
+        label=gettext_lazy('Moneda'),
         required=True,
         initial='USD',
     )
@@ -7509,7 +7510,7 @@ class ExpenseItemForm(forms.ModelForm):
             }),
             'description': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Almuerzo con cliente'
+                'placeholder': gettext_lazy('Ej: Almuerzo con cliente')
             }),
             'amount': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -7518,16 +7519,16 @@ class ExpenseItemForm(forms.ModelForm):
             }),
             'vendor': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Restaurante El Buen Sabor'
+                'placeholder': gettext_lazy('Ej: Restaurante El Buen Sabor')
             }),
             'location': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Santiago, Chile'
+                'placeholder': gettext_lazy('Ej: Santiago, Chile')
             }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': 'Notas adicionales...'
+                'placeholder': gettext_lazy('Notas adicionales...')
             }),
             'receipt_file': forms.FileInput(attrs={
                 'class': 'form-control',
@@ -7538,15 +7539,15 @@ class ExpenseItemForm(forms.ModelForm):
             }),
         }
         labels = {
-            'date': 'Fecha del gasto',
-            'category': 'Categoría',
-            'description': 'Descripción',
-            'amount': 'Monto',
-            'vendor': 'Proveedor/Comercio',
-            'location': 'Ubicación',
-            'notes': 'Notas adicionales',
-            'receipt_file': 'Comprobante/Recibo',
-            'is_reimbursable': 'Reembolsable',
+            'date': gettext_lazy('Fecha del gasto'),
+            'category': gettext_lazy('Categoría'),
+            'description': gettext_lazy('Descripción'),
+            'amount': gettext_lazy('Monto'),
+            'vendor': gettext_lazy('Proveedor/Comercio'),
+            'location': gettext_lazy('Ubicación'),
+            'notes': gettext_lazy('Notas adicionales'),
+            'receipt_file': gettext_lazy('Comprobante/Recibo'),
+            'is_reimbursable': gettext_lazy('Reembolsable'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -7580,15 +7581,15 @@ class ExpenseCommentForm(forms.ModelForm):
             'comment': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Escribe tu comentario...'
+                'placeholder': gettext_lazy('Escribe tu comentario...')
             }),
             'is_internal': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
         }
         labels = {
-            'comment': 'Comentario',
-            'is_internal': 'Comentario interno (solo administradores)',
+            'comment': gettext_lazy('Comentario'),
+            'is_internal': gettext_lazy('Comentario interno (solo administradores)'),
         }
 
 
@@ -7610,11 +7611,11 @@ class ExpenseFundForm(forms.ModelForm):
             }),
             'source_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: BBVA, Banamex, Efectivo…',
+                'placeholder': gettext_lazy('Ej: BBVA, Banamex, Efectivo…'),
             }),
             'invoice_reference': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Número de factura o referencia de transferencia',
+                'placeholder': gettext_lazy('Número de factura o referencia de transferencia'),
             }),
             'received_at': forms.DateInput(attrs={
                 'class': 'form-control',
@@ -7623,23 +7624,23 @@ class ExpenseFundForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': 'Notas adicionales (opcional)',
+                'placeholder': gettext_lazy('Notas adicionales (opcional)'),
             }),
         }
         labels = {
-            'amount': 'Monto recibido',
-            'source_type': 'Tipo de fuente',
-            'source_name': 'Fuente / Banco',
-            'invoice_reference': 'Referencia de factura / comprobante',
-            'received_at': 'Fecha de recepción',
-            'notes': 'Notas',
+            'amount': gettext_lazy('Monto recibido'),
+            'source_type': gettext_lazy('Tipo de fuente'),
+            'source_name': gettext_lazy('Fuente / Banco'),
+            'invoice_reference': gettext_lazy('Referencia de factura / comprobante'),
+            'received_at': gettext_lazy('Fecha de recepción'),
+            'notes': gettext_lazy('Notas'),
         }
 
 
 class ExpenseReportFilterForm(forms.Form):
     """Formulario para filtrar rendiciones de gastos"""
     
-    STATUS_CHOICES = [('', 'Todos los estados')] + ExpenseReport.STATUS_CHOICES
+    STATUS_CHOICES = [('', gettext_lazy('Todos los estados'))] + ExpenseReport.STATUS_CHOICES
     
     status = forms.ChoiceField(
         choices=STATUS_CHOICES,
@@ -7647,7 +7648,7 @@ class ExpenseReportFilterForm(forms.Form):
         widget=forms.Select(attrs={
             'class': 'form-select'
         }),
-        label='Estado'
+        label=gettext_lazy('Estado')
     )
     
     employee = forms.ModelChoiceField(
@@ -7656,8 +7657,8 @@ class ExpenseReportFilterForm(forms.Form):
         widget=forms.Select(attrs={
             'class': 'form-select'
         }),
-        label='Empleado',
-        empty_label='Todos los empleados'
+        label=gettext_lazy('Empleado'),
+        empty_label=gettext_lazy('Todos los empleados')
     )
     
     start_date = forms.DateField(
@@ -7666,7 +7667,7 @@ class ExpenseReportFilterForm(forms.Form):
             'class': 'form-control',
             'type': 'date'
         }),
-        label='Desde'
+        label=gettext_lazy('Desde')
     )
     
     end_date = forms.DateField(
@@ -7675,7 +7676,7 @@ class ExpenseReportFilterForm(forms.Form):
             'class': 'form-control',
             'type': 'date'
         }),
-        label='Hasta'
+        label=gettext_lazy('Hasta')
     )
     
     search = forms.CharField(
@@ -7683,9 +7684,9 @@ class ExpenseReportFilterForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Buscar por título o descripción...'
+            'placeholder': gettext_lazy('Buscar por título o descripción...')
         }),
-        label='Buscar'
+        label=gettext_lazy('Buscar')
     )
 
 
@@ -7701,12 +7702,12 @@ class VideoMeetingForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Reunión de planificación semanal'
+                'placeholder': gettext_lazy('Ej: Reunión de planificación semanal')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Descripción de la reunión, agenda, objetivos...'
+                'placeholder': gettext_lazy('Descripción de la reunión, agenda, objetivos...')
             }),
             'participants': forms.SelectMultiple(attrs={
                 'class': 'form-select',
@@ -7726,17 +7727,17 @@ class VideoMeetingForm(forms.ModelForm):
             }),
             'meeting_url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://zoom.us/j/... o https://meet.google.com/...'
+                'placeholder': gettext_lazy('https://zoom.us/j/... o https://meet.google.com/...')
             }),
         }
         labels = {
-            'title': 'Título de la reunión',
-            'description': 'Descripción',
-            'participants': 'Participantes',
-            'company': 'Empresa',
-            'scheduled_date': 'Fecha y hora programada',
-            'duration_minutes': 'Duración (minutos)',
-            'meeting_url': 'URL de la reunión',
+            'title': gettext_lazy('Título de la reunión'),
+            'description': gettext_lazy('Descripción'),
+            'participants': gettext_lazy('Participantes'),
+            'company': gettext_lazy('Empresa'),
+            'scheduled_date': gettext_lazy('Fecha y hora programada'),
+            'duration_minutes': gettext_lazy('Duración (minutos)'),
+            'meeting_url': gettext_lazy('URL de la reunión'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -7783,8 +7784,8 @@ class VideoMeetingEditForm(forms.ModelForm):
             'class': 'form-control',
             'accept': '.mp4,.avi,.mov,.mp3,.wav,.m4a,.webm',
         }),
-        label='Archivos de grabación',
-        help_text='Puedes subir múltiples archivos. Formatos: MP4, AVI, MOV, MP3, WAV, M4A, WebM (máx. 500MB c/u)'
+        label=gettext_lazy('Archivos de grabación'),
+        help_text=gettext_lazy('Puedes subir múltiples archivos. Formatos: MP4, AVI, MOV, MP3, WAV, M4A, WebM (máx. 500MB c/u)')
     )
     
     class Meta:
@@ -7797,12 +7798,12 @@ class VideoMeetingEditForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Reunión de planificación semanal'
+                'placeholder': gettext_lazy('Ej: Reunión de planificación semanal')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Descripción de la reunión, agenda, objetivos...'
+                'placeholder': gettext_lazy('Descripción de la reunión, agenda, objetivos...')
             }),
             'participants': forms.SelectMultiple(attrs={
                 'class': 'form-select',
@@ -7822,7 +7823,7 @@ class VideoMeetingEditForm(forms.ModelForm):
             }),
             'meeting_url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://zoom.us/j/... o https://meet.google.com/...'
+                'placeholder': gettext_lazy('https://zoom.us/j/... o https://meet.google.com/...')
             }),
             'recording_file': forms.FileInput(attrs={
                 'class': 'form-control',
@@ -7830,14 +7831,14 @@ class VideoMeetingEditForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título de la reunión',
-            'description': 'Descripción',
-            'participants': 'Participantes',
-            'company': 'Empresa',
-            'scheduled_date': 'Fecha y hora programada',
-            'duration_minutes': 'Duración (minutos)',
-            'meeting_url': 'URL de la reunión',
-            'recording_file': 'Archivo de grabación principal',
+            'title': gettext_lazy('Título de la reunión'),
+            'description': gettext_lazy('Descripción'),
+            'participants': gettext_lazy('Participantes'),
+            'company': gettext_lazy('Empresa'),
+            'scheduled_date': gettext_lazy('Fecha y hora programada'),
+            'duration_minutes': gettext_lazy('Duración (minutos)'),
+            'meeting_url': gettext_lazy('URL de la reunión'),
+            'recording_file': gettext_lazy('Archivo de grabación principal'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -7882,29 +7883,29 @@ class MeetingTranscriptionForm(forms.ModelForm):
             'transcription_text': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 10,
-                'placeholder': 'Transcripción completa de la reunión...'
+                'placeholder': gettext_lazy('Transcripción completa de la reunión...')
             }),
             'ai_summary': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Resumen ejecutivo de la reunión...'
+                'placeholder': gettext_lazy('Resumen ejecutivo de la reunión...')
             }),
             'key_points': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 6,
-                'placeholder': 'Puntos clave discutidos:\n- Punto 1\n- Punto 2\n- Punto 3'
+                'placeholder': gettext_lazy('Puntos clave discutidos:\n- Punto 1\n- Punto 2\n- Punto 3')
             }),
             'action_items': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 6,
-                'placeholder': 'Elementos de acción:\n- [ ] Acción 1 - Responsable: Nombre\n- [ ] Acción 2 - Responsable: Nombre'
+                'placeholder': gettext_lazy('Elementos de acción:\n- [ ] Acción 1 - Responsable: Nombre\n- [ ] Acción 2 - Responsable: Nombre')
             }),
         }
         labels = {
-            'transcription_text': 'Transcripción',
-            'ai_summary': 'Resumen',
-            'key_points': 'Puntos clave',
-            'action_items': 'Elementos de acción',
+            'transcription_text': gettext_lazy('Transcripción'),
+            'ai_summary': gettext_lazy('Resumen'),
+            'key_points': gettext_lazy('Puntos clave'),
+            'action_items': gettext_lazy('Elementos de acción'),
         }
 
 
@@ -7918,62 +7919,62 @@ class MeetingNoteForm(forms.ModelForm):
             'content': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Escribe tu nota sobre la reunión...'
+                'placeholder': gettext_lazy('Escribe tu nota sobre la reunión...')
             }),
             'is_private': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
         }
         labels = {
-            'content': 'Contenido de la nota',
-            'is_private': 'Nota privada (solo yo puedo verla)',
+            'content': gettext_lazy('Contenido de la nota'),
+            'is_private': gettext_lazy('Nota privada (solo yo puedo verla)'),
         }
 
 
 class MeetingFilterForm(forms.Form):
     """Formulario para filtrar reuniones"""
     
-    STATUS_CHOICES = [('', 'Todos los estados')] + VideoMeeting.MEETING_STATUS_CHOICES
-    TRANSCRIPTION_STATUS_CHOICES = [('', 'Todos los estados')] + VideoMeeting.TRANSCRIPTION_STATUS_CHOICES
+    STATUS_CHOICES = [('', gettext_lazy('Todos los estados'))] + VideoMeeting.MEETING_STATUS_CHOICES
+    TRANSCRIPTION_STATUS_CHOICES = [('', gettext_lazy('Todos los estados'))] + VideoMeeting.TRANSCRIPTION_STATUS_CHOICES
     
     search = forms.CharField(
         max_length=100,
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Buscar por título o descripción...'
+            'placeholder': gettext_lazy('Buscar por título o descripción...')
         }),
-        label='Buscar'
+        label=gettext_lazy('Buscar')
     )
     
     status = forms.ChoiceField(
         choices=STATUS_CHOICES,
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'}),
-        label='Estado'
+        label=gettext_lazy('Estado')
     )
     
     transcription_status = forms.ChoiceField(
         choices=TRANSCRIPTION_STATUS_CHOICES,
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'}),
-        label='Estado de transcripción'
+        label=gettext_lazy('Estado de transcripción')
     )
     
     company = forms.ModelChoiceField(
         queryset=None,
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'}),
-        label='Empresa',
-        empty_label='Todas las empresas'
+        label=gettext_lazy('Empresa'),
+        empty_label=gettext_lazy('Todas las empresas')
     )
     
     organizer = forms.ModelChoiceField(
         queryset=None,
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'}),
-        label='Organizador',
-        empty_label='Todos los organizadores'
+        label=gettext_lazy('Organizador'),
+        empty_label=gettext_lazy('Todos los organizadores')
     )
     
     date_from = forms.DateField(
@@ -7982,7 +7983,7 @@ class MeetingFilterForm(forms.Form):
             'class': 'form-control',
             'type': 'date'
         }),
-        label='Desde'
+        label=gettext_lazy('Desde')
     )
     
     date_to = forms.DateField(
@@ -7991,7 +7992,7 @@ class MeetingFilterForm(forms.Form):
             'class': 'form-control',
             'type': 'date'
         }),
-        label='Hasta'
+        label=gettext_lazy('Hasta')
     )
     
     def __init__(self, *args, **kwargs):
@@ -8030,11 +8031,11 @@ class QuoteGeneratorForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Citas Motivacionales del Día'
+                'placeholder': gettext_lazy('Ej: Citas Motivacionales del Día')
             }),
             'topic': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: "Dame citas que ha dicho Einstein sobre el amor", "Frases motivacionales de líderes empresariales", "Citas sobre el éxito y la perseverancia"',
+                'placeholder': gettext_lazy('Ej: "Dame citas que ha dicho Einstein sobre el amor", "Frases motivacionales de líderes empresariales", "Citas sobre el éxito y la perseverancia"'),
                 'rows': 3
             }),
         }
@@ -8057,11 +8058,11 @@ class CountdownTimerForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Lanzamiento del nuevo producto'
+                'placeholder': gettext_lazy('Ej: Lanzamiento del nuevo producto')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Descripción opcional del evento...',
+                'placeholder': gettext_lazy('Descripción opcional del evento...'),
                 'rows': 3
             }),
             'target_date': forms.DateTimeInput(attrs={
@@ -8085,10 +8086,10 @@ class CountdownTimerForm(forms.ModelForm):
         self.fields['target_date'].required = True
         
         # Ayuda para los campos
-        self.fields['title'].help_text = 'Nombre descriptivo para la cuenta regresiva'
-        self.fields['target_date'].help_text = 'Fecha y hora del evento objetivo'
-        self.fields['is_active'].help_text = 'Si está activo, la cuenta regresiva será visible'
-        self.fields['is_private'].help_text = 'Si está marcada como privada, solo tú podrás verla'
+        self.fields['title'].help_text = gettext_lazy('Nombre descriptivo para la cuenta regresiva')
+        self.fields['target_date'].help_text = gettext_lazy('Fecha y hora del evento objetivo')
+        self.fields['is_active'].help_text = gettext_lazy('Si está activo, la cuenta regresiva será visible')
+        self.fields['is_private'].help_text = gettext_lazy('Si está marcada como privada, solo tú podrás verla')
 
 
 class AbsenceTypeForm(forms.ModelForm):
@@ -8100,11 +8101,11 @@ class AbsenceTypeForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Vacaciones, Enfermedad, Permiso Personal'
+                'placeholder': gettext_lazy('Ej: Vacaciones, Enfermedad, Permiso Personal')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Descripción detallada del tipo de ausencia...',
+                'placeholder': gettext_lazy('Descripción detallada del tipo de ausencia...'),
                 'rows': 3
             }),
             'requires_documentation': forms.CheckboxInput(attrs={
@@ -8115,7 +8116,7 @@ class AbsenceTypeForm(forms.ModelForm):
             }),
             'max_days_per_year': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: 30 días',
+                'placeholder': gettext_lazy('Ej: 30 días'),
                 'min': '1'
             }),
             'color': forms.TextInput(attrs={
@@ -8135,13 +8136,13 @@ class AbsenceTypeForm(forms.ModelForm):
         self.fields['name'].required = True
         
         # Ayuda para los campos
-        self.fields['name'].help_text = 'Nombre único para identificar el tipo de ausencia'
-        self.fields['description'].help_text = 'Descripción opcional para explicar cuándo usar este tipo'
-        self.fields['requires_documentation'].help_text = 'Marcar si requiere documentos de respaldo (certificado médico, etc.)'
-        self.fields['is_paid'].help_text = 'Marcar si la ausencia es con goce de sueldo'
-        self.fields['max_days_per_year'].help_text = 'Límite anual de días (opcional). Dejar vacío si no tiene límite'
-        self.fields['color'].help_text = 'Color para mostrar en calendarios y reportes'
-        self.fields['is_active'].help_text = 'Solo los tipos activos estarán disponibles para crear ausencias'
+        self.fields['name'].help_text = gettext_lazy('Nombre único para identificar el tipo de ausencia')
+        self.fields['description'].help_text = gettext_lazy('Descripción opcional para explicar cuándo usar este tipo')
+        self.fields['requires_documentation'].help_text = gettext_lazy('Marcar si requiere documentos de respaldo (certificado médico, etc.)')
+        self.fields['is_paid'].help_text = gettext_lazy('Marcar si la ausencia es con goce de sueldo')
+        self.fields['max_days_per_year'].help_text = gettext_lazy('Límite anual de días (opcional). Dejar vacío si no tiene límite')
+        self.fields['color'].help_text = gettext_lazy('Color para mostrar en calendarios y reportes')
+        self.fields['is_active'].help_text = gettext_lazy('Solo los tipos activos estarán disponibles para crear ausencias')
 
 
 class ProcedureForm(forms.ModelForm):
@@ -8157,16 +8158,16 @@ class ProcedureForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Proceso de Atención al Cliente'
+                'placeholder': gettext_lazy('Ej: Proceso de Atención al Cliente')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Descripción detallada del procedimiento...'
+                'placeholder': gettext_lazy('Descripción detallada del procedimiento...')
             }),
             'url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://ejemplo.com (opcional)'
+                'placeholder': gettext_lazy('https://ejemplo.com (opcional)')
             }),
             'attachment': forms.FileInput(attrs={
                 'class': 'form-control',
@@ -8189,12 +8190,12 @@ class ProcedureForm(forms.ModelForm):
         self.fields['company'].required = False
         
         # Ayuda para los campos
-        self.fields['title'].help_text = 'Título descriptivo del procedimiento'
-        self.fields['description'].help_text = 'Descripción detallada del procedimiento (opcional)'
-        self.fields['url'].help_text = 'Enlace externo relacionado (opcional)'
-        self.fields['attachment'].help_text = 'Archivo del procedimiento (PDF, DOC, etc.) - Opcional'
-        self.fields['company'].help_text = 'Empresa a la que pertenece el procedimiento (opcional)'
-        self.fields['is_active'].help_text = 'Solo los procedimientos activos serán visibles'
+        self.fields['title'].help_text = gettext_lazy('Título descriptivo del procedimiento')
+        self.fields['description'].help_text = gettext_lazy('Descripción detallada del procedimiento (opcional)')
+        self.fields['url'].help_text = gettext_lazy('Enlace externo relacionado (opcional)')
+        self.fields['attachment'].help_text = gettext_lazy('Archivo del procedimiento (PDF, DOC, etc.) - Opcional')
+        self.fields['company'].help_text = gettext_lazy('Empresa a la que pertenece el procedimiento (opcional)')
+        self.fields['is_active'].help_text = gettext_lazy('Solo los procedimientos activos serán visibles')
         
     def clean_attachment(self):
         """Validar el archivo adjunto"""
@@ -8229,7 +8230,7 @@ class MonthlyCumplimientoForm(forms.ModelForm):
         widget=forms.Select(attrs={
             'class': 'form-select'
         }),
-        empty_label="Seleccionar usuario...",
+        empty_label=gettext_lazy("Seleccionar usuario..."),
         to_field_name=None  # Usar la pk
     )
     
@@ -8239,7 +8240,7 @@ class MonthlyCumplimientoForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ejercicio diario, Lectura, Meditación, etc.'
+                'placeholder': gettext_lazy('Ejercicio diario, Lectura, Meditación, etc.')
             }),
             'frequency_type': forms.Select(attrs={
                 'class': 'form-select'
@@ -8252,27 +8253,27 @@ class MonthlyCumplimientoForm(forms.ModelForm):
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción detallada de la meta...'
+                'placeholder': gettext_lazy('Descripción detallada de la meta...')
             }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
         }
         labels = {
-            'name': 'Nombre de la meta',
-            'user': 'Usuario',
-            'frequency_type': 'Tipo de frecuencia',
-            'target_days': 'Días objetivo en el mes',
-            'description': 'Descripción',
-            'is_active': 'Activo',
+            'name': gettext_lazy('Nombre de la meta'),
+            'user': gettext_lazy('Usuario'),
+            'frequency_type': gettext_lazy('Tipo de frecuencia'),
+            'target_days': gettext_lazy('Días objetivo en el mes'),
+            'description': gettext_lazy('Descripción'),
+            'is_active': gettext_lazy('Activo'),
         }
         help_texts = {
-            'name': 'Nombre descriptivo para la meta de cumplimiento',
-            'user': 'Usuario que debe cumplir esta meta',
-            'frequency_type': 'Todos los días o un número específico de días',
-            'target_days': 'Solo aplica para tipo "específico". Número de días que debe cumplir en el mes',
-            'description': 'Información adicional sobre la meta',
-            'is_active': 'Desmarcar para desactivar temporalmente esta meta',
+            'name': gettext_lazy('Nombre descriptivo para la meta de cumplimiento'),
+            'user': gettext_lazy('Usuario que debe cumplir esta meta'),
+            'frequency_type': gettext_lazy('Todos los días o un número específico de días'),
+            'target_days': gettext_lazy('Solo aplica para tipo "específico". Número de días que debe cumplir en el mes'),
+            'description': gettext_lazy('Información adicional sobre la meta'),
+            'is_active': gettext_lazy('Desmarcar para desactivar temporalmente esta meta'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -8313,12 +8314,12 @@ class DailyCumplimientoForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': 'Notas opcionales sobre este día...'
+                'placeholder': gettext_lazy('Notas opcionales sobre este día...')
             }),
         }
         labels = {
-            'completed': '¿Cumplido hoy?',
-            'notes': 'Notas (opcional)',
+            'completed': gettext_lazy('¿Cumplido hoy?'),
+            'notes': gettext_lazy('Notas (opcional)'),
         }
 
 
@@ -8331,17 +8332,17 @@ class QRCodeForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título descriptivo del QR'
+                'placeholder': gettext_lazy('Título descriptivo del QR')
             }),
             'content': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Ingresa aquí el contenido que deseas convertir a QR...'
+                'placeholder': gettext_lazy('Ingresa aquí el contenido que deseas convertir a QR...')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': 'Descripción opcional del código QR'
+                'placeholder': gettext_lazy('Descripción opcional del código QR')
             }),
             'qr_type': forms.Select(attrs={
                 'class': 'form-select',
@@ -8355,15 +8356,15 @@ class QRCodeForm(forms.ModelForm):
             })
         }
         labels = {
-            'title': 'Título',
-            'content': 'Contenido',
-            'description': 'Descripción',
-            'qr_type': 'Tipo de QR',
-            'size': 'Tamaño (px)'
+            'title': gettext_lazy('Título'),
+            'content': gettext_lazy('Contenido'),
+            'description': gettext_lazy('Descripción'),
+            'qr_type': gettext_lazy('Tipo de QR'),
+            'size': gettext_lazy('Tamaño (px)')
         }
         help_texts = {
-            'content': 'Según el tipo seleccionado, ingresa URL, texto, email, teléfono, etc.',
-            'size': 'Tamaño en píxeles del código QR (recomendado: 256)'
+            'content': gettext_lazy('Según el tipo seleccionado, ingresa URL, texto, email, teléfono, etc.'),
+            'size': gettext_lazy('Tamaño en píxeles del código QR (recomendado: 256)')
         }
 
     def __init__(self, *args, **kwargs):
@@ -8418,12 +8419,12 @@ class ContactCommentForm(forms.ModelForm):
             'content': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Escribe tu comentario aquí...',
+                'placeholder': gettext_lazy('Escribe tu comentario aquí...'),
                 'required': True
             }),
         }
         labels = {
-            'content': 'Comentario'
+            'content': gettext_lazy('Comentario')
         }
 
     def __init__(self, *args, **kwargs):
@@ -8452,15 +8453,15 @@ class ContactAttachmentForm(forms.ModelForm):
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': 'Descripción opcional del archivo...'
+                'placeholder': gettext_lazy('Descripción opcional del archivo...')
             }),
         }
         labels = {
-            'file': 'Archivo',
-            'description': 'Descripción'
+            'file': gettext_lazy('Archivo'),
+            'description': gettext_lazy('Descripción')
         }
         help_texts = {
-            'file': 'Tipos permitidos: PDF, DOC, DOCX, TXT, PNG, JPG, JPEG, GIF, XLS, XLSX'
+            'file': gettext_lazy('Tipos permitidos: PDF, DOC, DOCX, TXT, PNG, JPG, JPEG, GIF, XLS, XLSX')
         }
 
     def __init__(self, *args, **kwargs):
@@ -8502,8 +8503,8 @@ class TicketImportForm(forms.Form):
     """Formulario para importar tickets desde Excel"""
     
     excel_file = forms.FileField(
-        label='Archivo Excel',
-        help_text='Archivo Excel con columnas: Título, Descripción',
+        label=gettext_lazy('Archivo Excel'),
+        help_text=gettext_lazy('Archivo Excel con columnas: Título, Descripción'),
         widget=forms.ClearableFileInput(attrs={
             'class': 'form-control',
             'accept': '.xlsx,.xls',
@@ -8513,36 +8514,36 @@ class TicketImportForm(forms.Form):
     
     company = forms.ModelChoiceField(
         queryset=Company.objects.filter(is_active=True),
-        label='Empresa',
-        help_text='Empresa a la que se asignarán todos los tickets',
+        label=gettext_lazy('Empresa'),
+        help_text=gettext_lazy('Empresa a la que se asignarán todos los tickets'),
         widget=forms.Select(attrs={
             'class': 'form-select',
             'required': True
         }),
-        empty_label='Seleccione una empresa...'
+        empty_label=gettext_lazy('Seleccione una empresa...')
     )
     
     category = forms.ModelChoiceField(
         queryset=Category.objects.filter(is_active=True),
-        label='Categoría',
-        help_text='Categoría que se asignará a todos los tickets',
+        label=gettext_lazy('Categoría'),
+        help_text=gettext_lazy('Categoría que se asignará a todos los tickets'),
         widget=forms.Select(attrs={
             'class': 'form-select',
             'required': True
         }),
-        empty_label='Seleccione una categoría...'
+        empty_label=gettext_lazy('Seleccione una categoría...')
     )
     
     priority = forms.ChoiceField(
         choices=[
-            ('low', 'Baja'),
-            ('normal', 'Normal'),
-            ('high', 'Alta'),
-            ('urgent', 'Urgente')
+            ('low', gettext_lazy('Baja')),
+            ('normal', gettext_lazy('Normal')),
+            ('high', gettext_lazy('Alta')),
+            ('urgent', gettext_lazy('Urgente'))
         ],
         initial='normal',
-        label='Prioridad',
-        help_text='Prioridad que se asignará a todos los tickets',
+        label=gettext_lazy('Prioridad'),
+        help_text=gettext_lazy('Prioridad que se asignará a todos los tickets'),
         widget=forms.Select(attrs={
             'class': 'form-select'
         })
@@ -8579,23 +8580,23 @@ class CrmQuestionForm(forms.ModelForm):
             'question': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Escribe la pregunta aquí...',
+                'placeholder': gettext_lazy('Escribe la pregunta aquí...'),
                 'required': True
             }),
             'person_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre completo de quien pregunta',
+                'placeholder': gettext_lazy('Nombre completo de quien pregunta'),
                 'required': True
             }),
             'person_email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'correo@ejemplo.com',
+                'placeholder': gettext_lazy('correo@ejemplo.com'),
                 'required': True
             }),
             'answer': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Escribe la respuesta aquí...',
+                'placeholder': gettext_lazy('Escribe la respuesta aquí...'),
                 'id': 'id_answer'
             }),
         }
@@ -8632,7 +8633,7 @@ class CrmQuestionForm(forms.ModelForm):
                         'onkeydown': 'return false;'
                     })
                     # Marcar que es un campo controlado para usuarios no agentes
-                    self.fields['company'].help_text = 'Empresa asignada automáticamente'
+                    self.fields['company'].help_text = gettext_lazy('Empresa asignada automáticamente')
                 else:
                     self.fields['company'].queryset = Company.objects.none()
                 
@@ -8691,15 +8692,15 @@ class CrmQuestionFilterForm(forms.Form):
     """Formulario para filtrar preguntas del CRM"""
     
     STATUS_CHOICES = [
-        ('', 'Todos los estados'),
-        ('answered', 'Respondidas'),
-        ('pending', 'Pendientes'),
+        ('', gettext_lazy('Todos los estados')),
+        ('answered', gettext_lazy('Respondidas')),
+        ('pending', gettext_lazy('Pendientes')),
     ]
     
     company = forms.ModelChoiceField(
         queryset=Company.objects.filter(is_active=True),
         required=False,
-        empty_label="Todas las empresas",
+        empty_label=gettext_lazy("Todas las empresas"),
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     status = forms.ChoiceField(
@@ -8711,7 +8712,7 @@ class CrmQuestionFilterForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Buscar en preguntas, respuestas o nombres...'
+            'placeholder': gettext_lazy('Buscar en preguntas, respuestas o nombres...')
         })
     )
     
@@ -8747,30 +8748,30 @@ class PublicCrmQuestionForm(forms.ModelForm):
         widgets = {
             'person_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Tu nombre completo',
+                'placeholder': gettext_lazy('Tu nombre completo'),
                 'required': True
             }),
             'person_email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'tu.email@ejemplo.com',
+                'placeholder': gettext_lazy('tu.email@ejemplo.com'),
                 'required': True
             }),
             'question': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Escribe tu pregunta aquí...',
+                'placeholder': gettext_lazy('Escribe tu pregunta aquí...'),
                 'rows': 5,
                 'required': True
             }),
         }
         labels = {
-            'person_name': 'Tu Nombre',
-            'person_email': 'Tu Email',
-            'question': 'Tu Pregunta',
+            'person_name': gettext_lazy('Tu Nombre'),
+            'person_email': gettext_lazy('Tu Email'),
+            'question': gettext_lazy('Tu Pregunta'),
         }
         help_texts = {
-            'person_name': 'Ingresa tu nombre completo',
-            'person_email': 'Ingresa tu email para recibir notificaciones',
-            'question': 'Describe tu pregunta de manera clara y detallada',
+            'person_name': gettext_lazy('Ingresa tu nombre completo'),
+            'person_email': gettext_lazy('Ingresa tu email para recibir notificaciones'),
+            'question': gettext_lazy('Describe tu pregunta de manera clara y detallada'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -8815,20 +8816,20 @@ class SupportMeetingForm(forms.ModelForm):
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Descripción de la reunión...',
+                'placeholder': gettext_lazy('Descripción de la reunión...'),
                 'rows': 5,
                 'required': True
             }),
         }
         labels = {
-            'company': 'Empresa',
-            'date': 'Fecha',
-            'description': 'Descripción',
+            'company': gettext_lazy('Empresa'),
+            'date': gettext_lazy('Fecha'),
+            'description': gettext_lazy('Descripción'),
         }
         help_texts = {
-            'company': 'Selecciona la empresa para la cual es la reunión',
-            'date': 'Fecha en que se realizó la reunión',
-            'description': 'Descripción de la reunión',
+            'company': gettext_lazy('Selecciona la empresa para la cual es la reunión'),
+            'date': gettext_lazy('Fecha en que se realizó la reunión'),
+            'description': gettext_lazy('Descripción de la reunión'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -8859,7 +8860,7 @@ class SupportMeetingPointForm(forms.ModelForm):
         widgets = {
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Describe el punto tratado en la reunión...',
+                'placeholder': gettext_lazy('Describe el punto tratado en la reunión...'),
                 'rows': 3,
                 'required': True
             }),
@@ -8871,14 +8872,14 @@ class SupportMeetingPointForm(forms.ModelForm):
             }),
         }
         labels = {
-            'description': 'Descripción del punto',
-            'status': 'Estado del punto',
-            'is_selected': 'Seleccionar para crear como ticket',
+            'description': gettext_lazy('Descripción del punto'),
+            'status': gettext_lazy('Estado del punto'),
+            'is_selected': gettext_lazy('Seleccionar para crear como ticket'),
         }
         help_texts = {
-            'description': 'Describe detalladamente el punto tratado',
-            'status': 'Estado actual del punto en la reunión',
-            'is_selected': 'Marca esta casilla si quieres que este punto se convierta en ticket',
+            'description': gettext_lazy('Describe detalladamente el punto tratado'),
+            'status': gettext_lazy('Estado actual del punto en la reunión'),
+            'is_selected': gettext_lazy('Marca esta casilla si quieres que este punto se convierta en ticket'),
         }
     
     def clean_description(self):
@@ -8898,11 +8899,11 @@ class EmailTemplateForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la plantilla...'
+                'placeholder': gettext_lazy('Título de la plantilla...')
             }),
             'body': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Escribe el contenido del correo...',
+                'placeholder': gettext_lazy('Escribe el contenido del correo...'),
                 'rows': 10
             }),
             'category': forms.Select(attrs={
@@ -8918,18 +8919,18 @@ class EmailTemplateForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'body': 'Cuerpo del mensaje',
-            'category': 'Categoría',
-            'order': 'Orden',
-            'is_active': 'Activo',
+            'title': gettext_lazy('Título'),
+            'body': gettext_lazy('Cuerpo del mensaje'),
+            'category': gettext_lazy('Categoría'),
+            'order': gettext_lazy('Orden'),
+            'is_active': gettext_lazy('Activo'),
         }
         help_texts = {
-            'title': 'Nombre descriptivo para identificar la plantilla',
-            'body': 'Contenido del correo electrónico',
-            'category': 'Categoría para organizar las plantillas',
-            'order': 'Orden de visualización (menor número aparece primero)',
-            'is_active': 'Desmarcar para desactivar la plantilla sin eliminarla',
+            'title': gettext_lazy('Nombre descriptivo para identificar la plantilla'),
+            'body': gettext_lazy('Contenido del correo electrónico'),
+            'category': gettext_lazy('Categoría para organizar las plantillas'),
+            'order': gettext_lazy('Orden de visualización (menor número aparece primero)'),
+            'is_active': gettext_lazy('Desmarcar para desactivar la plantilla sin eliminarla'),
         }
 
 
@@ -8942,7 +8943,7 @@ class CounterForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ejemplo: Ventas, Llamadas, Tareas...'
+                'placeholder': gettext_lazy('Ejemplo: Ventas, Llamadas, Tareas...')
             }),
             'value': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -8956,21 +8957,21 @@ class CounterForm(forms.ModelForm):
             }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Notas adicionales (opcional)...',
+                'placeholder': gettext_lazy('Notas adicionales (opcional)...'),
                 'rows': 3
             }),
         }
         labels = {
-            'title': 'Título',
-            'value': 'Valor',
-            'date': 'Fecha',
-            'notes': 'Notas',
+            'title': gettext_lazy('Título'),
+            'value': gettext_lazy('Valor'),
+            'date': gettext_lazy('Fecha'),
+            'notes': gettext_lazy('Notas'),
         }
         help_texts = {
-            'title': 'Nombre del contador',
-            'value': 'Valor numérico del contador',
-            'date': 'Fecha del contador',
-            'notes': 'Información adicional (opcional)',
+            'title': gettext_lazy('Nombre del contador'),
+            'value': gettext_lazy('Valor numérico del contador'),
+            'date': gettext_lazy('Fecha del contador'),
+            'notes': gettext_lazy('Información adicional (opcional)'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -8995,40 +8996,40 @@ class OCRInvoiceForm(forms.ModelForm):
             }),
             'number': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Número de factura (opcional, se extrae del OCR)...',
+                'placeholder': gettext_lazy('Número de factura (opcional, se extrae del OCR)...'),
                 'required': False
             }),
             'supplier': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre del proveedor (opcional, se extrae del OCR)...',
+                'placeholder': gettext_lazy('Nombre del proveedor (opcional, se extrae del OCR)...'),
                 'required': False
             }),
             'neto': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
                 'min': '0',
-                'placeholder': '0.00 (opcional, se extrae del OCR)',
+                'placeholder': gettext_lazy('0.00 (opcional, se extrae del OCR)'),
                 'required': False
             }),
             'impuesto': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
                 'min': '0',
-                'placeholder': '0.00 (opcional, se extrae del OCR)',
+                'placeholder': gettext_lazy('0.00 (opcional, se extrae del OCR)'),
                 'required': False
             }),
             'total': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
                 'min': '0',
-                'placeholder': '0.00 (opcional, se extrae del OCR)',
+                'placeholder': gettext_lazy('0.00 (opcional, se extrae del OCR)'),
                 'required': False
             }),
             'amount': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
                 'min': '0',
-                'placeholder': '0.00 (opcional, se extrae del OCR)',
+                'placeholder': gettext_lazy('0.00 (opcional, se extrae del OCR)'),
                 'required': False
             }),
             'status': forms.Select(attrs={
@@ -9036,24 +9037,24 @@ class OCRInvoiceForm(forms.ModelForm):
             }),
         }
         labels = {
-            'image': 'Imagen de la Factura *',
-            'number': 'Número de Factura (opcional)',
-            'supplier': 'Proveedor (opcional)',
-            'neto': 'Neto (opcional)',
-            'impuesto': 'Impuesto (opcional)',
-            'total': 'Total (opcional)',
-            'amount': 'Importe (opcional)',
-            'status': 'Estado',
+            'image': gettext_lazy('Imagen de la Factura *'),
+            'number': gettext_lazy('Número de Factura (opcional)'),
+            'supplier': gettext_lazy('Proveedor (opcional)'),
+            'neto': gettext_lazy('Neto (opcional)'),
+            'impuesto': gettext_lazy('Impuesto (opcional)'),
+            'total': gettext_lazy('Total (opcional)'),
+            'amount': gettext_lazy('Importe (opcional)'),
+            'status': gettext_lazy('Estado'),
         }
         help_texts = {
-            'image': 'Imagen escaneada de la factura (requerido)',
-            'number': 'Se llenará automáticamente al procesar con OCR',
-            'supplier': 'Se llenará automáticamente al procesar con OCR',
-            'neto': 'Se llenará automáticamente al procesar con OCR',
-            'impuesto': 'Se llenará automáticamente al procesar con OCR',
-            'total': 'Se llenará automáticamente al procesar con OCR',
-            'amount': 'Se llenará automáticamente al procesar con OCR',
-            'status': 'Estado actual de la factura',
+            'image': gettext_lazy('Imagen escaneada de la factura (requerido)'),
+            'number': gettext_lazy('Se llenará automáticamente al procesar con OCR'),
+            'supplier': gettext_lazy('Se llenará automáticamente al procesar con OCR'),
+            'neto': gettext_lazy('Se llenará automáticamente al procesar con OCR'),
+            'impuesto': gettext_lazy('Se llenará automáticamente al procesar con OCR'),
+            'total': gettext_lazy('Se llenará automáticamente al procesar con OCR'),
+            'amount': gettext_lazy('Se llenará automáticamente al procesar con OCR'),
+            'status': gettext_lazy('Estado actual de la factura'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -9081,7 +9082,7 @@ class OCRInvoicePublicForm(forms.ModelForm):
             }),
         }
         labels = {
-            'image': 'Escanear Factura',
+            'image': gettext_lazy('Escanear Factura'),
         }
 
 
@@ -9094,12 +9095,12 @@ class ScheduledTaskForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre descriptivo de la tarea'
+                'placeholder': gettext_lazy('Nombre descriptivo de la tarea')
             }),
             'frequency': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': '1',
-                'placeholder': 'Ejemplo: 10'
+                'placeholder': gettext_lazy('Ejemplo: 10')
             }),
             'frequency_unit': forms.Select(attrs={
                 'class': 'form-select'
@@ -9125,18 +9126,18 @@ print(f"Hora actual: {current_time}")
             }),
         }
         labels = {
-            'name': 'Nombre de la Tarea',
-            'frequency': 'Frecuencia',
-            'frequency_unit': 'Unidad de Tiempo',
-            'code': 'Código Python a Ejecutar',
-            'is_active': 'Activar Tarea',
+            'name': gettext_lazy('Nombre de la Tarea'),
+            'frequency': gettext_lazy('Frecuencia'),
+            'frequency_unit': gettext_lazy('Unidad de Tiempo'),
+            'code': gettext_lazy('Código Python a Ejecutar'),
+            'is_active': gettext_lazy('Activar Tarea'),
         }
         help_texts = {
-            'name': 'Nombre descriptivo para identificar la tarea',
-            'frequency': 'Número que indica cada cuántas unidades se ejecuta',
-            'frequency_unit': 'Unidad de tiempo (minutos, horas, días, meses)',
-            'code': 'Código Python que se ejecutará automáticamente',
-            'is_active': 'Marcar para activar la ejecución automática',
+            'name': gettext_lazy('Nombre descriptivo para identificar la tarea'),
+            'frequency': gettext_lazy('Número que indica cada cuántas unidades se ejecuta'),
+            'frequency_unit': gettext_lazy('Unidad de tiempo (minutos, horas, días, meses)'),
+            'code': gettext_lazy('Código Python que se ejecutará automáticamente'),
+            'is_active': gettext_lazy('Marcar para activar la ejecución automática'),
         }
     
     def clean_frequency(self):
@@ -9171,8 +9172,8 @@ class EventForm(forms.ModelForm):
             format='%Y-%m-%dT%H:%M'
         ),
         input_formats=['%Y-%m-%dT%H:%M'],
-        label='Fecha y Hora',
-        help_text='Fecha y hora del evento'
+        label=gettext_lazy('Fecha y Hora'),
+        help_text=gettext_lazy('Fecha y hora del evento')
     )
     
     class Meta:
@@ -9181,16 +9182,16 @@ class EventForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título del evento'
+                'placeholder': gettext_lazy('Título del evento')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Descripción detallada del evento...'
+                'placeholder': gettext_lazy('Descripción detallada del evento...')
             }),
             'location': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ubicación del evento'
+                'placeholder': gettext_lazy('Ubicación del evento')
             }),
             'color': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -9201,18 +9202,18 @@ class EventForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción',
-            'location': 'Ubicación',
-            'color': 'Color',
-            'is_all_day': 'Todo el día',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción'),
+            'location': gettext_lazy('Ubicación'),
+            'color': gettext_lazy('Color'),
+            'is_all_day': gettext_lazy('Todo el día'),
         }
         help_texts = {
-            'title': 'Título del evento',
-            'description': 'Descripción detallada del evento',
-            'location': 'Lugar donde se realizará el evento',
-            'color': 'Color para identificar el evento en el calendario',
-            'is_all_day': 'Marcar si el evento dura todo el día',
+            'title': gettext_lazy('Título del evento'),
+            'description': gettext_lazy('Descripción detallada del evento'),
+            'location': gettext_lazy('Lugar donde se realizará el evento'),
+            'color': gettext_lazy('Color para identificar el evento en el calendario'),
+            'is_all_day': gettext_lazy('Marcar si el evento dura todo el día'),
         }
 
 
@@ -9227,7 +9228,7 @@ class TripForm(forms.ModelForm):
                 'type': 'date'
             }
         ),
-        label='Fecha de Inicio'
+        label=gettext_lazy('Fecha de Inicio')
     )
     
     end_date = forms.DateField(
@@ -9238,7 +9239,7 @@ class TripForm(forms.ModelForm):
                 'type': 'date'
             }
         ),
-        label='Fecha de Fin'
+        label=gettext_lazy('Fecha de Fin')
     )
     
     class Meta:
@@ -9247,29 +9248,29 @@ class TripForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Viaje a Madrid 2025'
+                'placeholder': gettext_lazy('Ej: Viaje a Madrid 2025')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción del viaje...'
+                'placeholder': gettext_lazy('Descripción del viaje...')
             }),
             'destination': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Madrid, España'
+                'placeholder': gettext_lazy('Ej: Madrid, España')
             }),
             'is_public': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
         }
         labels = {
-            'title': 'Título del Viaje',
-            'description': 'Descripción',
-            'destination': 'Destino Principal',
-            'is_public': 'Hacer público',
+            'title': gettext_lazy('Título del Viaje'),
+            'description': gettext_lazy('Descripción'),
+            'destination': gettext_lazy('Destino Principal'),
+            'is_public': gettext_lazy('Hacer público'),
         }
         help_texts = {
-            'is_public': 'Permitir que otras personas vean este viaje mediante un enlace',
+            'is_public': gettext_lazy('Permitir que otras personas vean este viaje mediante un enlace'),
         }
 
 
@@ -9284,7 +9285,7 @@ class TripStopForm(forms.ModelForm):
                 'type': 'date'
             }
         ),
-        label='Fecha de Visita'
+        label=gettext_lazy('Fecha de Visita')
     )
     
     visit_time = forms.TimeField(
@@ -9295,7 +9296,7 @@ class TripStopForm(forms.ModelForm):
                 'type': 'time'
             }
         ),
-        label='Hora de Visita'
+        label=gettext_lazy('Hora de Visita')
     )
     
     class Meta:
@@ -9305,16 +9306,16 @@ class TripStopForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Museo del Prado'
+                'placeholder': gettext_lazy('Ej: Museo del Prado')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': 'Descripción del lugar...'
+                'placeholder': gettext_lazy('Descripción del lugar...')
             }),
             'address': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Dirección completa'
+                'placeholder': gettext_lazy('Dirección completa')
             }),
             'latitude': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -9338,7 +9339,7 @@ class TripStopForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': 'Notas adicionales...'
+                'placeholder': gettext_lazy('Notas adicionales...')
             }),
         }
 
@@ -9352,40 +9353,40 @@ class MultiMeasurementForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Mediciones de Temperatura'
+                'placeholder': gettext_lazy('Ej: Mediciones de Temperatura')
             }),
             'label_1': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Temperatura Ambiente'
+                'placeholder': gettext_lazy('Ej: Temperatura Ambiente')
             }),
             'label_2': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Temperatura Corporal'
+                'placeholder': gettext_lazy('Ej: Temperatura Corporal')
             }),
             'label_3': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Humedad'
+                'placeholder': gettext_lazy('Ej: Humedad')
             }),
             'label_4': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Presión Atmosférica'
+                'placeholder': gettext_lazy('Ej: Presión Atmosférica')
             }),
             'label_5': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Velocidad del Viento'
+                'placeholder': gettext_lazy('Ej: Velocidad del Viento')
             }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
         }
         labels = {
-            'title': 'Título',
-            'label_1': 'Etiqueta Medición 1',
-            'label_2': 'Etiqueta Medición 2',
-            'label_3': 'Etiqueta Medición 3',
-            'label_4': 'Etiqueta Medición 4',
-            'label_5': 'Etiqueta Medición 5',
-            'is_active': 'Activo',
+            'title': gettext_lazy('Título'),
+            'label_1': gettext_lazy('Etiqueta Medición 1'),
+            'label_2': gettext_lazy('Etiqueta Medición 2'),
+            'label_3': gettext_lazy('Etiqueta Medición 3'),
+            'label_4': gettext_lazy('Etiqueta Medición 4'),
+            'label_5': gettext_lazy('Etiqueta Medición 5'),
+            'is_active': gettext_lazy('Activo'),
         }
 
 
@@ -9398,7 +9399,7 @@ class PersonalBudgetForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Presupuesto Familiar'
+                'placeholder': gettext_lazy('Ej: Presupuesto Familiar')
             }),
             'year': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -9412,9 +9413,9 @@ class PersonalBudgetForm(forms.ModelForm):
             }),
         }
         help_texts = {
-            'name': 'Nombre del presupuesto anual',
-            'year': 'Año del presupuesto',
-            'is_private': 'Solo tú podrás ver este presupuesto',
+            'name': gettext_lazy('Nombre del presupuesto anual'),
+            'year': gettext_lazy('Año del presupuesto'),
+            'is_private': gettext_lazy('Solo tú podrás ver este presupuesto'),
         }
 
 
@@ -9427,7 +9428,7 @@ class BudgetIncomeItemForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Nómina, Aguinaldo, etc.'
+                'placeholder': gettext_lazy('Ej: Nómina, Aguinaldo, etc.')
             }),
             'budgeted_amount': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -9440,10 +9441,10 @@ class BudgetIncomeItemForm(forms.ModelForm):
             }),
         }
         labels = {
-            'budgeted_amount': 'Monto Mensual (€)',
+            'budgeted_amount': gettext_lazy('Monto Mensual (€)'),
         }
         help_texts = {
-            'budgeted_amount': 'Ingresa el monto mensual que esperas recibir en euros',
+            'budgeted_amount': gettext_lazy('Ingresa el monto mensual que esperas recibir en euros'),
         }
 
 
@@ -9456,7 +9457,7 @@ class BudgetExpenseItemForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Comida, Vivienda, Transporte, etc.'
+                'placeholder': gettext_lazy('Ej: Comida, Vivienda, Transporte, etc.')
             }),
             'budgeted_amount': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -9469,10 +9470,10 @@ class BudgetExpenseItemForm(forms.ModelForm):
             }),
         }
         labels = {
-            'budgeted_amount': 'Monto Mensual (€)',
+            'budgeted_amount': gettext_lazy('Monto Mensual (€)'),
         }
         help_texts = {
-            'budgeted_amount': 'Ingresa el monto mensual que planeas gastar en euros (ej: 400 € en comida)',
+            'budgeted_amount': gettext_lazy('Ingresa el monto mensual que planeas gastar en euros (ej: 400 € en comida)'),
         }
 
 
@@ -9500,7 +9501,7 @@ class BudgetTransactionForm(forms.ModelForm):
             }),
             'description': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Descripción opcional'
+                'placeholder': gettext_lazy('Descripción opcional')
             }),
             'transaction_date': forms.DateInput(attrs={
                 'class': 'form-control',
@@ -9551,46 +9552,46 @@ class DynamicTableForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'ejemplo_tabla_api'
+                'placeholder': gettext_lazy('ejemplo_tabla_api')
             }),
             'display_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ejemplo de Tabla API'
+                'placeholder': gettext_lazy('Ejemplo de Tabla API')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción de la tabla...'
+                'placeholder': gettext_lazy('Descripción de la tabla...')
             }),
             'public_form_password': forms.PasswordInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Dejar vacío para formulario sin contraseña'
+                'placeholder': gettext_lazy('Dejar vacío para formulario sin contraseña')
             }),
             'public_form_title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título del formulario público'
+                'placeholder': gettext_lazy('Título del formulario público')
             }),
             'public_form_description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': 'Descripción que verán los usuarios...'
+                'placeholder': gettext_lazy('Descripción que verán los usuarios...')
             }),
             'public_form_success_message': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '¡Gracias! Tu información ha sido registrada.'
+                'placeholder': gettext_lazy('¡Gracias! Tu información ha sido registrada.')
             }),
         }
         labels = {
-            'name': 'Nombre de la Tabla',
-            'display_name': 'Nombre de Visualización',
-            'description': 'Descripción',
-            'allow_public_read': 'Permitir lectura pública (API)',
-            'allow_public_create': 'Permitir creación pública (API)',
-            'public_form_enabled': 'Habilitar Formulario Público Móvil',
-            'public_form_password': 'Contraseña del Formulario',
-            'public_form_title': 'Título del Formulario',
-            'public_form_description': 'Descripción del Formulario',
-            'public_form_success_message': 'Mensaje de Éxito',
+            'name': gettext_lazy('Nombre de la Tabla'),
+            'display_name': gettext_lazy('Nombre de Visualización'),
+            'description': gettext_lazy('Descripción'),
+            'allow_public_read': gettext_lazy('Permitir lectura pública (API)'),
+            'allow_public_create': gettext_lazy('Permitir creación pública (API)'),
+            'public_form_enabled': gettext_lazy('Habilitar Formulario Público Móvil'),
+            'public_form_password': gettext_lazy('Contraseña del Formulario'),
+            'public_form_title': gettext_lazy('Título del Formulario'),
+            'public_form_description': gettext_lazy('Descripción del Formulario'),
+            'public_form_success_message': gettext_lazy('Mensaje de Éxito'),
         }
 
 
@@ -9603,11 +9604,11 @@ class DynamicTableFieldForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'nombre_campo'
+                'placeholder': gettext_lazy('nombre_campo')
             }),
             'display_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre para mostrar'
+                'placeholder': gettext_lazy('Nombre para mostrar')
             }),
             'field_type': forms.Select(attrs={
                 'class': 'form-control'
@@ -9615,11 +9616,11 @@ class DynamicTableFieldForm(forms.ModelForm):
             'help_text': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': 'Texto de ayuda...'
+                'placeholder': gettext_lazy('Texto de ayuda...')
             }),
             'default_value': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Valor por defecto'
+                'placeholder': gettext_lazy('Valor por defecto')
             }),
             'max_length': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -9631,15 +9632,15 @@ class DynamicTableFieldForm(forms.ModelForm):
             }),
         }
         labels = {
-            'name': 'Nombre del Campo',
-            'display_name': 'Nombre de Visualización',
-            'field_type': 'Tipo de Campo',
-            'help_text': 'Texto de Ayuda',
-            'default_value': 'Valor por Defecto',
-            'is_required': 'Campo requerido',
-            'is_unique': 'Valor único',
-            'max_length': 'Longitud Máxima',
-            'order': 'Orden',
+            'name': gettext_lazy('Nombre del Campo'),
+            'display_name': gettext_lazy('Nombre de Visualización'),
+            'field_type': gettext_lazy('Tipo de Campo'),
+            'help_text': gettext_lazy('Texto de Ayuda'),
+            'default_value': gettext_lazy('Valor por Defecto'),
+            'is_required': gettext_lazy('Campo requerido'),
+            'is_unique': gettext_lazy('Valor único'),
+            'max_length': gettext_lazy('Longitud Máxima'),
+            'order': gettext_lazy('Orden'),
         }
 
 
@@ -9655,21 +9656,21 @@ class FunctionalRequirementDocumentForm(forms.ModelForm):
             }),
             'company_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'O escriba un nombre de empresa'
+                'placeholder': gettext_lazy('O escriba un nombre de empresa')
             }),
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Sistema de Gestión de Inventarios'
+                'placeholder': gettext_lazy('Ej: Sistema de Gestión de Inventarios')
             }),
         }
         labels = {
-            'company': 'Empresa (Opcional)',
-            'company_name': 'Nombre Libre de Empresa',
-            'title': 'Título del Documento',
+            'company': gettext_lazy('Empresa (Opcional)'),
+            'company_name': gettext_lazy('Nombre Libre de Empresa'),
+            'title': gettext_lazy('Título del Documento'),
         }
         help_texts = {
-            'company': 'Seleccione una empresa del listado',
-            'company_name': 'O escriba un nombre si no está en el listado',
+            'company': gettext_lazy('Seleccione una empresa del listado'),
+            'company_name': gettext_lazy('O escriba un nombre si no está en el listado'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -9690,7 +9691,7 @@ class FunctionalRequirementDocumentForm(forms.ModelForm):
             )
         
         return cleaned_data
-        self.fields['company'].empty_label = "Seleccionar empresa"
+        self.fields['company'].empty_label = gettext_lazy("Seleccionar empresa")
 
 
 class FunctionalRequirementForm(forms.ModelForm):
@@ -9702,17 +9703,17 @@ class FunctionalRequirementForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título breve del requerimiento...'
+                'placeholder': gettext_lazy('Título breve del requerimiento...')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Describe el requerimiento o alcance del proyecto...'
+                'placeholder': gettext_lazy('Describe el requerimiento o alcance del proyecto...')
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción del Requerimiento',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción del Requerimiento'),
         }
 
 
@@ -9725,17 +9726,17 @@ class FunctionalRequirementPublicEditForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título breve del requerimiento...'
+                'placeholder': gettext_lazy('Título breve del requerimiento...')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Edita la descripción del requerimiento...'
+                'placeholder': gettext_lazy('Edita la descripción del requerimiento...')
             }),
         }
         labels = {
-            'title': 'Título',
-            'description': 'Descripción del Requerimiento',
+            'title': gettext_lazy('Título'),
+            'description': gettext_lazy('Descripción del Requerimiento'),
         }
 
 
@@ -9744,17 +9745,17 @@ class FunctionalRequirementApprovalForm(forms.Form):
     
     approver_name = forms.CharField(
         max_length=200,
-        label='Tu Nombre',
+        label=gettext_lazy('Tu Nombre'),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Ingresa tu nombre completo'
+            'placeholder': gettext_lazy('Ingresa tu nombre completo')
         })
     )
     approver_email = forms.EmailField(
-        label='Tu Email',
+        label=gettext_lazy('Tu Email'),
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'tu@email.com'
+            'placeholder': gettext_lazy('tu@email.com')
         })
     )
 
@@ -9764,25 +9765,25 @@ class DocumentReviewForm(forms.Form):
     
     reviewer_name = forms.CharField(
         max_length=200,
-        label='Tu Nombre',
+        label=gettext_lazy('Tu Nombre'),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Ingresa tu nombre completo'
+            'placeholder': gettext_lazy('Ingresa tu nombre completo')
         })
     )
     reviewer_email = forms.EmailField(
-        label='Tu Email',
+        label=gettext_lazy('Tu Email'),
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'tu@email.com'
+            'placeholder': gettext_lazy('tu@email.com')
         })
     )
     comments = forms.CharField(
         required=False,
-        label='Comentarios',
+        label=gettext_lazy('Comentarios'),
         widget=forms.Textarea(attrs={
             'class': 'form-control',
-            'placeholder': 'Agrega comentarios adicionales (opcional)',
+            'placeholder': gettext_lazy('Agrega comentarios adicionales (opcional)'),
             'rows': 4
         })
     )
@@ -9793,24 +9794,24 @@ class RequirementCommentForm(forms.Form):
     
     author_name = forms.CharField(
         max_length=200,
-        label='Tu Nombre',
+        label=gettext_lazy('Tu Nombre'),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Ingresa tu nombre completo'
+            'placeholder': gettext_lazy('Ingresa tu nombre completo')
         })
     )
     author_email = forms.EmailField(
-        label='Tu Email',
+        label=gettext_lazy('Tu Email'),
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'tu@email.com'
+            'placeholder': gettext_lazy('tu@email.com')
         })
     )
     comment = forms.CharField(
-        label='Comentario',
+        label=gettext_lazy('Comentario'),
         widget=forms.Textarea(attrs={
             'class': 'form-control',
-            'placeholder': 'Escribe tu comentario sobre este requerimiento',
+            'placeholder': gettext_lazy('Escribe tu comentario sobre este requerimiento'),
             'rows': 3
         })
     )
@@ -9825,18 +9826,18 @@ class TaskPlanForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre del plan',
+                'placeholder': gettext_lazy('Nombre del plan'),
                 'required': True
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Descripción del plan (opcional)',
+                'placeholder': gettext_lazy('Descripción del plan (opcional)'),
                 'rows': 3
             })
         }
         labels = {
-            'title': 'Título del Plan',
-            'description': 'Descripción'
+            'title': gettext_lazy('Título del Plan'),
+            'description': gettext_lazy('Descripción')
         }
 
 
@@ -9849,18 +9850,18 @@ class TaskPlanDayForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Día 1, Lunes, Semana 1',
+                'placeholder': gettext_lazy('Ej: Día 1, Lunes, Semana 1'),
                 'required': True
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Información adicional sobre este día (opcional)',
+                'placeholder': gettext_lazy('Información adicional sobre este día (opcional)'),
                 'rows': 3
             })
         }
         labels = {
-            'title': 'Título del Día',
-            'description': 'Descripción'
+            'title': gettext_lazy('Título del Día'),
+            'description': gettext_lazy('Descripción')
         }
 
 
@@ -9873,12 +9874,12 @@ class TaskPlanItemForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la tarea',
+                'placeholder': gettext_lazy('Título de la tarea'),
                 'required': True
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Detalles de la tarea (opcional)',
+                'placeholder': gettext_lazy('Detalles de la tarea (opcional)'),
                 'rows': 3
             }),
             'priority': forms.Select(attrs={
@@ -9892,10 +9893,10 @@ class TaskPlanItemForm(forms.ModelForm):
             })
         }
         labels = {
-            'title': 'Título de la Tarea',
-            'description': 'Descripción',
-            'priority': 'Prioridad',
-            'estimated_hours': 'Horas Estimadas'
+            'title': gettext_lazy('Título de la Tarea'),
+            'description': gettext_lazy('Descripción'),
+            'priority': gettext_lazy('Prioridad'),
+            'estimated_hours': gettext_lazy('Horas Estimadas')
         }
 
 
@@ -9912,16 +9913,16 @@ class ChecklistForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título del checklist',
+                'placeholder': gettext_lazy('Título del checklist'),
                 'required': True
             }),
             'company': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre de la empresa (opcional)'
+                'placeholder': gettext_lazy('Nombre de la empresa (opcional)')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Descripción del checklist (opcional)',
+                'placeholder': gettext_lazy('Descripción del checklist (opcional)'),
                 'rows': 3
             }),
             'assigned_user': forms.Select(attrs={
@@ -9932,18 +9933,18 @@ class ChecklistForm(forms.ModelForm):
             })
         }
         labels = {
-            'title': 'Título del Checklist',
-            'company': 'Empresa',
-            'description': 'Descripción',
-            'assigned_user': 'Usuario Asignado',
-            'public_can_toggle': 'Permitir que visitantes marquen tareas como completadas'
+            'title': gettext_lazy('Título del Checklist'),
+            'company': gettext_lazy('Empresa'),
+            'description': gettext_lazy('Descripción'),
+            'assigned_user': gettext_lazy('Usuario Asignado'),
+            'public_can_toggle': gettext_lazy('Permitir que visitantes marquen tareas como completadas')
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         from django.contrib.auth.models import User as AuthUser
         self.fields['assigned_user'].queryset = AuthUser.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
-        self.fields['assigned_user'].empty_label = '— Sin asignar —'
+        self.fields['assigned_user'].empty_label = gettext_lazy('— Sin asignar —')
         self.fields['assigned_user'].required = False
 
 
@@ -9956,22 +9957,22 @@ class ChecklistItemForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la tarea',
+                'placeholder': gettext_lazy('Título de la tarea'),
                 'required': True
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Descripción de la tarea (opcional)',
+                'placeholder': gettext_lazy('Descripción de la tarea (opcional)'),
                 'rows': 3
             }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Notas adicionales (opcional)',
+                'placeholder': gettext_lazy('Notas adicionales (opcional)'),
                 'rows': 3
             }),
             'url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://ejemplo.com'
+                'placeholder': gettext_lazy('https://ejemplo.com')
             }),
             'cost': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -9981,11 +9982,11 @@ class ChecklistItemForm(forms.ModelForm):
             })
         }
         labels = {
-            'title': 'Título de la Tarea',
-            'description': 'Descripción',
-            'notes': 'Notas adicionales',
-            'url': 'Enlace URL',
-            'cost': 'Costo en Euros (opcional)'
+            'title': gettext_lazy('Título de la Tarea'),
+            'description': gettext_lazy('Descripción'),
+            'notes': gettext_lazy('Notas adicionales'),
+            'url': gettext_lazy('Enlace URL'),
+            'cost': gettext_lazy('Costo en Euros (opcional)')
         }
 
 
@@ -9997,7 +9998,7 @@ class AppCatalogForm(forms.ModelForm):
         model = AppCatalog
         fields = ['name', 'description', 'is_active', 'is_public']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del catálogo'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': gettext_lazy('Nombre del catálogo')}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'is_public': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
@@ -10017,7 +10018,7 @@ class AppCatalogLineForm(forms.ModelForm):
         fields = ['product', 'quantity', 'notes']
         widgets = {
             'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
-            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Nota opcional'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': gettext_lazy('Nota opcional')}),
         }
 
 
@@ -10047,7 +10048,7 @@ class ChatbotForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre del chatbot'
+                'placeholder': gettext_lazy('Nombre del chatbot')
             }),
             'type': forms.Select(attrs={
                 'class': 'form-select'
@@ -10055,7 +10056,7 @@ class ChatbotForm(forms.ModelForm):
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Ej: Agente de ventas para capturar leads'
+                'placeholder': gettext_lazy('Ej: Agente de ventas para capturar leads')
             }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -10066,12 +10067,12 @@ class ChatbotForm(forms.ModelForm):
             'ai_context': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Contexto adicional para la IA (opcional)'
+                'placeholder': gettext_lazy('Contexto adicional para la IA (opcional)')
             }),
             'welcome_message': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': '¡Hola! ¿En qué puedo ayudarte?'
+                'placeholder': gettext_lazy('¡Hola! ¿En qué puedo ayudarte?')
             }),
             'primary_color': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -10098,7 +10099,7 @@ class ChatbotForm(forms.ModelForm):
             'allowed_domains': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': 'ejemplo.com\notrodominio.com (uno por línea, solo para externos)'
+                'placeholder': gettext_lazy('ejemplo.com\notrodominio.com (uno por línea, solo para externos)')
             }),
             'response_delay': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -10108,28 +10109,28 @@ class ChatbotForm(forms.ModelForm):
             })
         }
         labels = {
-            'title': 'Nombre del Chatbot',
-            'type': 'Tipo de Chatbot',
-            'description': 'Descripción',
-            'is_active': 'Activo',
-            'use_ai': 'Usar IA para respuestas no configuradas',
-            'ai_context': 'Contexto para la IA',
-            'welcome_message': 'Mensaje de Bienvenida',
-            'primary_color': 'Color Principal',
-            'secondary_color': 'Color Secundario',
-            'bot_message_color': 'Color Mensajes del Bot',
-            'user_message_color': 'Color Mensajes del Usuario',
-            'icon_choice': 'Icono del Botón',
-            'position': 'Posición en la Pantalla',
-            'allowed_domains': 'Dominios Permitidos',
-            'response_delay': 'Tiempo de Espera (segundos)'
+            'title': gettext_lazy('Nombre del Chatbot'),
+            'type': gettext_lazy('Tipo de Chatbot'),
+            'description': gettext_lazy('Descripción'),
+            'is_active': gettext_lazy('Activo'),
+            'use_ai': gettext_lazy('Usar IA para respuestas no configuradas'),
+            'ai_context': gettext_lazy('Contexto para la IA'),
+            'welcome_message': gettext_lazy('Mensaje de Bienvenida'),
+            'primary_color': gettext_lazy('Color Principal'),
+            'secondary_color': gettext_lazy('Color Secundario'),
+            'bot_message_color': gettext_lazy('Color Mensajes del Bot'),
+            'user_message_color': gettext_lazy('Color Mensajes del Usuario'),
+            'icon_choice': gettext_lazy('Icono del Botón'),
+            'position': gettext_lazy('Posición en la Pantalla'),
+            'allowed_domains': gettext_lazy('Dominios Permitidos'),
+            'response_delay': gettext_lazy('Tiempo de Espera (segundos)')
         }
         help_texts = {
-            'type': 'Interno: Solo en esta web. Externo: Integrable vía script en otros sitios.',
-            'use_ai': 'Si está activado, la IA responderá preguntas no configuradas.',
-            'ai_context': 'Información adicional para que la IA responda mejor.',
-            'allowed_domains': 'Solo para externos. Deja vacío para permitir todos los dominios.',
-            'response_delay': 'Segundos que espera el bot antes de responder (0 = inmediato, simula escritura humana).'
+            'type': gettext_lazy('Interno: Solo en esta web. Externo: Integrable vía script en otros sitios.'),
+            'use_ai': gettext_lazy('Si está activado, la IA responderá preguntas no configuradas.'),
+            'ai_context': gettext_lazy('Información adicional para que la IA responda mejor.'),
+            'allowed_domains': gettext_lazy('Solo para externos. Deja vacío para permitir todos los dominios.'),
+            'response_delay': gettext_lazy('Segundos que espera el bot antes de responder (0 = inmediato, simula escritura humana).')
         }
 
 
@@ -10143,16 +10144,16 @@ class ChatbotQuestionForm(forms.ModelForm):
         widgets = {
             'question': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '¿Cuál es tu pregunta frecuente?'
+                'placeholder': gettext_lazy('¿Cuál es tu pregunta frecuente?')
             }),
             'keywords': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'palabra1, palabra2, palabra3'
+                'placeholder': gettext_lazy('palabra1, palabra2, palabra3')
             }),
             'answer': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Respuesta que se mostrará al usuario'
+                'placeholder': gettext_lazy('Respuesta que se mostrará al usuario')
             }),
             'order': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -10167,17 +10168,17 @@ class ChatbotQuestionForm(forms.ModelForm):
             })
         }
         labels = {
-            'question': 'Pregunta',
-            'keywords': 'Palabras Clave',
-            'answer': 'Respuesta',
-            'order': 'Orden',
-            'is_active': 'Activa',
-            'use_ai': 'Permitir que IA mejore esta respuesta'
+            'question': gettext_lazy('Pregunta'),
+            'keywords': gettext_lazy('Palabras Clave'),
+            'answer': gettext_lazy('Respuesta'),
+            'order': gettext_lazy('Orden'),
+            'is_active': gettext_lazy('Activa'),
+            'use_ai': gettext_lazy('Permitir que IA mejore esta respuesta')
         }
         help_texts = {
-            'keywords': 'Palabras separadas por comas que activarán esta respuesta.',
-            'order': 'Orden de sugerencia (menor número = mayor prioridad).',
-            'use_ai': 'La IA puede mejorar o expandir esta respuesta base.'
+            'keywords': gettext_lazy('Palabras separadas por comas que activarán esta respuesta.'),
+            'order': gettext_lazy('Orden de sugerencia (menor número = mayor prioridad).'),
+            'use_ai': gettext_lazy('La IA puede mejorar o expandir esta respuesta base.')
         }
 
 
@@ -10186,43 +10187,43 @@ class PublicWorkOrderForm(forms.Form):
     
     title = forms.CharField(
         max_length=255,
-        label='Título',
+        label=gettext_lazy('Título'),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Título descriptivo de la orden de trabajo'
+            'placeholder': gettext_lazy('Título descriptivo de la orden de trabajo')
         })
     )
     
     description = forms.CharField(
-        label='Descripción',
+        label=gettext_lazy('Descripción'),
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 5,
-            'placeholder': 'Describa detalladamente el trabajo a realizar'
+            'placeholder': gettext_lazy('Describa detalladamente el trabajo a realizar')
         })
     )
     
     company_name = forms.CharField(
         max_length=255,
         required=False,
-        label='Empresa',
+        label=gettext_lazy('Empresa'),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Nombre de la empresa (opcional)'
+            'placeholder': gettext_lazy('Nombre de la empresa (opcional)')
         })
     )
     
     contact_email = forms.EmailField(
-        label='Email de contacto',
+        label=gettext_lazy('Email de contacto'),
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'tu@email.com'
+            'placeholder': gettext_lazy('tu@email.com')
         })
     )
     
     due_date = forms.DateField(
         required=False,
-        label='Fecha de entrega deseada',
+        label=gettext_lazy('Fecha de entrega deseada'),
         widget=forms.DateInput(attrs={
             'class': 'form-control',
             'type': 'date'
@@ -10239,13 +10240,13 @@ class PrivacyPolicyForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Título de la política de privacidad',
+                'placeholder': gettext_lazy('Título de la política de privacidad'),
                 'required': True
             }),
             'content': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 15,
-                'placeholder': 'Contenido completo de la política de privacidad...',
+                'placeholder': gettext_lazy('Contenido completo de la política de privacidad...'),
                 'required': True
             }),
             'is_active': forms.CheckboxInput(attrs={
@@ -10253,14 +10254,14 @@ class PrivacyPolicyForm(forms.ModelForm):
             }),
         }
         labels = {
-            'title': 'Título',
-            'content': 'Contenido',
-            'is_active': 'Activa (visible públicamente)',
+            'title': gettext_lazy('Título'),
+            'content': gettext_lazy('Contenido'),
+            'is_active': gettext_lazy('Activa (visible públicamente)'),
         }
         help_texts = {
-            'title': 'Título descriptivo de la política',
-            'content': 'Contenido completo en formato HTML o texto plano',
-            'is_active': 'Marcar para que sea visible públicamente',
+            'title': gettext_lazy('Título descriptivo de la política'),
+            'content': gettext_lazy('Contenido completo en formato HTML o texto plano'),
+            'is_active': gettext_lazy('Marcar para que sea visible públicamente'),
         }
 
 

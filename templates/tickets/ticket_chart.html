@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
-{% block title %}Gráfico de Creación de Tickets{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Gráfico de Creación de Tickets" %}{% endblock %}
 {% block content %}
 <div class="container py-4">
     <div class="row mb-4">
         <div class="col">
-            <h2><i class="bi bi-bar-chart-line text-info"></i> Gráfico de Creación de Tickets</h2>
+            <h2><i class="bi bi-bar-chart-line text-info"></i> {% translate "Gráfico de Creación de Tickets" %}</h2>
             <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver a tickets
+                <i class="bi bi-arrow-left"></i> {% translate "Volver a tickets" %}
             </a>
         </div>
     </div>
@@ -15,7 +16,7 @@
     <div class="row mb-3">
         <div class="col">
             <div class="alert alert-info">
-                <strong><i class="bi bi-funnel"></i> Filtros aplicados:</strong>
+                <strong><i class="bi bi-funnel"></i> {% translate "Filtros aplicados:" %}</strong>
                 {% if request.GET.search %}
                     <span class="badge bg-primary">Búsqueda: {{ request.GET.search }}</span>
                 {% endif %}
@@ -42,20 +43,20 @@
             <div class="card shadow-sm">
                 <div class="card-header bg-white text-dark">
                     <h5 class="mb-0">
-                        <i class="bi bi-graph-up text-primary"></i> Actividad de Creación de Tickets
+                        <i class="bi bi-graph-up text-primary"></i> {% translate "Actividad de Creación de Tickets" %}
                     </h5>
                     <small class="text-muted">{{ activity_total }} ticket{{ activity_total|pluralize }} creado{{ activity_total|pluralize }} en el último año</small>
                 </div>
                 <div class="card-body">
                     <div class="contribution-graph-wrapper">
                         <div class="contribution-legend mb-2 d-flex justify-content-end align-items-center">
-                            <span class="text-muted small me-2">Menos</span>
-                            <span class="contribution-cell level-0" title="0 tickets"></span>
-                            <span class="contribution-cell level-1" title="1-2 tickets"></span>
-                            <span class="contribution-cell level-2" title="3-4 tickets"></span>
-                            <span class="contribution-cell level-3" title="5-6 tickets"></span>
-                            <span class="contribution-cell level-4" title="7+ tickets"></span>
-                            <span class="text-muted small ms-2">Más</span>
+                            <span class="text-muted small me-2">{% translate "Menos" %}</span>
+                            <span class="contribution-cell level-0" title="{% translate '0 tickets' %}"></span>
+                            <span class="contribution-cell level-1" title="{% translate '1-2 tickets' %}"></span>
+                            <span class="contribution-cell level-2" title="{% translate '3-4 tickets' %}"></span>
+                            <span class="contribution-cell level-3" title="{% translate '5-6 tickets' %}"></span>
+                            <span class="contribution-cell level-4" title="{% translate '7+ tickets' %}"></span>
+                            <span class="text-muted small ms-2">{% translate "Más" %}</span>
                         </div>
                         <div class="position-relative">
                             <!-- Etiquetas de meses -->
@@ -64,11 +65,11 @@
                             <div class="d-flex">
                                 <div class="contribution-days me-2">
                                     <div class="day-label"></div>
-                                    <div class="day-label">Lun</div>
+                                    <div class="day-label">{% translate "Lun" %}</div>
                                     <div class="day-label"></div>
-                                    <div class="day-label">Mié</div>
+                                    <div class="day-label">{% translate "Mié" %}</div>
                                     <div class="day-label"></div>
-                                    <div class="day-label">Vie</div>
+                                    <div class="day-label">{% translate "Vie" %}</div>
                                     <div class="day-label"></div>
                                 </div>
                                 <div class="contribution-graph" id="contribution-graph">
@@ -87,7 +88,7 @@
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-calendar-range"></i> Tickets creados
+                        <i class="bi bi-calendar-range"></i> {% translate "Tickets creados" %}
                     </h5>
                     <form method="get" class="d-inline-block">
                         {% if request.GET.search %}
@@ -106,9 +107,9 @@
                         <input type="hidden" name="assigned_to" value="{{ request.GET.assigned_to }}">
                         {% endif %}
                         <select name="group_by" class="form-select form-select-sm" onchange="this.form.submit()">
-                            <option value="hour" {% if group_by == 'hour' %}selected{% endif %}>Por hora</option>
-                            <option value="day" {% if group_by == 'day' %}selected{% endif %}>Por día</option>
-                            <option value="month" {% if group_by == 'month' %}selected{% endif %}>Por mes</option>
+                            <option value="hour" {% if group_by == 'hour' %}selected{% endif %}>{% translate "Por hora" %}</option>
+                            <option value="day" {% if group_by == 'day' %}selected{% endif %}>{% translate "Por día" %}</option>
+                            <option value="month" {% if group_by == 'month' %}selected{% endif %}>{% translate "Por mes" %}</option>
                         </select>
                     </form>
                 </div>

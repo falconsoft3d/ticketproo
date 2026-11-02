@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}Crear Usuario - TicketProo{% endblock %}
+{% block title %}{% translate "Crear Usuario - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -9,7 +10,7 @@
         <div class="card">
             <div class="card-header">
                 <h3 class="mb-0">
-                    <i class="bi bi-person-plus"></i> Crear Nuevo Usuario
+                    <i class="bi bi-person-plus"></i> {% translate "Crear Nuevo Usuario" %}
                 </h3>
             </div>
             <div class="card-body">
@@ -64,7 +65,7 @@
                                     </div>
                                 {% endif %}
                                 <small class="form-text text-muted">
-                                    Empresa a la que pertenece el usuario (opcional)
+                                    {% translate "Empresa a la que pertenece el usuario (opcional)" %}
                                 </small>
                             </div>
                         </div>
@@ -156,7 +157,7 @@
                     <div class="card mb-3">
                         <div class="card-header">
                             <h6 class="mb-0">
-                                <i class="bi bi-cash-coin"></i> Información de Precios por Hora
+                                <i class="bi bi-cash-coin"></i> {% translate "Información de Precios por Hora" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -176,7 +177,7 @@
                                             </div>
                                         {% endif %}
                                         <small class="form-text text-muted">
-                                            Precio que se cobra por cada hora trabajada
+                                            {% translate "Precio que se cobra por cada hora trabajada" %}
                                         </small>
                                     </div>
                                 </div>
@@ -196,7 +197,7 @@
                                             </div>
                                         {% endif %}
                                         <small class="form-text text-muted">
-                                            Coste interno por cada hora trabajada
+                                            {% translate "Coste interno por cada hora trabajada" %}
                                         </small>
                                     </div>
                                 </div>
@@ -206,20 +207,20 @@
                     
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i>
-                        <strong>Roles disponibles:</strong>
+                        <strong>{% translate "Roles disponibles:" %}</strong>
                         <ul class="mb-0 mt-2">
-                            <li><strong>Usuario:</strong> Puede crear y gestionar sus propios tickets.</li>
-                            <li><strong>Agente:</strong> Puede ver y gestionar todos los tickets del sistema.</li>
-                            <li><strong>Profesor:</strong> Puede crear y gestionar cursos y exámenes.</li>
+                            <li><strong>{% translate "Usuario:" %}</strong> {% translate "Puede crear y gestionar sus propios tickets." %}</li>
+                            <li><strong>{% translate "Agente:" %}</strong> {% translate "Puede ver y gestionar todos los tickets del sistema." %}</li>
+                            <li><strong>{% translate "Profesor:" %}</strong> {% translate "Puede crear y gestionar cursos y exámenes." %}</li>
                         </ul>
                     </div>
                     
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'user_management' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Cancelar
+                            <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                         </a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check"></i> Crear Usuario
+                            <i class="bi bi-check"></i> {% translate "Crear Usuario" %}
                         </button>
                     </div>
                 </form>

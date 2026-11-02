@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -21,9 +22,9 @@
                         </h2>
                         <p class="text-muted mb-0">
                             {% if is_own_notes %}
-                                Tus notas internas y registro de interacciones
+                                {% translate "Tus notas internas y registro de interacciones" %}
                             {% else %}
-                                Historial de interacciones y notas del usuario
+                                {% translate "Historial de interacciones y notas del usuario" %}
                             {% endif %}
                         </p>
                     </div>
@@ -31,7 +32,7 @@
                 
                 {% if can_create_notes %}
                     <a href="{% url 'note_create' %}?user={{ target_user.id }}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Nueva Nota
+                        <i class="bi bi-plus-circle"></i> {% translate "Nueva Nota" %}
                     </a>
                 {% endif %}
             </div>
@@ -60,13 +61,13 @@
                                 <div class="col-6">
                                     <div class="text-center p-2 bg-light rounded">
                                         <div class="fw-bold text-primary">{{ target_user.created_tickets.count }}</div>
-                                        <div class="small text-muted">Tickets</div>
+                                        <div class="small text-muted">{% translate "Tickets" %}</div>
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <div class="text-center p-2 bg-light rounded">
                                         <div class="fw-bold text-info">{{ target_user.notes.count }}</div>
-                                        <div class="small text-muted">Notas Totales</div>
+                                        <div class="small text-muted">{% translate "Notas Totales" %}</div>
                                     </div>
                                 </div>
                             </div>
@@ -99,11 +100,11 @@
                                                         </h6>
                                                         {% if note.is_private %}
                                                             <span class="badge bg-warning text-dark">
-                                                                <i class="bi bi-lock"></i> Privada
+                                                                <i class="bi bi-lock"></i> {% translate "Privada" %}
                                                             </span>
                                                         {% else %}
                                                             <span class="badge bg-info">
-                                                                <i class="bi bi-unlock"></i> Pública
+                                                                <i class="bi bi-unlock"></i> {% translate "Pública" %}
                                                             </span>
                                                         {% endif %}
                                                     </div>
@@ -139,11 +140,11 @@
                                                         <div class="d-flex gap-2">
                                                             <a href="{% url 'note_detail' note.id %}" 
                                                                class="btn btn-sm btn-outline-primary">
-                                                                <i class="bi bi-eye"></i> Ver
+                                                                <i class="bi bi-eye"></i> {% translate "Ver" %}
                                                             </a>
                                                             <a href="{% url 'note_edit' note.id %}" 
                                                                class="btn btn-sm btn-outline-secondary">
-                                                                <i class="bi bi-pencil"></i> Editar
+                                                                <i class="bi bi-pencil"></i> {% translate "Editar" %}
                                                             </a>
                                                         </div>
                                                     </div>
@@ -157,7 +158,7 @@
                                                     <div class="card-body">
                                                         <h6 class="card-title">
                                                             <i class="bi bi-ticket-perforated text-info"></i>
-                                                            Tickets Relacionados
+                                                            {% translate "Tickets Relacionados" %}
                                                         </h6>
                                                         <div class="d-flex flex-wrap gap-1">
                                                             {% for ticket in note.tickets.all|slice:":3" %}
@@ -182,14 +183,14 @@
 
                         <!-- Paginación -->
                         {% if page_obj.has_other_pages %}
-                            <nav aria-label="Paginación de notas" class="mt-4">
+                            <nav aria-label="{% translate 'Paginación de notas' %}" class="mt-4">
                                 <ul class="pagination justify-content-center">
                                     {% if page_obj.has_previous %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page=1">Primera</a>
+                                            <a class="page-link" href="?page=1">{% translate "Primera" %}</a>
                                         </li>
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{% translate "Anterior" %}</a>
                                         </li>
                                     {% endif %}
                                     
@@ -201,10 +202,10 @@
                                     
                                     {% if page_obj.has_next %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">{% translate "Siguiente" %}</a>
                                         </li>
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">{% translate "Última" %}</a>
                                         </li>
                                     {% endif %}
                                 </ul>
@@ -213,17 +214,17 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="bi bi-journal-x text-muted" style="font-size: 4rem;"></i>
-                            <h5 class="text-muted mt-3">No hay notas disponibles</h5>
+                            <h5 class="text-muted mt-3">{% translate "No hay notas disponibles" %}</h5>
                             <p class="text-muted">
                                 {% if is_own_notes %}
-                                    Aún no tienes notas internas registradas.
+                                    {% translate "Aún no tienes notas internas registradas." %}
                                 {% else %}
-                                    Este usuario no tiene notas internas registradas.
+                                    {% translate "Este usuario no tiene notas internas registradas." %}
                                 {% endif %}
                             </p>
                             {% if can_create_notes %}
                                 <a href="{% url 'note_create' %}?user={{ target_user.id }}" class="btn btn-primary">
-                                    <i class="bi bi-plus-circle"></i> Crear Primera Nota
+                                    <i class="bi bi-plus-circle"></i> {% translate "Crear Primera Nota" %}
                                 </a>
                             {% endif %}
                         </div>

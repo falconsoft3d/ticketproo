@@ -1,15 +1,16 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Gestión de Documentos - TicketProo{% endblock %}
+{% block title %}{% translate "Gestión de Documentos - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>
-        <i class="bi bi-file-earmark-text"></i> Gestión de Documentos
+        <i class="bi bi-file-earmark-text"></i> {% translate "Gestión de Documentos" %}
         <span class="badge bg-secondary ms-2">{{ total_documents }}</span>
     </h1>
     <a href="{% url 'document_create' %}" class="btn btn-primary">
-        <i class="bi bi-cloud-upload"></i> Subir Documento
+        <i class="bi bi-cloud-upload"></i> {% translate "Subir Documento" %}
     </a>
 </div>
 
@@ -18,16 +19,16 @@
     <div class="card-body">
         <form method="get" class="row g-3">
             <div class="col-md-4">
-                <label for="search" class="form-label">Buscar</label>
+                <label for="search" class="form-label">{% translate "Buscar" %}</label>
                 <input type="text" class="form-control" id="search" name="search" 
-                       value="{{ search_query|default:'' }}" placeholder="Título, descripción, etiquetas...">
+                       value="{{ search_query|default:'' }}" placeholder="{% translate 'Título, descripción, etiquetas...' %}">
             </div>
             
             <div class="col-md-3">
-                <label for="company" class="form-label">Empresa/Cliente</label>
+                <label for="company" class="form-label">{% translate "Empresa/Cliente" %}</label>
                 <select class="form-select" id="company" name="company">
-                    <option value="">Todas las empresas</option>
-                    <option value="none" {% if company_filter == 'none' %}selected{% endif %}>Sin empresa</option>
+                    <option value="">{% translate "Todas las empresas" %}</option>
+                    <option value="none" {% if company_filter == 'none' %}selected{% endif %}>{% translate "Sin empresa" %}</option>
                     {% for company in companies %}
                         <option value="{{ company.id }}" {% if company_filter == company.id|stringformat:'s' %}selected{% endif %}>
                             {{ company.name }}
@@ -37,9 +38,9 @@
             </div>
             
             <div class="col-md-3">
-                <label for="tag" class="form-label">Etiqueta</label>
+                <label for="tag" class="form-label">{% translate "Etiqueta" %}</label>
                 <select class="form-select" id="tag" name="tag">
-                    <option value="">Todas las etiquetas</option>
+                    <option value="">{% translate "Todas las etiquetas" %}</option>
                     {% for tag in all_tags %}
                         <option value="{{ tag }}" {% if tag_filter == tag %}selected{% endif %}>{{ tag }}</option>
                     {% endfor %}
@@ -48,10 +49,10 @@
             
             <div class="col-md-2 d-flex align-items-end">
                 <button type="submit" class="btn btn-outline-primary me-2">
-                    <i class="bi bi-search"></i> Filtrar
+                    <i class="bi bi-search"></i> {% translate "Filtrar" %}
                 </button>
                 <a href="{% url 'document_list' %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-x"></i> Limpiar
+                    <i class="bi bi-x"></i> {% translate "Limpiar" %}
                 </a>
             </div>
         </form>
@@ -66,14 +67,14 @@
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Documento</th>
-                        <th>Tipo/Tamaño</th>
-                        <th>Estado</th>
-                        <th>Empresa</th>
-                        <th>Etiquetas</th>
-                        <th>Descargas</th>
-                        <th>Creado</th>
-                        <th>Acciones</th>
+                        <th>{% translate "Documento" %}</th>
+                        <th>{% translate "Tipo/Tamaño" %}</th>
+                        <th>{% translate "Estado" %}</th>
+                        <th>{% translate "Empresa" %}</th>
+                        <th>{% translate "Etiquetas" %}</th>
+                        <th>{% translate "Descargas" %}</th>
+                        <th>{% translate "Creado" %}</th>
+                        <th>{% translate "Acciones" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -100,9 +101,9 @@
                         </td>
                         <td>
                             {% if document.is_public %}
-                                <span class="badge bg-success">Público</span>
+                                <span class="badge bg-success">{% translate "Público" %}</span>
                             {% else %}
-                                <span class="badge bg-warning">Privado</span>
+                                <span class="badge bg-warning">{% translate "Privado" %}</span>
                             {% endif %}
                         </td>
                         <td>
@@ -134,16 +135,16 @@
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="{% url 'document_detail' document.id %}" class="btn btn-outline-primary" title="Ver detalles">
+                                <a href="{% url 'document_detail' document.id %}" class="btn btn-outline-primary" title="{% translate 'Ver detalles' %}">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <a href="{% url 'document_download_private' document.id %}" class="btn btn-outline-success" title="Descargar">
+                                <a href="{% url 'document_download_private' document.id %}" class="btn btn-outline-success" title="{% translate 'Descargar' %}">
                                     <i class="bi bi-download"></i>
                                 </a>
-                                <a href="{% url 'document_edit' document.id %}" class="btn btn-outline-warning" title="Editar">
+                                <a href="{% url 'document_edit' document.id %}" class="btn btn-outline-warning" title="{% translate 'Editar' %}">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <a href="{% url 'document_delete' document.id %}" class="btn btn-outline-danger" title="Eliminar">
+                                <a href="{% url 'document_delete' document.id %}" class="btn btn-outline-danger" title="{% translate 'Eliminar' %}">
                                     <i class="bi bi-trash"></i>
                                 </a>
                             </div>
@@ -159,7 +160,7 @@
 <!-- Paginación -->
 {% if page_obj.has_other_pages %}
 <div class="card-footer">
-    <nav aria-label="Paginación de documentos">
+    <nav aria-label="{% translate 'Paginación de documentos' %}">
         <ul class="pagination justify-content-center mb-0">
             {% if page_obj.has_previous %}
                 <li class="page-item">
@@ -201,15 +202,15 @@
 <div class="card">
     <div class="card-body text-center py-5">
         <i class="bi bi-file-earmark-text display-4 text-muted mb-3"></i>
-        <h5 class="text-muted">No se encontraron documentos</h5>
+        <h5 class="text-muted">{% translate "No se encontraron documentos" %}</h5>
         {% if search_query or company_filter or tag_filter %}
-            <p class="text-muted">No hay documentos que coincidan con los filtros seleccionados.</p>
+            <p class="text-muted">{% translate "No hay documentos que coincidan con los filtros seleccionados." %}</p>
             <a href="{% url 'document_list' %}" class="btn btn-outline-primary me-2">
-                <i class="bi bi-x"></i> Limpiar filtros
+                <i class="bi bi-x"></i> {% translate "Limpiar filtros" %}
             </a>
         {% endif %}
         <a href="{% url 'document_create' %}" class="btn btn-primary">
-            <i class="bi bi-cloud-upload"></i> Subir Primer Documento
+            <i class="bi bi-cloud-upload"></i> {% translate "Subir Primer Documento" %}
         </a>
     </div>
 </div>

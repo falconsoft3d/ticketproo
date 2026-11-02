@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -6,9 +7,9 @@
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-file-earmark-text"></i> Contratos de Soporte</h2>
+                <h2><i class="bi bi-file-earmark-text"></i> {% translate "Contratos de Soporte" %}</h2>
                 <a href="{% url 'support_contract_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Nuevo Contrato
+                    <i class="bi bi-plus-circle"></i> {% translate "Nuevo Contrato" %}
                 </a>
             </div>
 
@@ -19,13 +20,13 @@
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Secuencia</th>
-                                        <th>Empresa</th>
-                                        <th>Fecha de Inicio</th>
-                                        <th>Frecuencia</th>
-                                        <th>Total</th>
-                                        <th>Estado</th>
-                                        <th class="text-center">Acciones</th>
+                                        <th>{% translate "Secuencia" %}</th>
+                                        <th>{% translate "Empresa" %}</th>
+                                        <th>{% translate "Fecha de Inicio" %}</th>
+                                        <th>{% translate "Frecuencia" %}</th>
+                                        <th>{% translate "Total" %}</th>
+                                        <th>{% translate "Estado" %}</th>
+                                        <th class="text-center">{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -49,19 +50,19 @@
                                         <td class="text-center">
                                             <div class="btn-group btn-group-sm" role="group">
                                                 <a href="{% url 'support_contract_detail' contract.pk %}" 
-                                                   class="btn btn-outline-primary" title="Ver">
+                                                   class="btn btn-outline-primary" title="{% translate 'Ver' %}">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
                                                 <a href="{% url 'support_contract_edit' contract.pk %}" 
-                                                   class="btn btn-outline-secondary" title="Editar">
+                                                   class="btn btn-outline-secondary" title="{% translate 'Editar' %}">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
                                                 <a href="{% url 'support_contract_pdf' contract.pk %}" 
-                                                   class="btn btn-outline-success" title="Descargar PDF" target="_blank">
+                                                   class="btn btn-outline-success" title="{% translate 'Descargar PDF' %}" target="_blank">
                                                     <i class="bi bi-file-pdf"></i>
                                                 </a>
                                                 <a href="{% url 'support_contract_delete' contract.pk %}" 
-                                                   class="btn btn-outline-danger" title="Eliminar">
+                                                   class="btn btn-outline-danger" title="{% translate 'Eliminar' %}">
                                                     <i class="bi bi-trash"></i>
                                                 </a>
                                             </div>
@@ -76,8 +77,8 @@
             {% else %}
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle"></i>
-                    No hay contratos de soporte registrados.
-                    <a href="{% url 'support_contract_create' %}">Crear el primer contrato</a>
+                    {% translate "No hay contratos de soporte registrados." %}
+                    <a href="{% url 'support_contract_create' %}">{% translate "Crear el primer contrato" %}</a>
                 </div>
             {% endif %}
         </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}Ticket #{{ ticket.id }} - TicketProo{% endblock %}
 
@@ -45,18 +46,18 @@
                     </span>
                     <span class="badge {{ ticket.get_type_badge_class }} me-2">
                         {% if ticket.ticket_type == 'error' %}
-                            <i class="bi bi-bug me-1"></i>Error
+                            <i class="bi bi-bug me-1"></i>{% translate "Error" %}
                         {% else %}
-                            <i class="bi bi-code-square me-1"></i>Desarrollo
+                            <i class="bi bi-code-square me-1"></i>{% translate "Desarrollo" %}
                         {% endif %}
                     </span>
                     {% if ticket.is_approved %}
                         <span class="badge bg-success">
-                            <i class="bi bi-check-circle me-1"></i>Aprobado
+                            <i class="bi bi-check-circle me-1"></i>{% translate "Aprobado" %}
                         </span>
                     {% else %}
                         <span class="badge bg-warning text-dark">
-                            <i class="bi bi-clock me-1"></i>Pendiente
+                            <i class="bi bi-clock me-1"></i>{% translate "Pendiente" %}
                         </span>
                     {% endif %}
                 </div>
@@ -65,7 +66,7 @@
                 <h4 class="mb-3">{{ ticket.title }}</h4>
                 
                 <div class="mb-4">
-                    <h6 class="text-muted mb-2">Descripción:</h6>
+                    <h6 class="text-muted mb-2">{% translate "Descripción:" %}</h6>
                     <div class="border rounded p-3 bg-light">
                         {{ ticket.description|linebreaks }}
                     </div>
@@ -74,7 +75,7 @@
                         <form method="post" action="{% url 'ticket_ai_analyze_now' ticket.pk %}" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-robot me-1"></i> Analizar con IA
+                                <i class="bi bi-robot me-1"></i> {% translate "Analizar con IA" %}
                             </button>
                         </form>
                     </div>
@@ -83,14 +84,14 @@
                 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <h6 class="text-muted mb-2">Creado por:</h6>
+                        <h6 class="text-muted mb-2">{% translate "Creado por:" %}</h6>
                         <p class="mb-0">
                             <i class="bi bi-person"></i> {{ ticket.created_by.get_full_name|default:ticket.created_by.username }}
                         </p>
                     </div>
                     
                     <div class="col-md-6 mb-3">
-                        <h6 class="text-muted mb-2">Categoría:</h6>
+                        <h6 class="text-muted mb-2">{% translate "Categoría:" %}</h6>
                         <p class="mb-0">
                             {% if ticket.category %}
                                 <span class="badge" style="background-color: {{ ticket.category.color }}; color: white;">
@@ -100,11 +101,11 @@
                                     <br><small class="text-muted">{{ ticket.category.description }}</small>
                                 {% endif %}
                             {% else %}
-                                <span class="text-muted">Sin categoría asignada</span>
+                                <span class="text-muted">{% translate "Sin categoría asignada" %}</span>
                             {% endif %}
                         </p>
 
-                        <h6 class="text-muted mb-2 mt-3">Horas estimadas:</h6>
+                        <h6 class="text-muted mb-2 mt-3">{% translate "Horas estimadas:" %}</h6>
                         {% if is_agent %}
                             <form method="post" class="d-flex align-items-center gap-2" style="max-width: 260px;">
                                 {% csrf_token %}
@@ -113,9 +114,9 @@
                                     <input type="number" name="estimated_hours" class="form-control"
                                            value="{{ ticket.hours|default_if_none:''|stringformat:'s' }}"
                                            step="0.25" min="0" placeholder="0.00">
-                                    <span class="input-group-text">h</span>
+                                    <span class="input-group-text">{% translate "h" %}</span>
                                 </div>
-                                <button type="submit" name="update_estimated_hours" class="btn btn-sm btn-primary" title="Guardar horas estimadas">
+                                <button type="submit" name="update_estimated_hours" class="btn btn-sm btn-primary" title="{% translate 'Guardar horas estimadas' %}">
                                     <i class="bi bi-check-lg"></i>
                                 </button>
                             </form>
@@ -124,14 +125,14 @@
                                 {% if ticket.hours %}
                                     <i class="bi bi-clock-history"></i> {{ ticket.hours }} horas
                                 {% else %}
-                                    <span class="text-muted">Sin estimar</span>
+                                    <span class="text-muted">{% translate "Sin estimar" %}</span>
                                 {% endif %}
                             </p>
                         {% endif %}
                     </div>
                     
                     <div class="col-md-6 mb-3">
-                        <h6 class="text-muted mb-2">Empresa:</h6>
+                        <h6 class="text-muted mb-2">{% translate "Empresa:" %}</h6>
                         <p class="mb-0">
                             {% if ticket.company %}
                                 <span class="badge" style="background-color: {{ ticket.company.color }}; color: white;">
@@ -141,37 +142,37 @@
                                     <br><small class="text-muted">{{ ticket.company.description }}</small>
                                 {% endif %}
                             {% else %}
-                                <span class="text-muted">Sin empresa asignada</span>
+                                <span class="text-muted">{% translate "Sin empresa asignada" %}</span>
                             {% endif %}
                         </p>
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <h6 class="text-muted mb-2">Fecha de creación:</h6>
+                        <h6 class="text-muted mb-2">{% translate "Fecha de creación:" %}</h6>
                         <p class="mb-0">
                             <i class="bi bi-calendar"></i> {{ ticket.created_at|date:"d/m/Y H:i" }}
                         </p>
                     </div>
                     
                     <div class="col-md-6 mb-3">
-                        <h6 class="text-muted mb-2">Asignado a:</h6>
+                        <h6 class="text-muted mb-2">{% translate "Asignado a:" %}</h6>
                         <p class="mb-0">
                             {% if ticket.assigned_to %}
                                 <i class="bi bi-person-check"></i> {{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}
                             {% else %}
-                                <i class="bi bi-person-x text-muted"></i> <span class="text-muted">Sin asignar</span>
+                                <i class="bi bi-person-x text-muted"></i> <span class="text-muted">{% translate "Sin asignar" %}</span>
                             {% endif %}
                         </p>
                     </div>
                     
                     <div class="col-md-6 mb-3">
-                        <h6 class="text-muted mb-2">Tipo de Ticket:</h6>
+                        <h6 class="text-muted mb-2">{% translate "Tipo de Ticket:" %}</h6>
                         <p class="mb-0">
                             <span class="badge {{ ticket.get_type_badge_class }}">
                                 {% if ticket.ticket_type == 'error' %}
-                                    <i class="bi bi-bug me-1"></i>Error
+                                    <i class="bi bi-bug me-1"></i>{% translate "Error" %}
                                 {% else %}
-                                    <i class="bi bi-code-square me-1"></i>Desarrollo
+                                    <i class="bi bi-code-square me-1"></i>{% translate "Desarrollo" %}
                                 {% endif %}
                             </span>
                         </p>
@@ -179,7 +180,7 @@
 
                     <!-- Calificación -->
                     <div class="col-md-6 mb-2">
-                        <h6 class="text-muted mb-2"><i class="bi bi-star me-1"></i>Calificación:</h6>
+                        <h6 class="text-muted mb-2"><i class="bi bi-star me-1"></i>{% translate "Calificación:" %}</h6>
                         <div class="d-flex align-items-center gap-3">
                             <div class="star-rating" id="starRating" data-current="{{ ticket.rating|default:0 }}" data-pk="{{ ticket.pk }}">
                                 {% for i in "12345" %}
@@ -194,7 +195,7 @@
                             <form method="post" action="{% url 'ticket_update_rating' ticket.pk %}" id="clearRatingForm" class="d-inline">
                                 {% csrf_token %}
                                 <input type="hidden" name="rating" value="0">
-                                <button type="submit" class="btn btn-link btn-sm text-muted p-0" title="Quitar calificación">
+                                <button type="submit" class="btn btn-link btn-sm text-muted p-0" title="{% translate 'Quitar calificación' %}">
                                     <i class="bi bi-x-circle"></i>
                                 </button>
                             </form>
@@ -207,18 +208,18 @@
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <h6 class="text-muted mb-2">Última actualización:</h6>
+                        <h6 class="text-muted mb-2">{% translate "Última actualización:" %}</h6>
                         <p class="mb-0">
                             <i class="bi bi-clock"></i> {{ ticket.updated_at|date:"d/m/Y H:i" }}
                         </p>
                     </div>
                     
                     <div class="col-md-12 mb-3">
-                        <h6 class="text-muted mb-2">Estado de Aprobación:</h6>
+                        <h6 class="text-muted mb-2">{% translate "Estado de Aprobación:" %}</h6>
                         <p class="mb-0">
                             {% if ticket.is_approved %}
                                 <span class="badge bg-success">
-                                    <i class="bi bi-check-circle me-1"></i>Aprobado
+                                    <i class="bi bi-check-circle me-1"></i>{% translate "Aprobado" %}
                                 </span>
                                 {% if ticket.approved_by %}
                                     <small class="text-muted ms-2">
@@ -230,7 +231,7 @@
                                 {% endif %}
                             {% else %}
                                 <span class="badge bg-warning text-dark">
-                                    <i class="bi bi-clock me-1"></i>Pendiente de Aprobación
+                                    <i class="bi bi-clock me-1"></i>{% translate "Pendiente de Aprobación" %}
                                 </span>
                             {% endif %}
                         </p>
@@ -238,12 +239,12 @@
 
                     <!-- Commit -->
                     <div class="col-md-12 mb-3">
-                        <h6 class="text-muted mb-2"><i class="bi bi-git me-1"></i>Commit:</h6>
+                        <h6 class="text-muted mb-2"><i class="bi bi-git me-1"></i>{% translate "Commit:" %}</h6>
                         {% if is_agent %}
                         <form method="post" action="{% url 'ticket_update_commit' ticket.pk %}" class="d-flex gap-2 align-items-center">
                             {% csrf_token %}
                             <input type="text" name="commit" class="form-control form-control-sm font-monospace"
-                                   value="{{ ticket.commit }}" placeholder="Hash, URL o referencia del commit..."
+                                   value="{{ ticket.commit }}" placeholder="{% translate 'Hash, URL o referencia del commit...' %}"
                                    style="max-width: 480px;">
                             <button type="submit" class="btn btn-outline-secondary btn-sm">
                                 <i class="bi bi-check-lg"></i>
@@ -287,7 +288,7 @@
                         <div class="ai-analysis-card rounded mb-3 p-3" style="background:linear-gradient(135deg,#f0f7ff 0%,#e8f4fd 100%);border:1px solid #b3d7f5;border-left:4px solid #0d6efd;">
                             <div class="d-flex align-items-center justify-content-between mb-2">
                                 <span class="fw-semibold text-primary" style="font-size:.9rem;">
-                                    <i class="bi bi-robot me-1"></i> Análisis de IA
+                                    <i class="bi bi-robot me-1"></i> {% translate "Análisis de IA" %}
                                 </span>
                                 <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
                             </div>
@@ -319,13 +320,13 @@
                                         <i class="bi bi-clock"></i>
                                         {{ comment.created_at|date:"d/m/Y H:i" }}
                                         {% if comment.updated_at != comment.created_at %}
-                                            (editado)
+                                            {% translate "(editado)" %}
                                         {% endif %}
                                     </small>
                                     {% if is_agent and comment.user == user %}
                                     <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1"
                                             data-bs-toggle="modal" data-bs-target="#editCommentModal{{ comment.pk }}"
-                                            title="Editar comentario">
+                                            title="{% translate 'Editar comentario' %}">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     {% endif %}
@@ -333,7 +334,7 @@
                                     <form method="post" action="{% url 'ticket_comment_delete' comment.pk %}" class="d-inline"
                                           onsubmit="return confirm('¿Eliminar este comentario?');">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1" title="Eliminar comentario">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1" title="{% translate 'Eliminar comentario' %}">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
@@ -353,17 +354,17 @@
                                     <form method="post" action="{% url 'ticket_comment_edit' comment.pk %}">
                                         {% csrf_token %}
                                         <div class="modal-header">
-                                            <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar comentario</h5>
+                                            <h5 class="modal-title"><i class="bi bi-pencil"></i> {% translate "Editar comentario" %}</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                         </div>
                                         <div class="modal-body">
                                             <textarea name="content" class="form-control" rows="4"
                                                       minlength="10" maxlength="1000" required>{{ comment.content }}</textarea>
-                                            <div class="form-text">Mínimo 10 caracteres, máximo 1000 caracteres.</div>
+                                            <div class="form-text">{% translate "Mínimo 10 caracteres, máximo 1000 caracteres." %}</div>
                                         </div>
                                         <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
+                                            <button type="submit" class="btn btn-primary">{% translate "Guardar cambios" %}</button>
                                         </div>
                                     </form>
                                 </div>
@@ -376,7 +377,7 @@
                 {% else %}
                     <div class="text-center text-muted py-3">
                         <i class="bi bi-chat display-4"></i>
-                        <p class="mt-2">No hay comentarios aún. ¡Sé el primero en comentar!</p>
+                        <p class="mt-2">{% translate "No hay comentarios aún. ¡Sé el primero en comentar!" %}</p>
                     </div>
                 {% endif %}
                 
@@ -384,13 +385,13 @@
                 <div id="ai-analysis-spinner" class="rounded mb-3 p-3" style="display:none;background:linear-gradient(135deg,#f0f7ff 0%,#e8f4fd 100%);border:1px solid #b3d7f5;border-left:4px solid #0d6efd;">
                     <div class="d-flex align-items-center gap-2">
                         <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                        <span class="text-primary fw-semibold" style="font-size:.9rem;"><i class="bi bi-robot me-1"></i> Analizando ticket con IA...</span>
+                        <span class="text-primary fw-semibold" style="font-size:.9rem;"><i class="bi bi-robot me-1"></i> {% translate "Analizando ticket con IA..." %}</span>
                     </div>
                 </div>
 
                 <!-- Formulario para nuevo comentario -->
                 <div class="border-top pt-3">
-                    <h6 class="mb-3">Agregar comentario</h6>
+                    <h6 class="mb-3">{% translate "Agregar comentario" %}</h6>
                     <form method="post">
                         {% csrf_token %}
                         <div class="mb-3">
@@ -402,11 +403,11 @@
                                     {% endfor %}
                                 </div>
                             {% endif %}
-                            <div class="form-text">Mínimo 10 caracteres, máximo 1000 caracteres.</div>
+                            <div class="form-text">{% translate "Mínimo 10 caracteres, máximo 1000 caracteres." %}</div>
                         </div>
                         <div class="text-end">
                             <button type="submit" name="add_comment" class="btn btn-primary">
-                                <i class="bi bi-send"></i> Enviar Comentario
+                                <i class="bi bi-send"></i> {% translate "Enviar Comentario" %}
                             </button>
                         </div>
                     </form>
@@ -437,7 +438,7 @@
                             </div>
                             <div>
                                 <a href="{% url 'download_attachment' attachment.id %}" class="btn btn-sm btn-outline-primary me-1">
-                                    <i class="bi bi-download"></i> Descargar
+                                    <i class="bi bi-download"></i> {% translate "Descargar" %}
                                 </a>
                                 {% if is_agent or attachment.uploaded_by == user %}
                                 <a href="{% url 'delete_attachment' attachment.id %}" 
@@ -451,22 +452,22 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <p class="text-muted text-center mb-0">No hay adjuntos</p>
+                    <p class="text-muted text-center mb-0">{% translate "No hay adjuntos" %}</p>
                 {% endif %}
 
                 <!-- Formulario para subir adjuntos -->
                 <hr>
-                <h6 class="mb-3">Subir nuevo adjunto</h6>
+                <h6 class="mb-3">{% translate "Subir nuevo adjunto" %}</h6>
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="mb-3">
                         {{ attachment_form.file }}
                     </div>
                     <small class="form-text text-muted mb-3">
-                        Tipos permitidos: PDF, DOC, DOCX, TXT, JPG, PNG, GIF, ZIP, RAR. Tamaño máximo: 10MB
+                        {% translate "Tipos permitidos: PDF, DOC, DOCX, TXT, JPG, PNG, GIF, ZIP, RAR. Tamaño máximo: 10MB" %}
                     </small>
                     <button type="submit" name="upload_attachment" class="btn btn-success btn-sm">
-                        <i class="bi bi-upload"></i> Subir Adjunto
+                        <i class="bi bi-upload"></i> {% translate "Subir Adjunto" %}
                     </button>
                 </form>
             </div>
@@ -476,7 +477,7 @@
         <div class="card mt-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
-                    <i class="bi bi-clock-history"></i> Líneas de Horas
+                    <i class="bi bi-clock-history"></i> {% translate "Líneas de Horas" %}
                 </h5>
                 <span class="badge bg-primary">
                     Total: {{ hour_lines_total }} h
@@ -489,11 +490,11 @@
                     <table class="table table-sm table-hover align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th><i class="bi bi-card-text me-1"></i>Descripción</th>
-                                <th><i class="bi bi-person me-1"></i>Usuario</th>
-                                <th class="text-center"><i class="bi bi-clock me-1"></i>Horas</th>
-                                <th class="text-center"><i class="bi bi-calendar me-1"></i>Fecha</th>
-                                {% if is_agent %}<th class="text-center">Acciones</th>{% endif %}
+                                <th><i class="bi bi-card-text me-1"></i>{% translate "Descripción" %}</th>
+                                <th><i class="bi bi-person me-1"></i>{% translate "Usuario" %}</th>
+                                <th class="text-center"><i class="bi bi-clock me-1"></i>{% translate "Horas" %}</th>
+                                <th class="text-center"><i class="bi bi-calendar me-1"></i>{% translate "Fecha" %}</th>
+                                {% if is_agent %}<th class="text-center">{% translate "Acciones" %}</th>{% endif %}
                             </tr>
                         </thead>
                         <tbody>
@@ -512,7 +513,7 @@
                                     <form method="post" action="{% url 'ticket_hour_line_delete' ticket.pk line.pk %}" class="d-inline"
                                           onsubmit="return confirm('¿Eliminar esta línea de horas?')">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="{% translate 'Eliminar' %}">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
@@ -525,7 +526,7 @@
                         </tbody>
                         <tfoot class="table-light fw-bold">
                             <tr>
-                                <td colspan="2">Total</td>
+                                <td colspan="2">{% translate "Total" %}</td>
                                 <td class="text-center">
                                     <span class="badge bg-primary">{{ hour_lines_total }} h</span>
                                 </td>
@@ -537,39 +538,39 @@
                 {% else %}
                 <p class="text-muted text-center mb-3">
                     <i class="bi bi-clock display-6 d-block mb-2"></i>
-                    No hay líneas de horas registradas aún.
+                    {% translate "No hay líneas de horas registradas aún." %}
                 </p>
                 {% endif %}
 
                 <!-- Formulario para agregar línea de horas -->
                 <hr>
-                <h6 class="mb-3"><i class="bi bi-plus-circle me-1"></i>Agregar línea de horas</h6>
+                <h6 class="mb-3"><i class="bi bi-plus-circle me-1"></i>{% translate "Agregar línea de horas" %}</h6>
                 <form method="post">
                     {% csrf_token %}
                     <div class="row g-2">
                         <div class="col-md-5">
-                            <label class="form-label small fw-semibold">Descripción</label>
+                            <label class="form-label small fw-semibold">{% translate "Descripción" %}</label>
                             {{ hour_line_form.description }}
                             {% if hour_line_form.description.errors %}
                                 <div class="text-danger small mt-1">{{ hour_line_form.description.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label small fw-semibold">Usuario</label>
+                            <label class="form-label small fw-semibold">{% translate "Usuario" %}</label>
                             {{ hour_line_form.user }}
                             {% if hour_line_form.user.errors %}
                                 <div class="text-danger small mt-1">{{ hour_line_form.user.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <div class="col-6 col-md-2">
-                            <label class="form-label small fw-semibold">Horas</label>
+                            <label class="form-label small fw-semibold">{% translate "Horas" %}</label>
                             {{ hour_line_form.hours }}
                             {% if hour_line_form.hours.errors %}
                                 <div class="text-danger small mt-1">{{ hour_line_form.hours.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <div class="col-6 col-md-2">
-                            <label class="form-label small fw-semibold">Fecha</label>
+                            <label class="form-label small fw-semibold">{% translate "Fecha" %}</label>
                             {{ hour_line_form.date }}
                             {% if hour_line_form.date.errors %}
                                 <div class="text-danger small mt-1">{{ hour_line_form.date.errors.0 }}</div>
@@ -577,7 +578,7 @@
                         </div>
                         <div class="col-12 text-end">
                             <button type="submit" name="add_hour_line" class="btn btn-primary btn-sm">
-                                <i class="bi bi-plus-lg me-1"></i>Agregar Horas
+                                <i class="bi bi-plus-lg me-1"></i>{% translate "Agregar Horas" %}
                             </button>
                         </div>
                     </div>
@@ -590,7 +591,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-gear"></i> Acciones
+                    <i class="bi bi-gear"></i> {% translate "Acciones" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -600,7 +601,7 @@
                     <form method="post" class="d-inline">
                         {% csrf_token %}
                         <button type="submit" name="assign_to_me" class="btn btn-success w-100">
-                            <i class="bi bi-person-plus"></i> Asignarme este ticket
+                            <i class="bi bi-person-plus"></i> {% translate "Asignarme este ticket" %}
                         </button>
                     </form>
                     {% endif %}
@@ -609,7 +610,7 @@
                     {% if is_agent and ticket.assigned_to %}
                     <a href="{% url 'unassign_ticket' ticket.pk %}" class="btn btn-outline-warning"
                        onclick="return confirm('¿Estás seguro de que quieres desasignar este ticket?')">
-                        <i class="bi bi-person-dash"></i> Desasignar ticket
+                        <i class="bi bi-person-dash"></i> {% translate "Desasignar ticket" %}
                     </a>
                     {% endif %}
                     
@@ -617,7 +618,7 @@
                     {% if is_agent %}
                     <div class="mt-2">
                         <h6 class="text-muted mb-2">
-                            <i class="bi bi-share"></i> Compartir Públicamente
+                            <i class="bi bi-share"></i> {% translate "Compartir Públicamente" %}
                         </h6>
                         
                         <!-- Activar/desactivar compartir público -->
@@ -625,11 +626,11 @@
                             {% csrf_token %}
                             {% if ticket.is_public_shareable %}
                                 <button type="submit" name="disable_public_share" class="btn btn-outline-danger btn-sm">
-                                    <i class="bi bi-eye-slash"></i> Desactivar compartir público
+                                    <i class="bi bi-eye-slash"></i> {% translate "Desactivar compartir público" %}
                                 </button>
                             {% else %}
                                 <button type="submit" name="enable_public_share" class="btn btn-outline-success btn-sm">
-                                    <i class="bi bi-eye"></i> Activar compartir público
+                                    <i class="bi bi-eye"></i> {% translate "Activar compartir público" %}
                                 </button>
                             {% endif %}
                         </form>
@@ -639,7 +640,7 @@
                         <div class="alert alert-info p-2 small">
                             <div class="d-flex align-items-center">
                                 <i class="bi bi-link-45deg me-2"></i>
-                                <span class="me-2">Enlace público:</span>
+                                <span class="me-2">{% translate "Enlace público:" %}</span>
                             </div>
                             <div class="input-group input-group-sm mt-2">
                                 <input type="text" 
@@ -650,19 +651,19 @@
                                 <button class="btn btn-outline-primary" 
                                         type="button" 
                                         onclick="copyPublicUrl()"
-                                        title="Copiar enlace">
+                                        title="{% translate 'Copiar enlace' %}">
                                     <i class="bi bi-clipboard"></i>
                                 </button>
                                 <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'public_ticket' ticket.public_share_token %}" 
                                    class="btn btn-outline-secondary"
                                    target="_blank"
-                                   title="Ver enlace público">
+                                   title="{% translate 'Ver enlace público' %}">
                                     <i class="bi bi-eye"></i>
                                 </a>
                             </div>
                             <small class="text-muted">
                                 <i class="bi bi-info-circle"></i>
-                                Este enlace permite ver el ticket sin necesidad de iniciar sesión.
+                                {% translate "Este enlace permite ver el ticket sin necesidad de iniciar sesión." %}
                             </small>
                         </div>
                         
@@ -673,7 +674,7 @@
                                     name="regenerate_token" 
                                     class="btn btn-outline-warning btn-sm"
                                     onclick="return confirm('¿Estás seguro? Esto invalidará el enlace actual.')">
-                                <i class="bi bi-arrow-clockwise"></i> Regenerar enlace
+                                <i class="bi bi-arrow-clockwise"></i> {% translate "Regenerar enlace" %}
                             </button>
                         </form>
                         {% endif %}
@@ -686,15 +687,15 @@
                         {% csrf_token %}
                         <input type="hidden" name="quick_change_status" value="1">
                         <label class="form-label small fw-semibold text-muted mb-1">
-                            <i class="bi bi-arrow-left-right me-1"></i>Cambiar Estado
+                            <i class="bi bi-arrow-left-right me-1"></i>{% translate "Cambiar Estado" %}
                         </label>
                         <div class="d-flex gap-2">
                             <select name="new_status" class="form-select form-select-sm">
-                                <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Abierto</option>
-                                <option value="working" {% if ticket.status == 'working' %}selected{% endif %}>Trabajando</option>
-                                <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>En Progreso</option>
-                                <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>Resuelto</option>
-                                <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Cerrado</option>
+                                <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>{% translate "Abierto" %}</option>
+                                <option value="working" {% if ticket.status == 'working' %}selected{% endif %}>{% translate "Trabajando" %}</option>
+                                <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>{% translate "En Progreso" %}</option>
+                                <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>{% translate "Resuelto" %}</option>
+                                <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>{% translate "Cerrado" %}</option>
                             </select>
                             <button type="submit" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-check-lg"></i>
@@ -704,15 +705,15 @@
                     <hr>
                     
                     <a href="{% url 'ticket_edit' ticket.pk %}" class="btn btn-warning">
-                        <i class="bi bi-pencil"></i> Editar Ticket
+                        <i class="bi bi-pencil"></i> {% translate "Editar Ticket" %}
                     </a>
                     
                     <a href="{% url 'ticket_print_pdf' ticket.pk %}" class="btn btn-info" target="_blank">
-                        <i class="bi bi-file-earmark-pdf"></i> Imprimir PDF
+                        <i class="bi bi-file-earmark-pdf"></i> {% translate "Imprimir PDF" %}
                     </a>
                     
                     <a href="{% url 'ticket_delete' ticket.pk %}" class="btn btn-danger">
-                        <i class="bi bi-trash"></i> Eliminar Ticket
+                        <i class="bi bi-trash"></i> {% translate "Eliminar Ticket" %}
                     </a>
                     
                     <!-- Botones de Aprobación (solo para agentes y administradores) -->
@@ -723,7 +724,7 @@
                             <input type="hidden" name="action" value="unapprove">
                             <button type="submit" class="btn btn-outline-warning" 
                                     onclick="return confirm('¿Estás seguro de que quieres quitar la aprobación de este ticket?')">
-                                <i class="bi bi-x-circle"></i> Quitar Aprobación
+                                <i class="bi bi-x-circle"></i> {% translate "Quitar Aprobación" %}
                             </button>
                         </form>
                     {% else %}
@@ -732,7 +733,7 @@
                             <input type="hidden" name="action" value="approve">
                             <button type="submit" class="btn btn-success" 
                                     onclick="return confirm('¿Estás seguro de que quieres aprobar este ticket?')">
-                                <i class="bi bi-check-circle"></i> Aprobar Ticket
+                                <i class="bi bi-check-circle"></i> {% translate "Aprobar Ticket" %}
                             </button>
                         </form>
                     {% endif %}
@@ -742,11 +743,11 @@
                     
                     <a href="{% url 'ticket_list' %}" class="btn btn-outline-primary">
                         <i class="bi bi-list-ul"></i> 
-                        {% if is_agent %}Ver Todos los Tickets{% else %}Mis Tickets{% endif %}
+                        {% if is_agent %}{% translate "Ver Todos los Tickets" %}{% else %}{% translate "Mis Tickets" %}{% endif %}
                     </a>
                     
                     <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-house-door"></i> Ir al Dashboard
+                        <i class="bi bi-house-door"></i> {% translate "Ir al Dashboard" %}
                     </a>
                 </div>
             </div>
@@ -756,15 +757,15 @@
         <div class="card mt-3">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
-                    <i class="bi bi-list-check"></i> Lista de Tareas
+                    <i class="bi bi-list-check"></i> {% translate "Lista de Tareas" %}
                 </h6>
                 <div class="d-flex align-items-center gap-2">
                     <button type="button" 
                             id="generateAIBtn" 
                             class="btn btn-sm btn-gradient-ai"
-                            title="Generar checklist automático con IA"
+                            title="{% translate 'Generar checklist automático con IA' %}"
                             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);">
-                        <i class="bi bi-stars"></i> Generar con IA
+                        <i class="bi bi-stars"></i> {% translate "Generar con IA" %}
                     </button>
                     <span class="badge bg-primary">{{ todo_items|length }}</span>
                 </div>
@@ -776,13 +777,13 @@
                         <input type="text" 
                                id="todoInput" 
                                class="form-control" 
-                               placeholder="Nueva tarea..."
+                               placeholder="{% translate 'Nueva tarea...' %}"
                                maxlength="500">
                         <button class="btn btn-primary" type="submit">
-                            <i class="bi bi-plus-lg"></i> Agregar
+                            <i class="bi bi-plus-lg"></i> {% translate "Agregar" %}
                         </button>
                     </div>
-                    <small class="text-muted">Máximo 500 caracteres</small>
+                    <small class="text-muted">{% translate "Máximo 500 caracteres" %}</small>
                 </form>
                 
                 <!-- Lista de tareas -->
@@ -804,7 +805,7 @@
                             </div>
                             <button class="btn btn-sm btn-outline-danger todo-delete ms-2" 
                                     data-id="{{ item.id }}"
-                                    title="Eliminar tarea">
+                                    title="{% translate 'Eliminar tarea' %}">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -812,7 +813,7 @@
                     {% else %}
                         <div class="text-center text-muted py-3" id="emptyTodoMessage">
                             <i class="bi bi-list-check display-4"></i>
-                            <p class="mt-2 small">No hay tareas aún. ¡Agrega la primera!</p>
+                            <p class="mt-2 small">{% translate "No hay tareas aún. ¡Agrega la primera!" %}</p>
                         </div>
                     {% endif %}
                 </div>
@@ -828,8 +829,8 @@
                             {% else %}
                                 0
                             {% endif %}
-                        </span> de 
-                        <span id="totalCount">{{ todo_items|length }}</span> completadas
+                        </span> {% translate "de" %} 
+                        <span id="totalCount">{{ todo_items|length }}</span> {% translate "completadas" %}
                     </small>
                 </div>
             </div>
@@ -839,25 +840,25 @@
         <div class="card mt-3">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-info-circle"></i> Información
+                    <i class="bi bi-info-circle"></i> {% translate "Información" %}
                 </h6>
             </div>
             <div class="card-body">
                 <small class="text-muted">
                     <div class="mb-2">
-                        <strong>Prioridades:</strong><br>
-                        <span class="badge bg-success">Baja</span>
-                        <span class="badge bg-warning">Media</span>
-                        <span class="badge bg-danger">Alta</span>
-                        <span class="badge bg-dark">Urgente</span>
+                        <strong>{% translate "Prioridades:" %}</strong><br>
+                        <span class="badge bg-success">{% translate "Baja" %}</span>
+                        <span class="badge bg-warning">{% translate "Media" %}</span>
+                        <span class="badge bg-danger">{% translate "Alta" %}</span>
+                        <span class="badge bg-dark">{% translate "Urgente" %}</span>
                     </div>
                     
                     <div>
-                        <strong>Estados:</strong><br>
-                        <span class="badge bg-primary">Abierto</span>
-                        <span class="badge bg-warning">En Progreso</span>
-                        <span class="badge bg-success">Resuelto</span>
-                        <span class="badge bg-secondary">Cerrado</span>
+                        <strong>{% translate "Estados:" %}</strong><br>
+                        <span class="badge bg-primary">{% translate "Abierto" %}</span>
+                        <span class="badge bg-warning">{% translate "En Progreso" %}</span>
+                        <span class="badge bg-success">{% translate "Resuelto" %}</span>
+                        <span class="badge bg-secondary">{% translate "Cerrado" %}</span>
                     </div>
                 </small>
             </div>

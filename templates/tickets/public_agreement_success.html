@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block extra_css %}
@@ -67,7 +68,7 @@
 </style>
 {% endblock %}
 
-{% block title %}Firma Registrada Exitosamente{% endblock %}
+{% block title %}{% translate "Firma Registrada Exitosamente" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -77,8 +78,8 @@
             <div class="success-icon mb-4">
                 <i class="bi bi-check-circle-fill"></i>
             </div>
-            <h1 class="display-4">¡Firma Registrada Exitosamente!</h1>
-            <p class="lead mb-0">Tu firma digital ha sido capturada y almacenada de forma segura</p>
+            <h1 class="display-4">{% translate "¡Firma Registrada Exitosamente!" %}</h1>
+            <p class="lead mb-0">{% translate "Tu firma digital ha sido capturada y almacenada de forma segura" %}</p>
         </div>
     </div>
 
@@ -92,13 +93,13 @@
                             <div class="col-lg-8">
                                 <div class="signature-summary">
                                     <div class="d-flex align-items-center mb-3">
-                                        <h4 class="me-3 mb-0">Resumen de tu Firma</h4>
+                                        <h4 class="me-3 mb-0">{% translate "Resumen de tu Firma" %}</h4>
                                         <span class="company-badge">{{ agreement.company.name }}</span>
                                     </div>
 
                                     <div class="row mb-4">
                                         <div class="col-md-6">
-                                            <h6><i class="bi bi-file-earmark-text"></i> Acuerdo Firmado:</h6>
+                                            <h6><i class="bi bi-file-earmark-text"></i> {% translate "Acuerdo Firmado:" %}</h6>
                                             <p class="mb-2"><strong>{{ agreement.title }}</strong></p>
                                             <small class="text-muted">
                                                 Creado el {{ agreement.created_at|date:"d/m/Y" }} por 
@@ -106,7 +107,7 @@
                                             </small>
                                         </div>
                                         <div class="col-md-6">
-                                            <h6><i class="bi bi-person-check"></i> Información del Firmante:</h6>
+                                            <h6><i class="bi bi-person-check"></i> {% translate "Información del Firmante:" %}</h6>
                                             <p class="mb-1"><strong>{{ signature.signer_name }}</strong></p>
                                             <p class="mb-1">{{ signature.signer_email }}</p>
                                             {% if signature.signer_phone %}
@@ -121,7 +122,7 @@
 
                                     <!-- Firma capturada -->
                                     <div class="mb-4">
-                                        <h6><i class="bi bi-pen-fill"></i> Tu Firma Digital:</h6>
+                                        <h6><i class="bi bi-pen-fill"></i> {% translate "Tu Firma Digital:" %}</h6>
                                         <div class="signature-display">
                                             {% if signature.signature_data %}
                                                 <img src="{{ signature.signature_data }}" 
@@ -130,7 +131,7 @@
                                             {% else %}
                                                 <span class="text-muted">
                                                     <i class="bi bi-pen display-4"></i><br>
-                                                    Firma digital registrada
+                                                    {% translate "Firma digital registrada" %}
                                                 </span>
                                             {% endif %}
                                         </div>
@@ -141,14 +142,14 @@
                                         <div class="col-md-4">
                                             <div class="p-3 bg-white rounded">
                                                 <i class="bi bi-people display-4 text-info"></i>
-                                                <h6>Total de Firmas</h6>
+                                                <h6>{% translate "Total de Firmas" %}</h6>
                                                 <h4 class="text-info">{{ agreement.signature_count }}</h4>
                                             </div>
                                         </div>
                                         <div class="col-md-4">
                                             <div class="p-3 bg-white rounded">
                                                 <i class="bi bi-target display-4 text-warning"></i>
-                                                <h6>Objetivo</h6>
+                                                <h6>{% translate "Objetivo" %}</h6>
                                                 <h4 class="text-warning">{{ agreement.max_signers }}</h4>
                                             </div>
                                         </div>
@@ -156,12 +157,12 @@
                                             <div class="p-3 bg-white rounded">
                                                 {% if agreement.status == 'completed' %}
                                                     <i class="bi bi-check-circle display-4 text-success"></i>
-                                                    <h6>Estado</h6>
-                                                    <h4 class="text-success">Completado</h4>
+                                                    <h6>{% translate "Estado" %}</h6>
+                                                    <h4 class="text-success">{% translate "Completado" %}</h4>
                                                 {% else %}
                                                     <i class="bi bi-clock display-4 text-primary"></i>
-                                                    <h6>Estado</h6>
-                                                    <h4 class="text-primary">En Proceso</h4>
+                                                    <h6>{% translate "Estado" %}</h6>
+                                                    <h4 class="text-primary">{% translate "En Proceso" %}</h4>
                                                 {% endif %}
                                             </div>
                                         </div>
@@ -169,7 +170,7 @@
 
                                     <!-- Progreso -->
                                     <div class="mt-4">
-                                        <h6>Progreso del Acuerdo:</h6>
+                                        <h6>{% translate "Progreso del Acuerdo:" %}</h6>
                                         <div class="progress mb-2" style="height: 15px;">
                                             {% widthratio agreement.signature_count agreement.max_signers 100 as progress_percent %}
                                             <div class="progress-bar bg-success progress-bar-striped" 
@@ -179,7 +180,7 @@
                                         </div>
                                         <small class="text-muted">
                                             {% if agreement.status == 'completed' %}
-                                                🎉 ¡El acuerdo ha sido completado con todas las firmas necesarias!
+                                                {% translate "🎉 ¡El acuerdo ha sido completado con todas las firmas necesarias!" %}
                                             {% else %}
                                                 Faltan {{ agreement.max_signers|add:"-1"|add:agreement.signature_count|mul:"-1" }} firma(s) para completar el acuerdo
                                             {% endif %}
@@ -191,27 +192,27 @@
                             <!-- Acciones disponibles -->
                             <div class="col-lg-4">
                                 <div class="action-buttons">
-                                    <h5><i class="bi bi-gear"></i> ¿Qué puedes hacer ahora?</h5>
+                                    <h5><i class="bi bi-gear"></i> {% translate "¿Qué puedes hacer ahora?" %}</h5>
                                     
                                     <div class="d-grid gap-3">
                                         <!-- Descargar PDF -->
                                         <a href="{% url 'download_signed_agreement' agreement.public_token %}" 
                                            class="btn btn-success btn-lg" target="_blank">
                                             <i class="bi bi-download"></i> 
-                                            Descargar PDF Firmado
+                                            {% translate "Descargar PDF Firmado" %}
                                         </a>
 
                                         <!-- Compartir -->
                                         <button class="btn btn-info btn-lg" onclick="shareAgreement()">
                                             <i class="bi bi-share"></i> 
-                                            Compartir Acuerdo
+                                            {% translate "Compartir Acuerdo" %}
                                         </button>
 
                                         <!-- Ver detalles -->
                                         <a href="{% url 'public_agreement_sign' agreement.public_token %}" 
                                            class="btn btn-outline-primary">
                                             <i class="bi bi-eye"></i> 
-                                            Ver Acuerdo Completo
+                                            {% translate "Ver Acuerdo Completo" %}
                                         </a>
                                     </div>
 
@@ -220,33 +221,33 @@
                                     <!-- Información adicional -->
                                     <div class="alert alert-info">
                                         <i class="bi bi-info-circle"></i>
-                                        <strong>Información Importante:</strong>
+                                        <strong>{% translate "Información Importante:" %}</strong>
                                         <ul class="mb-0 mt-2">
-                                            <li>Tu firma es legalmente vinculante</li>
-                                            <li>Puedes descargar el PDF en cualquier momento</li>
-                                            <li>Se ha enviado una confirmación por email</li>
+                                            <li>{% translate "Tu firma es legalmente vinculante" %}</li>
+                                            <li>{% translate "Puedes descargar el PDF en cualquier momento" %}</li>
+                                            <li>{% translate "Se ha enviado una confirmación por email" %}</li>
                                             {% if agreement.requires_approval %}
-                                                <li>La firma requiere aprobación</li>
+                                                <li>{% translate "La firma requiere aprobación" %}</li>
                                             {% endif %}
                                         </ul>
                                     </div>
 
                                     <!-- Datos técnicos -->
                                     <div class="mt-4">
-                                        <h6><i class="bi bi-shield-lock"></i> Datos de Seguridad</h6>
+                                        <h6><i class="bi bi-shield-lock"></i> {% translate "Datos de Seguridad" %}</h6>
                                         <div class="small text-muted">
                                             <div class="mb-1">
-                                                <strong>IP:</strong> {{ signature.ip_address }}
+                                                <strong>{% translate "IP:" %}</strong> {{ signature.ip_address }}
                                             </div>
                                             <div class="mb-1">
-                                                <strong>Navegador:</strong> {{ signature.user_agent|truncatechars:50 }}
+                                                <strong>{% translate "Navegador:" %}</strong> {{ signature.user_agent|truncatechars:50 }}
                                             </div>
                                             <div class="mb-1">
-                                                <strong>Timestamp:</strong> {{ signature.signed_at|date:"c" }}
+                                                <strong>{% translate "Timestamp:" %}</strong> {{ signature.signed_at|date:"c" }}
                                             </div>
                                             {% if signature.geolocation %}
                                                 <div class="mb-1">
-                                                    <strong>Ubicación:</strong> {{ signature.geolocation }}
+                                                    <strong>{% translate "Ubicación:" %}</strong> {{ signature.geolocation }}
                                                 </div>
                                             {% endif %}
                                         </div>
@@ -260,10 +261,10 @@
                 <!-- Mensaje de confirmación por email -->
                 <div class="alert alert-success mt-4 text-center">
                     <i class="bi bi-envelope-check display-4"></i>
-                    <h5 class="mt-2">Confirmación Enviada</h5>
+                    <h5 class="mt-2">{% translate "Confirmación Enviada" %}</h5>
                     <p class="mb-0">
-                        Hemos enviado una confirmación a <strong>{{ signature.signer_email }}</strong> 
-                        con una copia del acuerdo firmado y el enlace de descarga.
+                        {% translate "Hemos enviado una confirmación a" %} <strong>{{ signature.signer_email }}</strong> 
+                        {% translate "con una copia del acuerdo firmado y el enlace de descarga." %}
                     </p>
                 </div>
 
@@ -271,7 +272,7 @@
                 <div class="text-center mt-4">
                     <a href="{% url 'public_agreement_sign' agreement.public_token %}" 
                        class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver al Acuerdo
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver al Acuerdo" %}
                     </a>
                 </div>
             </div>

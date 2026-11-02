@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -168,7 +169,7 @@
                 <div class="col-md-8">
                     <h1 class="mb-2">
                         <i class="fas fa-question-circle me-3"></i>
-                        Enviar Pregunta
+                        {% translate "Enviar Pregunta" %}
                     </h1>
                     <h2 class="h4 mb-0 opacity-75">{{ company.name }}</h2>
                     {% if company.description %}
@@ -189,7 +190,7 @@
         <div class="mb-3">
             <a href="{% url 'public_crm_questions' company.uuid %}" class="back-link">
                 <i class="fas fa-arrow-left me-2"></i>
-                Volver a todas las preguntas
+                {% translate "Volver a todas las preguntas" %}
             </a>
         </div>
 
@@ -208,20 +209,20 @@
         <div class="info-section">
             <h5 class="mb-3">
                 <i class="fas fa-info-circle me-2"></i>
-                ¿Cómo funciona?
+                {% translate "¿Cómo funciona?" %}
             </h5>
             <ul class="mb-0">
                 <li class="mb-2">
-                    <strong>Completa el formulario:</strong> Proporciona tu nombre, email y escribe tu pregunta de manera clara y detallada.
+                    <strong>{% translate "Completa el formulario:" %}</strong> {% translate "Proporciona tu nombre, email y escribe tu pregunta de manera clara y detallada." %}
                 </li>
                 <li class="mb-2">
-                    <strong>Recibe un número:</strong> Tu pregunta será asignada con un número único para seguimiento.
+                    <strong>{% translate "Recibe un número:" %}</strong> {% translate "Tu pregunta será asignada con un número único para seguimiento." %}
                 </li>
                 <li class="mb-2">
-                    <strong>Obtén respuesta:</strong> Nuestro equipo responderá tu pregunta y podrás verla en esta misma página.
+                    <strong>{% translate "Obtén respuesta:" %}</strong> {% translate "Nuestro equipo responderá tu pregunta y podrás verla en esta misma página." %}
                 </li>
                 <li>
-                    <strong>Consulta públicamente:</strong> Todas las preguntas y respuestas son visibles para ayudar a otros clientes.
+                    <strong>{% translate "Consulta públicamente:" %}</strong> {% translate "Todas las preguntas y respuestas son visibles para ayudar a otros clientes." %}
                 </li>
             </ul>
         </div>
@@ -233,10 +234,10 @@
                     <div class="card-header">
                         <h4 class="mb-0">
                             <i class="fas fa-edit me-2"></i>
-                            Nueva Pregunta
+                            {% translate "Nueva Pregunta" %}
                         </h4>
                         <p class="mb-0 mt-2 opacity-75">
-                            Completa todos los campos para enviar tu pregunta
+                            {% translate "Completa todos los campos para enviar tu pregunta" %}
                         </p>
                     </div>
                     <div class="card-body p-4">
@@ -292,7 +293,7 @@
                                 </label>
                                 {{ form.question }}
                                 <div class="character-count">
-                                    <span id="charCount">0</span> caracteres
+                                    <span id="charCount">0</span> {% translate "caracteres" %}
                                 </div>
                                 {% if form.question.help_text %}
                                     <div class="help-text">
@@ -311,11 +312,11 @@
                             <div class="d-flex justify-content-between flex-wrap gap-3">
                                 <a href="{% url 'public_crm_questions' company.uuid %}" class="btn btn-outline-secondary">
                                     <i class="fas fa-times me-2"></i>
-                                    Cancelar
+                                    {% translate "Cancelar" %}
                                 </a>
                                 <button type="submit" class="btn btn-primary animate-submit" id="submitBtn">
                                     <i class="fas fa-paper-plane me-2"></i>
-                                    Enviar Pregunta
+                                    {% translate "Enviar Pregunta" %}
                                 </button>
                             </div>
                         </form>
@@ -329,11 +330,11 @@
             <div class="col-12 text-center">
                 <p class="text-muted">
                     <i class="fas fa-shield-alt me-1"></i>
-                    Tu información estará segura y solo será utilizada para responder tu pregunta.
+                    {% translate "Tu información estará segura y solo será utilizada para responder tu pregunta." %}
                 </p>
                 <p class="text-muted">
                     <i class="fas fa-eye me-1"></i>
-                    Las preguntas y respuestas son públicas para beneficio de todos los clientes.
+                    {% translate "Las preguntas y respuestas son públicas para beneficio de todos los clientes." %}
                 </p>
             </div>
         </div>

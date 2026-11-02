@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -157,7 +158,7 @@
         <!-- Botón de volver -->
         <div class="mb-3">
             <button onclick="history.back()" class="btn btn-outline-light btn-sm" style="border-radius: 15px;">
-                <i class="bi bi-arrow-left"></i> Volver
+                <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
             </button>
         </div>
         
@@ -196,7 +197,7 @@
                                     {% if progress.remaining_days > 0 %}
                                         • {{ progress.remaining_days }} días restantes
                                     {% else %}
-                                        • ¡Meta alcanzada! 🎉
+                                        {% translate "• ¡Meta alcanzada! 🎉" %}
                                     {% endif %}
                                 {% endwith %}
                             </div>
@@ -206,7 +207,7 @@
                             <div>
                                 {% if cumplimiento.frequency_type == 'daily' %}
                                     <span class="frequency-badge">
-                                        <i class="bi bi-calendar-check"></i> Diario
+                                        <i class="bi bi-calendar-check"></i> {% translate "Diario" %}
                                     </span>
                                 {% else %}
                                     <span class="frequency-badge">
@@ -257,8 +258,8 @@
                     <div class="empty-icon">
                         <i class="bi bi-inbox"></i>
                     </div>
-                    <h5>No hay cumplimientos</h5>
-                    <p class="mb-0">Este usuario no tiene cumplimientos activos en este momento.</p>
+                    <h5>{% translate "No hay cumplimientos" %}</h5>
+                    <p class="mb-0">{% translate "Este usuario no tiene cumplimientos activos en este momento." %}</p>
                 </div>
             </div>
         {% endif %}
@@ -267,7 +268,7 @@
         <div class="text-center mt-4">
             <small class="text-white-50">
                 <i class="bi bi-info-circle"></i>
-                Selecciona un cumplimiento para ver tu progreso mensual
+                {% translate "Selecciona un cumplimiento para ver tu progreso mensual" %}
             </small>
         </div>
     </div>

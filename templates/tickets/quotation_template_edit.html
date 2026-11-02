@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -11,12 +12,12 @@
                         <i class="bi bi-pencil text-primary"></i>
                         {{ page_title }}
                     </h1>
-                    <p class="text-muted mb-0">Modifica la configuración de la plantilla pública</p>
+                    <p class="text-muted mb-0">{% translate "Modifica la configuración de la plantilla pública" %}</p>
                 </div>
                 <div>
                     <a href="{% url 'quotation_template_detail' template.id %}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left"></i>
-                        Volver a Detalles
+                        {% translate "Volver a Detalles" %}
                     </a>
                 </div>
             </div>
@@ -24,7 +25,7 @@
             <!-- Formulario -->
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Información de la Plantilla</h5>
+                    <h5 class="mb-0">{% translate "Información de la Plantilla" %}</h5>
                 </div>
                 <div class="card-body">
                     <form method="post">
@@ -33,18 +34,18 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="title" class="form-label">Título de la Plantilla <span class="text-danger">*</span></label>
+                                    <label for="title" class="form-label">{% translate "Título de la Plantilla" %} <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="title" name="title" 
                                            value="{{ template.title }}" required>
-                                    <div class="form-text">Este título será visible para ti en la administración</div>
+                                    <div class="form-text">{% translate "Este título será visible para ti en la administración" %}</div>
                                 </div>
                             </div>
                             
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="quotation_id" class="form-label">Cotización Base <span class="text-danger">*</span></label>
+                                    <label for="quotation_id" class="form-label">{% translate "Cotización Base" %} <span class="text-danger">*</span></label>
                                     <select class="form-select" id="quotation_id" name="quotation_id" required>
-                                        <option value="">Selecciona una cotización</option>
+                                        <option value="">{% translate "Selecciona una cotización" %}</option>
                                         {% for quotation in quotations %}
                                             <option value="{{ quotation.id }}" 
                                                     {% if quotation.id == template.template_quotation.id %}selected{% endif %}>
@@ -53,15 +54,15 @@
                                             </option>
                                         {% endfor %}
                                     </select>
-                                    <div class="form-text">Esta cotización se usará como modelo para generar nuevas cotizaciones</div>
+                                    <div class="form-text">{% translate "Esta cotización se usará como modelo para generar nuevas cotizaciones" %}</div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="description" class="form-label">Descripción</label>
+                            <label for="description" class="form-label">{% translate "Descripción" %}</label>
                             <textarea class="form-control" id="description" name="description" rows="3">{{ template.description }}</textarea>
-                            <div class="form-text">Descripción interna para identificar el propósito de esta plantilla</div>
+                            <div class="form-text">{% translate "Descripción interna para identificar el propósito de esta plantilla" %}</div>
                         </div>
 
                         <div class="mb-3">
@@ -69,20 +70,20 @@
                                 <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
                                        {% if template.is_active %}checked{% endif %}>
                                 <label class="form-check-label" for="is_active">
-                                    Plantilla activa
+                                    {% translate "Plantilla activa" %}
                                 </label>
-                                <div class="form-text">Solo las plantillas activas pueden recibir nuevas solicitudes</div>
+                                <div class="form-text">{% translate "Solo las plantillas activas pueden recibir nuevas solicitudes" %}</div>
                             </div>
                         </div>
 
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'quotation_template_detail' template.id %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-x"></i>
-                                Cancelar
+                                {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i>
-                                Guardar Cambios
+                                {% translate "Guardar Cambios" %}
                             </button>
                         </div>
                     </form>
@@ -94,7 +95,7 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="bi bi-bar-chart text-info"></i>
-                        Estadísticas Actuales
+                        {% translate "Estadísticas Actuales" %}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -102,19 +103,19 @@
                         <div class="col-md-3">
                             <div class="border-end">
                                 <h5 class="text-primary mb-0">{{ template.views_count }}</h5>
-                                <small class="text-muted">Visualizaciones</small>
+                                <small class="text-muted">{% translate "Visualizaciones" %}</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="border-end">
                                 <h5 class="text-success mb-0">{{ template.conversions_count }}</h5>
-                                <small class="text-muted">Conversiones</small>
+                                <small class="text-muted">{% translate "Conversiones" %}</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="border-end">
                                 <h5 class="text-info mb-0">{{ template.requests.count }}</h5>
-                                <small class="text-muted">Solicitudes</small>
+                                <small class="text-muted">{% translate "Solicitudes" %}</small>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -125,7 +126,7 @@
                                     0%
                                 {% endif %}
                             </h5>
-                            <small class="text-muted">Tasa Conversión</small>
+                            <small class="text-muted">{% translate "Tasa Conversión" %}</small>
                         </div>
                     </div>
                 </div>
@@ -136,7 +137,7 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="bi bi-link-45deg text-success"></i>
-                        Enlace Público
+                        {% translate "Enlace Público" %}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -146,15 +147,15 @@
                         <button class="btn btn-outline-secondary" type="button" 
                                 onclick="copyToClipboard('{{ request.build_absolute_uri }}{{ template.get_public_url }}')">
                             <i class="bi bi-clipboard"></i>
-                            Copiar
+                            {% translate "Copiar" %}
                         </button>
                         <a href="{{ template.get_public_url }}" target="_blank" class="btn btn-outline-primary">
                             <i class="bi bi-box-arrow-up-right"></i>
-                            Abrir
+                            {% translate "Abrir" %}
                         </a>
                     </div>
                     <small class="text-muted">
-                        Este enlace permite a los clientes generar cotizaciones automáticamente
+                        {% translate "Este enlace permite a los clientes generar cotizaciones automáticamente" %}
                     </small>
                 </div>
             </div>

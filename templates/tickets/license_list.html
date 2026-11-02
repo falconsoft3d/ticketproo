@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -31,11 +32,11 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2><i class="bi bi-key text-primary"></i> {{ title }}</h2>
-                    <p class="text-muted">Gestión y control de licencias de productos</p>
+                    <p class="text-muted">{% translate "Gestión y control de licencias de productos" %}</p>
                 </div>
                 <div>
                     <a href="{% url 'license_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Nueva Licencia
+                        <i class="bi bi-plus-circle"></i> {% translate "Nueva Licencia" %}
                     </a>
                 </div>
             </div>
@@ -46,7 +47,7 @@
                     <div class="card bg-primary text-white">
                         <div class="card-body text-center">
                             <h3>{{ total_licenses }}</h3>
-                            <small>Total de Licencias</small>
+                            <small>{% translate "Total de Licencias" %}</small>
                         </div>
                     </div>
                 </div>
@@ -54,7 +55,7 @@
                     <div class="card bg-success text-white">
                         <div class="card-body text-center">
                             <h3>{{ active_licenses }}</h3>
-                            <small>Licencias Activas</small>
+                            <small>{% translate "Licencias Activas" %}</small>
                         </div>
                     </div>
                 </div>
@@ -62,7 +63,7 @@
                     <div class="card bg-danger text-white">
                         <div class="card-body text-center">
                             <h3>{{ expired_licenses }}</h3>
-                            <small>Licencias Expiradas</small>
+                            <small>{% translate "Licencias Expiradas" %}</small>
                         </div>
                     </div>
                 </div>
@@ -73,9 +74,9 @@
                 <div class="card-body">
                     <form method="get" class="row g-3">
                         <div class="col-md-3">
-                            <label for="company" class="form-label">Empresa</label>
+                            <label for="company" class="form-label">{% translate "Empresa" %}</label>
                             <select class="form-select" name="company" id="company">
-                                <option value="">Todas las empresas</option>
+                                <option value="">{% translate "Todas las empresas" %}</option>
                                 {% for company in companies %}
                                     <option value="{{ company.pk }}" 
                                             {% if current_filters.company == company.pk|stringformat:"s" %}selected{% endif %}>
@@ -85,25 +86,25 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="status" class="form-label">Estado</label>
+                            <label for="status" class="form-label">{% translate "Estado" %}</label>
                             <select class="form-select" name="status" id="status">
-                                <option value="">Todos los estados</option>
-                                <option value="active" {% if current_filters.status == "active" %}selected{% endif %}>Activa</option>
-                                <option value="expired" {% if current_filters.status == "expired" %}selected{% endif %}>Expirada</option>
-                                <option value="suspended" {% if current_filters.status == "suspended" %}selected{% endif %}>Suspendida</option>
-                                <option value="revoked" {% if current_filters.status == "revoked" %}selected{% endif %}>Revocada</option>
+                                <option value="">{% translate "Todos los estados" %}</option>
+                                <option value="active" {% if current_filters.status == "active" %}selected{% endif %}>{% translate "Activa" %}</option>
+                                <option value="expired" {% if current_filters.status == "expired" %}selected{% endif %}>{% translate "Expirada" %}</option>
+                                <option value="suspended" {% if current_filters.status == "suspended" %}selected{% endif %}>{% translate "Suspendida" %}</option>
+                                <option value="revoked" {% if current_filters.status == "revoked" %}selected{% endif %}>{% translate "Revocada" %}</option>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label for="product" class="form-label">Producto</label>
+                            <label for="product" class="form-label">{% translate "Producto" %}</label>
                             <input type="text" class="form-control" name="product" id="product" 
-                                   value="{{ current_filters.product }}" placeholder="Buscar por producto...">
+                                   value="{{ current_filters.product }}" placeholder="{% translate 'Buscar por producto...' %}">
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">&nbsp;</label>
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-outline-primary">
-                                    <i class="bi bi-search"></i> Filtrar
+                                    <i class="bi bi-search"></i> {% translate "Filtrar" %}
                                 </button>
                             </div>
                         </div>
@@ -133,11 +134,11 @@
                                     
                                     <div class="row text-center mb-3">
                                         <div class="col-6">
-                                            <small class="text-muted d-block">Inicio</small>
+                                            <small class="text-muted d-block">{% translate "Inicio" %}</small>
                                             <strong>{{ license.start_date|date:"d/m/Y" }}</strong>
                                         </div>
                                         <div class="col-6">
-                                            <small class="text-muted d-block">Vencimiento</small>
+                                            <small class="text-muted d-block">{% translate "Vencimiento" %}</small>
                                             <strong>{{ license.end_date|date:"d/m/Y" }}</strong>
                                         </div>
                                     </div>
@@ -159,7 +160,7 @@
                                     {% elif license.is_expired %}
                                         <div class="text-center mb-3">
                                             <span class="badge bg-danger">
-                                                <i class="bi bi-x-circle"></i> Expirada
+                                                <i class="bi bi-x-circle"></i> {% translate "Expirada" %}
                                             </span>
                                         </div>
                                     {% endif %}
@@ -167,16 +168,16 @@
                                 <div class="card-footer">
                                     <div class="btn-group w-100" role="group">
                                         <a href="{% url 'license_detail' license.pk %}" class="btn btn-outline-primary btn-sm">
-                                            <i class="bi bi-eye"></i> Ver
+                                            <i class="bi bi-eye"></i> {% translate "Ver" %}
                                         </a>
                                         <a href="{% url 'license_qr' license.pk %}" class="btn btn-outline-info btn-sm">
                                             <i class="bi bi-qr-code"></i> QR
                                         </a>
                                         <a href="{% url 'license_edit' license.pk %}" class="btn btn-outline-secondary btn-sm">
-                                            <i class="bi bi-pencil"></i> Editar
+                                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                                         </a>
                                         <a href="{% url 'license_delete' license.pk %}" class="btn btn-outline-danger btn-sm">
-                                            <i class="bi bi-trash"></i> Eliminar
+                                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                                         </a>
                                     </div>
                                 </div>
@@ -187,16 +188,16 @@
             {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-key display-1 text-muted"></i>
-                    <h4 class="mt-3">No hay licencias</h4>
+                    <h4 class="mt-3">{% translate "No hay licencias" %}</h4>
                     <p class="text-muted">
                         {% if current_filters.company or current_filters.status or current_filters.product %}
-                            No se encontraron licencias con los filtros aplicados.
+                            {% translate "No se encontraron licencias con los filtros aplicados." %}
                         {% else %}
-                            Aún no se han creado licencias en el sistema.
+                            {% translate "Aún no se han creado licencias en el sistema." %}
                         {% endif %}
                     </p>
                     <a href="{% url 'license_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear Primera Licencia
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Primera Licencia" %}
                     </a>
                 </div>
             {% endif %}

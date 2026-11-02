@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
 
@@ -10,10 +11,10 @@
                 <h1 class="mb-2">
                     <i class="bi bi-calendar-x"></i> {{ page_title }}
                 </h1>
-                <p class="text-muted mb-0">Gestiona los tipos de ausencias disponibles para empleados</p>
+                <p class="text-muted mb-0">{% translate "Gestiona los tipos de ausencias disponibles para empleados" %}</p>
             </div>
             <a href="{% url 'absence_type_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus"></i> Nuevo Tipo de Ausencia
+                <i class="bi bi-plus"></i> {% translate "Nuevo Tipo de Ausencia" %}
             </a>
         </div>
     </div>
@@ -25,7 +26,7 @@
         <div class="card border-primary">
             <div class="card-body text-center">
                 <h3 class="text-primary mb-0">{{ total_types }}</h3>
-                <p class="text-muted mb-0">Total de Tipos</p>
+                <p class="text-muted mb-0">{% translate "Total de Tipos" %}</p>
             </div>
         </div>
     </div>
@@ -33,7 +34,7 @@
         <div class="card border-success">
             <div class="card-body text-center">
                 <h3 class="text-success mb-0">{{ active_types }}</h3>
-                <p class="text-muted mb-0">Tipos Activos</p>
+                <p class="text-muted mb-0">{% translate "Tipos Activos" %}</p>
             </div>
         </div>
     </div>
@@ -44,7 +45,7 @@
 <div class="card">
     <div class="card-header">
         <h5 class="mb-0">
-            <i class="bi bi-list"></i> Tipos de Ausencias Configurados
+            <i class="bi bi-list"></i> {% translate "Tipos de Ausencias Configurados" %}
         </h5>
     </div>
     <div class="card-body p-0">
@@ -52,13 +53,13 @@
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Tipo</th>
-                        <th>Descripción</th>
-                        <th>Configuración</th>
-                        <th>Límite Anual</th>
-                        <th>Uso</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
+                        <th>{% translate "Tipo" %}</th>
+                        <th>{% translate "Descripción" %}</th>
+                        <th>{% translate "Configuración" %}</th>
+                        <th>{% translate "Límite Anual" %}</th>
+                        <th>{% translate "Uso" %}</th>
+                        <th>{% translate "Estado" %}</th>
+                        <th>{% translate "Acciones" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -74,24 +75,24 @@
                             {% if absence_type.description %}
                                 {{ absence_type.description|truncatechars:60 }}
                             {% else %}
-                                <span class="text-muted">Sin descripción</span>
+                                <span class="text-muted">{% translate "Sin descripción" %}</span>
                             {% endif %}
                         </td>
                         <td>
                             <div class="d-flex gap-1">
                                 {% if absence_type.is_paid %}
-                                    <span class="badge bg-success" title="Con goce de sueldo">
-                                        <i class="bi bi-currency-dollar"></i> Pagado
+                                    <span class="badge bg-success" title="{% translate 'Con goce de sueldo' %}">
+                                        <i class="bi bi-currency-dollar"></i> {% translate "Pagado" %}
                                     </span>
                                 {% else %}
-                                    <span class="badge bg-warning" title="Sin goce de sueldo">
-                                        <i class="bi bi-currency-dollar"></i> No Pagado
+                                    <span class="badge bg-warning" title="{% translate 'Sin goce de sueldo' %}">
+                                        <i class="bi bi-currency-dollar"></i> {% translate "No Pagado" %}
                                     </span>
                                 {% endif %}
                                 
                                 {% if absence_type.requires_documentation %}
-                                    <span class="badge bg-info" title="Requiere documentación">
-                                        <i class="bi bi-file-earmark-text"></i> Doc
+                                    <span class="badge bg-info" title="{% translate 'Requiere documentación' %}">
+                                        <i class="bi bi-file-earmark-text"></i> {% translate "Doc" %}
                                     </span>
                                 {% endif %}
                             </div>
@@ -102,7 +103,7 @@
                                     {{ absence_type.max_days_per_year }} días/año
                                 </span>
                             {% else %}
-                                <span class="text-muted">Sin límite</span>
+                                <span class="text-muted">{% translate "Sin límite" %}</span>
                             {% endif %}
                         </td>
                         <td>
@@ -113,11 +114,11 @@
                         <td>
                             {% if absence_type.is_active %}
                                 <span class="badge bg-success">
-                                    <i class="bi bi-check-circle"></i> Activo
+                                    <i class="bi bi-check-circle"></i> {% translate "Activo" %}
                                 </span>
                             {% else %}
                                 <span class="badge bg-secondary">
-                                    <i class="bi bi-pause-circle"></i> Inactivo
+                                    <i class="bi bi-pause-circle"></i> {% translate "Inactivo" %}
                                 </span>
                             {% endif %}
                         </td>
@@ -125,7 +126,7 @@
                             <div class="btn-group btn-group-sm" role="group">
                                 <a href="{% url 'absence_type_edit' absence_type.pk %}" 
                                    class="btn btn-outline-primary" 
-                                   title="Editar">
+                                   title="{% translate 'Editar' %}">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 
@@ -139,13 +140,13 @@
                                 {% if absence_type.get_usage_count == 0 %}
                                 <a href="{% url 'absence_type_delete' absence_type.pk %}" 
                                    class="btn btn-outline-danger" 
-                                   title="Eliminar">
+                                   title="{% translate 'Eliminar' %}">
                                     <i class="bi bi-trash"></i>
                                 </a>
                                 {% else %}
                                 <button class="btn btn-outline-secondary" 
                                         disabled 
-                                        title="No se puede eliminar porque tiene ausencias asociadas">
+                                        title="{% translate 'No se puede eliminar porque tiene ausencias asociadas' %}">
                                     <i class="bi bi-trash"></i>
                                 </button>
                                 {% endif %}
@@ -162,10 +163,10 @@
 <div class="card">
     <div class="card-body text-center py-5">
         <i class="bi bi-calendar-x display-4 text-muted mb-3"></i>
-        <h5 class="text-muted">No hay tipos de ausencias configurados</h5>
-        <p class="text-muted">Crea el primer tipo de ausencia para comenzar a gestionar las ausencias de empleados.</p>
+        <h5 class="text-muted">{% translate "No hay tipos de ausencias configurados" %}</h5>
+        <p class="text-muted">{% translate "Crea el primer tipo de ausencia para comenzar a gestionar las ausencias de empleados." %}</p>
         <a href="{% url 'absence_type_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus"></i> Crear Primer Tipo de Ausencia
+            <i class="bi bi-plus"></i> {% translate "Crear Primer Tipo de Ausencia" %}
         </a>
     </div>
 </div>
@@ -176,16 +177,16 @@
     <div class="col">
         <div class="alert alert-info">
             <h6 class="alert-heading">
-                <i class="bi bi-info-circle"></i> Información sobre Tipos de Ausencias
+                <i class="bi bi-info-circle"></i> {% translate "Información sobre Tipos de Ausencias" %}
             </h6>
-            <p class="mb-2"><strong>Configuración:</strong></p>
+            <p class="mb-2"><strong>{% translate "Configuración:" %}</strong></p>
             <ul class="mb-2">
-                <li><strong>Pagado:</strong> Indica si la ausencia es con o sin goce de sueldo</li>
-                <li><strong>Doc:</strong> Requiere documentación de respaldo (certificado médico, etc.)</li>
-                <li><strong>Límite Anual:</strong> Máximo de días permitidos por año (opcional)</li>
-                <li><strong>Color:</strong> Se usa para mostrar las ausencias en calendarios y reportes</li>
+                <li><strong>{% translate "Pagado:" %}</strong> {% translate "Indica si la ausencia es con o sin goce de sueldo" %}</li>
+                <li><strong>{% translate "Doc:" %}</strong> {% translate "Requiere documentación de respaldo (certificado médico, etc.)" %}</li>
+                <li><strong>{% translate "Límite Anual:" %}</strong> {% translate "Máximo de días permitidos por año (opcional)" %}</li>
+                <li><strong>{% translate "Color:" %}</strong> {% translate "Se usa para mostrar las ausencias en calendarios y reportes" %}</li>
             </ul>
-            <p class="mb-0"><strong>Nota:</strong> Solo se pueden eliminar tipos de ausencias que no tengan ausencias asociadas.</p>
+            <p class="mb-0"><strong>{% translate "Nota:" %}</strong> {% translate "Solo se pueden eliminar tipos de ausencias que no tengan ausencias asociadas." %}</p>
         </div>
     </div>
 </div>

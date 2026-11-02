@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - Vista Pública{% endblock %}
@@ -8,7 +9,7 @@
     <!-- Header público -->
     <div class="row mb-4">
         <div class="col-md-12 text-center">
-            <div class="badge bg-success mb-2">Vista Pública</div>
+            <div class="badge bg-success mb-2">{% translate "Vista Pública" %}</div>
             <h2>
                 <i class="bi bi-file-earmark-ruled me-2"></i>{{ document.sequence }}
             </h2>
@@ -33,30 +34,30 @@
             {% if document.is_document_accepted %}
             <div class="alert alert-success">
                 <h5 class="alert-heading">
-                    <i class="bi bi-check-circle-fill me-2"></i>Documento Aceptado
+                    <i class="bi bi-check-circle-fill me-2"></i>{% translate "Documento Aceptado" %}
                 </h5>
                 <hr>
-                <p class="mb-1"><strong>Revisado por:</strong> {{ document.document_reviewed_by_name }}</p>
-                <p class="mb-1"><strong>Email:</strong> {{ document.document_reviewed_by_email }}</p>
-                <p class="mb-1"><strong>Fecha:</strong> {{ document.document_reviewed_at|date:"d/m/Y H:i" }}</p>
+                <p class="mb-1"><strong>{% translate "Revisado por:" %}</strong> {{ document.document_reviewed_by_name }}</p>
+                <p class="mb-1"><strong>{% translate "Email:" %}</strong> {{ document.document_reviewed_by_email }}</p>
+                <p class="mb-1"><strong>{% translate "Fecha:" %}</strong> {{ document.document_reviewed_at|date:"d/m/Y H:i" }}</p>
                 {% if document.document_review_comments %}
                 <hr>
-                <p class="mb-0"><strong>Comentarios:</strong></p>
+                <p class="mb-0"><strong>{% translate "Comentarios:" %}</strong></p>
                 <p class="mb-0" style="white-space: pre-wrap;">{{ document.document_review_comments }}</p>
                 {% endif %}
             </div>
             {% elif document.is_document_rejected %}
             <div class="alert alert-danger">
                 <h5 class="alert-heading">
-                    <i class="bi bi-x-circle-fill me-2"></i>Documento Rechazado
+                    <i class="bi bi-x-circle-fill me-2"></i>{% translate "Documento Rechazado" %}
                 </h5>
                 <hr>
-                <p class="mb-1"><strong>Revisado por:</strong> {{ document.document_reviewed_by_name }}</p>
-                <p class="mb-1"><strong>Email:</strong> {{ document.document_reviewed_by_email }}</p>
-                <p class="mb-1"><strong>Fecha:</strong> {{ document.document_reviewed_at|date:"d/m/Y H:i" }}</p>
+                <p class="mb-1"><strong>{% translate "Revisado por:" %}</strong> {{ document.document_reviewed_by_name }}</p>
+                <p class="mb-1"><strong>{% translate "Email:" %}</strong> {{ document.document_reviewed_by_email }}</p>
+                <p class="mb-1"><strong>{% translate "Fecha:" %}</strong> {{ document.document_reviewed_at|date:"d/m/Y H:i" }}</p>
                 {% if document.document_review_comments %}
                 <hr>
-                <p class="mb-0"><strong>Comentarios:</strong></p>
+                <p class="mb-0"><strong>{% translate "Comentarios:" %}</strong></p>
                 <p class="mb-0" style="white-space: pre-wrap;">{{ document.document_review_comments }}</p>
                 {% endif %}
             </div>
@@ -71,7 +72,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-card-text me-2"></i>Descripción General
+                        <i class="bi bi-card-text me-2"></i>{% translate "Descripción General" %}
                     </h5>
                     <button type="button" 
                             class="btn btn-sm btn-outline-primary"
@@ -79,7 +80,7 @@
                             data-bs-target="#editDescription"
                             aria-expanded="false"
                             aria-controls="editDescription">
-                        <i class="bi bi-pencil me-1"></i>Editar
+                        <i class="bi bi-pencil me-1"></i>{% translate "Editar" %}
                     </button>
                 </div>
                 <div class="card-body">
@@ -87,7 +88,7 @@
                         <p class="mb-3" style="white-space: pre-wrap;">{{ document.description }}</p>
                     {% else %}
                         <p class="text-muted mb-3">
-                            <i>No se ha definido una descripción general para este documento.</i>
+                            <i>{% translate "No se ha definido una descripción general para este documento." %}</i>
                         </p>
                     {% endif %}
 
@@ -96,20 +97,20 @@
                         <form method="post" class="border p-3 rounded bg-light">
                             {% csrf_token %}
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Editar Descripción General</label>
+                                <label class="form-label fw-bold">{% translate "Editar Descripción General" %}</label>
                                 <textarea name="description" 
                                           class="form-control" 
                                           rows="5" 
                                           placeholder="Ingrese una descripción general del proyecto o alcance...">{{ document.description }}</textarea>
                             </div>
                             <button type="submit" name="edit_description" class="btn btn-primary me-2">
-                                <i class="bi bi-check-lg me-1"></i>Guardar
+                                <i class="bi bi-check-lg me-1"></i>{% translate "Guardar" %}
                             </button>
                             <button type="button" 
                                     class="btn btn-secondary"
                                     data-bs-toggle="collapse"
                                     data-bs-target="#editDescription">
-                                <i class="bi bi-x-lg me-1"></i>Cancelar
+                                <i class="bi bi-x-lg me-1"></i>{% translate "Cancelar" %}
                             </button>
                         </form>
                     </div>
@@ -123,7 +124,7 @@
         <div class="col-md-10 offset-md-1">
             <div class="card">
                 <div class="card-body">
-                    <h6 class="text-center mb-3">Progreso de Aprobación</h6>
+                    <h6 class="text-center mb-3">{% translate "Progreso de Aprobación" %}</h6>
                     <div class="progress" style="height: 30px;">
                         <div class="progress-bar 
                             {% if document.get_approval_percentage >= 80 %}bg-success
@@ -159,10 +160,10 @@
                     </h5>
                     {% if req.is_approved %}
                         <span class="badge bg-success">
-                            <i class="bi bi-check-circle me-1"></i>Aprobado
+                            <i class="bi bi-check-circle me-1"></i>{% translate "Aprobado" %}
                         </span>
                     {% else %}
-                        <span class="badge bg-warning text-dark">Pendiente de Aprobación</span>
+                        <span class="badge bg-warning text-dark">{% translate "Pendiente de Aprobación" %}</span>
                     {% endif %}
                 </div>
                 <div class="card-body">
@@ -178,12 +179,12 @@
                     {% if req.is_approved %}
                     <div class="alert alert-success">
                         <h6 class="alert-heading">
-                            <i class="bi bi-check-circle me-1"></i>Aprobado
+                            <i class="bi bi-check-circle me-1"></i>{% translate "Aprobado" %}
                         </h6>
                         <p class="mb-1">
-                            <strong>Por:</strong> {{ req.approved_by_name }}<br>
-                            <strong>Email:</strong> {{ req.approved_by_email }}<br>
-                            <strong>Fecha:</strong> {{ req.approved_at|date:"d/m/Y H:i" }}
+                            <strong>{% translate "Por:" %}</strong> {{ req.approved_by_name }}<br>
+                            <strong>{% translate "Email:" %}</strong> {{ req.approved_by_email }}<br>
+                            <strong>{% translate "Fecha:" %}</strong> {{ req.approved_at|date:"d/m/Y H:i" }}
                         </p>
                     </div>
                     {% else %}
@@ -193,19 +194,19 @@
                             {% csrf_token %}
                             <input type="hidden" name="requirement_id" value="{{ req.id }}">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Título</label>
-                                <input type="text" name="title" class="form-control" placeholder="Título del requerimiento" value="{{ req.title }}">
+                                <label class="form-label fw-bold">{% translate "Título" %}</label>
+                                <input type="text" name="title" class="form-control" placeholder="{% translate 'Título del requerimiento' %}" value="{{ req.title }}">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Descripción</label>
+                                <label class="form-label fw-bold">{% translate "Descripción" %}</label>
                                 <textarea name="description" class="form-control" rows="4" required>{{ req.description }}</textarea>
                             </div>
                             <div class="d-flex gap-2">
                                 <button type="submit" name="edit_requirement" class="btn btn-primary">
-                                    <i class="bi bi-save me-1"></i>Guardar Cambios
+                                    <i class="bi bi-save me-1"></i>{% translate "Guardar Cambios" %}
                                 </button>
                                 <button type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#editReq{{ req.id }}">
-                                    Cancelar
+                                    {% translate "Cancelar" %}
                                 </button>
                             </div>
                         </form>
@@ -216,7 +217,7 @@
                         <form method="post" class="border p-3 rounded bg-light">
                             {% csrf_token %}
                             <input type="hidden" name="requirement_id" value="{{ req.id }}">
-                            <h6 class="mb-3">Aprobar Requerimiento</h6>
+                            <h6 class="mb-3">{% translate "Aprobar Requerimiento" %}</h6>
                             <div class="mb-3">
                                 {{ approval_form.approver_name }}
                             </div>
@@ -225,10 +226,10 @@
                             </div>
                             <div class="d-flex gap-2">
                                 <button type="submit" name="approve_requirement" class="btn btn-success">
-                                    <i class="bi bi-check-circle me-1"></i>Aprobar
+                                    <i class="bi bi-check-circle me-1"></i>{% translate "Aprobar" %}
                                 </button>
                                 <button type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#approveReq{{ req.id }}">
-                                    Cancelar
+                                    {% translate "Cancelar" %}
                                 </button>
                             </div>
                         </form>
@@ -237,10 +238,10 @@
                     <!-- Botones de acción -->
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#editReq{{ req.id }}">
-                            <i class="bi bi-pencil me-1"></i>Editar
+                            <i class="bi bi-pencil me-1"></i>{% translate "Editar" %}
                         </button>
                         <button type="button" class="btn btn-success" data-bs-toggle="collapse" data-bs-target="#approveReq{{ req.id }}">
-                            <i class="bi bi-check-circle me-1"></i>Aprobar
+                            <i class="bi bi-check-circle me-1"></i>{% translate "Aprobar" %}
                         </button>
                         <button type="button" class="btn btn-info" data-bs-toggle="collapse" data-bs-target="#commentsReq{{ req.id }}">
                             <i class="bi bi-chat-left-text me-1"></i>Comentarios ({{ req.comments.count }})
@@ -252,7 +253,7 @@
                     <div class="collapse mt-3" id="commentsReq{{ req.id }}">
                         <div class="border rounded p-3 bg-light">
                             <h6 class="mb-3">
-                                <i class="bi bi-chat-left-text me-2"></i>Comentarios
+                                <i class="bi bi-chat-left-text me-2"></i>{% translate "Comentarios" %}
                             </h6>
 
                             <!-- Comentarios existentes -->
@@ -275,7 +276,7 @@
                             </div>
                             {% else %}
                             <p class="text-muted mb-3">
-                                <i>No hay comentarios aún. Sé el primero en comentar.</i>
+                                <i>{% translate "No hay comentarios aún. Sé el primero en comentar." %}</i>
                             </p>
                             {% endif %}
 
@@ -284,7 +285,7 @@
                                 <form method="post" class="border p-3 rounded bg-white">
                                     {% csrf_token %}
                                     <input type="hidden" name="requirement_id" value="{{ req.id }}">
-                                    <h6 class="mb-3">Agregar Comentario</h6>
+                                    <h6 class="mb-3">{% translate "Agregar Comentario" %}</h6>
                                     <div class="mb-3">
                                         <label class="form-label fw-bold">{{ comment_form.author_name.label }}</label>
                                         {{ comment_form.author_name }}
@@ -299,10 +300,10 @@
                                     </div>
                                     <div class="d-flex gap-2">
                                         <button type="submit" name="add_comment" class="btn btn-primary">
-                                            <i class="bi bi-send me-1"></i>Enviar Comentario
+                                            <i class="bi bi-send me-1"></i>{% translate "Enviar Comentario" %}
                                         </button>
                                         <button type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#addCommentReq{{ req.id }}">
-                                            Cancelar
+                                            {% translate "Cancelar" %}
                                         </button>
                                     </div>
                                 </form>
@@ -310,7 +311,7 @@
 
                             <!-- Botón para mostrar formulario -->
                             <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#addCommentReq{{ req.id }}">
-                                <i class="bi bi-plus-circle me-1"></i>Agregar Comentario
+                                <i class="bi bi-plus-circle me-1"></i>{% translate "Agregar Comentario" %}
                             </button>
                         </div>
                     </div>
@@ -321,8 +322,8 @@
             <div class="card">
                 <div class="card-body text-center py-5">
                     <i class="bi bi-list-ol text-muted" style="font-size: 4rem;"></i>
-                    <h4 class="mt-3 text-muted">No hay requerimientos aún</h4>
-                    <p class="text-muted">Este documento aún no tiene requerimientos definidos</p>
+                    <h4 class="mt-3 text-muted">{% translate "No hay requerimientos aún" %}</h4>
+                    <p class="text-muted">{% translate "Este documento aún no tiene requerimientos definidos" %}</p>
                 </div>
             </div>
             {% endif %}
@@ -336,13 +337,13 @@
             <div class="card border-primary">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-clipboard-check me-2"></i>Revisión del Documento Completo
+                        <i class="bi bi-clipboard-check me-2"></i>{% translate "Revisión del Documento Completo" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <p class="text-muted mb-4">
                         <i class="bi bi-info-circle me-1"></i>
-                        Una vez que hayas revisado todos los requerimientos, puedes aceptar o rechazar el documento completo.
+                        {% translate "Una vez que hayas revisado todos los requerimientos, puedes aceptar o rechazar el documento completo." %}
                     </p>
 
                     <!-- Formulario de Aceptación -->
@@ -350,7 +351,7 @@
                         <form method="post" class="border border-success p-4 rounded bg-light">
                             {% csrf_token %}
                             <h6 class="text-success mb-3">
-                                <i class="bi bi-check-circle-fill me-2"></i>Aceptar Documento
+                                <i class="bi bi-check-circle-fill me-2"></i>{% translate "Aceptar Documento" %}
                             </h6>
                             <div class="mb-3">
                                 <label class="form-label fw-bold">{{ review_form.reviewer_name.label }}</label>
@@ -366,10 +367,10 @@
                             </div>
                             <div class="d-flex gap-2">
                                 <button type="submit" name="accept_document" class="btn btn-success">
-                                    <i class="bi bi-check-circle-fill me-1"></i>Confirmar Aceptación
+                                    <i class="bi bi-check-circle-fill me-1"></i>{% translate "Confirmar Aceptación" %}
                                 </button>
                                 <button type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#acceptDocumentForm">
-                                    Cancelar
+                                    {% translate "Cancelar" %}
                                 </button>
                             </div>
                         </form>
@@ -380,7 +381,7 @@
                         <form method="post" class="border border-danger p-4 rounded bg-light">
                             {% csrf_token %}
                             <h6 class="text-danger mb-3">
-                                <i class="bi bi-x-circle-fill me-2"></i>Rechazar Documento
+                                <i class="bi bi-x-circle-fill me-2"></i>{% translate "Rechazar Documento" %}
                             </h6>
                             <div class="mb-3">
                                 <label class="form-label fw-bold">{{ review_form.reviewer_name.label }}</label>
@@ -394,15 +395,15 @@
                                 <label class="form-label fw-bold">{{ review_form.comments.label }}</label>
                                 {{ review_form.comments }}
                                 <small class="form-text text-muted">
-                                    Por favor, explica los motivos del rechazo para que puedan realizarse correcciones.
+                                    {% translate "Por favor, explica los motivos del rechazo para que puedan realizarse correcciones." %}
                                 </small>
                             </div>
                             <div class="d-flex gap-2">
                                 <button type="submit" name="reject_document" class="btn btn-danger">
-                                    <i class="bi bi-x-circle-fill me-1"></i>Confirmar Rechazo
+                                    <i class="bi bi-x-circle-fill me-1"></i>{% translate "Confirmar Rechazo" %}
                                 </button>
                                 <button type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#rejectDocumentForm">
-                                    Cancelar
+                                    {% translate "Cancelar" %}
                                 </button>
                             </div>
                         </form>
@@ -411,10 +412,10 @@
                     <!-- Botones principales -->
                     <div class="d-flex gap-3 justify-content-center">
                         <button type="button" class="btn btn-success btn-lg" data-bs-toggle="collapse" data-bs-target="#acceptDocumentForm">
-                            <i class="bi bi-check-circle-fill me-2"></i>Aceptar Documento
+                            <i class="bi bi-check-circle-fill me-2"></i>{% translate "Aceptar Documento" %}
                         </button>
                         <button type="button" class="btn btn-danger btn-lg" data-bs-toggle="collapse" data-bs-target="#rejectDocumentForm">
-                            <i class="bi bi-x-circle-fill me-2"></i>Rechazar Documento
+                            <i class="bi bi-x-circle-fill me-2"></i>{% translate "Rechazar Documento" %}
                         </button>
                     </div>
                 </div>
@@ -429,8 +430,8 @@
             <div class="card">
                 <div class="card-body text-center">
                     <small class="text-muted">
-                        Esta es una vista pública del Documento de Requerimientos Funcionales.<br>
-                        Puede editar y aprobar cada requerimiento individualmente.<br>
+                        {% translate "Esta es una vista pública del Documento de Requerimientos Funcionales." %}<br>
+                        {% translate "Puede editar y aprobar cada requerimiento individualmente." %}<br>
                         Última actualización: {{ document.updated_at|date:"d/m/Y H:i" }}
                     </small>
                 </div>

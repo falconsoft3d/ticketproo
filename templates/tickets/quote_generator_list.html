@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
 
@@ -11,10 +12,10 @@
                     <i class="bi bi-chat-quote"></i> {{ page_title }}
                 </h1>
                 <a href="{% url 'quote_generator_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Nuevo Generador
+                    <i class="bi bi-plus-circle"></i> {% translate "Nuevo Generador" %}
                 </a>
             </div>
-            <p class="text-muted mt-2">Genera citas temáticas personalizadas con inteligencia artificial</p>
+            <p class="text-muted mt-2">{% translate "Genera citas temáticas personalizadas con inteligencia artificial" %}</p>
         </div>
     </div>
 
@@ -26,9 +27,9 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">{{ generator.title|truncatechars:30 }}</h5>
                     {% if generator.is_active %}
-                        <span class="badge bg-success">Activo</span>
+                        <span class="badge bg-success">{% translate "Activo" %}</span>
                     {% else %}
-                        <span class="badge bg-secondary">Inactivo</span>
+                        <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                     {% endif %}
                 </div>
                 <div class="card-body">
@@ -59,14 +60,14 @@
                 <div class="card-footer">
                     <div class="btn-group w-100" role="group">
                         <a href="{% url 'quote_generator_detail' generator.pk %}" class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-eye"></i> Ver
+                            <i class="bi bi-eye"></i> {% translate "Ver" %}
                         </a>
                         {% if generator.created_by == user or user.is_superuser %}
                         <form method="post" action="{% url 'quote_generator_regenerate' generator.pk %}" style="display: inline;">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-outline-warning btn-sm" 
                                     onclick="return confirm('¿Regenerar todas las citas? Esta acción no se puede deshacer.')">
-                                <i class="bi bi-arrow-clockwise"></i> Regenerar
+                                <i class="bi bi-arrow-clockwise"></i> {% translate "Regenerar" %}
                             </button>
                         </form>
                         {% endif %}
@@ -82,10 +83,10 @@
             <div class="card">
                 <div class="card-body text-center py-5">
                     <i class="bi bi-chat-quote display-4 text-muted mb-3"></i>
-                    <h5 class="text-muted">No hay generadores de citas aún</h5>
-                    <p class="text-muted">Crea tu primer generador para comenzar a generar citas personalizadas con IA.</p>
+                    <h5 class="text-muted">{% translate "No hay generadores de citas aún" %}</h5>
+                    <p class="text-muted">{% translate "Crea tu primer generador para comenzar a generar citas personalizadas con IA." %}</p>
                     <a href="{% url 'quote_generator_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear Primer Generador
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Primer Generador" %}
                     </a>
                 </div>
             </div>

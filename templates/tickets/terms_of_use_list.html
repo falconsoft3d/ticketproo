@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
 
@@ -13,11 +14,11 @@
                         <i class="bi bi-file-text text-primary"></i>
                         {{ page_title }}
                     </h2>
-                    <p class="text-muted mb-0">Gestiona las condiciones de uso de la aplicación</p>
+                    <p class="text-muted mb-0">{% translate "Gestiona las condiciones de uso de la aplicación" %}</p>
                 </div>
                 <div>
                     <a href="{% url 'terms_of_use_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Nueva Condición de Uso
+                        <i class="bi bi-plus-circle"></i> {% translate "Nueva Condición de Uso" %}
                     </a>
                 </div>
             </div>
@@ -32,9 +33,9 @@
                                     <div class="d-flex justify-content-between align-items-start mb-3">
                                         <h5 class="card-title mb-0">{{ term.title }}</h5>
                                         {% if term.is_active %}
-                                            <span class="badge bg-success">Activo</span>
+                                            <span class="badge bg-success">{% translate "Activo" %}</span>
                                         {% else %}
-                                            <span class="badge bg-secondary">Inactivo</span>
+                                            <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                                         {% endif %}
                                     </div>
                                     
@@ -63,12 +64,12 @@
                                         <div class="btn-group btn-group-sm">
                                             <a href="{% url 'terms_of_use_detail' term.pk %}" 
                                                class="btn btn-outline-primary" 
-                                               title="Ver detalles">
+                                               title="{% translate 'Ver detalles' %}">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             <a href="{% url 'terms_of_use_edit' term.pk %}" 
                                                class="btn btn-outline-secondary" 
-                                               title="Editar">
+                                               title="{% translate 'Editar' %}">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
                                             <form method="post" 
@@ -84,7 +85,7 @@
                                             </form>
                                             <a href="{% url 'terms_of_use_delete' term.pk %}" 
                                                class="btn btn-outline-danger" 
-                                               title="Eliminar">
+                                               title="{% translate 'Eliminar' %}">
                                                 <i class="bi bi-trash"></i>
                                             </a>
                                         </div>
@@ -97,8 +98,8 @@
             {% else %}
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle"></i>
-                    No hay condiciones de uso registradas. 
-                    <a href="{% url 'terms_of_use_create' %}" class="alert-link">Crear la primera condición de uso</a>
+                    {% translate "No hay condiciones de uso registradas." %} 
+                    <a href="{% url 'terms_of_use_create' %}" class="alert-link">{% translate "Crear la primera condición de uso" %}</a>
                 </div>
             {% endif %}
         </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -16,24 +17,24 @@
         </div>
         <div class="dropdown">
             <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                <i class="bi bi-gear"></i> Acciones
+                <i class="bi bi-gear"></i> {% translate "Acciones" %}
             </button>
             <ul class="dropdown-menu">
                 <li>
                     <a class="dropdown-item" href="{% url 'monthly_cumplimiento_edit' cumplimiento.pk %}">
-                        <i class="bi bi-pencil"></i> Editar Meta
+                        <i class="bi bi-pencil"></i> {% translate "Editar Meta" %}
                     </a>
                 </li>
                 <li>
                     <a class="dropdown-item" href="{% url 'monthly_cumplimiento_toggle' cumplimiento.pk %}">
                         <i class="bi bi-toggle-{% if cumplimiento.is_active %}on{% else %}off{% endif %}"></i> 
-                        {% if cumplimiento.is_active %}Desactivar{% else %}Activar{% endif %}
+                        {% if cumplimiento.is_active %}{% translate "Desactivar" %}{% else %}{% translate "Activar" %}{% endif %}
                     </a>
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                     <a class="dropdown-item text-danger" href="{% url 'monthly_cumplimiento_delete' cumplimiento.pk %}">
-                        <i class="bi bi-trash"></i> Eliminar Meta
+                        <i class="bi bi-trash"></i> {% translate "Eliminar Meta" %}
                     </a>
                 </li>
             </ul>
@@ -46,25 +47,25 @@
             <div class="card h-100">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-info-circle"></i> Información de la Meta
+                        <i class="bi bi-info-circle"></i> {% translate "Información de la Meta" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <strong><i class="bi bi-bullseye text-primary"></i> Nombre:</strong>
+                        <strong><i class="bi bi-bullseye text-primary"></i> {% translate "Nombre:" %}</strong>
                         <p class="mb-0">{{ cumplimiento.name }}</p>
                     </div>
                     
                     <div class="mb-3">
-                        <strong><i class="bi bi-person text-success"></i> Usuario:</strong>
+                        <strong><i class="bi bi-person text-success"></i> {% translate "Usuario:" %}</strong>
                         <p class="mb-0">{{ cumplimiento.user }}</p>
                     </div>
                     
                     <div class="mb-3">
-                        <strong><i class="bi bi-clock text-info"></i> Frecuencia:</strong>
+                        <strong><i class="bi bi-clock text-info"></i> {% translate "Frecuencia:" %}</strong>
                         <p class="mb-0">
                             {% if cumplimiento.frequency_type == 'daily' %}
-                                <span class="badge bg-info">Todos los días</span>
+                                <span class="badge bg-info">{% translate "Todos los días" %}</span>
                             {% else %}
                                 <span class="badge bg-warning">{{ cumplimiento.target_days }} días al mes</span>
                             {% endif %}
@@ -73,25 +74,25 @@
                     
                     <div class="mb-3">
                         <strong><i class="bi bi-toggle-{% if cumplimiento.is_active %}on{% else %}off{% endif %} 
-                                  {% if cumplimiento.is_active %}text-success{% else %}text-secondary{% endif %}"></i> Estado:</strong>
+                                  {% if cumplimiento.is_active %}text-success{% else %}text-secondary{% endif %}"></i> {% translate "Estado:" %}</strong>
                         <p class="mb-0">
                             {% if cumplimiento.is_active %}
-                                <span class="badge bg-success">Activo</span>
+                                <span class="badge bg-success">{% translate "Activo" %}</span>
                             {% else %}
-                                <span class="badge bg-secondary">Inactivo</span>
+                                <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                             {% endif %}
                         </p>
                     </div>
                     
                     {% if cumplimiento.description %}
                     <div class="mb-3">
-                        <strong><i class="bi bi-card-text text-muted"></i> Descripción:</strong>
+                        <strong><i class="bi bi-card-text text-muted"></i> {% translate "Descripción:" %}</strong>
                         <p class="mb-0">{{ cumplimiento.description }}</p>
                     </div>
                     {% endif %}
                     
                     <div class="mb-3">
-                        <strong><i class="bi bi-calendar text-muted"></i> Creado:</strong>
+                        <strong><i class="bi bi-calendar text-muted"></i> {% translate "Creado:" %}</strong>
                         <p class="mb-0">{{ cumplimiento.created_at|date:"d/m/Y H:i" }}</p>
                         <small class="text-muted">por {{ cumplimiento.created_by.get_full_name|default:cumplimiento.created_by.username }}</small>
                     </div>
@@ -104,7 +105,7 @@
             <div class="card h-100">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-graph-up"></i> Progreso del Mes
+                        <i class="bi bi-graph-up"></i> {% translate "Progreso del Mes" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -124,19 +125,19 @@
                             {% else %}text-danger{% endif %}">
                             {{ progress.completed_days }}/{{ progress.target_days }}
                         </h3>
-                        <p class="text-muted">días cumplidos</p>
+                        <p class="text-muted">{% translate "días cumplidos" %}</p>
                     </div>
                     
                     <div class="row text-center">
                         <div class="col-6">
                             <div class="border-end">
                                 <h4 class="text-success mb-0">{{ progress.completed_days }}</h4>
-                                <small class="text-muted">Cumplidos</small>
+                                <small class="text-muted">{% translate "Cumplidos" %}</small>
                             </div>
                         </div>
                         <div class="col-6">
                             <h4 class="text-danger mb-0">{{ progress.remaining_days }}</h4>
-                            <small class="text-muted">Restantes</small>
+                            <small class="text-muted">{% translate "Restantes" %}</small>
                         </div>
                     </div>
                 </div>
@@ -148,7 +149,7 @@
             <div class="card h-100">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-phone"></i> URL Pública (Móvil)
+                        <i class="bi bi-phone"></i> {% translate "URL Pública (Móvil)" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -162,18 +163,18 @@
                                 <i class="bi bi-clipboard"></i>
                             </button>
                         </div>
-                        <small class="text-muted">Comparte esta URL para acceso desde móvil</small>
+                        <small class="text-muted">{% translate "Comparte esta URL para acceso desde móvil" %}</small>
                     </div>
                     
                     <div class="d-grid gap-2">
                         <a href="{{ cumplimiento.get_public_url }}" target="_blank" class="btn btn-success">
-                            <i class="bi bi-phone"></i> Abrir Vista Móvil
+                            <i class="bi bi-phone"></i> {% translate "Abrir Vista Móvil" %}
                         </a>
                         <button class="btn btn-outline-primary" onclick="generateQR()">
-                            <i class="bi bi-qr-code"></i> Generar Código QR
+                            <i class="bi bi-qr-code"></i> {% translate "Generar Código QR" %}
                         </button>
                         <button class="btn btn-outline-info" onclick="testPublicUrl()">
-                            <i class="bi bi-globe"></i> Probar URL Pública
+                            <i class="bi bi-globe"></i> {% translate "Probar URL Pública" %}
                         </button>
                     </div>
                 </div>
@@ -185,7 +186,7 @@
     <div class="card">
         <div class="card-header">
             <h5 class="mb-0">
-                <i class="bi bi-calendar-month"></i> Calendario del Mes Actual
+                <i class="bi bi-calendar-month"></i> {% translate "Calendario del Mes Actual" %}
             </h5>
         </div>
         <div class="card-body">
@@ -193,13 +194,13 @@
                 <!-- Días de la semana -->
                 <div class="col-12 mb-3">
                     <div class="row text-center">
-                        <div class="col"><strong>Lun</strong></div>
-                        <div class="col"><strong>Mar</strong></div>
-                        <div class="col"><strong>Mié</strong></div>
-                        <div class="col"><strong>Jue</strong></div>
-                        <div class="col"><strong>Vie</strong></div>
-                        <div class="col"><strong>Sáb</strong></div>
-                        <div class="col"><strong>Dom</strong></div>
+                        <div class="col"><strong>{% translate "Lun" %}</strong></div>
+                        <div class="col"><strong>{% translate "Mar" %}</strong></div>
+                        <div class="col"><strong>{% translate "Mié" %}</strong></div>
+                        <div class="col"><strong>{% translate "Jue" %}</strong></div>
+                        <div class="col"><strong>{% translate "Vie" %}</strong></div>
+                        <div class="col"><strong>{% translate "Sáb" %}</strong></div>
+                        <div class="col"><strong>{% translate "Dom" %}</strong></div>
                     </div>
                 </div>
                 
@@ -223,7 +224,7 @@
                                 </div>
                                 {% if day.has_notes %}
                                     <small class="text-info">
-                                        <i class="bi bi-chat-dots" title="Tiene notas"></i>
+                                        <i class="bi bi-chat-dots" title="{% translate 'Tiene notas' %}"></i>
                                     </small>
                                 {% endif %}
                             </div>
@@ -247,7 +248,7 @@
             </div>
             <div class="modal-body text-center">
                 <div id="qrcode" class="mb-3"></div>
-                <p class="text-muted">Escanea este código con el móvil para acceder directamente</p>
+                <p class="text-muted">{% translate "Escanea este código con el móvil para acceder directamente" %}</p>
             </div>
         </div>
     </div>

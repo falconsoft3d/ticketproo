@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Generador de Libros con IA - TicketProo{% endblock %}
+{% block title %}{% translate "Generador de Libros con IA - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -8,10 +9,10 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center">
                 <h1>
-                    <i class="bi bi-book"></i> Generador de Libros con IA
+                    <i class="bi bi-book"></i> {% translate "Generador de Libros con IA" %}
                 </h1>
                 <a href="{% url 'ai_book_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-lg"></i> Nuevo Libro
+                    <i class="bi bi-plus-lg"></i> {% translate "Nuevo Libro" %}
                 </a>
             </div>
         </div>
@@ -22,21 +23,21 @@
         <div class="card-body">
             <form method="get" class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label">Estado</label>
+                    <label class="form-label">{% translate "Estado" %}</label>
                     <select name="status" class="form-select">
-                        <option value="">Todos los estados</option>
-                        <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Borrador</option>
-                        <option value="chapters_proposed" {% if status_filter == 'chapters_proposed' %}selected{% endif %}>Capítulos Propuestos</option>
-                        <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>En Progreso</option>
-                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completado</option>
+                        <option value="">{% translate "Todos los estados" %}</option>
+                        <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>{% translate "Borrador" %}</option>
+                        <option value="chapters_proposed" {% if status_filter == 'chapters_proposed' %}selected{% endif %}>{% translate "Capítulos Propuestos" %}</option>
+                        <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>{% translate "En Progreso" %}</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>{% translate "Completado" %}</option>
                     </select>
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
                     <button type="submit" class="btn btn-secondary me-2">
-                        <i class="bi bi-funnel"></i> Filtrar
+                        <i class="bi bi-funnel"></i> {% translate "Filtrar" %}
                     </button>
                     <a href="{% url 'ai_book_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle"></i> Limpiar
+                        <i class="bi bi-x-circle"></i> {% translate "Limpiar" %}
                     </a>
                 </div>
             </form>
@@ -56,7 +57,7 @@
                 </div>
                 <div class="card-body">
                     <p class="text-muted small">
-                        <strong>Tema:</strong><br>
+                        <strong>{% translate "Tema:" %}</strong><br>
                         {{ book.topic|truncatechars:150 }}
                     </p>
                     
@@ -91,14 +92,14 @@
                 <div class="card-footer">
                     <div class="btn-group w-100" role="group">
                         <a href="{% url 'ai_book_detail' book.pk %}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye"></i> Ver
+                            <i class="bi bi-eye"></i> {% translate "Ver" %}
                         </a>
                         <a href="{% url 'ai_book_edit' book.pk %}" class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-pencil"></i> Editar
+                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                         </a>
                         {% if book.status == 'draft' %}
                         <a href="{% url 'ai_book_propose_chapters' book.pk %}" class="btn btn-sm btn-outline-success">
-                            <i class="bi bi-stars"></i> Capítulos
+                            <i class="bi bi-stars"></i> {% translate "Capítulos" %}
                         </a>
                         {% endif %}
                         <a href="{% url 'ai_book_delete' book.pk %}" class="btn btn-sm btn-outline-danger">
@@ -112,10 +113,10 @@
         <div class="col-md-12">
             <div class="text-center text-muted py-5">
                 <i class="bi bi-book display-1"></i>
-                <p class="mt-3 h5">No hay libros creados aún</p>
-                <p>¡Comienza a generar tu primer libro con IA!</p>
+                <p class="mt-3 h5">{% translate "No hay libros creados aún" %}</p>
+                <p>{% translate "¡Comienza a generar tu primer libro con IA!" %}</p>
                 <a href="{% url 'ai_book_create' %}" class="btn btn-primary mt-3">
-                    <i class="bi bi-plus-lg"></i> Crear Primer Libro
+                    <i class="bi bi-plus-lg"></i> {% translate "Crear Primer Libro" %}
                 </a>
             </div>
         </div>
@@ -124,11 +125,11 @@
 
     <!-- Paginación -->
     {% if books.has_other_pages %}
-    <nav aria-label="Paginación">
+    <nav aria-label="{% translate 'Paginación' %}">
         <ul class="pagination justify-content-center">
             {% if books.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ books.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Anterior</a>
+                    <a class="page-link" href="?page={{ books.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">{% translate "Anterior" %}</a>
                 </li>
             {% endif %}
             
@@ -138,7 +139,7 @@
             
             {% if books.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ books.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Siguiente</a>
+                    <a class="page-link" href="?page={{ books.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">{% translate "Siguiente" %}</a>
                 </li>
             {% endif %}
         </ul>

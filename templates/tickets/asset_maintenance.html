@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -28,32 +29,32 @@
     <!-- Header -->
     <div class="text-center mb-4">
         <h2><i class="bi bi-tools text-warning"></i> {{ title }}</h2>
-        <p class="text-muted">Enviar activo a mantenimiento</p>
+        <p class="text-muted">{% translate "Enviar activo a mantenimiento" %}</p>
     </div>
 
     <div class="maintenance-container">
         <!-- Información del Activo -->
         <div class="asset-info">
             <h5 class="mb-3">
-                <i class="bi bi-box"></i> Información del Activo
+                <i class="bi bi-box"></i> {% translate "Información del Activo" %}
             </h5>
             <div class="row">
                 <div class="col-md-6">
-                    <strong>Nombre:</strong><br>
+                    <strong>{% translate "Nombre:" %}</strong><br>
                     <span class="text-primary">{{ asset.name }}</span>
                 </div>
                 <div class="col-md-6">
-                    <strong>Fabricante:</strong><br>
+                    <strong>{% translate "Fabricante:" %}</strong><br>
                     {{ asset.manufacturer }}
                 </div>
             </div>
             <div class="row mt-2">
                 <div class="col-md-6">
-                    <strong>Número de Serie:</strong><br>
+                    <strong>{% translate "Número de Serie:" %}</strong><br>
                     <code>{{ asset.serial_number }}</code>
                 </div>
                 <div class="col-md-6">
-                    <strong>Estado Actual:</strong><br>
+                    <strong>{% translate "Estado Actual:" %}</strong><br>
                     <span class="badge bg-{{ asset.get_status_display_color }}">
                         {{ asset.get_status_display }}
                     </span>
@@ -62,11 +63,11 @@
             
             {% if asset.assigned_to %}
                 <div class="mt-3 p-2 bg-warning bg-opacity-10 rounded">
-                    <strong>⚠️ Actualmente asignado a:</strong>
+                    <strong>{% translate "⚠️ Actualmente asignado a:" %}</strong>
                     <i class="bi bi-person-circle"></i> {{ asset.assigned_to.name }}
                     <small class="text-muted d-block">{{ asset.assigned_to.position }}</small>
                     <small class="text-warning">
-                        <i class="bi bi-info-circle"></i> El activo será desasignado automáticamente
+                        <i class="bi bi-info-circle"></i> {% translate "El activo será desasignado automáticamente" %}
                     </small>
                 </div>
             {% endif %}
@@ -74,14 +75,14 @@
 
         <!-- Información de la Acción -->
         <div class="alert alert-warning">
-            <h6><i class="bi bi-tools"></i> ¿Qué ocurrirá?</h6>
+            <h6><i class="bi bi-tools"></i> {% translate "¿Qué ocurrirá?" %}</h6>
             <ul class="mb-0">
-                <li>El estado del activo cambiará a <strong>"En Mantenimiento"</strong></li>
+                <li>{% translate "El estado del activo cambiará a" %} <strong>{% translate '"En Mantenimiento"' %}</strong></li>
                 {% if asset.assigned_to %}
-                    <li>Se desasignará automáticamente de <strong>{{ asset.assigned_to.name }}</strong></li>
+                    <li>{% translate "Se desasignará automáticamente de" %} <strong>{{ asset.assigned_to.name }}</strong></li>
                 {% endif %}
-                <li>Se registrará la acción en el historial del activo</li>
-                <li>El activo no estará disponible para nuevas asignaciones</li>
+                <li>{% translate "Se registrará la acción en el historial del activo" %}</li>
+                <li>{% translate "El activo no estará disponible para nuevas asignaciones" %}</li>
             </ul>
         </div>
 
@@ -91,7 +92,7 @@
             
             <div class="mb-4">
                 <label for="reason" class="form-label">
-                    <i class="bi bi-chat-text"></i> Motivo del Mantenimiento
+                    <i class="bi bi-chat-text"></i> {% translate "Motivo del Mantenimiento" %}
                 </label>
                 <textarea 
                     name="reason" 
@@ -102,7 +103,7 @@
                     required
                 ></textarea>
                 <div class="form-text">
-                    Explique brevemente por qué se envía el activo a mantenimiento
+                    {% translate "Explique brevemente por qué se envía el activo a mantenimiento" %}
                 </div>
             </div>
 
@@ -110,13 +111,13 @@
             {% if asset.warranty_expiry %}
                 <div class="alert alert-info">
                     <i class="bi bi-shield-check"></i> 
-                    <strong>Garantía:</strong> 
+                    <strong>{% translate "Garantía:" %}</strong> 
                     {% if asset.warranty_expiry >= "now"|date:"Y-m-d" %}
                         Válida hasta {{ asset.warranty_expiry|date:"d F Y" }}
-                        <span class="badge bg-success">VIGENTE</span>
+                        <span class="badge bg-success">{% translate "VIGENTE" %}</span>
                     {% else %}
                         Expiró el {{ asset.warranty_expiry|date:"d F Y" }}
-                        <span class="badge bg-danger">VENCIDA</span>
+                        <span class="badge bg-danger">{% translate "VENCIDA" %}</span>
                     {% endif %}
                 </div>
             {% endif %}
@@ -124,10 +125,10 @@
             <!-- Botones -->
             <div class="d-flex justify-content-between">
                 <a href="{% url 'asset_detail' asset.pk %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Cancelar
+                    <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                 </a>
                 <button type="submit" class="btn btn-warning">
-                    <i class="bi bi-tools"></i> Enviar a Mantenimiento
+                    <i class="bi bi-tools"></i> {% translate "Enviar a Mantenimiento" %}
                 </button>
             </div>
         </form>

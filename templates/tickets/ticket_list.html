@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Lista de Tickets - TicketProo{% endblock %}
+{% block title %}{% translate "Lista de Tickets - TicketProo" %}{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -80,16 +81,16 @@
         <h1>
             <i class="bi bi-list-ul"></i> 
             {% if user.groups.all and user.groups.first.name == 'Agentes' %}
-                Todos los Tickets
+                {% translate "Todos los Tickets" %}
             {% else %}
-                Mis Tickets{% if user.profile.company %} y de {{ user.profile.company.name }}{% endif %}
+                {% translate "Mis Tickets" %}{% if user.profile.company %} y de {{ user.profile.company.name }}{% endif %}
             {% endif %}
         </h1>
         {% if not user.groups.all or user.groups.first.name != 'Agentes' %}
             {% if user.profile.company %}
                 <p class="text-muted mb-0">
                     <i class="bi bi-info-circle"></i> 
-                    Viendo tus tickets personales y los tickets de tu empresa
+                    {% translate "Viendo tus tickets personales y los tickets de tu empresa" %}
                 </p>
             {% endif %}
         {% endif %}
@@ -98,56 +99,56 @@
     <div>
         <a href="{% url 'ticket_chart' %}{% if search or status_filter or priority_filter or assigned_filter or company_filter %}?{% endif %}{% if search %}search={{ search|urlencode }}{% endif %}{% if status_filter %}{% if search %}&{% endif %}status={{ status_filter }}{% endif %}{% if company_filter %}{% if search or status_filter %}&{% endif %}company={{ company_filter }}{% endif %}{% if priority_filter %}{% if search or status_filter or company_filter %}&{% endif %}priority={{ priority_filter }}{% endif %}{% if assigned_filter %}{% if search or status_filter or priority_filter or company_filter %}&{% endif %}assigned_to={{ assigned_filter }}{% endif %}" 
            class="btn btn-outline-info">
-            <i class="bi bi-bar-chart-line"></i> Ver gráfico de creación
+            <i class="bi bi-bar-chart-line"></i> {% translate "Ver gráfico de creación" %}
         </a>
     </div>
     {% endif %}
     <div class="d-flex gap-2">
         {% if is_agent %}
         <a href="{% url 'ticket_export_excel' %}{% if search or status_filter or priority_filter or assigned_filter or company_filter %}?{% endif %}{% if search %}search={{ search|urlencode }}{% endif %}{% if status_filter %}{% if search %}&{% endif %}status={{ status_filter }}{% endif %}{% if company_filter %}{% if search or status_filter %}&{% endif %}company={{ company_filter }}{% endif %}{% if priority_filter %}{% if search or status_filter or company_filter %}&{% endif %}priority={{ priority_filter }}{% endif %}{% if assigned_filter %}{% if search or status_filter or priority_filter or company_filter %}&{% endif %}assigned_to={{ assigned_filter }}{% endif %}" 
-           class="btn btn-success" title="Exportar a Excel">
-            <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+           class="btn btn-success" title="{% translate 'Exportar a Excel' %}">
+            <i class="bi bi-file-earmark-excel"></i> {% translate "Exportar Excel" %}
         </a>
-        <button type="button" class="btn btn-warning" id="selectAllFiltered" onclick="selectAllFilteredTickets()" title="Seleccionar todos los tickets del filtro actual (todas las páginas)">
-            <i class="bi bi-check2-all"></i> Todos
+        <button type="button" class="btn btn-warning" id="selectAllFiltered" onclick="selectAllFilteredTickets()" title="{% translate 'Seleccionar todos los tickets del filtro actual (todas las páginas)' %}">
+            <i class="bi bi-check2-all"></i> {% translate "Todos" %}
         </button>
-        <button type="button" class="btn btn-danger" id="exportSelectedPDF" onclick="exportSelectedTicketsToPDF()" disabled title="Exportar tickets seleccionados a PDF">
-            <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+        <button type="button" class="btn btn-danger" id="exportSelectedPDF" onclick="exportSelectedTicketsToPDF()" disabled title="{% translate 'Exportar tickets seleccionados a PDF' %}">
+            <i class="bi bi-file-earmark-pdf"></i> {% translate "Exportar PDF" %}
         </button>
         {% endif %}
         
 
         
         <div class="btn-group" role="group">
-            <button type="button" class="btn btn-info dropdown-toggle" id="bulkActionsBtn" data-bs-toggle="dropdown" aria-expanded="false" disabled title="Cambiar estado de tickets seleccionados" style="display: none;">
-                <i class="bi bi-arrow-repeat"></i> Cambiar Estado
+            <button type="button" class="btn btn-info dropdown-toggle" id="bulkActionsBtn" data-bs-toggle="dropdown" aria-expanded="false" disabled title="{% translate 'Cambiar estado de tickets seleccionados' %}" style="display: none;">
+                <i class="bi bi-arrow-repeat"></i> {% translate "Cambiar Estado" %}
             </button>
             <ul class="dropdown-menu" aria-labelledby="bulkActionsBtn">
-                <li><a class="dropdown-item" href="#" onclick="bulkChangeStatus('open'); return false;"><span class="badge bg-primary">Abierto</span></a></li>
-                <li><a class="dropdown-item" href="#" onclick="bulkChangeStatus('in_progress'); return false;"><span class="badge bg-info">En Progreso</span></a></li>
-                <li><a class="dropdown-item" href="#" onclick="bulkChangeStatus('development'); return false;"><span class="badge bg-warning">Desarrollo</span></a></li>
-                <li><a class="dropdown-item" href="#" onclick="bulkChangeStatus('resolved'); return false;"><span class="badge bg-success">Resuelto</span></a></li>
-                <li><a class="dropdown-item" href="#" onclick="bulkChangeStatus('closed'); return false;"><span class="badge bg-secondary">Cerrado</span></a></li>
+                <li><a class="dropdown-item" href="#" onclick="bulkChangeStatus('open'); return false;"><span class="badge bg-primary">{% translate "Abierto" %}</span></a></li>
+                <li><a class="dropdown-item" href="#" onclick="bulkChangeStatus('in_progress'); return false;"><span class="badge bg-info">{% translate "En Progreso" %}</span></a></li>
+                <li><a class="dropdown-item" href="#" onclick="bulkChangeStatus('development'); return false;"><span class="badge bg-warning">{% translate "Desarrollo" %}</span></a></li>
+                <li><a class="dropdown-item" href="#" onclick="bulkChangeStatus('resolved'); return false;"><span class="badge bg-success">{% translate "Resuelto" %}</span></a></li>
+                <li><a class="dropdown-item" href="#" onclick="bulkChangeStatus('closed'); return false;"><span class="badge bg-secondary">{% translate "Cerrado" %}</span></a></li>
             </ul>
         </div>
         {% if is_agent %}
-        <a href="{% url 'ticket_import' %}" class="btn btn-success" title="Importar tickets desde Excel">
-            <i class="bi bi-file-earmark-excel"></i> Importar Excel
+        <a href="{% url 'ticket_import' %}" class="btn btn-success" title="{% translate 'Importar tickets desde Excel' %}">
+            <i class="bi bi-file-earmark-excel"></i> {% translate "Importar Excel" %}
         </a>
         {% endif %}
-        <a href="{% url 'qa_rating_public' %}" class="evaluar-btn" title="¡Dinos cómo lo estamos haciendo!">
+        <a href="{% url 'qa_rating_public' %}" class="evaluar-btn" title="{% translate '¡Dinos cómo lo estamos haciendo!' %}">
             <span class="evaluar-emoji">😊</span>
-            <span class="evaluar-texto">¡Evalúanos!</span>
-            <span class="evaluar-sub">Tu opinión nos importa</span>
+            <span class="evaluar-texto">{% translate "¡Evalúanos!" %}</span>
+            <span class="evaluar-sub">{% translate "Tu opinión nos importa" %}</span>
         </a>
-        <button type="button" class="btn btn-outline-secondary" id="toggleFiltrosBtn" onclick="toggleFiltros()" title="Mostrar / ocultar filtros">
+        <button type="button" class="btn btn-outline-secondary" id="toggleFiltrosBtn" onclick="toggleFiltros()" title="{% translate 'Mostrar / ocultar filtros' %}">
             <i class="bi bi-funnel" id="toggleFiltrosIcon"></i>
         </button>
-        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#kpiModal" title="Ver indicadores">
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#kpiModal" title="{% translate 'Ver indicadores' %}">
             <i class="bi bi-bar-chart-fill"></i>
         </button>
         <a href="{% url 'ticket_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus"></i> Nuevo Ticket
+            <i class="bi bi-plus"></i> {% translate "Nuevo Ticket" %}
         </a>
     </div>
 </div>
@@ -158,10 +159,10 @@
     <div>
         <strong>Tienes {{ rfi_open_count }} RFI{{ rfi_open_count|pluralize }} abierto{{ rfi_open_count|pluralize }}</strong> pendiente{{ rfi_open_count|pluralize }} de completar.
         {% if rfi_oldest_days > 0 %}
-        La más antigua lleva <strong>{{ rfi_oldest_days }} día{{ rfi_oldest_days|pluralize }}</strong> sin cerrar.
+        {% translate "La más antigua lleva" %} <strong>{{ rfi_oldest_days }} día{{ rfi_oldest_days|pluralize }}</strong> {% translate "sin cerrar." %}
         {% endif %}
         <a href="{% url 'rfi_my_list' %}" class="alert-link ms-2">
-            <i class="bi bi-arrow-right-circle"></i> Ver mis RFI
+            <i class="bi bi-arrow-right-circle"></i> {% translate "Ver mis RFI" %}
         </a>
     </div>
 </div>
@@ -172,15 +173,15 @@
     <div class="card-body">
         <form method="get" class="row g-3">
             <div class="col-md-2">
-                <label for="search" class="form-label">Buscar</label>
+                <label for="search" class="form-label">{% translate "Buscar" %}</label>
                 <input type="text" class="form-control" id="search" name="search" 
-                       value="{{ search|default:'' }}" placeholder="Título o descripción...">
+                       value="{{ search|default:'' }}" placeholder="{% translate 'Título o descripción...' %}">
             </div>
             
             <div class="col-md-2">
-                <label for="status" class="form-label">Estado</label>
+                <label for="status" class="form-label">{% translate "Estado" %}</label>
                 <select class="form-select" id="status" name="status">
-                    <option value="">Todos los estados</option>
+                    <option value="">{% translate "Todos los estados" %}</option>
                     {% for status_value, status_label in status_choices %}
                         <option value="{{ status_value }}" {% if status_filter == status_value %}selected{% endif %}>
                             {{ status_label }}
@@ -190,9 +191,9 @@
             </div>
             
             <div class="col-md-2">
-                <label for="company" class="form-label">Empresa</label>
+                <label for="company" class="form-label">{% translate "Empresa" %}</label>
                 <select class="form-select" id="company" name="company">
-                    <option value="">Todas las empresas</option>
+                    <option value="">{% translate "Todas las empresas" %}</option>
                     {% for company in companies %}
                         <option value="{{ company.id }}" {% if company_filter == company.id|stringformat:"s" %}selected{% endif %}>
                             {{ company.name }}
@@ -202,9 +203,9 @@
             </div>
             
             <div class="col-md-2">
-                <label for="priority" class="form-label">Prioridad</label>
+                <label for="priority" class="form-label">{% translate "Prioridad" %}</label>
                 <select class="form-select" id="priority" name="priority">
-                    <option value="">Todas las prioridades</option>
+                    <option value="">{% translate "Todas las prioridades" %}</option>
                     {% for priority_value, priority_label in priority_choices %}
                         <option value="{{ priority_value }}" {% if priority_filter == priority_value %}selected{% endif %}>
                             {{ priority_label }}
@@ -216,10 +217,10 @@
             <div class="col-md-4 d-flex align-items-end mb-2">
                 <div class="filter-buttons">
                     <button type="submit" class="btn btn-primary btn-large">
-                        <i class="bi bi-search"></i> Filtrar
+                        <i class="bi bi-search"></i> {% translate "Filtrar" %}
                     </button>
                     <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x"></i> Limpiar
+                        <i class="bi bi-x"></i> {% translate "Limpiar" %}
                     </a>
                 </div>
             </div>
@@ -238,14 +239,14 @@
                         <th class="col-checkbox" style="width:3%">
                             <input type="checkbox" id="selectAll" class="form-check-input" onchange="toggleAllTickets()">
                         </th>
-                        <th class="col-number" style="width:7%">Número</th>
-                        <th class="col-title" style="width:40%">Título</th>
-                        <th class="col-company" data-column="company" style="width:12%">Empresa</th>
-                        <th class="col-status" data-column="status" style="width:8%">Estado</th>
-                        <th class="col-approval" data-column="approval" style="width:9%">Aprobación</th>
-                        <th class="col-age" data-column="age" style="width:8%">Antigüedad</th>
-                        <th class="col-date" data-column="date" style="width:9%">Fecha Creación</th>
-                        <th class="col-hours text-center" data-column="hours" style="width:4%">Horas</th>
+                        <th class="col-number" style="width:7%">{% translate "Número" %}</th>
+                        <th class="col-title" style="width:40%">{% translate "Título" %}</th>
+                        <th class="col-company" data-column="company" style="width:12%">{% translate "Empresa" %}</th>
+                        <th class="col-status" data-column="status" style="width:8%">{% translate "Estado" %}</th>
+                        <th class="col-approval" data-column="approval" style="width:9%">{% translate "Aprobación" %}</th>
+                        <th class="col-age" data-column="age" style="width:8%">{% translate "Antigüedad" %}</th>
+                        <th class="col-date" data-column="date" style="width:9%">{% translate "Fecha Creación" %}</th>
+                        <th class="col-hours text-center" data-column="hours" style="width:4%">{% translate "Horas" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -266,11 +267,11 @@
                                title="{{ ticket.title }}">
                                 {% if not is_agent %}
                                     {% if ticket.created_by == user %}
-                                        <i class="bi bi-person-circle text-primary me-1" title="Tu ticket"></i>
+                                        <i class="bi bi-person-circle text-primary me-1" title="{% translate 'Tu ticket' %}"></i>
                                     {% elif ticket.company == user.profile.company and user.profile.company %}
-                                        <i class="bi bi-building text-info me-1" title="Ticket de tu empresa"></i>
+                                        <i class="bi bi-building text-info me-1" title="{% translate 'Ticket de tu empresa' %}"></i>
                                     {% elif ticket.project in user.assigned_projects.all %}
-                                        <i class="bi bi-folder text-success me-1" title="Ticket de tu proyecto"></i>
+                                        <i class="bi bi-folder text-success me-1" title="{% translate 'Ticket de tu proyecto' %}"></i>
                                     {% endif %}
                                 {% endif %}
                                 {{ ticket.title }}
@@ -282,7 +283,7 @@
                                     <i class="bi bi-building me-1"></i>{{ ticket.company.name }}
                                 </span>
                             {% else %}
-                                <span class="text-muted">Sin empresa</span>
+                                <span class="text-muted">{% translate "Sin empresa" %}</span>
                             {% endif %}
                         </td>
                         <td class="col-status" data-column="status">
@@ -293,11 +294,11 @@
                         <td class="col-approval" data-column="approval">
                             {% if ticket.is_approved %}
                                 <span class="badge bg-success">
-                                    <i class="bi bi-check-circle me-1"></i>Aprobado
+                                    <i class="bi bi-check-circle me-1"></i>{% translate "Aprobado" %}
                                 </span>
                             {% else %}
                                 <span class="badge bg-warning text-dark">
-                                    <i class="bi bi-clock me-1"></i>Pendiente
+                                    <i class="bi bi-clock me-1"></i>{% translate "Pendiente" %}
                                 </span>
                             {% endif %}
                         </td>
@@ -322,7 +323,7 @@
                 <tfoot class="table-light fw-bold">
                     <tr>
                         <td colspan="8" class="text-end pe-3">
-                            <i class="bi bi-clock-history me-1"></i> Total de horas (todos los resultados):
+                            <i class="bi bi-clock-history me-1"></i> {% translate "Total de horas (todos los resultados):" %}
                         </td>
                         <td class="text-center">
                             <span class="badge bg-primary">{{ total_hours_all }} h</span>
@@ -336,7 +337,7 @@
     <!-- Paginación -->
     {% if page_obj.has_other_pages %}
     <div class="card-footer">
-        <nav aria-label="Paginación de tickets">
+        <nav aria-label="{% translate 'Paginación de tickets' %}">
             <ul class="pagination justify-content-center mb-0">
                 {% if page_obj.has_previous %}
                     <li class="page-item">
@@ -378,17 +379,17 @@
 <div class="card">
     <div class="card-body text-center py-5">
         <i class="bi bi-inbox display-4 text-muted mb-3"></i>
-        <h5 class="text-muted">No se encontraron tickets</h5>
+        <h5 class="text-muted">{% translate "No se encontraron tickets" %}</h5>
         {% if search or status_filter or priority_filter %}
-            <p class="text-muted">No hay tickets que coincidan con los filtros seleccionados.</p>
+            <p class="text-muted">{% translate "No hay tickets que coincidan con los filtros seleccionados." %}</p>
             <a href="{% url 'ticket_list' %}" class="btn btn-outline-primary me-2">
-                <i class="bi bi-x"></i> Limpiar filtros
+                <i class="bi bi-x"></i> {% translate "Limpiar filtros" %}
             </a>
         {% else %}
-            <p class="text-muted">Aún no has creado ningún ticket.</p>
+            <p class="text-muted">{% translate "Aún no has creado ningún ticket." %}</p>
         {% endif %}
         <a href="{% url 'ticket_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus"></i> Crear Primer Ticket
+            <i class="bi bi-plus"></i> {% translate "Crear Primer Ticket" %}
         </a>
     </div>
 </div>
@@ -397,18 +398,18 @@
 {% if not is_agent and rfis_pendientes %}
 <div class="mt-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0"><i class="bi bi-clipboard-question text-warning"></i> Mis RFI Pendientes</h4>
-        <a href="{% url 'rfi_my_list' %}" class="btn btn-outline-warning btn-sm">Ver todos</a>
+        <h4 class="mb-0"><i class="bi bi-clipboard-question text-warning"></i> {% translate "Mis RFI Pendientes" %}</h4>
+        <a href="{% url 'rfi_my_list' %}" class="btn btn-outline-warning btn-sm">{% translate "Ver todos" %}</a>
     </div>
     <div class="card shadow-sm">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Código</th>
-                        <th>Título</th>
-                        <th>Empresa</th>
-                        <th>Días abierto</th>
+                        <th>{% translate "Código" %}</th>
+                        <th>{% translate "Título" %}</th>
+                        <th>{% translate "Empresa" %}</th>
+                        <th>{% translate "Días abierto" %}</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -429,7 +430,7 @@
                         </td>
                         <td>
                             <a href="{% url 'rfi_detail' rfi.pk %}" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-eye"></i> Ver
+                                <i class="bi bi-eye"></i> {% translate "Ver" %}
                             </a>
                         </td>
                     </tr>
@@ -774,9 +775,9 @@ function toggleFiltros() {
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold text-muted" id="kpiModalLabel">
-                    <i class="bi bi-bar-chart-fill me-2"></i>Indicadores
+                    <i class="bi bi-bar-chart-fill me-2"></i>{% translate "Indicadores" %}
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% translate 'Cerrar' %}"></button>
             </div>
             <div class="modal-body p-4">
                 <div class="row g-4">
@@ -785,7 +786,7 @@ function toggleFiltros() {
                         <div class="rounded-4 p-4 text-center h-100 d-flex flex-column justify-content-center"
                              style="background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);">
                             <div class="text-white mb-2" style="font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;opacity:0.85;">
-                                <i class="bi bi-hourglass-split me-1"></i> Tickets Pendientes
+                                <i class="bi bi-hourglass-split me-1"></i> {% translate "Tickets Pendientes" %}
                             </div>
                             <div class="text-white fw-bold lh-1 mb-1" style="font-size:5rem;">
                                 {{ kpi_tickets_pending }}
@@ -807,7 +808,7 @@ function toggleFiltros() {
                         <div class="rounded-4 p-4 text-center h-100 d-flex flex-column justify-content-center"
                              style="background: linear-gradient(135deg, #f72585 0%, #b5179e 100%);">
                             <div class="text-white mb-2" style="font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;opacity:0.85;">
-                                <i class="bi bi-clipboard-question me-1"></i> RFI Abiertos
+                                <i class="bi bi-clipboard-question me-1"></i> {% translate "RFI Abiertos" %}
                             </div>
                             <div class="text-white fw-bold lh-1 mb-1" style="font-size:5rem;">
                                 {{ kpi_rfi_open }}

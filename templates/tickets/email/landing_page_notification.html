@@ -1,9 +1,10 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nueva Solicitud de Landing Page</title>
+    <title>{% translate "Nueva Solicitud de Landing Page" %}</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -205,7 +206,7 @@
 <body>
     <div class="email-container">
         <div class="header">
-            <h1>🎯 Nueva Solicitud de Landing Page</h1>
+            <h1>{% translate "🎯 Nueva Solicitud de Landing Page" %}</h1>
             <p>{{ landing_page.nombre_producto }}</p>
         </div>
         
@@ -220,13 +221,13 @@
             </div>
             
             <div class="customer-details">
-                <h3>👤 Información del Cliente</h3>
+                <h3>{% translate "👤 Información del Cliente" %}</h3>
                 <div class="detail-row">
-                    <div class="detail-label">Nombre:</div>
+                    <div class="detail-label">{% translate "Nombre:" %}</div>
                     <div class="detail-value">{{ submission.nombre }} {{ submission.apellido }}</div>
                 </div>
                 <div class="detail-row">
-                    <div class="detail-label">Email:</div>
+                    <div class="detail-label">{% translate "Email:" %}</div>
                     <div class="detail-value">
                         <a href="mailto:{{ submission.email }}" style="color: {{ landing_page.color_primario }};">
                             {{ submission.email }}
@@ -235,7 +236,7 @@
                 </div>
                 {% if submission.telefono %}
                 <div class="detail-row">
-                    <div class="detail-label">Teléfono:</div>
+                    <div class="detail-label">{% translate "Teléfono:" %}</div>
                     <div class="detail-value">
                         <a href="tel:{{ submission.telefono }}" style="color: {{ landing_page.color_primario }};">
                             {{ submission.telefono }}
@@ -245,17 +246,17 @@
                 {% endif %}
                 {% if submission.empresa %}
                 <div class="detail-row">
-                    <div class="detail-label">Empresa:</div>
+                    <div class="detail-label">{% translate "Empresa:" %}</div>
                     <div class="detail-value">{{ submission.empresa }}</div>
                 </div>
                 {% endif %}
                 <div class="detail-row">
-                    <div class="detail-label">Fecha:</div>
+                    <div class="detail-label">{% translate "Fecha:" %}</div>
                     <div class="detail-value">{{ submission.created_at|date:"d/m/Y H:i" }}</div>
                 </div>
                 {% if submission.ip_address %}
                 <div class="detail-row">
-                    <div class="detail-label">IP:</div>
+                    <div class="detail-label">{% translate "IP:" %}</div>
                     <div class="detail-value">{{ submission.ip_address }}</div>
                 </div>
                 {% endif %}
@@ -263,7 +264,7 @@
             
             {% if submission.utm_source or submission.utm_medium or submission.utm_campaign %}
             <div class="utm-info">
-                <h4>📈 Información de Campaña (UTM)</h4>
+                <h4>{% translate "📈 Información de Campaña (UTM)" %}</h4>
                 {% if submission.utm_source %}
                     <span class="utm-tag">Fuente: {{ submission.utm_source }}</span>
                 {% endif %}
@@ -279,21 +280,21 @@
             <div class="stats">
                 <div class="stat-item">
                     <div class="stat-number">{{ landing_page.total_views }}</div>
-                    <div class="stat-label">Vistas Totales</div>
+                    <div class="stat-label">{% translate "Vistas Totales" %}</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-number">{{ landing_page.total_submissions }}</div>
-                    <div class="stat-label">Envíos Totales</div>
+                    <div class="stat-label">{% translate "Envíos Totales" %}</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-number">{{ landing_page.conversion_rate|floatformat:1 }}%</div>
-                    <div class="stat-label">Conversión</div>
+                    <div class="stat-label">{% translate "Conversión" %}</div>
                 </div>
             </div>
         </div>
         
         <div class="actions">
-            <h3 style="margin: 0 0 15px; color: #495057;">🚀 Acciones Recomendadas</h3>
+            <h3 style="margin: 0 0 15px; color: #495057;">{% translate "🚀 Acciones Recomendadas" %}</h3>
             <a href="mailto:{{ submission.email }}?subject=Información sobre {{ landing_page.nombre_producto }}&body=Hola {{ submission.nombre }},
 
 Gracias por tu interés en {{ landing_page.nombre_producto }}.
@@ -301,18 +302,18 @@ Gracias por tu interés en {{ landing_page.nombre_producto }}.
 Me pongo en contacto contigo para brindarte más información personalizada.
 
 Saludos cordiales," class="btn">
-                📧 Responder por Email
+                {% translate "📧 Responder por Email" %}
             </a>
             {% if submission.telefono %}
             <a href="tel:{{ submission.telefono }}" class="btn btn-secondary">
-                📞 Llamar Ahora
+                {% translate "📞 Llamar Ahora" %}
             </a>
             {% endif %}
         </div>
         
         <div class="footer">
             <p style="margin: 0;">
-                Esta notificación fue generada automáticamente por el sistema de Landing Pages.<br>
+                {% translate "Esta notificación fue generada automáticamente por el sistema de Landing Pages." %}<br>
                 <strong>{{ landing_page.nombre_producto }}</strong> | 
                 Envío recibido el {{ submission.created_at|date:"d/m/Y" }} a las {{ submission.created_at|date:"H:i" }}
             </p>

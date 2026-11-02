@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Transacciones - {{ block.super }}{% endblock %}
@@ -7,10 +8,10 @@
 <div class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
-                    <li class="breadcrumb-item active">Transacciones</li>
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">{% translate "Inicio" %}</a></li>
+                    <li class="breadcrumb-item active">{% translate "Transacciones" %}</li>
                 </ol>
             </nav>
         </div>
@@ -19,9 +20,9 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
-                <h2><i class="bi bi-arrow-left-right"></i> Transacciones Rápidas</h2>
+                <h2><i class="bi bi-arrow-left-right"></i> {% translate "Transacciones Rápidas" %}</h2>
                 <a href="{% url 'transaction_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Nueva Transacción
+                    <i class="bi bi-plus-circle"></i> {% translate "Nueva Transacción" %}
                 </a>
             </div>
         </div>
@@ -35,13 +36,13 @@
                         <table class="table table-hover">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Código</th>
-                                    <th>Nombre</th>
+                                    <th>{% translate "Código" %}</th>
+                                    <th>{% translate "Nombre" %}</th>
                                     <th>URL</th>
-                                    <th>Visibilidad</th>
-                                    <th>Estado</th>
-                                    <th>Creado por</th>
-                                    <th>Acciones</th>
+                                    <th>{% translate "Visibilidad" %}</th>
+                                    <th>{% translate "Estado" %}</th>
+                                    <th>{% translate "Creado por" %}</th>
+                                    <th>{% translate "Acciones" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -60,19 +61,19 @@
                                     <td>
                                         {% if transaction.visible_for_all %}
                                         <span class="badge bg-success">
-                                            <i class="bi bi-globe"></i> Todos
+                                            <i class="bi bi-globe"></i> {% translate "Todos" %}
                                         </span>
                                         {% else %}
                                         <span class="badge bg-warning">
-                                            <i class="bi bi-shield-lock"></i> Solo Agentes
+                                            <i class="bi bi-shield-lock"></i> {% translate "Solo Agentes" %}
                                         </span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         {% if transaction.is_active %}
-                                        <span class="badge bg-success">Activa</span>
+                                        <span class="badge bg-success">{% translate "Activa" %}</span>
                                         {% else %}
-                                        <span class="badge bg-secondary">Inactiva</span>
+                                        <span class="badge bg-secondary">{% translate "Inactiva" %}</span>
                                         {% endif %}
                                     </td>
                                     <td>
@@ -84,13 +85,13 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{{ transaction.url }}" class="btn btn-outline-info" title="Probar" target="_blank">
+                                            <a href="{{ transaction.url }}" class="btn btn-outline-info" title="{% translate 'Probar' %}" target="_blank">
                                                 <i class="bi bi-box-arrow-up-right"></i>
                                             </a>
-                                            <a href="{% url 'transaction_edit' transaction.id %}" class="btn btn-outline-secondary" title="Editar">
+                                            <a href="{% url 'transaction_edit' transaction.id %}" class="btn btn-outline-secondary" title="{% translate 'Editar' %}">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
-                                            <a href="{% url 'transaction_delete' transaction.id %}" class="btn btn-outline-danger" title="Eliminar">
+                                            <a href="{% url 'transaction_delete' transaction.id %}" class="btn btn-outline-danger" title="{% translate 'Eliminar' %}">
                                                 <i class="bi bi-trash"></i>
                                             </a>
                                         </div>
@@ -100,9 +101,9 @@
                                 <tr>
                                     <td colspan="7" class="text-center py-5">
                                         <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
-                                        <p class="text-muted">No hay transacciones registradas</p>
+                                        <p class="text-muted">{% translate "No hay transacciones registradas" %}</p>
                                         <a href="{% url 'transaction_create' %}" class="btn btn-primary">
-                                            <i class="bi bi-plus-circle"></i> Crear Primera Transacción
+                                            <i class="bi bi-plus-circle"></i> {% translate "Crear Primera Transacción" %}
                                         </a>
                                     </td>
                                 </tr>

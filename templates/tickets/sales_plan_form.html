@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}{% if plan %}Editar{% else %}Nuevo{% endif %} Plan de Venta - TicketProo{% endblock %}
+{% block title %}{% if plan %}{% translate "Editar" %}{% else %}{% translate "Nuevo" %}{% endif %} {% translate "Plan de Venta - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -10,7 +11,7 @@
                 <div class="card-header">
                     <h4 class="mb-0">
                         <i class="bi bi-{% if plan %}pencil{% else %}plus-circle{% endif %} text-primary"></i>
-                        {% if plan %}Editar Plan de Venta{% else %}Nuevo Plan de Venta{% endif %}
+                        {% if plan %}{% translate "Editar Plan de Venta" %}{% else %}{% translate "Nuevo Plan de Venta" %}{% endif %}
                     </h4>
                 </div>
                 <div class="card-body">
@@ -28,7 +29,7 @@
                         </div>
 
                         <hr>
-                        <h5 class="mb-3"><i class="bi bi-bullseye"></i> Objetivos Mensuales</h5>
+                        <h5 class="mb-3"><i class="bi bi-bullseye"></i> {% translate "Objetivos Mensuales" %}</h5>
 
                         <div class="row">
                             <div class="col-md-3 mb-3">
@@ -39,7 +40,7 @@
                                 {% if form.monthly_contact_goal.errors %}
                                     <div class="text-danger small">{{ form.monthly_contact_goal.errors }}</div>
                                 {% endif %}
-                                <small class="text-muted">Contactos nuevos a crear</small>
+                                <small class="text-muted">{% translate "Contactos nuevos a crear" %}</small>
                             </div>
 
                             <div class="col-md-3 mb-3">
@@ -50,7 +51,7 @@
                                 {% if form.monthly_positive_contact_goal.errors %}
                                     <div class="text-danger small">{{ form.monthly_positive_contact_goal.errors }}</div>
                                 {% endif %}
-                                <small class="text-muted">Contactos con estado positivo</small>
+                                <small class="text-muted">{% translate "Contactos con estado positivo" %}</small>
                             </div>
 
                             <div class="col-md-3 mb-3">
@@ -61,7 +62,7 @@
                                 {% if form.monthly_meeting_goal.errors %}
                                     <div class="text-danger small">{{ form.monthly_meeting_goal.errors }}</div>
                                 {% endif %}
-                                <small class="text-muted">Reuniones a realizar</small>
+                                <small class="text-muted">{% translate "Reuniones a realizar" %}</small>
                             </div>
 
                             <div class="col-md-3 mb-3">
@@ -72,7 +73,7 @@
                                 {% if form.monthly_won_goal.errors %}
                                     <div class="text-danger small">{{ form.monthly_won_goal.errors }}</div>
                                 {% endif %}
-                                <small class="text-muted">Contactos ganados</small>
+                                <small class="text-muted">{% translate "Contactos ganados" %}</small>
                             </div>
                         </div>
 
@@ -86,15 +87,15 @@
                             {% if form.is_active.errors %}
                                 <div class="text-danger small">{{ form.is_active.errors }}</div>
                             {% endif %}
-                            <small class="text-muted">Solo un plan activo por usuario</small>
+                            <small class="text-muted">{% translate "Solo un plan activo por usuario" %}</small>
                         </div>
 
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'sales_plan_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle"></i> Guardar Plan
+                                <i class="bi bi-check-circle"></i> {% translate "Guardar Plan" %}
                             </button>
                         </div>
                     </form>

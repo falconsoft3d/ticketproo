@@ -1,7 +1,8 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 
-{% block title %}Blog - TicketProo{% endblock %}
+{% block title %}{% translate "Blog - TicketProo" %}{% endblock %}
 
 {% block hero_icon %}<i class="bi bi-journal-richtext"></i>{% endblock %}
-{% block hero_title %}Blog{% endblock %}
-{% block hero_description %}Descubre artículos, noticias y contenido de interés sobre nuestra plataforma y el mundo de la gestión de proyectos.{% endblock %}
+{% block hero_title %}{% translate "Blog" %}{% endblock %}
+{% block hero_description %}{% translate "Descubre artículos, noticias y contenido de interés sobre nuestra plataforma y el mundo de la gestión de proyectos." %}{% endblock %}

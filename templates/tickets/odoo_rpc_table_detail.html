@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ table.name }} - Ticket System{% endblock %}
@@ -7,9 +8,9 @@
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">Conexiones</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">{% translate "Conexiones" %}</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'odoo_rpc_table_list' table.connection.id %}">{{ table.connection.name }}</a></li>
                     <li class="breadcrumb-item active">{{ table.name }}</li>
                 </ol>
@@ -26,10 +27,10 @@
                 <div class="col-md-4 text-end">
                     <div class="btn-group" role="group">
                         <a href="{% url 'odoo_rpc_table_edit' table.id %}" class="btn btn-outline-primary">
-                            <i class="bi bi-pencil"></i> Editar
+                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                         </a>
                         <a href="{% url 'odoo_rpc_table_delete' table.id %}" class="btn btn-outline-danger">
-                            <i class="bi bi-trash"></i> Eliminar
+                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                         </a>
                     </div>
                 </div>
@@ -48,21 +49,21 @@
             {% if table.public_url_enabled %}
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 <h5 class="alert-heading">
-                    <i class="bi bi-link-45deg"></i> URL Pública Activa
+                    <i class="bi bi-link-45deg"></i> {% translate "URL Pública Activa" %}
                 </h5>
-                <p class="mb-2">Esta tabla tiene una URL pública habilitada para importaciones externas.</p>
+                <p class="mb-2">{% translate "Esta tabla tiene una URL pública habilitada para importaciones externas." %}</p>
                 <div class="d-flex align-items-center gap-2">
                     <input type="text" class="form-control form-control-sm" value="{{ public_url }}" id="publicUrlQuick" readonly style="max-width: 500px;">
                     <button class="btn btn-sm btn-outline-success" onclick="copyPublicUrl()">
-                        <i class="bi bi-clipboard"></i> Copiar
+                        <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                     </button>
                     <a href="{% url 'odoo_rpc_manage_public_url' table.id %}" class="btn btn-sm btn-success">
-                        <i class="bi bi-gear"></i> Gestionar
+                        <i class="bi bi-gear"></i> {% translate "Gestionar" %}
                     </a>
                 </div>
                 {% if table.public_url_password %}
                 <small class="text-muted d-block mt-2">
-                    <i class="bi bi-lock"></i> Protegida con contraseña
+                    <i class="bi bi-lock"></i> {% translate "Protegida con contraseña" %}
                 </small>
                 {% endif %}
                 {% if table.public_url_expires_at %}
@@ -78,21 +79,21 @@
             {% if table.public_form_enabled %}
             <div class="alert alert-primary alert-dismissible fade show" role="alert">
                 <h5 class="alert-heading">
-                    <i class="bi bi-file-earmark-text"></i> Formulario Público Activo
+                    <i class="bi bi-file-earmark-text"></i> {% translate "Formulario Público Activo" %}
                 </h5>
-                <p class="mb-2">Esta tabla tiene un formulario público habilitado para crear registros externos.</p>
+                <p class="mb-2">{% translate "Esta tabla tiene un formulario público habilitado para crear registros externos." %}</p>
                 <div class="d-flex align-items-center gap-2">
                     <input type="text" class="form-control form-control-sm" value="{{ form_url }}" id="formUrlQuick" readonly style="max-width: 500px;">
                     <button class="btn btn-sm btn-outline-primary" onclick="copyFormUrlQuick()">
-                        <i class="bi bi-clipboard"></i> Copiar
+                        <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                     </button>
                     <button class="btn btn-sm btn-primary" onclick="showFormModal()">
-                        <i class="bi bi-gear"></i> Gestionar
+                        <i class="bi bi-gear"></i> {% translate "Gestionar" %}
                     </button>
                 </div>
                 {% if table.public_form_password %}
                 <small class="text-muted d-block mt-2">
-                    <i class="bi bi-lock"></i> Protegido con contraseña
+                    <i class="bi bi-lock"></i> {% translate "Protegido con contraseña" %}
                 </small>
                 {% endif %}
                 {% if table.public_form_expires_at %}
@@ -110,7 +111,7 @@
                     <div class="card bg-primary text-white">
                         <div class="card-body">
                             <h3 class="mb-0">{{ fields.count }}</h3>
-                            <p class="mb-0">Campos Definidos</p>
+                            <p class="mb-0">{% translate "Campos Definidos" %}</p>
                         </div>
                     </div>
                 </div>
@@ -118,7 +119,7 @@
                     <div class="card bg-warning text-dark">
                         <div class="card-body">
                             <h3 class="mb-0">{{ pending_count }}</h3>
-                            <p class="mb-0">Datos Pendientes</p>
+                            <p class="mb-0">{% translate "Datos Pendientes" %}</p>
                         </div>
                     </div>
                 </div>
@@ -126,7 +127,7 @@
                     <div class="card bg-success text-white">
                         <div class="card-body">
                             <h3 class="mb-0">{{ success_count }}</h3>
-                            <p class="mb-0">Procesados</p>
+                            <p class="mb-0">{% translate "Procesados" %}</p>
                         </div>
                     </div>
                 </div>
@@ -134,7 +135,7 @@
                     <div class="card bg-danger text-white">
                         <div class="card-body">
                             <h3 class="mb-0">{{ failed_count }}</h3>
-                            <p class="mb-0">Fallidos</p>
+                            <p class="mb-0">{% translate "Fallidos" %}</p>
                         </div>
                     </div>
                 </div>
@@ -145,28 +146,28 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="mb-0"><i class="bi bi-lightning"></i> Acciones Rápidas</h5>
+                            <h5 class="mb-0"><i class="bi bi-lightning"></i> {% translate "Acciones Rápidas" %}</h5>
                         </div>
                         <div class="card-body">
                             <div class="d-grid gap-2 d-md-flex">
                                 {% if fields %}
                                 <a href="{% url 'odoo_rpc_search_odoo' table.id %}" class="btn btn-warning">
-                                    <i class="bi bi-search"></i> Buscar en Odoo
+                                    <i class="bi bi-search"></i> {% translate "Buscar en Odoo" %}
                                 </a>
                                 <a href="{% url 'odoo_rpc_table_export_template' table.id %}" class="btn btn-success">
-                                    <i class="bi bi-download"></i> Descargar Plantilla Excel
+                                    <i class="bi bi-download"></i> {% translate "Descargar Plantilla Excel" %}
                                 </a>
                                 <a href="{% url 'odoo_rpc_table_import_data' table.id %}" class="btn btn-info">
-                                    <i class="bi bi-upload"></i> Importar Datos
+                                    <i class="bi bi-upload"></i> {% translate "Importar Datos" %}
                                 </a>
                                 <a href="{% url 'odoo_rpc_data_list' table.id %}" class="btn btn-secondary">
-                                    <i class="bi bi-database"></i> Ver Datos en BD
+                                    <i class="bi bi-database"></i> {% translate "Ver Datos en BD" %}
                                 </a>
                                 <a href="{% url 'odoo_rpc_import_files_list' table.id %}" class="btn btn-outline-primary">
-                                    <i class="bi bi-file-earmark-excel"></i> Ver Archivos Importados
+                                    <i class="bi bi-file-earmark-excel"></i> {% translate "Ver Archivos Importados" %}
                                 </a>
                                 <a href="{% url 'odoo_rpc_manage_public_url' table.id %}" class="btn {% if table.public_url_enabled %}btn-success{% else %}btn-outline-info{% endif %}">
-                                    <i class="bi bi-link-45deg"></i> URL Pública
+                                    <i class="bi bi-link-45deg"></i> {% translate "URL Pública" %}
                                     {% if table.public_url_enabled %}
                                     <span class="badge bg-light text-success ms-1">
                                         <i class="bi bi-check-circle"></i>
@@ -174,7 +175,7 @@
                                     {% endif %}
                                 </a>
                                 <button class="btn {% if table.public_form_enabled %}btn-primary{% else %}btn-outline-primary{% endif %}" onclick="showFormModal()">
-                                    <i class="bi bi-file-earmark-text"></i> Formulario Público
+                                    <i class="bi bi-file-earmark-text"></i> {% translate "Formulario Público" %}
                                     {% if table.public_form_enabled %}
                                     <span class="badge bg-light text-primary ms-1">
                                         <i class="bi bi-check-circle"></i>
@@ -189,7 +190,7 @@
                                 {% else %}
                                 <div class="alert alert-warning mb-0">
                                     <i class="bi bi-exclamation-triangle"></i> 
-                                    Primero debes agregar campos a esta tabla antes de poder exportar/importar datos.
+                                    {% translate "Primero debes agregar campos a esta tabla antes de poder exportar/importar datos." %}
                                 </div>
                                 {% endif %}
                             </div>
@@ -203,9 +204,9 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Campos Definidos</h5>
+                            <h5 class="mb-0"><i class="bi bi-list-ul"></i> {% translate "Campos Definidos" %}</h5>
                             <a href="{% url 'odoo_rpc_field_create' table.id %}" class="btn btn-sm btn-primary">
-                                <i class="bi bi-plus-circle"></i> Agregar Campo
+                                <i class="bi bi-plus-circle"></i> {% translate "Agregar Campo" %}
                             </a>
                         </div>
                         <div class="card-body">
@@ -214,13 +215,13 @@
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th>Orden</th>
-                                            <th>Nombre</th>
-                                            <th>Campo Odoo</th>
-                                            <th>Tipo</th>
-                                            <th>Requerido</th>
-                                            <th>Ayuda</th>
-                                            <th>Acciones</th>
+                                            <th>{% translate "Orden" %}</th>
+                                            <th>{% translate "Nombre" %}</th>
+                                            <th>{% translate "Campo Odoo" %}</th>
+                                            <th>{% translate "Tipo" %}</th>
+                                            <th>{% translate "Requerido" %}</th>
+                                            <th>{% translate "Ayuda" %}</th>
+                                            <th>{% translate "Acciones" %}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -234,9 +235,9 @@
                                             </td>
                                             <td>
                                                 {% if field.is_required %}
-                                                <span class="badge bg-danger">Sí</span>
+                                                <span class="badge bg-danger">{% translate "Sí" %}</span>
                                                 {% else %}
-                                                <span class="badge bg-secondary">No</span>
+                                                <span class="badge bg-secondary">{% translate "No" %}</span>
                                                 {% endif %}
                                             </td>
                                             <td>{{ field.help_text|truncatewords:10 }}</td>
@@ -260,8 +261,8 @@
                             {% else %}
                             <div class="alert alert-info mb-0">
                                 <i class="bi bi-info-circle"></i> 
-                                No hay campos definidos. 
-                                <a href="{% url 'odoo_rpc_field_create' table.id %}">Agregar el primer campo</a>
+                                {% translate "No hay campos definidos." %} 
+                                <a href="{% url 'odoo_rpc_field_create' table.id %}">{% translate "Agregar el primer campo" %}</a>
                             </div>
                             {% endif %}
                         </div>
@@ -278,52 +279,52 @@
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">
-                    <i class="bi bi-file-earmark-text"></i> Gestionar Formulario Público
+                    <i class="bi bi-file-earmark-text"></i> {% translate "Gestionar Formulario Público" %}
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> Genera un formulario público que permite a usuarios externos crear registros en esta tabla de Odoo.
+                    <i class="bi bi-info-circle"></i> {% translate "Genera un formulario público que permite a usuarios externos crear registros en esta tabla de Odoo." %}
                 </div>
                 
                 <div class="form-check form-switch mb-3">
                     <input class="form-check-input" type="checkbox" id="formEnabled" onchange="toggleFormUrl()">
                     <label class="form-check-label" for="formEnabled">
-                        Habilitar Formulario Público
+                        {% translate "Habilitar Formulario Público" %}
                     </label>
                 </div>
                 
                 <div id="formUrlContainer" class="mb-3" style="display: none;">
-                    <label class="form-label">URL del Formulario:</label>
+                    <label class="form-label">{% translate "URL del Formulario:" %}</label>
                     <div class="input-group">
                         <input type="text" class="form-control" id="formUrl" readonly>
                         <button class="btn btn-outline-primary" type="button" onclick="copyFormUrl()">
-                            <i class="bi bi-clipboard"></i> Copiar
+                            <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                         </button>
                     </div>
                 </div>
                 
                 <div id="formConfigContainer" style="display: none;">
                     <hr>
-                    <h6>Configuración</h6>
+                    <h6>{% translate "Configuración" %}</h6>
                     
                     <div class="mb-3">
-                        <label for="formPassword" class="form-label">Contraseña (opcional)</label>
-                        <input type="password" class="form-control" id="formPassword" placeholder="Dejar vacío para acceso sin contraseña">
-                        <small class="text-muted">Protege el formulario con contraseña</small>
+                        <label for="formPassword" class="form-label">{% translate "Contraseña (opcional)" %}</label>
+                        <input type="password" class="form-control" id="formPassword" placeholder="{% translate 'Dejar vacío para acceso sin contraseña' %}">
+                        <small class="text-muted">{% translate "Protege el formulario con contraseña" %}</small>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="formExpires" class="form-label">Fecha de Expiración (opcional)</label>
+                        <label for="formExpires" class="form-label">{% translate "Fecha de Expiración (opcional)" %}</label>
                         <input type="datetime-local" class="form-control" id="formExpires">
-                        <small class="text-muted">El formulario dejará de funcionar después de esta fecha</small>
+                        <small class="text-muted">{% translate "El formulario dejará de funcionar después de esta fecha" %}</small>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" onclick="saveFormSettings()">Guardar Configuración</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cerrar" %}</button>
+                <button type="button" class="btn btn-primary" onclick="saveFormSettings()">{% translate "Guardar Configuración" %}</button>
             </div>
         </div>
     </div>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ title }} - Biblioteca de Comandos{% endblock %}
@@ -16,16 +17,16 @@
                     </h1>
                     <p class="text-muted mb-0">
                         {% if command %}
-                            Actualiza la información del comando
+                            {% translate "Actualiza la información del comando" %}
                         {% else %}
-                            Agrega un nuevo comando a tu biblioteca
+                            {% translate "Agrega un nuevo comando a tu biblioteca" %}
                         {% endif %}
                     </p>
                 </div>
-                <nav aria-label="breadcrumb">
+                <nav aria-label="{% translate 'breadcrumb' %}">
                     <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'command_library' %}">Comandos</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'command_library' %}">{% translate "Comandos" %}</a></li>
                         <li class="breadcrumb-item active">{{ title }}</li>
                     </ol>
                 </nav>
@@ -38,7 +39,7 @@
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0">
                                 <i class="bi bi-{% if command %}pencil{% else %}plus{% endif %}"></i>
-                                Información del comando
+                                {% translate "Información del comando" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -153,12 +154,12 @@
                                     </button>
                                     <a href="{% url 'command_library' %}" class="btn btn-outline-secondary">
                                         <i class="bi bi-arrow-left"></i>
-                                        Cancelar
+                                        {% translate "Cancelar" %}
                                     </a>
                                     {% if command %}
                                     <a href="{% url 'command_detail' command.pk %}" class="btn btn-outline-info">
                                         <i class="bi bi-eye"></i>
-                                        Ver comando
+                                        {% translate "Ver comando" %}
                                     </a>
                                     {% endif %}
                                 </div>
@@ -173,13 +174,13 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="bi bi-eye"></i>
-                                Vista previa
+                                {% translate "Vista previa" %}
                             </h6>
                         </div>
                         <div class="card-body" id="previewContainer">
                             <div class="text-muted text-center">
                                 <i class="bi bi-terminal display-6"></i>
-                                <p class="mt-2">Completa el formulario para ver la vista previa</p>
+                                <p class="mt-2">{% translate "Completa el formulario para ver la vista previa" %}</p>
                             </div>
                         </div>
                     </div>
@@ -189,30 +190,30 @@
                         <div class="card-header bg-info bg-opacity-10">
                             <h6 class="mb-0">
                                 <i class="bi bi-lightbulb text-info"></i>
-                                Consejos
+                                {% translate "Consejos" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <ul class="list-unstyled mb-0">
                                 <li class="mb-2">
                                     <i class="bi bi-check-circle text-success"></i>
-                                    <small>Usa títulos descriptivos y claros</small>
+                                    <small>{% translate "Usa títulos descriptivos y claros" %}</small>
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-check-circle text-success"></i>
-                                    <small>Incluye parámetros y opciones en el comando</small>
+                                    <small>{% translate "Incluye parámetros y opciones en el comando" %}</small>
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-check-circle text-success"></i>
-                                    <small>Agrega etiquetas para facilitar la búsqueda</small>
+                                    <small>{% translate "Agrega etiquetas para facilitar la búsqueda" %}</small>
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-check-circle text-success"></i>
-                                    <small>Marca comandos peligrosos para prevenir errores</small>
+                                    <small>{% translate "Marca comandos peligrosos para prevenir errores" %}</small>
                                 </li>
                                 <li class="mb-0">
                                     <i class="bi bi-check-circle text-success"></i>
-                                    <small>Incluye ejemplos prácticos cuando sea posible</small>
+                                    <small>{% translate "Incluye ejemplos prácticos cuando sea posible" %}</small>
                                 </li>
                             </ul>
                         </div>
@@ -223,25 +224,25 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="bi bi-tags"></i>
-                                Categorías disponibles
+                                {% translate "Categorías disponibles" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-12">
                                     <div class="d-flex flex-wrap gap-1">
-                                        <span class="badge bg-linux"><i class="bi bi-terminal"></i> Linux/Unix</span>
-                                        <span class="badge bg-windows"><i class="bi bi-windows"></i> Windows</span>
-                                        <span class="badge bg-docker"><i class="bi bi-box"></i> Docker</span>
-                                        <span class="badge bg-git"><i class="bi bi-git"></i> Git</span>
-                                        <span class="badge bg-python"><i class="bi bi-code-slash"></i> Python</span>
-                                        <span class="badge bg-javascript"><i class="bi bi-braces"></i> JavaScript</span>
-                                        <span class="badge bg-database"><i class="bi bi-database"></i> Base de Datos</span>
-                                        <span class="badge bg-network"><i class="bi bi-wifi"></i> Redes</span>
-                                        <span class="badge bg-security"><i class="bi bi-shield-check"></i> Seguridad</span>
-                                        <span class="badge bg-devops"><i class="bi bi-gear"></i> DevOps</span>
-                                        <span class="badge bg-web"><i class="bi bi-globe"></i> Desarrollo Web</span>
-                                        <span class="badge bg-mobile"><i class="bi bi-phone"></i> Desarrollo Móvil</span>
+                                        <span class="badge bg-linux"><i class="bi bi-terminal"></i> {% translate "Linux/Unix" %}</span>
+                                        <span class="badge bg-windows"><i class="bi bi-windows"></i> {% translate "Windows" %}</span>
+                                        <span class="badge bg-docker"><i class="bi bi-box"></i> {% translate "Docker" %}</span>
+                                        <span class="badge bg-git"><i class="bi bi-git"></i> {% translate "Git" %}</span>
+                                        <span class="badge bg-python"><i class="bi bi-code-slash"></i> {% translate "Python" %}</span>
+                                        <span class="badge bg-javascript"><i class="bi bi-braces"></i> {% translate "JavaScript" %}</span>
+                                        <span class="badge bg-database"><i class="bi bi-database"></i> {% translate "Base de Datos" %}</span>
+                                        <span class="badge bg-network"><i class="bi bi-wifi"></i> {% translate "Redes" %}</span>
+                                        <span class="badge bg-security"><i class="bi bi-shield-check"></i> {% translate "Seguridad" %}</span>
+                                        <span class="badge bg-devops"><i class="bi bi-gear"></i> {% translate "DevOps" %}</span>
+                                        <span class="badge bg-web"><i class="bi bi-globe"></i> {% translate "Desarrollo Web" %}</span>
+                                        <span class="badge bg-mobile"><i class="bi bi-phone"></i> {% translate "Desarrollo Móvil" %}</span>
                                     </div>
                                 </div>
                             </div>

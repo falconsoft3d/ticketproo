@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -8,23 +9,23 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <nav aria-label="breadcrumb">
+                <nav aria-label="{% translate 'breadcrumb' %}">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{% url 'crm_dashboard' %}">CRM</a></li>
                         {% if activity.opportunity %}
-                            <li class="breadcrumb-item"><a href="{% url 'opportunity_list' %}">Oportunidades</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'opportunity_list' %}">{% translate "Oportunidades" %}</a></li>
                             <li class="breadcrumb-item"><a href="{% url 'opportunity_detail' activity.opportunity.pk %}">{{ activity.opportunity.name }}</a></li>
                         {% else %}
-                            <li class="breadcrumb-item"><a href="{% url 'my_activities_dashboard' %}">Actividades</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'my_activities_dashboard' %}">{% translate "Actividades" %}</a></li>
                         {% endif %}
                         <li class="breadcrumb-item"><a href="{% url 'opportunity_activity_detail' activity.pk %}">{{ activity.title }}</a></li>
-                        <li class="breadcrumb-item active">Eliminar</li>
+                        <li class="breadcrumb-item active">{% translate "Eliminar" %}</li>
                     </ol>
                 </nav>
                 <h1 class="h3 mb-0 text-danger">
-                    <i class="fas fa-trash"></i> Eliminar Actividad
+                    <i class="fas fa-trash"></i> {% translate "Eliminar Actividad" %}
                 </h1>
-                <p class="text-muted mb-0">Esta acción no se puede deshacer</p>
+                <p class="text-muted mb-0">{% translate "Esta acción no se puede deshacer" %}</p>
             </div>
         </div>
     </div>
@@ -35,13 +36,13 @@
         <div class="card shadow-sm border-danger">
             <div class="card-header bg-danger text-white">
                 <h5 class="mb-0">
-                    <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación
+                    <i class="fas fa-exclamation-triangle"></i> {% translate "Confirmar Eliminación" %}
                 </h5>
             </div>
             <div class="card-body">
                 <div class="alert alert-danger">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <strong>¡Atención!</strong> Estás a punto de eliminar la siguiente actividad de forma permanente:
+                    <strong>{% translate "¡Atención!" %}</strong> {% translate "Estás a punto de eliminar la siguiente actividad de forma permanente:" %}
                 </div>
 
                 <div class="card mb-4">
@@ -53,14 +54,14 @@
                         
                         <div class="row">
                             <div class="col-md-6">
-                                <strong>Tipo:</strong> {{ activity.get_activity_type_display }}<br>
-                                <strong>Prioridad:</strong> <span class="badge bg-{{ activity.get_priority_color }}">{{ activity.get_priority_display }}</span><br>
-                                <strong>Estado:</strong> <span class="badge bg-{{ activity.get_status_color }}">{{ activity.get_status_display }}</span>
+                                <strong>{% translate "Tipo:" %}</strong> {{ activity.get_activity_type_display }}<br>
+                                <strong>{% translate "Prioridad:" %}</strong> <span class="badge bg-{{ activity.get_priority_color }}">{{ activity.get_priority_display }}</span><br>
+                                <strong>{% translate "Estado:" %}</strong> <span class="badge bg-{{ activity.get_status_color }}">{{ activity.get_status_display }}</span>
                             </div>
                             <div class="col-md-6">
-                                <strong>Fecha programada:</strong> {{ activity.scheduled_date|date:"d/m/Y H:i" }}<br>
-                                <strong>Asignado a:</strong> {{ activity.assigned_to.get_full_name|default:activity.assigned_to.username }}<br>
-                                <strong>Oportunidad:</strong> {{ activity.opportunity.name }}
+                                <strong>{% translate "Fecha programada:" %}</strong> {{ activity.scheduled_date|date:"d/m/Y H:i" }}<br>
+                                <strong>{% translate "Asignado a:" %}</strong> {{ activity.assigned_to.get_full_name|default:activity.assigned_to.username }}<br>
+                                <strong>{% translate "Oportunidad:" %}</strong> {{ activity.opportunity.name }}
                             </div>
                         </div>
                     </div>
@@ -70,10 +71,10 @@
                     {% csrf_token %}
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'opportunity_activity_detail' activity.pk %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Cancelar
+                            <i class="fas fa-arrow-left"></i> {% translate "Cancelar" %}
                         </a>
                         <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-trash"></i> Confirmar Eliminación
+                            <i class="fas fa-trash"></i> {% translate "Confirmar Eliminación" %}
                         </button>
                     </div>
                 </form>

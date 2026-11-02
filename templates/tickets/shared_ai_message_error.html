@@ -1,9 +1,10 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Error - TicketProo</title>
+    <title>{% translate "Error - TicketProo" %}</title>
     
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -45,23 +46,23 @@
         <div class="error-icon">
             <i class="bi bi-exclamation-triangle"></i>
         </div>
-        <h2 class="mb-3">Mensaje no disponible</h2>
+        <h2 class="mb-3">{% translate "Mensaje no disponible" %}</h2>
         <p class="text-muted mb-4">
             {{ error_message|default:"Este mensaje compartido no está disponible o ha sido eliminado." }}
         </p>
         <p class="text-muted mb-4">
             <small>
                 <i class="bi bi-info-circle"></i> 
-                Posibles razones:
+                {% translate "Posibles razones:" %}
             </small>
         </p>
         <ul class="text-start text-muted small mb-4">
-            <li>El enlace es incorrecto</li>
-            <li>El mensaje fue descompartido por el propietario</li>
-            <li>El enlace ha expirado</li>
+            <li>{% translate "El enlace es incorrecto" %}</li>
+            <li>{% translate "El mensaje fue descompartido por el propietario" %}</li>
+            <li>{% translate "El enlace ha expirado" %}</li>
         </ul>
         <a href="/" class="btn btn-primary">
-            <i class="bi bi-house"></i> Ir a TicketProo
+            <i class="bi bi-house"></i> {% translate "Ir a TicketProo" %}
         </a>
     </div>
     

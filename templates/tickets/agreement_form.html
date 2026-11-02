@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block extra_css %}
@@ -69,19 +70,19 @@
                 <div class="col-md-8">
                     <h1>
                         <i class="bi bi-file-earmark-plus"></i> 
-                        {% if agreement %}Editar Acuerdo{% else %}Nuevo Acuerdo{% endif %}
+                        {% if agreement %}{% translate "Editar Acuerdo" %}{% else %}{% translate "Nuevo Acuerdo" %}{% endif %}
                     </h1>
                     <p class="mb-0">
                         {% if agreement %}
                             Modifica el acuerdo "{{ agreement.title }}"
                         {% else %}
-                            Crea un nuevo acuerdo o contrato con firma digital
+                            {% translate "Crea un nuevo acuerdo o contrato con firma digital" %}
                         {% endif %}
                     </p>
                 </div>
                 <div class="col-md-4 text-end">
                     <a href="{% url 'agreement_list' %}" class="btn btn-light">
-                        <i class="bi bi-arrow-left"></i> Volver a Acuerdos
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver a Acuerdos" %}
                     </a>
                 </div>
             </div>
@@ -95,7 +96,7 @@
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="bi bi-pencil-square"></i> 
-                        {% if agreement %}Editar Información{% else %}Información del Acuerdo{% endif %}
+                        {% if agreement %}{% translate "Editar Información" %}{% else %}{% translate "Información del Acuerdo" %}{% endif %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -107,14 +108,14 @@
                         <div class="ai-section">
                             <div class="row align-items-center">
                                 <div class="col-md-8">
-                                    <h5><i class="bi bi-robot"></i> Generación con Inteligencia Artificial</h5>
-                                    <p class="mb-0">Deja que la IA genere automáticamente el contenido del acuerdo basándose en el título</p>
+                                    <h5><i class="bi bi-robot"></i> {% translate "Generación con Inteligencia Artificial" %}</h5>
+                                    <p class="mb-0">{% translate "Deja que la IA genere automáticamente el contenido del acuerdo basándose en el título" %}</p>
                                 </div>
                                 <div class="col-md-4 text-end">
                                     <div class="form-check form-switch">
                                         {{ form.generate_ai_content }}
                                         <label class="form-check-label" for="{{ form.generate_ai_content.id_for_label }}">
-                                            Usar IA
+                                            {% translate "Usar IA" %}
                                         </label>
                                     </div>
                                 </div>
@@ -134,7 +135,7 @@
                         
                         <!-- Información básica -->
                         <div class="form-section">
-                            <h6><i class="bi bi-info-circle"></i> Información Básica</h6>
+                            <h6><i class="bi bi-info-circle"></i> {% translate "Información Básica" %}</h6>
                             
                             <div class="mb-3">
                                 <label for="{{ form.title.id_for_label }}" class="form-label">
@@ -143,7 +144,7 @@
                                 {{ form.title }}
                                 <div class="form-text">{{ form.title.help_text }}</div>
                                 <div class="char-counter">
-                                    <span id="title-count">0</span> / 200 caracteres
+                                    <span id="title-count">0</span> {% translate "/ 200 caracteres" %}
                                 </div>
                             </div>
                             
@@ -154,14 +155,14 @@
                                 {{ form.body }}
                                 <div class="form-text">{{ form.body.help_text }}</div>
                                 <div class="char-counter">
-                                    <span id="body-count">0</span> caracteres
+                                    <span id="body-count">0</span> {% translate "caracteres" %}
                                 </div>
                             </div>
                         </div>
                         
                         <!-- Configuración -->
                         <div class="form-section">
-                            <h6><i class="bi bi-gear"></i> Configuración del Acuerdo</h6>
+                            <h6><i class="bi bi-gear"></i> {% translate "Configuración del Acuerdo" %}</h6>
                             
                             <div class="row">
                                 <div class="col-md-6">
@@ -211,16 +212,16 @@
                         <!-- Botones -->
                         <div class="d-flex gap-2 justify-content-end">
                             <a href="{% url 'agreement_list' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             {% if not agreement %}
                                 <button type="button" id="generate-ai-btn" class="btn btn-generate-ai" style="display: none;">
-                                    <i class="bi bi-robot"></i> Generar con IA
+                                    <i class="bi bi-robot"></i> {% translate "Generar con IA" %}
                                 </button>
                             {% endif %}
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i> 
-                                {% if agreement %}Actualizar{% else %}Crear{% endif %} Acuerdo
+                                {% if agreement %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Acuerdo" %}
                             </button>
                         </div>
                     </form>
@@ -233,14 +234,14 @@
             <div class="sticky-top" style="top: 2rem;">
                 <div class="card form-card">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-eye"></i> Vista Previa</h5>
+                        <h5 class="mb-0"><i class="bi bi-eye"></i> {% translate "Vista Previa" %}</h5>
                     </div>
                     <div class="card-body">
                         <div class="preview-section">
                             <div id="preview-content">
                                 <div class="text-center text-muted">
                                     <i class="bi bi-file-earmark display-4"></i>
-                                    <p class="mt-2">Escribe el título y contenido para ver la vista previa</p>
+                                    <p class="mt-2">{% translate "Escribe el título y contenido para ver la vista previa" %}</p>
                                 </div>
                             </div>
                         </div>
@@ -250,27 +251,27 @@
                 {% if agreement %}
                 <div class="card form-card mt-3">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Estado Actual</h5>
+                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> {% translate "Estado Actual" %}</h5>
                     </div>
                     <div class="card-body">
                         <div class="mb-2">
-                            <strong>Estado:</strong> 
+                            <strong>{% translate "Estado:" %}</strong> 
                             <span class="badge bg-secondary">{{ agreement.get_status_display }}</span>
                         </div>
                         <div class="mb-2">
-                            <strong>Firmas:</strong> {{ agreement.signature_count }} / {{ agreement.max_signers }}
+                            <strong>{% translate "Firmas:" %}</strong> {{ agreement.signature_count }} / {{ agreement.max_signers }}
                         </div>
                         <div class="mb-2">
-                            <strong>Editable:</strong>
+                            <strong>{% translate "Editable:" %}</strong>
                             {% if agreement.is_editable %}
-                                <span class="text-success">Sí</span>
+                                <span class="text-success">{% translate "Sí" %}</span>
                             {% else %}
-                                <span class="text-danger">No (tiene firmas)</span>
+                                <span class="text-danger">{% translate "No (tiene firmas)" %}</span>
                             {% endif %}
                         </div>
                         {% if agreement.public_token %}
                             <div class="mb-2">
-                                <strong>Token:</strong>
+                                <strong>{% translate "Token:" %}</strong>
                                 <code class="small">{{ agreement.public_token|truncatechars:20 }}</code>
                             </div>
                         {% endif %}

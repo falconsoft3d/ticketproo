@@ -1,22 +1,23 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Eliminar Acción Financiera - TicketProo{% endblock %}
+{% block title %}{% translate "Eliminar Acción Financiera - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col">
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="{% url 'financial_actions_list' %}">Acciones Financieras</a></li>
-                <li class="breadcrumb-item active">Eliminar</li>
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'financial_actions_list' %}">{% translate "Acciones Financieras" %}</a></li>
+                <li class="breadcrumb-item active">{% translate "Eliminar" %}</li>
             </ol>
         </nav>
         
         <h1 class="mb-2 text-danger">
-            <i class="bi bi-trash"></i> Eliminar Acción Financiera
+            <i class="bi bi-trash"></i> {% translate "Eliminar Acción Financiera" %}
         </h1>
-        <p class="text-muted">Confirme la eliminación de la acción financiera</p>
+        <p class="text-muted">{% translate "Confirme la eliminación de la acción financiera" %}</p>
     </div>
 </div>
 
@@ -25,43 +26,43 @@
         <div class="card border-danger">
             <div class="card-header bg-danger text-white">
                 <h5 class="card-title mb-0">
-                    <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                    <i class="bi bi-exclamation-triangle"></i> {% translate "Confirmar Eliminación" %}
                 </h5>
             </div>
             <div class="card-body">
                 <div class="alert alert-danger">
                     <h6 class="alert-heading">
-                        <i class="bi bi-exclamation-triangle"></i> ¡Atención!
+                        <i class="bi bi-exclamation-triangle"></i> {% translate "¡Atención!" %}
                     </h6>
                     <p class="mb-0">
-                        Esta acción eliminará permanentemente la acción financiera y 
-                        <strong>no se podrá deshacer</strong>. La acción ya no aparecerá en el ticker del dashboard.
+                        {% translate "Esta acción eliminará permanentemente la acción financiera y" %} 
+                        <strong>{% translate "no se podrá deshacer" %}</strong>{% translate ". La acción ya no aparecerá en el ticker del dashboard." %}
                     </p>
                 </div>
                 
                 <!-- Detalles de la acción a eliminar -->
                 <div class="row">
                     <div class="col-md-6">
-                        <h6>Detalles de la Acción:</h6>
+                        <h6>{% translate "Detalles de la Acción:" %}</h6>
                         <ul class="list-unstyled">
-                            <li><strong>Símbolo:</strong> {{ action.symbol }}</li>
-                            <li><strong>Nombre:</strong> {{ action.name }}</li>
-                            <li><strong>Precio Actual:</strong> {{ action.current_price }} {{ action.currency }}</li>
-                            <li><strong>Estado:</strong> 
+                            <li><strong>{% translate "Símbolo:" %}</strong> {{ action.symbol }}</li>
+                            <li><strong>{% translate "Nombre:" %}</strong> {{ action.name }}</li>
+                            <li><strong>{% translate "Precio Actual:" %}</strong> {{ action.current_price }} {{ action.currency }}</li>
+                            <li><strong>{% translate "Estado:" %}</strong> 
                                 {% if action.is_active %}
-                                    <span class="badge bg-success">Activa</span>
+                                    <span class="badge bg-success">{% translate "Activa" %}</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Inactiva</span>
+                                    <span class="badge bg-secondary">{% translate "Inactiva" %}</span>
                                 {% endif %}
                             </li>
                         </ul>
                     </div>
                     <div class="col-md-6">
-                        <h6>Información Adicional:</h6>
+                        <h6>{% translate "Información Adicional:" %}</h6>
                         <ul class="list-unstyled">
-                            <li><strong>Orden:</strong> {{ action.order }}</li>
-                            <li><strong>Creado:</strong> {{ action.created_at|date:"d/m/Y H:i" }}</li>
-                            <li><strong>Última Actualización:</strong> {{ action.last_updated|date:"d/m/Y H:i" }}</li>
+                            <li><strong>{% translate "Orden:" %}</strong> {{ action.order }}</li>
+                            <li><strong>{% translate "Creado:" %}</strong> {{ action.created_at|date:"d/m/Y H:i" }}</li>
+                            <li><strong>{% translate "Última Actualización:" %}</strong> {{ action.last_updated|date:"d/m/Y H:i" }}</li>
                         </ul>
                     </div>
                 </div>
@@ -71,10 +72,10 @@
                 <form method="post" class="d-flex gap-2">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-trash"></i> Sí, Eliminar Acción
+                        <i class="bi bi-trash"></i> {% translate "Sí, Eliminar Acción" %}
                     </button>
                     <a href="{% url 'financial_actions_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-x-circle"></i> Cancelar
+                        <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                     </a>
                 </form>
             </div>
@@ -86,7 +87,7 @@
         <div class="card">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-eye"></i> Esta información se eliminará
+                    <i class="bi bi-eye"></i> {% translate "Esta información se eliminará" %}
                 </h6>
             </div>
             <div class="card-body">
@@ -108,7 +109,7 @@
                 </div>
                 <div class="text-center mt-2">
                     <small class="text-muted">
-                        <i class="bi bi-trash"></i> Se eliminará del ticker
+                        <i class="bi bi-trash"></i> {% translate "Se eliminará del ticker" %}
                     </small>
                 </div>
             </div>
@@ -118,22 +119,22 @@
         <div class="card mt-3">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-info-circle"></i> Impacto de la Eliminación
+                    <i class="bi bi-info-circle"></i> {% translate "Impacto de la Eliminación" %}
                 </h6>
             </div>
             <div class="card-body">
                 <ul class="list-unstyled mb-0">
                     <li class="mb-2">
                         <i class="bi bi-x-circle text-danger"></i>
-                        <span class="ms-2">Ya no aparecerá en el ticker del dashboard</span>
+                        <span class="ms-2">{% translate "Ya no aparecerá en el ticker del dashboard" %}</span>
                     </li>
                     <li class="mb-2">
                         <i class="bi bi-x-circle text-danger"></i>
-                        <span class="ms-2">Se perderá el historial de precios</span>
+                        <span class="ms-2">{% translate "Se perderá el historial de precios" %}</span>
                     </li>
                     <li class="mb-0">
                         <i class="bi bi-arrow-clockwise text-info"></i>
-                        <span class="ms-2">Puede volver a crearla manualmente</span>
+                        <span class="ms-2">{% translate "Puede volver a crearla manualmente" %}</span>
                     </li>
                 </ul>
             </div>

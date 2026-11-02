@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -63,7 +64,7 @@
             </div>
             <a href="{% url 'public_client_requests' token %}" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-left me-1"></i>
-                Volver
+                {% translate "Volver" %}
             </a>
         </div>
 
@@ -75,28 +76,28 @@
             </h4>
             
             <div class="mb-3">
-                <span class="badge bg-secondary me-2">Estado:</span>
+                <span class="badge bg-secondary me-2">{% translate "Estado:" %}</span>
                 {% if client_request.status == 'pending' %}
                     <span class="badge bg-warning text-dark">
-                        <i class="bi bi-clock me-1"></i>Pendiente
+                        <i class="bi bi-clock me-1"></i>{% translate "Pendiente" %}
                     </span>
                 {% elif client_request.status == 'in_progress' %}
                     <span class="badge bg-info">
-                        <i class="bi bi-arrow-repeat me-1"></i>En Progreso
+                        <i class="bi bi-arrow-repeat me-1"></i>{% translate "En Progreso" %}
                     </span>
                 {% elif client_request.status == 'completed' %}
                     <span class="badge bg-success">
-                        <i class="bi bi-check-circle me-1"></i>Completada
+                        <i class="bi bi-check-circle me-1"></i>{% translate "Completada" %}
                     </span>
                 {% elif client_request.status == 'cancelled' %}
                     <span class="badge bg-danger">
-                        <i class="bi bi-x-circle me-1"></i>Cancelada
+                        <i class="bi bi-x-circle me-1"></i>{% translate "Cancelada" %}
                     </span>
                 {% endif %}
                 
                 {% if has_response %}
                     <span class="badge bg-success ms-2">
-                        <i class="bi bi-check-circle-fill me-1"></i>Respondida
+                        <i class="bi bi-check-circle-fill me-1"></i>{% translate "Respondida" %}
                     </span>
                 {% endif %}
             </div>
@@ -111,13 +112,13 @@
             <div class="row">
                 <div class="col-md-6">
                     <p class="mb-2">
-                        <strong><i class="bi bi-person me-1"></i> Solicitado a:</strong><br>
+                        <strong><i class="bi bi-person me-1"></i> {% translate "Solicitado a:" %}</strong><br>
                         {{ client_request.requested_to }}
                     </p>
                 </div>
                 <div class="col-md-6">
                     <p class="mb-2">
-                        <strong><i class="bi bi-calendar me-1"></i> Fecha:</strong><br>
+                        <strong><i class="bi bi-calendar me-1"></i> {% translate "Fecha:" %}</strong><br>
                         {{ client_request.created_at|date:"d/m/Y H:i" }}
                     </p>
                 </div>
@@ -126,12 +127,12 @@
             {% if client_request.attachment %}
             <hr>
             <div class="mb-2">
-                <strong><i class="bi bi-paperclip me-1"></i> Documento adjunto:</strong><br>
+                <strong><i class="bi bi-paperclip me-1"></i> {% translate "Documento adjunto:" %}</strong><br>
                 <a href="{{ client_request.attachment.url }}" 
                    class="btn btn-sm btn-info mt-2" 
                    target="_blank">
                     <i class="bi bi-download me-1"></i>
-                    Descargar Documento de Referencia
+                    {% translate "Descargar Documento de Referencia" %}
                 </a>
             </div>
             {% endif %}
@@ -142,22 +143,22 @@
         <div class="response-card">
             <h5 class="mb-3">
                 <i class="bi bi-check-circle-fill text-success me-2"></i>
-                Respuesta Enviada
+                {% translate "Respuesta Enviada" %}
             </h5>
             
             <div class="mb-3">
-                <strong>Respuesta:</strong>
+                <strong>{% translate "Respuesta:" %}</strong>
                 <p class="text-muted mt-2">{{ client_request.response.response_text|linebreaks }}</p>
             </div>
 
             {% if client_request.response.attachment %}
             <div class="mb-3">
-                <strong>Archivo Adjunto:</strong><br>
+                <strong>{% translate "Archivo Adjunto:" %}</strong><br>
                 <a href="{{ client_request.response.attachment.url }}" 
                    class="btn btn-sm btn-outline-primary mt-2" 
                    target="_blank">
                     <i class="bi bi-download me-1"></i>
-                    Descargar Archivo
+                    {% translate "Descargar Archivo" %}
                 </a>
             </div>
             {% endif %}
@@ -174,7 +175,7 @@
         <div class="form-card">
             <h5 class="mb-3">
                 <i class="bi bi-pencil-square text-warning me-2"></i>
-                Responder Solicitud
+                {% translate "Responder Solicitud" %}
             </h5>
 
             {% if messages %}
@@ -198,7 +199,7 @@
                     {% if response_form.response_text.errors %}
                         <div class="text-danger small mt-1">{{ response_form.response_text.errors.0 }}</div>
                     {% endif %}
-                    <div class="form-text">Escribe aquí tu respuesta detallada</div>
+                    <div class="form-text">{% translate "Escribe aquí tu respuesta detallada" %}</div>
                 </div>
 
                 <div class="mb-3">
@@ -210,13 +211,13 @@
                     {% if response_form.attachment.errors %}
                         <div class="text-danger small mt-1">{{ response_form.attachment.errors.0 }}</div>
                     {% endif %}
-                    <div class="form-text">Puedes adjuntar un archivo si es necesario (opcional)</div>
+                    <div class="form-text">{% translate "Puedes adjuntar un archivo si es necesario (opcional)" %}</div>
                 </div>
 
                 <div class="d-grid">
                     <button type="submit" class="btn btn-success btn-lg">
                         <i class="bi bi-send me-2"></i>
-                        Enviar Respuesta
+                        {% translate "Enviar Respuesta" %}
                     </button>
                 </div>
             </form>
@@ -227,7 +228,7 @@
         <div class="text-center mt-4">
             <p class="text-white small">
                 <i class="bi bi-shield-check me-1"></i>
-                Portal seguro - Todos los datos son confidenciales
+                {% translate "Portal seguro - Todos los datos son confidenciales" %}
             </p>
         </div>
     </div>

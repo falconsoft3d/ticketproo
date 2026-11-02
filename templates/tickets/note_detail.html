@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -21,11 +22,11 @@
                         <div class="d-flex align-items-center gap-2">
                             {% if note.is_private %}
                                 <span class="badge bg-warning text-dark">
-                                    <i class="bi bi-lock"></i> Nota Privada
+                                    <i class="bi bi-lock"></i> {% translate "Nota Privada" %}
                                 </span>
                             {% else %}
                                 <span class="badge bg-info">
-                                    <i class="bi bi-unlock"></i> Nota Pública
+                                    <i class="bi bi-unlock"></i> {% translate "Nota Pública" %}
                                 </span>
                             {% endif %}
                             <span class="text-muted small">
@@ -46,17 +47,17 @@
                         {% if note.is_shareable and note.share_token %}
                             <div class="btn-group">
                                 <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
-                                    <i class="bi bi-share"></i> Compartido
+                                    <i class="bi bi-share"></i> {% translate "Compartido" %}
                                 </button>
                                 <ul class="dropdown-menu">
                                     <li>
                                         <a class="dropdown-item" href="#" onclick="copyShareLink()">
-                                            <i class="bi bi-copy"></i> Copiar enlace
+                                            <i class="bi bi-copy"></i> {% translate "Copiar enlace" %}
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="{% url 'shared_note' note.share_token %}" target="_blank">
-                                            <i class="bi bi-eye"></i> Ver enlace público
+                                            <i class="bi bi-eye"></i> {% translate "Ver enlace público" %}
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
@@ -65,7 +66,7 @@
                                             {% csrf_token %}
                                             <button type="submit" class="dropdown-item text-warning" 
                                                     onclick="return confirm('¿Regenerar enlace? El enlace actual dejará de funcionar.')">
-                                                <i class="bi bi-arrow-clockwise"></i> Regenerar enlace
+                                                <i class="bi bi-arrow-clockwise"></i> {% translate "Regenerar enlace" %}
                                             </button>
                                         </form>
                                     </li>
@@ -74,7 +75,7 @@
                                             {% csrf_token %}
                                             <button type="submit" class="dropdown-item text-danger" 
                                                     onclick="return confirm('¿Deshabilitar compartir? El enlace dejará de funcionar.')">
-                                                <i class="bi bi-x-circle"></i> Deshabilitar compartir
+                                                <i class="bi bi-x-circle"></i> {% translate "Deshabilitar compartir" %}
                                             </button>
                                         </form>
                                     </li>
@@ -84,17 +85,17 @@
                             <form method="post" action="{% url 'note_generate_share_link' note.id %}" style="display: inline;">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-outline-info">
-                                    <i class="bi bi-share"></i> Generar enlace
+                                    <i class="bi bi-share"></i> {% translate "Generar enlace" %}
                                 </button>
                             </form>
                         {% endif %}
                     {% endif %}
                     
                     <a href="{% url 'note_edit' note.id %}" class="btn btn-outline-primary">
-                        <i class="bi bi-pencil"></i> Editar
+                        <i class="bi bi-pencil"></i> {% translate "Editar" %}
                     </a>
                     <a href="{% url 'note_delete' note.id %}" class="btn btn-outline-danger">
-                        <i class="bi bi-trash"></i> Eliminar
+                        <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                     </a>
                 </div>
             </div>
@@ -104,12 +105,12 @@
                 <div class="alert alert-info d-flex align-items-center mb-4">
                     <i class="bi bi-info-circle me-2"></i>
                     <div class="flex-grow-1">
-                        <strong>Esta nota está siendo compartida públicamente</strong>
+                        <strong>{% translate "Esta nota está siendo compartida públicamente" %}</strong>
                         <div class="mt-1">
                             <small class="text-muted">
-                                Enlace: <span id="shareLink">{{ request.scheme }}://{{ request.get_host }}{% url 'shared_note' note.share_token %}</span>
+                                {% translate "Enlace:" %} <span id="shareLink">{{ request.scheme }}://{{ request.get_host }}{% url 'shared_note' note.share_token %}</span>
                                 <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyShareLink()">
-                                    <i class="bi bi-copy"></i> Copiar
+                                    <i class="bi bi-copy"></i> {% translate "Copiar" %}
                                 </button>
                             </small>
                         </div>
@@ -125,7 +126,7 @@
             <!-- Contenido de la nota -->
             <div class="card mb-4">
                 <div class="card-body">
-                    <h5 class="card-title">Descripción</h5>
+                    <h5 class="card-title">{% translate "Descripción" %}</h5>
                     <div class="note-content">
                         {{ note.description|linebreaks }}
                     </div>
@@ -186,7 +187,7 @@
                 <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-person-circle text-primary"></i>
-                        Usuario Asociado
+                        {% translate "Usuario Asociado" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -209,13 +210,13 @@
                         <div class="col-6">
                             <div class="text-center p-2 bg-light rounded">
                                 <div class="fw-bold text-primary">{{ note.user.created_tickets.count }}</div>
-                                <div class="small text-muted">Tickets</div>
+                                <div class="small text-muted">{% translate "Tickets" %}</div>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="text-center p-2 bg-light rounded">
                                 <div class="fw-bold text-info">{{ note.user.notes.count }}</div>
-                                <div class="small text-muted">Notas</div>
+                                <div class="small text-muted">{% translate "Notas" %}</div>
                             </div>
                         </div>
                     </div>
@@ -223,10 +224,10 @@
                     <!-- Enlaces rápidos -->
                     <div class="mt-3">
                         <a href="{% url 'user_notes' note.user.id %}" class="btn btn-sm btn-outline-primary w-100 mb-2">
-                            <i class="bi bi-journal-text"></i> Ver todas sus notas
+                            <i class="bi bi-journal-text"></i> {% translate "Ver todas sus notas" %}
                         </a>
                         <a href="{% url 'note_create' %}?user={{ note.user.id }}" class="btn btn-sm btn-outline-success w-100">
-                            <i class="bi bi-plus-circle"></i> Nueva nota para este usuario
+                            <i class="bi bi-plus-circle"></i> {% translate "Nueva nota para este usuario" %}
                         </a>
                     </div>
                 </div>
@@ -237,40 +238,40 @@
                 <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-info-circle text-info"></i>
-                        Detalles de la Nota
+                        {% translate "Detalles de la Nota" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="small text-muted">Creada por</label>
+                        <label class="small text-muted">{% translate "Creada por" %}</label>
                         <div class="fw-bold">{{ note.created_by.get_full_name|default:note.created_by.username }}</div>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="small text-muted">Fecha de creación</label>
+                        <label class="small text-muted">{% translate "Fecha de creación" %}</label>
                         <div class="fw-bold">{{ note.created_at|date:"d/m/Y H:i" }}</div>
                     </div>
                     
                     {% if note.updated_at != note.created_at %}
                         <div class="mb-3">
-                            <label class="small text-muted">Última actualización</label>
+                            <label class="small text-muted">{% translate "Última actualización" %}</label>
                             <div class="fw-bold">{{ note.updated_at|date:"d/m/Y H:i" }}</div>
                         </div>
                     {% endif %}
                     
                     <div class="mb-3">
-                        <label class="small text-muted">Visibilidad</label>
+                        <label class="small text-muted">{% translate "Visibilidad" %}</label>
                         <div class="fw-bold">
                             {% if note.is_private %}
-                                <i class="bi bi-lock text-warning"></i> Solo agentes
+                                <i class="bi bi-lock text-warning"></i> {% translate "Solo agentes" %}
                             {% else %}
-                                <i class="bi bi-unlock text-info"></i> Usuario y agentes
+                                <i class="bi bi-unlock text-info"></i> {% translate "Usuario y agentes" %}
                             {% endif %}
                         </div>
                     </div>
                     
                     <div class="mb-0">
-                        <label class="small text-muted">Tickets relacionados</label>
+                        <label class="small text-muted">{% translate "Tickets relacionados" %}</label>
                         <div class="fw-bold">{{ note.get_related_tickets_count }} ticket{{ note.get_related_tickets_count|pluralize:"s" }}</div>
                     </div>
                 </div>
@@ -281,19 +282,19 @@
                 <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-lightning text-warning"></i>
-                        Acciones Rápidas
+                        {% translate "Acciones Rápidas" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         <a href="{% url 'notes_list' %}" class="btn btn-outline-primary">
-                            <i class="bi bi-list"></i> Ver todas las notas
+                            <i class="bi bi-list"></i> {% translate "Ver todas las notas" %}
                         </a>
                         <a href="{% url 'note_create' %}" class="btn btn-outline-success">
-                            <i class="bi bi-plus-circle"></i> Crear nueva nota
+                            <i class="bi bi-plus-circle"></i> {% translate "Crear nueva nota" %}
                         </a>
                         <a href="{% url 'ticket_list' %}" class="btn btn-outline-info">
-                            <i class="bi bi-ticket-perforated"></i> Ver tickets
+                            <i class="bi bi-ticket-perforated"></i> {% translate "Ver tickets" %}
                         </a>
                     </div>
                 </div>

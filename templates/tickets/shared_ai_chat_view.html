@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -103,7 +104,7 @@
             </div>
             <h2 class="mb-1">{{ shared_chat.title }}</h2>
             <p class="mb-0 opacity-75">
-                Conversación compartida con IA
+                {% translate "Conversación compartida con IA" %}
             </p>
         </div>
 
@@ -128,7 +129,7 @@
             {% empty %}
                 <div class="text-center text-muted py-5">
                     <i class="bi bi-chat-dots" style="font-size: 3rem;"></i>
-                    <p class="mt-3">No hay mensajes en esta conversación</p>
+                    <p class="mt-3">{% translate "No hay mensajes en esta conversación" %}</p>
                 </div>
             {% endfor %}
         </div>

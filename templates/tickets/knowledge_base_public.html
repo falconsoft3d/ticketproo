@@ -1,4 +1,5 @@
 {% extends "public_base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ knowledge_base.title }}{% endblock %}
@@ -26,7 +27,7 @@
                     {% if knowledge_base.tags %}
                     <p class="mb-2">
                         <i class="bi bi-tags"></i>
-                        <strong>Etiquetas:</strong> 
+                        <strong>{% translate "Etiquetas:" %}</strong> 
                         <small class="text-muted">{{ knowledge_base.tags }}</small>
                     </p>
                     {% endif %}
@@ -50,7 +51,7 @@
     <div class="card mb-4 shadow-sm">
         <div class="card-header bg-light">
             <h4 class="mb-0">
-                <i class="bi bi-file-text"></i> Descripción
+                <i class="bi bi-file-text"></i> {% translate "Descripción" %}
             </h4>
         </div>
         <div class="card-body">
@@ -64,10 +65,10 @@
     <div class="card shadow-sm">
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
             <h4 class="mb-0">
-                <i class="bi bi-code-slash"></i> Código Fuente
+                <i class="bi bi-code-slash"></i> {% translate "Código Fuente" %}
             </h4>
             <button class="btn btn-sm btn-outline-light" onclick="copyCode()">
-                <i class="bi bi-clipboard"></i> Copiar Código
+                <i class="bi bi-clipboard"></i> {% translate "Copiar Código" %}
             </button>
         </div>
         <div class="card-body p-0">
@@ -80,7 +81,7 @@
     <div class="text-center mt-5 mb-5">
         <p class="text-muted">
             <i class="bi bi-info-circle"></i>
-            Este contenido fue compartido públicamente desde una Base de Conocimientos
+            {% translate "Este contenido fue compartido públicamente desde una Base de Conocimientos" %}
         </p>
     </div>
 </div>

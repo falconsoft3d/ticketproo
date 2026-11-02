@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="container">
@@ -37,7 +38,7 @@
                                 <div id="themePreview" class="theme-preview-container" style="width: 80px; height: 40px; border-radius: 10px; border: 2px solid #ddd; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
                             </div>
                             <small class="form-text text-muted">
-                                <i class="bi bi-info-circle"></i> Este será el aspecto visual del formulario público
+                                <i class="bi bi-info-circle"></i> {% translate "Este será el aspecto visual del formulario público" %}
                             </small>
                             {% if form.theme.errors %}
                                 <div class="text-danger">{{ form.theme.errors }}</div>
@@ -66,10 +67,10 @@
                         
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'form_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle"></i> {% if form_obj %}Actualizar{% else %}Crear{% endif %} Formulario
+                                <i class="bi bi-check-circle"></i> {% if form_obj %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Formulario" %}
                             </button>
                         </div>
                     </form>

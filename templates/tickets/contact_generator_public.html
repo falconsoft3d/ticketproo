@@ -1,4 +1,5 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -75,7 +76,7 @@
                     <div class="mb-4">
                         <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
                     </div>
-                    <h2 class="mb-3 text-success">¡Perfecto!</h2>
+                    <h2 class="mb-3 text-success">{% translate "¡Perfecto!" %}</h2>
                     <p class="lead mb-4">{{ success_message }}</p>
                     <div class="bg-light p-3 rounded">
                         <small class="text-muted">
@@ -113,7 +114,7 @@
                                 <div class="mb-3">
                                     <label for="{{ form.name.id_for_label }}" class="form-label fw-bold required-field">
                                         <i class="bi bi-person me-1"></i>
-                                        Nombre Completo
+                                        {% translate "Nombre Completo" %}
                                     </label>
                                     {{ form.name }}
                                     {% if form.name.errors %}
@@ -127,7 +128,7 @@
                                 <div class="mb-3">
                                     <label for="{{ form.email.id_for_label }}" class="form-label fw-bold required-field">
                                         <i class="bi bi-envelope me-1"></i>
-                                        Correo Electrónico
+                                        {% translate "Correo Electrónico" %}
                                     </label>
                                     {{ form.email }}
                                     {% if form.email.errors %}
@@ -142,7 +143,7 @@
                                     <div class="mb-3">
                                         <label for="{{ form.phone.id_for_label }}" class="form-label fw-bold">
                                             <i class="bi bi-telephone me-1"></i>
-                                            Teléfono
+                                            {% translate "Teléfono" %}
                                         </label>
                                         {{ form.phone }}
                                         {% if form.phone.errors %}
@@ -158,7 +159,7 @@
                                     <div class="mb-3">
                                         <label for="{{ form.company.id_for_label }}" class="form-label fw-bold">
                                             <i class="bi bi-building me-1"></i>
-                                            Empresa
+                                            {% translate "Empresa" %}
                                         </label>
                                         {{ form.company }}
                                         {% if form.company.errors %}
@@ -174,7 +175,7 @@
                                     <div class="mb-3">
                                         <label for="{{ form.position.id_for_label }}" class="form-label fw-bold">
                                             <i class="bi bi-person-badge me-1"></i>
-                                            Cargo o Posición
+                                            {% translate "Cargo o Posición" %}
                                         </label>
                                         {{ form.position }}
                                         {% if form.position.errors %}
@@ -190,7 +191,7 @@
                                     <div class="mb-3">
                                         <label for="{{ form.notes.id_for_label }}" class="form-label fw-bold">
                                             <i class="bi bi-chat-text me-1"></i>
-                                            Comentarios Adicionales
+                                            {% translate "Comentarios Adicionales" %}
                                         </label>
                                         {{ form.notes }}
                                         {% if form.notes.errors %}
@@ -205,7 +206,7 @@
                         <div class="d-grid">
                             <button type="submit" class="btn btn-custom bg-primary text-white btn-lg" id="submitBtn">
                                 <i class="bi bi-send me-2"></i>
-                                Enviar Información
+                                {% translate "Enviar Información" %}
                             </button>
                         </div>
 
@@ -213,7 +214,7 @@
                         <div class="text-center mt-4">
                             <small class="text-muted">
                                 <i class="bi bi-shield-check me-1"></i>
-                                Tu información será tratada de forma confidencial y no será compartida con terceros.
+                                {% translate "Tu información será tratada de forma confidencial y no será compartida con terceros." %}
                             </small>
                         </div>
                     </form>
@@ -223,7 +224,7 @@
             <!-- Footer -->
             <div class="text-center mt-4">
                 <small class="text-muted">
-                    Powered by <strong>{{ generator.company.name }}</strong>
+                    {% translate "Powered by" %} <strong>{{ generator.company.name }}</strong>
                 </small>
             </div>
         </div>

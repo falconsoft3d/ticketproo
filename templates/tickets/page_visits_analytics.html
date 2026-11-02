@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -105,15 +106,15 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1 class="h3 mb-0">📊 Analytics de Páginas Públicas</h1>
+                    <h1 class="h3 mb-0">{% translate "📊 Analytics de Páginas Públicas" %}</h1>
                     <p class="text-muted">Análisis de visitas del {{ start_date|date:"d/m/Y" }} al {{ end_date|date:"d/m/Y" }}</p>
                 </div>
                 <div>
                     <a href="{% url 'page_visits_detail' %}" class="btn btn-outline-primary me-2">
-                        <i class="fas fa-list"></i> Ver Detalle
+                        <i class="fas fa-list"></i> {% translate "Ver Detalle" %}
                     </a>
                     <a href="{% url 'page_visits_export' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-success">
-                        <i class="fas fa-download"></i> Exportar CSV
+                        <i class="fas fa-download"></i> {% translate "Exportar CSV" %}
                     </a>
                 </div>
             </div>
@@ -124,31 +125,31 @@
     <div class="filter-card">
         <div class="alert alert-info mb-3">
             <i class="fas fa-info-circle"></i> 
-            <strong>Período seleccionado:</strong> {{ start_date|date:"d/m/Y" }} - {{ end_date|date:"d/m/Y" }} 
+            <strong>{% translate "Período seleccionado:" %}</strong> {{ start_date|date:"d/m/Y" }} - {{ end_date|date:"d/m/Y" }} 
             ({{ total_visits }} visitas en total)
         </div>
         <form method="get" class="row g-3">
             <div class="col-md-3">
-                <label class="form-label">Fecha Desde</label>
+                <label class="form-label">{% translate "Fecha Desde" %}</label>
                 <input type="date" class="form-control" name="fecha_desde" value="{{ start_date|date:'Y-m-d' }}">
             </div>
             <div class="col-md-3">
-                <label class="form-label">Fecha Hasta</label>
+                <label class="form-label">{% translate "Fecha Hasta" %}</label>
                 <input type="date" class="form-control" name="fecha_hasta" value="{{ end_date|date:'Y-m-d' }}">
             </div>
             <div class="col-md-3">
-                <label class="form-label">Tipo de Página</label>
+                <label class="form-label">{% translate "Tipo de Página" %}</label>
                 <select class="form-select" name="page_type">
-                    <option value="">Todas las páginas</option>
+                    <option value="">{% translate "Todas las páginas" %}</option>
                     {% for value, label in page_types %}
                         <option value="{{ value }}" {% if page_type_filter == value %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">País</label>
+                <label class="form-label">{% translate "País" %}</label>
                 <select class="form-select" name="country">
-                    <option value="">Todos los países</option>
+                    <option value="">{% translate "Todos los países" %}</option>
                     {% for country in countries %}
                         <option value="{{ country.country_code }}" {% if country_filter == country.country_code %}selected{% endif %}>
                             {{ country.country }}
@@ -159,13 +160,13 @@
             <div class="col-md-3">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" name="exclude_bots" value="true" {% if exclude_bots %}checked{% endif %}>
-                    <label class="form-check-label">Excluir bots</label>
+                    <label class="form-check-label">{% translate "Excluir bots" %}</label>
                 </div>
             </div>
             <div class="col-md-3">
                 <label class="form-label">&nbsp;</label>
                 <button type="submit" class="btn btn-primary w-100">
-                    <i class="fas fa-filter"></i> Filtrar
+                    <i class="fas fa-filter"></i> {% translate "Filtrar" %}
                 </button>
             </div>
         </form>
@@ -176,25 +177,25 @@
         <div class="col-md-3">
             <div class="stats-card">
                 <h3>{{ total_visits|floatformat:0 }}</h3>
-                <p><i class="fas fa-eye"></i> Total de Visitas</p>
+                <p><i class="fas fa-eye"></i> {% translate "Total de Visitas" %}</p>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stats-card">
                 <h3>{{ unique_ips|floatformat:0 }}</h3>
-                <p><i class="fas fa-users"></i> Visitantes Únicos</p>
+                <p><i class="fas fa-users"></i> {% translate "Visitantes Únicos" %}</p>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stats-card">
                 <h3>{{ unique_countries|floatformat:0 }}</h3>
-                <p><i class="fas fa-globe"></i> Países Diferentes</p>
+                <p><i class="fas fa-globe"></i> {% translate "Países Diferentes" %}</p>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stats-card">
                 <h3>{{ landing_total_visits|floatformat:0 }}</h3>
-                <p><i class="fas fa-rocket"></i> Visitas Landing</p>
+                <p><i class="fas fa-rocket"></i> {% translate "Visitas Landing" %}</p>
             </div>
         </div>
     </div>
@@ -205,19 +206,19 @@
         <div class="col-md-4">
             <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
                 <h3>{{ landing_total_visits|floatformat:0 }}</h3>
-                <p><i class="fas fa-bullseye"></i> Total Visitas Landing</p>
+                <p><i class="fas fa-bullseye"></i> {% translate "Total Visitas Landing" %}</p>
             </div>
         </div>
         <div class="col-md-4">
             <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
                 <h3>{{ landing_unique_visitors|floatformat:0 }}</h3>
-                <p><i class="fas fa-users"></i> Visitantes Únicos Landing</p>
+                <p><i class="fas fa-users"></i> {% translate "Visitantes Únicos Landing" %}</p>
             </div>
         </div>
         <div class="col-md-4">
             <div class="stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
                 <h3>{% if landing_total_visits > 0 %}{{ landing_unique_visitors|floatformat:0 }}/{{ landing_total_visits|floatformat:0 }}{% else %}0%{% endif %}</h3>
-                <p><i class="fas fa-chart-line"></i> Ratio Conversión</p>
+                <p><i class="fas fa-chart-line"></i> {% translate "Ratio Conversión" %}</p>
             </div>
         </div>
     </div>
@@ -228,14 +229,14 @@
         <!-- Visitas por día -->
         <div class="col-md-8">
             <div class="chart-container">
-                <h5><i class="fas fa-chart-line"></i> Visitas por Día</h5>
+                <h5><i class="fas fa-chart-line"></i> {% translate "Visitas por Día" %}</h5>
                 {% if total_visits > 0 %}
                     <div id="visitsChart"></div>
                 {% else %}
                     <div class="chart-no-data">
                         <div class="text-center">
                             <i class="fas fa-chart-line fa-3x mb-2"></i>
-                            <p>No hay datos de visitas en el período seleccionado</p>
+                            <p>{% translate "No hay datos de visitas en el período seleccionado" %}</p>
                         </div>
                     </div>
                 {% endif %}
@@ -245,14 +246,14 @@
         <!-- Dispositivos -->
         <div class="col-md-4">
             <div class="chart-container">
-                <h5><i class="fas fa-chart-pie"></i> Dispositivos</h5>
+                <h5><i class="fas fa-chart-pie"></i> {% translate "Dispositivos" %}</h5>
                 {% if mobile_visits > 0 or desktop_visits > 0 %}
                     <div id="devicesChart"></div>
                 {% else %}
                     <div class="chart-no-data">
                         <div class="text-center">
                             <i class="fas fa-mobile fa-3x mb-2"></i>
-                            <p>No hay datos de dispositivos</p>
+                            <p>{% translate "No hay datos de dispositivos" %}</p>
                         </div>
                     </div>
                 {% endif %}
@@ -264,7 +265,7 @@
         <!-- Visitas por página -->
         <div class="col-md-6">
             <div class="chart-container">
-                <h5><i class="fas fa-chart-bar"></i> Páginas Más Visitadas</h5>
+                <h5><i class="fas fa-chart-bar"></i> {% translate "Páginas Más Visitadas" %}</h5>
                 {% for page in visits_by_page %}
                 <div class="mb-3">
                     <div class="d-flex justify-content-between">
@@ -282,7 +283,7 @@
         <!-- Top países -->
         <div class="col-md-6">
             <div class="chart-container">
-                <h5><i class="fas fa-globe-americas"></i> Países con Más Visitas</h5>
+                <h5><i class="fas fa-globe-americas"></i> {% translate "Países con Más Visitas" %}</h5>
                 {% for country in top_countries %}
                 <div class="mb-3">
                     <div class="d-flex justify-content-between">
@@ -305,14 +306,14 @@
     <div class="row">
         <div class="col-12">
             <div class="chart-container">
-                <h5><i class="fas fa-rocket"></i> Landing Pages Más Visitadas</h5>
+                <h5><i class="fas fa-rocket"></i> {% translate "Landing Pages Más Visitadas" %}</h5>
                 <div class="row">
                     {% for landing in landing_pages_stats %}
                     <div class="col-md-6 mb-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <span class="badge bg-warning text-dark">
-                                    <i class="fas fa-bullseye"></i> Landing
+                                    <i class="fas fa-bullseye"></i> {% translate "Landing" %}
                                 </span>
                                 <div class="mt-1">
                                     <strong>{{ landing.page_title|default:"Sin título" }}</strong>
@@ -322,7 +323,7 @@
                             </div>
                             <div class="text-end">
                                 <h6 class="mb-0">{{ landing.count }}</h6>
-                                <small class="text-muted">visitas</small>
+                                <small class="text-muted">{% translate "visitas" %}</small>
                             </div>
                         </div>
                         <div class="progress progress-bar-custom mt-2">
@@ -335,7 +336,7 @@
                 <!-- Fuentes UTM de Landing Pages -->
                 {% if landing_utm_sources %}
                 <div class="mt-4">
-                    <h6><i class="fas fa-tag"></i> Fuentes de Tráfico (UTM) para Landing Pages</h6>
+                    <h6><i class="fas fa-tag"></i> {% translate "Fuentes de Tráfico (UTM) para Landing Pages" %}</h6>
                     {% for utm in landing_utm_sources %}
                     <div class="mb-2">
                         <div class="d-flex justify-content-between">
@@ -359,7 +360,7 @@
         <!-- Top navegadores -->
         <div class="col-md-6">
             <div class="chart-container">
-                <h5><i class="fas fa-browser"></i> Navegadores Más Usados</h5>
+                <h5><i class="fas fa-browser"></i> {% translate "Navegadores Más Usados" %}</h5>
                 {% for browser in top_browsers %}
                 <div class="mb-3">
                     <div class="d-flex justify-content-between">
@@ -377,7 +378,7 @@
         <!-- Fuentes de tráfico -->
         <div class="col-md-6">
             <div class="chart-container">
-                <h5><i class="fas fa-link"></i> Principales Fuentes de Tráfico</h5>
+                <h5><i class="fas fa-link"></i> {% translate "Principales Fuentes de Tráfico" %}</h5>
                 {% for referrer in referrers %}
                 <div class="mb-3">
                     <div class="d-flex justify-content-between">
@@ -385,7 +386,7 @@
                             {% if referrer.referrer %}
                                 {{ referrer.referrer|truncatechars:30 }}
                             {% else %}
-                                Acceso directo
+                                {% translate "Acceso directo" %}
                             {% endif %}
                         </span>
                         <strong>{{ referrer.count }} visitas</strong>
@@ -403,16 +404,16 @@
     <div class="row">
         <div class="col-12">
             <div class="chart-container">
-                <h5><i class="fas fa-clock"></i> Visitas Recientes</h5>
+                <h5><i class="fas fa-clock"></i> {% translate "Visitas Recientes" %}</h5>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead class="table-light">
                             <tr>
-                                <th>Fecha/Hora</th>
-                                <th>Página</th>
-                                <th>Ubicación</th>
-                                <th>Navegador</th>
-                                <th>Dispositivo</th>
+                                <th>{% translate "Fecha/Hora" %}</th>
+                                <th>{% translate "Página" %}</th>
+                                <th>{% translate "Ubicación" %}</th>
+                                <th>{% translate "Navegador" %}</th>
+                                <th>{% translate "Dispositivo" %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -431,7 +432,7 @@
                                     {% if visit.location %}
                                         <span class="location-badge">{{ visit.location }}</span>
                                     {% else %}
-                                        <span class="text-muted">Desconocida</span>
+                                        <span class="text-muted">{% translate "Desconocida" %}</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -439,12 +440,12 @@
                                 </td>
                                 <td>
                                     {% if visit.is_mobile %}
-                                        <i class="fas fa-mobile text-success" title="Móvil"></i>
+                                        <i class="fas fa-mobile text-success" title="{% translate 'Móvil' %}"></i>
                                     {% else %}
-                                        <i class="fas fa-desktop text-primary" title="Desktop"></i>
+                                        <i class="fas fa-desktop text-primary" title="{% translate 'Desktop' %}"></i>
                                     {% endif %}
                                     {% if visit.is_bot %}
-                                        <span class="badge bg-warning ms-1">Bot</span>
+                                        <span class="badge bg-warning ms-1">{% translate "Bot" %}</span>
                                     {% endif %}
                                 </td>
                             </tr>

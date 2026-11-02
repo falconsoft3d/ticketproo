@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -7,7 +8,7 @@
         <div class="col-lg-6">
             <div class="mb-4">
                 <a href="{% url 'ocr_invoice_detail' invoice.pk %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-1"></i> Volver
+                    <i class="bi bi-arrow-left me-1"></i> {% translate "Volver" %}
                 </a>
             </div>
 
@@ -15,16 +16,16 @@
                 <div class="card-header bg-danger text-white">
                     <h4 class="mb-0">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        Eliminar Factura OCR
+                        {% translate "Eliminar Factura OCR" %}
                     </h4>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>¡Advertencia!</strong> Esta acción no se puede deshacer.
+                        <strong>{% translate "¡Advertencia!" %}</strong> {% translate "Esta acción no se puede deshacer." %}
                     </div>
 
-                    <p>¿Estás seguro de que deseas eliminar la siguiente factura?</p>
+                    <p>{% translate "¿Estás seguro de que deseas eliminar la siguiente factura?" %}</p>
 
                     <div class="border rounded p-3 bg-light mb-4">
                         {% if invoice.image %}
@@ -33,11 +34,11 @@
                         <h5 class="mb-3">{{ invoice.number }}</h5>
                         <div class="row">
                             <div class="col-6">
-                                <small class="text-muted">Proveedor:</small>
+                                <small class="text-muted">{% translate "Proveedor:" %}</small>
                                 <div>{{ invoice.supplier }}</div>
                             </div>
                             <div class="col-6">
-                                <small class="text-muted">Importe:</small>
+                                <small class="text-muted">{% translate "Importe:" %}</small>
                                 <div class="text-success">${{ invoice.amount }}</div>
                             </div>
                         </div>
@@ -47,10 +48,10 @@
                         {% csrf_token %}
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'ocr_invoice_detail' invoice.pk %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                                <i class="bi bi-x-circle me-1"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash me-1"></i> Sí, eliminar
+                                <i class="bi bi-trash me-1"></i> {% translate "Sí, eliminar" %}
                             </button>
                         </div>
                     </form>

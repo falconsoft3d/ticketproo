@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 
 {% block title %}{{ command.title }} - Biblioteca de Comandos{% endblock %}
 
@@ -20,10 +21,10 @@
                     </h1>
                     <p class="text-muted mb-0">{{ command.description }}</p>
                 </div>
-                <nav aria-label="breadcrumb">
+                <nav aria-label="{% translate 'breadcrumb' %}">
                     <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'command_library' %}">Comandos</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'command_library' %}">{% translate "Comandos" %}</a></li>
                         <li class="breadcrumb-item active">{{ command.title|truncatechars:30 }}</li>
                     </ol>
                 </nav>
@@ -36,10 +37,10 @@
                         <div class="card-header d-flex justify-content-between align-items-center bg-dark text-white">
                             <h5 class="mb-0">
                                 <i class="bi bi-terminal"></i>
-                                Comando
+                                {% translate "Comando" %}
                             </h5>
                             <div>
-                                <button class="btn btn-outline-light btn-sm" onclick="copyCommand()" title="Copiar comando">
+                                <button class="btn btn-outline-light btn-sm" onclick="copyCommand()" title="{% translate 'Copiar comando' %}">
                                     <i class="bi bi-clipboard" id="copyIcon"></i>
                                 </button>
                                 <button class="btn btn-outline-light btn-sm" onclick="toggleFavorite({{ command.pk }})" title="{% if command.is_favorite %}Quitar de favoritos{% else %}Agregar a favoritos{% endif %}">
@@ -58,7 +59,7 @@
                         <div class="card-header bg-success text-white">
                             <h5 class="mb-0">
                                 <i class="bi bi-code-square"></i>
-                                Ejemplo de uso
+                                {% translate "Ejemplo de uso" %}
                             </h5>
                         </div>
                         <div class="card-body p-0">
@@ -73,7 +74,7 @@
                         <div class="card-header bg-info text-white">
                             <h5 class="mb-0">
                                 <i class="bi bi-sticky"></i>
-                                Notas adicionales
+                                {% translate "Notas adicionales" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -88,8 +89,8 @@
                         <div class="d-flex align-items-center">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
                             <div>
-                                <h6 class="alert-heading mb-1">⚠️ Comando peligroso</h6>
-                                <p class="mb-0">Este comando puede causar cambios irreversibles o daños al sistema. Úsalo con precaución y asegúrate de entender completamente lo que hace antes de ejecutarlo.</p>
+                                <h6 class="alert-heading mb-1">{% translate "⚠️ Comando peligroso" %}</h6>
+                                <p class="mb-0">{% translate "Este comando puede causar cambios irreversibles o daños al sistema. Úsalo con precaución y asegúrate de entender completamente lo que hace antes de ejecutarlo." %}</p>
                             </div>
                         </div>
                     </div>
@@ -102,13 +103,13 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="bi bi-info-circle"></i>
-                                Información
+                                {% translate "Información" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <table class="table table-sm table-borderless">
                                 <tr>
-                                    <td class="text-muted"><i class="bi bi-tags"></i> Categoría:</td>
+                                    <td class="text-muted"><i class="bi bi-tags"></i> {% translate "Categoría:" %}</td>
                                     <td>
                                         <span class="badge bg-{{ command.category }}">
                                             {{ command.get_category_display }}
@@ -116,23 +117,23 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="text-muted"><i class="bi bi-person"></i> Creado por:</td>
+                                    <td class="text-muted"><i class="bi bi-person"></i> {% translate "Creado por:" %}</td>
                                     <td>{{ command.created_by.username }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="text-muted"><i class="bi bi-calendar"></i> Fecha:</td>
+                                    <td class="text-muted"><i class="bi bi-calendar"></i> {% translate "Fecha:" %}</td>
                                     <td title="{{ command.created_at }}">{{ command.created_at|date:"d/m/Y H:i" }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="text-muted"><i class="bi bi-pencil"></i> Modificado:</td>
+                                    <td class="text-muted"><i class="bi bi-pencil"></i> {% translate "Modificado:" %}</td>
                                     <td title="{{ command.updated_at }}">{{ command.updated_at|date:"d/m/Y H:i" }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="text-muted"><i class="bi bi-eye"></i> Visualizaciones:</td>
+                                    <td class="text-muted"><i class="bi bi-eye"></i> {% translate "Visualizaciones:" %}</td>
                                     <td>{{ command.view_count }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="text-muted"><i class="bi bi-clipboard"></i> Copias:</td>
+                                    <td class="text-muted"><i class="bi bi-clipboard"></i> {% translate "Copias:" %}</td>
                                     <td>{{ command.usage_count }}</td>
                                 </tr>
                             </table>
@@ -145,7 +146,7 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="bi bi-hash"></i>
-                                Etiquetas
+                                {% translate "Etiquetas" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -165,7 +166,7 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="bi bi-gear"></i>
-                                Acciones
+                                {% translate "Acciones" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -173,25 +174,25 @@
                                 {% if user == command.created_by or user.is_staff %}
                                 <a href="{% url 'command_edit' command.pk %}" class="btn btn-outline-primary btn-sm">
                                     <i class="bi bi-pencil"></i>
-                                    Editar comando
+                                    {% translate "Editar comando" %}
                                 </a>
                                 <a href="{% url 'command_delete' command.pk %}" class="btn btn-outline-danger btn-sm">
                                     <i class="bi bi-trash"></i>
-                                    Eliminar comando
+                                    {% translate "Eliminar comando" %}
                                 </a>
                                 <hr class="my-2">
                                 {% endif %}
                                 <button class="btn btn-outline-success btn-sm" onclick="shareCommand()">
                                     <i class="bi bi-share"></i>
-                                    Compartir comando
+                                    {% translate "Compartir comando" %}
                                 </button>
                                 <button class="btn btn-outline-info btn-sm" onclick="downloadCommand()">
                                     <i class="bi bi-download"></i>
-                                    Descargar como .txt
+                                    {% translate "Descargar como .txt" %}
                                 </button>
                                 <a href="{% url 'command_library' %}" class="btn btn-outline-secondary btn-sm">
                                     <i class="bi bi-arrow-left"></i>
-                                    Volver a la biblioteca
+                                    {% translate "Volver a la biblioteca" %}
                                 </a>
                             </div>
                         </div>
@@ -203,7 +204,7 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="bi bi-link"></i>
-                                Comandos relacionados
+                                {% translate "Comandos relacionados" %}
                             </h6>
                         </div>
                         <div class="card-body">
@@ -238,13 +239,13 @@
             <div class="modal-header">
                 <h5 class="modal-title">
                     <i class="bi bi-share"></i>
-                    Compartir comando
+                    {% translate "Compartir comando" %}
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">URL del comando:</label>
+                    <label class="form-label">{% translate "URL del comando:" %}</label>
                     <div class="input-group">
                         <input type="text" class="form-control" id="shareUrl" readonly value="{{ request.build_absolute_uri }}">
                         <button class="btn btn-outline-secondary" onclick="copyShareUrl()">
@@ -254,7 +255,7 @@
                 </div>
                 <div class="text-muted small">
                     <i class="bi bi-info-circle"></i>
-                    Comparte esta URL para que otros puedan ver este comando.
+                    {% translate "Comparte esta URL para que otros puedan ver este comando." %}
                 </div>
             </div>
         </div>

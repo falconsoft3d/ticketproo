@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}Eliminar Enlace - {{ block.super }}{% endblock %}
@@ -11,23 +12,23 @@
                 <div class="card-header bg-danger text-white">
                     <h4 class="mb-0">
                         <i class="bi bi-exclamation-triangle"></i>
-                        Confirmar Eliminación
+                        {% translate "Confirmar Eliminación" %}
                     </h4>
                 </div>
 
                 <div class="card-body">
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle-fill"></i>
-                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                        <strong>{% translate "¡Atención!" %}</strong> {% translate "Esta acción no se puede deshacer." %}
                     </div>
 
                     <h5>¿Estás seguro de eliminar el enlace "{{ link.title }}"?</h5>
 
                     <div class="mt-3 p-3 bg-light rounded">
-                        <p class="mb-1"><strong>Grupo:</strong> {{ link.group.title }}</p>
-                        <p class="mb-1"><strong>URL:</strong> {{ link.url }}</p>
+                        <p class="mb-1"><strong>{% translate "Grupo:" %}</strong> {{ link.group.title }}</p>
+                        <p class="mb-1"><strong>{% translate "URL:" %}</strong> {{ link.url }}</p>
                         {% if link.description %}
-                        <p class="mb-0"><strong>Descripción:</strong> {{ link.description }}</p>
+                        <p class="mb-0"><strong>{% translate "Descripción:" %}</strong> {{ link.description }}</p>
                         {% endif %}
                     </div>
 
@@ -35,10 +36,10 @@
                         {% csrf_token %}
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Sí, Eliminar Enlace
+                                <i class="bi bi-trash"></i> {% translate "Sí, Eliminar Enlace" %}
                             </button>
                             <a href="{% url 'access_group_detail' link.group.id %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>

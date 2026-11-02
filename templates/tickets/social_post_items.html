@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load tickets_tags %}
 {% for post in posts %}
 <div class="card mb-3 post-card" id="post-{{ post.id }}">
@@ -10,10 +11,10 @@
                     <h6 class="mb-0">
                         {{ post.user.get_full_name|default:post.user.username }}
                         {% if post.is_private %}
-                        <span class="badge bg-secondary ms-2"><i class="bi bi-lock"></i> Privado</span>
+                        <span class="badge bg-secondary ms-2"><i class="bi bi-lock"></i> {% translate "Privado" %}</span>
                         {% endif %}
                         {% if post.company_only %}
-                        <span class="badge bg-info ms-2"><i class="bi bi-building"></i> Solo empresa</span>
+                        <span class="badge bg-info ms-2"><i class="bi bi-building"></i> {% translate "Solo empresa" %}</span>
                         {% endif %}
                     </h6>
                     <small class="text-muted">{{ post.created_at|date:"d/m/Y H:i" }}</small>
@@ -28,25 +29,25 @@
                     {% if post.user == user %}
                     <li>
                         <a class="dropdown-item" href="#" onclick="editPost({{ post.id }}); return false;">
-                            <i class="bi bi-pencil"></i> Editar
+                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                         </a>
                     </li>
                     <li>
                         <a class="dropdown-item" href="#" onclick="togglePrivacy({{ post.id }}, {{ post.is_private|yesno:'true,false' }}); return false;">
                             <i class="bi bi-{% if post.is_private %}unlock{% else %}lock{% endif %}"></i> 
-                            {% if post.is_private %}Hacer público{% else %}Hacer privado{% endif %}
+                            {% if post.is_private %}{% translate "Hacer público" %}{% else %}{% translate "Hacer privado" %}{% endif %}
                         </a>
                     </li>
                     <li>
                         <a class="dropdown-item" href="#" onclick="sharePost({{ post.id }}); return false;">
-                            <i class="bi bi-share"></i> Compartir
+                            <i class="bi bi-share"></i> {% translate "Compartir" %}
                         </a>
                     </li>
                     <li><hr class="dropdown-divider"></li>
                     {% endif %}
                     <li>
                         <a class="dropdown-item text-danger" href="#" onclick="deletePost({{ post.id }}); return false;">
-                            <i class="bi bi-trash"></i> Eliminar{% if is_agent and post.user != user %} (Agente){% endif %}
+                            <i class="bi bi-trash"></i> {% translate "Eliminar" %}{% if is_agent and post.user != user %} {% translate "(Agente)" %}{% endif %}
                         </a>
                     </li>
                 </ul>
@@ -71,7 +72,7 @@
         <div class="ratio ratio-16x9 mb-3">
             <iframe 
                 src="{{ embed_url }}" 
-                title="YouTube video player" 
+                title="{% translate 'YouTube video player' %}" 
                 frameborder="0" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                 referrerpolicy="strict-origin-when-cross-origin"
@@ -92,7 +93,7 @@
             <small class="text-muted">
                 💬 <span id="comments-count-{{ post.id }}">{{ post.get_comments_count }}</span>
                 {% if post.share_token %}
-                | 👁️ <span id="views-count-{{ post.id }}" title="Vistas públicas">{{ post.public_views_count }}</span>
+                | 👁️ <span id="views-count-{{ post.id }}" title="{% translate 'Vistas públicas' %}">{{ post.public_views_count }}</span>
                 {% endif %}
             </small>
         </div>
@@ -104,35 +105,35 @@
                 onclick="toggleReaction({{ post.id }}, 'like')"
                 id="like-btn-{{ post.id }}"
             >
-                <i class="bi bi-hand-thumbs-up"></i> Me gusta
+                <i class="bi bi-hand-thumbs-up"></i> {% translate "Me gusta" %}
             </button>
             <button 
                 class="btn btn-link text-decoration-none flex-grow-1 reaction-btn {% if post.user_reaction == 'love' %}active-love{% endif %}" 
                 onclick="toggleReaction({{ post.id }}, 'love')"
                 id="love-btn-{{ post.id }}"
             >
-                <i class="bi bi-heart-fill"></i> Me encanta
+                <i class="bi bi-heart-fill"></i> {% translate "Me encanta" %}
             </button>
             <button 
                 class="btn btn-link text-decoration-none flex-grow-1 reaction-btn {% if post.user_reaction == 'dislike' %}active-dislike{% endif %}" 
                 onclick="toggleReaction({{ post.id }}, 'dislike')"
                 id="dislike-btn-{{ post.id }}"
             >
-                <i class="bi bi-hand-thumbs-down"></i> No me gusta
+                <i class="bi bi-hand-thumbs-down"></i> {% translate "No me gusta" %}
             </button>
             <button 
                 class="btn btn-link text-decoration-none flex-grow-1" 
                 onclick="toggleComments({{ post.id }})"
             >
-                <i class="bi bi-chat"></i> Comentar
+                <i class="bi bi-chat"></i> {% translate "Comentar" %}
             </button>
             <button 
                 class="btn btn-link text-decoration-none flex-grow-1 favorite-btn {% if post.id in user_favorites %}active-favorite{% endif %}" 
                 onclick="toggleFavorite({{ post.id }})"
                 id="favorite-btn-{{ post.id }}"
-                title="Guardar como favorito"
+                title="{% translate 'Guardar como favorito' %}"
             >
-                <i class="bi bi-star{% if post.id in user_favorites %}-fill{% endif %}"></i> Favorito
+                <i class="bi bi-star{% if post.id in user_favorites %}-fill{% endif %}"></i> {% translate "Favorito" %}
             </button>
         </div>
 
@@ -164,20 +165,20 @@
                             
                             <!-- Botones de reacciones del comentario -->
                             <span class="comment-reactions">
-                                <a href="#" class="text-decoration-none text-muted" onclick="reactToComment({{ comment.id }}, 'like'); return false;" title="Me gusta">
-                                    Me gusta
+                                <a href="#" class="text-decoration-none text-muted" onclick="reactToComment({{ comment.id }}, 'like'); return false;" title="{% translate 'Me gusta' %}">
+                                    {% translate "Me gusta" %}
                                 </a>
-                                <a href="#" class="text-decoration-none text-muted" onclick="reactToComment({{ comment.id }}, 'love'); return false;" title="Me encanta">
-                                    Me encanta
+                                <a href="#" class="text-decoration-none text-muted" onclick="reactToComment({{ comment.id }}, 'love'); return false;" title="{% translate 'Me encanta' %}">
+                                    {% translate "Me encanta" %}
                                 </a>
-                                <a href="#" class="text-decoration-none text-muted" onclick="reactToComment({{ comment.id }}, 'dislike'); return false;" title="No me gusta">
-                                    No me gusta
+                                <a href="#" class="text-decoration-none text-muted" onclick="reactToComment({{ comment.id }}, 'dislike'); return false;" title="{% translate 'No me gusta' %}">
+                                    {% translate "No me gusta" %}
                                 </a>
                             </span>
                             
                             {% if comment.user == user %}
                             <a href="#" class="text-danger" onclick="deleteComment({{ comment.id }}); return false;">
-                                <i class="bi bi-trash"></i> Eliminar
+                                <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                             </a>
                             {% endif %}
                         </small>
@@ -207,7 +208,7 @@
                                     type="text" 
                                     class="form-control" 
                                     id="comment-input-{{ post.id }}"
-                                    placeholder="Escribe un comentario..."
+                                    placeholder="{% translate 'Escribe un comentario...' %}"
                                     required
                                     oninput="handleMentionInput(this)"
                                 >

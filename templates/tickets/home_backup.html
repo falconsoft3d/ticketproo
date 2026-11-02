@@ -1,9 +1,10 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TicketProo - Sistema Profesional de Gestión de Tickets</title>
+    <title>{% translate "TicketProo - Sistema Profesional de Gestión de Tickets" %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
@@ -52,26 +53,26 @@
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'blog_list' %}active{% endif %}" href="{% url 'blog_list' %}">
                             <i class="bi bi-journal-richtext me-1"></i>
-                            Blog
+                            {% translate "Blog" %}
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'public_concepts' %}active{% endif %}" href="{% url 'public_concepts' %}">
                             <i class="bi bi-lightbulb me-1"></i>
-                            Conceptos
+                            {% translate "Conceptos" %}
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'contacto_web' %}active{% endif %}" href="{% url 'contacto_web' %}">
                             <i class="bi bi-envelope me-1"></i>
-                            Contacto
+                            {% translate "Contacto" %}
                         </a>
                     </li>
                     {% if is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'dashboard' %}">
                                 <i class="bi bi-speedometer2 me-1"></i>
-                                Dashboard
+                                {% translate "Dashboard" %}
                             </a>
                         </li>
                         <li class="nav-item dropdown">
@@ -81,11 +82,11 @@
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{% url 'dashboard' %}">
-                                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                    <i class="bi bi-speedometer2 me-2"></i>{% translate "Dashboard" %}
                                 </a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{% url 'logout' %}">
-                                    <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                                    <i class="bi bi-box-arrow-right me-2"></i>{% translate "Cerrar Sesión" %}
                                 </a></li>
                             </ul>
                         </li>
@@ -93,13 +94,13 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'login' %}">
                                 <i class="bi bi-box-arrow-in-right me-1"></i>
-                                Iniciar Sesión
+                                {% translate "Iniciar Sesión" %}
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link btn btn-outline-light ms-2 px-3" href="{% url 'register' %}">
                                 <i class="bi bi-person-plus me-1"></i>
-                                Registrarse
+                                {% translate "Registrarse" %}
                             </a>
                         </li>
                     {% endif %}
@@ -118,31 +119,30 @@
                             ¡Hola, {{ user.username }}! 👋
                         </h1>
                         <p class="lead mb-4">
-                            Bienvenido de vuelta a TicketProo. Aquí tienes un resumen de tu actividad 
-                            {% if user_role == 'Agente' %}como agente{% else %}y tus tickets{% endif %}.
+                            {% translate "Bienvenido de vuelta a TicketProo. Aquí tienes un resumen de tu actividad" %} 
+                            {% if user_role == 'Agente' %}{% translate "como agente" %}{% else %}{% translate "y tus tickets" %}{% endif %}.
                         </p>
                         <div class="d-flex gap-3 mb-4">
                             <a href="{% url 'dashboard' %}" class="btn btn-light btn-cta btn-lg">
                                 <i class="bi bi-speedometer2 me-2"></i>
-                                Ir al Dashboard
+                                {% translate "Ir al Dashboard" %}
                             </a>
                         </div>
                     {% else %}
                         <h1 class="display-4 fw-bold mb-4">
-                            TicketProo - Gestión Profesional de Tickets
+                            {% translate "TicketProo - Gestión Profesional de Tickets" %}
                         </h1>
                         <p class="lead mb-4">
-                            Organiza, rastrea y resuelve todos tus tickets de soporte de manera eficiente. 
-                            Una plataforma profesional y poderosa para gestionar todas tus solicitudes.
+                            {% translate "Organiza, rastrea y resuelve todos tus tickets de soporte de manera eficiente. Una plataforma profesional y poderosa para gestionar todas tus solicitudes." %}
                         </p>
                         <div class="d-flex gap-3 mb-4">
                             <a href="{% url 'register' %}" class="btn btn-light btn-cta btn-lg">
                                 <i class="bi bi-rocket-takeoff me-2"></i>
-                                Comenzar Gratis
+                                {% translate "Comenzar Gratis" %}
                             </a>
                             <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">
                                 <i class="bi bi-box-arrow-in-right me-2"></i>
-                                Iniciar Sesión
+                                {% translate "Iniciar Sesión" %}
                             </a>
                         </div>
                         
@@ -150,9 +150,9 @@
                         <div class="text-center mt-4">
                             <p class="mb-3">
                                 <i class="bi bi-question-circle me-1"></i>
-                                ¿Tienes preguntas? 
+                                {% translate "¿Tienes preguntas?" %} 
                                 <a href="{% url 'contacto_web' %}" class="text-white text-decoration-none fw-bold">
-                                    <i class="bi bi-envelope me-1"></i>Contáctanos
+                                    <i class="bi bi-envelope me-1"></i>{% translate "Contáctanos" %}
                                 </a>
                             </p>
                         </div>
@@ -163,10 +163,9 @@
                         <div class="col-12">
                             <div class="text-center mb-4">
                                 <i class="bi bi-robot display-1 mb-3" style="color: rgba(255,255,255,0.8);"></i>
-                                <h2 class="fw-bold mb-3">🚀 Potenciado por Inteligencia Artificial</h2>
+                                <h2 class="fw-bold mb-3">{% translate "🚀 Potenciado por Inteligencia Artificial" %}</h2>
                                 <p class="lead">
-                                    TicketProo integra tecnología de IA avanzada para optimizar la gestión de tickets, 
-                                    automatizar respuestas y mejorar la experiencia del usuario.
+                                    {% translate "TicketProo integra tecnología de IA avanzada para optimizar la gestión de tickets, automatizar respuestas y mejorar la experiencia del usuario." %}
                                 </p>
                             </div>
                             
@@ -174,22 +173,22 @@
                                 <div class="col-md-4 mb-3">
                                     <div class="stats-card p-4 text-center h-100">
                                         <i class="bi bi-chat-dots-fill display-4 mb-3" style="color: rgba(255,255,255,0.9);"></i>
-                                        <h5 class="fw-bold">Chat Inteligente</h5>
-                                        <p class="mb-0 small">Respuestas automáticas con IA para resolver consultas al instante</p>
+                                        <h5 class="fw-bold">{% translate "Chat Inteligente" %}</h5>
+                                        <p class="mb-0 small">{% translate "Respuestas automáticas con IA para resolver consultas al instante" %}</p>
                                     </div>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <div class="stats-card p-4 text-center h-100">
                                         <i class="bi bi-lightning-charge-fill display-4 mb-3" style="color: rgba(255,255,255,0.9);"></i>
-                                        <h5 class="fw-bold">Automatización</h5>
-                                        <p class="mb-0 small">Procesos optimizados con Machine Learning para mayor eficiencia</p>
+                                        <h5 class="fw-bold">{% translate "Automatización" %}</h5>
+                                        <p class="mb-0 small">{% translate "Procesos optimizados con Machine Learning para mayor eficiencia" %}</p>
                                     </div>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <div class="stats-card p-4 text-center h-100">
                                         <i class="bi bi-graph-up-arrow display-4 mb-3" style="color: rgba(255,255,255,0.9);"></i>
-                                        <h5 class="fw-bold">Analytics Predictivo</h5>
-                                        <p class="mb-0 small">Insights basados en datos para tomar mejores decisiones</p>
+                                        <h5 class="fw-bold">{% translate "Analytics Predictivo" %}</h5>
+                                        <p class="mb-0 small">{% translate "Insights basados en datos para tomar mejores decisiones" %}</p>
                                     </div>
                                 </div>
                             </div>
@@ -198,14 +197,14 @@
                             <div class="text-center mt-4">
                                 <p class="mb-3">
                                     <i class="bi bi-info-circle me-2"></i>
-                                    La IA está integrada en todas las funciones del sistema
+                                    {% translate "La IA está integrada en todas las funciones del sistema" %}
                                 </p>
                             </div>
                             {% else %}
                             <div class="text-center mt-4">
                                 <p class="mb-3">
                                     <i class="bi bi-stars me-2"></i>
-                                    Experimenta el futuro de la gestión de tickets con IA
+                                    {% translate "Experimenta el futuro de la gestión de tickets con IA" %}
                                 </p>
                             </div>
                             {% endif %}
@@ -247,7 +246,7 @@
             <div class="text-center mt-4">
                 <p class="text-muted">
                     <i class="bi bi-info-circle me-1"></i>
-                    Mostrando los primeros 10 conceptos más relevantes
+                    {% translate "Mostrando los primeros 10 conceptos más relevantes" %}
                 </p>
             </div>
             {% endif %}
@@ -261,8 +260,8 @@
             {% if is_authenticated %}
                 <div class="row text-center mb-5">
                     <div class="col-lg-8 mx-auto">
-                        <h2 class="fw-bold mb-3">Acceso Rápido</h2>
-                        <p class="text-muted">Accede rápidamente a las funciones principales de TicketProo.</p>
+                        <h2 class="fw-bold mb-3">{% translate "Acceso Rápido" %}</h2>
+                        <p class="text-muted">{% translate "Accede rápidamente a las funciones principales de TicketProo." %}</p>
                     </div>
                 </div>
                 
@@ -271,8 +270,8 @@
                         <div class="text-center p-4">
                             <a href="{% url 'dashboard' %}" class="text-decoration-none">
                                 <i class="bi bi-speedometer2 feature-icon"></i>
-                                <h4 class="fw-bold mb-3">Dashboard</h4>
-                                <p class="text-muted">Estadísticas y resumen de actividad</p>
+                                <h4 class="fw-bold mb-3">{% translate "Dashboard" %}</h4>
+                                <p class="text-muted">{% translate "Estadísticas y resumen de actividad" %}</p>
                             </a>
                         </div>
                     </div>
@@ -281,8 +280,8 @@
                         <div class="text-center p-4">
                             <a href="{% url 'contact_list' %}" class="text-decoration-none">
                                 <i class="bi bi-person-lines-fill feature-icon"></i>
-                                <h4 class="fw-bold mb-3">Contactos CRM</h4>
-                                <p class="text-muted">Gestionar contactos y clientes</p>
+                                <h4 class="fw-bold mb-3">{% translate "Contactos CRM" %}</h4>
+                                <p class="text-muted">{% translate "Gestionar contactos y clientes" %}</p>
                             </a>
                         </div>
                     </div>
@@ -292,8 +291,8 @@
                         <div class="text-center p-4">
                             <a href="{% url 'contactos_web_list' %}" class="text-decoration-none">
                                 <i class="bi bi-envelope-plus feature-icon"></i>
-                                <h4 class="fw-bold mb-3">Contactos Web</h4>
-                                <p class="text-muted">Mensajes desde la web pública</p>
+                                <h4 class="fw-bold mb-3">{% translate "Contactos Web" %}</h4>
+                                <p class="text-muted">{% translate "Mensajes desde la web pública" %}</p>
                             </a>
                         </div>
                     </div>
@@ -302,8 +301,8 @@
             {% else %}
                 <div class="row text-center mb-5">
                     <div class="col-lg-8 mx-auto">
-                        <h2 class="fw-bold mb-3">¿Por qué elegir TicketProo?</h2>
-                        <p class="text-muted">Todas las herramientas que necesitas para gestionar tus tickets de soporte de manera profesional.</p>
+                        <h2 class="fw-bold mb-3">{% translate "¿Por qué elegir TicketProo?" %}</h2>
+                        <p class="text-muted">{% translate "Todas las herramientas que necesitas para gestionar tus tickets de soporte de manera profesional." %}</p>
                     </div>
                 </div>
                 
@@ -311,24 +310,24 @@
                     <div class="col-lg-4 mb-4">
                         <div class="text-center p-4">
                             <i class="bi bi-lightning feature-icon"></i>
-                            <h4 class="fw-bold mb-3">Rápido y Eficiente</h4>
-                            <p class="text-muted">Crea y gestiona tickets en segundos. Interfaz intuitiva y fácil de usar.</p>
+                            <h4 class="fw-bold mb-3">{% translate "Rápido y Eficiente" %}</h4>
+                            <p class="text-muted">{% translate "Crea y gestiona tickets en segundos. Interfaz intuitiva y fácil de usar." %}</p>
                         </div>
                     </div>
                     
                     <div class="col-lg-4 mb-4">
                         <div class="text-center p-4">
                             <i class="bi bi-shield-check feature-icon"></i>
-                            <h4 class="fw-bold mb-3">Seguro y Confiable</h4>
-                            <p class="text-muted">Tus datos están seguros con nosotros. Sistema confiable y estable.</p>
+                            <h4 class="fw-bold mb-3">{% translate "Seguro y Confiable" %}</h4>
+                            <p class="text-muted">{% translate "Tus datos están seguros con nosotros. Sistema confiable y estable." %}</p>
                         </div>
                     </div>
                     
                     <div class="col-lg-4 mb-4">
                         <div class="text-center p-4">
                             <i class="bi bi-graph-up feature-icon"></i>
-                            <h4 class="fw-bold mb-3">Seguimiento en Tiempo Real</h4>
-                            <p class="text-muted">Rastrea el progreso de tus tickets y mantente informado en todo momento.</p>
+                            <h4 class="fw-bold mb-3">{% translate "Seguimiento en Tiempo Real" %}</h4>
+                            <p class="text-muted">{% translate "Rastrea el progreso de tus tickets y mantente informado en todo momento." %}</p>
                         </div>
                     </div>
                 </div>
@@ -342,18 +341,18 @@
         <div class="container">
             <div class="row justify-content-center text-center">
                 <div class="col-lg-8">
-                    <h2 class="fw-bold mb-3">¿Listo para comenzar?</h2>
+                    <h2 class="fw-bold mb-3">{% translate "¿Listo para comenzar?" %}</h2>
                     <p class="text-muted mb-4">
-                        Únete a nuestra comunidad y comienza a gestionar tus tickets de manera profesional.
+                        {% translate "Únete a nuestra comunidad y comienza a gestionar tus tickets de manera profesional." %}
                     </p>
                     <div class="d-flex gap-3 justify-content-center flex-wrap">
                         <a href="{% url 'register' %}" class="btn btn-primary btn-cta btn-lg">
                             <i class="bi bi-person-plus me-2"></i>
-                            Crear Cuenta Gratis
+                            {% translate "Crear Cuenta Gratis" %}
                         </a>
                         <a href="{% url 'contacto_web' %}" class="btn btn-outline-primary btn-lg">
                             <i class="bi bi-envelope me-2"></i>
-                            Contáctanos
+                            {% translate "Contáctanos" %}
                         </a>
                     </div>
                 </div>
@@ -371,30 +370,30 @@
                         <i class="bi bi-ticket-perforated me-2"></i>
                         TicketProo
                     </h5>
-                    <p class="text-muted">La plataforma profesional para gestionar tus solicitudes de soporte con tecnología de IA avanzada.</p>
+                    <p class="text-muted">{% translate "La plataforma profesional para gestionar tus solicitudes de soporte con tecnología de IA avanzada." %}</p>
                 </div>
                 <div class="col-md-4 mb-4">
-                    <h5>Enlaces Rápidos</h5>
+                    <h5>{% translate "Enlaces Rápidos" %}</h5>
                     <ul class="list-unstyled">
                         <li class="mb-2">
                             <a href="{% url 'blog_list' %}" class="text-light text-decoration-none">
-                                <i class="bi bi-journal-richtext me-2"></i>Blog
+                                <i class="bi bi-journal-richtext me-2"></i>{% translate "Blog" %}
                             </a>
                         </li>
                         <li class="mb-2">
                             <a href="{% url 'public_concepts' %}" class="text-light text-decoration-none">
-                                <i class="bi bi-lightbulb me-2"></i>Conceptos
+                                <i class="bi bi-lightbulb me-2"></i>{% translate "Conceptos" %}
                             </a>
                         </li>
                         <li class="mb-2">
                             <a href="{% url 'contacto_web' %}" class="text-light text-decoration-none">
-                                <i class="bi bi-envelope me-2"></i>Contacto
+                                <i class="bi bi-envelope me-2"></i>{% translate "Contacto" %}
                             </a>
                         </li>
                     </ul>
                 </div>
                 <div class="col-md-4 mb-4">
-                    <h5>Contáctanos</h5>
+                    <h5>{% translate "Contáctanos" %}</h5>
                     <ul class="list-unstyled">
                         <li class="mb-2">
                             <i class="bi bi-envelope me-2"></i>
@@ -408,7 +407,7 @@
                         </li>
                         <li class="mb-2">
                             <a href="{% url 'contacto_web' %}" class="btn btn-outline-light btn-sm">
-                                <i class="bi bi-chat-dots me-1"></i>Enviar Mensaje
+                                <i class="bi bi-chat-dots me-1"></i>{% translate "Enviar Mensaje" %}
                             </a>
                         </li>
                     </ul>
@@ -417,7 +416,7 @@
             <hr class="my-4">
             <div class="row">
                 <div class="col-12 text-center">
-                    <p class="text-muted mb-0">&copy; 2025 TicketProo. Todos los derechos reservados. | Desarrollado por Marlon Falcón Hdez</p>
+                    <p class="text-muted mb-0">&copy; 2025 TicketProo. {% translate "Todos los derechos reservados." %} | {% translate "Desarrollado por" %} Marlon Falcón Hdez</p>
                 </div>
             </div>
         </div>

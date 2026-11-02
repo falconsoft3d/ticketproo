@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -10,7 +11,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">{{ title }}</h4>
                     <a href="{% url 'expense_report_detail' expense_report.pk %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left"></i> Volver a Rendición
+                        <i class="fas fa-arrow-left"></i> {% translate "Volver a Rendición" %}
                     </a>
                 </div>
                 
@@ -49,7 +50,7 @@
                             
                             <div class="col-md-3">
                                 <div class="mb-3">
-                                    <label class="form-label">Monto y Moneda</label>
+                                    <label class="form-label">{% translate "Monto y Moneda" %}</label>
                                     <div class="input-group">
                                         <span class="input-group-text" id="currency-symbol">$</span>
                                         {{ form.amount }}
@@ -59,7 +60,7 @@
                                             {% for error in form.amount.errors %}{{ error }}{% endfor %}
                                         </div>
                                     {% endif %}
-                                    <div class="btn-group mt-2 w-100" role="group" aria-label="Moneda">
+                                    <div class="btn-group mt-2 w-100" role="group" aria-label="{% translate 'Moneda' %}">
                                         {% for radio in form.currency %}
                                         <input type="radio"
                                                class="btn-check"
@@ -69,8 +70,8 @@
                                                autocomplete="off"
                                                {% if radio.data.selected %}checked{% endif %}>
                                         <label class="btn btn-outline-primary btn-sm" for="{{ radio.data.attrs.id }}">
-                                            {% if radio.data.value == 'USD' %}$ USD — Dólar
-                                            {% else %}€ EUR — Euro{% endif %}
+                                            {% if radio.data.value == 'USD' %}{% translate "$ USD — Dólar" %}
+                                            {% else %}{% translate "€ EUR — Euro" %}{% endif %}
                                         </label>
                                         {% endfor %}
                                     </div>
@@ -138,7 +139,7 @@
                                         </div>
                                     {% endif %}
                                     <small class="form-text text-muted">
-                                        Formatos aceptados: PDF, JPG, PNG (máx. 5MB)
+                                        {% translate "Formatos aceptados: PDF, JPG, PNG (máx. 5MB)" %}
                                     </small>
                                 </div>
                             </div>
@@ -181,12 +182,12 @@
                         <div class="row">
                             <div class="col-12">
                                 <div class="alert alert-info">
-                                    <h6>Comprobante actual:</h6>
+                                    <h6>{% translate "Comprobante actual:" %}</h6>
                                     <a href="{{ expense_item.receipt_file.url }}" target="_blank" class="btn btn-sm btn-outline-info">
-                                        <i class="fas fa-file"></i> Ver comprobante actual
+                                        <i class="fas fa-file"></i> {% translate "Ver comprobante actual" %}
                                     </a>
                                     <small class="d-block mt-1 text-muted">
-                                        Sube un nuevo archivo para reemplazar el actual
+                                        {% translate "Sube un nuevo archivo para reemplazar el actual" %}
                                     </small>
                                 </div>
                             </div>
@@ -203,7 +204,7 @@
 
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'expense_report_detail' expense_report.pk %}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancelar
+                                <i class="fas fa-times"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> {{ action }}

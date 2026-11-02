@@ -1,9 +1,10 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - TicketProo</title>
+    <title>{% translate "Dashboard - TicketProo" %}</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -269,7 +270,7 @@
         <div class="nav-left">
             <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;">
                 <i class="fa-solid fa-grip-vertical"></i>
-                <span>Home</span>
+                <span>{% translate "Home" %}</span>
             </a>
         </div>
         <div class="nav-right">
@@ -287,7 +288,7 @@
                 </div>
             </div>
             {% endif %}
-            <div class="nav-item" title="Actividad">
+            <div class="nav-item" title="{% translate 'Actividad' %}">
                 <i class="fa-regular fa-clock"></i>
             </div>
             <div class="user-avatar" title="{{ user.get_full_name|default:user.username }}">
@@ -298,10 +299,10 @@
 
     <!-- Botones fijos: Registrar Asistencia y Chat -->
     <div class="fixed-buttons">
-        <a href="{% url 'time_clock' %}" class="btn-fixed btn-attendance" title="Registrar Asistencia">
+        <a href="{% url 'time_clock' %}" class="btn-fixed btn-attendance" title="{% translate 'Registrar Asistencia' %}">
             <i class="bi bi-clock-history"></i>
         </a>
-        <a href="{% url 'chat_list' %}" class="btn-fixed btn-chat" title="Chat">
+        <a href="{% url 'chat_list' %}" class="btn-fixed btn-chat" title="{% translate 'Chat' %}">
             <i class="fa-regular fa-comments"></i>
             {% if pending_messages > 0 %}
             <span class="badge">{{ pending_messages }}</span>

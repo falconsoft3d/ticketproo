@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -24,24 +25,24 @@
             <div class="row g-3 mb-4 border-bottom pb-3">
                 {% if book.company %}
                 <div class="col-sm-6 col-md-3">
-                    <div class="text-muted small">Empresa</div>
+                    <div class="text-muted small">{% translate "Empresa" %}</div>
                     <div class="fw-semibold">{{ book.company.name }}</div>
                 </div>
                 {% endif %}
                 {% if book.assigned_user %}
                 <div class="col-sm-6 col-md-3">
-                    <div class="text-muted small">Usuario asignado</div>
+                    <div class="text-muted small">{% translate "Usuario asignado" %}</div>
                     <div class="fw-semibold">{{ book.assigned_user.get_full_name|default:book.assigned_user.username }}</div>
                 </div>
                 {% endif %}
                 {% if book.created_by %}
                 <div class="col-sm-6 col-md-3">
-                    <div class="text-muted small">Creado por</div>
+                    <div class="text-muted small">{% translate "Creado por" %}</div>
                     <div class="fw-semibold">{{ book.created_by.get_full_name|default:book.created_by.username }}</div>
                 </div>
                 {% endif %}
                 <div class="col-sm-6 col-md-3">
-                    <div class="text-muted small">Última actualización</div>
+                    <div class="text-muted small">{% translate "Última actualización" %}</div>
                     <div class="fw-semibold">{{ book.updated_at|date:"d/m/Y" }}</div>
                 </div>
             </div>
@@ -58,7 +59,7 @@
             </div>
             {% endif %}
 
-            <h5 class="border-bottom pb-2 mb-3"><i class="bi bi-chat-left-text"></i> Historial</h5>
+            <h5 class="border-bottom pb-2 mb-3"><i class="bi bi-chat-left-text"></i> {% translate "Historial" %}</h5>
 
             {% if entries %}
                 {% for entry in entries %}
@@ -66,9 +67,9 @@
                     <div class="d-flex justify-content-between mb-2">
                         <div>
                             {% if entry.is_agent_entry %}
-                            <span class="badge bg-primary">Agente</span>
+                            <span class="badge bg-primary">{% translate "Agente" %}</span>
                             {% else %}
-                            <span class="badge bg-secondary">Usuario</span>
+                            <span class="badge bg-secondary">{% translate "Usuario" %}</span>
                             {% endif %}
                             <strong class="ms-2">{{ entry.author.get_full_name|default:entry.author.username }}</strong>
                         </div>
@@ -78,11 +79,11 @@
                 </div>
                 {% endfor %}
             {% else %}
-            <p class="text-muted text-center py-4">Sin entradas registradas.</p>
+            <p class="text-muted text-center py-4">{% translate "Sin entradas registradas." %}</p>
             {% endif %}
         </div>
         <div class="card-footer text-muted small d-flex justify-content-between">
-            <span>Vista pública – Solo lectura</span>
+            <span>{% translate "Vista pública – Solo lectura" %}</span>
             <span>TicketProo</span>
         </div>
     </div>

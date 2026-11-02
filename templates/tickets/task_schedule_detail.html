@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -10,8 +11,8 @@
             <h2>
                 <i class="fas fa-tasks"></i> {{ schedule.title }}
                 {% if schedule.is_public %}
-                <span class="badge bg-success" title="Público">
-                    <i class="fas fa-globe"></i> Público
+                <span class="badge bg-success" title="{% translate 'Público' %}">
+                    <i class="fas fa-globe"></i> {% translate "Público" %}
                 </span>
                 {% endif %}
             </h2>
@@ -23,20 +24,20 @@
         <div class="btn-group">
             {% if schedule.is_public %}
             <a href="{% url 'task_schedule_public_gantt' schedule.public_token %}" class="btn btn-primary" target="_blank">
-                <i class="fas fa-chart-gantt"></i> Vista Gantt Pública
+                <i class="fas fa-chart-gantt"></i> {% translate "Vista Gantt Pública" %}
             </a>
             {% endif %}
             <a href="{% url 'schedule_task_create' schedule.pk %}" class="btn btn-success">
-                <i class="fas fa-plus"></i> Nueva Tarea
+                <i class="fas fa-plus"></i> {% translate "Nueva Tarea" %}
             </a>
             <a href="{% url 'task_schedule_edit' schedule.pk %}" class="btn btn-warning">
-                <i class="fas fa-edit"></i> Editar
+                <i class="fas fa-edit"></i> {% translate "Editar" %}
             </a>
             <a href="{% url 'task_schedule_duplicate' schedule.pk %}" class="btn btn-info">
-                <i class="fas fa-copy"></i> Duplicar
+                <i class="fas fa-copy"></i> {% translate "Duplicar" %}
             </a>
             <a href="{% url 'task_schedule_delete' schedule.pk %}" class="btn btn-danger">
-                <i class="fas fa-trash"></i> Eliminar
+                <i class="fas fa-trash"></i> {% translate "Eliminar" %}
             </a>
         </div>
     </div>
@@ -44,7 +45,7 @@
     <!-- Descripción -->
     {% if schedule.description %}
     <div class="alert alert-info">
-        <strong>Descripción:</strong> {{ schedule.description }}
+        <strong>{% translate "Descripción:" %}</strong> {{ schedule.description }}
     </div>
     {% endif %}
 
@@ -53,10 +54,10 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    <p class="mb-1"><strong>Fecha de Inicio:</strong> {{ schedule.start_date|date:"d/m/Y" }}</p>
+                    <p class="mb-1"><strong>{% translate "Fecha de Inicio:" %}</strong> {{ schedule.start_date|date:"d/m/Y" }}</p>
                 </div>
                 <div class="col-md-6">
-                    <p class="mb-1"><strong>Fecha de Fin:</strong> {{ schedule.end_date|date:"d/m/Y" }}</p>
+                    <p class="mb-1"><strong>{% translate "Fecha de Fin:" %}</strong> {{ schedule.end_date|date:"d/m/Y" }}</p>
                 </div>
             </div>
         </div>
@@ -66,31 +67,30 @@
     <div class="card mb-4 border-warning">
         <div class="card-header bg-warning text-dark">
             <h6 class="mb-0">
-                <i class="fas fa-calendar-alt"></i> Reprogramar Cronograma
+                <i class="fas fa-calendar-alt"></i> {% translate "Reprogramar Cronograma" %}
             </h6>
         </div>
         <div class="card-body">
             <div class="alert alert-info">
                 <small>
                     <i class="fas fa-info-circle"></i> 
-                    <strong>¿Cómo funciona?</strong> Al cambiar la fecha de inicio, todas las tareas se moverán automáticamente 
-                    manteniendo las mismas duraciones y la distancia relativa entre ellas.
+                    <strong>{% translate "¿Cómo funciona?" %}</strong> {% translate "Al cambiar la fecha de inicio, todas las tareas se moverán automáticamente manteniendo las mismas duraciones y la distancia relativa entre ellas." %}
                 </small>
             </div>
             <form method="post" action="{% url 'task_schedule_reschedule' schedule.pk %}" class="row g-3 align-items-end">
                 {% csrf_token %}
                 <div class="col-md-4">
                     <label for="new_start_date" class="form-label">
-                        <strong>Nueva Fecha de Inicio</strong>
+                        <strong>{% translate "Nueva Fecha de Inicio" %}</strong>
                     </label>
                     <input type="date" class="form-control" id="new_start_date" 
                            name="new_start_date" value="{{ schedule.start_date|date:'Y-m-d' }}">
                 </div>
                 <div class="col-md-4">
                     <div class="text-muted">
-                        <small><strong>Inicio actual:</strong> {{ schedule.start_date|date:"d/m/Y" }}</small><br>
-                        <small><strong>Fin actual:</strong> {{ schedule.end_date|date:"d/m/Y" }}</small><br>
-                        <small><strong>Total tareas:</strong> {{ kpis.total_tasks }}</small>
+                        <small><strong>{% translate "Inicio actual:" %}</strong> {{ schedule.start_date|date:"d/m/Y" }}</small><br>
+                        <small><strong>{% translate "Fin actual:" %}</strong> {{ schedule.end_date|date:"d/m/Y" }}</small><br>
+                        <small><strong>{% translate "Total tareas:" %}</strong> {{ kpis.total_tasks }}</small>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -108,7 +108,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h3 class="text-primary mb-0">{{ kpis.total_tasks }}</h3>
-                    <small class="text-muted">Total Tareas</small>
+                    <small class="text-muted">{% translate "Total Tareas" %}</small>
                 </div>
             </div>
         </div>
@@ -116,7 +116,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h3 class="text-success mb-0">{{ kpis.completed_tasks }}</h3>
-                    <small class="text-muted">Completadas</small>
+                    <small class="text-muted">{% translate "Completadas" %}</small>
                 </div>
             </div>
         </div>
@@ -124,7 +124,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h3 class="text-warning mb-0">{{ kpis.pending_tasks }}</h3>
-                    <small class="text-muted">Pendientes</small>
+                    <small class="text-muted">{% translate "Pendientes" %}</small>
                 </div>
             </div>
         </div>
@@ -132,7 +132,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h3 class="text-danger mb-0">{{ kpis.overdue_tasks }}</h3>
-                    <small class="text-muted">Vencidas</small>
+                    <small class="text-muted">{% translate "Vencidas" %}</small>
                 </div>
             </div>
         </div>
@@ -140,7 +140,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h3 class="text-info mb-0">{{ kpis.progress_percentage|floatformat:0 }}%</h3>
-                    <small class="text-muted">Progreso</small>
+                    <small class="text-muted">{% translate "Progreso" %}</small>
                 </div>
             </div>
         </div>
@@ -148,7 +148,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h3 class="text-primary mb-0">{{ kpis.on_time_rate|floatformat:0 }}%</h3>
-                    <small class="text-muted">A Tiempo</small>
+                    <small class="text-muted">{% translate "A Tiempo" %}</small>
                 </div>
             </div>
         </div>
@@ -160,7 +160,7 @@
             <div class="card text-center shadow-sm border-info">
                 <div class="card-body">
                     <h3 class="text-info mb-0">{{ schedule.get_total_days }}</h3>
-                    <small class="text-muted">Días Laborables del Cronograma</small>
+                    <small class="text-muted">{% translate "Días Laborables del Cronograma" %}</small>
                 </div>
             </div>
         </div>
@@ -168,7 +168,7 @@
             <div class="card text-center shadow-sm border-secondary">
                 <div class="card-body">
                     <h3 class="text-secondary mb-0">{{ schedule.get_total_task_days }}</h3>
-                    <small class="text-muted">Total Días Laborables de Tareas</small>
+                    <small class="text-muted">{% translate "Total Días Laborables de Tareas" %}</small>
                 </div>
             </div>
         </div>
@@ -176,7 +176,7 @@
             <div class="card text-center shadow-sm border-dark">
                 <div class="card-body">
                     <h3 class="text-dark mb-0">{{ schedule.get_total_task_hours }}</h3>
-                    <small class="text-muted">Total Horas Laborables</small>
+                    <small class="text-muted">{% translate "Total Horas Laborables" %}</small>
                 </div>
             </div>
         </div>
@@ -184,7 +184,7 @@
             <div class="card text-center shadow-sm border-warning">
                 <div class="card-body">
                     <h3 class="text-warning mb-0">{{ schedule.get_total_work_weeks }}</h3>
-                    <small class="text-muted">Semanas de Trabajo</small>
+                    <small class="text-muted">{% translate "Semanas de Trabajo" %}</small>
                 </div>
             </div>
         </div>
@@ -193,23 +193,23 @@
     <!-- Enlace Público -->
     {% if schedule.is_public %}
     <div class="alert alert-success">
-        <strong><i class="fas fa-link"></i> Enlace Público:</strong>
+        <strong><i class="fas fa-link"></i> {% translate "Enlace Público:" %}</strong>
         <div class="input-group mt-2">
             <input type="text" class="form-control" readonly 
                    value="{{ request.scheme }}://{{ request.get_host }}{% url 'task_schedule_public' schedule.public_token %}"
                    id="publicLink">
             <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">
-                <i class="fas fa-copy"></i> Copiar
+                <i class="fas fa-copy"></i> {% translate "Copiar" %}
             </button>
         </div>
-        <small class="text-muted">Cualquier persona con este enlace puede ver el cronograma</small>
+        <small class="text-muted">{% translate "Cualquier persona con este enlace puede ver el cronograma" %}</small>
     </div>
     {% endif %}
 
     <!-- Lista de Tareas -->
     <div class="card">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0"><i class="fas fa-list"></i> Tareas</h5>
+            <h5 class="mb-0"><i class="fas fa-list"></i> {% translate "Tareas" %}</h5>
         </div>
         <div class="card-body">
             {% if tasks %}
@@ -220,14 +220,14 @@
                             <th width="40">
                                 <input type="checkbox" class="form-check-input" disabled>
                             </th>
-                            <th>Título</th>
-                            <th>Asignado</th>
-                            <th>Prioridad</th>
-                            <th>Inicio</th>
-                            <th>Fin</th>
+                            <th>{% translate "Título" %}</th>
+                            <th>{% translate "Asignado" %}</th>
+                            <th>{% translate "Prioridad" %}</th>
+                            <th>{% translate "Inicio" %}</th>
+                            <th>{% translate "Fin" %}</th>
                            
-                            <th>Estado</th>
-                            <th width="120">Acciones</th>
+                            <th>{% translate "Estado" %}</th>
+                            <th width="120">{% translate "Acciones" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -241,7 +241,7 @@
                             <td>
                                 <strong>{{ task.title }}</strong>
                                 {% if task.dependencies.exists %}
-                                <span class="badge bg-secondary ms-1" title="Tiene dependencias">
+                                <span class="badge bg-secondary ms-1" title="{% translate 'Tiene dependencias' %}">
                                     <i class="fas fa-link"></i> {{ task.dependencies.count }}
                                 </span>
                                 {% endif %}
@@ -250,18 +250,18 @@
                                 {% if task.assigned_to %}
                                     <i class="fas fa-user"></i> {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
                                 {% else %}
-                                    <span class="text-muted">Sin asignar</span>
+                                    <span class="text-muted">{% translate "Sin asignar" %}</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if task.priority == 'critical' %}
-                                    <span class="badge bg-danger">Crítica</span>
+                                    <span class="badge bg-danger">{% translate "Crítica" %}</span>
                                 {% elif task.priority == 'high' %}
-                                    <span class="badge bg-warning">Alta</span>
+                                    <span class="badge bg-warning">{% translate "Alta" %}</span>
                                 {% elif task.priority == 'medium' %}
-                                    <span class="badge bg-info">Media</span>
+                                    <span class="badge bg-info">{% translate "Media" %}</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Baja</span>
+                                    <span class="badge bg-secondary">{% translate "Baja" %}</span>
                                 {% endif %}
                             </td>
                             <td>{{ task.start_date|date:"d/m/Y" }}</td>
@@ -269,21 +269,21 @@
                             
                             <td>
                                 {% if task.is_completed %}
-                                    <span class="badge bg-success"><i class="fas fa-check"></i> Completada</span>
+                                    <span class="badge bg-success"><i class="fas fa-check"></i> {% translate "Completada" %}</span>
                                 {% elif task.is_overdue %}
-                                    <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> Vencida</span>
+                                    <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> {% translate "Vencida" %}</span>
                                 {% else %}
-                                    <span class="badge bg-warning"><i class="fas fa-clock"></i> Pendiente</span>
+                                    <span class="badge bg-warning"><i class="fas fa-clock"></i> {% translate "Pendiente" %}</span>
                                 {% endif %}
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
                                     <a href="{% url 'schedule_task_edit' task.pk %}" 
-                                       class="btn btn-warning" title="Editar">
+                                       class="btn btn-warning" title="{% translate 'Editar' %}">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <a href="{% url 'schedule_task_delete' task.pk %}" 
-                                       class="btn btn-danger" title="Eliminar">
+                                       class="btn btn-danger" title="{% translate 'Eliminar' %}">
                                         <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
@@ -295,8 +295,8 @@
             </div>
             {% else %}
             <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> No hay tareas creadas todavía. 
-                <a href="{% url 'schedule_task_create' schedule.pk %}">Crea la primera tarea</a>.
+                <i class="fas fa-info-circle"></i> {% translate "No hay tareas creadas todavía." %} 
+                <a href="{% url 'schedule_task_create' schedule.pk %}">{% translate "Crea la primera tarea" %}</a>.
             </div>
             {% endif %}
         </div>

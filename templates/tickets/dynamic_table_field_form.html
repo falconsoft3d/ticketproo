@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}{% if form.instance.pk %}Editar{% else %}Nuevo{% endif %} Campo{% endblock %}
+{% block title %}{% if form.instance.pk %}{% translate "Editar" %}{% else %}{% translate "Nuevo" %}{% endif %} {% translate "Campo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -9,13 +10,13 @@
         <div class="col">
             <h2>
                 <i class="fas fa-columns"></i> 
-                {% if form.instance.pk %}Editar{% else %}Nuevo{% endif %} Campo
+                {% if form.instance.pk %}{% translate "Editar" %}{% else %}{% translate "Nuevo" %}{% endif %} {% translate "Campo" %}
             </h2>
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'dynamic_table_list' %}">Tablas API</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dynamic_table_list' %}">{% translate "Tablas API" %}</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'dynamic_table_detail' table.pk %}">{{ table.name }}</a></li>
-                    <li class="breadcrumb-item active">{% if form.instance.pk %}Editar{% else %}Nuevo{% endif %} Campo</li>
+                    <li class="breadcrumb-item active">{% if form.instance.pk %}{% translate "Editar" %}{% else %}{% translate "Nuevo" %}{% endif %} {% translate "Campo" %}</li>
                 </ol>
             </nav>
         </div>
@@ -25,7 +26,7 @@
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Información del Campo</h5>
+                    <h5 class="mb-0">{% translate "Información del Campo" %}</h5>
                 </div>
                 <div class="card-body">
                     <form method="post">
@@ -40,7 +41,7 @@
                         <div class="row">
                             <div class="col-md-8 mb-3">
                                 <label for="{{ form.name.id_for_label }}" class="form-label">
-                                    Nombre del Campo <span class="text-danger">*</span>
+                                    {% translate "Nombre del Campo" %} <span class="text-danger">*</span>
                                 </label>
                                 {{ form.name }}
                                 {% if form.name.errors %}
@@ -49,13 +50,13 @@
                                     </div>
                                 {% endif %}
                                 <small class="form-text text-muted">
-                                    Sin espacios, solo letras, números y guiones bajos
+                                    {% translate "Sin espacios, solo letras, números y guiones bajos" %}
                                 </small>
                             </div>
 
                             <div class="col-md-4 mb-3">
                                 <label for="{{ form.order.id_for_label }}" class="form-label">
-                                    Orden <span class="text-danger">*</span>
+                                    {% translate "Orden" %} <span class="text-danger">*</span>
                                 </label>
                                 {{ form.order }}
                                 {% if form.order.errors %}
@@ -68,7 +69,7 @@
 
                         <div class="mb-3">
                             <label for="{{ form.field_type.id_for_label }}" class="form-label">
-                                Tipo de Campo <span class="text-danger">*</span>
+                                {% translate "Tipo de Campo" %} <span class="text-danger">*</span>
                             </label>
                             {{ form.field_type }}
                             {% if form.field_type.errors %}
@@ -80,7 +81,7 @@
 
                         <div class="mb-3">
                             <label for="{{ form.display_name.id_for_label }}" class="form-label">
-                                Nombre de Visualización <span class="text-danger">*</span>
+                                {% translate "Nombre de Visualización" %} <span class="text-danger">*</span>
                             </label>
                             {{ form.display_name }}
                             {% if form.display_name.errors %}
@@ -89,13 +90,13 @@
                                 </div>
                             {% endif %}
                             <small class="form-text text-muted">
-                                Nombre amigable para mostrar
+                                {% translate "Nombre amigable para mostrar" %}
                             </small>
                         </div>
 
                         <div class="mb-3">
                             <label for="{{ form.help_text.id_for_label }}" class="form-label">
-                                Texto de Ayuda
+                                {% translate "Texto de Ayuda" %}
                             </label>
                             {{ form.help_text }}
                             {% if form.help_text.errors %}
@@ -107,7 +108,7 @@
 
                         <div class="mb-3">
                             <label for="{{ form.default_value.id_for_label }}" class="form-label">
-                                Valor por Defecto
+                                {% translate "Valor por Defecto" %}
                             </label>
                             {{ form.default_value }}
                             {% if form.default_value.errors %}
@@ -122,7 +123,7 @@
                                 <div class="form-check">
                                     {{ form.is_required }}
                                     <label class="form-check-label" for="{{ form.is_required.id_for_label }}">
-                                        Campo requerido
+                                        {% translate "Campo requerido" %}
                                     </label>
                                 </div>
                             </div>
@@ -130,13 +131,13 @@
                                 <div class="form-check">
                                     {{ form.is_unique }}
                                     <label class="form-check-label" for="{{ form.is_unique.id_for_label }}">
-                                        Valor único
+                                        {% translate "Valor único" %}
                                     </label>
                                 </div>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="{{ form.max_length.id_for_label }}" class="form-label">
-                                    Longitud Máxima
+                                    {% translate "Longitud Máxima" %}
                                 </label>
                                 {{ form.max_length }}
                                 {% if form.max_length.errors %}
@@ -149,10 +150,10 @@
 
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Guardar
+                                <i class="fas fa-save"></i> {% translate "Guardar" %}
                             </button>
                             <a href="{% url 'dynamic_table_detail' table.pk %}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancelar
+                                <i class="fas fa-times"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>
@@ -163,26 +164,26 @@
         <div class="col-lg-4">
             <div class="card bg-light">
                 <div class="card-body">
-                    <h5><i class="fas fa-info-circle"></i> Tipos de Campo</h5>
+                    <h5><i class="fas fa-info-circle"></i> {% translate "Tipos de Campo" %}</h5>
                     
-                    <p class="small mb-2"><strong>Texto:</strong> Cadena corta</p>
-                    <p class="small mb-2"><strong>Área de texto:</strong> Texto largo/multilínea</p>
-                    <p class="small mb-2"><strong>Número:</strong> Entero</p>
-                    <p class="small mb-2"><strong>Decimal:</strong> Número con decimales</p>
-                    <p class="small mb-2"><strong>Booleano:</strong> true/false</p>
-                    <p class="small mb-2"><strong>Fecha:</strong> YYYY-MM-DD</p>
-                    <p class="small mb-2"><strong>Fecha y Hora:</strong> ISO 8601</p>
-                    <p class="small mb-2"><strong>Email:</strong> Validación de email</p>
-                    <p class="small mb-2"><strong>URL:</strong> Validación de URL</p>
-                    <p class="small mb-0"><strong>JSON:</strong> Objeto/array JSON</p>
+                    <p class="small mb-2"><strong>{% translate "Texto:" %}</strong> {% translate "Cadena corta" %}</p>
+                    <p class="small mb-2"><strong>{% translate "Área de texto:" %}</strong> {% translate "Texto largo/multilínea" %}</p>
+                    <p class="small mb-2"><strong>{% translate "Número:" %}</strong> {% translate "Entero" %}</p>
+                    <p class="small mb-2"><strong>{% translate "Decimal:" %}</strong> {% translate "Número con decimales" %}</p>
+                    <p class="small mb-2"><strong>{% translate "Booleano:" %}</strong> {% translate "true/false" %}</p>
+                    <p class="small mb-2"><strong>{% translate "Fecha:" %}</strong> {% translate "YYYY-MM-DD" %}</p>
+                    <p class="small mb-2"><strong>{% translate "Fecha y Hora:" %}</strong> {% translate "ISO 8601" %}</p>
+                    <p class="small mb-2"><strong>{% translate "Email:" %}</strong> {% translate "Validación de email" %}</p>
+                    <p class="small mb-2"><strong>{% translate "URL:" %}</strong> {% translate "Validación de URL" %}</p>
+                    <p class="small mb-0"><strong>{% translate "JSON:" %}</strong> {% translate "Objeto/array JSON" %}</p>
 
                     <hr>
 
-                    <h6 class="mt-3">Validaciones</h6>
+                    <h6 class="mt-3">{% translate "Validaciones" %}</h6>
                     <ul class="small mb-0">
-                        <li><strong>Requerido:</strong> No puede estar vacío</li>
-                        <li><strong>Único:</strong> No puede repetirse</li>
-                        <li><strong>Long. Máx:</strong> Para text/textarea</li>
+                        <li><strong>{% translate "Requerido:" %}</strong> {% translate "No puede estar vacío" %}</li>
+                        <li><strong>{% translate "Único:" %}</strong> {% translate "No puede repetirse" %}</li>
+                        <li><strong>{% translate "Long. Máx:" %}</strong> {% translate "Para text/textarea" %}</li>
                     </ul>
                 </div>
             </div>

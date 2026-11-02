@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -7,12 +8,12 @@
 <div class="container mt-4">
     <div class="row mb-4">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_list' %}">Gerentes IA</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_list' %}">{% translate "Gerentes IA" %}</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'ai_manager_detail' manager.pk %}">{{ manager.name }}</a></li>
-                    <li class="breadcrumb-item active">Nueva Reunión</li>
+                    <li class="breadcrumb-item active">{% translate "Nueva Reunión" %}</li>
                 </ol>
             </nav>
         </div>
@@ -24,7 +25,7 @@
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-primary text-white">
                     <h3 class="mb-0">
-                        <i class="bi bi-calendar-plus"></i> Nueva Reunión
+                        <i class="bi bi-calendar-plus"></i> {% translate "Nueva Reunión" %}
                     </h3>
                     <p class="mb-0 mt-2">
                         <i class="bi bi-robot"></i> {{ manager.name }} - {{ manager.get_category_display }}
@@ -37,28 +38,28 @@
                         <!-- Título -->
                         <div class="mb-3">
                             <label for="title" class="form-label fw-bold">
-                                <i class="bi bi-card-heading"></i> Título de la Reunión <span class="text-danger">*</span>
+                                <i class="bi bi-card-heading"></i> {% translate "Título de la Reunión" %} <span class="text-danger">*</span>
                             </label>
                             <input type="text" class="form-control" id="title" name="title" 
-                                   placeholder="Ejemplo: Reporte de ventas del día, Problemas en producción..." 
+                                   placeholder="{% translate 'Ejemplo: Reporte de ventas del día, Problemas en producción...' %}" 
                                    required maxlength="300">
-                            <small class="text-muted">Resume el tema principal de la reunión</small>
+                            <small class="text-muted">{% translate "Resume el tema principal de la reunión" %}</small>
                         </div>
 
                         <!-- Tipo de Entrada -->
                         <div class="mb-3">
                             <label class="form-label fw-bold">
-                                <i class="bi bi-input-cursor"></i> Tipo de Entrada
+                                <i class="bi bi-input-cursor"></i> {% translate "Tipo de Entrada" %}
                             </label>
                             <div class="btn-group w-100" role="group">
                                 <input type="radio" class="btn-check" name="input_type" id="input_text" value="text" checked>
                                 <label class="btn btn-outline-primary" for="input_text">
-                                    <i class="bi bi-keyboard"></i> Texto
+                                    <i class="bi bi-keyboard"></i> {% translate "Texto" %}
                                 </label>
 
                                 <input type="radio" class="btn-check" name="input_type" id="input_audio" value="audio">
                                 <label class="btn btn-outline-primary" for="input_audio">
-                                    <i class="bi bi-mic"></i> Audio
+                                    <i class="bi bi-mic"></i> {% translate "Audio" %}
                                 </label>
                             </div>
                         </div>
@@ -66,19 +67,19 @@
                         <!-- Entrada de Texto -->
                         <div class="mb-3" id="text_input_container">
                             <label for="user_input" class="form-label fw-bold">
-                                <i class="bi bi-chat-left-text"></i> Comparte tus Pensamientos <span class="text-danger">*</span>
+                                <i class="bi bi-chat-left-text"></i> {% translate "Comparte tus Pensamientos" %} <span class="text-danger">*</span>
                             </label>
                             
                             <!-- Botón de Micrófono -->
                             <div class="mb-2">
                                 <button type="button" class="btn btn-outline-danger" id="record_btn">
-                                    <i class="bi bi-mic-fill"></i> <span id="record_text">Grabar Audio</span>
+                                    <i class="bi bi-mic-fill"></i> <span id="record_text">{% translate "Grabar Audio" %}</span>
                                 </button>
                                 <button type="button" class="btn btn-outline-secondary d-none" id="stop_btn">
-                                    <i class="bi bi-stop-circle-fill"></i> Detener Grabación
+                                    <i class="bi bi-stop-circle-fill"></i> {% translate "Detener Grabación" %}
                                 </button>
                                 <span class="ms-2 text-muted d-none" id="recording_status">
-                                    <i class="bi bi-record-circle text-danger"></i> Grabando... <span id="recording_time">0:00</span>
+                                    <i class="bi bi-record-circle text-danger"></i> {% translate "Grabando..." %} <span id="recording_time">0:00</span>
                                 </span>
                             </div>
                             
@@ -92,41 +93,40 @@
 - ¿Necesitas algún consejo específico?
 
 Sé específico y honesto para obtener mejores recomendaciones..."></textarea>
-                            <small class="text-muted">Comparte detalles sobre tu día, logros, desafíos o planes. Puedes usar el micrófono para dictar.</small>
+                            <small class="text-muted">{% translate "Comparte detalles sobre tu día, logros, desafíos o planes. Puedes usar el micrófono para dictar." %}</small>
                         </div>
 
                         <!-- Entrada de Audio -->
                         <div class="mb-3 d-none" id="audio_input_container">
                             <label for="audio_file" class="form-label fw-bold">
-                                <i class="bi bi-mic-fill"></i> Archivo de Audio
+                                <i class="bi bi-mic-fill"></i> {% translate "Archivo de Audio" %}
                             </label>
                             
                             <!-- Botón de Grabar para modo audio -->
                             <div class="mb-2">
                                 <button type="button" class="btn btn-danger" id="record_audio_btn">
-                                    <i class="bi bi-mic-fill"></i> <span id="record_audio_text">Grabar Audio</span>
+                                    <i class="bi bi-mic-fill"></i> <span id="record_audio_text">{% translate "Grabar Audio" %}</span>
                                 </button>
                                 <button type="button" class="btn btn-secondary d-none" id="stop_audio_btn">
-                                    <i class="bi bi-stop-circle-fill"></i> Detener
+                                    <i class="bi bi-stop-circle-fill"></i> {% translate "Detener" %}
                                 </button>
                                 <span class="ms-2 text-muted d-none" id="recording_audio_status">
-                                    <i class="bi bi-record-circle text-danger"></i> Grabando... <span id="recording_audio_time">0:00</span>
+                                    <i class="bi bi-record-circle text-danger"></i> {% translate "Grabando..." %} <span id="recording_audio_time">0:00</span>
                                 </span>
                             </div>
                             
                             <input type="file" class="form-control" id="audio_file" name="audio_file" accept="audio/*">
-                            <small class="text-muted">Graba tu audio directamente o sube un archivo de audio</small>
+                            <small class="text-muted">{% translate "Graba tu audio directamente o sube un archivo de audio" %}</small>
                         </div>
 
                         <!-- Archivos Adjuntos -->
                         <div class="mb-3">
                             <label for="attachments" class="form-label fw-bold">
-                                <i class="bi bi-paperclip"></i> Archivos Adjuntos (Opcional)
+                                <i class="bi bi-paperclip"></i> {% translate "Archivos Adjuntos (Opcional)" %}
                             </label>
                             <input type="file" class="form-control" id="attachments" name="attachments" multiple>
                             <small class="text-muted">
-                                Puedes subir documentos, imágenes, PDFs que el gerente IA debe considerar en su análisis. 
-                                Selecciona uno o varios archivos.
+                                {% translate "Puedes subir documentos, imágenes, PDFs que el gerente IA debe considerar en su análisis. Selecciona uno o varios archivos." %}
                             </small>
                             <div id="attachment_preview" class="mt-2"></div>
                         </div>
@@ -134,24 +134,24 @@ Sé específico y honesto para obtener mejores recomendaciones..."></textarea>
                         <!-- Panel de Información -->
                         <div class="alert alert-info">
                             <h6 class="alert-heading">
-                                <i class="bi bi-info-circle"></i> ¿Qué pasará después?
+                                <i class="bi bi-info-circle"></i> {% translate "¿Qué pasará después?" %}
                             </h6>
                             <ul class="mb-0">
-                                <li><strong>{{ manager.name }}</strong> analizará lo que compartas</li>
-                                <li>Considerará el contexto de tus reuniones anteriores</li>
-                                <li>Te dará feedback constructivo y personalizado</li>
-                                <li>Identificará áreas de mejora específicas</li>
-                                <li>Te proporcionará recomendaciones accionables</li>
+                                <li><strong>{{ manager.name }}</strong> {% translate "analizará lo que compartas" %}</li>
+                                <li>{% translate "Considerará el contexto de tus reuniones anteriores" %}</li>
+                                <li>{% translate "Te dará feedback constructivo y personalizado" %}</li>
+                                <li>{% translate "Identificará áreas de mejora específicas" %}</li>
+                                <li>{% translate "Te proporcionará recomendaciones accionables" %}</li>
                             </ul>
                         </div>
 
                         <!-- Botones -->
                         <div class="d-flex gap-2 justify-content-end">
                             <a href="{% url 'ai_manager_detail' manager.pk %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary" id="submit_btn">
-                                <i class="bi bi-send"></i> <span id="submit_text">Iniciar Reunión</span>
+                                <i class="bi bi-send"></i> <span id="submit_text">{% translate "Iniciar Reunión" %}</span>
                                 <span class="spinner-border spinner-border-sm d-none" id="submit_spinner"></span>
                             </button>
                         </div>
@@ -181,15 +181,15 @@ Sé específico y honesto para obtener mejores recomendaciones..."></textarea>
             <div class="card shadow-sm border-0 bg-light">
                 <div class="card-body">
                     <h6 class="card-title">
-                        <i class="bi bi-lightbulb"></i> Consejos para una mejor reunión
+                        <i class="bi bi-lightbulb"></i> {% translate "Consejos para una mejor reunión" %}
                     </h6>
                     <ul class="small mb-0">
-                        <li>Sé específico con tus logros y desafíos</li>
-                        <li>Menciona métricas o números cuando sea posible</li>
-                        <li>Explica el contexto de las situaciones</li>
-                        <li>No tengas miedo de compartir dificultades</li>
-                        <li>Pregunta sobre temas específicos si necesitas ayuda</li>
-                        <li>Sé honesto para recibir consejos realmente útiles</li>
+                        <li>{% translate "Sé específico con tus logros y desafíos" %}</li>
+                        <li>{% translate "Menciona métricas o números cuando sea posible" %}</li>
+                        <li>{% translate "Explica el contexto de las situaciones" %}</li>
+                        <li>{% translate "No tengas miedo de compartir dificultades" %}</li>
+                        <li>{% translate "Pregunta sobre temas específicos si necesitas ayuda" %}</li>
+                        <li>{% translate "Sé honesto para recibir consejos realmente útiles" %}</li>
                     </ul>
                 </div>
             </div>
@@ -198,16 +198,16 @@ Sé específico y honesto para obtener mejores recomendaciones..."></textarea>
             <div class="card shadow-sm border-0 mt-3">
                 <div class="card-body">
                     <h6 class="card-title">
-                        <i class="bi bi-bar-chart"></i> Tus Estadísticas
+                        <i class="bi bi-bar-chart"></i> {% translate "Tus Estadísticas" %}
                     </h6>
                     <div class="row text-center">
                         <div class="col-6">
                             <h4 class="mb-0">{{ manager.meetings.filter.count }}</h4>
-                            <small class="text-muted">Reuniones</small>
+                            <small class="text-muted">{% translate "Reuniones" %}</small>
                         </div>
                         <div class="col-6">
                             <h4 class="mb-0">{{ manager.get_total_meetings }}</h4>
-                            <small class="text-muted">Total</small>
+                            <small class="text-muted">{% translate "Total" %}</small>
                         </div>
                     </div>
                 </div>

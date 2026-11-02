@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ session.title }} - Chat IA{% endblock %}
@@ -374,7 +375,7 @@ textarea:focus-visible {
                                 </button>
                             </div>
                         </form>
-                        <small class="text-muted mt-2 d-block">Ctrl+Enter para enviar</small>
+                        <small class="text-muted mt-2 d-block">{% translate "Ctrl+Enter para enviar" %}</small>
                     </div>
                 </div>
             </div>

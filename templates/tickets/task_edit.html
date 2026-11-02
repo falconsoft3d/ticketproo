@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -12,7 +13,7 @@
                     <i class="bi bi-pencil me-2"></i>{{ page_title }}
                 </h2>
                 <a href="{% url 'tickets:task_detail' task.id %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-1"></i>Volver
+                    <i class="bi bi-arrow-left me-1"></i>{% translate "Volver" %}
                 </a>
             </div>
 
@@ -26,17 +27,17 @@
                             <!-- Información básica -->
                             <div class="col-md-12 mb-4">
                                 <h5 class="border-bottom pb-2 mb-3">
-                                    <i class="bi bi-info-circle me-1"></i>Información Básica
+                                    <i class="bi bi-info-circle me-1"></i>{% translate "Información Básica" %}
                                 </h5>
                                 
                                 <div class="mb-3">
-                                    <label for="title" class="form-label">Título de la Tarea *</label>
+                                    <label for="title" class="form-label">{% translate "Título de la Tarea *" %}</label>
                                     <input type="text" class="form-control" id="title" name="title" 
                                            value="{{ task.title }}" required>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="description" class="form-label">Descripción *</label>
+                                    <label for="description" class="form-label">{% translate "Descripción *" %}</label>
                                     <textarea class="form-control" id="description" name="description" rows="4" required>{{ task.description }}</textarea>
                                 </div>
                             </div>
@@ -44,11 +45,11 @@
                             <!-- Estado y prioridad -->
                             <div class="col-md-6 mb-4">
                                 <h5 class="border-bottom pb-2 mb-3">
-                                    <i class="bi bi-flag me-1"></i>Estado y Prioridad
+                                    <i class="bi bi-flag me-1"></i>{% translate "Estado y Prioridad" %}
                                 </h5>
                                 
                                 <div class="mb-3">
-                                    <label for="status" class="form-label">Estado</label>
+                                    <label for="status" class="form-label">{% translate "Estado" %}</label>
                                     <select class="form-select" id="status" name="status">
                                         {% for value, label in status_choices %}
                                             <option value="{{ value }}" {% if value == task.status %}selected{% endif %}>
@@ -59,7 +60,7 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="priority" class="form-label">Prioridad</label>
+                                    <label for="priority" class="form-label">{% translate "Prioridad" %}</label>
                                     <select class="form-select" id="priority" name="priority">
                                         {% for value, label in priority_choices %}
                                             <option value="{{ value }}" {% if value == task.priority %}selected{% endif %}>
@@ -73,21 +74,21 @@
                             <!-- Fechas y tiempo -->
                             <div class="col-md-6 mb-4">
                                 <h5 class="border-bottom pb-2 mb-3">
-                                    <i class="bi bi-calendar me-1"></i>Fechas y Tiempo
+                                    <i class="bi bi-calendar me-1"></i>{% translate "Fechas y Tiempo" %}
                                 </h5>
                                 
                                 <div class="mb-3">
-                                    <label for="due_date" class="form-label">Fecha de Vencimiento</label>
+                                    <label for="due_date" class="form-label">{% translate "Fecha de Vencimiento" %}</label>
                                     <input type="date" class="form-control" id="due_date" name="due_date" 
                                            value="{% if task.due_date %}{{ task.due_date|date:'Y-m-d' }}{% endif %}">
-                                    <div class="form-text">Fecha límite para completar la tarea (opcional)</div>
+                                    <div class="form-text">{% translate "Fecha límite para completar la tarea (opcional)" %}</div>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="estimated_hours" class="form-label">Horas Estimadas</label>
+                                    <label for="estimated_hours" class="form-label">{% translate "Horas Estimadas" %}</label>
                                     <input type="number" class="form-control" id="estimated_hours" name="estimated_hours" 
                                            step="0.5" min="0" value="{{ task.estimated_hours|default:'' }}">
-                                    <div class="form-text">Tiempo estimado para completar la tarea</div>
+                                    <div class="form-text">{% translate "Tiempo estimado para completar la tarea" %}</div>
                                 </div>
                             </div>
 
@@ -95,11 +96,11 @@
                             {% if can_change_assignees %}
                             <div class="col-md-6 mb-4">
                                 <h5 class="border-bottom pb-2 mb-3">
-                                    <i class="bi bi-people me-1"></i>Asignación
+                                    <i class="bi bi-people me-1"></i>{% translate "Asignación" %}
                                 </h5>
                                 
                                 <div class="mb-3">
-                                    <label for="assigned_to" class="form-label">Asignado a</label>
+                                    <label for="assigned_to" class="form-label">{% translate "Asignado a" %}</label>
                                     <select class="form-select" id="assigned_to" name="assigned_to" multiple>
                                         {% for user in users %}
                                             <option value="{{ user.id }}" 
@@ -108,21 +109,21 @@
                                             </option>
                                         {% endfor %}
                                     </select>
-                                    <div class="form-text">Mantén presionado Ctrl (Cmd en Mac) para seleccionar múltiples usuarios</div>
+                                    <div class="form-text">{% translate "Mantén presionado Ctrl (Cmd en Mac) para seleccionar múltiples usuarios" %}</div>
                                 </div>
                             </div>
                             {% else %}
                             <div class="col-md-6 mb-4">
                                 <h5 class="border-bottom pb-2 mb-3">
-                                    <i class="bi bi-people me-1"></i>Asignación
+                                    <i class="bi bi-people me-1"></i>{% translate "Asignación" %}
                                 </h5>
                                 
                                 <div class="mb-3">
-                                    <label class="form-label">Asignado a</label>
+                                    <label class="form-label">{% translate "Asignado a" %}</label>
                                     <div class="form-control-plaintext">
                                         {{ task.get_assigned_users_display }}
                                     </div>
-                                    <div class="form-text">Solo los agentes pueden cambiar las asignaciones</div>
+                                    <div class="form-text">{% translate "Solo los agentes pueden cambiar las asignaciones" %}</div>
                                 </div>
                             </div>
                             {% endif %}
@@ -130,13 +131,13 @@
                             <!-- Contenido relacionado -->
                             <div class="col-md-6 mb-4">
                                 <h5 class="border-bottom pb-2 mb-3">
-                                    <i class="bi bi-link-45deg me-1"></i>Contenido Relacionado
+                                    <i class="bi bi-link-45deg me-1"></i>{% translate "Contenido Relacionado" %}
                                 </h5>
                                 
                                 <div class="mb-3">
-                                    <label for="ticket" class="form-label">Ticket Relacionado</label>
+                                    <label for="ticket" class="form-label">{% translate "Ticket Relacionado" %}</label>
                                     <select class="form-select" id="ticket" name="ticket">
-                                        <option value="">Sin ticket asociado</option>
+                                        <option value="">{% translate "Sin ticket asociado" %}</option>
                                         {% for ticket in tickets %}
                                             <option value="{{ ticket.id }}" 
                                                     {% if task.ticket.id == ticket.id %}selected{% endif %}>
@@ -147,9 +148,9 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="project" class="form-label">Proyecto Relacionado</label>
+                                    <label for="project" class="form-label">{% translate "Proyecto Relacionado" %}</label>
                                     <select class="form-select" id="project" name="project">
-                                        <option value="">Sin proyecto asociado</option>
+                                        <option value="">{% translate "Sin proyecto asociado" %}</option>
                                         {% for project in projects %}
                                             <option value="{{ project.id }}" 
                                                     {% if task.project.id == project.id %}selected{% endif %}>
@@ -164,10 +165,10 @@
                         <!-- Botones -->
                         <div class="d-flex justify-content-between align-items-center pt-3 border-top">
                             <a href="{% url 'tickets:task_detail' task.id %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                                <i class="bi bi-x-circle me-1"></i>{% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-1"></i>Actualizar Tarea
+                                <i class="bi bi-check-circle me-1"></i>{% translate "Actualizar Tarea" %}
                             </button>
                         </div>
                     </form>
@@ -178,26 +179,26 @@
             <div class="card mt-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="bi bi-info-circle me-1"></i>Información de la Tarea
+                        <i class="bi bi-info-circle me-1"></i>{% translate "Información de la Tarea" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>Creado por:</strong> {{ task.created_by.get_full_name|default:task.created_by.username }}</p>
-                            <p><strong>Fecha de creación:</strong> {{ task.created_at|date:"d/m/Y H:i" }}</p>
+                            <p><strong>{% translate "Creado por:" %}</strong> {{ task.created_by.get_full_name|default:task.created_by.username }}</p>
+                            <p><strong>{% translate "Fecha de creación:" %}</strong> {{ task.created_at|date:"d/m/Y H:i" }}</p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Última actualización:</strong> {{ task.updated_at|date:"d/m/Y H:i" }}</p>
+                            <p><strong>{% translate "Última actualización:" %}</strong> {{ task.updated_at|date:"d/m/Y H:i" }}</p>
                             {% if task.completed_at %}
-                                <p><strong>Fecha de finalización:</strong> {{ task.completed_at|date:"d/m/Y H:i" }}</p>
+                                <p><strong>{% translate "Fecha de finalización:" %}</strong> {{ task.completed_at|date:"d/m/Y H:i" }}</p>
                             {% endif %}
                         </div>
                     </div>
                     {% if task.estimated_hours %}
                     <div class="row">
                         <div class="col-md-12">
-                            <p><strong>Progreso:</strong> {{ task.progress_percentage }}%</p>
+                            <p><strong>{% translate "Progreso:" %}</strong> {{ task.progress_percentage }}%</p>
                             <div class="progress" style="height: 8px;">
                                 <div class="progress-bar" role="progressbar" 
                                      style="width: {{ task.progress_percentage }}%"

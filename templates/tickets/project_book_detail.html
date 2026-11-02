@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ book.title }} – Libro de Proyecto{% endblock %}
@@ -37,24 +38,24 @@
     <div class="d-flex justify-content-between align-items-start mb-3 no-print">
         <div>
             <a href="{% url 'project_book_list' %}" class="btn btn-sm btn-outline-secondary mb-2">
-                <i class="bi bi-arrow-left"></i> Volver a la lista
+                <i class="bi bi-arrow-left"></i> {% translate "Volver a la lista" %}
             </a>
             <h1 class="mb-0"><i class="bi bi-journal-bookmark"></i> {{ book.title }}</h1>
             <span class="badge bg-{{ book.get_status_color }} mt-1">{{ book.get_status_display }}</span>
         </div>
         <div class="d-flex gap-2 flex-wrap justify-content-end no-print">
             <a href="{% url 'project_book_pdf' book.pk %}" target="_blank" class="btn btn-outline-danger btn-sm">
-                <i class="bi bi-file-earmark-pdf"></i> Imprimir / PDF
+                <i class="bi bi-file-earmark-pdf"></i> {% translate "Imprimir / PDF" %}
             </a>
             <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#shareModal">
-                <i class="bi bi-share"></i> Compartir
+                <i class="bi bi-share"></i> {% translate "Compartir" %}
             </button>
             {% if is_agent %}
             <a href="{% url 'project_book_edit' book.pk %}" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-pencil"></i> Editar
+                <i class="bi bi-pencil"></i> {% translate "Editar" %}
             </a>
             <a href="{% url 'project_book_delete' book.pk %}" class="btn btn-outline-danger btn-sm">
-                <i class="bi bi-trash"></i> Eliminar
+                <i class="bi bi-trash"></i> {% translate "Eliminar" %}
             </a>
             {% endif %}
         </div>
@@ -75,35 +76,35 @@
             <div class="row g-3">
                 {% if book.company %}
                 <div class="col-sm-6 col-md-3">
-                    <div class="text-muted small">Empresa</div>
+                    <div class="text-muted small">{% translate "Empresa" %}</div>
                     <div class="fw-semibold"><i class="bi bi-building"></i> {{ book.company.name }}</div>
                 </div>
                 {% endif %}
                 {% if book.assigned_user %}
                 <div class="col-sm-6 col-md-3">
-                    <div class="text-muted small">Usuario asignado</div>
+                    <div class="text-muted small">{% translate "Usuario asignado" %}</div>
                     <div class="fw-semibold"><i class="bi bi-person-check"></i> {{ book.assigned_user.get_full_name|default:book.assigned_user.username }}</div>
                 </div>
                 {% endif %}
                 {% if book.created_by %}
                 <div class="col-sm-6 col-md-3">
-                    <div class="text-muted small">Creado por</div>
+                    <div class="text-muted small">{% translate "Creado por" %}</div>
                     <div class="fw-semibold"><i class="bi bi-person"></i> {{ book.created_by.get_full_name|default:book.created_by.username }}</div>
                 </div>
                 {% endif %}
                 <div class="col-sm-6 col-md-3">
-                    <div class="text-muted small">Creado el</div>
+                    <div class="text-muted small">{% translate "Creado el" %}</div>
                     <div class="fw-semibold">{{ book.created_at|date:"d/m/Y" }}</div>
                 </div>
                 {% if book.start_date %}
                 <div class="col-sm-6 col-md-3">
-                    <div class="text-muted small">Inicio</div>
+                    <div class="text-muted small">{% translate "Inicio" %}</div>
                     <div class="fw-semibold">{{ book.start_date|date:"d/m/Y" }}</div>
                 </div>
                 {% endif %}
                 {% if book.end_date %}
                 <div class="col-sm-6 col-md-3">
-                    <div class="text-muted small">Cierre estimado</div>
+                    <div class="text-muted small">{% translate "Cierre estimado" %}</div>
                     <div class="fw-semibold">{{ book.end_date|date:"d/m/Y" }}</div>
                 </div>
                 {% endif %}
@@ -123,7 +124,7 @@
     </div>
 
     <!-- Entradas de trazabilidad -->
-    <h5 class="mb-3"><i class="bi bi-chat-left-text"></i> Trazabilidad del Proyecto</h5>
+    <h5 class="mb-3"><i class="bi bi-chat-left-text"></i> {% translate "Trazabilidad del Proyecto" %}</h5>
 
     {% if entries %}
         {% for entry in entries %}
@@ -131,9 +132,9 @@
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <div>
                     {% if entry.is_agent_entry %}
-                    <span class="badge bg-primary entry-author-badge"><i class="bi bi-shield-check"></i> Agente</span>
+                    <span class="badge bg-primary entry-author-badge"><i class="bi bi-shield-check"></i> {% translate "Agente" %}</span>
                     {% else %}
-                    <span class="badge bg-secondary entry-author-badge"><i class="bi bi-person"></i> Usuario</span>
+                    <span class="badge bg-secondary entry-author-badge"><i class="bi bi-person"></i> {% translate "Usuario" %}</span>
                     {% endif %}
                     <span class="ms-2 fw-semibold">{{ entry.author.get_full_name|default:entry.author.username }}</span>
                 </div>
@@ -142,7 +143,7 @@
                     {% if is_agent or entry.author == request.user %}
                     <form method="post" action="{% url 'project_book_entry_delete' book.pk entry.pk %}" class="no-print" onsubmit="return confirm('¿Eliminar esta entrada?')">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Eliminar entrada">
+                        <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="{% translate 'Eliminar entrada' %}">
                             <i class="bi bi-x-lg"></i>
                         </button>
                     </form>
@@ -153,7 +154,7 @@
             {% if entry.attachment %}
             <div class="mt-2">
                 <a href="{{ entry.attachment.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-paperclip"></i> Ver adjunto
+                    <i class="bi bi-paperclip"></i> {% translate "Ver adjunto" %}
                 </a>
             </div>
             {% endif %}
@@ -162,14 +163,14 @@
     {% else %}
     <div class="text-center py-4 text-muted">
         <i class="bi bi-chat-left display-4"></i>
-        <p class="mt-2">No hay entradas aún. Agrega la primera nota de seguimiento.</p>
+        <p class="mt-2">{% translate "No hay entradas aún. Agrega la primera nota de seguimiento." %}</p>
     </div>
     {% endif %}
 
     <!-- Formulario nueva entrada -->
     <div class="card border-0 shadow-sm mt-4 no-print">
         <div class="card-header bg-transparent fw-semibold">
-            <i class="bi bi-plus-circle"></i> Agregar nota de seguimiento
+            <i class="bi bi-plus-circle"></i> {% translate "Agregar nota de seguimiento" %}
         </div>
         <div class="card-body">
             <form method="post" enctype="multipart/form-data">
@@ -178,12 +179,12 @@
                     <textarea name="content" rows="4" class="form-control" placeholder="Escribe aquí tu nota, avance, observación o acuerdo…" required></textarea>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label small text-muted">Archivo adjunto (opcional)</label>
+                    <label class="form-label small text-muted">{% translate "Archivo adjunto (opcional)" %}</label>
                     <input type="file" name="attachment" class="form-control form-control-sm">
                 </div>
                 <div class="d-flex justify-content-end">
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-send"></i> Agregar Entrada
+                        <i class="bi bi-send"></i> {% translate "Agregar Entrada" %}
                     </button>
                 </div>
             </form>
@@ -196,16 +197,16 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-share"></i> Compartir Libro de Proyecto</h5>
+                <h5 class="modal-title"><i class="bi bi-share"></i> {% translate "Compartir Libro de Proyecto" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted small">Cualquier persona con este enlace podrá ver el libro (sin necesidad de iniciar sesión).</p>
+                <p class="text-muted small">{% translate "Cualquier persona con este enlace podrá ver el libro (sin necesidad de iniciar sesión)." %}</p>
                 <div class="input-group">
                     <input type="text" id="shareLink" class="form-control" readonly
                            value="{{ request.scheme }}://{{ request.get_host }}{% url 'project_book_public' book.share_token %}">
                     <button class="btn btn-outline-secondary" onclick="copyShareLink()">
-                        <i class="bi bi-clipboard"></i> Copiar
+                        <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                     </button>
                 </div>
             </div>

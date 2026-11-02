@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -199,38 +200,38 @@
 {% block content %}
 <div class="domino-lobby">
     <a href="{% url 'dashboard' %}" class="back-button">
-        <i class="bi bi-arrow-left"></i> Volver al Dashboard
+        <i class="bi bi-arrow-left"></i> {% translate "Volver al Dashboard" %}
     </a>
 
     <div class="lobby-container">
         <!-- Header -->
         <div class="lobby-header">
-            <h1><span class="domino-animation">🎲</span> Dominó Multijugador <span class="domino-animation">🎲</span></h1>
-            <p>Únete a una partida existente o crea tu propia mesa de dominó hasta el doble 9</p>
+            <h1><span class="domino-animation">🎲</span> {% translate "Dominó Multijugador" %} <span class="domino-animation">🎲</span></h1>
+            <p>{% translate "Únete a una partida existente o crea tu propia mesa de dominó hasta el doble 9" %}</p>
         </div>
 
         <!-- Crear Nueva Partida -->
         <div class="create-game-form">
-            <h3 class="mb-3"><i class="bi bi-plus-circle"></i> Crear Nueva Partida</h3>
+            <h3 class="mb-3"><i class="bi bi-plus-circle"></i> {% translate "Crear Nueva Partida" %}</h3>
             <form method="post" action="{% url 'domino_create_game' %}">
                 {% csrf_token %}
                 <div class="row">
                     <div class="col-md-6">
-                        <label class="form-label">Nombre de la Partida</label>
+                        <label class="form-label">{% translate "Nombre de la Partida" %}</label>
                         <input type="text" class="form-control" name="game_name" required 
-                               placeholder="Ej: Mesa de los Amigos" maxlength="100">
+                               placeholder="{% translate 'Ej: Mesa de los Amigos' %}" maxlength="100">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Máximo de Jugadores</label>
+                        <label class="form-label">{% translate "Máximo de Jugadores" %}</label>
                         <select class="form-select" name="max_players">
-                            <option value="2">2 Jugadores</option>
-                            <option value="3">3 Jugadores</option>
-                            <option value="4" selected>4 Jugadores</option>
+                            <option value="2">{% translate "2 Jugadores" %}</option>
+                            <option value="3">{% translate "3 Jugadores" %}</option>
+                            <option value="4" selected>{% translate "4 Jugadores" %}</option>
                         </select>
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
                         <button type="submit" class="btn btn-domino w-100">
-                            <i class="bi bi-plus"></i> Crear Partida
+                            <i class="bi bi-plus"></i> {% translate "Crear Partida" %}
                         </button>
                     </div>
                 </div>
@@ -242,7 +243,7 @@
             <div class="col-lg-6">
                 <div class="game-card">
                     <div class="game-card-header">
-                        <i class="bi bi-person-check"></i> Tus Partidas Activas
+                        <i class="bi bi-person-check"></i> {% translate "Tus Partidas Activas" %}
                     </div>
                     <div class="game-card-body">
                         {% if user_games %}
@@ -265,7 +266,7 @@
                                 </div>
                                 <div>
                                     <a href="{% url 'domino_game_detail' game.id %}" class="btn btn-join btn-sm">
-                                        <i class="bi bi-play"></i> Jugar
+                                        <i class="bi bi-play"></i> {% translate "Jugar" %}
                                     </a>
                                 </div>
                             </div>
@@ -273,8 +274,8 @@
                         {% else %}
                             <div class="empty-state">
                                 <i class="bi bi-dice-6"></i>
-                                <p>No tienes partidas activas</p>
-                                <small class="text-muted">Crea una nueva partida o únete a una existente</small>
+                                <p>{% translate "No tienes partidas activas" %}</p>
+                                <small class="text-muted">{% translate "Crea una nueva partida o únete a una existente" %}</small>
                             </div>
                         {% endif %}
                     </div>
@@ -285,7 +286,7 @@
             <div class="col-lg-6">
                 <div class="game-card">
                     <div class="game-card-header">
-                        <i class="bi bi-collection"></i> Partidas Disponibles
+                        <i class="bi bi-collection"></i> {% translate "Partidas Disponibles" %}
                     </div>
                     <div class="game-card-body">
                         {% if available_games %}
@@ -309,7 +310,7 @@
                                 </div>
                                 <div>
                                     <a href="{% url 'domino_join_game' game.id %}" class="btn btn-join btn-sm">
-                                        <i class="bi bi-box-arrow-in-right"></i> Unirse
+                                        <i class="bi bi-box-arrow-in-right"></i> {% translate "Unirse" %}
                                     </a>
                                 </div>
                             </div>
@@ -317,8 +318,8 @@
                         {% else %}
                             <div class="empty-state">
                                 <i class="bi bi-hourglass"></i>
-                                <p>No hay partidas disponibles</p>
-                                <small class="text-muted">¡Sé el primero en crear una nueva partida!</small>
+                                <p>{% translate "No hay partidas disponibles" %}</p>
+                                <small class="text-muted">{% translate "¡Sé el primero en crear una nueva partida!" %}</small>
                             </div>
                         {% endif %}
                     </div>
@@ -329,27 +330,26 @@
         <!-- Información del Juego -->
         <div class="game-card mt-4">
             <div class="game-card-header">
-                <i class="bi bi-info-circle"></i> Cómo Jugar
+                <i class="bi bi-info-circle"></i> {% translate "Cómo Jugar" %}
             </div>
             <div class="game-card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <h6><i class="bi bi-1-circle"></i> Reglas Básicas</h6>
+                        <h6><i class="bi bi-1-circle"></i> {% translate "Reglas Básicas" %}</h6>
                         <ul class="list-unstyled">
-                            <li><i class="bi bi-check text-success"></i> Dominó hasta el doble 9 (55 fichas)</li>
-                            <li><i class="bi bi-check text-success"></i> 10 fichas por jugador al inicio</li>
-                            <li><i class="bi bi-check text-success"></i> 2-4 jugadores por partida</li>
-                            <li><i class="bi bi-check text-success"></i> Si no puedes jugar, debes pasar</li>
+                            <li><i class="bi bi-check text-success"></i> {% translate "Dominó hasta el doble 9 (55 fichas)" %}</li>
+                            <li><i class="bi bi-check text-success"></i> {% translate "10 fichas por jugador al inicio" %}</li>
+                            <li><i class="bi bi-check text-success"></i> {% translate "2-4 jugadores por partida" %}</li>
+                            <li><i class="bi bi-check text-success"></i> {% translate "Si no puedes jugar, debes pasar" %}</li>
                         </ul>
                     </div>
                     <div class="col-md-6">
-                        <h6><i class="bi bi-trophy"></i> Objetivo</h6>
+                        <h6><i class="bi bi-trophy"></i> {% translate "Objetivo" %}</h6>
                         <p class="text-muted">
-                            El objetivo es ser el primer jugador en quedarse sin fichas, 
-                            o tener la menor suma de puntos en las fichas restantes cuando la partida se bloquee.
+                            {% translate "El objetivo es ser el primer jugador en quedarse sin fichas, o tener la menor suma de puntos en las fichas restantes cuando la partida se bloquee." %}
                         </p>
                         
-                        <h6><i class="bi bi-dice-6"></i> Fichas Ejemplo</h6>
+                        <h6><i class="bi bi-dice-6"></i> {% translate "Fichas Ejemplo" %}</h6>
                         <div>
                             <span class="domino-tile">[0|0]</span>
                             <span class="domino-tile">[1|3]</span>

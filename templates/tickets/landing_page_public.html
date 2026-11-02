@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -818,7 +819,7 @@
                                             <div class="d-grid mb-3">
                                                 <a href="{{ landing_page.meeting_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-lg" id="meetingButton" onclick="trackMeetingClick(event)">
                                                     <i class="fas fa-calendar-plus me-2"></i>
-                                                    Planificar Reunión
+                                                    {% translate "Planificar Reunión" %}
                                                     <span class="badge bg-light text-dark ms-2" id="meetingCounter">{{ landing_page.meeting_button_clicks }}</span>
                                                 </a>
                                             </div>
@@ -848,7 +849,7 @@
                                                 <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
                                                     <i class="fas fa-exclamation-triangle me-2"></i>
                                                     {{ message }}
-                                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% translate 'Close' %}"></button>
                                                 </div>
                                             {% endfor %}
                                         {% endif %}
@@ -856,9 +857,9 @@
                                         {% if already_submitted_today %}
                                             <div class="alert alert-warning alert-dismissible fade show" role="alert">
                                                 <i class="fas fa-clock me-2"></i>
-                                                <strong>Formulario ya enviado hoy</strong><br>
-                                                Ya has enviado el formulario hoy desde esta ubicación. Para enviar una nueva solicitud, espera hasta mañana o contáctanos directamente.
-                                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                                <strong>{% translate "Formulario ya enviado hoy" %}</strong><br>
+                                                {% translate "Ya has enviado el formulario hoy desde esta ubicación. Para enviar una nueva solicitud, espera hasta mañana o contáctanos directamente." %}
+                                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% translate 'Close' %}"></button>
                                             </div>
                                         {% endif %}
                                         
@@ -866,7 +867,7 @@
                                             {% csrf_token %}
                                             {# Honeypot anti-spam: campo invisible para humanos; los bots lo rellenan #}
                                             <div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
-                                                <label for="id_url">No rellenar</label>
+                                                <label for="id_url">{% translate "No rellenar" %}</label>
                                                 <input type="text" name="url" id="id_url" tabindex="-1" autocomplete="off" value="">
                                             </div>
                                             
@@ -936,7 +937,7 @@
                                             <div class="d-grid mb-3">
                                                 <button type="submit" class="btn btn-primary btn-lg" id="contactButton">
                                                     <i class="fas fa-paper-plane me-2"></i>
-                                                    Contactar
+                                                    {% translate "Contactar" %}
                                                     <span class="badge bg-light text-dark ms-2" id="contactCounter">{{ landing_page.contact_button_clicks }}</span>
                                                 </button>
                                             </div>

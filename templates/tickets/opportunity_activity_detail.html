@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -8,12 +9,12 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <nav aria-label="breadcrumb">
+                <nav aria-label="{% translate 'breadcrumb' %}">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{% url 'crm_dashboard' %}">CRM</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'my_activities_dashboard' %}">Actividades</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'my_activities_dashboard' %}">{% translate "Actividades" %}</a></li>
                         {% if activity.opportunity %}
-                            <li class="breadcrumb-item"><a href="{% url 'opportunity_list' %}">Oportunidades</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'opportunity_list' %}">{% translate "Oportunidades" %}</a></li>
                             <li class="breadcrumb-item"><a href="{% url 'opportunity_detail' activity.opportunity.pk %}">{{ activity.opportunity.name }}</a></li>
                         {% endif %}
                         <li class="breadcrumb-item active">{{ activity.title }}</li>
@@ -28,7 +29,7 @@
                     {% elif activity.contact %}
                         <i class="fas fa-user"></i> Contacto: {{ activity.contact.name }}
                     {% else %}
-                        <i class="fas fa-tasks"></i> Actividad independiente
+                        <i class="fas fa-tasks"></i> {% translate "Actividad independiente" %}
                     {% endif %}
                 </p>
             </div>
@@ -45,31 +46,31 @@
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">
-                    <i class="fas fa-info-circle"></i> Detalles de la Actividad
+                    <i class="fas fa-info-circle"></i> {% translate "Detalles de la Actividad" %}
                 </h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <h6>Tipo de Actividad</h6>
+                        <h6>{% translate "Tipo de Actividad" %}</h6>
                         <span class="badge bg-secondary fs-6 mb-3">{{ activity.get_activity_type_display }}</span>
                     </div>
                     <div class="col-md-6">
-                        <h6>Prioridad</h6>
+                        <h6>{% translate "Prioridad" %}</h6>
                         <span class="badge bg-{{ activity.get_priority_color }} fs-6 mb-3">{{ activity.get_priority_display }}</span>
                     </div>
                 </div>
 
                 {% if activity.description %}
                 <div class="mb-3">
-                    <h6>Descripción</h6>
+                    <h6>{% translate "Descripción" %}</h6>
                     <p class="text-muted">{{ activity.description|linebreaks }}</p>
                 </div>
                 {% endif %}
 
                 <div class="row">
                     <div class="col-md-6">
-                        <h6>Fecha y Hora Programada</h6>
+                        <h6>{% translate "Fecha y Hora Programada" %}</h6>
                         <p class="mb-2">
                             <i class="fas fa-calendar"></i> {{ activity.scheduled_date|date:"d/m/Y" }}
                             <br>
@@ -83,7 +84,7 @@
                         {% elif activity.is_due_today %}
                             <div class="alert alert-warning">
                                 <i class="fas fa-clock"></i> 
-                                Esta actividad vence hoy.
+                                {% translate "Esta actividad vence hoy." %}
                             </div>
                         {% elif activity.is_due_soon %}
                             <div class="alert alert-info">
@@ -93,7 +94,7 @@
                         {% endif %}
                     </div>
                     <div class="col-md-6">
-                        <h6>Asignado a</h6>
+                        <h6>{% translate "Asignado a" %}</h6>
                         <p class="mb-2">
                             <span class="badge bg-primary">
                                 {{ activity.assigned_to.get_full_name|default:activity.assigned_to.username }}
@@ -101,14 +102,14 @@
                         </p>
                         
                         {% if activity.duration_minutes %}
-                        <h6>Duración Estimada</h6>
+                        <h6>{% translate "Duración Estimada" %}</h6>
                         <p class="mb-2">
                             <i class="fas fa-stopwatch"></i> {{ activity.duration_minutes }} minutos
                         </p>
                         {% endif %}
                         
                         {% if activity.location %}
-                        <h6>Ubicación</h6>
+                        <h6>{% translate "Ubicación" %}</h6>
                         <p class="mb-2">
                             <i class="fas fa-map-marker-alt"></i> {{ activity.location }}
                         </p>
@@ -123,7 +124,7 @@
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-success text-white">
                 <h5 class="mb-0">
-                    <i class="fas fa-check-circle"></i> Resultado de la Actividad
+                    <i class="fas fa-check-circle"></i> {% translate "Resultado de la Actividad" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -141,42 +142,42 @@
         <div class="card shadow-sm">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="fas fa-cogs"></i> Acciones
+                    <i class="fas fa-cogs"></i> {% translate "Acciones" %}
                 </h5>
             </div>
             <div class="card-body">
                 <div class="d-flex gap-2 flex-wrap">
                     {% if activity.assigned_to == request.user and activity.status in 'pending,in_progress' %}
                     <a href="{% url 'opportunity_activity_complete' activity.pk %}" class="btn btn-success">
-                        <i class="fas fa-check"></i> Completar Actividad
+                        <i class="fas fa-check"></i> {% translate "Completar Actividad" %}
                     </a>
                     {% endif %}
                     
                     {% if activity.created_by == request.user or activity.assigned_to == request.user %}
                     <a href="{% url 'opportunity_activity_edit' activity.pk %}" class="btn btn-warning">
-                        <i class="fas fa-edit"></i> Editar
+                        <i class="fas fa-edit"></i> {% translate "Editar" %}
                     </a>
                     {% endif %}
                     
                     {% if activity.opportunity %}
                     <a href="{% url 'opportunity_detail' activity.opportunity.pk %}" class="btn btn-primary">
-                        <i class="fas fa-bullseye"></i> Ver Oportunidad
+                        <i class="fas fa-bullseye"></i> {% translate "Ver Oportunidad" %}
                     </a>
                     {% endif %}
                     
                     {% if activity.contact %}
                     <a href="{% url 'contact_detail' activity.contact.pk %}" class="btn btn-info">
-                        <i class="fas fa-user"></i> Ver Contacto
+                        <i class="fas fa-user"></i> {% translate "Ver Contacto" %}
                     </a>
                     {% endif %}
                     
                     <a href="{% url 'my_activities_dashboard' %}" class="btn btn-secondary">
-                        <i class="fas fa-tasks"></i> Mis Actividades
+                        <i class="fas fa-tasks"></i> {% translate "Mis Actividades" %}
                     </a>
                     
                     {% if activity.created_by == request.user %}
                     <a href="{% url 'opportunity_activity_delete' activity.pk %}" class="btn btn-danger">
-                        <i class="fas fa-trash"></i> Eliminar
+                        <i class="fas fa-trash"></i> {% translate "Eliminar" %}
                     </a>
                     {% endif %}
                 </div>
@@ -190,7 +191,7 @@
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-info text-white">
                 <h6 class="mb-0">
-                    <i class="fas fa-bullseye"></i> Oportunidad Relacionada
+                    <i class="fas fa-bullseye"></i> {% translate "Oportunidad Relacionada" %}
                 </h6>
             </div>
             <div class="card-body">
@@ -201,31 +202,31 @@
                     <div class="col-6">
                         <div class="border-end">
                             <h6 class="text-success mb-0">${{ activity.opportunity.value|floatformat:0 }}</h6>
-                            <small class="text-muted">Valor</small>
+                            <small class="text-muted">{% translate "Valor" %}</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <h6 class="text-warning mb-0">{{ activity.opportunity.probability }}%</h6>
-                        <small class="text-muted">Probabilidad</small>
+                        <small class="text-muted">{% translate "Probabilidad" %}</small>
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <small class="text-muted d-block">Estado:</small>
+                    <small class="text-muted d-block">{% translate "Estado:" %}</small>
                     <span class="badge fs-6" style="background-color: {{ activity.opportunity.status.color }}">
                         {{ activity.opportunity.status.name }}
                     </span>
                 </div>
 
                 <div class="mb-3">
-                    <small class="text-muted d-block">Asignado a:</small>
+                    <small class="text-muted d-block">{% translate "Asignado a:" %}</small>
                     <span class="badge bg-primary">
                         {{ activity.opportunity.assigned_to.get_full_name|default:activity.opportunity.assigned_to.username }}
                     </span>
                 </div>
 
                 <div class="mb-3">
-                    <small class="text-muted d-block">Cierre estimado:</small>
+                    <small class="text-muted d-block">{% translate "Cierre estimado:" %}</small>
                     <strong>{{ activity.opportunity.expected_close_date|date:"d/m/Y" }}</strong>
                 </div>
             </div>
@@ -235,7 +236,7 @@
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-info text-white">
                 <h6 class="mb-0">
-                    <i class="fas fa-user"></i> Contacto Relacionado
+                    <i class="fas fa-user"></i> {% translate "Contacto Relacionado" %}
                 </h6>
             </div>
             <div class="card-body">
@@ -246,20 +247,20 @@
                 
                 {% if activity.contact.email %}
                 <div class="mb-2">
-                    <small class="text-muted d-block">Email:</small>
+                    <small class="text-muted d-block">{% translate "Email:" %}</small>
                     <a href="mailto:{{ activity.contact.email }}">{{ activity.contact.email }}</a>
                 </div>
                 {% endif %}
 
                 {% if activity.contact.phone %}
                 <div class="mb-2">
-                    <small class="text-muted d-block">Teléfono:</small>
+                    <small class="text-muted d-block">{% translate "Teléfono:" %}</small>
                     <a href="tel:{{ activity.contact.phone }}">{{ activity.contact.phone }}</a>
                 </div>
                 {% endif %}
 
                 <div class="mb-3">
-                    <small class="text-muted d-block">Estado:</small>
+                    <small class="text-muted d-block">{% translate "Estado:" %}</small>
                     <span class="badge bg-{{ activity.contact.get_status_color }}">
                         {% if activity.contact.status == 'positive' %}😊{% endif %}
                         {{ activity.contact.get_status_display }}
@@ -272,11 +273,11 @@
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-secondary text-white">
                 <h6 class="mb-0">
-                    <i class="fas fa-tasks"></i> Actividad Independiente
+                    <i class="fas fa-tasks"></i> {% translate "Actividad Independiente" %}
                 </h6>
             </div>
             <div class="card-body">
-                <p class="text-muted">Esta actividad no está asociada a ninguna oportunidad o contacto específico.</p>
+                <p class="text-muted">{% translate "Esta actividad no está asociada a ninguna oportunidad o contacto específico." %}</p>
             </div>
         </div>
         {% endif %}
@@ -285,30 +286,30 @@
         <div class="card shadow-sm">
             <div class="card-header bg-secondary text-white">
                 <h6 class="mb-0">
-                    <i class="fas fa-chart-bar"></i> Información Adicional
+                    <i class="fas fa-chart-bar"></i> {% translate "Información Adicional" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="mb-3">
-                    <small class="text-muted d-block">Creado por:</small>
+                    <small class="text-muted d-block">{% translate "Creado por:" %}</small>
                     <strong>{{ activity.created_by.get_full_name|default:activity.created_by.username }}</strong>
                 </div>
 
                 <div class="mb-3">
-                    <small class="text-muted d-block">Fecha de creación:</small>
+                    <small class="text-muted d-block">{% translate "Fecha de creación:" %}</small>
                     <strong>{{ activity.created_at|date:"d/m/Y H:i" }}</strong>
                 </div>
 
                 {% if activity.updated_at != activity.created_at %}
                 <div class="mb-3">
-                    <small class="text-muted d-block">Última actualización:</small>
+                    <small class="text-muted d-block">{% translate "Última actualización:" %}</small>
                     <strong>{{ activity.updated_at|date:"d/m/Y H:i" }}</strong>
                 </div>
                 {% endif %}
 
                 {% if activity.status == 'completed' and activity.completed_date %}
                 <div class="mb-3">
-                    <small class="text-muted d-block">Completada:</small>
+                    <small class="text-muted d-block">{% translate "Completada:" %}</small>
                     <strong class="text-success">{{ activity.completed_date|date:"d/m/Y H:i" }}</strong>
                 </div>
                 {% endif %}

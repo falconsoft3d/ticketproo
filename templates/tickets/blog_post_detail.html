@@ -1,4 +1,5 @@
 {% extends "blog_base.html" %}
+{% load i18n %}
 
 {% block title %}{{ post.title }} - Blog TicketProo{% endblock %}
 
@@ -6,9 +7,9 @@
 <div class="row">
     <div class="col-md-8">
         <!-- Navegación -->
-        <nav aria-label="breadcrumb" class="mb-4">
+        <nav aria-label="{% translate 'breadcrumb' %}" class="mb-4">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'blog_list' %}">Blog</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'blog_list' %}">{% translate "Blog" %}</a></li>
                 <li class="breadcrumb-item"><a href="?category={{ post.category.slug }}">{{ post.category.name }}</a></li>
                 <li class="breadcrumb-item active" aria-current="page">{{ post.title|truncatewords:5 }}</li>
             </ol>
@@ -69,12 +70,12 @@
             
             {% if user.is_authenticated and user.is_staff %}
             <div class="mt-4 p-3 bg-light rounded">
-                <h6><i class="fas fa-cog"></i> Administración</h6>
+                <h6><i class="fas fa-cog"></i> {% translate "Administración" %}</h6>
                 <a href="{% url 'blog_post_detail_admin' post.pk %}" class="btn btn-outline-primary btn-sm me-2">
-                    <i class="fas fa-edit"></i> Editar Artículo
+                    <i class="fas fa-edit"></i> {% translate "Editar Artículo" %}
                 </a>
                 <a href="{% url 'blog_post_list_admin' %}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-list"></i> Gestionar Blog
+                    <i class="fas fa-list"></i> {% translate "Gestionar Blog" %}
                 </a>
             </div>
             {% endif %}
@@ -92,40 +93,40 @@
             <!-- Formulario de comentarios -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Dejar un comentario</h5>
+                    <h5 class="mb-0">{% translate "Dejar un comentario" %}</h5>
                 </div>
                 <div class="card-body">
                     <form method="POST">
                         {% csrf_token %}
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="{{ comment_form.name.id_for_label }}" class="form-label">Nombre *</label>
+                                <label for="{{ comment_form.name.id_for_label }}" class="form-label">{% translate "Nombre *" %}</label>
                                 {{ comment_form.name }}
                                 {% if comment_form.name.errors %}
                                 <div class="text-danger small">{{ comment_form.name.errors.0 }}</div>
                                 {% endif %}
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="{{ comment_form.email.id_for_label }}" class="form-label">Email *</label>
+                                <label for="{{ comment_form.email.id_for_label }}" class="form-label">{% translate "Email *" %}</label>
                                 {{ comment_form.email }}
-                                <small class="form-text text-muted">No se publicará tu email</small>
+                                <small class="form-text text-muted">{% translate "No se publicará tu email" %}</small>
                                 {% if comment_form.email.errors %}
                                 <div class="text-danger small">{{ comment_form.email.errors.0 }}</div>
                                 {% endif %}
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="{{ comment_form.content.id_for_label }}" class="form-label">Comentario *</label>
+                            <label for="{{ comment_form.content.id_for_label }}" class="form-label">{% translate "Comentario *" %}</label>
                             {{ comment_form.content }}
                             {% if comment_form.content.errors %}
                             <div class="text-danger small">{{ comment_form.content.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> Enviar Comentario
+                            <i class="fas fa-paper-plane"></i> {% translate "Enviar Comentario" %}
                         </button>
                         <small class="form-text text-muted d-block mt-2">
-                            Los comentarios están sujetos a aprobación antes de ser publicados.
+                            {% translate "Los comentarios están sujetos a aprobación antes de ser publicados." %}
                         </small>
                     </form>
                 </div>
@@ -149,7 +150,7 @@
             {% empty %}
             <div class="alert alert-info">
                 <i class="fas fa-info-circle"></i>
-                Sé el primero en comentar este artículo.
+                {% translate "Sé el primero en comentar este artículo." %}
             </div>
             {% endfor %}
         </section>
@@ -161,7 +162,7 @@
         {% if related_posts %}
         <div class="card mb-4">
             <div class="card-header">
-                <h5><i class="fas fa-newspaper"></i> Artículos Relacionados</h5>
+                <h5><i class="fas fa-newspaper"></i> {% translate "Artículos Relacionados" %}</h5>
             </div>
             <div class="card-body">
                 {% for related in related_posts %}
@@ -190,11 +191,11 @@
         <!-- Navegación -->
         <div class="card">
             <div class="card-header">
-                <h6><i class="fas fa-navigation"></i> Navegación</h6>
+                <h6><i class="fas fa-navigation"></i> {% translate "Navegación" %}</h6>
             </div>
             <div class="card-body">
                 <a href="{% url 'blog_list' %}" class="btn btn-outline-primary btn-sm d-block mb-2">
-                    <i class="fas fa-arrow-left"></i> Volver al Blog
+                    <i class="fas fa-arrow-left"></i> {% translate "Volver al Blog" %}
                 </a>
                 <a href="?category={{ post.category.slug }}" class="btn btn-outline-secondary btn-sm d-block">
                     <i class="fas fa-tags"></i> Más de {{ post.category.name }}

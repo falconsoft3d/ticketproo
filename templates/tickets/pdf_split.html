@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}Pdf2Pdfs - Herramientas PDF{% endblock %}
+{% block title %}{% translate "Pdf2Pdfs - Herramientas PDF" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -12,15 +13,15 @@
                 <div>
                     <h1 class="h3 mb-0">
                         <i class="bi bi-file-earmark-break text-primary"></i>
-                        Pdf2Pdfs
+                        {% translate "Pdf2Pdfs" %}
                     </h1>
-                    <p class="text-muted mb-0">Divide un PDF en archivos individuales, una página por archivo</p>
+                    <p class="text-muted mb-0">{% translate "Divide un PDF en archivos individuales, una página por archivo" %}</p>
                 </div>
-                <nav aria-label="breadcrumb">
+                <nav aria-label="{% translate 'breadcrumb' %}">
                     <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                        <li class="breadcrumb-item">Herramientas</li>
-                        <li class="breadcrumb-item active">Pdf2Pdfs</li>
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                        <li class="breadcrumb-item">{% translate "Herramientas" %}</li>
+                        <li class="breadcrumb-item active">{% translate "Pdf2Pdfs" %}</li>
                     </ol>
                 </nav>
             </div>
@@ -32,28 +33,28 @@
                         <div class="card-header bg-info bg-opacity-10">
                             <h5 class="mb-0">
                                 <i class="bi bi-info-circle text-info"></i>
-                                Cómo usar esta herramienta
+                                {% translate "Cómo usar esta herramienta" %}
                             </h5>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <h6><i class="bi bi-1-circle"></i> Selecciona un PDF</h6>
-                                    <p class="text-muted small mb-3">Sube el archivo PDF que quieres dividir en páginas individuales.</p>
+                                    <h6><i class="bi bi-1-circle"></i> {% translate "Selecciona un PDF" %}</h6>
+                                    <p class="text-muted small mb-3">{% translate "Sube el archivo PDF que quieres dividir en páginas individuales." %}</p>
                                     
-                                    <h6><i class="bi bi-2-circle"></i> Procesamiento automático</h6>
-                                    <p class="text-muted small mb-3">La herramienta dividirá cada página en un archivo PDF separado.</p>
+                                    <h6><i class="bi bi-2-circle"></i> {% translate "Procesamiento automático" %}</h6>
+                                    <p class="text-muted small mb-3">{% translate "La herramienta dividirá cada página en un archivo PDF separado." %}</p>
                                 </div>
                                 <div class="col-md-6">
-                                    <h6><i class="bi bi-3-circle"></i> Descarga en ZIP</h6>
-                                    <p class="text-muted small mb-3">Recibirás un archivo ZIP con todos los PDFs individuales.</p>
+                                    <h6><i class="bi bi-3-circle"></i> {% translate "Descarga en ZIP" %}</h6>
+                                    <p class="text-muted small mb-3">{% translate "Recibirás un archivo ZIP con todos los PDFs individuales." %}</p>
                                     
-                                    <h6><i class="bi bi-card-list"></i> Características:</h6>
+                                    <h6><i class="bi bi-card-list"></i> {% translate "Características:" %}</h6>
                                     <ul class="list-unstyled text-muted small">
-                                        <li><i class="bi bi-check-circle text-success"></i> Un archivo por página</li>
-                                        <li><i class="bi bi-check-circle text-success"></i> Nomenclatura organizada</li>
-                                        <li><i class="bi bi-check-circle text-success"></i> Calidad original</li>
-                                        <li><i class="bi bi-check-circle text-success"></i> Archivos numerados</li>
+                                        <li><i class="bi bi-check-circle text-success"></i> {% translate "Un archivo por página" %}</li>
+                                        <li><i class="bi bi-check-circle text-success"></i> {% translate "Nomenclatura organizada" %}</li>
+                                        <li><i class="bi bi-check-circle text-success"></i> {% translate "Calidad original" %}</li>
+                                        <li><i class="bi bi-check-circle text-success"></i> {% translate "Archivos numerados" %}</li>
                                     </ul>
                                 </div>
                             </div>
@@ -65,26 +66,26 @@
                         <div class="card-header bg-success bg-opacity-10">
                             <h6 class="mb-0">
                                 <i class="bi bi-gear text-success"></i>
-                                Proceso automático
+                                {% translate "Proceso automático" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <ul class="list-unstyled mb-0">
                                 <li class="mb-2">
                                     <i class="bi bi-file-earmark-pdf text-danger"></i>
-                                    <small>Analiza cada página</small>
+                                    <small>{% translate "Analiza cada página" %}</small>
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-scissors text-warning"></i>
-                                    <small>Extrae individualmente</small>
+                                    <small>{% translate "Extrae individualmente" %}</small>
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-123 text-info"></i>
-                                    <small>Numera secuencialmente</small>
+                                    <small>{% translate "Numera secuencialmente" %}</small>
                                 </li>
                                 <li class="mb-0">
                                     <i class="bi bi-file-zip text-primary"></i>
-                                    <small>Comprime en ZIP</small>
+                                    <small>{% translate "Comprime en ZIP" %}</small>
                                 </li>
                             </ul>
                         </div>
@@ -99,7 +100,7 @@
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0">
                                 <i class="bi bi-upload"></i>
-                                Subir PDF para dividir
+                                {% translate "Subir PDF para dividir" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -110,7 +111,7 @@
                                 <div class="mb-4">
                                     <label for="pdf_file" class="form-label fw-bold">
                                         <i class="bi bi-file-earmark-arrow-up"></i>
-                                        Archivo PDF
+                                        {% translate "Archivo PDF" %}
                                     </label>
                                     <input type="file" 
                                            class="form-control form-control-lg" 
@@ -120,7 +121,7 @@
                                            required>
                                     <div class="form-text">
                                         <i class="bi bi-info-circle"></i>
-                                        Solo archivos PDF. Tamaño máximo recomendado: 50MB
+                                        {% translate "Solo archivos PDF. Tamaño máximo recomendado: 50MB" %}
                                     </div>
                                 </div>
 
@@ -130,7 +131,7 @@
                                         <div class="d-flex align-items-center">
                                             <i class="bi bi-info-circle me-2"></i>
                                             <div>
-                                                <strong>Archivo seleccionado:</strong>
+                                                <strong>{% translate "Archivo seleccionado:" %}</strong>
                                                 <div id="fileName" class="text-muted"></div>
                                                 <div id="fileSize" class="text-muted small"></div>
                                             </div>
@@ -142,11 +143,11 @@
                                 <div class="d-grid gap-2 d-md-flex justify-content-md-center">
                                     <button type="submit" class="btn btn-danger btn-lg px-5" id="splitBtn" disabled>
                                         <i class="bi bi-scissors me-2"></i>
-                                        Dividir PDF
+                                        {% translate "Dividir PDF" %}
                                     </button>
                                     <button type="reset" class="btn btn-outline-secondary btn-lg px-4">
                                         <i class="bi bi-arrow-clockwise me-2"></i>
-                                        Limpiar
+                                        {% translate "Limpiar" %}
                                     </button>
                                 </div>
                             </form>
@@ -162,7 +163,7 @@
                         <div class="card-header">
                             <h5 class="mb-0">
                                 <i class="bi bi-diagram-2"></i>
-                                Proceso de división
+                                {% translate "Proceso de división" %}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -170,8 +171,8 @@
                                 <div class="col-md-3">
                                     <div class="mb-3">
                                         <i class="bi bi-file-earmark-pdf display-4 text-danger"></i>
-                                        <h6 class="mt-2">PDF Original</h6>
-                                        <p class="text-muted small">5 páginas</p>
+                                        <h6 class="mt-2">{% translate "PDF Original" %}</h6>
+                                        <p class="text-muted small">{% translate "5 páginas" %}</p>
                                         <div class="small text-muted">
                                             <div class="badge bg-secondary me-1">1</div>
                                             <div class="badge bg-secondary me-1">2</div>
@@ -184,37 +185,37 @@
                                 <div class="col-md-2 d-flex align-items-center justify-content-center">
                                     <div class="text-center">
                                         <i class="bi bi-arrow-right display-6 text-primary"></i>
-                                        <div class="small text-muted mt-1">Divide</div>
+                                        <div class="small text-muted mt-1">{% translate "Divide" %}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-7">
                                     <div class="mb-3">
-                                        <h6 class="mb-3">5 Archivos PDF Individuales</h6>
+                                        <h6 class="mb-3">{% translate "5 Archivos PDF Individuales" %}</h6>
                                         <div class="row">
                                             <div class="col">
                                                 <i class="bi bi-file-earmark-pdf text-success"></i>
-                                                <div class="small">archivo_pagina_001.pdf</div>
+                                                <div class="small">{% translate "archivo_pagina_001.pdf" %}</div>
                                             </div>
                                             <div class="col">
                                                 <i class="bi bi-file-earmark-pdf text-success"></i>
-                                                <div class="small">archivo_pagina_002.pdf</div>
+                                                <div class="small">{% translate "archivo_pagina_002.pdf" %}</div>
                                             </div>
                                             <div class="col">
                                                 <i class="bi bi-file-earmark-pdf text-success"></i>
-                                                <div class="small">archivo_pagina_003.pdf</div>
+                                                <div class="small">{% translate "archivo_pagina_003.pdf" %}</div>
                                             </div>
                                             <div class="col">
                                                 <i class="bi bi-file-earmark-pdf text-success"></i>
-                                                <div class="small">archivo_pagina_004.pdf</div>
+                                                <div class="small">{% translate "archivo_pagina_004.pdf" %}</div>
                                             </div>
                                             <div class="col">
                                                 <i class="bi bi-file-earmark-pdf text-success"></i>
-                                                <div class="small">archivo_pagina_005.pdf</div>
+                                                <div class="small">{% translate "archivo_pagina_005.pdf" %}</div>
                                             </div>
                                         </div>
                                         <div class="mt-2">
                                             <i class="bi bi-file-zip text-primary display-6"></i>
-                                            <div class="small text-muted">Descarga como archivo ZIP</div>
+                                            <div class="small text-muted">{% translate "Descarga como archivo ZIP" %}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -231,22 +232,22 @@
                         <div class="card-header bg-warning bg-opacity-10">
                             <h6 class="mb-0">
                                 <i class="bi bi-lightbulb text-warning"></i>
-                                Casos de uso comunes
+                                {% translate "Casos de uso comunes" %}
                             </h6>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-4">
-                                    <h6><i class="bi bi-share"></i> Compartir páginas específicas</h6>
-                                    <p class="text-muted small">Envía solo las páginas relevantes a diferentes personas.</p>
+                                    <h6><i class="bi bi-share"></i> {% translate "Compartir páginas específicas" %}</h6>
+                                    <p class="text-muted small">{% translate "Envía solo las páginas relevantes a diferentes personas." %}</p>
                                 </div>
                                 <div class="col-md-4">
-                                    <h6><i class="bi bi-archive"></i> Organización de documentos</h6>
-                                    <p class="text-muted small">Separa un documento grande en archivos manejables.</p>
+                                    <h6><i class="bi bi-archive"></i> {% translate "Organización de documentos" %}</h6>
+                                    <p class="text-muted small">{% translate "Separa un documento grande en archivos manejables." %}</p>
                                 </div>
                                 <div class="col-md-4">
-                                    <h6><i class="bi bi-printer"></i> Impresión selectiva</h6>
-                                    <p class="text-muted small">Imprime solo las páginas que necesitas.</p>
+                                    <h6><i class="bi bi-printer"></i> {% translate "Impresión selectiva" %}</h6>
+                                    <p class="text-muted small">{% translate "Imprime solo las páginas que necesitas." %}</p>
                                 </div>
                             </div>
                         </div>

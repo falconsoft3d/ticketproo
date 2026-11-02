@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -16,14 +17,14 @@
                     </h2>
                     <p class="text-muted mb-0">
                         {% if api_endpoint %}
-                            Actualizar los datos que devolverá esta API
+                            {% translate "Actualizar los datos que devolverá esta API" %}
                         {% else %}
-                            Al guardar se generará automáticamente un endpoint GET para consultar estos datos
+                            {% translate "Al guardar se generará automáticamente un endpoint GET para consultar estos datos" %}
                         {% endif %}
                     </p>
                 </div>
                 <a href="{% url 'api_endpoint_list' %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Volver a Lista
+                    <i class="bi bi-arrow-left"></i> {% translate "Volver a Lista" %}
                 </a>
             </div>
 
@@ -84,7 +85,7 @@
                         <!-- Botones -->
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'api_endpoint_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save"></i> {{ action }}

@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -12,35 +13,35 @@
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header bg-success text-white">
-                        <h3>¡Ticket Creado Exitosamente!</h3>
+                        <h3>{% translate "¡Ticket Creado Exitosamente!" %}</h3>
                     </div>
                     <div class="card-body">
                         <div class="alert alert-success">
-                            <h5>Tu solicitud ha sido enviada correctamente</h5>
-                            <p>Número de ticket: <strong>#{{ ticket.id }}</strong></p>
+                            <h5>{% translate "Tu solicitud ha sido enviada correctamente" %}</h5>
+                            <p>{% translate "Número de ticket:" %} <strong>#{{ ticket.id }}</strong></p>
                         </div>
 
-                        <h6>Detalles del Ticket:</h6>
+                        <h6>{% translate "Detalles del Ticket:" %}</h6>
                         <ul>
-                            <li><strong>Empresa:</strong> {{ company.name }}</li>
-                            <li><strong>Título:</strong> {{ ticket.title }}</li>
-                            <li><strong>Prioridad:</strong> {{ ticket.get_priority_display }}</li>
-                            <li><strong>Estado:</strong> {{ ticket.get_status_display }}</li>
-                            <li><strong>Cliente:</strong> {{ customer_name }}</li>
-                            <li><strong>Email:</strong> {{ customer_email }}</li>
+                            <li><strong>{% translate "Empresa:" %}</strong> {{ company.name }}</li>
+                            <li><strong>{% translate "Título:" %}</strong> {{ ticket.title }}</li>
+                            <li><strong>{% translate "Prioridad:" %}</strong> {{ ticket.get_priority_display }}</li>
+                            <li><strong>{% translate "Estado:" %}</strong> {{ ticket.get_status_display }}</li>
+                            <li><strong>{% translate "Cliente:" %}</strong> {{ customer_name }}</li>
+                            <li><strong>{% translate "Email:" %}</strong> {{ customer_email }}</li>
                         </ul>
 
-                        <h6>¿Qué sigue?</h6>
+                        <h6>{% translate "¿Qué sigue?" %}</h6>
                         <ol>
-                            <li>Recibirás una confirmación por email</li>
-                            <li>Nuestro equipo revisará tu solicitud</li>
-                            <li>Te contactaremos con una respuesta</li>
+                            <li>{% translate "Recibirás una confirmación por email" %}</li>
+                            <li>{% translate "Nuestro equipo revisará tu solicitud" %}</li>
+                            <li>{% translate "Te contactaremos con una respuesta" %}</li>
                         </ol>
 
                         <div class="mt-4">
                             <a href="{% url 'public_company_ticket_create' public_token=company.public_token %}" 
                                class="btn btn-primary">
-                                Crear Otra Solicitud
+                                {% translate "Crear Otra Solicitud" %}
                             </a>
                         </div>
                     </div>

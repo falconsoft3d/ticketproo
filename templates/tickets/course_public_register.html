@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -101,8 +102,8 @@
                     <!-- Formulario de Registro -->
                     <div class="p-4">
                         <div class="text-center mb-4">
-                            <h4 class="text-dark mb-2">Regístrate para acceder al curso</h4>
-                            <p class="text-muted">Crea tu cuenta y comienza a aprender</p>
+                            <h4 class="text-dark mb-2">{% translate "Regístrate para acceder al curso" %}</h4>
+                            <p class="text-muted">{% translate "Crea tu cuenta y comienza a aprender" %}</p>
                         </div>
                         
                         <!-- Mostrar mensajes -->
@@ -129,7 +130,7 @@
                                                placeholder=" " 
                                                required>
                                         <label for="first_name">
-                                            <i class="bi bi-person me-1"></i>Nombre
+                                            <i class="bi bi-person me-1"></i>{% translate "Nombre" %}
                                         </label>
                                     </div>
                                 </div>
@@ -142,7 +143,7 @@
                                                placeholder=" " 
                                                required>
                                         <label for="last_name">
-                                            <i class="bi bi-person me-1"></i>Apellido
+                                            <i class="bi bi-person me-1"></i>{% translate "Apellido" %}
                                         </label>
                                     </div>
                                 </div>
@@ -157,7 +158,7 @@
                                            placeholder=" " 
                                            required>
                                     <label for="email">
-                                        <i class="bi bi-envelope me-1"></i>Correo Electrónico
+                                        <i class="bi bi-envelope me-1"></i>{% translate "Correo Electrónico" %}
                                     </label>
                                 </div>
                             </div>
@@ -172,11 +173,11 @@
                                            minlength="8" 
                                            required>
                                     <label for="password">
-                                        <i class="bi bi-lock me-1"></i>Contraseña
+                                        <i class="bi bi-lock me-1"></i>{% translate "Contraseña" %}
                                     </label>
                                 </div>
                                 <div class="form-text">
-                                    <small><i class="bi bi-info-circle"></i> Mínimo 8 caracteres</small>
+                                    <small><i class="bi bi-info-circle"></i> {% translate "Mínimo 8 caracteres" %}</small>
                                 </div>
                             </div>
                             
@@ -189,20 +190,20 @@
                                            placeholder=" " 
                                            required>
                                     <label for="password_confirm">
-                                        <i class="bi bi-lock-fill me-1"></i>Confirmar Contraseña
+                                        <i class="bi bi-lock-fill me-1"></i>{% translate "Confirmar Contraseña" %}
                                     </label>
                                 </div>
                             </div>
                             
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-register btn-primary text-white fw-bold">
-                                    <i class="bi bi-person-plus me-2"></i>Crear Cuenta y Acceder al Curso
+                                    <i class="bi bi-person-plus me-2"></i>{% translate "Crear Cuenta y Acceder al Curso" %}
                                 </button>
                             </div>
                             
                             <div class="text-center mt-3">
                                 <small class="text-muted">
-                                    Al registrarte, aceptas nuestros términos y condiciones
+                                    {% translate "Al registrarte, aceptas nuestros términos y condiciones" %}
                                 </small>
                             </div>
                         </form>
@@ -212,16 +213,16 @@
                     <div class="border-top p-3">
                         <div class="row text-center">
                             <div class="col-4">
-                                <small class="text-muted d-block">Registros</small>
+                                <small class="text-muted d-block">{% translate "Registros" %}</small>
                                 <strong>{{ token.registration_count }}{% if token.max_registrations %}/{{ token.max_registrations }}{% endif %}</strong>
                             </div>
                             <div class="col-4">
-                                <small class="text-muted d-block">Estado</small>
-                                <span class="badge bg-success">Activo</span>
+                                <small class="text-muted d-block">{% translate "Estado" %}</small>
+                                <span class="badge bg-success">{% translate "Activo" %}</span>
                             </div>
                             <div class="col-4">
-                                <small class="text-muted d-block">Expira</small>
-                                <strong>{% if token.expires_at %}{{ token.expires_at|date:"d/m/Y" }}{% else %}Nunca{% endif %}</strong>
+                                <small class="text-muted d-block">{% translate "Expira" %}</small>
+                                <strong>{% if token.expires_at %}{{ token.expires_at|date:"d/m/Y" }}{% else %}{% translate "Nunca" %}{% endif %}</strong>
                             </div>
                         </div>
                     </div>
@@ -229,7 +230,7 @@
                 
                 <div class="text-center mt-3">
                     <small class="text-white">
-                        ¿Ya tienes una cuenta? <a href="/login/" class="text-white text-decoration-underline">Inicia sesión aquí</a>
+                        {% translate "¿Ya tienes una cuenta?" %} <a href="/login/" class="text-white text-decoration-underline">{% translate "Inicia sesión aquí" %}</a>
                     </small>
                 </div>
             </div>

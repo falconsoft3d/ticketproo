@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -8,7 +9,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="bi bi-trash"></i> {{ page_title }}</h2>
         <a href="{% url 'multi_measurement_detail' measurement.pk %}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Volver
+            <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
         </a>
     </div>
 
@@ -16,35 +17,35 @@
         <div class="col-md-6">
             <div class="card border-danger">
                 <div class="card-header bg-danger text-white">
-                    <strong><i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación</strong>
+                    <strong><i class="bi bi-exclamation-triangle"></i> {% translate "Confirmar Eliminación" %}</strong>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle"></i> 
-                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                        <strong>{% translate "¡Atención!" %}</strong> {% translate "Esta acción no se puede deshacer." %}
                     </div>
 
-                    <p>¿Estás seguro de que deseas eliminar esta medición?</p>
+                    <p>{% translate "¿Estás seguro de que deseas eliminar esta medición?" %}</p>
                     
                     <div class="card bg-light mb-3">
                         <div class="card-body">
                             <p class="mb-2">
-                                <strong>Número:</strong> 
+                                <strong>{% translate "Número:" %}</strong> 
                                 <span class="badge bg-primary">{{ measurement.sequence_number }}</span>
                             </p>
                             <p class="mb-2">
-                                <strong>Título:</strong> {{ measurement.title }}
+                                <strong>{% translate "Título:" %}</strong> {{ measurement.title }}
                             </p>
                             <p class="mb-2">
-                                <strong>Registros:</strong> 
+                                <strong>{% translate "Registros:" %}</strong> 
                                 <span class="badge bg-info">{{ measurement.records.count }} registros</span>
                             </p>
                             <p class="mb-0">
-                                <strong>Estado:</strong>
+                                <strong>{% translate "Estado:" %}</strong>
                                 {% if measurement.is_active %}
-                                    <span class="badge bg-success">Activo</span>
+                                    <span class="badge bg-success">{% translate "Activo" %}</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Inactivo</span>
+                                    <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                                 {% endif %}
                             </p>
                         </div>
@@ -54,10 +55,10 @@
                         {% csrf_token %}
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'multi_measurement_detail' measurement.pk %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Sí, Eliminar
+                                <i class="bi bi-trash"></i> {% translate "Sí, Eliminar" %}
                             </button>
                         </div>
                     </form>

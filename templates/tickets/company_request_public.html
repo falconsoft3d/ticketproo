@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% block content %}
 <div class="container text-center mt-4">
   <h1>{{ generator.title }}</h1>
@@ -6,13 +7,13 @@
 
   {% if success %}
     <div class="alert alert-success">{{ success_message }}</div>
-    <p>Tu solicitud: <strong>{{ request_obj.sequence }}</strong></p>
+    <p>{% translate "Tu solicitud:" %} <strong>{{ request_obj.sequence }}</strong></p>
     <p>Fecha: {{ request_obj.request_date }}</p>
   {% else %}
     <form method="post">
       {% csrf_token %}
       {{ form.as_p }}
-      <button class="btn btn-primary" type="submit">Enviar Solicitud</button>
+      <button class="btn btn-primary" type="submit">{% translate "Enviar Solicitud" %}</button>
     </form>
   {% endif %}
 

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -76,15 +77,15 @@
                             <!-- Secuencia (solo mostrar si está editando) -->
                             {% if meeting %}
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Secuencia</label>
+                                    <label class="form-label">{% translate "Secuencia" %}</label>
                                     <input type="text" class="form-control" value="#{{ meeting.sequence }}" readonly>
-                                    <div class="form-text">Número secuencial automático</div>
+                                    <div class="form-text">{% translate "Número secuencial automático" %}</div>
                                 </div>
                             {% else %}
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Secuencia</label>
+                                    <label class="form-label">{% translate "Secuencia" %}</label>
                                     <input type="text" class="form-control" value="Se asignará automáticamente" readonly>
-                                    <div class="form-text">El número se generará al guardar</div>
+                                    <div class="form-text">{% translate "El número se generará al guardar" %}</div>
                                 </div>
                             {% endif %}
                             
@@ -110,22 +111,22 @@
                         <!-- Información adicional -->
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
-                            <strong>Información:</strong>
+                            <strong>{% translate "Información:" %}</strong>
                             <ul class="mb-0 mt-2">
-                                <li>La secuencia se asignará automáticamente por empresa</li>
-                                <li>Después de crear la reunión podrás agregar puntos específicos</li>
-                                <li>Los puntos seleccionados se pueden convertir masivamente en tickets</li>
+                                <li>{% translate "La secuencia se asignará automáticamente por empresa" %}</li>
+                                <li>{% translate "Después de crear la reunión podrás agregar puntos específicos" %}</li>
+                                <li>{% translate "Los puntos seleccionados se pueden convertir masivamente en tickets" %}</li>
                             </ul>
                         </div>
                         
                         <!-- Botones -->
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'support_meeting_list' %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-2"></i>Cancelar
+                                <i class="fas fa-arrow-left me-2"></i>{% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save me-2"></i>
-                                {% if meeting %}Actualizar{% else %}Crear{% endif %} Reunión
+                                {% if meeting %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Reunión" %}
                             </button>
                         </div>
                     </form>
@@ -135,19 +136,19 @@
                     <div class="card-footer bg-light">
                         <div class="row text-center">
                             <div class="col-md-3">
-                                <small class="text-muted">Creado por:</small><br>
+                                <small class="text-muted">{% translate "Creado por:" %}</small><br>
                                 <strong>{{ meeting.created_by.get_full_name|default:meeting.created_by.username }}</strong>
                             </div>
                             <div class="col-md-3">
-                                <small class="text-muted">Fecha de creación:</small><br>
+                                <small class="text-muted">{% translate "Fecha de creación:" %}</small><br>
                                 <strong>{{ meeting.created_at|date:"d/m/Y H:i" }}</strong>
                             </div>
                             <div class="col-md-3">
-                                <small class="text-muted">Última actualización:</small><br>
+                                <small class="text-muted">{% translate "Última actualización:" %}</small><br>
                                 <strong>{{ meeting.updated_at|date:"d/m/Y H:i" }}</strong>
                             </div>
                             <div class="col-md-3">
-                                <small class="text-muted">Puntos totales:</small><br>
+                                <small class="text-muted">{% translate "Puntos totales:" %}</small><br>
                                 <strong>{{ meeting.points_count }}</strong>
                             </div>
                         </div>

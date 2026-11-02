@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - Vista Pública{% endblock %}
@@ -8,7 +9,7 @@
     <!-- Header público -->
     <div class="row mb-4">
         <div class="col-md-12 text-center">
-            <div class="badge bg-success mb-2">Vista Pública</div>
+            <div class="badge bg-success mb-2">{% translate "Vista Pública" %}</div>
             <h2>
                 <i class="bi bi-clipboard-check me-2"></i>{{ work_order.order_number }}
             </h2>
@@ -18,15 +19,15 @@
             <div class="btn-group mt-3" role="group">
                 <a href="{% url 'public_work_order' work_order.public_share_token %}" 
                    class="btn btn-outline-primary">
-                    <i class="bi bi-info-circle me-1"></i>Información
+                    <i class="bi bi-info-circle me-1"></i>{% translate "Información" %}
                 </a>
                 <a href="{% url 'public_work_order_tasks' work_order.public_share_token %}" 
                    class="btn btn-outline-info">
-                    <i class="bi bi-list-task me-1"></i>Tareas
+                    <i class="bi bi-list-task me-1"></i>{% translate "Tareas" %}
                 </a>
                 <a href="{% url 'public_work_order_create' work_order.public_share_token %}" 
                    class="btn btn-outline-success">
-                    <i class="bi bi-plus-circle me-1"></i>Crear Orden
+                    <i class="bi bi-plus-circle me-1"></i>{% translate "Crear Orden" %}
                 </a>
             </div>
         </div>
@@ -38,20 +39,20 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-info-circle me-1"></i>Información de la Orden
+                        <i class="bi bi-info-circle me-1"></i>{% translate "Información de la Orden" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <!-- Estado actual -->
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <h6>Estado</h6>
+                            <h6>{% translate "Estado" %}</h6>
                             <span class="badge {{ work_order.get_status_badge_class }} fs-6">
                                 {{ work_order.get_status_display }}
                             </span>
                         </div>
                         <div class="col-md-6">
-                            <h6>Prioridad</h6>
+                            <h6>{% translate "Prioridad" %}</h6>
                             <span class="badge {{ work_order.get_priority_badge_class }} fs-6">
                                 {{ work_order.get_priority_display }}
                             </span>
@@ -62,7 +63,7 @@
 
                     <!-- Descripción -->
                     <div class="mb-4">
-                        <h6>Descripción del trabajo</h6>
+                        <h6>{% translate "Descripción del trabajo" %}</h6>
                         <div class="bg-light p-3 rounded">
                             {{ work_order.description|linebreaks }}
                         </div>
@@ -71,14 +72,14 @@
                     <!-- Información de fechas -->
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Fecha de entrega</h6>
+                            <h6>{% translate "Fecha de entrega" %}</h6>
                             <p class="mb-1">
                                 <i class="bi bi-calendar-event me-1"></i>
                                 {{ work_order.due_date|date:"d/m/Y" }}
                                 {% if work_order.is_overdue %}
-                                    <span class="badge bg-danger ms-2">Vencida</span>
+                                    <span class="badge bg-danger ms-2">{% translate "Vencida" %}</span>
                                 {% elif work_order.days_until_due <= 3 and work_order.status != 'finished' %}
-                                    <span class="badge bg-warning ms-2">Próxima a vencer</span>
+                                    <span class="badge bg-warning ms-2">{% translate "Próxima a vencer" %}</span>
                                 {% endif %}
                             </p>
                             {% if work_order.days_until_due and work_order.status != 'finished' %}
@@ -86,7 +87,7 @@
                                     {% if work_order.days_until_due > 0 %}
                                         Faltan {{ work_order.days_until_due }} día{{ work_order.days_until_due|pluralize }}
                                     {% elif work_order.days_until_due == 0 %}
-                                        Vence hoy
+                                        {% translate "Vence hoy" %}
                                     {% else %}
                                         Vencida hace {{ work_order.days_until_due|add:"-1" }} día{{ work_order.days_until_due|add:"-1"|pluralize }}
                                     {% endif %}
@@ -95,7 +96,7 @@
                         </div>
                         <div class="col-md-6">
                             {% if work_order.estimated_hours %}
-                                <h6>Horas estimadas</h6>
+                                <h6>{% translate "Horas estimadas" %}</h6>
                                 <p class="mb-1">
                                     <i class="bi bi-clock me-1"></i>
                                     {{ work_order.estimated_hours }} hora{{ work_order.estimated_hours|pluralize }}
@@ -108,7 +109,7 @@
                     <div class="row mb-3">
                         {% if work_order.amount %}
                         <div class="col-md-6">
-                            <h6>Importe</h6>
+                            <h6>{% translate "Importe" %}</h6>
                             <p class="mb-1">
                                 <i class="bi bi-currency-dollar me-1"></i>
                                 <strong class="text-success">{{ work_order.get_amount_display }}</strong>
@@ -116,7 +117,7 @@
                         </div>
                         {% endif %}
                         <div class="col-md-6">
-                            <h6>Creado por</h6>
+                            <h6>{% translate "Creado por" %}</h6>
                             <p class="mb-1">
                                 <i class="bi bi-person me-1"></i>
                                 {{ work_order.created_by.get_full_name|default:work_order.created_by.username }}
@@ -134,7 +135,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="bi bi-building me-1"></i>Empresa
+                        <i class="bi bi-building me-1"></i>{% translate "Empresa" %}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -164,7 +165,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="bi bi-clock-history me-1"></i>Progreso de la Orden
+                        <i class="bi bi-clock-history me-1"></i>{% translate "Progreso de la Orden" %}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -172,7 +173,7 @@
                         <div class="timeline-item">
                             <div class="timeline-marker bg-primary"></div>
                             <div class="timeline-content">
-                                <h6 class="mb-1">Orden creada</h6>
+                                <h6 class="mb-1">{% translate "Orden creada" %}</h6>
                                 <p class="text-muted mb-0">
                                     <small>{{ work_order.created_at|date:"d/m/Y H:i" }}</small>
                                 </p>
@@ -183,9 +184,9 @@
                         <div class="timeline-item">
                             <div class="timeline-marker bg-primary"></div>
                             <div class="timeline-content">
-                                <h6 class="mb-1">Orden aceptada</h6>
+                                <h6 class="mb-1">{% translate "Orden aceptada" %}</h6>
                                 <p class="text-muted mb-0">
-                                    <small>Trabajo en progreso</small>
+                                    <small>{% translate "Trabajo en progreso" %}</small>
                                 </p>
                             </div>
                         </div>
@@ -195,7 +196,7 @@
                         <div class="timeline-item">
                             <div class="timeline-marker bg-success"></div>
                             <div class="timeline-content">
-                                <h6 class="mb-1">Orden completada</h6>
+                                <h6 class="mb-1">{% translate "Orden completada" %}</h6>
                                 <p class="text-muted mb-0">
                                     <small>{{ work_order.completed_at|date:"d/m/Y H:i" }}</small>
                                 </p>
@@ -251,7 +252,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="bi bi-star-fill me-1"></i>Calificación
+                        <i class="bi bi-star-fill me-1"></i>{% translate "Calificación" %}
                         {% if avg_rating %}
                             <span class="badge bg-warning text-dark ms-2">
                                 {{ avg_rating }} <i class="bi bi-star-fill"></i>
@@ -264,7 +265,7 @@
                     <!-- Formulario de calificación -->
                     <form method="post" class="mb-4">
                         {% csrf_token %}
-                        <h6 class="mb-3">Califica este trabajo:</h6>
+                        <h6 class="mb-3">{% translate "Califica este trabajo:" %}</h6>
                         <div class="mb-3">
                             {{ rating_form.rating }}
                         </div>
@@ -275,14 +276,14 @@
                             {{ rating_form.comment }}
                         </div>
                         <button type="submit" name="submit_rating" class="btn btn-warning">
-                            <i class="bi bi-star-fill me-1"></i>Enviar Calificación
+                            <i class="bi bi-star-fill me-1"></i>{% translate "Enviar Calificación" %}
                         </button>
                     </form>
 
                     <!-- Mostrar calificaciones existentes -->
                     {% if ratings %}
                     <hr>
-                    <h6 class="mb-3">Calificaciones anteriores:</h6>
+                    <h6 class="mb-3">{% translate "Calificaciones anteriores:" %}</h6>
                     {% for rating in ratings %}
                     <div class="border-bottom pb-3 mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -312,7 +313,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="bi bi-chat-left-text me-1"></i>Comentarios
+                        <i class="bi bi-chat-left-text me-1"></i>{% translate "Comentarios" %}
                         <span class="badge bg-secondary ms-2">{{ comments.count }}</span>
                     </h6>
                 </div>
@@ -320,7 +321,7 @@
                     <!-- Formulario de comentario -->
                     <form method="post" class="mb-4">
                         {% csrf_token %}
-                        <h6 class="mb-3">Agregar un comentario:</h6>
+                        <h6 class="mb-3">{% translate "Agregar un comentario:" %}</h6>
                         <div class="mb-3">
                             {{ comment_form.author_name }}
                         </div>
@@ -328,14 +329,14 @@
                             {{ comment_form.comment }}
                         </div>
                         <button type="submit" name="submit_comment" class="btn btn-primary">
-                            <i class="bi bi-chat-left-text me-1"></i>Enviar Comentario
+                            <i class="bi bi-chat-left-text me-1"></i>{% translate "Enviar Comentario" %}
                         </button>
                     </form>
 
                     <!-- Mostrar comentarios existentes -->
                     {% if comments %}
                     <hr>
-                    <h6 class="mb-3">Comentarios anteriores:</h6>
+                    <h6 class="mb-3">{% translate "Comentarios anteriores:" %}</h6>
                     {% for comment in comments %}
                     <div class="border-bottom pb-3 mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -346,7 +347,7 @@
                     </div>
                     {% endfor %}
                     {% else %}
-                    <p class="text-muted text-center mb-0">No hay comentarios aún. ¡Sé el primero en comentar!</p>
+                    <p class="text-muted text-center mb-0">{% translate "No hay comentarios aún. ¡Sé el primero en comentar!" %}</p>
                     {% endif %}
                 </div>
             </div>
@@ -386,17 +387,17 @@
                     <!-- Botón de aprobación si está en borrador -->
                     {% if work_order.status == 'draft' %}
                     <div class="mb-4">
-                        <h5 class="text-primary mb-3">¿Aprueba esta orden de trabajo?</h5>
+                        <h5 class="text-primary mb-3">{% translate "¿Aprueba esta orden de trabajo?" %}</h5>
                         <form method="post" onsubmit="return confirm('¿Está seguro de que desea aprobar esta orden de trabajo?');">
                             {% csrf_token %}
                             <button type="submit" name="approve_work_order" value="approve" 
                                     class="btn btn-success btn-lg">
                                 <i class="bi bi-check-circle me-2"></i>
-                                Aprobar Orden de Trabajo
+                                {% translate "Aprobar Orden de Trabajo" %}
                             </button>
                         </form>
                         <small class="text-muted d-block mt-2">
-                            Al aprobar, la orden cambiará a estado "Aceptado" y comenzará el trabajo.
+                            {% translate 'Al aprobar, la orden cambiará a estado "Aceptado" y comenzará el trabajo.' %}
                         </small>
                     </div>
                     <hr>
@@ -404,7 +405,7 @@
                     <div class="mb-4">
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle me-2"></i>
-                            Esta orden ha sido <strong>aprobada</strong> y se encuentra en progreso.
+                            {% translate "Esta orden ha sido" %} <strong>{% translate "aprobada" %}</strong> {% translate "y se encuentra en progreso." %}
                         </div>
                     </div>
                     <hr>
@@ -412,15 +413,15 @@
                     <div class="mb-4">
                         <div class="alert alert-success">
                             <i class="bi bi-check-circle me-2"></i>
-                            Esta orden ha sido <strong>completada</strong>.
+                            {% translate "Esta orden ha sido" %} <strong>{% translate "completada" %}</strong>.
                         </div>
                     </div>
                     <hr>
                     {% endif %}
                     
                     <small class="text-muted">
-                        Esta es una vista pública de la orden de trabajo.<br>
-                        Para más información o consultas, contacta directamente con la empresa.
+                        {% translate "Esta es una vista pública de la orden de trabajo." %}<br>
+                        {% translate "Para más información o consultas, contacta directamente con la empresa." %}
                     </small>
                     <hr>
                     <p class="text-muted mb-0">

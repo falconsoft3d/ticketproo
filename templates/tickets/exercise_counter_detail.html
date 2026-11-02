@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ exercise.title }}{% endblock %}
@@ -9,38 +10,38 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0"><i class="bi bi-heart-pulse"></i> Información del Ejercicio</h5>
+                    <h5 class="mb-0"><i class="bi bi-heart-pulse"></i> {% translate "Información del Ejercicio" %}</h5>
                 </div>
                 <div class="card-body">
                     <table class="table table-bordered">
                         <tr>
-                            <th>Título:</th>
+                            <th>{% translate "Título:" %}</th>
                             <td><strong>{{ exercise.title }}</strong></td>
                         </tr>
                         <tr>
-                            <th>Tandas Objetivo:</th>
+                            <th>{% translate "Tandas Objetivo:" %}</th>
                             <td><span class="badge bg-primary">{{ exercise.sets_target }}</span></td>
                         </tr>
                         <tr>
-                            <th>Repeticiones Objetivo:</th>
+                            <th>{% translate "Repeticiones Objetivo:" %}</th>
                             <td><span class="badge bg-info">{{ exercise.reps_target }}</span></td>
                         </tr>
                         <tr>
-                            <th>Estado:</th>
+                            <th>{% translate "Estado:" %}</th>
                             <td>
                                 {% if exercise.status == 'pending' %}
-                                    <span class="badge bg-secondary">⏸️ Pendiente</span>
+                                    <span class="badge bg-secondary">{% translate "⏸️ Pendiente" %}</span>
                                 {% elif exercise.status == 'in_progress' %}
-                                    <span class="badge bg-success">▶️ En Progreso</span>
+                                    <span class="badge bg-success">{% translate "▶️ En Progreso" %}</span>
                                 {% elif exercise.status == 'paused' %}
-                                    <span class="badge bg-warning">⏸️ Pausado</span>
+                                    <span class="badge bg-warning">{% translate "⏸️ Pausado" %}</span>
                                 {% else %}
-                                    <span class="badge bg-dark">⏹️ Finalizado</span>
+                                    <span class="badge bg-dark">{% translate "⏹️ Finalizado" %}</span>
                                 {% endif %}
                             </td>
                         </tr>
                         <tr>
-                            <th>Progreso:</th>
+                            <th>{% translate "Progreso:" %}</th>
                             <td>
                                 <div class="progress" style="height: 25px;">
                                     <div class="progress-bar bg-success" 
@@ -56,33 +57,33 @@
                         </tr>
                         {% if exercise.get_duration %}
                         <tr>
-                            <th>Duración:</th>
+                            <th>{% translate "Duración:" %}</th>
                             <td>{{ exercise.get_duration }}</td>
                         </tr>
                         {% endif %}
                         <tr>
-                            <th>Creado:</th>
+                            <th>{% translate "Creado:" %}</th>
                             <td>{{ exercise.created_at|date:"d/m/Y H:i" }}</td>
                         </tr>
                         {% if exercise.notes %}
                         <tr>
-                            <th>Notas:</th>
+                            <th>{% translate "Notas:" %}</th>
                             <td>{{ exercise.notes }}</td>
                         </tr>
                         {% endif %}
                     </table>
 
                     <div class="alert alert-info">
-                        <strong><i class="bi bi-share"></i> URL Pública:</strong>
+                        <strong><i class="bi bi-share"></i> {% translate "URL Pública:" %}</strong>
                         <div class="input-group mt-2">
                             <input type="text" class="form-control" id="publicUrl" 
                                    value="{{ public_url }}" readonly>
                             <button class="btn btn-outline-secondary" type="button" 
                                     onclick="copyUrl()">
-                                <i class="bi bi-clipboard"></i> Copiar
+                                <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                             </button>
                         </div>
-                        <small class="text-muted">Comparte esta URL para acceder al contador sin login</small>
+                        <small class="text-muted">{% translate "Comparte esta URL para acceder al contador sin login" %}</small>
                     </div>
                 </div>
             </div>
@@ -91,7 +92,7 @@
         <div class="col-md-6">
             <div class="card border-primary">
                 <div class="card-header bg-primary text-white">
-                    <h6 class="mb-0"><i class="bi bi-layers"></i> Tandas Actuales</h6>
+                    <h6 class="mb-0"><i class="bi bi-layers"></i> {% translate "Tandas Actuales" %}</h6>
                 </div>
                 <div class="card-body text-center">
                     <h1 class="display-1 text-primary">{{ exercise.current_sets }}</h1>
@@ -101,7 +102,7 @@
 
             <div class="card border-info mt-3">
                 <div class="card-header bg-info text-white">
-                    <h6 class="mb-0"><i class="bi bi-arrow-repeat"></i> Repeticiones Actuales</h6>
+                    <h6 class="mb-0"><i class="bi bi-arrow-repeat"></i> {% translate "Repeticiones Actuales" %}</h6>
                 </div>
                 <div class="card-body text-center">
                     <h1 class="display-1 text-info">{{ exercise.current_reps }}</h1>
@@ -114,13 +115,13 @@
     <div class="row mt-3">
         <div class="col-12">
             <a href="{% url 'exercise_counter_list' %}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+                <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
             </a>
             <a href="{{ exercise.get_public_url }}" class="btn btn-primary" target="_blank">
-                <i class="bi bi-play-circle"></i> Abrir Contador
+                <i class="bi bi-play-circle"></i> {% translate "Abrir Contador" %}
             </a>
             <a href="{% url 'exercise_counter_delete' exercise.pk %}" class="btn btn-danger">
-                <i class="bi bi-trash"></i> Eliminar
+                <i class="bi bi-trash"></i> {% translate "Eliminar" %}
             </a>
         </div>
     </div>

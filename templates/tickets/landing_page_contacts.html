@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -7,9 +8,9 @@
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1><i class="fas fa-users text-primary"></i> Contactos desde Landing Pages</h1>
+                <h1><i class="fas fa-users text-primary"></i> {% translate "Contactos desde Landing Pages" %}</h1>
                 <a href="{% url 'landing_page_list' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver a Landing Pages
+                    <i class="fas fa-arrow-left"></i> {% translate "Volver a Landing Pages" %}
                 </a>
             </div>
 
@@ -20,7 +21,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <h5 class="card-title">Total</h5>
+                                    <h5 class="card-title">{% translate "Total" %}</h5>
                                     <h2 class="mb-0">{{ total_contacts }}</h2>
                                 </div>
                                 <div class="align-self-center">
@@ -35,7 +36,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <h5 class="card-title">No Leídos</h5>
+                                    <h5 class="card-title">{% translate "No Leídos" %}</h5>
                                     <h2 class="mb-0">{{ unread_contacts }}</h2>
                                 </div>
                                 <div class="align-self-center">
@@ -50,7 +51,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <h5 class="card-title">Respondidos</h5>
+                                    <h5 class="card-title">{% translate "Respondidos" %}</h5>
                                     <h2 class="mb-0">{{ answered_contacts }}</h2>
                                 </div>
                                 <div class="align-self-center">
@@ -65,7 +66,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <h5 class="card-title">Tasa Conv.</h5>
+                                    <h5 class="card-title">{% translate "Tasa Conv." %}</h5>
                                     <h2 class="mb-0">
                                         {% if total_contacts > 0 %}
                                             {{ answered_contacts|floatformat:0 }}%
@@ -90,13 +91,13 @@
                             <table class="table table-hover">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>Estado</th>
-                                        <th>Nombre</th>
-                                        <th>Email</th>
-                                        <th>Empresa</th>
-                                        <th>Asunto</th>
-                                        <th>Fecha</th>
-                                        <th>Acciones</th>
+                                        <th>{% translate "Estado" %}</th>
+                                        <th>{% translate "Nombre" %}</th>
+                                        <th>{% translate "Email" %}</th>
+                                        <th>{% translate "Empresa" %}</th>
+                                        <th>{% translate "Asunto" %}</th>
+                                        <th>{% translate "Fecha" %}</th>
+                                        <th>{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -105,16 +106,16 @@
                                             <td>
                                                 <div class="d-flex gap-1">
                                                     {% if not contact.leido %}
-                                                        <span class="badge bg-warning" title="No leído">
+                                                        <span class="badge bg-warning" title="{% translate 'No leído' %}">
                                                             <i class="fas fa-eye-slash"></i>
                                                         </span>
                                                     {% endif %}
                                                     {% if contact.respondido %}
-                                                        <span class="badge bg-success" title="Respondido">
+                                                        <span class="badge bg-success" title="{% translate 'Respondido' %}">
                                                             <i class="fas fa-check"></i>
                                                         </span>
                                                     {% else %}
-                                                        <span class="badge bg-secondary" title="Pendiente">
+                                                        <span class="badge bg-secondary" title="{% translate 'Pendiente' %}">
                                                             <i class="fas fa-clock"></i>
                                                         </span>
                                                     {% endif %}
@@ -151,18 +152,18 @@
                                                 <div class="btn-group" role="group">
                                                     <button class="btn btn-sm btn-outline-primary" 
                                                             onclick="viewContact('{{ contact.id }}')" 
-                                                            title="Ver detalles">
+                                                            title="{% translate 'Ver detalles' %}">
                                                         <i class="fas fa-eye"></i>
                                                     </button>
                                                     <a href="mailto:{{ contact.email }}" 
                                                        class="btn btn-sm btn-outline-success" 
-                                                       title="Enviar email">
+                                                       title="{% translate 'Enviar email' %}">
                                                         <i class="fas fa-envelope"></i>
                                                     </a>
                                                     {% if not contact.leido %}
                                                         <button class="btn btn-sm btn-outline-warning" 
                                                                 onclick="markAsRead('{{ contact.id }}')" 
-                                                                title="Marcar como leído">
+                                                                title="{% translate 'Marcar como leído' %}">
                                                             <i class="fas fa-eye"></i>
                                                         </button>
                                                     {% endif %}
@@ -178,10 +179,10 @@
             {% else %}
                 <div class="text-center py-5">
                     <i class="fas fa-users fa-4x text-muted mb-3"></i>
-                    <h3 class="text-muted">No hay contactos aún</h3>
-                    <p class="text-muted">Los contactos creados desde landing pages aparecerán aquí.</p>
+                    <h3 class="text-muted">{% translate "No hay contactos aún" %}</h3>
+                    <p class="text-muted">{% translate "Los contactos creados desde landing pages aparecerán aquí." %}</p>
                     <a href="{% url 'landing_page_list' %}" class="btn btn-primary">
-                        <i class="fas fa-rocket"></i> Ver Landing Pages
+                        <i class="fas fa-rocket"></i> {% translate "Ver Landing Pages" %}
                     </a>
                 </div>
             {% endif %}
@@ -195,20 +196,20 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="fas fa-user"></i> Detalles del Contacto
+                    <i class="fas fa-user"></i> {% translate "Detalles del Contacto" %}
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="contactModalBody">
                 <div class="text-center">
                     <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Cargando...</span>
+                        <span class="visually-hidden">{% translate "Cargando..." %}</span>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" onclick="replyToContact()">Responder</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cerrar" %}</button>
+                <button type="button" class="btn btn-primary" onclick="replyToContact()">{% translate "Responder" %}</button>
             </div>
         </div>
     </div>

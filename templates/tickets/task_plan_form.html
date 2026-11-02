@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ plan.title|default:"Nuevo Plan" }} - {{ block.super }}{% endblock %}
 
@@ -10,7 +11,7 @@
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">
                         <i class="bi bi-{% if plan %}pencil{% else %}plus-circle{% endif %}"></i>
-                        {% if plan %}Editar Plan{% else %}Crear Nuevo Plan{% endif %}
+                        {% if plan %}{% translate "Editar Plan" %}{% else %}{% translate "Crear Nuevo Plan" %}{% endif %}
                     </h4>
                 </div>
 
@@ -19,14 +20,14 @@
                         {% csrf_token %}
 
                         <div class="mb-3">
-                            <label for="title" class="form-label">Título del Plan <span class="text-danger">*</span></label>
+                            <label for="title" class="form-label">{% translate "Título del Plan" %} <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="title" name="title" 
                                    value="{{ plan.title|default:'' }}" required maxlength="200"
-                                   placeholder="Ej: Plan de Entrenamiento, Plan Semanal de Trabajo">
+                                   placeholder="{% translate 'Ej: Plan de Entrenamiento, Plan Semanal de Trabajo' %}">
                         </div>
 
                         <div class="mb-4">
-                            <label for="description" class="form-label">Descripción</label>
+                            <label for="description" class="form-label">{% translate "Descripción" %}</label>
                             <textarea class="form-control" id="description" name="description" 
                                       rows="3" placeholder="Descripción opcional del plan">{{ plan.description|default:'' }}</textarea>
                         </div>
@@ -34,11 +35,11 @@
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save"></i>
-                                {% if plan %}Actualizar{% else %}Crear{% endif %} Plan
+                                {% if plan %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Plan" %}
                             </button>
                             <a href="{% if plan %}{% url 'task_plan_detail' plan.id %}{% else %}{% url 'task_plan_list' %}{% endif %}" 
                                class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>

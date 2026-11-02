@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -16,7 +17,7 @@
                 <div class="card-body">
                     <!-- Fecha -->
                     <div class="mb-3">
-                        <h6><i class="bi bi-calendar"></i> Fecha y Hora</h6>
+                        <h6><i class="bi bi-calendar"></i> {% translate "Fecha y Hora" %}</h6>
                         <p class="ms-4">{{ event.event_date|date:"l, d \d\e F \d\e Y \a \l\a\s H:i" }}</p>
                     </div>
 
@@ -24,7 +25,7 @@
                     {% if event.is_all_day %}
                     <div class="mb-3">
                         <span class="badge bg-info">
-                            <i class="bi bi-clock"></i> Evento de todo el día
+                            <i class="bi bi-clock"></i> {% translate "Evento de todo el día" %}
                         </span>
                     </div>
                     {% endif %}
@@ -32,7 +33,7 @@
                     <!-- Ubicación -->
                     {% if event.location %}
                     <div class="mb-3">
-                        <h6><i class="bi bi-geo-alt"></i> Ubicación</h6>
+                        <h6><i class="bi bi-geo-alt"></i> {% translate "Ubicación" %}</h6>
                         <p class="ms-4">{{ event.location }}</p>
                     </div>
                     {% endif %}
@@ -40,7 +41,7 @@
                     <!-- Descripción -->
                     {% if event.description %}
                     <div class="mb-3">
-                        <h6><i class="bi bi-file-text"></i> Descripción</h6>
+                        <h6><i class="bi bi-file-text"></i> {% translate "Descripción" %}</h6>
                         <div class="ms-4">
                             {{ event.description|linebreaks }}
                         </div>
@@ -61,14 +62,14 @@
                 <div class="card-footer">
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'event_calendar' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Volver al Calendario
+                            <i class="bi bi-arrow-left"></i> {% translate "Volver al Calendario" %}
                         </a>
                         <div>
                             <a href="{% url 'event_edit' event.pk %}" class="btn btn-primary">
-                                <i class="bi bi-pencil"></i> Editar
+                                <i class="bi bi-pencil"></i> {% translate "Editar" %}
                             </a>
                             <a href="{% url 'event_delete' event.pk %}" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Eliminar
+                                <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                             </a>
                         </div>
                     </div>

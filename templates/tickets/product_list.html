@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -28,11 +29,11 @@
     <div class="row mb-4">
         <div class="col-md-8">
             <h2><i class="bi bi-box-seam"></i> {{ page_title }}</h2>
-            <p class="text-muted">Gestiona el catálogo de productos de tu empresa</p>
+            <p class="text-muted">{% translate "Gestiona el catálogo de productos de tu empresa" %}</p>
         </div>
         <div class="col-md-4 text-end">
             <a href="{% url 'product_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Nuevo Producto
+                <i class="bi bi-plus-circle"></i> {% translate "Nuevo Producto" %}
             </a>
         </div>
     </div>
@@ -43,7 +44,7 @@
             <div class="card stats-card">
                 <div class="card-body text-center">
                     <h3 class="mb-1">{{ total_products }}</h3>
-                    <p class="mb-0"><i class="bi bi-box-seam"></i> Total Productos</p>
+                    <p class="mb-0"><i class="bi bi-box-seam"></i> {% translate "Total Productos" %}</p>
                 </div>
             </div>
         </div>
@@ -51,7 +52,7 @@
             <div class="card bg-success text-white">
                 <div class="card-body text-center">
                     <h3 class="mb-1">{{ active_products }}</h3>
-                    <p class="mb-0"><i class="bi bi-check-circle"></i> Productos Activos</p>
+                    <p class="mb-0"><i class="bi bi-check-circle"></i> {% translate "Productos Activos" %}</p>
                 </div>
             </div>
         </div>
@@ -59,7 +60,7 @@
             <div class="card bg-warning text-white">
                 <div class="card-body text-center">
                     <h3 class="mb-1">{{ inactive_products }}</h3>
-                    <p class="mb-0"><i class="bi bi-pause-circle"></i> Productos Inactivos</p>
+                    <p class="mb-0"><i class="bi bi-pause-circle"></i> {% translate "Productos Inactivos" %}</p>
                 </div>
             </div>
         </div>
@@ -70,23 +71,23 @@
         <div class="card-body">
             <form method="GET" class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label">Buscar</label>
-                    <input type="text" name="search" class="form-control" placeholder="Nombre o descripción..." value="{{ search }}">
+                    <label class="form-label">{% translate "Buscar" %}</label>
+                    <input type="text" name="search" class="form-control" placeholder="{% translate 'Nombre o descripción...' %}" value="{{ search }}">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Estado</label>
+                    <label class="form-label">{% translate "Estado" %}</label>
                     <select name="status" class="form-select">
-                        <option value="all" {% if status == 'all' %}selected{% endif %}>Todos</option>
-                        <option value="active" {% if status == 'active' %}selected{% endif %}>Activos</option>
-                        <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactivos</option>
+                        <option value="all" {% if status == 'all' %}selected{% endif %}>{% translate "Todos" %}</option>
+                        <option value="active" {% if status == 'active' %}selected{% endif %}>{% translate "Activos" %}</option>
+                        <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>{% translate "Inactivos" %}</option>
                     </select>
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
                     <button type="submit" class="btn btn-outline-primary me-2">
-                        <i class="bi bi-search"></i> Filtrar
+                        <i class="bi bi-search"></i> {% translate "Filtrar" %}
                     </button>
                     <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-clockwise"></i> Limpiar
+                        <i class="bi bi-arrow-clockwise"></i> {% translate "Limpiar" %}
                     </a>
                 </div>
             </form>
@@ -106,9 +107,9 @@
                             </a>
                         </h5>
                         {% if product.is_active %}
-                            <span class="badge bg-success">Activo</span>
+                            <span class="badge bg-success">{% translate "Activo" %}</span>
                         {% else %}
-                            <span class="badge bg-secondary">Inactivo</span>
+                            <span class="badge bg-secondary">{% translate "Inactivo" %}</span>
                         {% endif %}
                     </div>
                     <div class="card-body">
@@ -128,13 +129,13 @@
                     <div class="card-footer bg-transparent">
                         <div class="btn-group w-100" role="group">
                             <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-info btn-sm">
-                                <i class="bi bi-eye"></i> Ver
+                                <i class="bi bi-eye"></i> {% translate "Ver" %}
                             </a>
                             <a href="{% url 'product_edit' product.id %}" class="btn btn-outline-warning btn-sm">
-                                <i class="bi bi-pencil"></i> Editar
+                                <i class="bi bi-pencil"></i> {% translate "Editar" %}
                             </a>
                             <a href="{% url 'product_delete' product.id %}" class="btn btn-outline-danger btn-sm">
-                                <i class="bi bi-trash"></i> Eliminar
+                                <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                             </a>
                         </div>
                     </div>
@@ -145,14 +146,14 @@
 
         <!-- Paginación -->
         {% if page_obj.has_other_pages %}
-        <nav aria-label="Paginación de productos">
+        <nav aria-label="{% translate 'Paginación de productos' %}">
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status != 'all' %}&status={{ status }}{% endif %}">Primera</a>
+                        <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status != 'all' %}&status={{ status }}{% endif %}">{% translate "Primera" %}</a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status != 'all' %}&status={{ status }}{% endif %}">Anterior</a>
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status != 'all' %}&status={{ status }}{% endif %}">{% translate "Anterior" %}</a>
                     </li>
                 {% endif %}
 
@@ -170,10 +171,10 @@
 
                 {% if page_obj.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status != 'all' %}&status={{ status }}{% endif %}">Siguiente</a>
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status != 'all' %}&status={{ status }}{% endif %}">{% translate "Siguiente" %}</a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status != 'all' %}&status={{ status }}{% endif %}">Última</a>
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status != 'all' %}&status={{ status }}{% endif %}">{% translate "Última" %}</a>
                     </li>
                 {% endif %}
             </ul>
@@ -182,10 +183,10 @@
     {% else %}
         <div class="text-center py-5">
             <i class="bi bi-box-seam display-1 text-muted"></i>
-            <h3 class="mt-3">No hay productos</h3>
-            <p class="text-muted">¡Comienza agregando tu primer producto!</p>
+            <h3 class="mt-3">{% translate "No hay productos" %}</h3>
+            <p class="text-muted">{% translate "¡Comienza agregando tu primer producto!" %}</p>
             <a href="{% url 'product_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Crear Primer Producto
+                <i class="bi bi-plus-circle"></i> {% translate "Crear Primer Producto" %}
             </a>
         </div>
     {% endif %}

@@ -1,22 +1,23 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Levantamiento de Procesos{% endblock %}
+{% block title %}{% translate "Levantamiento de Procesos" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0">
       <i class="bi bi-clipboard-check me-2"></i>
-      Levantamiento de Procesos
+      {% translate "Levantamiento de Procesos" %}
     </h1>
     <div class="d-flex gap-2">
       <button class="btn btn-outline-secondary" onclick="copyIntakeUrl()" id="copy-intake-btn"
-              title="Copiar enlace público de captación">
-        <i class="bi bi-share me-1"></i> Compartir enlace
+              title="{% translate 'Copiar enlace público de captación' %}">
+        <i class="bi bi-share me-1"></i> {% translate "Compartir enlace" %}
       </button>
       <a href="{% url 'process_survey_create' %}" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i> Nuevo Levantamiento
+        <i class="bi bi-plus-lg me-1"></i> {% translate "Nuevo Levantamiento" %}
       </a>
     </div>
   </div>
@@ -24,7 +25,7 @@
   <!-- Búsqueda -->
   <form method="get" class="mb-3">
     <div class="input-group" style="max-width:400px;">
-      <input type="text" name="search" class="form-control" placeholder="Buscar..." value="{{ search }}">
+      <input type="text" name="search" class="form-control" placeholder="{% translate 'Buscar...' %}" value="{{ search }}">
       <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
       {% if search %}
         <a href="{% url 'process_survey_list' %}" class="btn btn-outline-danger"><i class="bi bi-x-lg"></i></a>
@@ -40,18 +41,18 @@
           <thead class="table-light">
             <tr>
               <th>#</th>
-              <th>Nombre</th>
-              <th>Fecha</th>
-              <th>Empresa</th>
-              <th>Estado</th>
-              <th class="text-center">Contrato</th>
-              <th class="text-center">Firma cliente</th>
-              <th class="text-end">Importe</th>
-              <th class="text-center" title="Vistas cuando no está rechazado">Vistas</th>
-              <th class="text-center" title="Vistas cuando está rechazado">Vistas Rechazado</th>
-              <th>Líneas</th>
-              <th>Creado por</th>
-              <th class="text-end">Acciones</th>
+              <th>{% translate "Nombre" %}</th>
+              <th>{% translate "Fecha" %}</th>
+              <th>{% translate "Empresa" %}</th>
+              <th>{% translate "Estado" %}</th>
+              <th class="text-center">{% translate "Contrato" %}</th>
+              <th class="text-center">{% translate "Firma cliente" %}</th>
+              <th class="text-end">{% translate "Importe" %}</th>
+              <th class="text-center" title="{% translate 'Vistas cuando no está rechazado' %}">{% translate "Vistas" %}</th>
+              <th class="text-center" title="{% translate 'Vistas cuando está rechazado' %}">{% translate "Vistas Rechazado" %}</th>
+              <th>{% translate "Líneas" %}</th>
+              <th>{% translate "Creado por" %}</th>
+              <th class="text-end">{% translate "Acciones" %}</th>
             </tr>
           </thead>
           <tbody>
@@ -69,11 +70,11 @@
               <td>{{ survey.company.name|default:"—" }}</td>
               <td>
                 {% if survey.status == 'proceso' %}
-                  <span class="badge bg-warning text-dark">En proceso</span>
+                  <span class="badge bg-warning text-dark">{% translate "En proceso" %}</span>
                 {% elif survey.status == 'aceptado' %}
-                  <span class="badge bg-success">Aceptado</span>
+                  <span class="badge bg-success">{% translate "Aceptado" %}</span>
                 {% elif survey.status == 'rechazado' %}
-                  <span class="badge bg-danger">Rechazado</span>
+                  <span class="badge bg-danger">{% translate "Rechazado" %}</span>
                 {% else %}
                   <span class="badge bg-secondary">{{ survey.status }}</span>
                 {% endif %}
@@ -82,7 +83,7 @@
               <td class="text-center">
                 <div class="d-flex align-items-center justify-content-center gap-1">
                   <a href="{% url 'public_process_survey_contract' survey.public_share_token %}" target="_blank"
-                     class="btn btn-outline-primary btn-xs py-0 px-1" style="font-size:.72rem;" title="Ver contrato">
+                     class="btn btn-outline-primary btn-xs py-0 px-1" style="font-size:.72rem;" title="{% translate 'Ver contrato' %}">
                     <i class="bi bi-file-earmark-text"></i>
                   </a>
                   {% with cv=survey.contract_views.count %}
@@ -101,10 +102,10 @@
               <td class="text-center">
                 {% if survey.client_signature_image %}
                   <span class="badge bg-success" title="Firmado por {{ survey.client_signed_name }} el {{ survey.client_signed_at|date:'d/m/Y' }}">
-                    <i class="bi bi-pen me-1"></i>Firmado
+                    <i class="bi bi-pen me-1"></i>{% translate "Firmado" %}
                   </span>
                 {% elif survey.clauses.count > 0 %}
-                  <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Pendiente</span>
+                  <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>{% translate "Pendiente" %}</span>
                 {% else %}
                   <span class="text-muted" style="font-size:.75rem;">—</span>
                 {% endif %}
@@ -138,7 +139,7 @@
               <td>{% if survey.created_by %}{{ survey.created_by.get_full_name|default:survey.created_by.username }}{% else %}—{% endif %}</td>
               <td class="text-end" onclick="event.stopPropagation()">
                 <div class="btn-group btn-group-sm">
-                  <a href="{% url 'process_survey_delete' survey.pk %}" class="btn btn-outline-danger" title="Eliminar">
+                  <a href="{% url 'process_survey_delete' survey.pk %}" class="btn btn-outline-danger" title="{% translate 'Eliminar' %}">
                     <i class="bi bi-trash"></i>
                   </a>
                 </div>
@@ -173,8 +174,8 @@
   {% else %}
   <div class="text-center py-5 text-muted">
     <i class="bi bi-clipboard-x fs-1"></i>
-    <p class="mt-2">No hay levantamientos registrados aún.</p>
-    <a href="{% url 'process_survey_create' %}" class="btn btn-primary mt-2">Crear el primero</a>
+    <p class="mt-2">{% translate "No hay levantamientos registrados aún." %}</p>
+    <a href="{% url 'process_survey_create' %}" class="btn btn-primary mt-2">{% translate "Crear el primero" %}</a>
   </div>
   {% endif %}
 </div>

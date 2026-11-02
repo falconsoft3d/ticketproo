@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}{% if precotizador %}Editar{% else %}Crear{% endif %} Precotizador{% endblock %}
+{% block title %}{% if precotizador %}{% translate "Editar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Precotizador" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -11,10 +12,10 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
                         <i class="bi bi-{% if precotizador %}pencil{% else %}plus-circle{% endif %}"></i> 
-                        {% if precotizador %}Editar{% else %}Crear{% endif %} Precotizador con IA
+                        {% if precotizador %}{% translate "Editar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Precotizador con IA" %}
                     </h5>
                     <a href="{% url 'precotizador_list' %}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -27,7 +28,7 @@
                                 <div class="card mb-4">
                                     <div class="card-header">
                                         <h6 class="mb-0">
-                                            <i class="bi bi-info-circle"></i> Información General
+                                            <i class="bi bi-info-circle"></i> {% translate "Información General" %}
                                         </h6>
                                     </div>
                                     <div class="card-body">
@@ -87,23 +88,23 @@
                                 <div class="card mb-4">
                                     <div class="card-header">
                                         <h6 class="mb-0">
-                                            <i class="bi bi-graph-up"></i> Información Actual
+                                            <i class="bi bi-graph-up"></i> {% translate "Información Actual" %}
                                         </h6>
                                     </div>
                                     <div class="card-body">
                                         <table class="table table-sm table-borderless mb-0">
                                             <tr>
-                                                <td><strong>Creado:</strong></td>
+                                                <td><strong>{% translate "Creado:" %}</strong></td>
                                                 <td>{{ precotizador.created_at|date:"d/m/Y H:i" }}</td>
                                             </tr>
                                             <tr>
-                                                <td><strong>Ejemplos:</strong></td>
+                                                <td><strong>{% translate "Ejemplos:" %}</strong></td>
                                                 <td>
                                                     <span class="badge bg-info">{{ precotizador.examples.count }}</span>
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><strong>Cotizaciones:</strong></td>
+                                                <td><strong>{% translate "Cotizaciones:" %}</strong></td>
                                                 <td>
                                                     <span class="badge bg-secondary">{{ precotizador.quotes.count }}</span>
                                                 </td>
@@ -113,12 +114,12 @@
                                 </div>
                                 {% else %}
                                 <div class="alert alert-info">
-                                    <h6><i class="bi bi-lightbulb"></i> Consejos</h6>
+                                    <h6><i class="bi bi-lightbulb"></i> {% translate "Consejos" %}</h6>
                                     <ul class="mb-0">
-                                        <li>Describe claramente el tipo de cliente</li>
-                                        <li>Incluye sector, tamaño de empresa, etc.</li>
-                                        <li>Proporciona 10 casos de ejemplo realistas</li>
-                                        <li>La IA usará estos datos para estimaciones futuras</li>
+                                        <li>{% translate "Describe claramente el tipo de cliente" %}</li>
+                                        <li>{% translate "Incluye sector, tamaño de empresa, etc." %}</li>
+                                        <li>{% translate "Proporciona 10 casos de ejemplo realistas" %}</li>
+                                        <li>{% translate "La IA usará estos datos para estimaciones futuras" %}</li>
                                     </ul>
                                 </div>
                                 {% endif %}
@@ -129,10 +130,10 @@
                         <div class="card">
                             <div class="card-header">
                                 <h6 class="mb-0">
-                                    <i class="bi bi-list-ol"></i> Casos de Ejemplo (10 obligatorios)
+                                    <i class="bi bi-list-ol"></i> {% translate "Casos de Ejemplo (10 obligatorios)" %}
                                 </h6>
                                 <small class="text-muted">
-                                    Proporciona 10 ejemplos de trabajos típicos con sus horas estimadas
+                                    {% translate "Proporciona 10 ejemplos de trabajos típicos con sus horas estimadas" %}
                                 </small>
                             </div>
                             <div class="card-body">
@@ -194,11 +195,11 @@
 
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'precotizador_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i> 
-                                {% if precotizador %}Actualizar{% else %}Crear{% endif %} Precotizador
+                                {% if precotizador %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Precotizador" %}
                             </button>
                         </div>
                     </form>

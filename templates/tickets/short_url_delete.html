@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Eliminar URL Corta{% endblock %}
+{% block title %}{% translate "Eliminar URL Corta" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -10,18 +11,18 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-trash"></i> Eliminar URL Corta
+                        <i class="bi bi-trash"></i> {% translate "Eliminar URL Corta" %}
                     </h5>
                     <a href="{% url 'short_url_list' %}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-warning d-flex align-items-center" role="alert">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
                         <div>
-                            <strong>¿Estás seguro de que quieres eliminar esta URL corta?</strong>
-                            <br>Esta acción no se puede deshacer.
+                            <strong>{% translate "¿Estás seguro de que quieres eliminar esta URL corta?" %}</strong>
+                            <br>{% translate "Esta acción no se puede deshacer." %}
                         </div>
                     </div>
 
@@ -29,16 +30,16 @@
                         <div class="col-md-8">
                             <div class="card bg-light">
                                 <div class="card-body">
-                                    <h6 class="card-title">Detalles de la URL</h6>
+                                    <h6 class="card-title">{% translate "Detalles de la URL" %}</h6>
                                     <table class="table table-sm table-borderless mb-0">
                                         <tr>
-                                            <td><strong>Código:</strong></td>
+                                            <td><strong>{% translate "Código:" %}</strong></td>
                                             <td>
                                                 <code>{{ short_url.short_code }}</code>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><strong>URL Original:</strong></td>
+                                            <td><strong>{% translate "URL Original:" %}</strong></td>
                                             <td>
                                                 <a href="{{ short_url.original_url }}" target="_blank" class="text-break">
                                                     {{ short_url.original_url }}
@@ -47,24 +48,24 @@
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><strong>URL Corta:</strong></td>
+                                            <td><strong>{% translate "URL Corta:" %}</strong></td>
                                             <td>
                                                 <code>{{ request.build_absolute_uri|slice:':-1' }}{% url 'short_url_redirect' short_url.short_code %}</code>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Creada:</strong></td>
+                                            <td><strong>{% translate "Creada:" %}</strong></td>
                                             <td>{{ short_url.created_at|date:"d/m/Y H:i" }}</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Clics:</strong></td>
+                                            <td><strong>{% translate "Clics:" %}</strong></td>
                                             <td>
                                                 <span class="badge bg-info">{{ short_url.clicks }}</span>
                                             </td>
                                         </tr>
                                         {% if short_url.expires_at %}
                                         <tr>
-                                            <td><strong>Expira:</strong></td>
+                                            <td><strong>{% translate "Expira:" %}</strong></td>
                                             <td>
                                                 {% if short_url.is_expired %}
                                                     <span class="badge bg-danger">Expirada - {{ short_url.expires_at|date:"d/m/Y H:i" }}</span>
@@ -75,7 +76,7 @@
                                         </tr>
                                         {% endif %}
                                         <tr>
-                                            <td><strong>Creada por:</strong></td>
+                                            <td><strong>{% translate "Creada por:" %}</strong></td>
                                             <td>{{ short_url.created_by.get_full_name|default:short_url.created_by.username }}</td>
                                         </tr>
                                     </table>
@@ -86,12 +87,12 @@
 
                     <div class="d-flex justify-content-between mt-4">
                         <a href="{% url 'short_url_list' %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
+                            <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                         </a>
                         <form method="post" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Confirmar Eliminación
+                                <i class="bi bi-trash"></i> {% translate "Confirmar Eliminación" %}
                             </button>
                         </form>
                     </div>

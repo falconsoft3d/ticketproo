@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}Eliminar Archivo - TicketProo{% endblock %}
+{% block title %}{% translate "Eliminar Archivo - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -10,16 +11,16 @@
             <div class="card border-danger">
                 <div class="card-header bg-danger text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                        <i class="bi bi-exclamation-triangle"></i> {% translate "Confirmar Eliminación" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-warning">
                         <i class="bi bi-warning"></i>
-                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                        <strong>{% translate "¡Atención!" %}</strong> {% translate "Esta acción no se puede deshacer." %}
                     </div>
                     
-                    <h6>¿Estás seguro de que deseas eliminar este archivo?</h6>
+                    <h6>{% translate "¿Estás seguro de que deseas eliminar este archivo?" %}</h6>
                     
                     <div class="border rounded p-3 bg-light mt-3">
                         <div class="d-flex align-items-center mb-2">
@@ -36,12 +37,12 @@
                     </div>
                     
                     <div class="mt-4">
-                        <h6>Consecuencias de la eliminación:</h6>
+                        <h6>{% translate "Consecuencias de la eliminación:" %}</h6>
                         <ul class="small text-muted">
-                            <li>El archivo será eliminado permanentemente del servidor</li>
-                            <li>Los usuarios ya no podrán descargarlo</li>
-                            <li>Se perderá el historial de descargas</li>
-                            <li>Los enlaces de descarga dejarán de funcionar</li>
+                            <li>{% translate "El archivo será eliminado permanentemente del servidor" %}</li>
+                            <li>{% translate "Los usuarios ya no podrán descargarlo" %}</li>
+                            <li>{% translate "Se perderá el historial de descargas" %}</li>
+                            <li>{% translate "Los enlaces de descarga dejarán de funcionar" %}</li>
                         </ul>
                     </div>
                     
@@ -49,10 +50,10 @@
                         {% csrf_token %}
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'shared_file_detail' shared_file.id %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Sí, eliminar archivo
+                                <i class="bi bi-trash"></i> {% translate "Sí, eliminar archivo" %}
                             </button>
                         </div>
                     </form>

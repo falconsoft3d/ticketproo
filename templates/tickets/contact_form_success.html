@@ -1,9 +1,10 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario Enviado Exitosamente</title>
+    <title>{% translate "Formulario Enviado Exitosamente" %}</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -176,11 +177,10 @@
             </div>
             
             <div class="success-content">
-                <h1 class="success-title">¡Formulario Enviado!</h1>
+                <h1 class="success-title">{% translate "¡Formulario Enviado!" %}</h1>
                 
                 <p class="success-message">
-                    Gracias por tu interés. Hemos recibido tu solicitud de contacto y la información de tu empresa. 
-                    Nuestro equipo la revisará y se pondrá en contacto contigo muy pronto.
+                    {% translate "Gracias por tu interés. Hemos recibido tu solicitud de contacto y la información de tu empresa. Nuestro equipo la revisará y se pondrá en contacto contigo muy pronto." %}
                 </p>
                 
                 <div class="timeline">
@@ -189,8 +189,8 @@
                             <i class="bi bi-envelope-check"></i>
                         </div>
                         <div class="timeline-content">
-                            <h5>Solicitud Recibida</h5>
-                            <p>Tu formulario ha sido enviado exitosamente y está en nuestra bandeja de entrada.</p>
+                            <h5>{% translate "Solicitud Recibida" %}</h5>
+                            <p>{% translate "Tu formulario ha sido enviado exitosamente y está en nuestra bandeja de entrada." %}</p>
                         </div>
                     </div>
                     
@@ -199,8 +199,8 @@
                             <i class="bi bi-eye"></i>
                         </div>
                         <div class="timeline-content">
-                            <h5>Revisión en Proceso</h5>
-                            <p>Analizaremos tu solicitud y la información de tu empresa en las próximas 24 horas.</p>
+                            <h5>{% translate "Revisión en Proceso" %}</h5>
+                            <p>{% translate "Analizaremos tu solicitud y la información de tu empresa en las próximas 24 horas." %}</p>
                         </div>
                     </div>
                     
@@ -209,8 +209,8 @@
                             <i class="bi bi-telephone"></i>
                         </div>
                         <div class="timeline-content">
-                            <h5>Contacto Próximo</h5>
-                            <p>Te contactaremos por correo o teléfono para conocer mejor tus necesidades.</p>
+                            <h5>{% translate "Contacto Próximo" %}</h5>
+                            <p>{% translate "Te contactaremos por correo o teléfono para conocer mejor tus necesidades." %}</p>
                         </div>
                     </div>
                     
@@ -219,8 +219,8 @@
                             <i class="bi bi-rocket"></i>
                         </div>
                         <div class="timeline-content">
-                            <h5>Propuesta Personalizada</h5>
-                            <p>Recibirás una propuesta adaptada específicamente a tu empresa y proyecto.</p>
+                            <h5>{% translate "Propuesta Personalizada" %}</h5>
+                            <p>{% translate "Recibirás una propuesta adaptada específicamente a tu empresa y proyecto." %}</p>
                         </div>
                     </div>
                 </div>
@@ -228,15 +228,14 @@
                 <div class="contact-info">
                     <h5>
                         <i class="bi bi-info-circle me-2"></i>
-                        ¿Necesitas contacto inmediato?
+                        {% translate "¿Necesitas contacto inmediato?" %}
                     </h5>
                     <p class="mb-2">
-                        <strong>Tiempo de respuesta:</strong> Menos de 24 horas en días laborables
+                        <strong>{% translate "Tiempo de respuesta:" %}</strong> {% translate "Menos de 24 horas en días laborables" %}
                     </p>
                     <p class="mb-0">
                         <small class="text-muted">
-                            Si tu proyecto es urgente, asegúrate de mencionarlo en el mensaje que enviaste. 
-                            Priorizamos las solicitudes urgentes.
+                            {% translate "Si tu proyecto es urgente, asegúrate de mencionarlo en el mensaje que enviaste. Priorizamos las solicitudes urgentes." %}
                         </small>
                     </p>
                 </div>
@@ -244,7 +243,7 @@
                 <div class="mt-4">
                     <button onclick="window.close()" class="btn btn-outline-success btn-lg">
                         <i class="bi bi-check-lg me-2"></i>
-                        Cerrar Ventana
+                        {% translate "Cerrar Ventana" %}
                     </button>
                 </div>
             </div>

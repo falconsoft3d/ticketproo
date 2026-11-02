@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -8,16 +9,16 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <nav aria-label="breadcrumb">
+                <nav aria-label="{% translate 'breadcrumb' %}">
                     <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="{% url 'crm_dashboard' %}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'course_list' %}">Cursos</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'crm_dashboard' %}">{% translate "Dashboard" %}</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'course_list' %}">{% translate "Cursos" %}</a></li>
                         <li class="breadcrumb-item"><a href="{% url 'course_detail' course.pk %}">{{ course.title }}</a></li>
-                        <li class="breadcrumb-item active">Generar Token de Registro</li>
+                        <li class="breadcrumb-item active">{% translate "Generar Token de Registro" %}</li>
                     </ol>
                 </nav>
                 <h1 class="h3 mb-0">
-                    <i class="bi bi-person-plus"></i> Generar Token de Registro
+                    <i class="bi bi-person-plus"></i> {% translate "Generar Token de Registro" %}
                 </h1>
                 <p class="text-muted">Para: {{ course.title }}</p>
             </div>
@@ -30,15 +31,14 @@
         <div class="card">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">
-                    <i class="bi bi-link-45deg"></i> Configuración del Token de Registro
+                    <i class="bi bi-link-45deg"></i> {% translate "Configuración del Token de Registro" %}
                 </h5>
             </div>
             <div class="card-body">
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle"></i>
-                    <strong>¿Qué es un token de registro?</strong><br>
-                    Un token de registro es un enlace único que permite a usuarios externos registrarse específicamente para tomar este curso.
-                    Puedes compartir este enlace y los usuarios podrán crear una cuenta y acceder directamente al curso.
+                    <strong>{% translate "¿Qué es un token de registro?" %}</strong><br>
+                    {% translate "Un token de registro es un enlace único que permite a usuarios externos registrarse específicamente para tomar este curso. Puedes compartir este enlace y los usuarios podrán crear una cuenta y acceder directamente al curso." %}
                 </div>
 
                 <form method="post">
@@ -48,7 +48,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="expires_in_days" class="form-label">
-                                    <i class="bi bi-calendar-event"></i> Días hasta expiración
+                                    <i class="bi bi-calendar-event"></i> {% translate "Días hasta expiración" %}
                                 </label>
                                 <input type="number" 
                                        class="form-control" 
@@ -58,7 +58,7 @@
                                        max="365"
                                        placeholder="30">
                                 <div class="form-text">
-                                    Dejar vacío para que no expire nunca
+                                    {% translate "Dejar vacío para que no expire nunca" %}
                                 </div>
                             </div>
                         </div>
@@ -66,7 +66,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="max_registrations" class="form-label">
-                                    <i class="bi bi-people"></i> Máximo de registros
+                                    <i class="bi bi-people"></i> {% translate "Máximo de registros" %}
                                 </label>
                                 <input type="number" 
                                        class="form-control" 
@@ -75,7 +75,7 @@
                                        min="1" 
                                        placeholder="100">
                                 <div class="form-text">
-                                    Dejar vacío para registros ilimitados
+                                    {% translate "Dejar vacío para registros ilimitados" %}
                                 </div>
                             </div>
                         </div>
@@ -83,10 +83,10 @@
                     
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Generar Token
+                            <i class="bi bi-plus-circle"></i> {% translate "Generar Token" %}
                         </button>
                         <a href="{% url 'course_detail' course.pk %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left"></i> Cancelar
+                            <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                         </a>
                     </div>
                 </form>
@@ -98,26 +98,26 @@
         <div class="card">
             <div class="card-header bg-light">
                 <h6 class="mb-0">
-                    <i class="bi bi-lightbulb"></i> Consejos
+                    <i class="bi bi-lightbulb"></i> {% translate "Consejos" %}
                 </h6>
             </div>
             <div class="card-body">
                 <ul class="list-unstyled mb-0">
                     <li class="mb-2">
                         <i class="bi bi-check-circle text-success"></i>
-                        <small>Los usuarios registrados podrán acceder inmediatamente al curso</small>
+                        <small>{% translate "Los usuarios registrados podrán acceder inmediatamente al curso" %}</small>
                     </li>
                     <li class="mb-2">
                         <i class="bi bi-check-circle text-success"></i>
-                        <small>Puedes generar múltiples tokens con diferentes configuraciones</small>
+                        <small>{% translate "Puedes generar múltiples tokens con diferentes configuraciones" %}</small>
                     </li>
                     <li class="mb-2">
                         <i class="bi bi-check-circle text-success"></i>
-                        <small>Los tokens pueden ser desactivados en cualquier momento</small>
+                        <small>{% translate "Los tokens pueden ser desactivados en cualquier momento" %}</small>
                     </li>
                     <li class="mb-0">
                         <i class="bi bi-check-circle text-success"></i>
-                        <small>Se pueden establecer límites de tiempo y cantidad</small>
+                        <small>{% translate "Se pueden establecer límites de tiempo y cantidad" %}</small>
                     </li>
                 </ul>
             </div>

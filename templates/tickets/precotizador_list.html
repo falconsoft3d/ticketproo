@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Precotizadores{% endblock %}
+{% block title %}{% translate "Precotizadores" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -10,10 +11,10 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-calculator"></i> Precotizadores con IA
+                        <i class="bi bi-calculator"></i> {% translate "Precotizadores con IA" %}
                     </h5>
                     <a href="{% url 'precotizador_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Crear Precotizador
+                        <i class="bi bi-plus-circle"></i> {% translate "Crear Precotizador" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -22,13 +23,13 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Título</th>
-                                        <th>Cliente</th>
-                                        <th>Tarifa/Hora</th>
-                                        <th>Ejemplos</th>
-                                        <th>Cotizaciones</th>
-                                        <th>Creado</th>
-                                        <th>Acciones</th>
+                                        <th>{% translate "Título" %}</th>
+                                        <th>{% translate "Cliente" %}</th>
+                                        <th>{% translate "Tarifa/Hora" %}</th>
+                                        <th>{% translate "Ejemplos" %}</th>
+                                        <th>{% translate "Cotizaciones" %}</th>
+                                        <th>{% translate "Creado" %}</th>
+                                        <th>{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -64,22 +65,22 @@
                                             <div class="btn-group" role="group">
                                                 <a href="{% url 'precotizador_detail' precotizador.pk %}" 
                                                    class="btn btn-outline-primary btn-sm" 
-                                                   title="Ver detalles">
+                                                   title="{% translate 'Ver detalles' %}">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
                                                 <a href="{% url 'precotizador_quote' precotizador.pk %}" 
                                                    class="btn btn-outline-success btn-sm" 
-                                                   title="Generar cotización">
+                                                   title="{% translate 'Generar cotización' %}">
                                                     <i class="bi bi-cpu"></i>
                                                 </a>
                                                 <a href="{% url 'precotizador_edit' precotizador.pk %}" 
                                                    class="btn btn-outline-secondary btn-sm" 
-                                                   title="Editar">
+                                                   title="{% translate 'Editar' %}">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
                                                 <a href="{% url 'precotizador_delete' precotizador.pk %}" 
                                                    class="btn btn-outline-danger btn-sm" 
-                                                   title="Eliminar">
+                                                   title="{% translate 'Eliminar' %}">
                                                     <i class="bi bi-trash"></i>
                                                 </a>
                                             </div>
@@ -94,10 +95,10 @@
                             <div class="mb-4">
                                 <i class="bi bi-calculator display-1 text-muted"></i>
                             </div>
-                            <h3 class="text-muted">No hay precotizadores creados</h3>
-                            <p class="text-muted">Crea tu primer precotizador para comenzar a generar estimaciones con IA.</p>
+                            <h3 class="text-muted">{% translate "No hay precotizadores creados" %}</h3>
+                            <p class="text-muted">{% translate "Crea tu primer precotizador para comenzar a generar estimaciones con IA." %}</p>
                             <a href="{% url 'precotizador_create' %}" class="btn btn-primary">
-                                <i class="bi bi-plus-circle"></i> Crear Primer Precotizador
+                                <i class="bi bi-plus-circle"></i> {% translate "Crear Primer Precotizador" %}
                             </a>
                         </div>
                     {% endif %}

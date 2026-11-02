@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -53,14 +54,14 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h1 class="h3 mb-0">📋 {{ page_title }}</h1>
-                    <p class="text-muted">Vista detallada de todas las visitas registradas</p>
+                    <p class="text-muted">{% translate "Vista detallada de todas las visitas registradas" %}</p>
                 </div>
                 <div>
                     <a href="{% url 'page_visits_analytics' %}" class="btn btn-outline-primary me-2">
-                        <i class="fas fa-chart-bar"></i> Ver Analytics
+                        <i class="fas fa-chart-bar"></i> {% translate "Ver Analytics" %}
                     </a>
                     <a href="{% url 'page_visits_export' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-success">
-                        <i class="fas fa-download"></i> Exportar CSV
+                        <i class="fas fa-download"></i> {% translate "Exportar CSV" %}
                     </a>
                 </div>
             </div>
@@ -71,30 +72,30 @@
     <div class="filter-card">
         <form method="get" class="row g-3">
             <div class="col-md-2">
-                <label class="form-label">Buscar</label>
-                <input type="text" class="form-control" name="search" value="{{ search }}" placeholder="IP, URL, título...">
+                <label class="form-label">{% translate "Buscar" %}</label>
+                <input type="text" class="form-control" name="search" value="{{ search }}" placeholder="{% translate 'IP, URL, título...' %}">
             </div>
             <div class="col-md-2">
-                <label class="form-label">Fecha Desde</label>
+                <label class="form-label">{% translate "Fecha Desde" %}</label>
                 <input type="date" class="form-control" name="fecha_desde" value="{{ fecha_desde }}">
             </div>
             <div class="col-md-2">
-                <label class="form-label">Fecha Hasta</label>
+                <label class="form-label">{% translate "Fecha Hasta" %}</label>
                 <input type="date" class="form-control" name="fecha_hasta" value="{{ fecha_hasta }}">
             </div>
             <div class="col-md-2">
-                <label class="form-label">Tipo de Página</label>
+                <label class="form-label">{% translate "Tipo de Página" %}</label>
                 <select class="form-select" name="page_type">
-                    <option value="">Todas</option>
+                    <option value="">{% translate "Todas" %}</option>
                     {% for value, label in page_types %}
                         <option value="{{ value }}" {% if page_type == value %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label">País</label>
+                <label class="form-label">{% translate "País" %}</label>
                 <select class="form-select" name="country">
-                    <option value="">Todos</option>
+                    <option value="">{% translate "Todos" %}</option>
                     {% for country in countries %}
                         <option value="{{ country.country_code }}" {% if country == country.country_code %}selected{% endif %}>
                             {{ country.country }}
@@ -103,23 +104,23 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label">Dispositivo</label>
+                <label class="form-label">{% translate "Dispositivo" %}</label>
                 <select class="form-select" name="is_mobile">
-                    <option value="">Todos</option>
-                    <option value="true" {% if is_mobile == 'true' %}selected{% endif %}>Móvil</option>
-                    <option value="false" {% if is_mobile == 'false' %}selected{% endif %}>Desktop</option>
+                    <option value="">{% translate "Todos" %}</option>
+                    <option value="true" {% if is_mobile == 'true' %}selected{% endif %}>{% translate "Móvil" %}</option>
+                    <option value="false" {% if is_mobile == 'false' %}selected{% endif %}>{% translate "Desktop" %}</option>
                 </select>
             </div>
             <div class="col-md-6">
                 <div class="form-check mt-4">
                     <input class="form-check-input" type="checkbox" name="exclude_bots" value="true" {% if exclude_bots %}checked{% endif %}>
-                    <label class="form-check-label">Excluir bots</label>
+                    <label class="form-check-label">{% translate "Excluir bots" %}</label>
                 </div>
             </div>
             <div class="col-md-6">
                 <label class="form-label">&nbsp;</label>
                 <button type="submit" class="btn btn-primary w-100">
-                    <i class="fas fa-filter"></i> Filtrar
+                    <i class="fas fa-filter"></i> {% translate "Filtrar" %}
                 </button>
             </div>
         </form>
@@ -144,15 +145,15 @@
         <table class="table table-hover table-striped">
             <thead class="table-dark">
                 <tr>
-                    <th>Fecha/Hora</th>
-                    <th>Página</th>
-                    <th>Título</th>
+                    <th>{% translate "Fecha/Hora" %}</th>
+                    <th>{% translate "Página" %}</th>
+                    <th>{% translate "Título" %}</th>
                     <th>IP</th>
-                    <th>Ubicación</th>
-                    <th>Navegador</th>
+                    <th>{% translate "Ubicación" %}</th>
+                    <th>{% translate "Navegador" %}</th>
                     <th>SO</th>
-                    <th>Dispositivo</th>
-                    <th>Referrer</th>
+                    <th>{% translate "Dispositivo" %}</th>
+                    <th>{% translate "Referrer" %}</th>
                 </tr>
             </thead>
             <tbody>
@@ -165,14 +166,14 @@
                     <td>
                         <span class="badge badge-page-type bg-primary">{{ visit.get_page_type_display }}</span>
                         {% if visit.is_bot %}
-                            <br><span class="badge bg-warning">Bot</span>
+                            <br><span class="badge bg-warning">{% translate "Bot" %}</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if visit.page_title %}
                             <span title="{{ visit.page_title }}">{{ visit.page_title|truncatechars:30 }}</span>
                         {% else %}
-                            <span class="text-muted">Sin título</span>
+                            <span class="text-muted">{% translate "Sin título" %}</span>
                         {% endif %}
                         <br>
                         <small class="text-muted" title="{{ visit.page_url }}">{{ visit.page_url|truncatechars:40 }}</small>
@@ -187,7 +188,7 @@
                                 {{ visit.city|default:visit.country|truncatechars:15 }}
                             </span>
                         {% else %}
-                            <span class="text-muted">Desconocida</span>
+                            <span class="text-muted">{% translate "Desconocida" %}</span>
                         {% endif %}
                     </td>
                     <td>
@@ -198,16 +199,16 @@
                     </td>
                     <td class="text-center">
                         {% if visit.is_mobile %}
-                            <i class="fas fa-mobile text-success" title="Móvil"></i>
+                            <i class="fas fa-mobile text-success" title="{% translate 'Móvil' %}"></i>
                         {% else %}
-                            <i class="fas fa-desktop text-primary" title="Desktop"></i>
+                            <i class="fas fa-desktop text-primary" title="{% translate 'Desktop' %}"></i>
                         {% endif %}
                     </td>
                     <td>
                         {% if visit.referrer %}
                             <small title="{{ visit.referrer }}">{{ visit.referrer|truncatechars:25 }}</small>
                         {% else %}
-                            <span class="text-muted">Directo</span>
+                            <span class="text-muted">{% translate "Directo" %}</span>
                         {% endif %}
                         
                         {% if visit.utm_source or visit.utm_medium or visit.utm_campaign %}
@@ -231,7 +232,7 @@
                     <td colspan="9" class="text-center py-4">
                         <div class="text-muted">
                             <i class="fas fa-inbox fa-3x mb-3"></i>
-                            <p>No se encontraron visitas con los filtros aplicados.</p>
+                            <p>{% translate "No se encontraron visitas con los filtros aplicados." %}</p>
                         </div>
                     </td>
                 </tr>
@@ -242,14 +243,14 @@
 
     <!-- Paginación -->
     {% if page_obj.has_other_pages %}
-    <nav aria-label="Paginación de visitas">
+    <nav aria-label="{% translate 'Paginación de visitas' %}">
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page=1">Primera</a>
+                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page=1">{% translate "Primera" %}</a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}">Anterior</a>
+                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}">{% translate "Anterior" %}</a>
                 </li>
             {% endif %}
             
@@ -267,10 +268,10 @@
             
             {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.next_page_number }}">Siguiente</a>
+                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.next_page_number }}">{% translate "Siguiente" %}</a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.paginator.num_pages }}">Última</a>
+                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.paginator.num_pages }}">{% translate "Última" %}</a>
                 </li>
             {% endif %}
         </ul>

@@ -1,7 +1,8 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}Enviar Grabación - TicketProo{% endblock %}
+{% block title %}{% translate "Enviar Grabación - TicketProo" %}{% endblock %}
 
 {% block content %}
 <!-- Toast de confirmación -->
@@ -9,11 +10,11 @@
     <div id="uploadSuccessToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="toast-header bg-success text-white">
             <i class="bi bi-check-circle-fill me-2"></i>
-            <strong class="me-auto">¡Grabación Enviada!</strong>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            <strong class="me-auto">{% translate "¡Grabación Enviada!" %}</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="{% translate 'Close' %}"></button>
         </div>
         <div class="toast-body bg-light">
-            <span id="toastMessage">Grabación enviada exitosamente.</span>
+            <span id="toastMessage">{% translate "Grabación enviada exitosamente." %}</span>
         </div>
     </div>
 </div>
@@ -22,29 +23,29 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="text-center mb-4">
-                <h2><i class="bi bi-mic-fill text-primary"></i> Enviar Grabación</h2>
-                <p class="text-muted">Graba directamente desde tu navegador y comparte tu mensaje</p>
+                <h2><i class="bi bi-mic-fill text-primary"></i> {% translate "Enviar Grabación" %}</h2>
+                <p class="text-muted">{% translate "Graba directamente desde tu navegador y comparte tu mensaje" %}</p>
             </div>
             
             <!-- Controles de grabación -->
             <div class="card shadow mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-mic"></i> Control de Grabación</h5>
+                    <h5 class="mb-0"><i class="bi bi-mic"></i> {% translate "Control de Grabación" %}</h5>
                 </div>
                 <div class="card-body text-center">
                     <div id="recording-status" class="mb-3">
-                        <span class="badge bg-secondary">Listo para grabar</span>
+                        <span class="badge bg-secondary">{% translate "Listo para grabar" %}</span>
                     </div>
                     
                     <div class="btn-group mb-3" role="group">
                         <button type="button" id="start-recording" class="btn btn-danger">
-                            <i class="bi bi-record-circle"></i> Iniciar Grabación
+                            <i class="bi bi-record-circle"></i> {% translate "Iniciar Grabación" %}
                         </button>
                         <button type="button" id="stop-recording" class="btn btn-secondary" disabled>
-                            <i class="bi bi-stop-circle"></i> Detener
+                            <i class="bi bi-stop-circle"></i> {% translate "Detener" %}
                         </button>
                         <button type="button" id="play-recording" class="btn btn-primary" disabled>
-                            <i class="bi bi-play-circle"></i> Reproducir
+                            <i class="bi bi-play-circle"></i> {% translate "Reproducir" %}
                         </button>
                     </div>
                     
@@ -59,8 +60,7 @@
                     <div id="recording-info" class="mt-3" style="display: none;">
                         <small class="text-muted">
                             <i class="bi bi-info-circle"></i> 
-                            Duración: <span id="duration-display">00:00</span> | 
-                            Tamaño: <span id="size-display">0 KB</span>
+                            {% translate "Duración:" %} <span id="duration-display">00:00</span> {% translate "| Tamaño:" %} <span id="size-display">{% translate "0 KB" %}</span>
                         </small>
                     </div>
                 </div>
@@ -83,7 +83,7 @@
                         
                         <div class="d-grid mt-4">
                             <button type="submit" class="btn btn-primary btn-lg" id="submit-btn" disabled>
-                                <i class="bi bi-send"></i> Enviar Grabación
+                                <i class="bi bi-send"></i> {% translate "Enviar Grabación" %}
                             </button>
                         </div>
                     </form>
@@ -95,22 +95,22 @@
                 <div class="col-md-4">
                     <div class="text-center">
                         <i class="bi bi-mic-fill display-4 text-primary"></i>
-                        <h5 class="mt-3">Fácil de Usar</h5>
-                        <p class="text-muted small">Solo necesita un navegador web con micrófono</p>
+                        <h5 class="mt-3">{% translate "Fácil de Usar" %}</h5>
+                        <p class="text-muted small">{% translate "Solo necesita un navegador web con micrófono" %}</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="text-center">
                         <i class="bi bi-robot display-4 text-success"></i>
-                        <h5 class="mt-3">Transcripción Automática</h5>
-                        <p class="text-muted small">Su mensaje será transcrito automáticamente</p>
+                        <h5 class="mt-3">{% translate "Transcripción Automática" %}</h5>
+                        <p class="text-muted small">{% translate "Su mensaje será transcrito automáticamente" %}</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="text-center">
                         <i class="bi bi-shield-check display-4 text-info"></i>
-                        <h5 class="mt-3">Privado y Seguro</h5>
-                        <p class="text-muted small">Sus grabaciones están protegidas</p>
+                        <h5 class="mt-3">{% translate "Privado y Seguro" %}</h5>
+                        <p class="text-muted small">{% translate "Sus grabaciones están protegidas" %}</p>
                     </div>
                 </div>
             </div>
@@ -118,43 +118,41 @@
             <!-- Información técnica -->
             <div class="card mt-4">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información importante</h6>
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> {% translate "Información importante" %}</h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Características de grabación:</h6>
+                            <h6>{% translate "Características de grabación:" %}</h6>
                             <ul class="small">
-                                <li><strong>Formato:</strong> WebM con codec Opus</li>
-                                <li><strong>Calidad:</strong> Alta fidelidad</li>
-                                <li><strong>Compatibilidad:</strong> Navegadores modernos</li>
-                                <li><strong>Tiempo máximo:</strong> Sin límite técnico</li>
-                                <li><strong>Visualización:</strong> En tiempo real</li>
+                                <li><strong>{% translate "Formato:" %}</strong> {% translate "WebM con codec Opus" %}</li>
+                                <li><strong>{% translate "Calidad:" %}</strong> {% translate "Alta fidelidad" %}</li>
+                                <li><strong>{% translate "Compatibilidad:" %}</strong> {% translate "Navegadores modernos" %}</li>
+                                <li><strong>{% translate "Tiempo máximo:" %}</strong> {% translate "Sin límite técnico" %}</li>
+                                <li><strong>{% translate "Visualización:" %}</strong> {% translate "En tiempo real" %}</li>
                             </ul>
                         </div>
                         <div class="col-md-6">
-                            <h6>Proceso de envío:</h6>
+                            <h6>{% translate "Proceso de envío:" %}</h6>
                             <ul class="small">
-                                <li>Grabación directa desde el navegador</li>
-                                <li>Previsualización antes del envío</li>
-                                <li>Transcripción automática</li>
-                                <li>Confirmación por email</li>
-                                <li>Procesamiento seguro</li>
-                                <li>Notificación al equipo</li>
+                                <li>{% translate "Grabación directa desde el navegador" %}</li>
+                                <li>{% translate "Previsualización antes del envío" %}</li>
+                                <li>{% translate "Transcripción automática" %}</li>
+                                <li>{% translate "Confirmación por email" %}</li>
+                                <li>{% translate "Procesamiento seguro" %}</li>
+                                <li>{% translate "Notificación al equipo" %}</li>
                             </ul>
                         </div>
                     </div>
                     
                     <div class="alert alert-primary mt-3">
                         <i class="bi bi-lightbulb"></i>
-                        <strong>Consejo:</strong> Para mejores resultados, asegúrese de estar en un ambiente silencioso
-                        y hable claramente hacia el micrófono. La transcripción se procesará automáticamente.
+                        <strong>{% translate "Consejo:" %}</strong> {% translate "Para mejores resultados, asegúrese de estar en un ambiente silencioso y hable claramente hacia el micrófono. La transcripción se procesará automáticamente." %}
                     </div>
                     
                     <div class="alert alert-info mt-2">
                         <i class="bi bi-shield-check"></i>
-                        <strong>Privacidad:</strong> Su grabación solo será escuchada por el personal autorizado
-                        y será tratada con total confidencialidad.
+                        <strong>{% translate "Privacidad:" %}</strong> {% translate "Su grabación solo será escuchada por el personal autorizado y será tratada con total confidencialidad." %}
                     </div>
                 </div>
             </div>

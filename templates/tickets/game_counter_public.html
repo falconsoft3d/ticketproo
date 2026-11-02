@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -270,15 +271,15 @@
         <div class="game-controls">
             {% if game.status == 'pending' %}
                 <button class="btn-start" onclick="startGame()">
-                    <i class="bi bi-play-circle"></i> Iniciar Juego
+                    <i class="bi bi-play-circle"></i> {% translate "Iniciar Juego" %}
                 </button>
             {% elif game.status == 'in_progress' %}
                 <button class="btn-finish" onclick="finishGame()">
-                    <i class="bi bi-stop-circle"></i> Finalizar Juego
+                    <i class="bi bi-stop-circle"></i> {% translate "Finalizar Juego" %}
                 </button>
             {% elif game.status == 'finished' %}
                 <button class="btn-clone" onclick="cloneGame()">
-                    <i class="bi bi-files"></i> Clonar Juego
+                    <i class="bi bi-files"></i> {% translate "Clonar Juego" %}
                 </button>
             {% endif %}
         </div>
@@ -286,11 +287,11 @@
         <div class="game-status">
             <span class="status-badge status-{{ game.status }}" id="statusBadge">
                 {% if game.status == 'pending' %}
-                    ⏸️ Pendiente
+                    {% translate "⏸️ Pendiente" %}
                 {% elif game.status == 'in_progress' %}
-                    ▶️ En Progreso
+                    {% translate "▶️ En Progreso" %}
                 {% else %}
-                    ⏹️ Finalizado
+                    {% translate "⏹️ Finalizado" %}
                 {% endif %}
             </span>
         </div>
@@ -311,7 +312,7 @@
                 <div class="player-score" id="player1Score">{{ game.player1_score }}</div>
                 {% if game.status == 'in_progress' %}
                 <div class="tap-hint">
-                    <i class="bi bi-hand-index-thumb"></i> Toca para sumar punto
+                    <i class="bi bi-hand-index-thumb"></i> {% translate "Toca para sumar punto" %}
                 </div>
                 {% endif %}
             </div>
@@ -323,7 +324,7 @@
             <div class="player-content">
                 {% if game.status == 'in_progress' %}
                 <div class="tap-hint">
-                    <i class="bi bi-hand-index-thumb"></i> Toca para sumar punto
+                    <i class="bi bi-hand-index-thumb"></i> {% translate "Toca para sumar punto" %}
                 </div>
                 {% endif %}
                 <div class="player-score" id="player2Score">{{ game.player2_score }}</div>
@@ -336,7 +337,7 @@
     <div class="winner-overlay" id="winnerOverlay">
         <div class="winner-content">
             <div class="trophy">🏆</div>
-            <h1>¡Ganador!</h1>
+            <h1>{% translate "¡Ganador!" %}</h1>
             <h2 id="winnerName"></h2>
             <p id="finalScore"></p>
         </div>

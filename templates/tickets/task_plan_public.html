@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -160,13 +161,13 @@
 
                                     <div class="d-flex gap-1 flex-wrap">
                                         {% if task.priority == 'critical' %}
-                                            <span class="badge bg-danger">Crítica</span>
+                                            <span class="badge bg-danger">{% translate "Crítica" %}</span>
                                         {% elif task.priority == 'high' %}
-                                            <span class="badge bg-warning text-dark">Alta</span>
+                                            <span class="badge bg-warning text-dark">{% translate "Alta" %}</span>
                                         {% elif task.priority == 'medium' %}
-                                            <span class="badge bg-info">Media</span>
+                                            <span class="badge bg-info">{% translate "Media" %}</span>
                                         {% else %}
-                                            <span class="badge bg-secondary">Baja</span>
+                                            <span class="badge bg-secondary">{% translate "Baja" %}</span>
                                         {% endif %}
 
                                         {% if task.estimated_hours %}
@@ -177,7 +178,7 @@
 
                                         {% if task.is_completed and task.completed_at %}
                                         <span class="badge bg-success">
-                                            <i class="bi bi-check"></i> Completada
+                                            <i class="bi bi-check"></i> {% translate "Completada" %}
                                         </span>
                                         {% endif %}
                                     </div>
@@ -188,7 +189,7 @@
                     {% else %}
                         <div class="text-center text-muted py-5">
                             <i class="bi bi-inbox fs-1"></i>
-                            <p class="mb-0 mt-2">Sin tareas asignadas</p>
+                            <p class="mb-0 mt-2">{% translate "Sin tareas asignadas" %}</p>
                         </div>
                     {% endif %}
                 </div>
@@ -199,7 +200,7 @@
         <div class="header-card">
             <div class="text-center py-5">
                 <i class="bi bi-calendar-x fs-1 text-muted"></i>
-                <h4 class="text-muted mt-3">No hay días en esta planificación</h4>
+                <h4 class="text-muted mt-3">{% translate "No hay días en esta planificación" %}</h4>
             </div>
         </div>
         {% endif %}
@@ -210,8 +211,8 @@
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                    <h5 class="modal-title" id="dayModalLabel"><i class="bi bi-calendar-day"></i> Día</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="dayModalLabel"><i class="bi bi-calendar-day"></i> {% translate "Día" %}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
                 </div>
                 <div class="modal-body" id="dayModalBody" style="min-height: 400px;">
                 </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block extra_css %}
@@ -61,14 +62,14 @@
                         <h2 class="mb-0">{{ employee.get_full_name }}</h2>
                         <h4 class="mb-2 opacity-75">{{ employee.position }}</h4>
                         <span class="badge bg-light text-success status-badge-large">
-                            <i class="bi bi-check-circle"></i> Empleado Activo
+                            <i class="bi bi-check-circle"></i> {% translate "Empleado Activo" %}
                         </span>
                     </div>
                 </div>
             </div>
             <div class="col-md-4 text-end">
                 <a href="{% url 'active_employee_list' %}" class="btn btn-light">
-                    <i class="bi bi-arrow-left"></i> Volver a Empleados
+                    <i class="bi bi-arrow-left"></i> {% translate "Volver a Empleados" %}
                 </a>
             </div>
         </div>
@@ -78,10 +79,10 @@
         <!-- Información de Contacto -->
         <div class="col-lg-4">
             <div class="contact-info mb-4">
-                <h5><i class="bi bi-person-lines-fill"></i> Información de Contacto</h5>
+                <h5><i class="bi bi-person-lines-fill"></i> {% translate "Información de Contacto" %}</h5>
                 
                 <div class="mb-3">
-                    <label class="form-label"><strong>Email:</strong></label>
+                    <label class="form-label"><strong>{% translate "Email:" %}</strong></label>
                     <div class="d-flex align-items-center">
                         <a href="mailto:{{ employee.email }}" class="text-decoration-none me-2">
                             {{ employee.email }}
@@ -94,7 +95,7 @@
                 
                 {% if employee.phone %}
                 <div class="mb-3">
-                    <label class="form-label"><strong>Teléfono:</strong></label>
+                    <label class="form-label"><strong>{% translate "Teléfono:" %}</strong></label>
                     <div class="d-flex align-items-center">
                         <a href="tel:{{ employee.phone }}" class="text-decoration-none me-2">
                             {{ employee.phone }}
@@ -107,12 +108,12 @@
                 {% endif %}
                 
                 <div class="mb-3">
-                    <label class="form-label"><strong>Fecha de Contratación:</strong></label>
+                    <label class="form-label"><strong>{% translate "Fecha de Contratación:" %}</strong></label>
                     <div>{{ employee.created_at|date:"d/m/Y" }}</div>
                 </div>
                 
                 <div class="mb-3">
-                    <label class="form-label"><strong>Última Actualización:</strong></label>
+                    <label class="form-label"><strong>{% translate "Última Actualización:" %}</strong></label>
                     <div>{{ employee.updated_at|date:"d/m/Y H:i" }}</div>
                 </div>
             </div>
@@ -120,22 +121,22 @@
             <!-- Información Salarial -->
             {% if employee.salary_euros %}
             <div class="info-card mb-4 text-center">
-                <h5><i class="bi bi-currency-euro"></i> Salario</h5>
+                <h5><i class="bi bi-currency-euro"></i> {% translate "Salario" %}</h5>
                 <div class="salary-highlight">
                     €{{ employee.salary_euros|floatformat:0 }}
                 </div>
-                <small class="text-muted">Salario anual</small>
+                <small class="text-muted">{% translate "Salario anual" %}</small>
                 
                 <hr>
                 
                 <div class="row text-center">
                     <div class="col-6">
                         <strong id="monthly-salary">€0</strong>
-                        <br><small class="text-muted">Mensual</small>
+                        <br><small class="text-muted">{% translate "Mensual" %}</small>
                     </div>
                     <div class="col-6">
                         <strong id="daily-salary">€0</strong>
-                        <br><small class="text-muted">Diario</small>
+                        <br><small class="text-muted">{% translate "Diario" %}</small>
                     </div>
                 </div>
                 
@@ -153,17 +154,17 @@
 
             <!-- Acciones Rápidas -->
             <div class="info-card mb-4">
-                <h5><i class="bi bi-gear"></i> Acciones Rápidas</h5>
+                <h5><i class="bi bi-gear"></i> {% translate "Acciones Rápidas" %}</h5>
                 <div class="d-grid gap-2">
                     <a href="{% url 'employee_payroll_list' employee.pk %}" class="btn btn-success">
-                        <i class="bi bi-receipt-cutoff"></i> Gestionar Nóminas
+                        <i class="bi bi-receipt-cutoff"></i> {% translate "Gestionar Nóminas" %}
                     </a>
                     <a href="{% url 'employee_edit_hiring_opinion' employee.pk %}" class="btn btn-outline-primary">
-                        <i class="bi bi-chat-square-text"></i> Opinión de Contratación
+                        <i class="bi bi-chat-square-text"></i> {% translate "Opinión de Contratación" %}
                     </a>
                     {% if employee.resume_file %}
                     <a href="{{ employee.resume_file.url }}" target="_blank" class="btn btn-outline-secondary">
-                        <i class="bi bi-file-pdf"></i> Descargar CV
+                        <i class="bi bi-file-pdf"></i> {% translate "Descargar CV" %}
                     </a>
                     {% endif %}
                 </div>
@@ -172,7 +173,7 @@
             <!-- Evaluación IA -->
             {% if employee.ai_score %}
             <div class="info-card mb-4 text-center">
-                <h5><i class="bi bi-robot"></i> Evaluación Inicial</h5>
+                <h5><i class="bi bi-robot"></i> {% translate "Evaluación Inicial" %}</h5>
                 <div class="mb-3">
                     {% if employee.ai_score >= 8 %}
                         <div class="badge bg-success fs-4 p-3">
@@ -188,25 +189,25 @@
                         </div>
                     {% endif %}
                 </div>
-                <small class="text-muted">Puntuación obtenida durante la selección</small>
+                <small class="text-muted">{% translate "Puntuación obtenida durante la selección" %}</small>
             </div>
             {% endif %}
 
             <!-- Acciones rápidas -->
             <div class="info-card">
-                <h5><i class="bi bi-tools"></i> Acciones Rápidas</h5>
+                <h5><i class="bi bi-tools"></i> {% translate "Acciones Rápidas" %}</h5>
                 <div class="d-grid gap-2">
                     <a href="mailto:{{ employee.email }}" class="btn btn-primary">
-                        <i class="bi bi-envelope"></i> Enviar Email
+                        <i class="bi bi-envelope"></i> {% translate "Enviar Email" %}
                     </a>
                     {% if employee.phone %}
                     <a href="tel:{{ employee.phone }}" class="btn btn-success">
-                        <i class="bi bi-telephone"></i> Llamar
+                        <i class="bi bi-telephone"></i> {% translate "Llamar" %}
                     </a>
                     {% endif %}
                     {% if employee.resume_file %}
                     <a href="{{ employee.resume_file.url }}" target="_blank" class="btn btn-outline-secondary">
-                        <i class="bi bi-file-pdf"></i> Ver Currículo
+                        <i class="bi bi-file-pdf"></i> {% translate "Ver Currículo" %}
                     </a>
                     {% endif %}
                 </div>
@@ -218,7 +219,7 @@
             {% if employee.description %}
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5><i class="bi bi-briefcase"></i> Experiencia y Perfil Profesional</h5>
+                    <h5><i class="bi bi-briefcase"></i> {% translate "Experiencia y Perfil Profesional" %}</h5>
                 </div>
                 <div class="card-body">
                     <div style="white-space: pre-wrap;">{{ employee.description }}</div>
@@ -230,12 +231,12 @@
             {% if employee.ai_analysis %}
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5><i class="bi bi-cpu"></i> Análisis de Selección (IA)</h5>
+                    <h5><i class="bi bi-cpu"></i> {% translate "Análisis de Selección (IA)" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i>
-                        Este análisis fue generado durante el proceso de selección del candidato.
+                        {% translate "Este análisis fue generado durante el proceso de selección del candidato." %}
                     </div>
                     <div style="white-space: pre-wrap;">{{ employee.ai_analysis }}</div>
                 </div>
@@ -246,9 +247,9 @@
             {% if employee.hiring_meeting_opinion %}
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5><i class="bi bi-chat-square-text"></i> Opinión de Reunión de Contratación</h5>
+                    <h5><i class="bi bi-chat-square-text"></i> {% translate "Opinión de Reunión de Contratación" %}</h5>
                     <a href="{% url 'employee_edit_hiring_opinion' employee.pk %}" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-pencil"></i> Editar
+                        <i class="bi bi-pencil"></i> {% translate "Editar" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -262,12 +263,12 @@
             <!-- Botón para agregar opinión si no existe -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5><i class="bi bi-chat-square-text"></i> Opinión de Reunión de Contratación</h5>
+                    <h5><i class="bi bi-chat-square-text"></i> {% translate "Opinión de Reunión de Contratación" %}</h5>
                 </div>
                 <div class="card-body text-center">
-                    <p class="text-muted mb-3">No hay opinión registrada para la reunión de contratación.</p>
+                    <p class="text-muted mb-3">{% translate "No hay opinión registrada para la reunión de contratación." %}</p>
                     <a href="{% url 'employee_edit_hiring_opinion' employee.pk %}" class="btn btn-outline-success">
-                        <i class="bi bi-plus-circle"></i> Agregar Opinión
+                        <i class="bi bi-plus-circle"></i> {% translate "Agregar Opinión" %}
                     </a>
                 </div>
             </div>
@@ -277,20 +278,20 @@
             {% if employee.resume_file %}
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5><i class="bi bi-file-earmark-pdf"></i> Documentación</h5>
+                    <h5><i class="bi bi-file-earmark-pdf"></i> {% translate "Documentación" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between p-3 border rounded">
                         <div class="d-flex align-items-center">
                             <i class="bi bi-file-pdf text-danger fs-2 me-3"></i>
                             <div>
-                                <h6 class="mb-0">Currículo del Empleado</h6>
+                                <h6 class="mb-0">{% translate "Currículo del Empleado" %}</h6>
                                 <small class="text-muted">{{ employee.resume_file.name|cut:"resumes/" }}</small>
                             </div>
                         </div>
                         <div>
                             <a href="{{ employee.resume_file.url }}" class="btn btn-primary" target="_blank">
-                                <i class="bi bi-download"></i> Descargar
+                                <i class="bi bi-download"></i> {% translate "Descargar" %}
                             </a>
                         </div>
                     </div>
@@ -301,16 +302,16 @@
             <!-- Historial del Empleado -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5><i class="bi bi-clock-history"></i> Historial</h5>
+                    <h5><i class="bi bi-clock-history"></i> {% translate "Historial" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="timeline">
                         <div class="timeline-item">
                             <div class="timeline-marker bg-success"></div>
                             <div class="timeline-content">
-                                <h6><i class="bi bi-check-circle text-success"></i> Empleado Contratado</h6>
+                                <h6><i class="bi bi-check-circle text-success"></i> {% translate "Empleado Contratado" %}</h6>
                                 <p class="text-muted mb-0">{{ employee.updated_at|date:"d/m/Y H:i" }}</p>
-                                <small>Se confirma la contratación del empleado</small>
+                                <small>{% translate "Se confirma la contratación del empleado" %}</small>
                             </div>
                         </div>
                         
@@ -318,9 +319,9 @@
                         <div class="timeline-item">
                             <div class="timeline-marker bg-info"></div>
                             <div class="timeline-content">
-                                <h6><i class="bi bi-robot text-info"></i> Evaluación IA Completada</h6>
+                                <h6><i class="bi bi-robot text-info"></i> {% translate "Evaluación IA Completada" %}</h6>
                                 <p class="text-muted mb-0">Puntuación: {{ employee.ai_score }}/10</p>
-                                <small>Análisis automático del perfil profesional</small>
+                                <small>{% translate "Análisis automático del perfil profesional" %}</small>
                             </div>
                         </div>
                         {% endif %}
@@ -328,9 +329,9 @@
                         <div class="timeline-item">
                             <div class="timeline-marker bg-primary"></div>
                             <div class="timeline-content">
-                                <h6><i class="bi bi-person-plus text-primary"></i> Aplicación Recibida</h6>
+                                <h6><i class="bi bi-person-plus text-primary"></i> {% translate "Aplicación Recibida" %}</h6>
                                 <p class="text-muted mb-0">{{ employee.created_at|date:"d/m/Y H:i" }}</p>
-                                <small>El candidato envió su aplicación inicial</small>
+                                <small>{% translate "El candidato envió su aplicación inicial" %}</small>
                             </div>
                         </div>
                     </div>

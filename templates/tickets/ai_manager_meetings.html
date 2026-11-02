@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -7,12 +8,12 @@
 <div class="container mt-4">
     <div class="row mb-4">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_list' %}">Gerentes IA</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_list' %}">{% translate "Gerentes IA" %}</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'ai_manager_detail' manager.pk %}">{{ manager.name }}</a></li>
-                    <li class="breadcrumb-item active">Reuniones</li>
+                    <li class="breadcrumb-item active">{% translate "Reuniones" %}</li>
                 </ol>
             </nav>
         </div>
@@ -28,7 +29,7 @@
         </div>
         <div class="col-lg-4 text-end">
             <a href="{% url 'ai_manager_meeting_create' manager.pk %}" class="btn btn-primary">
-                <i class="bi bi-calendar-plus"></i> Nueva Reunión
+                <i class="bi bi-calendar-plus"></i> {% translate "Nueva Reunión" %}
             </a>
         </div>
     </div>
@@ -39,7 +40,7 @@
             <div class="card shadow-sm border-0 text-center">
                 <div class="card-body">
                     <h3 class="text-primary mb-0">{{ stats.total_meetings }}</h3>
-                    <small class="text-muted">Total Reuniones</small>
+                    <small class="text-muted">{% translate "Total Reuniones" %}</small>
                 </div>
             </div>
         </div>
@@ -47,7 +48,7 @@
             <div class="card shadow-sm border-0 text-center">
                 <div class="card-body">
                     <h3 class="text-success mb-0">{{ stats.text_meetings }}</h3>
-                    <small class="text-muted">Por Texto</small>
+                    <small class="text-muted">{% translate "Por Texto" %}</small>
                 </div>
             </div>
         </div>
@@ -55,7 +56,7 @@
             <div class="card shadow-sm border-0 text-center">
                 <div class="card-body">
                     <h3 class="text-info mb-0">{{ stats.audio_meetings }}</h3>
-                    <small class="text-muted">Por Audio</small>
+                    <small class="text-muted">{% translate "Por Audio" %}</small>
                 </div>
             </div>
         </div>
@@ -63,7 +64,7 @@
             <div class="card shadow-sm border-0 text-center">
                 <div class="card-body">
                     <h3 class="text-warning mb-0">{{ stats.unique_users }}</h3>
-                    <small class="text-muted">Participantes</small>
+                    <small class="text-muted">{% translate "Participantes" %}</small>
                 </div>
             </div>
         </div>
@@ -74,23 +75,23 @@
         <div class="card-body">
             <form method="get" class="row g-3">
                 <div class="col-md-6">
-                    <label for="search" class="form-label">Buscar</label>
+                    <label for="search" class="form-label">{% translate "Buscar" %}</label>
                     <input type="text" class="form-control" id="search" name="search" 
-                           placeholder="Buscar por título o contenido..." 
+                           placeholder="{% translate 'Buscar por título o contenido...' %}" 
                            value="{{ request.GET.search }}">
                 </div>
                 <div class="col-md-3">
-                    <label for="input_type" class="form-label">Tipo de Entrada</label>
+                    <label for="input_type" class="form-label">{% translate "Tipo de Entrada" %}</label>
                     <select class="form-select" id="input_type" name="input_type">
-                        <option value="">Todos</option>
-                        <option value="text" {% if request.GET.input_type == 'text' %}selected{% endif %}>Texto</option>
-                        <option value="audio" {% if request.GET.input_type == 'audio' %}selected{% endif %}>Audio</option>
+                        <option value="">{% translate "Todos" %}</option>
+                        <option value="text" {% if request.GET.input_type == 'text' %}selected{% endif %}>{% translate "Texto" %}</option>
+                        <option value="audio" {% if request.GET.input_type == 'audio' %}selected{% endif %}>{% translate "Audio" %}</option>
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label for="user" class="form-label">Usuario</label>
+                    <label for="user" class="form-label">{% translate "Usuario" %}</label>
                     <select class="form-select" id="user" name="user">
-                        <option value="">Todos</option>
+                        <option value="">{% translate "Todos" %}</option>
                         {% for user in users %}
                         <option value="{{ user.id }}" {% if request.GET.user|stringformat:"s" == user.id|stringformat:"s" %}selected{% endif %}>
                             {{ user.get_full_name|default:user.username }}
@@ -100,10 +101,10 @@
                 </div>
                 <div class="col-12">
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-search"></i> Buscar
+                        <i class="bi bi-search"></i> {% translate "Buscar" %}
                     </button>
                     <a href="{% url 'ai_manager_meetings' manager.pk %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle"></i> Limpiar
+                        <i class="bi bi-x-circle"></i> {% translate "Limpiar" %}
                     </a>
                 </div>
             </form>
@@ -121,9 +122,9 @@
                             <h5 class="card-title mb-0">{{ meeting.title }}</h5>
                             <span class="badge {% if meeting.input_type == 'text' %}bg-primary{% else %}bg-info{% endif %}">
                                 {% if meeting.input_type == 'text' %}
-                                    <i class="bi bi-keyboard"></i> Texto
+                                    <i class="bi bi-keyboard"></i> {% translate "Texto" %}
                                 {% else %}
-                                    <i class="bi bi-mic"></i> Audio
+                                    <i class="bi bi-mic"></i> {% translate "Audio" %}
                                 {% endif %}
                             </span>
                         </div>
@@ -136,13 +137,13 @@
                         </div>
 
                         <p class="card-text text-muted small mb-3">
-                            <strong>Resumen:</strong> {{ meeting.ai_summary|truncatewords:25 }}
+                            <strong>{% translate "Resumen:" %}</strong> {{ meeting.ai_summary|truncatewords:25 }}
                         </p>
 
                         {% if meeting.improvement_areas %}
                         <div class="alert alert-warning alert-sm small mb-3">
                             <i class="bi bi-exclamation-triangle"></i> 
-                            <strong>Áreas de mejora identificadas</strong>
+                            <strong>{% translate "Áreas de mejora identificadas" %}</strong>
                         </div>
                         {% endif %}
 
@@ -151,7 +152,7 @@
                                 <i class="bi bi-coin"></i> {{ meeting.tokens_used }} tokens
                             </small>
                             <a href="{% url 'ai_manager_meeting_detail' meeting.pk %}" class="btn btn-sm btn-outline-primary">
-                                Ver Detalle <i class="bi bi-arrow-right"></i>
+                                {% translate "Ver Detalle" %} <i class="bi bi-arrow-right"></i>
                             </a>
                         </div>
                     </div>
@@ -162,7 +163,7 @@
 
         <!-- Paginación -->
         {% if is_paginated %}
-        <nav aria-label="Paginación de reuniones">
+        <nav aria-label="{% translate 'Paginación de reuniones' %}">
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
                     <li class="page-item">
@@ -211,16 +212,16 @@
             <div class="card-body">
                 <i class="bi bi-calendar-x display-1 text-muted mb-3"></i>
                 {% if request.GET.search or request.GET.input_type or request.GET.user %}
-                    <h4>No se encontraron reuniones</h4>
-                    <p class="text-muted">Intenta ajustar los filtros de búsqueda</p>
+                    <h4>{% translate "No se encontraron reuniones" %}</h4>
+                    <p class="text-muted">{% translate "Intenta ajustar los filtros de búsqueda" %}</p>
                     <a href="{% url 'ai_manager_meetings' manager.pk %}" class="btn btn-outline-primary">
-                        <i class="bi bi-x-circle"></i> Limpiar Filtros
+                        <i class="bi bi-x-circle"></i> {% translate "Limpiar Filtros" %}
                     </a>
                 {% else %}
-                    <h4>Aún no hay reuniones</h4>
-                    <p class="text-muted">Crea la primera reunión con este gerente IA</p>
+                    <h4>{% translate "Aún no hay reuniones" %}</h4>
+                    <p class="text-muted">{% translate "Crea la primera reunión con este gerente IA" %}</p>
                     <a href="{% url 'ai_manager_meeting_create' manager.pk %}" class="btn btn-primary">
-                        <i class="bi bi-calendar-plus"></i> Nueva Reunión
+                        <i class="bi bi-calendar-plus"></i> {% translate "Nueva Reunión" %}
                     </a>
                 {% endif %}
             </div>
@@ -231,7 +232,7 @@
     <div class="row mt-4">
         <div class="col-12">
             <a href="{% url 'ai_manager_detail' manager.pk %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver al Gerente
+                <i class="bi bi-arrow-left"></i> {% translate "Volver al Gerente" %}
             </a>
         </div>
     </div>

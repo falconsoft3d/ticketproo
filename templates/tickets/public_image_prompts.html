@@ -1,230 +1,196 @@
 {% extends 'public_base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
+{% block extra_css %}
+    .ap-pr-hero { padding: 72px 0 8px; text-align: center; }
+    .ap-pr-hero h1 { font-size: clamp(2.4rem, 6vw, 4rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; margin-bottom: .6rem; }
+    .ap-pr-hero p { font-size: clamp(1.05rem, 2vw, 1.35rem); color: var(--ap-ink-2); max-width: 680px; margin: 0 auto; }
+    .ap-pr-search {
+        max-width: 600px; margin: 2rem auto 0;
+        display: flex; align-items: center; gap: .4rem;
+        background: var(--ap-surface); border: 1px solid var(--ap-line);
+        border-radius: 980px; padding: 6px 6px 6px 20px;
+        box-shadow: 0 12px 32px -16px var(--ap-shadow);
+    }
+    .ap-pr-search > i { color: var(--ap-ink-3); }
+    .ap-pr-search input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; color: var(--ap-ink); font-size: 1.02rem; padding: .6rem .5rem; }
+    .ap-pr-search button, .ap-pr-search a {
+        border: none; border-radius: 980px; padding: .6rem 1.2rem;
+        font-size: .92rem; font-weight: 500; text-decoration: none; white-space: nowrap;
+    }
+    .ap-pr-search button { background: var(--ap-blue); color: #fff; }
+    .ap-pr-search button:hover { background: var(--ap-blue-hover); }
+    .ap-pr-search a { background: var(--ap-fill-2); color: var(--ap-ink); }
+    .ap-pr-hero p.ap-pr-count { font-size: .88rem; max-width: none; }
+    .ap-pr-count { text-align: center; color: var(--ap-ink-3); font-size: .88rem; margin-top: 1rem; }
+
+    .ap-pr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 22px; }
+    .ap-pr-card {
+        background: var(--ap-fill-2); border-radius: 22px; overflow: hidden;
+        display: flex; flex-direction: column;
+        transition: transform .3s cubic-bezier(.2, .8, .2, 1), box-shadow .3s ease;
+    }
+    .ap-pr-card:hover { transform: translateY(-4px); box-shadow: 0 20px 44px -22px var(--ap-shadow); }
+    .ap-pr-media { position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; background: var(--ap-fill); }
+    .ap-pr-media img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s cubic-bezier(.2, .8, .2, 1); }
+    .ap-pr-card:hover .ap-pr-media img { transform: scale(1.04); }
+    .ap-pr-body { padding: 20px 22px 22px; display: flex; flex-direction: column; flex: 1; }
+    .ap-pr-body h3 { font-size: 1.12rem; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 .5rem; }
+    .ap-pr-body h3 a { color: var(--ap-ink); text-decoration: none; }
+    .ap-pr-body h3 a:hover { color: var(--ap-blue); }
+    .ap-pr-text {
+        color: var(--ap-ink-2); font-size: .88rem; line-height: 1.55; flex: 1; margin-bottom: .9rem;
+        display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .ap-pr-tags { font-size: .78rem; color: var(--ap-link); margin-bottom: .9rem; word-break: break-word; }
+    .ap-pr-foot { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+    .ap-pr-date { font-size: .78rem; color: var(--ap-ink-3); }
+    .ap-pr-actions { display: flex; gap: .4rem; }
+    .ap-pr-btn {
+        display: inline-flex; align-items: center; gap: .35rem;
+        border: none; border-radius: 980px; padding: .42rem .9rem;
+        font-size: .82rem; font-weight: 500; text-decoration: none;
+        background: var(--ap-fill); color: var(--ap-ink);
+        transition: background .15s ease;
+    }
+    .ap-pr-btn:hover { background: var(--ap-fill-3); color: var(--ap-ink); }
+    .ap-pr-btn.primary { background: var(--ap-contrast-bg); color: var(--ap-contrast-fg); }
+    .ap-pr-btn.primary:hover { opacity: .85; color: var(--ap-contrast-fg); }
+    .ap-pr-btn.copied { background: var(--ap-soft-green); color: #1f9d48; }
+
+    .ap-pr-pages { display: flex; justify-content: center; align-items: center; gap: .5rem; margin-top: 3rem; }
+    .ap-pr-pages a, .ap-pr-pages span {
+        min-width: 38px; height: 38px; padding: 0 .9rem;
+        display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 980px; text-decoration: none; font-size: .9rem;
+    }
+    .ap-pr-pages a { background: var(--ap-fill-2); color: var(--ap-ink); }
+    .ap-pr-pages a:hover { background: var(--ap-fill); }
+    .ap-pr-pages span { color: var(--ap-ink-2); }
+    .ap-empty-state { text-align: center; padding: 4rem 1rem; color: var(--ap-ink-2); }
+    .ap-empty-state i { font-size: 2.6rem; color: var(--ap-line-strong); display: block; margin-bottom: .8rem; }
+    @media (prefers-reduced-motion: reduce) {
+        .ap-pr-card:hover, .ap-pr-card:hover .ap-pr-media img { transform: none; }
+    }
+{% endblock %}
+
+{% block hero_section %}
+<section class="ap-pr-hero">
+    <div class="container">
+        <h1>{% translate "Prompts de IA." %}</h1>
+        <p>{% translate "Explora prompts generados por IA para crear imágenes increíbles." %}</p>
+        <form method="get" action="{% url 'public_image_prompts' %}" class="ap-pr-search" role="search">
+            <i class="bi bi-search"></i>
+            <input type="search" name="search" value="{{ search }}" autocomplete="off"
+                   placeholder="{% translate 'Buscar por título, prompt o etiquetas' %}"
+                   aria-label="{% translate 'Buscar por título, prompt o etiquetas' %}">
+            {% if search %}<a href="{% url 'public_image_prompts' %}">{% translate "Limpiar" %}</a>{% endif %}
+            <button type="submit">{% translate "Buscar" %}</button>
+        </form>
+        <p class="ap-pr-count">
+            {% if search %}
+                {% blocktranslate with q=search %}Resultados para «{{ q }}»{% endblocktranslate %}: {{ page_obj.paginator.count }}
+            {% else %}
+                {% translate "Prompts públicos" %}: {{ total_prompts }}
+            {% endif %}
+        </p>
+    </div>
+</section>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-5 mb-5">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12 text-center">
-            <h1 class="display-4 mb-3">
-                <i class="bi bi-image text-primary"></i> Prompts Públicos
-            </h1>
-            <p class="lead text-muted">
-                Explora prompts generados por IA para crear imágenes increíbles
-            </p>
-        </div>
-    </div>
-
-    <!-- Buscador -->
-    <div class="row mb-4">
-        <div class="col-lg-6 mx-auto">
-            <form method="get" action="{% url 'public_image_prompts' %}" class="input-group">
-                <input type="text" class="form-control form-control-lg" name="search" 
-                       placeholder="Buscar por título, prompt o etiquetas..." 
-                       value="{{ search }}">
-                <button class="btn btn-primary" type="submit">
-                    <i class="bi bi-search"></i> Buscar
-                </button>
-                {% if search %}
-                    <a href="{% url 'public_image_prompts' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle"></i>
-                    </a>
-                {% endif %}
-            </form>
-        </div>
-    </div>
-
-    <!-- Contador -->
-    <div class="row mb-3">
-        <div class="col-12">
-            <p class="text-muted">
-                {% if search %}
-                    Mostrando {{ page_obj.paginator.count }} resultado{{ page_obj.paginator.count|pluralize }} para "{{ search }}"
-                {% else %}
-                    {{ total_prompts }} prompt{{ total_prompts|pluralize }} público{{ total_prompts|pluralize }} disponible{{ total_prompts|pluralize }}
-                {% endif %}
-            </p>
-        </div>
-    </div>
-
-    <!-- Grid de Prompts -->
-    {% if page_obj %}
-        <div class="row g-4">
-            {% for prompt in page_obj %}
-                <div class="col-lg-4 col-md-6">
-                    <div class="card h-100 shadow-sm hover-card">
-                        <!-- Imagen -->
-                        <div class="position-relative">
-                            <img src="{{ prompt.image.url }}" class="card-img-top" alt="{{ prompt.title }}" 
-                                 style="height: 250px; object-fit: cover;">
-                            
-                            <!-- Badge de Usuario -->
-                            <div class="position-absolute top-0 end-0 m-2">
-                                <span class="badge bg-dark bg-opacity-75">
-                                    <i class="bi bi-person-circle"></i> {{ prompt.user.username }}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <!-- Contenido -->
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title">{{ prompt.title }}</h5>
-                            
-                            <!-- Prompt Preview -->
-                            <p class="card-text text-muted small flex-grow-1">
-                                {{ prompt.get_final_prompt|truncatewords:20 }}
-                            </p>
-                            
-                            <!-- Tags -->
-                            {% if prompt.tags %}
-                                <div class="mb-2">
-                                    <span class="badge bg-primary">
-                                        <i class="bi bi-tags"></i> {{ prompt.tags }}
-                                    </span>
-                                </div>
-                            {% endif %}
-                            
-                            <!-- Botones -->
-                            <div class="d-flex gap-2">
-                                <a href="{% url 'public_image_prompt_detail' prompt.pk %}" 
-                                   class="btn btn-primary btn-sm flex-grow-1">
-                                    <i class="bi bi-eye"></i> Ver Detalle
-                                </a>
-                                <button class="btn btn-outline-primary btn-sm" 
-                                        onclick="copyPrompt('{{ prompt.get_final_prompt|escapejs }}', this)"
-                                        title="Copiar prompt">
-                                    <i class="bi bi-clipboard"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Footer -->
-                        <div class="card-footer bg-transparent border-top-0">
-                            <small class="text-muted">
-                                <i class="bi bi-calendar"></i> {{ prompt.created_at|date:"d/m/Y" }}
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-
-        <!-- Paginación -->
-        {% if page_obj.has_other_pages %}
-            <div class="row mt-5">
-                <div class="col-12">
-                    <nav aria-label="Navegación de páginas">
-                        <ul class="pagination justify-content-center">
-                            {% if page_obj.has_previous %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}">
-                                        <i class="bi bi-chevron-double-left"></i>
-                                    </a>
-                                </li>
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">
-                                        <i class="bi bi-chevron-left"></i>
-                                    </a>
-                                </li>
-                            {% endif %}
-
-                            <li class="page-item active">
-                                <span class="page-link">
-                                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
-                                </span>
-                            </li>
-
-                            {% if page_obj.has_next %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}">
-                                        <i class="bi bi-chevron-right"></i>
-                                    </a>
-                                </li>
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}">
-                                        <i class="bi bi-chevron-double-right"></i>
-                                    </a>
-                                </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
-                </div>
-            </div>
+{% if page_obj %}
+<div class="ap-pr-grid">
+    {% for prompt in page_obj %}
+    <article class="ap-pr-card">
+        {% if prompt.image %}
+        <a href="{% url 'public_image_prompt_detail' prompt.pk %}" class="ap-pr-media">
+            {# Si la imagen no carga, se quita el bloque completo #}
+            <img src="{{ prompt.image.url }}" alt="{{ prompt.title }}" loading="lazy" onerror="this.closest('.ap-pr-media').remove()">
+        </a>
         {% endif %}
-    {% else %}
-        <div class="row">
-            <div class="col-12">
-                <div class="alert alert-info text-center">
-                    <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
-                    <h4>No hay prompts disponibles</h4>
-                    {% if search %}
-                        <p>No se encontraron resultados para "{{ search }}"</p>
-                        <a href="{% url 'public_image_prompts' %}" class="btn btn-primary">
-                            Ver todos los prompts
-                        </a>
-                    {% else %}
-                        <p>Aún no hay prompts públicos compartidos</p>
-                    {% endif %}
+        <div class="ap-pr-body">
+            <h3><a href="{% url 'public_image_prompt_detail' prompt.pk %}">{{ prompt.title }}</a></h3>
+            {% with text=prompt.get_final_prompt %}
+            {% if text and text != "None" %}<p class="ap-pr-text">{{ text }}</p>{% else %}<div class="flex-grow-1"></div>{% endif %}
+            {% endwith %}
+            {% if prompt.tags %}<div class="ap-pr-tags"><i class="bi bi-tags me-1"></i>{{ prompt.tags }}</div>{% endif %}
+            <div class="ap-pr-foot">
+                <span class="ap-pr-date"><i class="bi bi-person-circle me-1"></i>{{ prompt.user.username }} · {{ prompt.created_at|date:"d M Y" }}</span>
+                <div class="ap-pr-actions">
+                    <button type="button" class="ap-pr-btn" data-copy="{{ prompt.get_final_prompt }}" title="{% translate 'Copiar prompt' %}">
+                        <i class="bi bi-clipboard"></i> <span>{% translate "Copiar" %}</span>
+                    </button>
+                    <a href="{% url 'public_image_prompt_detail' prompt.pk %}" class="ap-pr-btn primary">{% translate "Ver" %}</a>
                 </div>
             </div>
         </div>
-    {% endif %}
+    </article>
+    {% endfor %}
 </div>
 
-<!-- Estilos adicionales -->
-<style>
-    .hover-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    .hover-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
-    }
-    
-    .card-img-top {
-        transition: transform 0.3s ease;
-    }
-    
-    .hover-card:hover .card-img-top {
-        transform: scale(1.05);
-    }
-    
-    .card {
-        overflow: hidden;
-    }
-</style>
+{% if page_obj.has_other_pages %}
+<nav class="ap-pr-pages" aria-label="{% translate 'Paginación' %}">
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search|urlencode }}{% endif %}" aria-label="{% translate 'Anterior' %}"><i class="bi bi-chevron-left"></i></a>
+    {% endif %}
+    <span>{% blocktranslate with n=page_obj.number total=page_obj.paginator.num_pages %}Página {{ n }} de {{ total }}{% endblocktranslate %}</span>
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search|urlencode }}{% endif %}" aria-label="{% translate 'Siguiente' %}"><i class="bi bi-chevron-right"></i></a>
+    {% endif %}
+</nav>
+{% endif %}
+{% else %}
+<div class="ap-empty-state">
+    <i class="bi bi-image"></i>
+    <h3 class="fw-semibold">{% translate "No hay prompts disponibles" %}</h3>
+    {% if search %}
+        <p>{% blocktranslate with q=search %}No se encontraron resultados para «{{ q }}».{% endblocktranslate %}</p>
+        <a href="{% url 'public_image_prompts' %}" class="ap-pr-btn primary">{% translate "Ver todos los prompts" %}</a>
+    {% else %}
+        <p>{% translate "Aún no hay prompts públicos compartidos." %}</p>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
 
-<!-- JavaScript para copiar -->
+{% block extra_js %}
+{% translate "¡Copiado!" as copied_label %}
 <script>
-function copyPrompt(text, button) {
-    // Crear elemento temporal
-    const tempInput = document.createElement('textarea');
-    tempInput.value = text;
-    document.body.appendChild(tempInput);
-    tempInput.select();
-    
-    try {
-        document.execCommand('copy');
-        
-        // Cambiar el botón temporalmente
-        const originalHTML = button.innerHTML;
-        button.innerHTML = '<i class="bi bi-check-circle"></i> ¡Copiado!';
-        button.classList.remove('btn-outline-primary');
-        button.classList.add('btn-success');
-        
-        setTimeout(() => {
-            button.innerHTML = originalHTML;
-            button.classList.remove('btn-success');
-            button.classList.add('btn-outline-primary');
-        }, 2000);
-    } catch (err) {
-        alert('Error al copiar el prompt');
+(function () {
+    var copiedLabel = '{{ copied_label|escapejs }}';
+
+    function fallbackCopy(text) {
+        var area = document.createElement('textarea');
+        area.value = text;
+        area.setAttribute('readonly', '');
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        try { document.execCommand('copy'); } finally { document.body.removeChild(area); }
     }
-    
-    document.body.removeChild(tempInput);
-}
+
+    document.querySelectorAll('[data-copy]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var text = btn.getAttribute('data-copy');
+            var done = function () {
+                var label = btn.querySelector('span');
+                var original = label.textContent;
+                btn.classList.add('copied');
+                label.textContent = copiedLabel;
+                setTimeout(function () { btn.classList.remove('copied'); label.textContent = original; }, 1800);
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
+            } else {
+                fallbackCopy(text);
+                done();
+            }
+        });
+    });
+})();
 </script>
 {% endblock %}

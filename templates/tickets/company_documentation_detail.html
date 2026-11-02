@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -8,10 +9,10 @@
     <!-- Encabezado -->
     <div class="row mb-4">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{% url 'company_documentation_list' %}">Documentaciones</a>
+                        <a href="{% url 'company_documentation_list' %}">{% translate "Documentaciones" %}</a>
                     </li>
                     <li class="breadcrumb-item active">{{ documentation.title }}</li>
                 </ol>
@@ -27,12 +28,12 @@
                 </div>
                 <div class="btn-group">
                     <a href="{% url 'company_documentation_edit' documentation.pk %}" class="btn btn-warning">
-                        <i class="bi bi-pencil"></i> Editar
+                        <i class="bi bi-pencil"></i> {% translate "Editar" %}
                     </a>
                     <a href="{% url 'company_documentation_delete' documentation.pk %}" 
                        class="btn btn-danger"
                        onclick="return confirm('¿Estás seguro de que quieres eliminar esta documentación?')">
-                        <i class="bi bi-trash"></i> Eliminar
+                        <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                     </a>
                 </div>
             </div>
@@ -45,34 +46,34 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-info-circle"></i> Información General
+                        <i class="bi bi-info-circle"></i> {% translate "Información General" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     {% if documentation.description %}
                     <div class="mb-3">
-                        <strong>Descripción:</strong>
+                        <strong>{% translate "Descripción:" %}</strong>
                         <p class="mt-2">{{ documentation.description|linebreaks }}</p>
                     </div>
                     {% endif %}
                     
                     <div class="row">
                         <div class="col-md-6">
-                            <strong>Estado:</strong>
+                            <strong>{% translate "Estado:" %}</strong>
                             {% if documentation.is_public %}
-                                <span class="badge bg-success ms-2">Público</span>
+                                <span class="badge bg-success ms-2">{% translate "Público" %}</span>
                             {% else %}
-                                <span class="badge bg-secondary ms-2">Privado</span>
+                                <span class="badge bg-secondary ms-2">{% translate "Privado" %}</span>
                             {% endif %}
                         </div>
                         <div class="col-md-6">
-                            <strong>Total de enlaces:</strong> {{ urls.count }}
+                            <strong>{% translate "Total de enlaces:" %}</strong> {{ urls.count }}
                         </div>
                         <div class="col-md-6 mt-2">
-                            <strong>Creado por:</strong> {{ documentation.created_by.get_full_name|default:documentation.created_by.username }}
+                            <strong>{% translate "Creado por:" %}</strong> {{ documentation.created_by.get_full_name|default:documentation.created_by.username }}
                         </div>
                         <div class="col-md-6 mt-2">
-                            <strong>Fecha de creación:</strong> {{ documentation.created_at|date:"d/m/Y H:i" }}
+                            <strong>{% translate "Fecha de creación:" %}</strong> {{ documentation.created_at|date:"d/m/Y H:i" }}
                         </div>
                     </div>
                 </div>
@@ -82,7 +83,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-link-45deg"></i> Enlaces y URLs
+                        <i class="bi bi-link-45deg"></i> {% translate "Enlaces y URLs" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -96,18 +97,18 @@
                                         <h6 class="card-title mb-0">{{ url.title }}</h6>
                                         <div class="d-flex align-items-center gap-2">
                                             {% if url.has_credentials %}
-                                                <span class="badge bg-warning">Con credenciales</span>
+                                                <span class="badge bg-warning">{% translate "Con credenciales" %}</span>
                                             {% endif %}
                                             <!-- Botones de acción individual -->
                                             <div class="btn-group btn-group-sm" role="group">
                                                 <a href="{% url 'company_documentation_url_edit' documentation.pk url.pk %}" 
                                                    class="btn btn-outline-warning btn-sm"
-                                                   title="Editar enlace">
+                                                   title="{% translate 'Editar enlace' %}">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
                                                 <a href="{% url 'company_documentation_url_delete' documentation.pk url.pk %}" 
                                                    class="btn btn-outline-danger btn-sm"
-                                                   title="Eliminar enlace">
+                                                   title="{% translate 'Eliminar enlace' %}">
                                                     <i class="bi bi-trash"></i>
                                                 </a>
                                                 <!-- Toggle activo/inactivo -->
@@ -134,7 +135,7 @@
                                         {% else %}
                                             <span class="text-muted text-decoration-line-through">
                                                 {{ url.url|truncatechars:50 }}
-                                                <small class="badge bg-secondary ms-1">Inactivo</small>
+                                                <small class="badge bg-secondary ms-1">{% translate "Inactivo" %}</small>
                                             </span>
                                         {% endif %}
                                     </p>
@@ -149,14 +150,14 @@
                                     <div class="mt-2 p-2 bg-light rounded">
                                         <small>
                                             {% if url.username %}
-                                            <strong>Usuario:</strong> {{ url.username }}<br>
+                                            <strong>{% translate "Usuario:" %}</strong> {{ url.username }}<br>
                                             {% endif %}
                                             {% if url.password %}
-                                            <strong>Contraseña:</strong> 
+                                            <strong>{% translate "Contraseña:" %}</strong> 
                                             <span class="password-field" data-password="{{ url.password }}">
                                                 ••••••••
                                                 <button type="button" class="btn btn-sm btn-outline-secondary ms-1 toggle-password" 
-                                                        title="Mostrar/Ocultar contraseña">
+                                                        title="{% translate 'Mostrar/Ocultar contraseña' %}">
                                                     <i class="bi bi-eye"></i>
                                                 </button>
                                             </span>
@@ -168,7 +169,7 @@
                                     {% if url.notes %}
                                     <div class="mt-2">
                                         <small class="text-muted">
-                                            <strong>Notas:</strong> {{ url.notes|truncatewords:10 }}
+                                            <strong>{% translate "Notas:" %}</strong> {{ url.notes|truncatewords:10 }}
                                         </small>
                                     </div>
                                     {% endif %}
@@ -186,10 +187,10 @@
                     {% else %}
                     <div class="text-center py-4">
                         <i class="bi bi-link-45deg display-4 text-muted"></i>
-                        <h5 class="mt-3">No hay enlaces</h5>
-                        <p class="text-muted">Esta documentación aún no tiene enlaces configurados.</p>
+                        <h5 class="mt-3">{% translate "No hay enlaces" %}</h5>
+                        <p class="text-muted">{% translate "Esta documentación aún no tiene enlaces configurados." %}</p>
                         <a href="{% url 'company_documentation_url_create' documentation.pk %}" class="btn btn-primary">
-                            <i class="bi bi-plus"></i> Agregar primer enlace
+                            <i class="bi bi-plus"></i> {% translate "Agregar primer enlace" %}
                         </a>
                     </div>
                     {% endif %}
@@ -202,17 +203,17 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="mb-0">
-                        <i class="bi bi-gear"></i> Acciones
+                        <i class="bi bi-gear"></i> {% translate "Acciones" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2 mb-3">
                         <a href="{% url 'company_documentation_edit' documentation.pk %}" class="btn btn-warning">
-                            <i class="bi bi-pencil"></i> Editar Documentación
+                            <i class="bi bi-pencil"></i> {% translate "Editar Documentación" %}
                         </a>
                         
                         <a href="{% url 'company_documentation_url_create' documentation.pk %}" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Agregar Nuevo Enlace
+                            <i class="bi bi-plus-circle"></i> {% translate "Agregar Nuevo Enlace" %}
                         </a>
                         
                         <!-- Toggle público/privado -->
@@ -221,11 +222,11 @@
                             {% if documentation.is_public %}
                                 <button type="submit" class="btn btn-outline-danger w-100"
                                         onclick="return confirm('¿Desactivar el acceso público? El enlace dejará de funcionar.')">
-                                    <i class="bi bi-eye-slash"></i> Hacer Privado
+                                    <i class="bi bi-eye-slash"></i> {% translate "Hacer Privado" %}
                                 </button>
                             {% else %}
                                 <button type="submit" class="btn btn-outline-success w-100">
-                                    <i class="bi bi-globe"></i> Hacer Público
+                                    <i class="bi bi-globe"></i> {% translate "Hacer Público" %}
                                 </button>
                             {% endif %}
                         </form>
@@ -234,7 +235,7 @@
                     <hr>
                     
                     <a href="{% url 'company_documentation_list' %}" class="btn btn-outline-secondary w-100">
-                        <i class="bi bi-arrow-left"></i> Volver a la lista
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver a la lista" %}
                     </a>
                 </div>
             </div>
@@ -244,12 +245,12 @@
             <div class="card">
                 <div class="card-header bg-success text-white">
                     <h6 class="mb-0">
-                        <i class="bi bi-globe"></i> Enlace Público
+                        <i class="bi bi-globe"></i> {% translate "Enlace Público" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <p class="small text-muted mb-2">
-                        Los clientes pueden acceder a esta documentación con el siguiente enlace:
+                        {% translate "Los clientes pueden acceder a esta documentación con el siguiente enlace:" %}
                     </p>
                     
                     <div class="input-group mb-3">
@@ -261,7 +262,7 @@
                         <button class="btn btn-outline-secondary btn-sm" 
                                 type="button" 
                                 onclick="copyPublicUrl()"
-                                title="Copiar enlace">
+                                title="{% translate 'Copiar enlace' %}">
                             <i class="bi bi-clipboard"></i>
                         </button>
                     </div>
@@ -269,7 +270,7 @@
                     <a href="{{ documentation.get_public_url }}" 
                        class="btn btn-success btn-sm w-100" 
                        target="_blank">
-                        <i class="bi bi-eye"></i> Ver página pública
+                        <i class="bi bi-eye"></i> {% translate "Ver página pública" %}
                     </a>
                 </div>
             </div>

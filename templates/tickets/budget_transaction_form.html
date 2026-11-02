@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -18,7 +19,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="{{ form.transaction_type.id_for_label }}" class="form-label">
-                                    <i class="bi bi-arrow-left-right me-1"></i>Tipo de Transacción
+                                    <i class="bi bi-arrow-left-right me-1"></i>{% translate "Tipo de Transacción" %}
                                 </label>
                                 {{ form.transaction_type }}
                                 {% if form.transaction_type.errors %}
@@ -30,7 +31,7 @@
                             
                             <div class="col-md-6 mb-3">
                                 <label for="{{ form.transaction_date.id_for_label }}" class="form-label">
-                                    <i class="bi bi-calendar3 me-1"></i>Fecha
+                                    <i class="bi bi-calendar3 me-1"></i>{% translate "Fecha" %}
                                 </label>
                                 {{ form.transaction_date }}
                                 {% if form.transaction_date.errors %}
@@ -44,7 +45,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3" id="income_item_div">
                                 <label for="{{ form.income_item.id_for_label }}" class="form-label">
-                                    <i class="bi bi-arrow-up-circle text-success me-1"></i>Partida de Ingreso
+                                    <i class="bi bi-arrow-up-circle text-success me-1"></i>{% translate "Partida de Ingreso" %}
                                 </label>
                                 {{ form.income_item }}
                                 {% if form.income_item.errors %}
@@ -56,7 +57,7 @@
                             
                             <div class="col-md-6 mb-3" id="expense_item_div" style="display: none;">
                                 <label for="{{ form.expense_item.id_for_label }}" class="form-label">
-                                    <i class="bi bi-arrow-down-circle text-danger me-1"></i>Partida de Egreso
+                                    <i class="bi bi-arrow-down-circle text-danger me-1"></i>{% translate "Partida de Egreso" %}
                                 </label>
                                 {{ form.expense_item }}
                                 {% if form.expense_item.errors %}
@@ -68,7 +69,7 @@
                             
                             <div class="col-md-6 mb-3">
                                 <label for="{{ form.amount.id_for_label }}" class="form-label">
-                                    <i class="bi bi-currency-dollar me-1"></i>Monto
+                                    <i class="bi bi-currency-dollar me-1"></i>{% translate "Monto" %}
                                 </label>
                                 {{ form.amount }}
                                 {% if form.amount.errors %}
@@ -81,7 +82,7 @@
                         
                         <div class="mb-3">
                             <label for="{{ form.description.id_for_label }}" class="form-label">
-                                <i class="bi bi-chat-left-text me-1"></i>Descripción
+                                <i class="bi bi-chat-left-text me-1"></i>{% translate "Descripción" %}
                             </label>
                             {{ form.description }}
                             {% if form.description.errors %}
@@ -89,15 +90,15 @@
                                     {{ form.description.errors }}
                                 </div>
                             {% endif %}
-                            <small class="form-text text-muted">Describe brevemente esta transacción (opcional)</small>
+                            <small class="form-text text-muted">{% translate "Describe brevemente esta transacción (opcional)" %}</small>
                         </div>
                         
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'budget_detail' budget.pk %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                <i class="bi bi-arrow-left me-1"></i>{% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-success">
-                                <i class="bi bi-save me-1"></i>Registrar
+                                <i class="bi bi-save me-1"></i>{% translate "Registrar" %}
                             </button>
                         </div>
                     </form>

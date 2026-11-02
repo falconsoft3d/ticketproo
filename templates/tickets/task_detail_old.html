@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -14,16 +15,16 @@
                 </h2>
                 <div class="btn-group">
                     <a href="{% url 'tickets:task_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left me-1"></i>Volver
+                        <i class="bi bi-arrow-left me-1"></i>{% translate "Volver" %}
                     </a>
                     {% if can_edit %}
                     <a href="{% url 'tickets:task_edit' task.pk %}" class="btn btn-outline-warning">
-                        <i class="bi bi-pencil me-1"></i>Editar
+                        <i class="bi bi-pencil me-1"></i>{% translate "Editar" %}
                     </a>
                     {% endif %}
                     {% if can_delete %}
                     <a href="{% url 'tickets:task_delete' task.pk %}" class="btn btn-outline-danger">
-                        <i class="bi bi-trash me-1"></i>Eliminar
+                        <i class="bi bi-trash me-1"></i>{% translate "Eliminar" %}
                     </a>
                     {% endif %}
                 </div>
@@ -35,7 +36,7 @@
                     <div class="row align-items-center">
                         <div class="col-md-8">
                             <h5 class="card-title mb-0">
-                                <i class="bi bi-info-circle me-1"></i>Detalles de la Tarea
+                                <i class="bi bi-info-circle me-1"></i>{% translate "Detalles de la Tarea" %}
                             </h5>
                         </div>
                         <div class="col-md-4 text-end">
@@ -51,7 +52,7 @@
                 <div class="card-body">
                     <!-- Descripción -->
                     <div class="mb-4">
-                        <h6>Descripción</h6>
+                        <h6>{% translate "Descripción" %}</h6>
                         <div class="bg-light p-3 rounded">
                             {{ task.description|linebreaks }}
                         </div>
@@ -60,19 +61,19 @@
                     <!-- Información de fechas -->
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <h6>Fecha de vencimiento</h6>
+                            <h6>{% translate "Fecha de vencimiento" %}</h6>
                             <p class="mb-1">
                                 {% if task.due_date %}
                                     <i class="bi bi-calendar-event me-1"></i>
                                     {{ task.due_date|date:"d/m/Y H:i" }}
                                     {% if task.is_overdue %}
-                                        <span class="badge bg-danger ms-2">Vencida</span>
+                                        <span class="badge bg-danger ms-2">{% translate "Vencida" %}</span>
                                     {% elif task.days_until_due <= 1 and task.status != 'completed' %}
-                                        <span class="badge bg-warning ms-2">Próxima a vencer</span>
+                                        <span class="badge bg-warning ms-2">{% translate "Próxima a vencer" %}</span>
                                     {% endif %}
                                 {% else %}
                                     <i class="bi bi-calendar-x me-1"></i>
-                                    <span class="text-muted">Sin fecha límite definida</span>
+                                    <span class="text-muted">{% translate "Sin fecha límite definida" %}</span>
                                 {% endif %}
                             </p>
                             {% if task.due_date and task.days_until_due and task.status != 'completed' %}
@@ -80,7 +81,7 @@
                                     {% if task.days_until_due > 0 %}
                                         Faltan {{ task.days_until_due }} día{{ task.days_until_due|pluralize }}
                                     {% elif task.days_until_due == 0 %}
-                                        Vence hoy
+                                        {% translate "Vence hoy" %}
                                     {% else %}
                                         Vencida hace {{ task.days_until_due|add:"-1" }} día{{ task.days_until_due|add:"-1"|pluralize }}
                                     {% endif %}
@@ -88,11 +89,11 @@
                             {% endif %}
                         </div>
                         <div class="col-md-6">
-                            <h6>Progreso</h6>
+                            <h6>{% translate "Progreso" %}</h6>
                             {% if task.status == 'completed' %}
                                 <div class="progress mb-2" style="height: 25px;">
                                     <div class="progress-bar bg-success" style="width: 100%">
-                                        <strong>100% Completada</strong>
+                                        <strong>{% translate "100% Completada" %}</strong>
                                     </div>
                                 </div>
                             {% elif task.estimated_hours and task.actual_hours %}
@@ -105,7 +106,7 @@
                                 </div>
                                 {% endwith %}
                             {% else %}
-                                <p class="text-muted">Sin datos de progreso</p>
+                                <p class="text-muted">{% translate "Sin datos de progreso" %}</p>
                             {% endif %}
                         </div>
                     </div>
@@ -114,7 +115,7 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             {% if task.estimated_hours %}
-                                <h6>Horas estimadas</h6>
+                                <h6>{% translate "Horas estimadas" %}</h6>
                                 <p class="mb-1">
                                     <i class="bi bi-clock me-1"></i>
                                     {{ task.estimated_hours }} hora{{ task.estimated_hours|pluralize }}
@@ -123,7 +124,7 @@
                         </div>
                         <div class="col-md-6">
                             {% if task.actual_hours %}
-                                <h6>Horas trabajadas</h6>
+                                <h6>{% translate "Horas trabajadas" %}</h6>
                                 <p class="mb-1">
                                     <i class="bi bi-hourglass-split me-1"></i>
                                     {{ task.actual_hours }} hora{{ task.actual_hours|pluralize }}
@@ -135,7 +136,7 @@
                     <!-- Creador -->
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Creado por</h6>
+                            <h6>{% translate "Creado por" %}</h6>
                             <p class="mb-1">
                                 <i class="bi bi-person me-1"></i>
                                 {{ task.created_by.get_full_name|default:task.created_by.username }}
@@ -146,7 +147,7 @@
                         </div>
                         <div class="col-md-6">
                             {% if task.completed_at %}
-                                <h6>Completada el</h6>
+                                <h6>{% translate "Completada el" %}</h6>
                                 <p class="mb-1">
                                     <i class="bi bi-check-circle me-1"></i>
                                     {{ task.completed_at|date:"d/m/Y H:i" }}
@@ -162,31 +163,31 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="bi bi-arrow-repeat me-1"></i>Cambio Rápido de Estado
+                        <i class="bi bi-arrow-repeat me-1"></i>{% translate "Cambio Rápido de Estado" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <form id="statusForm" class="row g-3">
                         {% csrf_token %}
                         <div class="col-md-4">
-                            <label for="newStatus" class="form-label">Nuevo Estado</label>
+                            <label for="newStatus" class="form-label">{% translate "Nuevo Estado" %}</label>
                             <select id="newStatus" name="status" class="form-select">
-                                <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>Pendiente</option>
-                                <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>En Progreso</option>
-                                <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>Completada</option>
-                                <option value="cancelled" {% if task.status == 'cancelled' %}selected{% endif %}>Cancelada</option>
+                                <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>{% translate "Pendiente" %}</option>
+                                <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>{% translate "En Progreso" %}</option>
+                                <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>{% translate "Completada" %}</option>
+                                <option value="cancelled" {% if task.status == 'cancelled' %}selected{% endif %}>{% translate "Cancelada" %}</option>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label for="actualHours" class="form-label">Horas Trabajadas</label>
+                            <label for="actualHours" class="form-label">{% translate "Horas Trabajadas" %}</label>
                             <input type="number" id="actualHours" name="actual_hours" class="form-control" 
                                    step="0.25" min="0" value="{{ task.actual_hours|default:'' }}" 
-                                   placeholder="Ej: 8.5">
+                                   placeholder="{% translate 'Ej: 8.5' %}">
                         </div>
                         <div class="col-md-4">
                             <label>&nbsp;</label>
                             <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-check-circle me-1"></i>Actualizar
+                                <i class="bi bi-check-circle me-1"></i>{% translate "Actualizar" %}
                             </button>
                         </div>
                     </form>
@@ -201,7 +202,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="bi bi-folder me-1"></i>Proyecto
+                        <i class="bi bi-folder me-1"></i>{% translate "Proyecto" %}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -248,7 +249,7 @@
                         </div>
                         {% endfor %}
                     {% else %}
-                        <p class="text-muted mb-0">Sin usuarios asignados</p>
+                        <p class="text-muted mb-0">{% translate "Sin usuarios asignados" %}</p>
                     {% endif %}
                 </div>
             </div>
@@ -257,7 +258,7 @@
             <div class="card">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="bi bi-clock-history me-1"></i>Timeline
+                        <i class="bi bi-clock-history me-1"></i>{% translate "Timeline" %}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -265,7 +266,7 @@
                         <div class="timeline-item">
                             <div class="timeline-marker bg-primary"></div>
                             <div class="timeline-content">
-                                <h6 class="mb-1">Tarea creada</h6>
+                                <h6 class="mb-1">{% translate "Tarea creada" %}</h6>
                                 <p class="text-muted mb-0">
                                     <small>{{ task.created_at|date:"d/m/Y H:i" }}</small>
                                 </p>
@@ -276,9 +277,9 @@
                         <div class="timeline-item">
                             <div class="timeline-marker bg-warning"></div>
                             <div class="timeline-content">
-                                <h6 class="mb-1">En progreso</h6>
+                                <h6 class="mb-1">{% translate "En progreso" %}</h6>
                                 <p class="text-muted mb-0">
-                                    <small>Trabajo iniciado</small>
+                                    <small>{% translate "Trabajo iniciado" %}</small>
                                 </p>
                             </div>
                         </div>
@@ -288,7 +289,7 @@
                         <div class="timeline-item">
                             <div class="timeline-marker bg-success"></div>
                             <div class="timeline-content">
-                                <h6 class="mb-1">Tarea completada</h6>
+                                <h6 class="mb-1">{% translate "Tarea completada" %}</h6>
                                 <p class="text-muted mb-0">
                                     <small>{{ task.completed_at|date:"d/m/Y H:i" }}</small>
                                 </p>

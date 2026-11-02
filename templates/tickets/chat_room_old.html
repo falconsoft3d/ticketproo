@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -221,12 +222,12 @@
                         {% endif %}
                     </h6>
                     <small class="text-success">
-                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i> En línea
+                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i> {% translate "En línea" %}
                     </small>
                 </div>
                 
                 <div>
-                    <h6><i class="fas fa-users me-1"></i> Participantes</h6>
+                    <h6><i class="fas fa-users me-1"></i> {% translate "Participantes" %}</h6>
                     {% for participant in room.participants.all %}
                         <div class="d-flex align-items-center mb-2">
                             <div class="avatar me-2" style="width: 25px; height: 25px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); font-size: 0.7rem;">
@@ -234,7 +235,7 @@
                             </div>
                             <small>
                                 {{ participant.get_full_name|default:participant.username }}
-                                {% if participant == user %} (Tú){% endif %}
+                                {% if participant == user %} {% translate "(Tú)" %}{% endif %}
                             </small>
                         </div>
                     {% endfor %}
@@ -285,8 +286,8 @@
                     {% empty %}
                         <div class="text-center py-5 text-muted">
                             <i class="fas fa-comments fa-3x mb-3" style="opacity: 0.3;"></i>
-                            <h5>¡Comienza la conversación!</h5>
-                            <p>No hay mensajes aún.</p>
+                            <h5>{% translate "¡Comienza la conversación!" %}</h5>
+                            <p>{% translate "No hay mensajes aún." %}</p>
                         </div>
                     {% endfor %}
                 </div>
@@ -298,12 +299,12 @@
                         <textarea name="message" class="message-input" placeholder="Escribe tu mensaje..."
                                   onInput="this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'"></textarea>
                         
-                        <label for="attachment" class="btn-circular btn-attach" title="Adjuntar archivo">
+                        <label for="attachment" class="btn-circular btn-attach" title="{% translate 'Adjuntar archivo' %}">
                             <i class="fas fa-paperclip"></i>
                         </label>
                         <input type="file" name="attachment" id="attachment" style="display: none;">
                         
-                        <button type="submit" class="btn-circular btn-send" title="Enviar">
+                        <button type="submit" class="btn-circular btn-send" title="{% translate 'Enviar' %}">
                             <i class="fas fa-paper-plane"></i>
                         </button>
                     </form>
@@ -423,12 +424,12 @@
                                         {% endif %}
                                     </h6>
                                     <small class="text-success">
-                                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i> En línea
+                                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i> {% translate "En línea" %}
                                     </small>
                                 </div>
                                 
                                 <div>
-                                    <h6><i class="fas fa-users me-1"></i> Participantes</h6>
+                                    <h6><i class="fas fa-users me-1"></i> {% translate "Participantes" %}</h6>
                                     {% for participant in room.participants.all %}
                                         <div class="d-flex align-items-center mb-2">
                                             <div class="rounded-circle me-2 d-flex align-items-center justify-content-center text-white fw-bold" 
@@ -437,7 +438,7 @@
                                             </div>
                                             <small>
                                                 {{ participant.get_full_name|default:participant.username }}
-                                                {% if participant == user %} (Tú){% endif %}
+                                                {% if participant == user %} {% translate "(Tú)" %}{% endif %}
                                             </small>
                                         </div>
                                     {% endfor %}
@@ -513,8 +514,8 @@
                                 {% empty %}
                                     <div class="text-center py-5 text-muted">
                                         <i class="fas fa-comments fa-3x mb-3" style="opacity: 0.3;"></i>
-                                        <h5>¡Comienza la conversación!</h5>
-                                        <p>No hay mensajes aún.</p>
+                                        <h5>{% translate "¡Comienza la conversación!" %}</h5>
+                                        <p>{% translate "No hay mensajes aún." %}</p>
                                     </div>
                                 {% endfor %}
                             </div>
@@ -533,14 +534,14 @@
                                         
                                         <label for="id_attachment" class="btn btn-outline-primary" 
                                                style="border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;"
-                                               title="Adjuntar archivo">
+                                               title="{% translate 'Adjuntar archivo' %}">
                                             <i class="fas fa-paperclip"></i>
                                         </label>
                                         <input type="file" name="attachment" id="id_attachment" style="display: none;">
                                         
                                         <button type="submit" class="btn btn-primary" 
                                                 style="border-radius: 50%; width: 45px; height: 45px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; display: flex; align-items: center; justify-content: center;"
-                                                title="Enviar mensaje">
+                                                title="{% translate 'Enviar mensaje' %}">
                                             <i class="fas fa-paper-plane"></i>
                                         </button>
                                     </div>

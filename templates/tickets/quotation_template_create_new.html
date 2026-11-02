@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -11,12 +12,12 @@
                         <i class="bi bi-plus-circle text-primary"></i>
                         {{ page_title }}
                     </h1>
-                    <p class="text-muted mb-0">Crea una nueva plantilla pública para generar cotizaciones automáticamente</p>
+                    <p class="text-muted mb-0">{% translate "Crea una nueva plantilla pública para generar cotizaciones automáticamente" %}</p>
                 </div>
                 <div>
                     <a href="{% url 'quotation_template_list' %}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left"></i>
-                        Volver a Plantillas
+                        {% translate "Volver a Plantillas" %}
                     </a>
                 </div>
             </div>
@@ -24,7 +25,7 @@
             <!-- Formulario -->
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Información de la Plantilla</h5>
+                    <h5 class="mb-0">{% translate "Información de la Plantilla" %}</h5>
                 </div>
                 <div class="card-body">
                     <form method="post">
@@ -33,18 +34,18 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="title" class="form-label">Título de la Plantilla <span class="text-danger">*</span></label>
+                                    <label for="title" class="form-label">{% translate "Título de la Plantilla" %} <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="title" name="title" 
-                                           placeholder="Ej: Cotización Estándar de Servicios IT" required>
-                                    <div class="form-text">Este título será visible para ti en la administración</div>
+                                           placeholder="{% translate 'Ej: Cotización Estándar de Servicios IT' %}" required>
+                                    <div class="form-text">{% translate "Este título será visible para ti en la administración" %}</div>
                                 </div>
                             </div>
                             
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="quotation_id" class="form-label">Cotización Base <span class="text-danger">*</span></label>
+                                    <label for="quotation_id" class="form-label">{% translate "Cotización Base" %} <span class="text-danger">*</span></label>
                                     <select class="form-select" id="quotation_id" name="quotation_id" required>
-                                        <option value="">Selecciona una cotización</option>
+                                        <option value="">{% translate "Selecciona una cotización" %}</option>
                                         {% for quotation in quotations %}
                                             <option value="{{ quotation.id }}">
                                                 {{ quotation.sequence }} - {{ quotation.company.name }} 
@@ -52,26 +53,26 @@
                                             </option>
                                         {% endfor %}
                                     </select>
-                                    <div class="form-text">Esta cotización se usará como modelo para generar nuevas cotizaciones</div>
+                                    <div class="form-text">{% translate "Esta cotización se usará como modelo para generar nuevas cotizaciones" %}</div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="description" class="form-label">Descripción</label>
+                            <label for="description" class="form-label">{% translate "Descripción" %}</label>
                             <textarea class="form-control" id="description" name="description" rows="3" 
                                       placeholder="Describe qué tipo de cotizaciones generará esta plantilla..."></textarea>
-                            <div class="form-text">Descripción interna para identificar el propósito de esta plantilla</div>
+                            <div class="form-text">{% translate "Descripción interna para identificar el propósito de esta plantilla" %}</div>
                         </div>
 
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'quotation_template_list' %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-x"></i>
-                                Cancelar
+                                {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i>
-                                Crear Plantilla
+                                {% translate "Crear Plantilla" %}
                             </button>
                         </div>
                     </form>
@@ -83,22 +84,22 @@
                 <div class="card-body">
                     <h6 class="card-title">
                         <i class="bi bi-info-circle text-info"></i>
-                        ¿Cómo funciona una plantilla pública?
+                        {% translate "¿Cómo funciona una plantilla pública?" %}
                     </h6>
                     <div class="row">
                         <div class="col-md-6">
                             <ul class="list-unstyled">
                                 <li class="mb-2">
                                     <i class="bi bi-1-circle text-primary me-2"></i>
-                                    Se genera un enlace público único
+                                    {% translate "Se genera un enlace público único" %}
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-2-circle text-primary me-2"></i>
-                                    Los clientes llenan un formulario
+                                    {% translate "Los clientes llenan un formulario" %}
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-3-circle text-primary me-2"></i>
-                                    Se crea automáticamente una empresa
+                                    {% translate "Se crea automáticamente una empresa" %}
                                 </li>
                             </ul>
                         </div>
@@ -106,15 +107,15 @@
                             <ul class="list-unstyled">
                                 <li class="mb-2">
                                     <i class="bi bi-4-circle text-primary me-2"></i>
-                                    Se duplica la cotización seleccionada
+                                    {% translate "Se duplica la cotización seleccionada" %}
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-5-circle text-primary me-2"></i>
-                                    El cliente ve su cotización personalizada
+                                    {% translate "El cliente ve su cotización personalizada" %}
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-6-circle text-primary me-2"></i>
-                                    Puede aprobar directamente online
+                                    {% translate "Puede aprobar directamente online" %}
                                 </li>
                             </ul>
                         </div>

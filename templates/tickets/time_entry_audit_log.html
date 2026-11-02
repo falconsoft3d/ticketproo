@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -18,36 +19,36 @@
                     <div class="alert alert-light border">
                         <div class="row">
                             <div class="col-md-3">
-                                <strong>Usuario:</strong><br>
+                                <strong>{% translate "Usuario:" %}</strong><br>
                                 {{ entry.user.get_full_name|default:entry.user.username }}
                             </div>
                             <div class="col-md-3">
-                                <strong>Fecha:</strong><br>
+                                <strong>{% translate "Fecha:" %}</strong><br>
                                 {{ entry.fecha_entrada|date:"d/m/Y" }}
                             </div>
                             <div class="col-md-3">
-                                <strong>Entrada:</strong><br>
+                                <strong>{% translate "Entrada:" %}</strong><br>
                                 {{ entry.fecha_entrada|date:"H:i" }}
                             </div>
                             <div class="col-md-3">
-                                <strong>Salida:</strong><br>
+                                <strong>{% translate "Salida:" %}</strong><br>
                                 {% if entry.fecha_salida %}
                                     {{ entry.fecha_salida|date:"H:i" }}
                                 {% else %}
-                                    <span class="badge bg-success">Activo</span>
+                                    <span class="badge bg-success">{% translate "Activo" %}</span>
                                 {% endif %}
                             </div>
                         </div>
                         <div class="row mt-2">
                             <div class="col-md-6">
-                                <strong>Duración:</strong> {{ entry.duracion_formateada }}
+                                <strong>{% translate "Duración:" %}</strong> {{ entry.duracion_formateada }}
                             </div>
                             <div class="col-md-6">
-                                <strong>Estado:</strong>
+                                <strong>{% translate "Estado:" %}</strong>
                                 {% if entry.fecha_salida %}
-                                    <span class="badge bg-secondary">Completado</span>
+                                    <span class="badge bg-secondary">{% translate "Completado" %}</span>
                                 {% else %}
-                                    <span class="badge bg-success">En Progreso</span>
+                                    <span class="badge bg-success">{% translate "En Progreso" %}</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -56,26 +57,26 @@
                     <!-- Botones de acción -->
                     <div class="mb-3">
                         <a href="{% url 'time_entry_detail' entry.id %}" class="btn btn-outline-primary">
-                            <i class="bi bi-arrow-left"></i> Volver al Registro
+                            <i class="bi bi-arrow-left"></i> {% translate "Volver al Registro" %}
                         </a>
                         <a href="{% url 'time_entry_edit' entry.id %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-edit"></i> Editar Registro
+                            <i class="bi bi-edit"></i> {% translate "Editar Registro" %}
                         </a>
                     </div>
 
                     <!-- Historial de auditoría -->
                     {% if audit_logs %}
-                        <h5><i class="bi bi-list-ul"></i> Historial Completo de Modificaciones</h5>
+                        <h5><i class="bi bi-list-ul"></i> {% translate "Historial Completo de Modificaciones" %}</h5>
                         <div class="table-responsive">
                             <table class="table table-striped table-hover">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>Fecha y Hora</th>
-                                        <th>Usuario</th>
-                                        <th>Campo Modificado</th>
-                                        <th>Valor Anterior</th>
-                                        <th>Valor Nuevo</th>
-                                        <th>Razón del Cambio</th>
+                                        <th>{% translate "Fecha y Hora" %}</th>
+                                        <th>{% translate "Usuario" %}</th>
+                                        <th>{% translate "Campo Modificado" %}</th>
+                                        <th>{% translate "Valor Anterior" %}</th>
+                                        <th>{% translate "Valor Nuevo" %}</th>
+                                        <th>{% translate "Razón del Cambio" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -99,9 +100,9 @@
                                         <td>
                                             <span class="badge bg-primary">
                                                 {% if log.field_name == 'fecha_entrada' %}
-                                                    <i class="bi bi-clock"></i> Hora de Entrada
+                                                    <i class="bi bi-clock"></i> {% translate "Hora de Entrada" %}
                                                 {% elif log.field_name == 'fecha_salida' %}
-                                                    <i class="bi bi-clock-fill"></i> Hora de Salida
+                                                    <i class="bi bi-clock-fill"></i> {% translate "Hora de Salida" %}
                                                 {% else %}
                                                     <i class="bi bi-pencil"></i> {{ log.field_name|title }}
                                                 {% endif %}
@@ -113,7 +114,7 @@
                                                     <del>{{ log.old_value }}</del>
                                                 </div>
                                             {% else %}
-                                                <em class="text-muted">Vacío</em>
+                                                <em class="text-muted">{% translate "Vacío" %}</em>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -122,7 +123,7 @@
                                                     <strong>{{ log.new_value }}</strong>
                                                 </div>
                                             {% else %}
-                                                <em class="text-muted">Vacío</em>
+                                                <em class="text-muted">{% translate "Vacío" %}</em>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -132,7 +133,7 @@
                                                     {{ log.change_reason }}
                                                 </div>
                                             {% else %}
-                                                <em class="text-muted">Sin especificar</em>
+                                                <em class="text-muted">{% translate "Sin especificar" %}</em>
                                             {% endif %}
                                         </td>
                                     </tr>
@@ -143,25 +144,25 @@
                     {% else %}
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i>
-                            <strong>No hay cambios registrados</strong><br>
-                            Este registro no ha sido modificado desde su creación.
+                            <strong>{% translate "No hay cambios registrados" %}</strong><br>
+                            {% translate "Este registro no ha sido modificado desde su creación." %}
                         </div>
                     {% endif %}
 
                     <!-- Información adicional -->
                     <div class="mt-4">
-                        <h6>Información del Registro</h6>
+                        <h6>{% translate "Información del Registro" %}</h6>
                         <div class="row">
                             <div class="col-md-6">
-                                <strong>Creado:</strong> {{ entry.created_at|date:"d/m/Y H:i" }}
+                                <strong>{% translate "Creado:" %}</strong> {{ entry.created_at|date:"d/m/Y H:i" }}
                             </div>
                             <div class="col-md-6">
-                                <strong>Última actualización:</strong> {{ entry.updated_at|date:"d/m/Y H:i" }}
+                                <strong>{% translate "Última actualización:" %}</strong> {{ entry.updated_at|date:"d/m/Y H:i" }}
                             </div>
                         </div>
                         {% if entry.notas %}
                         <div class="mt-2">
-                            <strong>Notas:</strong><br>
+                            <strong>{% translate "Notas:" %}</strong><br>
                             <div class="border p-2 bg-light rounded">
                                 {{ entry.notas|linebreaks }}
                             </div>

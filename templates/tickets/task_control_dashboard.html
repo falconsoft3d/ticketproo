@@ -1,20 +1,21 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Control de Tareas - TicketProo{% endblock %}
+{% block title %}{% translate "Control de Tareas - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>
-                <i class="bi bi-check2-square"></i> Control Diario de Tareas
+                <i class="bi bi-check2-square"></i> {% translate "Control Diario de Tareas" %}
             </h2>
             <div class="d-flex gap-2">
                 <span class="badge bg-info fs-6">
                     <i class="bi bi-calendar-day"></i> {{ today_completed }} completadas hoy
                 </span>
                 <a href="{% url 'task_list' %}" class="btn btn-outline-primary">
-                    <i class="bi bi-list-task"></i> Ver todas las tareas
+                    <i class="bi bi-list-task"></i> {% translate "Ver todas las tareas" %}
                 </a>
             </div>
         </div>
@@ -27,7 +28,7 @@
         <div class="card border-warning">
             <div class="card-body text-center">
                 <div class="display-6 text-warning">{{ total_pending }}</div>
-                <small class="text-muted">Pendientes</small>
+                <small class="text-muted">{% translate "Pendientes" %}</small>
             </div>
         </div>
     </div>
@@ -35,7 +36,7 @@
         <div class="card border-primary">
             <div class="card-body text-center">
                 <div class="display-6 text-primary">{{ total_in_progress }}</div>
-                <small class="text-muted">En Progreso</small>
+                <small class="text-muted">{% translate "En Progreso" %}</small>
             </div>
         </div>
     </div>
@@ -43,7 +44,7 @@
         <div class="card border-success">
             <div class="card-body text-center">
                 <div class="display-6 text-success">{{ total_completed }}</div>
-                <small class="text-muted">Completadas</small>
+                <small class="text-muted">{% translate "Completadas" %}</small>
             </div>
         </div>
     </div>
@@ -51,7 +52,7 @@
         <div class="card border-danger">
             <div class="card-body text-center">
                 <div class="display-6 text-danger">{{ overdue_tasks|length }}</div>
-                <small class="text-muted">Vencidas</small>
+                <small class="text-muted">{% translate "Vencidas" %}</small>
             </div>
         </div>
     </div>
@@ -95,7 +96,7 @@
                                 <div class="ms-2">
                                     <form method="post" action="{% url 'task_control_start' task.pk %}" class="d-inline">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-primary" title="Comenzar tarea">
+                                        <button type="submit" class="btn btn-sm btn-primary" title="{% translate 'Comenzar tarea' %}">
                                             <i class="bi bi-play-fill"></i>
                                         </button>
                                     </form>
@@ -107,7 +108,7 @@
                 {% else %}
                     <div class="text-center text-muted py-4">
                         <i class="bi bi-check-circle display-6"></i>
-                        <p class="mt-2">¡No tienes tareas pendientes!</p>
+                        <p class="mt-2">{% translate "¡No tienes tareas pendientes!" %}</p>
                     </div>
                 {% endif %}
             </div>
@@ -151,13 +152,13 @@
                                 <div class="ms-2 d-flex flex-column gap-1">
                                     <form method="post" action="{% url 'task_control_complete' task.pk %}" class="d-inline">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-success" title="Completar tarea">
+                                        <button type="submit" class="btn btn-sm btn-success" title="{% translate 'Completar tarea' %}">
                                             <i class="bi bi-check-lg"></i>
                                         </button>
                                     </form>
                                     <form method="post" action="{% url 'task_control_pause' task.pk %}" class="d-inline">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-warning" title="Pausar tarea">
+                                        <button type="submit" class="btn btn-sm btn-warning" title="{% translate 'Pausar tarea' %}">
                                             <i class="bi bi-pause-fill"></i>
                                         </button>
                                     </form>
@@ -169,8 +170,8 @@
                 {% else %}
                     <div class="text-center text-muted py-4">
                         <i class="bi bi-play-circle display-6"></i>
-                        <p class="mt-2">No tienes tareas en progreso</p>
-                        <small>Comienza una tarea pendiente para trabajar en ella</small>
+                        <p class="mt-2">{% translate "No tienes tareas en progreso" %}</p>
+                        <small>{% translate "Comienza una tarea pendiente para trabajar en ella" %}</small>
                     </div>
                 {% endif %}
             </div>
@@ -214,8 +215,8 @@
                 {% else %}
                     <div class="text-center text-muted py-4">
                         <i class="bi bi-trophy display-6"></i>
-                        <p class="mt-2">Aún no has completado tareas</p>
-                        <small>¡Comienza a trabajar para ver tus logros aquí!</small>
+                        <p class="mt-2">{% translate "Aún no has completado tareas" %}</p>
+                        <small>{% translate "¡Comienza a trabajar para ver tus logros aquí!" %}</small>
                     </div>
                 {% endif %}
             </div>
@@ -259,14 +260,14 @@
                                         <form method="post" action="{% url 'task_control_start' task.pk %}" class="d-inline">
                                             {% csrf_token %}
                                             <button type="submit" class="btn btn-sm btn-primary">
-                                                <i class="bi bi-play-fill"></i> Comenzar
+                                                <i class="bi bi-play-fill"></i> {% translate "Comenzar" %}
                                             </button>
                                         </form>
                                     {% elif task.status == 'in_progress' %}
                                         <form method="post" action="{% url 'task_control_complete' task.pk %}" class="d-inline">
                                             {% csrf_token %}
                                             <button type="submit" class="btn btn-sm btn-success">
-                                                <i class="bi bi-check-lg"></i> Completar
+                                                <i class="bi bi-check-lg"></i> {% translate "Completar" %}
                                             </button>
                                         </form>
                                     {% endif %}

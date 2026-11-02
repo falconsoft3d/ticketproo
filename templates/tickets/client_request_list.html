@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -8,17 +9,17 @@
             <div class="d-flex justify-content-between align-items-center">
                 <h2>
                     <i class="bi bi-file-text me-2"></i>
-                    Solicitudes al Cliente
+                    {% translate "Solicitudes al Cliente" %}
                 </h2>
                 <div>
                     <a href="?export=excel{% if status_filter %}&status={{ status_filter }}{% endif %}{% if company_filter %}&company={{ company_filter }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" 
                        class="btn btn-success me-2">
                         <i class="bi bi-file-earmark-excel me-2"></i>
-                        Exportar Excel
+                        {% translate "Exportar Excel" %}
                     </a>
                     <a href="{% url 'client_request_create' %}" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-2"></i>
-                        Nueva Solicitud
+                        {% translate "Nueva Solicitud" %}
                     </a>
                 </div>
             </div>
@@ -31,7 +32,7 @@
             <div class="card border-primary">
                 <div class="card-body text-center">
                     <h3 class="mb-0 text-primary">{{ total_requests }}</h3>
-                    <small class="text-muted">Total</small>
+                    <small class="text-muted">{% translate "Total" %}</small>
                 </div>
             </div>
         </div>
@@ -39,7 +40,7 @@
             <div class="card border-warning">
                 <div class="card-body text-center">
                     <h3 class="mb-0 text-warning">{{ pending_requests }}</h3>
-                    <small class="text-muted">Pendientes</small>
+                    <small class="text-muted">{% translate "Pendientes" %}</small>
                 </div>
             </div>
         </div>
@@ -47,7 +48,7 @@
             <div class="card border-info">
                 <div class="card-body text-center">
                     <h3 class="mb-0 text-info">{{ in_progress_requests }}</h3>
-                    <small class="text-muted">En Progreso</small>
+                    <small class="text-muted">{% translate "En Progreso" %}</small>
                 </div>
             </div>
         </div>
@@ -55,7 +56,7 @@
             <div class="card border-success">
                 <div class="card-body text-center">
                     <h3 class="mb-0 text-success">{{ completed_requests }}</h3>
-                    <small class="text-muted">Completadas</small>
+                    <small class="text-muted">{% translate "Completadas" %}</small>
                 </div>
             </div>
         </div>
@@ -63,7 +64,7 @@
             <div class="card border-secondary">
                 <div class="card-body text-center">
                     <h3 class="mb-0 text-secondary">{{ requests_with_response }}</h3>
-                    <small class="text-muted">Respondidas</small>
+                    <small class="text-muted">{% translate "Respondidas" %}</small>
                 </div>
             </div>
         </div>
@@ -71,7 +72,7 @@
             <div class="card border-danger">
                 <div class="card-body text-center">
                     <h3 class="mb-0 text-danger">{{ cancelled_requests }}</h3>
-                    <small class="text-muted">Canceladas</small>
+                    <small class="text-muted">{% translate "Canceladas" %}</small>
                 </div>
             </div>
         </div>
@@ -84,23 +85,23 @@
                 <div class="card-header bg-light">
                     <h5 class="mb-0">
                         <i class="bi bi-funnel me-2"></i>
-                        Filtros
+                        {% translate "Filtros" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <form method="get" class="row g-3">
                         <div class="col-md-3">
-                            <label class="form-label">Buscar</label>
+                            <label class="form-label">{% translate "Buscar" %}</label>
                             <input type="text" 
                                    name="search" 
                                    class="form-control" 
-                                   placeholder="Secuencia, título, persona..."
+                                   placeholder="{% translate 'Secuencia, título, persona...' %}"
                                    value="{{ search }}">
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Estado</label>
+                            <label class="form-label">{% translate "Estado" %}</label>
                             <select name="status" class="form-select">
-                                <option value="">Todos</option>
+                                <option value="">{% translate "Todos" %}</option>
                                 {% for value, label in status_choices %}
                                 <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
@@ -108,9 +109,9 @@
                         </div>
                         {% if is_agent %}
                         <div class="col-md-3">
-                            <label class="form-label">Empresa</label>
+                            <label class="form-label">{% translate "Empresa" %}</label>
                             <select name="company" class="form-select">
-                                <option value="">Todas</option>
+                                <option value="">{% translate "Todas" %}</option>
                                 {% for company in companies %}
                                 <option value="{{ company.id }}" {% if company_filter == company.id|stringformat:"s" %}selected{% endif %}>
                                     {{ company.name }}
@@ -120,14 +121,14 @@
                         </div>
                         {% endif %}
                         <div class="col-md-2">
-                            <label class="form-label">Desde</label>
+                            <label class="form-label">{% translate "Desde" %}</label>
                             <input type="date" 
                                    name="date_from" 
                                    class="form-control"
                                    value="{{ date_from }}">
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Hasta</label>
+                            <label class="form-label">{% translate "Hasta" %}</label>
                             <input type="date" 
                                    name="date_to" 
                                    class="form-control"
@@ -136,11 +137,11 @@
                         <div class="col-md-12">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-search me-2"></i>
-                                Filtrar
+                                {% translate "Filtrar" %}
                             </button>
                             <a href="{% url 'client_request_list' %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle me-2"></i>
-                                Limpiar
+                                {% translate "Limpiar" %}
                             </a>
                         </div>
                     </form>
@@ -158,14 +159,14 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Secuencia</th>
-                                    <th>Título</th>
-                                    <th>Solicitado a</th>
-                                    <th>Empresa</th>
-                                    <th>Estado</th>
-                                    <th>Fecha</th>
-                                    <th>Respuesta</th>
-                                    <th>Acciones</th>
+                                    <th>{% translate "Secuencia" %}</th>
+                                    <th>{% translate "Título" %}</th>
+                                    <th>{% translate "Solicitado a" %}</th>
+                                    <th>{% translate "Empresa" %}</th>
+                                    <th>{% translate "Estado" %}</th>
+                                    <th>{% translate "Fecha" %}</th>
+                                    <th>{% translate "Respuesta" %}</th>
+                                    <th>{% translate "Acciones" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -189,39 +190,39 @@
                                     </td>
                                     <td>
                                         {% if request.status == 'pending' %}
-                                            <span class="badge bg-warning text-dark">Pendiente</span>
+                                            <span class="badge bg-warning text-dark">{% translate "Pendiente" %}</span>
                                         {% elif request.status == 'in_progress' %}
-                                            <span class="badge bg-info">En Progreso</span>
+                                            <span class="badge bg-info">{% translate "En Progreso" %}</span>
                                         {% elif request.status == 'completed' %}
-                                            <span class="badge bg-success">Completada</span>
+                                            <span class="badge bg-success">{% translate "Completada" %}</span>
                                         {% elif request.status == 'cancelled' %}
-                                            <span class="badge bg-danger">Cancelada</span>
+                                            <span class="badge bg-danger">{% translate "Cancelada" %}</span>
                                         {% endif %}
                                     </td>
                                     <td>{{ request.created_at|date:"d/m/Y H:i" }}</td>
                                     <td class="text-center">
                                         {% if request.response %}
-                                            <i class="bi bi-check-circle-fill text-success" title="Respondida"></i>
+                                            <i class="bi bi-check-circle-fill text-success" title="{% translate 'Respondida' %}"></i>
                                         {% else %}
-                                            <i class="bi bi-clock text-muted" title="Sin responder"></i>
+                                            <i class="bi bi-clock text-muted" title="{% translate 'Sin responder' %}"></i>
                                         {% endif %}
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a href="{% url 'client_request_detail' request.pk %}" 
                                                class="btn btn-outline-primary" 
-                                               title="Ver">
+                                               title="{% translate 'Ver' %}">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             {% if request.created_by == user and not request.response %}
                                             <a href="{% url 'client_request_edit' request.pk %}" 
                                                class="btn btn-outline-secondary" 
-                                               title="Editar">
+                                               title="{% translate 'Editar' %}">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
                                             <a href="{% url 'client_request_delete' request.pk %}" 
                                                class="btn btn-outline-danger" 
-                                               title="Eliminar">
+                                               title="{% translate 'Eliminar' %}">
                                                 <i class="bi bi-trash"></i>
                                             </a>
                                             {% endif %}
@@ -241,8 +242,8 @@
         <div class="col-md-12">
             <div class="alert alert-info">
                 <i class="bi bi-info-circle me-2"></i>
-                No hay solicitudes al cliente registradas.
-                <a href="{% url 'client_request_create' %}" class="alert-link">Crear la primera solicitud</a>
+                {% translate "No hay solicitudes al cliente registradas." %}
+                <a href="{% url 'client_request_create' %}" class="alert-link">{% translate "Crear la primera solicitud" %}</a>
             </div>
         </div>
     </div>

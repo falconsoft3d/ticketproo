@@ -1,112 +1,574 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 
-{% block title %}TicketProo - Sistema Profesional de Gestión de Tickets{% endblock %}
+{% block title %}TicketProo - {% translate "Sistema Profesional de Gestión de Tickets" %}{% endblock %}
+
+{% block body_class %}{% translate "ap-home" %}{% endblock %}
+
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+{% endblock %}
 
 {% block extra_css %}
-<style>
-    .hero-section {
-        padding: 80px 0;
+    /* ==========================================
+       LANDING — estilo Apple / Satellite7
+       ========================================== */
+    body.ap-home {
+        --ap-bg: #ffffff;
+        --ap-bg-alt: #f5f5f7;
+        --ap-tile: #f5f5f7;
+        --ap-radius: 28px;
+        background: var(--ap-bg);
+        color: var(--ap-ink);
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        letter-spacing: -0.01em;
     }
-    .stats-card {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 15px;
+
+    html[data-theme="dark"] body.ap-home {
+        --ap-bg: #000000;
+        --ap-bg-alt: #101011;
+        --ap-tile: #1c1c1e;
     }
-    .btn-cta {
-        background: linear-gradient(45deg, #667eea, #764ba2);
-        border: none;
-        padding: 12px 30px;
+
+    /* Tipografía */
+    .ap-eyebrow {
+        font-size: 1.05rem;
         font-weight: 600;
-        transition: transform 0.3s ease;
+        color: #bf4800;
+        margin-bottom: .5rem;
     }
-    .btn-cta:hover {
-        transform: translateY(-2px);
-        background: linear-gradient(45deg, #5a6fd8, #6a4190);
+    .ap-headline {
+        font-size: clamp(2.6rem, 7vw, 5.5rem);
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        line-height: 1.04;
+        margin-bottom: 1rem;
     }
-    .blog-preview-card {
-        transition: all 0.3s ease;
+    .ap-title {
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.08;
+        margin-bottom: .75rem;
     }
-    .blog-preview-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+    .ap-sub {
+        font-size: clamp(1.1rem, 2vw, 1.5rem);
+        font-weight: 400;
+        color: var(--ap-ink-2);
+        line-height: 1.4;
+        max-width: 720px;
+        margin: 0 auto;
     }
-    .blog-preview-card .badge {
-        font-size: 0.8em;
+    .ap-gradient-text {
+        background: linear-gradient(90deg, #0071e3 0%, #7b3fe4 50%, #e3307a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
     }
-</style>
+
+    /* Botones */
+    .ap-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        background: var(--ap-blue);
+        color: #fff;
+        font-size: 1.05rem;
+        font-weight: 400;
+        padding: .75rem 1.5rem;
+        border-radius: 980px;
+        text-decoration: none;
+        border: none;
+        transition: background .2s ease, transform .2s ease;
+    }
+    .ap-btn:hover { background: var(--ap-blue-hover); color: #fff; }
+    .ap-btn:active { transform: scale(.98); }
+    .ap-btn-ghost {
+        background: transparent;
+        color: var(--ap-blue);
+        border: 1px solid var(--ap-blue);
+    }
+    .ap-btn-ghost:hover { background: var(--ap-blue); color: #fff; }
+    .ap-btn-dark { background: var(--ap-contrast-bg); color: var(--ap-contrast-fg); }
+    .ap-btn-dark:hover { background: var(--ap-contrast-bg); color: var(--ap-contrast-fg); opacity: .85; }
+    .ap-link {
+        color: var(--ap-link);
+        font-size: 1.05rem;
+        text-decoration: none;
+    }
+    .ap-link:hover { text-decoration: underline; color: var(--ap-link); }
+    .ap-link::after { content: " \203A"; }
+
+    /* Secciones */
+    .ap-section { padding: 110px 0; }
+    .ap-section-sm { padding: 70px 0; }
+    .ap-alt { background: var(--ap-bg-alt); }
+    .ap-dark { background: #000; color: #f5f5f7; }
+    .ap-dark .ap-sub { color: #a1a1a6; }
+
+    /* Hero */
+    .ap-hero {
+        padding: 96px 0 0;
+        text-align: center;
+        overflow: hidden;
+    }
+    .ap-hero .ap-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.25rem;
+        justify-content: center;
+        align-items: center;
+        margin: 2rem 0 3.5rem;
+    }
+
+    /* Mockup tipo Mac */
+    .ap-device {
+        max-width: 980px;
+        margin: 0 auto;
+        background: var(--ap-surface);
+        border-radius: 18px 18px 0 0;
+        border: 1px solid var(--ap-line);
+        border-bottom: none;
+        box-shadow: 0 40px 100px -20px rgba(0, 0, 0, .25), 0 0 0 10px var(--ap-tile);
+        overflow: hidden;
+        text-align: left;
+    }
+    .ap-device-bar {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 12px 16px;
+        background: var(--ap-fill-2);
+        border-bottom: 1px solid var(--ap-line);
+    }
+    .ap-device-bar span {
+        width: 12px; height: 12px; border-radius: 50%;
+        display: inline-block;
+    }
+    .ap-device-bar .ap-url {
+        flex: 1;
+        width: auto; height: auto;
+        border-radius: 7px;
+        margin-left: 1rem;
+        background: var(--ap-fill);
+        color: var(--ap-ink-3);
+        font-size: .75rem;
+        padding: 4px 12px;
+        text-align: center;
+    }
+    /* Miniatura del dashboard real */
+    .ap-device-body { background: var(--ap-app-bg, #f5f5f7); min-height: 380px; }
+    html[data-theme="dark"] .ap-device-body { --ap-app-bg: #000; }
+    .ap-m-nav {
+        display: flex; align-items: center; gap: 14px;
+        padding: 9px 20px;
+        background: var(--ap-surface);
+        border-bottom: 1px solid var(--ap-line-soft);
+        font-size: .72rem; color: var(--ap-ink-2);
+    }
+    .ap-m-nav b { color: var(--ap-ink); font-size: .82rem; font-weight: 600; margin-right: 6px; }
+    .ap-m-nav .ap-m-menu { display: flex; gap: 12px; }
+    .ap-m-nav .ap-m-right { margin-left: auto; display: flex; align-items: center; gap: 7px; }
+    .ap-m-dot {
+        width: 20px; height: 20px; border-radius: 50%;
+        background: var(--ap-fill-2); color: var(--ap-ink);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: .55rem; font-weight: 700;
+    }
+    .ap-m-main { padding: 20px 24px 22px; }
+    .ap-m-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 16px; }
+    .ap-m-date { font-size: .6rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--ap-ink-3); }
+    .ap-m-hello { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.03em; margin: 2px 0 0; color: var(--ap-ink); }
+    .ap-m-btns { display: flex; gap: 6px; }
+    .ap-m-btn { font-size: .65rem; font-weight: 500; padding: 5px 11px; border-radius: 980px; background: var(--ap-fill); color: var(--ap-ink); white-space: nowrap; }
+    .ap-m-btn.primary { background: var(--ap-blue); color: #fff; }
+    .ap-m-kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 9px; margin-bottom: 12px; }
+    .ap-m-kpi { background: var(--ap-surface); border-radius: 13px; padding: 10px 11px; }
+    .ap-m-chip {
+        width: 20px; height: 20px; border-radius: 6px;
+        display: inline-flex; align-items: center; justify-content: center;
+        color: #fff; font-size: .62rem; margin-bottom: 8px;
+    }
+    .ap-m-kpi b { display: block; font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1; color: var(--ap-ink); }
+    .ap-m-kpi b small { font-size: .62rem; font-weight: 500; color: var(--ap-ink-3); }
+    .ap-m-kpi > span:not(.ap-m-chip) { display: block; font-size: .58rem; color: var(--ap-ink-2); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ap-m-bar { height: 3px; border-radius: 3px; background: var(--ap-line-soft); margin-top: 5px; overflow: hidden; }
+    .ap-m-bar i { display: block; width: 33%; height: 100%; background: #ff9f0a; }
+    .ap-m-card { background: var(--ap-surface); border-radius: 13px; padding: 12px 14px 4px; }
+    .ap-m-card-head { display: flex; justify-content: space-between; font-size: .78rem; font-weight: 600; color: var(--ap-ink); margin-bottom: 4px; }
+    .ap-m-card-head span { font-size: .62rem; font-weight: 400; color: var(--ap-link); }
+    .ap-mini-row {
+        display: grid; grid-template-columns: 56px 1fr auto auto; gap: 10px; align-items: center;
+        padding: 8px 0;
+        border-top: 1px solid var(--ap-line-soft);
+        font-size: .68rem; color: var(--ap-ink);
+    }
+    .ap-mini-row em { font-style: normal; color: var(--ap-ink-3); font-variant-numeric: tabular-nums; }
+    .ap-pill {
+        font-size: .68rem; font-weight: 500;
+        padding: 3px 9px; border-radius: 980px;
+    }
+    .ap-pill.blue { background: var(--ap-soft-blue); color: #0060c7; }
+    .ap-pill.green { background: var(--ap-soft-green); color: #1a7f37; }
+    .ap-pill.orange { background: var(--ap-soft-orange); color: #b25000; }
+
+    /* Stats */
+    .ap-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2rem;
+        text-align: center;
+    }
+    .ap-stat b {
+        display: block;
+        font-size: clamp(2.2rem, 4vw, 3.2rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+    }
+    .ap-stat span { color: var(--ap-ink-2); font-size: 1rem; }
+
+    /* Buscador */
+    .ap-search {
+        max-width: 640px;
+        margin: 2rem auto 0;
+        display: flex;
+        align-items: center;
+        background: var(--ap-surface);
+        border-radius: 980px;
+        padding: 6px 6px 6px 22px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, .04), 0 12px 32px rgba(0, 0, 0, .06);
+        border: 1px solid var(--ap-line);
+    }
+    .ap-search i { color: var(--ap-ink-3); font-size: 1.1rem; }
+    .ap-search input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 1.05rem;
+        padding: .7rem .9rem;
+        color: var(--ap-ink);
+        min-width: 0;
+    }
+    .ap-search .ap-btn { padding: .65rem 1.3rem; font-size: .95rem; }
+
+    /* Bento tiles */
+    .ap-bento {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 20px;
+    }
+    .ap-tile {
+        border-radius: var(--ap-radius);
+        background: var(--ap-surface);
+        padding: 40px 36px;
+        overflow: hidden;
+        position: relative;
+        min-height: 300px;
+        display: flex;
+        flex-direction: column;
+        transition: transform .4s cubic-bezier(.2, .8, .2, 1), box-shadow .4s ease;
+    }
+    .ap-alt .ap-tile { background: var(--ap-surface); }
+    .ap-tile:hover { transform: scale(1.012); box-shadow: 0 20px 50px -20px rgba(0, 0, 0, .18); }
+    .ap-tile.span-2 { grid-column: span 2; }
+    .ap-tile.span-3 { grid-column: span 3; }
+    .ap-tile.span-4 { grid-column: span 4; }
+    .ap-tile.dark { background: #000; color: #f5f5f7; }
+    html[data-theme="dark"] .ap-tile.dark {
+        background: linear-gradient(160deg, #1c1c1e 0%, #0b0b0c 100%);
+        box-shadow: inset 0 0 0 1px #2c2c2e;
+    }
+    html[data-theme="dark"] .ap-dark { background: #0b0b0c; }
+
+    .ap-tile.dark p { color: #a1a1a6; }
+    .ap-tile h3 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        line-height: 1.15;
+        margin-bottom: .6rem;
+    }
+    .ap-tile p { color: var(--ap-ink-2); font-size: 1.02rem; line-height: 1.5; margin-bottom: 0; }
+    .ap-tile .ap-tile-icon {
+        font-size: 2.6rem;
+        margin-top: auto;
+        padding-top: 2rem;
+        line-height: 1;
+    }
+    .ap-icon-chip {
+        width: 52px; height: 52px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #fff;
+        margin-bottom: 1.25rem;
+    }
+
+    /* Alcances */
+    .ap-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 20px;
+    }
+    .ap-card {
+        background: var(--ap-surface);
+        border-radius: 22px;
+        padding: 28px;
+        height: 100%;
+        transition: transform .3s ease, box-shadow .3s ease;
+    }
+    .ap-card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .2); }
+    .ap-card h5 { font-weight: 600; font-size: 1.1rem; letter-spacing: -0.015em; margin-bottom: .5rem; color: var(--ap-ink); }
+    .ap-card p { color: var(--ap-ink-2); font-size: .92rem; margin-bottom: 0; }
+    .ap-tag {
+        display: inline-block;
+        font-size: .72rem;
+        font-weight: 600;
+        color: #bf4800;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        margin-bottom: .6rem;
+    }
+
+    /* Open source */
+    .ap-steps { list-style: none; padding: 0; margin: 0; }
+    .ap-steps li {
+        display: flex;
+        gap: 1.1rem;
+        padding: 1.25rem 0;
+        border-bottom: 1px solid #2c2c2e;
+    }
+    .ap-steps li:last-child { border-bottom: none; }
+    .ap-steps .n {
+        flex: 0 0 34px; height: 34px;
+        border-radius: 50%;
+        background: #1d1d1f;
+        border: 1px solid #424245;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 600; font-size: .9rem;
+    }
+    .ap-steps h6 { font-weight: 600; margin-bottom: .15rem; color: #f5f5f7; }
+    .ap-steps small { color: #a1a1a6; }
+    .ap-panel {
+        background: #1d1d1f;
+        border-radius: var(--ap-radius);
+        padding: 36px;
+    }
+    .ap-dark .ap-link { color: #2997ff; }
+
+    /* Blog */
+    .ap-post {
+        background: var(--ap-surface);
+        border-radius: 22px;
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        text-decoration: none;
+        color: var(--ap-ink);
+        transition: transform .3s ease, box-shadow .3s ease;
+    }
+    .ap-post:hover { transform: translateY(-4px); box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .22); color: var(--ap-ink); }
+    .ap-post img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
+    .ap-post-ph {
+        aspect-ratio: 16 / 10;
+        background: linear-gradient(135deg, var(--ap-soft-blue), #f3e8ff);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 2.5rem; color: #8e8ef0;
+    }
+    .ap-post-body { padding: 22px 24px 26px; display: flex; flex-direction: column; flex: 1; }
+    .ap-post-body h5 { font-weight: 600; font-size: 1.12rem; letter-spacing: -0.015em; line-height: 1.3; }
+    .ap-post-body p { color: var(--ap-ink-2); font-size: .9rem; flex: 1; }
+    .ap-post-meta { color: var(--ap-ink-3); font-size: .8rem; display: flex; gap: 1rem; }
+
+    /* Catálogos */
+    .ap-product {
+        background: var(--ap-surface);
+        border-radius: 22px;
+        padding: 26px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        transition: transform .3s ease, box-shadow .3s ease;
+    }
+    .ap-product:hover { transform: translateY(-4px); box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .2); }
+    .ap-product h5 a { color: var(--ap-ink); text-decoration: none; font-weight: 600; letter-spacing: -0.015em; }
+    .ap-product h5 a:hover { color: var(--ap-blue); }
+    .ap-price { font-size: 1.3rem; font-weight: 600; letter-spacing: -0.02em; }
+    .ap-video {
+        display: block; position: relative;
+        border-radius: 14px; overflow: hidden;
+        aspect-ratio: 16 / 9; margin-bottom: .75rem;
+    }
+    .ap-video img { width: 100%; height: 100%; object-fit: cover; }
+    .ap-video span {
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 52px; height: 52px; border-radius: 50%;
+        background: rgba(255, 255, 255, .85);
+        backdrop-filter: blur(8px);
+        display: flex; align-items: center; justify-content: center;
+        color: #000; font-size: 1.5rem;
+    }
+
+    /* Mis webs */
+    .ap-webs {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+    .ap-web {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        background: var(--ap-tile);
+        border-radius: 22px;
+        padding: 24px;
+        color: var(--ap-ink);
+        text-decoration: none;
+        position: relative;
+        transition: transform .3s cubic-bezier(.2, .8, .2, 1), box-shadow .3s ease;
+    }
+    a.ap-web:hover { color: var(--ap-ink); transform: translateY(-4px); box-shadow: 0 18px 40px -18px var(--ap-shadow); }
+    .ap-web-icon {
+        flex: 0 0 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.3rem;
+        color: #fff;
+        background: linear-gradient(160deg, #5ac8fa, #0071e3);
+    }
+    .ap-web-icon { position: relative; overflow: hidden; }
+    .ap-web-icon img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        padding: 10px;
+        object-fit: contain;
+        background: #fff;
+        border-radius: inherit;
+    }
+    .ap-web:nth-child(4n+2) .ap-web-icon { background: linear-gradient(160deg, #d68bff, #8e3bdb); }
+    .ap-web:nth-child(4n+3) .ap-web-icon { background: linear-gradient(160deg, #ffb340, #ff6b00); }
+    .ap-web:nth-child(4n+4) .ap-web-icon { background: linear-gradient(160deg, #6be585, #1fa64a); }
+    .ap-web-body { min-width: 0; padding-right: 1.25rem; }
+    .ap-web-body h3 { font-size: 1.1rem; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 .1rem; }
+    .ap-web-domain { font-size: .8rem; color: var(--ap-link); word-break: break-all; }
+    .ap-web-body p { color: var(--ap-ink-2); font-size: .9rem; margin: .5rem 0 0; }
+    .ap-web-go { position: absolute; top: 22px; right: 22px; color: var(--ap-ink-3); transition: color .2s ease; }
+    a.ap-web:hover .ap-web-go { color: var(--ap-blue); }
+
+    /* Animación de entrada */
+    .ap-reveal {
+        opacity: 0;
+        transform: translateY(32px);
+        transition: opacity .9s cubic-bezier(.2, .8, .2, 1), transform .9s cubic-bezier(.2, .8, .2, 1);
+    }
+    .ap-reveal.in { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) {
+        .ap-reveal { opacity: 1; transform: none; transition: none; }
+        .ap-tile:hover, .ap-card:hover, .ap-post:hover, .ap-product:hover, a.ap-web:hover { transform: none; }
+    }
+
+    /* Responsive */
+    @media (max-width: 991px) {
+        .ap-bento { grid-template-columns: repeat(2, 1fr); }
+        .ap-tile.span-2, .ap-tile.span-3, .ap-tile.span-4 { grid-column: span 1; }
+        .ap-tile.wide-md { grid-column: span 2; }
+        .ap-m-nav .ap-m-menu { display: none; }
+        .ap-m-kpis { grid-template-columns: repeat(3, 1fr); }
+        .ap-section { padding: 80px 0; }
+    }
+    @media (max-width: 767px) {
+        .ap-hero { padding-top: 64px; }
+        .ap-stats { grid-template-columns: repeat(2, 1fr); row-gap: 2.5rem; }
+        .ap-bento { grid-template-columns: 1fr; }
+        .ap-tile.wide-md { grid-column: span 1; }
+        .ap-tile { min-height: 0; padding: 32px 28px; }
+        .ap-m-main { padding: 16px; }
+        .ap-m-btns .ap-m-btn:not(.primary) { display: none; }
+        .ap-mini-row { grid-template-columns: 1fr auto; }
+        .ap-mini-row em, .ap-mini-row .ap-pill.prio { display: none; }
+        .ap-panel { padding: 26px; }
+        .ap-section { padding: 64px 0; }
+    }
 {% endblock %}
 
 {% block hero_section %}
-<!-- Hero Section -->
-<section class="hero-section">
+{% get_current_language as CURRENT_LANG %}
+<!-- Hero -->
+<section class="ap-hero">
     <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-6">
-                <h1 class="display-4 fw-bold mb-4">
-                    <i class="bi bi-ticket-perforated me-3"></i>
-                    TicketProo
-                </h1>
-                <p class="lead mb-4">
-                    El sistema de gestión de tickets más avanzado del mercado. 
-                    Optimiza tu soporte técnico con inteligencia artificial y automatización.
-                </p>
-                <div class="d-flex gap-3 mb-4">
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'dashboard' %}" class="btn btn-light btn-lg btn-cta">
-                            <i class="bi bi-speedometer2 me-2"></i>
-                            Ir al Dashboard
-                        </a>
-                    {% else %}
-                        <a href="{% url 'login' %}" class="btn btn-light btn-lg btn-cta">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>
-                            Iniciar Sesión
-                        </a>
-                        <a href="{% url 'register' %}" class="btn btn-outline-light btn-lg">
-                            <i class="bi bi-person-plus me-2"></i>
-                            Registrarse Gratis
-                        </a>
-                    {% endif %}
-                </div>
-                
-                <!-- Quick Contact CTA -->
-                <div class="mt-4">
-                    <p class="mb-2 text-light">¿Necesitas más información?</p>
-                    <a href="{% url 'contacto_web' %}" class="btn btn-outline-light">
-                        <i class="bi bi-envelope me-2"></i>
-                        Contáctanos
-                    </a>
-                </div>
+        <p class="ap-eyebrow ap-reveal">{% translate "Nuevo · Con inteligencia artificial" %}</p>
+        <h1 class="ap-headline ap-reveal">{% translate "TicketProo." %}<br><span class="ap-gradient-text">{% translate "Soporte, reinventado." %}</span></h1>
+        <p class="ap-sub ap-reveal">
+            {% translate "El sistema de gestión de tickets que optimiza tu soporte técnico con inteligencia artificial y automatización." %}
+        </p>
+        <div class="ap-actions ap-reveal">
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}" class="ap-btn">{% translate "Ir al Dashboard" %}</a>
+            {% else %}
+                <a href="{% url 'register' %}" class="ap-btn">{% translate "Empieza gratis" %}</a>
+                <a href="{% url 'login' %}" class="ap-link">{% translate "Iniciar sesión" %}</a>
+            {% endif %}
+            <a href="{% url 'contacto_web' %}" class="ap-link">{% translate "Contáctanos" %}</a>
+        </div>
+
+        <!-- Vista previa del producto -->
+        <div class="ap-device ap-reveal" aria-hidden="true">
+            <div class="ap-device-bar">
+                <span style="background:#ff5f57"></span>
+                <span style="background:#febc2e"></span>
+                <span style="background:#28c840"></span>
+                <span class="ap-url">{% translate "ticketproo.com/dashboard" %}</span>
             </div>
-            <div class="col-lg-6">
-                <div class="row g-3">
-                    <div class="col-6">
-                        <div class="stats-card p-4 text-center">
-                            <i class="bi bi-people display-4 mb-3"></i>
-                            <h3>1</h3>
-                            <p class="mb-0">Uso de IA</p>
+            <div class="ap-device-body">
+                <div class="ap-m-nav">
+                    <b><i class="bi bi-ticket-perforated"></i> TicketProo</b>
+                    <div class="ap-m-menu"><span>{% translate "Tickets" %}</span><span>CRM</span><span>HR</span><span>ERP</span><span>QA</span></div>
+                    <div class="ap-m-right">
+                        <span class="ap-m-dot">{{ CURRENT_LANG|upper }}</span>
+                        <span class="ap-m-dot"><i class="bi bi-moon-stars-fill"></i></span>
+                        <span class="ap-m-dot"><i class="bi bi-person-fill"></i></span>
+                    </div>
+                </div>
+                <div class="ap-m-main">
+                    <div class="ap-m-head">
+                        <div>
+                            <div class="ap-m-date" id="ap-m-date" data-lang="{{ CURRENT_LANG }}">{% now "d/m/Y" %}</div>
+                            <div class="ap-m-hello">{% translate "Buenas tardes" %}, Ana.</div>
+                        </div>
+                        <div class="ap-m-btns">
+                            <span class="ap-m-btn primary"><i class="bi bi-plus-lg"></i> {% translate "Crear ticket" %}</span>
+                            <span class="ap-m-btn">😊 {% translate "Evalúanos" %}</span>
                         </div>
                     </div>
-                    <div class="col-6">
-                        <div class="stats-card p-4 text-center">
-                            <i class="bi bi-ticket-detailed display-4 mb-3"></i>
-                            <h3>1</h3>
-                            <p class="mb-0">Gestión de Tickets</p>
-                        </div>
+                    <div class="ap-m-kpis">
+                        <div class="ap-m-kpi"><span class="ap-m-chip" style="background:#0a84ff"><i class="bi bi-ticket-perforated-fill"></i></span><b>21<small> / 26</small></b><span>{% translate "Tickets pendientes" %}</span></div>
+                        <div class="ap-m-kpi"><span class="ap-m-chip" style="background:#ff453a"><i class="bi bi-file-earmark-text-fill"></i></span><b>3<small> / 5</small></b><span>{% translate "RFI pendientes" %}</span></div>
+                        <div class="ap-m-kpi"><span class="ap-m-chip" style="background:#30d158"><i class="bi bi-mortarboard-fill"></i></span><b>6</b><span>{% translate "Cursos disponibles" %}</span></div>
+                        <div class="ap-m-kpi"><span class="ap-m-chip" style="background:#bf5af2"><i class="bi bi-book-fill"></i></span><b>12</b><span>{% translate "Manuales" %}</span></div>
+                        <div class="ap-m-kpi"><span class="ap-m-chip" style="background:#40c8e0"><i class="bi bi-shield-check"></i></span><b>14</b><span>{% translate "Días sin nuevos tickets" %}</span></div>
+                        <div class="ap-m-kpi"><span class="ap-m-chip" style="background:#ff9f0a"><i class="bi bi-check2-all"></i></span><b>4<small> / 12</small></b><span>{% translate "Checklist" %} · 33%</span><div class="ap-m-bar"><i></i></div></div>
                     </div>
-                    <div class="col-6">
-                        <div class="stats-card p-4 text-center">
-                            <i class="bi bi-clock display-4 mb-3"></i>
-                            <h3>99.9%</h3>
-                            <p class="mb-0">Uptime</p>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="stats-card p-4 text-center">
-                            <i class="bi bi-shield-check display-4 mb-3"></i>
-                            <h3>24/7</h3>
-                            <p class="mb-0">Soporte</p>
-                        </div>
+                    <div class="ap-m-card">
+                        <div class="ap-m-card-head">{% translate "Tickets recientes" %} <span>{% translate "Ver todos" %} ›</span></div>
+                        <div class="ap-mini-row"><em>#1042</em><span>{% translate "Error al exportar informes" %}</span><span class="ap-pill orange prio">{% translate "Alta" %}</span><span class="ap-pill blue">{% translate "Abierto" %}</span></div>
+                        <div class="ap-mini-row"><em>#1041</em><span>{% translate "Configurar acceso VPN" %}</span><span class="ap-pill blue prio">{% translate "Media" %}</span><span class="ap-pill blue">{% translate "En progreso" %}</span></div>
+                        <div class="ap-mini-row"><em>#1040</em><span>{% translate "Nueva plantilla de factura" %}</span><span class="ap-pill green prio">{% translate "Baja" %}</span><span class="ap-pill green">{% translate "Resuelto" %}</span></div>
                     </div>
                 </div>
             </div>
@@ -116,346 +578,174 @@
 {% endblock %}
 
 {% block content_wrapper %}
-<!-- Buscador de productos -->
-<section class="py-5" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);">
+<!-- Stats -->
+<section class="ap-section-sm ap-alt">
     <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-7 text-center">
-                <h3 class="fw-bold text-white mb-2">Busca en nuestro catálogo</h3>
-                <p class="text-white-50 mb-4">Encuentra el producto o servicio que necesitas</p>
-                <form action="{% url 'public_app_catalogs' %}" method="get">
-                    <div class="input-group input-group-lg shadow">
-                        <input type="text" name="q" class="form-control border-0 ps-4"
-                               placeholder="Buscar producto o servicio..."
-                               autocomplete="off">
-                        <button class="btn btn-primary px-4" type="submit">
-                            <i class="bi bi-search"></i>
-                        </button>
-                    </div>
-                </form>
+        <div class="ap-stats ap-reveal">
+            <div class="ap-stat"><b>{% translate "IA" %}</b><span>{% translate "Clasificación automática" %}</span></div>
+            <div class="ap-stat"><b>99.9%</b><span>{% translate "Uptime" %}</span></div>
+            <div class="ap-stat"><b>24/7</b><span>{% translate "Soporte" %}</span></div>
+            <div class="ap-stat"><b>MIT</b><span>{% translate "Código abierto" %}</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- Features bento -->
+<section class="ap-section">
+    <div class="container">
+        <div class="text-center mb-5 ap-reveal">
+            <h2 class="ap-title">{% translate "¿Por qué TicketProo?" %}</h2>
+            <p class="ap-sub">{% translate "Todo lo que tu equipo necesita. En una sola plataforma." %}</p>
+        </div>
+
+        <div class="ap-bento">
+            <div class="ap-tile dark span-4 wide-md ap-reveal">
+                <span class="ap-icon-chip" style="background:linear-gradient(135deg,#0071e3,#7b3fe4)"><i class="bi bi-robot"></i></span>
+                <h3>{% translate "IA integrada." %}<br><span class="ap-gradient-text">{% translate "Más rápido que nunca." %}</span></h3>
+                <p>{% translate "Clasificación automática de tickets y respuestas inteligentes que mejoran la eficiencia de tu equipo." %}</p>
+            </div>
+            <div class="ap-tile span-2 ap-reveal" style="background:var(--ap-tile, var(--ap-fill-2))">
+                <span class="ap-icon-chip" style="background:#34c759"><i class="bi bi-graph-up-arrow"></i></span>
+                <h3>{% translate "Analytics en tiempo real." %}</h3>
+                <p>{% translate "Métricas y KPIs para tomar decisiones informadas." %}</p>
+            </div>
+            <div class="ap-tile span-2 ap-reveal" style="background:var(--ap-tile, var(--ap-fill-2))">
+                <span class="ap-icon-chip" style="background:#ff9f0a"><i class="bi bi-chat-dots-fill"></i></span>
+                <h3>{% translate "Chat al instante." %}</h3>
+                <p>{% translate "Comunicación entre equipos para resolver problemas más rápido." %}</p>
+            </div>
+            <div class="ap-tile span-2 ap-reveal" style="background:var(--ap-tile, var(--ap-fill-2))">
+                <span class="ap-icon-chip" style="background:#ff375f"><i class="bi bi-shield-lock-fill"></i></span>
+                <h3>{% translate "Seguridad avanzada." %}</h3>
+                <p>{% translate "Cifrado y controles de acceso granulares para tus datos." %}</p>
+            </div>
+            <div class="ap-tile span-2 ap-reveal" style="background:var(--ap-tile, var(--ap-fill-2))">
+                <span class="ap-icon-chip" style="background:#5e5ce6"><i class="bi bi-people-fill"></i></span>
+                <h3>{% translate "Colaboración." %}</h3>
+                <p>{% translate "Herramientas de trabajo en equipo para resolver juntos." %}</p>
+            </div>
+            <div class="ap-tile span-3 ap-reveal" style="background:var(--ap-tile, var(--ap-fill-2))">
+                <span class="ap-icon-chip" style="background:#0a84ff"><i class="bi bi-journal-text"></i></span>
+                <h3>{% translate "Documentación viva." %}</h3>
+                <p>{% translate "Base de conocimientos integrada con búsqueda inteligente y categorización." %}</p>
+            </div>
+            <div class="ap-tile span-3 ap-reveal" style="background:var(--ap-tile, var(--ap-fill-2))">
+                <span class="ap-icon-chip" style="background:#636366"><i class="bi bi-plug-fill"></i></span>
+                <h3>{% translate "Integraciones." %}</h3>
+                <p>{% translate "Conecta TicketProo con tus herramientas de IA favoritas." %}</p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Features Section -->
-<section class="py-5 bg-light">
-    <div class="container">
-        <div class="row">
-            <div class="col-12 text-center mb-5">
-                <h2 class="display-6 fw-bold">¿Por qué elegir TicketProo?</h2>
-                <p class="lead text-muted">Características que hacen la diferencia</p>
-            </div>
-        </div>
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="text-center">
-                    <div class="feature-icon">
-                        <i class="bi bi-robot"></i>
-                    </div>
-                    <h4>IA Integrada</h4>
-                    <p class="text-muted">Clasificación automática de tickets y respuestas inteligentes que mejoran la eficiencia de tu equipo.</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="text-center">
-                    <div class="feature-icon">
-                        <i class="bi bi-graph-up"></i>
-                    </div>
-                    <h4>Analytics Avanzados</h4>
-                    <p class="text-muted">Dashboards completos con métricas en tiempo real para tomar decisiones informadas.</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="text-center">
-                    <div class="feature-icon">
-                        <i class="bi bi-people"></i>
-                    </div>
-                    <h4>Colaboración</h4>
-                    <p class="text-muted">Herramientas de trabajo en equipo que facilitan la resolución rápida de problemas.</p>
-                </div>
-            </div>
-        </div>
+<!-- Buscador de catálogo -->
+<section class="ap-section ap-alt">
+    <div class="container text-center ap-reveal">
+        <h2 class="ap-title">{% translate "Encuentra lo que necesitas." %}</h2>
+        <p class="ap-sub">{% translate "Busca en nuestro catálogo de productos y servicios." %}</p>
+        <form action="{% url 'public_app_catalogs' %}" method="get" class="ap-search" role="search">
+            <i class="bi bi-search"></i>
+            <input type="text" name="q" placeholder="{% translate "Buscar producto o servicio" %}" autocomplete="off" aria-label="{% translate "Buscar producto o servicio" %}">
+            <button class="ap-btn" type="submit">{% translate "Buscar" %}</button>
+        </form>
     </div>
 </section>
 
-<!-- CTA Section -->
-<section class="py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-    <div class="container">
-        <div class="row">
-            <div class="col-12 text-center text-white">
-                <h2 class="display-6 fw-bold mb-4">¿Listo para transformar tu soporte?</h2>
-                <p class="lead mb-4">Únete a cientos de empresas que confían en TicketProo</p>
-                <div class="d-flex gap-3 justify-content-center">
-                    {% if not user.is_authenticated %}
-                        <a href="{% url 'register' %}" class="btn btn-light btn-lg">
-                            <i class="bi bi-person-plus me-2"></i>
-                            Comenzar Gratis
-                        </a>
-                    {% endif %}
-                    <a href="{% url 'contacto_web' %}" class="btn btn-outline-light btn-lg">
-                        <i class="bi bi-envelope me-2"></i>
-                        Contactar Ventas
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Alcances Section -->
+<!-- Alcances -->
 {% if alcances %}
-<section class="py-5 bg-light">
+<section class="ap-section">
     <div class="container">
-        <div class="text-center mb-5">
-            <h2 class="display-6 fw-bold mb-3">Alcance de TicketProo</h2>
-            <p class="lead text-muted">Conoce que podemos hacer TicketProo</p>
+        <div class="text-center mb-5 ap-reveal">
+            <h2 class="ap-title">{% translate "Alcance de TicketProo." %}</h2>
+            <p class="ap-sub">{% translate "Conoce todo lo que puede hacer TicketProo por ti." %}</p>
         </div>
-        
-        <div class="row g-4">
+        <div class="ap-cards">
             {% for alcance in alcances %}
-            <div class="col-md-6 col-lg-3">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body text-center">
-                        
-                        <h5 class="card-title text-dark mb-3">{{ alcance.titulo }}</h5>
-                        {% if alcance.categoria %}
-                            <span class="badge bg-primary mb-3">{{ alcance.categoria }}</span>
-                        {% endif %}
-                        <p class="card-text text-muted small">
-                            {{ alcance.descripcion|truncatewords:15 }}
-                        </p>
-                    
-                    </div>
-                </div>
+            <div class="ap-card ap-reveal" style="background:var(--ap-tile, var(--ap-fill-2))">
+                {% if alcance.categoria %}<span class="ap-tag">{{ alcance.categoria }}</span>{% endif %}
+                <h5>{{ alcance.titulo }}</h5>
+                <p>{{ alcance.descripcion|truncatewords:15 }}</p>
             </div>
             {% endfor %}
+        </div>
+        <div class="text-center mt-5">
+            <a href="{% url 'alcance_publico_list' %}" class="ap-link">{% translate "Ver todo el alcance" %}</a>
         </div>
     </div>
 </section>
 {% endif %}
 
-<!-- Open Source Section -->
-<section class="py-5" style="background: white">
+<!-- Open Source -->
+<section class="ap-section ap-dark">
     <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-6 text-black">
-                <div class="mb-4">
-                    <h2 class="display-5 fw-bold mb-3">Proyecto de Código Abierto</h2>
-                    <p class="lead mb-4">
-                        TicketProo es un proyecto de código abierto que fomenta la innovación y la colaboración. 
-                        Únete a nuestra comunidad de desarrolladores y contribuye al futuro del soporte técnico.
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 ap-reveal">
+                <p class="ap-eyebrow" style="color:#2997ff">{% translate "Open Source" %}</p>
+                <h2 class="ap-title">{% translate "Hecho en abierto." %}<br>{% translate "Mejorado por todos." %}</h2>
+                <p class="ap-sub ms-0 mb-4">
+                    {% translate "TicketProo es un proyecto de código abierto que fomenta la innovación y la colaboración. Únete a la comunidad y contribuye al futuro del soporte técnico." %}
+                </p>
+                <div class="d-flex flex-wrap gap-3 align-items-center">
+                    <a href="https://github.com/falconsoft3d/ticketproo" target="_blank" rel="noopener" class="ap-btn" style="background:#f5f5f7;color:#1d1d1f">
+                        <i class="bi bi-github"></i> {% translate "Ver en GitHub" %}
+                    </a>
+                    <a href="https://github.com/falconsoft3d/ticketproo/fork" target="_blank" rel="noopener" class="ap-link">{% translate "Fork el proyecto" %}</a>
+                </div>
+            </div>
+            <div class="col-lg-6 ap-reveal">
+                <div class="ap-panel">
+                    <h4 class="fw-semibold mb-2" style="letter-spacing:-0.02em">{% translate "¿Cómo contribuir?" %}</h4>
+                    <ul class="ap-steps">
+                        <li><span class="n">1</span><div><h6>{% translate "Fork el repositorio" %}</h6><small>{% translate "Crea tu propia copia del proyecto" %}</small></div></li>
+                        <li><span class="n">2</span><div><h6>{% translate "Crea una rama" %}</h6><small>{% translate "Desarrolla tu funcionalidad" %}</small></div></li>
+                        <li><span class="n">3</span><div><h6>{% translate "Envía un Pull Request" %}</h6><small>{% translate "Comparte tus mejoras" %}</small></div></li>
+                    </ul>
+                    <p class="mb-0 mt-3 small" style="color:#a1a1a6">
+                        <i class="bi bi-code-slash me-1"></i> {% translate "Licencia MIT" %} ·
+                        <a href="https://github.com/falconsoft3d/ticketproo" target="_blank" rel="noopener" style="color:#2997ff;text-decoration:none">{% translate "github.com/falconsoft3d/ticketproo" %}</a>
                     </p>
                 </div>
-                
-                <div class="d-flex flex-wrap gap-3 mb-4">
-                    <a href="https://github.com/falconsoft3d/ticketproo" target="_blank" class="btn btn-light btn-lg">
-                        <i class="bi bi-github me-2"></i>
-                        Ver en GitHub
-                    </a>
-                    <a href="https://github.com/falconsoft3d/ticketproo/fork" target="_blank" class="btn btn-light btn-lg">
-                        <i class="bi bi-share me-2"></i>
-                        Fork el Proyecto
-                    </a>
-                </div>
-                
-                <div class="row g-3">
-                    <div class="col-6">
-                        <div class="text-center">
-                            <i class="bi bi-code-square display-6 mb-2"></i>
-                            <p class="mb-0 fw-bold">Código Abierto</p>
-                            <small>Licencia MIT</small>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="text-center">
-                            <i class="bi bi-people display-6 mb-2"></i>
-                            <p class="mb-0 fw-bold">Comunidad</p>
-                            <small>Contribuciones bienvenidas</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-6">
-                <div class="bg-white rounded-3 p-4 shadow">
-                    <h4 class="text-dark mb-3">¿Cómo contribuir?</h4>
-                    <div class="list-group list-group-flush">
-                        <div class="list-group-item border-0 ps-0">
-                            <div class="d-flex align-items-center">
-                                <span class="badge bg-primary rounded-pill me-3">1</span>
-                                <div>
-                                    <h6 class="mb-1">Fork el repositorio</h6>
-                                    <small class="text-muted">Crea tu propia copia del proyecto</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="list-group-item border-0 ps-0">
-                            <div class="d-flex align-items-center">
-                                <span class="badge bg-success rounded-pill me-3">2</span>
-                                <div>
-                                    <h6 class="mb-1">Crea una rama</h6>
-                                    <small class="text-muted">Desarrolla tu funcionalidad</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="list-group-item border-0 ps-0">
-                            <div class="d-flex align-items-center">
-                                <span class="badge bg-warning rounded-pill me-3">3</span>
-                                <div>
-                                    <h6 class="mb-1">Envía un Pull Request</h6>
-                                    <small class="text-muted">Comparte tus mejoras</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-3 p-3 bg-light rounded">
-                        <small class="text-muted">
-                            <i class="bi bi-info-circle me-1"></i>
-                            <strong>Repositorio:</strong> 
-                            <a href="https://github.com/falconsoft3d/ticketproo" target="_blank" class="text-decoration-none">
-                                github.com/falconsoft3d/ticketproo
-                            </a>
-                        </small>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Content Section for additional features -->
-<section class="py-5">
+<!-- Blog -->
+<section class="ap-section ap-alt">
     <div class="container">
-        <div class="row">
-            <div class="col-12 text-center mb-5">
-                <h2 class="display-6 fw-bold text-white">Características Principales</h2>
-                <p class="lead text-white">Todo lo que necesitas en una sola plataforma</p>
-            </div>
-        </div>
-        
-        <div class="row g-4">
-            <div class="col-lg-4 col-md-6">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body text-center p-4">
-                        <i class="bi bi-ticket-detailed display-4 text-primary mb-3"></i>
-                        <h5 class="card-title">Gestión de Tickets</h5>
-                        <p class="card-text text-muted">Sistema completo de seguimiento y gestión de solicitudes con prioridades automáticas.</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-4 col-md-6">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body text-center p-4">
-                        <i class="bi bi-chat-dots display-4 text-success mb-3"></i>
-                        <h5 class="card-title">Chat en Tiempo Real</h5>
-                        <p class="card-text text-muted">Comunicación instantánea entre equipos para resolver problemas más rápido.</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-4 col-md-6">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body text-center p-4">
-                        <i class="bi bi-file-earmark-text display-4 text-warning mb-3"></i>
-                        <h5 class="card-title">Documentación</h5>
-                        <p class="card-text text-muted">Base de conocimientos integrada con búsqueda inteligente y categorización.</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-4 col-md-6">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body text-center p-4">
-                        <i class="bi bi-speedometer2 display-4 text-info mb-3"></i>
-                        <h5 class="card-title">Dashboard Avanzado</h5>
-                        <p class="card-text text-muted">Métricas y KPIs en tiempo real para monitorear el rendimiento del equipo.</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-4 col-md-6">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body text-center p-4">
-                        <i class="bi bi-shield-check display-4 text-danger mb-3"></i>
-                        <h5 class="card-title">Seguridad Avanzada</h5>
-                        <p class="card-text text-muted">Protección de datos con cifrado end-to-end y controles de acceso granulares.</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-4 col-md-6">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body text-center p-4">
-                        <i class="bi bi-plugin display-4 text-secondary mb-3"></i>
-                        <h5 class="card-title">Integraciones</h5>
-                        <p class="card-text text-muted">Conecta con tus herramientas de IA favorita.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-
-
-<!-- Blog Preview Section -->
-<section class="py-5 bg-light">
-    <div class="container">
-        <div class="row">
-            <div class="col-12 text-center mb-5">
-                <h2 class="display-6 fw-bold">📰 Últimos Artículos del Blog</h2>
-                <p class="lead text-muted">Mantente al día con las últimas novedades y tendencias</p>
-            </div>
+        <div class="text-center mb-5 ap-reveal">
+            <h2 class="ap-title">{% translate "Lo último del blog." %}</h2>
+            <p class="ap-sub">{% translate "Novedades, guías y tendencias." %}</p>
         </div>
         <div class="row g-4">
             {% for post in latest_blog_posts %}
-            <div class="col-lg-3 col-md-6">
-                <div class="card h-100 border-0 shadow-sm blog-preview-card">
+            <div class="col-lg-3 col-md-6 ap-reveal">
+                <a href="{% url 'blog_post_detail' post.slug %}" class="ap-post">
                     {% if post.featured_image %}
-                    <img src="{{ post.featured_image.url }}" class="card-img-top" alt="{{ post.title }}" style="height: 200px; object-fit: cover;">
+                        <img src="{{ post.featured_image.url }}" alt="{{ post.title }}" loading="lazy">
+                    {% else %}
+                        <div class="ap-post-ph"><i class="bi bi-journal-richtext"></i></div>
                     {% endif %}
-                    <div class="card-body d-flex flex-column">
-                        <div class="mb-2">
-                            <span class="badge bg-primary rounded-pill">
-                                <i class="bi bi-tag me-1"></i>{{ post.category.name }}
-                            </span>
-                        </div>
-                        <h5 class="card-title">{{ post.title|truncatechars:60 }}</h5>
-                        <p class="card-text text-muted flex-grow-1">{{ post.excerpt|truncatechars:120 }}</p>
-                        <div class="mt-auto">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <small class="text-muted">
-                                    <i class="bi bi-calendar me-1"></i>{{ post.created_at|date:"d M Y" }}
-                                </small>
-                                <small class="text-muted">
-                                    <i class="bi bi-eye me-1"></i>{{ post.views_count|default:0 }}
-                                </small>
-                            </div>
-                            <a href="{% url 'blog_post_detail' post.slug %}" class="btn btn-outline-primary btn-sm w-100">
-                                <i class="bi bi-arrow-right me-1"></i>Leer artículo
-                            </a>
+                    <div class="ap-post-body">
+                        {% if post.category %}<span class="ap-tag">{{ post.category.name }}</span>{% endif %}
+                        <h5>{{ post.title|truncatechars:60 }}</h5>
+                        <p>{{ post.excerpt|truncatechars:120 }}</p>
+                        <div class="ap-post-meta">
+                            <span>{{ post.created_at|date:"d M Y" }}</span>
+                            <span><i class="bi bi-eye me-1"></i>{{ post.views_count|default:0 }}</span>
                         </div>
                     </div>
-                </div>
+                </a>
             </div>
             {% empty %}
-            <div class="col-12 text-center">
-                <div class="py-5">
-                    <i class="bi bi-journal-text display-1 text-muted mb-3"></i>
-                    <h4 class="text-muted">Próximamente nuevos artículos</h4>
-                    <p class="text-muted">Estamos preparando contenido interesante para ti</p>
-                </div>
+            <div class="col-12 text-center py-4">
+                <p class="ap-sub">{% translate "Próximamente nuevos artículos." %}</p>
             </div>
             {% endfor %}
         </div>
         {% if latest_blog_posts %}
         <div class="text-center mt-5">
-            <a href="{% url 'blog_list' %}" class="btn btn-primary btn-lg">
-                <i class="bi bi-collection me-2"></i>Ver todos los artículos
-            </a>
+            <a href="{% url 'blog_list' %}" class="ap-link">{% translate "Ver todos los artículos" %}</a>
         </div>
         {% endif %}
     </div>
@@ -463,111 +753,156 @@
 
 {% if public_catalogs %}
 <!-- Catálogos de Apps públicos -->
-<section class="py-5">
+<section class="ap-section">
     <div class="container">
-        <div class="row mb-5">
-            <div class="col-12 text-center">
-                <h2 class="display-6 fw-bold text-white">📦 Catálogos de Apps</h2>
-                <p class="lead text-white-50">Explora nuestros productos y recursos disponibles</p>
-            </div>
+        <div class="text-center mb-5 ap-reveal">
+            <h2 class="ap-title">{% translate "Catálogos de apps." %}</h2>
+            <p class="ap-sub">{% translate "Explora nuestros productos y recursos disponibles." %}</p>
         </div>
 
         {% for catalog in public_catalogs %}
-        <div class="mb-5">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="fw-bold mb-0 text-white">
-                    <i class="bi bi-grid-3x3-gap-fill text-white-50"></i> {{ catalog.name }}
-                </h3>
-                <span class="badge bg-success"><i class="bi bi-globe"></i> Público</span>
+        <div class="mb-5 ap-reveal">
+            <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
+                <div>
+                    <h3 class="fw-bold mb-1" style="letter-spacing:-0.025em">{{ catalog.name }}</h3>
+                    {% if catalog.description %}
+                    <p class="mb-0" style="color:var(--ap-ink-2)">{{ catalog.description }}</p>
+                    {% endif %}
+                </div>
+                <span class="ap-pill green"><i class="bi bi-globe me-1"></i>{% translate "Público" %}</span>
             </div>
-            {% if catalog.description %}
-            <p class="text-white-50 mb-4">{{ catalog.description }}</p>
-            {% endif %}
 
             {% with lines=catalog.lines.all|slice:":3" %}
             {% if lines %}
             <div class="row g-4">
                 {% for line in lines %}
                 <div class="col-lg-4 col-md-6">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-header bg-primary bg-opacity-10 border-0">
-                            <h5 class="mb-0 text-primary">
-                                <a href="{% url 'public_product_detail' line.product.pk %}" class="text-primary text-decoration-none">
-                                    <i class="bi bi-box-seam"></i> {{ line.product.name }}
-                                </a>
-                            </h5>
+                    <div class="ap-product" style="background:var(--ap-tile, var(--ap-fill-2))">
+                        <h5 class="mb-2">
+                            <a href="{% url 'public_product_detail' line.product.pk %}">{{ line.product.name }}</a>
+                        </h5>
+                        {% if line.product.description %}
+                        <p class="small flex-grow-1" style="color:var(--ap-ink-2)">{{ line.product.description|truncatechars:150 }}</p>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="ap-price">{{ line.product.price_with_currency }}</span>
+                            {% if line.quantity > 1 %}
+                            <span class="ap-pill blue">x{{ line.quantity }}</span>
+                            {% endif %}
                         </div>
-                        <div class="card-body d-flex flex-column">
-                            {% if line.product.description %}
-                            <p class="text-muted small flex-grow-1">{{ line.product.description|truncatechars:150 }}</p>
-                            {% endif %}
 
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <span class="fw-bold text-success fs-5">{{ line.product.price_with_currency }}</span>
-                                {% if line.quantity > 1 %}
-                                <span class="badge bg-secondary">x{{ line.quantity }}</span>
-                                {% endif %}
-                            </div>
+                        {% if line.notes %}
+                        <p class="small fst-italic mb-3" style="color:var(--ap-ink-3)">{{ line.notes }}</p>
+                        {% endif %}
 
-                            {% if line.notes %}
-                            <p class="text-muted small fst-italic mb-3">
-                                <i class="bi bi-sticky"></i> {{ line.notes }}
-                            </p>
-                            {% endif %}
-
-                            <!-- Videos del producto (miniatura del primero) -->
-                            {% with videos=line.product.videos.all %}
-                            {% if videos %}
-                            <div class="mt-2">
-                                {% with video=videos.0 %}
-                                {% with thumb=video.get_thumbnail_url %}
-                                {% if thumb %}
-                                <a href="{{ video.url }}" target="_blank" rel="noopener noreferrer" class="d-block position-relative mb-2 rounded overflow-hidden" style="aspect-ratio:16/9;">
-                                    <img src="{{ thumb }}" alt="{{ video.title|default:'Video' }}" class="w-100 h-100 object-fit-cover">
-                                    <span class="position-absolute top-50 start-50 translate-middle bg-dark bg-opacity-50 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                                        <i class="bi bi-play-fill text-white fs-4"></i>
-                                    </span>
-                                </a>
-                                {% endif %}
-                                {% endwith %}
-                                {% endwith %}
-                                {% if videos|length > 1 %}
-                                <a href="{% url 'public_product_detail' line.product.pk %}" class="btn btn-outline-danger btn-sm w-100">
-                                    <i class="bi bi-play-circle"></i> Ver todos los videos ({{ videos|length }})
-                                </a>
-                                {% endif %}
-                            </div>
+                        {% with videos=line.product.videos.all %}
+                        {% if videos %}
+                            {% with video=videos.0 %}
+                            {% with thumb=video.get_thumbnail_url %}
+                            {% if thumb %}
+                            <a href="{{ video.url }}" target="_blank" rel="noopener noreferrer" class="ap-video">
+                                <img src="{{ thumb }}" alt="{{ video.title|default:'Video' }}" loading="lazy">
+                                <span><i class="bi bi-play-fill"></i></span>
+                            </a>
                             {% endif %}
                             {% endwith %}
+                            {% endwith %}
+                            {% if videos|length > 1 %}
+                            <a href="{% url 'public_product_detail' line.product.pk %}" class="ap-link small mb-2">{% translate "Ver todos los videos" %} ({{ videos|length }})</a>
+                            {% endif %}
+                        {% endif %}
+                        {% endwith %}
 
-                            <div class="mt-auto pt-3">
-                                <a href="{% url 'public_product_detail' line.product.pk %}" class="btn btn-primary btn-sm w-100">
-                                    <i class="bi bi-arrow-right"></i> Ver detalle
-                                </a>
-                            </div>
+                        <div class="mt-auto pt-2">
+                            <a href="{% url 'public_product_detail' line.product.pk %}" class="ap-btn ap-btn-dark w-100 justify-content-center" style="font-size:.95rem;padding:.6rem 1rem">{% translate "Ver detalle" %}</a>
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
             {% else %}
-            <p class="text-muted">Este catálogo aún no tiene productos.</p>
+            <p style="color:var(--ap-ink-3)">{% translate "Este catálogo aún no tiene productos." %}</p>
             {% endif %}
             {% endwith %}
         </div>
-
-        {% if not forloop.last %}
-        <hr class="my-5 border-white opacity-25">
-        {% endif %}
         {% endfor %}
 
-        <div class="text-center mt-5">
-            <a href="{% url 'public_app_catalogs' %}" class="btn btn-outline-light btn-lg">
-                <i class="bi bi-grid-3x3-gap-fill me-2"></i>Ver todos los catálogos
-            </a>
+        <div class="text-center mt-4">
+            <a href="{% url 'public_app_catalogs' %}" class="ap-link">{% translate "Ver todos los catálogos" %}</a>
         </div>
     </div>
 </section>
 {% endif %}
 
+<!-- CTA final -->
+<section class="ap-section ap-alt text-center">
+    <div class="container ap-reveal">
+        <h2 class="ap-headline" style="font-size:clamp(2.2rem,6vw,4.5rem)">{% translate "¿Listo para transformar tu soporte?" %}</h2>
+        <p class="ap-sub mb-4">{% translate "Únete a las empresas que ya confían en TicketProo." %}</p>
+        <div class="d-flex flex-wrap gap-4 justify-content-center align-items-center">
+            {% if not user.is_authenticated %}
+                <a href="{% url 'register' %}" class="ap-btn">{% translate "Comenzar gratis" %}</a>
+            {% else %}
+                <a href="{% url 'dashboard' %}" class="ap-btn">{% translate "Ir al Dashboard" %}</a>
+            {% endif %}
+            <a href="{% url 'contacto_web' %}" class="ap-link">{% translate "Contactar ventas" %}</a>
+        </div>
+    </div>
+</section>
+
+{% if my_websites %}
+<!-- Mis webs (tabla dinámica "mis_webs") -->
+<section class="ap-section">
+    <div class="container">
+        <div class="text-center mb-5 ap-reveal">
+            <h2 class="ap-title">{% translate "Nuestras webs." %}</h2>
+            <p class="ap-sub">{% translate "Otros proyectos y sitios que desarrollamos." %}</p>
+        </div>
+        <div class="ap-webs">
+            {% for site in my_websites %}
+            {% if site.url %}<a href="{{ site.url }}" target="_blank" rel="noopener" class="ap-web ap-reveal">{% else %}<div class="ap-web ap-reveal">{% endif %}
+                <span class="ap-web-icon">
+                    {{ site.name|default:site.domain|slice:":1"|upper }}
+                    {% if site.domain %}<img src="https://icons.duckduckgo.com/ip3/{{ site.domain|urlencode }}.ico" alt="" loading="lazy" onerror="this.remove()">{% endif %}
+                </span>
+                <div class="ap-web-body">
+                    <h3>{{ site.name|default:site.domain }}</h3>
+                    {% if site.domain %}<span class="ap-web-domain">{{ site.domain }}</span>{% endif %}
+                    {% if site.description %}<p>{{ site.description }}</p>{% endif %}
+                </div>
+                {% if site.url %}<i class="bi bi-arrow-up-right ap-web-go"></i>{% endif %}
+            {% if site.url %}</a>{% else %}</div>{% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var mDate = document.getElementById('ap-m-date');
+    if (mDate) {
+        try { mDate.textContent = new Date().toLocaleDateString(mDate.dataset.lang, { weekday: 'long', day: 'numeric', month: 'long' }); } catch (e) {}
+    }
+})();
+(function () {
+    var items = document.querySelectorAll('.ap-reveal');
+    if (!('IntersectionObserver' in window)) {
+        items.forEach(function (el) { el.classList.add('in'); });
+        return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+            if (e.isIntersecting) {
+                e.target.classList.add('in');
+                io.unobserve(e.target);
+            }
+        });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    items.forEach(function (el) { io.observe(el); });
+})();
+</script>
 {% endblock %}

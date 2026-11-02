@@ -1,4 +1,5 @@
 {% extends 'base.html' %}{% extends 'base.html' %}
+{% load i18n %}
 
 {% load static %}{% load static %}
 
@@ -18,7 +19,7 @@
 
             <div>            <div>
 
-                <nav aria-label="breadcrumb">                <nav aria-label="breadcrumb">
+                <nav aria-label="{% translate 'breadcrumb' %}">                <nav aria-label="{% translate 'breadcrumb' %}">
 
                     <ol class="breadcrumb">                    <ol class="breadcrumb">
 
@@ -38,7 +39,7 @@
 
                 <div class="alert alert-info mb-3">                <div class="alert alert-info mb-3">
 
-                    <i class="bi bi-info-circle"></i> <strong>Vista Pública</strong> - Esta clase está disponible sin necesidad de autenticación                    <i class="bi bi-info-circle"></i> <strong>Vista Pública</strong> - Esta clase está disponible sin necesidad de autenticación
+                    <i class="bi bi-info-circle"></i> <strong>{% translate "Vista Pública" %}</strong> {% translate "- Esta clase está disponible sin necesidad de autenticación" %}                    <i class="bi bi-info-circle"></i> <strong>{% translate "Vista Pública" %}</strong> {% translate "- Esta clase está disponible sin necesidad de autenticación" %}
 
                 </div>                </div>
 
@@ -64,13 +65,13 @@
 
                     <a href="{% url 'login' %}" class="btn btn-outline-primary">                    <a href="{% url 'login' %}" class="btn btn-outline-primary">
 
-                        <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión                        <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                        <i class="bi bi-box-arrow-in-right"></i> {% translate "Iniciar Sesión" %}                        <i class="bi bi-box-arrow-in-right"></i> {% translate "Iniciar Sesión" %}
 
                     </a>                    </a>
 
                     <a href="{% url 'register' %}" class="btn btn-primary">                    <a href="{% url 'register' %}" class="btn btn-primary">
 
-                        <i class="bi bi-person-plus"></i> Registrarse                        <i class="bi bi-person-plus"></i> Registrarse
+                        <i class="bi bi-person-plus"></i> {% translate "Registrarse" %}                        <i class="bi bi-person-plus"></i> {% translate "Registrarse" %}
 
                     </a>                    </a>
 
@@ -98,7 +99,7 @@
 
                 <h5 class="mb-0">                <h5 class="mb-0">
 
-                    <i class="bi bi-play-circle"></i> Contenido de la Clase                    <i class="bi bi-play-circle"></i> Contenido de la Clase
+                    <i class="bi bi-play-circle"></i> {% translate "Contenido de la Clase" %}                    <i class="bi bi-play-circle"></i> {% translate "Contenido de la Clase" %}
 
                 </h5>                </h5>
 
@@ -110,7 +111,7 @@
 
                     <div class="mb-4">                    <div class="mb-4">
 
-                        <h6 class="text-muted mb-2">Descripción:</h6>                        <h6 class="text-muted mb-2">Descripción:</h6>
+                        <h6 class="text-muted mb-2">{% translate "Descripción:" %}</h6>                        <h6 class="text-muted mb-2">{% translate "Descripción:" %}</h6>
 
                         <p>{{ course_class.description|linebreaks }}</p>                        <p>{{ course_class.description|linebreaks }}</p>
 
@@ -124,7 +125,7 @@
 
                     <div class="mb-4">                    <div class="mb-4">
 
-                        <h6 class="text-muted mb-2">Video de la Clase:</h6>                        <h6 class="text-muted mb-2">Video de la Clase:</h6>
+                        <h6 class="text-muted mb-2">{% translate "Video de la Clase:" %}</h6>                        <h6 class="text-muted mb-2">{% translate "Video de la Clase:" %}</h6>
 
                         <div class="alert alert-success">                        <div class="alert alert-success">
 
@@ -132,15 +133,15 @@
 
                                 <div>                                <div>
 
-                                    <strong><i class="bi bi-play-circle"></i> Video disponible</strong><br>                                    <strong><i class="bi bi-play-circle"></i> Video disponible</strong><br>
+                                    <strong><i class="bi bi-play-circle"></i> {% translate "Video disponible" %}</strong><br>                                    <strong><i class="bi bi-play-circle"></i> {% translate "Video disponible" %}</strong><br>
 
-                                    <small class="text-muted">Haz clic en el botón para abrir el video en una nueva pestaña</small>                                    <small class="text-muted">Haz clic en el botón para abrir el video en una nueva pestaña</small>
+                                    <small class="text-muted">{% translate "Haz clic en el botón para abrir el video en una nueva pestaña" %}</small>                                    <small class="text-muted">{% translate "Haz clic en el botón para abrir el video en una nueva pestaña" %}</small>
 
                                 </div>                                </div>
 
                                 <button class="btn btn-success" onclick="window.open('{{ course_class.video_url }}', '_blank')">                                <button class="btn btn-success" onclick="window.open('{{ course_class.video_url }}', '_blank')">
 
-                                    <i class="bi bi-play-circle"></i> Ver Video                                    <i class="bi bi-play-circle"></i> Ver Video
+                                    <i class="bi bi-play-circle"></i> {% translate "Ver Video" %}                                    <i class="bi bi-play-circle"></i> {% translate "Ver Video" %}
 
                                 </button>                                </button>
 
@@ -152,7 +153,7 @@
 
                         <div class="mt-3">                        <div class="mt-3">
 
-                            <small class="text-muted">URL del video:</small><br>                            <small class="text-muted">URL del video:</small><br>
+                            <small class="text-muted">{% translate "URL del video:" %}</small><br>                            <small class="text-muted">{% translate "URL del video:" %}</small><br>
 
                             <a href="{{ course_class.video_url }}" target="_blank" class="text-decoration-none">                            <a href="{{ course_class.video_url }}" target="_blank" class="text-decoration-none">
 
@@ -174,7 +175,7 @@
 
                     <div class="mb-4">                    <div class="mb-4">
 
-                        <h6 class="text-muted mb-2">Contenido Adicional:</h6>                        <h6 class="text-muted mb-2">Contenido Adicional:</h6>
+                        <h6 class="text-muted mb-2">{% translate "Contenido Adicional:" %}</h6>                        <h6 class="text-muted mb-2">{% translate "Contenido Adicional:" %}</h6>
 
                         <div class="border rounded p-3 bg-light">                        <div class="border rounded p-3 bg-light">
 
@@ -200,7 +201,7 @@
 
                 <h6 class="mb-0">                <h6 class="mb-0">
 
-                    <i class="bi bi-arrow-left-right"></i> Navegación                    <i class="bi bi-arrow-left-right"></i> Navegación
+                    <i class="bi bi-arrow-left-right"></i> {% translate "Navegación" %}                    <i class="bi bi-arrow-left-right"></i> {% translate "Navegación" %}
 
                 </h6>                </h6>
 
@@ -218,7 +219,7 @@
 
                                class="btn btn-outline-secondary w-100">                               class="btn btn-outline-secondary w-100">
 
-                                <i class="bi bi-arrow-left"></i> Anterior<br>                                <i class="bi bi-arrow-left"></i> Anterior<br>
+                                <i class="bi bi-arrow-left"></i> {% translate "Anterior" %}<br>                                <i class="bi bi-arrow-left"></i> {% translate "Anterior" %}<br>
 
                                 <small>{{ previous_class.title|truncatechars:30 }}</small>                                <small>{{ previous_class.title|truncatechars:30 }}</small>
 
@@ -228,7 +229,7 @@
 
                             <div class="btn btn-outline-secondary w-100 disabled">                            <div class="btn btn-outline-secondary w-100 disabled">
 
-                                <i class="bi bi-arrow-left"></i> No hay clase anterior                                <i class="bi bi-arrow-left"></i> No hay clase anterior
+                                <i class="bi bi-arrow-left"></i> {% translate "No hay clase anterior" %}                                <i class="bi bi-arrow-left"></i> {% translate "No hay clase anterior" %}
 
                             </div>                            </div>
 
@@ -244,7 +245,7 @@
 
                                class="btn btn-outline-primary w-100">                               class="btn btn-outline-primary w-100">
 
-                                <i class="bi bi-arrow-right"></i> Siguiente<br>                                <i class="bi bi-arrow-right"></i> Siguiente<br>
+                                <i class="bi bi-arrow-right"></i> {% translate "Siguiente" %}<br>                                <i class="bi bi-arrow-right"></i> {% translate "Siguiente" %}<br>
 
                                 <small>{{ next_class.title|truncatechars:30 }}</small>                                <small>{{ next_class.title|truncatechars:30 }}</small>
 
@@ -254,7 +255,7 @@
 
                             <div class="btn btn-outline-primary w-100 disabled">                            <div class="btn btn-outline-primary w-100 disabled">
 
-                                <i class="bi bi-arrow-right"></i> No hay clase siguiente                                <i class="bi bi-arrow-right"></i> No hay clase siguiente
+                                <i class="bi bi-arrow-right"></i> {% translate "No hay clase siguiente" %}                                <i class="bi bi-arrow-right"></i> {% translate "No hay clase siguiente" %}
 
                             </div>                            </div>
 
@@ -282,7 +283,7 @@
 
                 <h6 class="mb-0">                <h6 class="mb-0">
 
-                    <i class="bi bi-info-circle"></i> Información de la Clase                    <i class="bi bi-info-circle"></i> Información de la Clase
+                    <i class="bi bi-info-circle"></i> {% translate "Información de la Clase" %}                    <i class="bi bi-info-circle"></i> {% translate "Información de la Clase" %}
 
                 </h6>                </h6>
 
@@ -292,7 +293,7 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-2">                <div class="d-flex justify-content-between align-items-center mb-2">
 
-                    <small class="text-muted">Curso:</small>                    <small class="text-muted">Curso:</small>
+                    <small class="text-muted">{% translate "Curso:" %}</small>                    <small class="text-muted">{% translate "Curso:" %}</small>
 
                     <span class="badge bg-primary">{{ course.title }}</span>                    <span class="badge bg-primary">{{ course.title }}</span>
 
@@ -304,7 +305,7 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-2">                <div class="d-flex justify-content-between align-items-center mb-2">
 
-                    <small class="text-muted">Orden:</small>                    <small class="text-muted">Orden:</small>
+                    <small class="text-muted">{% translate "Orden:" %}</small>                    <small class="text-muted">{% translate "Orden:" %}</small>
 
                     <span>{{ course_class.order }}</span>                    <span>{{ course_class.order }}</span>
 
@@ -316,7 +317,7 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-2">                <div class="d-flex justify-content-between align-items-center mb-2">
 
-                    <small class="text-muted">Creado:</small>                    <small class="text-muted">Creado:</small>
+                    <small class="text-muted">{% translate "Creado:" %}</small>                    <small class="text-muted">{% translate "Creado:" %}</small>
 
                     <span>{{ course_class.created_at|date:"d/m/Y" }}</span>                    <span>{{ course_class.created_at|date:"d/m/Y" }}</span>
 
@@ -326,7 +327,7 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-2">                <div class="d-flex justify-content-between align-items-center mb-2">
 
-                    <small class="text-muted">Vistas:</small>                    <small class="text-muted">Vistas:</small>
+                    <small class="text-muted">{% translate "Vistas:" %}</small>                    <small class="text-muted">{% translate "Vistas:" %}</small>
 
                     <span class="badge bg-success">{{ course_class.get_view_count }}</span>                    <span class="badge bg-success">{{ course_class.get_view_count }}</span>
 
@@ -338,13 +339,13 @@
 
                     <div class="d-flex justify-content-between align-items-center mb-2">                    <div class="d-flex justify-content-between align-items-center mb-2">
 
-                        <small class="text-muted">Tu estado:</small>                        <small class="text-muted">Tu estado:</small>
+                        <small class="text-muted">{% translate "Tu estado:" %}</small>                        <small class="text-muted">{% translate "Tu estado:" %}</small>
 
                         {% if user_has_viewed %}                        {% if user_has_viewed %}
 
                             <span class="badge bg-success">                            <span class="badge bg-success">
 
-                                <i class="bi bi-check-circle"></i> Vista                                <i class="bi bi-check-circle"></i> Vista
+                                <i class="bi bi-check-circle"></i> {% translate "Vista" %}                                <i class="bi bi-check-circle"></i> {% translate "Vista" %}
 
                             </span>                            </span>
 
@@ -352,7 +353,7 @@
 
                             <span class="badge bg-secondary">                            <span class="badge bg-secondary">
 
-                                <i class="bi bi-circle"></i> Sin ver                                <i class="bi bi-circle"></i> Sin ver
+                                <i class="bi bi-circle"></i> {% translate "Sin ver" %}                                <i class="bi bi-circle"></i> {% translate "Sin ver" %}
 
                             </span>                            </span>
 
@@ -374,15 +375,15 @@
 
                         <small class="text-warning fw-bold">                        <small class="text-warning fw-bold">
 
-                            <i class="bi bi-share"></i> Vista Pública                            <i class="bi bi-share"></i> Vista Pública
+                            <i class="bi bi-share"></i> {% translate "Vista Pública" %}                            <i class="bi bi-share"></i> {% translate "Vista Pública" %}
 
                         </small>                        </small>
 
-                        <span class="badge bg-warning text-dark">Activa</span>                        <span class="badge bg-warning text-dark">Activa</span>
+                        <span class="badge bg-warning text-dark">{% translate "Activa" %}</span>                        <span class="badge bg-warning text-dark">{% translate "Activa" %}</span>
 
                     </div>                    </div>
 
-                    <p class="small mb-0 mt-1">Esta clase es accesible públicamente.</p>                    <p class="small mb-0 mt-1">Esta clase es accesible públicamente.</p>
+                    <p class="small mb-0 mt-1">{% translate "Esta clase es accesible públicamente." %}</p>                    <p class="small mb-0 mt-1">{% translate "Esta clase es accesible públicamente." %}</p>
 
                 </div>                </div>
 
@@ -400,7 +401,7 @@
 
                 <h6 class="mb-0">                <h6 class="mb-0">
 
-                    <i class="bi bi-tools"></i> Acciones                    <i class="bi bi-tools"></i> Acciones
+                    <i class="bi bi-tools"></i> {% translate "Acciones" %}                    <i class="bi bi-tools"></i> {% translate "Acciones" %}
 
                 </h6>                </h6>
 
@@ -412,7 +413,7 @@
 
                     <a href="{% url 'course_public' course.public_token %}" class="btn btn-outline-secondary">                    <a href="{% url 'course_public' course.public_token %}" class="btn btn-outline-secondary">
 
-                        <i class="bi bi-arrow-left"></i> Volver al Curso                        <i class="bi bi-arrow-left"></i> Volver al Curso
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver al Curso" %}                        <i class="bi bi-arrow-left"></i> {% translate "Volver al Curso" %}
 
                     </a>                    </a>
 
@@ -422,7 +423,7 @@
 
                         <button class="btn btn-success" onclick="window.open('{{ course_class.video_url }}', '_blank')">                        <button class="btn btn-success" onclick="window.open('{{ course_class.video_url }}', '_blank')">
 
-                            <i class="bi bi-play-circle"></i> Ver Video                            <i class="bi bi-play-circle"></i> Ver Video
+                            <i class="bi bi-play-circle"></i> {% translate "Ver Video" %}                            <i class="bi bi-play-circle"></i> {% translate "Ver Video" %}
 
                         </button>                        </button>
 
@@ -434,7 +435,7 @@
 
                         <a href="{% url 'course_class_detail' course.pk course_class.pk %}" class="btn btn-primary">                        <a href="{% url 'course_class_detail' course.pk course_class.pk %}" class="btn btn-primary">
 
-                            <i class="bi bi-lock"></i> Ver Versión Privada                            <i class="bi bi-lock"></i> Ver Versión Privada
+                            <i class="bi bi-lock"></i> {% translate "Ver Versión Privada" %}                            <i class="bi bi-lock"></i> {% translate "Ver Versión Privada" %}
 
                         </a>                        </a>
 
@@ -446,7 +447,7 @@
 
                                     onclick="markAsViewed('{{ course_class.pk }}', '{{ course.pk }}')">                                    onclick="markAsViewed('{{ course_class.pk }}', '{{ course.pk }}')">
 
-                                <i class="bi bi-check-circle"></i> Marcar como Vista                                <i class="bi bi-check-circle"></i> Marcar como Vista
+                                <i class="bi bi-check-circle"></i> {% translate "Marcar como Vista" %}                                <i class="bi bi-check-circle"></i> {% translate "Marcar como Vista" %}
 
                             </button>                            </button>
 
@@ -456,13 +457,13 @@
 
                         <a href="{% url 'register' %}" class="btn btn-primary">                        <a href="{% url 'register' %}" class="btn btn-primary">
 
-                            <i class="bi bi-person-plus"></i> Registrarse                            <i class="bi bi-person-plus"></i> Registrarse
+                            <i class="bi bi-person-plus"></i> {% translate "Registrarse" %}                            <i class="bi bi-person-plus"></i> {% translate "Registrarse" %}
 
                         </a>                        </a>
 
                         <a href="{% url 'login' %}" class="btn btn-outline-primary">                        <a href="{% url 'login' %}" class="btn btn-outline-primary">
 
-                            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión                            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                            <i class="bi bi-box-arrow-in-right"></i> {% translate "Iniciar Sesión" %}                            <i class="bi bi-box-arrow-in-right"></i> {% translate "Iniciar Sesión" %}
 
                         </a>                        </a>
 

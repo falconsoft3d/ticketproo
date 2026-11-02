@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -10,21 +11,21 @@ import uuid
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=100, unique=True, verbose_name='Nombre')
-    description = models.TextField(blank=True, verbose_name='Descripción')
+    name = models.CharField(max_length=100, unique=True, verbose_name=gettext_lazy('Nombre'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
     color = models.CharField(
         max_length=7, 
         default='#007bff',
-        help_text='Color en formato hexadecimal (ej: #007bff)',
-        verbose_name='Color'
+        help_text=gettext_lazy('Color en formato hexadecimal (ej: #007bff)'),
+        verbose_name=gettext_lazy('Color')
     )
-    is_active = models.BooleanField(default=True, verbose_name='Activa')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy('Activa'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
     
     class Meta:
         ordering = ['name']
-        verbose_name = 'Categoría'
-        verbose_name_plural = 'Categorías'
+        verbose_name = gettext_lazy('Categoría')
+        verbose_name_plural = gettext_lazy('Categorías')
     
     def __str__(self):
         return self.name
@@ -36,55 +37,55 @@ class Company(models.Model):
     name = models.CharField(
         max_length=200, 
         unique=True, 
-        verbose_name='Nombre de la Empresa'
+        verbose_name=gettext_lazy('Nombre de la Empresa')
     )
     description = models.TextField(
         blank=True, 
-        verbose_name='Descripción',
-        help_text='Descripción opcional de la empresa'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción opcional de la empresa')
     )
     address = models.CharField(
         max_length=300, 
         blank=True, 
-        verbose_name='Dirección'
+        verbose_name=gettext_lazy('Dirección')
     )
     phone = models.CharField(
         max_length=20, 
         blank=True, 
-        verbose_name='Teléfono'
+        verbose_name=gettext_lazy('Teléfono')
     )
     email = models.EmailField(
         blank=True, 
-        verbose_name='Email de contacto'
+        verbose_name=gettext_lazy('Email de contacto')
     )
     website = models.URLField(
         blank=True, 
-        verbose_name='Sitio web'
+        verbose_name=gettext_lazy('Sitio web')
     )
     color = models.CharField(
         max_length=7, 
         default='#28a745',
-        help_text='Color en formato hexadecimal (ej: #28a745)',
-        verbose_name='Color identificativo'
+        help_text=gettext_lazy('Color en formato hexadecimal (ej: #28a745)'),
+        verbose_name=gettext_lazy('Color identificativo')
     )
     logo = models.ImageField(
         upload_to='company_logos/',
         blank=True,
         null=True,
-        verbose_name='Logo de la empresa',
-        help_text='Logo de la empresa (opcional)'
+        verbose_name=gettext_lazy('Logo de la empresa'),
+        help_text=gettext_lazy('Logo de la empresa (opcional)')
     )
     is_active = models.BooleanField(
         default=True, 
-        verbose_name='Empresa activa'
+        verbose_name=gettext_lazy('Empresa activa')
     )
     created_at = models.DateTimeField(
         default=timezone.now, 
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True, 
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     public_token = models.UUIDField(
         default=uuid.uuid4,
@@ -92,15 +93,15 @@ class Company(models.Model):
         null=True,
         blank=True,
         editable=True,
-        verbose_name='Token público',
-        help_text='Token único para acceso público a estadísticas'
+        verbose_name=gettext_lazy('Token público'),
+        help_text=gettext_lazy('Token único para acceso público a estadísticas')
     )
     client_requests_token = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name='Token de Solicitudes',
-        help_text='Token único para que los clientes accedan a sus solicitudes'
+        verbose_name=gettext_lazy('Token de Solicitudes'),
+        help_text=gettext_lazy('Token único para que los clientes accedan a sus solicitudes')
     )
     uuid = models.UUIDField(
         default=uuid.uuid4,
@@ -108,99 +109,99 @@ class Company(models.Model):
         unique=True,
         null=True,
         blank=True,
-        verbose_name='UUID público',
-        help_text='Identificador único para URLs públicas'
+        verbose_name=gettext_lazy('UUID público'),
+        help_text=gettext_lazy('Identificador único para URLs públicas')
     )
     business_objectives = models.TextField(
         blank=True,
-        verbose_name='Objetivos Empresariales',
-        help_text='Objetivos, metas y KPIs estratégicos de la empresa. Estos serán considerados en los resúmenes ejecutivos generados por IA.'
+        verbose_name=gettext_lazy('Objetivos Empresariales'),
+        help_text=gettext_lazy('Objetivos, metas y KPIs estratégicos de la empresa. Estos serán considerados en los resúmenes ejecutivos generados por IA.')
     )
     
     # Información fiscal y de ubicación
     tax_id = models.CharField(
         max_length=50,
         blank=True,
-        verbose_name='NIF/CIF/Tax ID',
-        help_text='Número de identificación fiscal'
+        verbose_name=gettext_lazy('NIF/CIF/Tax ID'),
+        help_text=gettext_lazy('Número de identificación fiscal')
     )
     city = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Ciudad',
-        help_text='Ciudad de la empresa'
+        verbose_name=gettext_lazy('Ciudad'),
+        help_text=gettext_lazy('Ciudad de la empresa')
     )
     state = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Estado/Provincia',
-        help_text='Estado o provincia de la empresa'
+        verbose_name=gettext_lazy('Estado/Provincia'),
+        help_text=gettext_lazy('Estado o provincia de la empresa')
     )
     postal_code = models.CharField(
         max_length=20,
         blank=True,
-        verbose_name='Código Postal',
-        help_text='Código postal'
+        verbose_name=gettext_lazy('Código Postal'),
+        help_text=gettext_lazy('Código postal')
     )
     country = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='País',
-        help_text='País de la empresa'
+        verbose_name=gettext_lazy('País'),
+        help_text=gettext_lazy('País de la empresa')
     )
     
     # Información bancaria
     bank_name = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Nombre del Banco',
-        help_text='Nombre del banco'
+        verbose_name=gettext_lazy('Nombre del Banco'),
+        help_text=gettext_lazy('Nombre del banco')
     )
     bank_url = models.URLField(
         blank=True,
-        verbose_name='URL del Banco',
-        help_text='Sitio web del banco'
+        verbose_name=gettext_lazy('URL del Banco'),
+        help_text=gettext_lazy('Sitio web del banco')
     )
     bank_account_holder = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Titular de la Cuenta',
-        help_text='Nombre del titular de la cuenta bancaria'
+        verbose_name=gettext_lazy('Titular de la Cuenta'),
+        help_text=gettext_lazy('Nombre del titular de la cuenta bancaria')
     )
     bank_account = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Número de Cuenta',
-        help_text='IBAN o número de cuenta bancaria'
+        verbose_name=gettext_lazy('Número de Cuenta'),
+        help_text=gettext_lazy('IBAN o número de cuenta bancaria')
     )
     bank_swift = models.CharField(
         max_length=50,
         blank=True,
-        verbose_name='SWIFT/BIC',
-        help_text='Código SWIFT o BIC del banco'
+        verbose_name=gettext_lazy('SWIFT/BIC'),
+        help_text=gettext_lazy('Código SWIFT o BIC del banco')
     )
     
     # Condiciones de pago
     payment_terms = models.TextField(
         blank=True,
-        verbose_name='Condiciones de Pago',
-        help_text='Términos y condiciones de pago (se mostrarán en las cotizaciones)'
+        verbose_name=gettext_lazy('Condiciones de Pago'),
+        help_text=gettext_lazy('Términos y condiciones de pago (se mostrarán en las cotizaciones)')
     )
     payment_terms_description = models.TextField(
         blank=True,
-        verbose_name='Descripción de Condiciones de Pago',
-        help_text='Descripción detallada de las condiciones de pago para las cotizaciones'
+        verbose_name=gettext_lazy('Descripción de Condiciones de Pago'),
+        help_text=gettext_lazy('Descripción detallada de las condiciones de pago para las cotizaciones')
     )
     quotation_general_description = models.TextField(
         blank=True,
-        verbose_name='Descripción General de Cotizaciones',
-        help_text='Descripción general que aparecerá en todas las cotizaciones de esta empresa'
+        verbose_name=gettext_lazy('Descripción General de Cotizaciones'),
+        help_text=gettext_lazy('Descripción general que aparecerá en todas las cotizaciones de esta empresa')
     )
     
     class Meta:
         ordering = ['name']
-        verbose_name = 'Empresa'
-        verbose_name_plural = 'Empresas'
+        verbose_name = gettext_lazy('Empresa')
+        verbose_name_plural = gettext_lazy('Empresas')
     
     def __str__(self):
         return self.name
@@ -257,58 +258,58 @@ class Project(models.Model):
     """Modelo para gestionar proyectos de trabajo"""
     
     STATUS_CHOICES = [
-        ('planning', 'Planificación'),
-        ('active', 'Activo'),
-        ('on_hold', 'En Pausa'),
-        ('completed', 'Completado'),
-        ('cancelled', 'Cancelado'),
+        ('planning', gettext_lazy('Planificación')),
+        ('active', gettext_lazy('Activo')),
+        ('on_hold', gettext_lazy('En Pausa')),
+        ('completed', gettext_lazy('Completado')),
+        ('cancelled', gettext_lazy('Cancelado')),
     ]
     
-    name = models.CharField(max_length=200, unique=True, verbose_name='Nombre del Proyecto')
-    description = models.TextField(blank=True, verbose_name='Descripción')
+    name = models.CharField(max_length=200, unique=True, verbose_name=gettext_lazy('Nombre del Proyecto'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
     color = models.CharField(
         max_length=7, 
         default='#28a745',
-        help_text='Color en formato hexadecimal (ej: #28a745)',
-        verbose_name='Color'
+        help_text=gettext_lazy('Color en formato hexadecimal (ej: #28a745)'),
+        verbose_name=gettext_lazy('Color')
     )
     status = models.CharField(
         max_length=20, 
         choices=STATUS_CHOICES, 
         default='active', 
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
-    start_date = models.DateField(null=True, blank=True, verbose_name='Fecha de Inicio')
-    end_date = models.DateField(null=True, blank=True, verbose_name='Fecha de Fin')
-    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    start_date = models.DateField(null=True, blank=True, verbose_name=gettext_lazy('Fecha de Inicio'))
+    end_date = models.DateField(null=True, blank=True, verbose_name=gettext_lazy('Fecha de Fin'))
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy('Activo'))
     created_by = models.ForeignKey(
         User, 
         on_delete=models.CASCADE, 
         related_name='created_projects',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     assigned_users = models.ManyToManyField(
         User,
         blank=True,
         related_name='assigned_projects',
-        verbose_name='Usuarios Asignados',
-        help_text='Usuarios que tienen acceso a este proyecto'
+        verbose_name=gettext_lazy('Usuarios Asignados'),
+        help_text=gettext_lazy('Usuarios que tienen acceso a este proyecto')
     )
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última actualización'))
     public_share_token = models.CharField(
         max_length=64,
         unique=True,
         blank=True,
         null=True,
-        verbose_name='Token de Compartir Público',
-        help_text='Token único para compartir información del proyecto públicamente'
+        verbose_name=gettext_lazy('Token de Compartir Público'),
+        help_text=gettext_lazy('Token único para compartir información del proyecto públicamente')
     )
     
     class Meta:
         ordering = ['-created_at', 'name']
-        verbose_name = 'Proyecto'
-        verbose_name_plural = 'Proyectos'
+        verbose_name = gettext_lazy('Proyecto')
+        verbose_name_plural = gettext_lazy('Proyectos')
     
     def __str__(self):
         return self.name
@@ -479,41 +480,41 @@ class Project(models.Model):
 
 class Ticket(models.Model):
     PRIORITY_CHOICES = [
-        ('low', 'Baja'),
-        ('medium', 'Media'),
-        ('high', 'Alta'),
-        ('urgent', 'Urgente'),
+        ('low', gettext_lazy('Baja')),
+        ('medium', gettext_lazy('Media')),
+        ('high', gettext_lazy('Alta')),
+        ('urgent', gettext_lazy('Urgente')),
     ]
     
     STATUS_CHOICES = [
-        ('open', 'Abierto'),
-        ('working', 'Trabajando'),
-        ('in_progress', 'En Progreso'),
-        ('resolved', 'Resuelto'),
-        ('closed', 'Cerrado'),
+        ('open', gettext_lazy('Abierto')),
+        ('working', gettext_lazy('Trabajando')),
+        ('in_progress', gettext_lazy('En Progreso')),
+        ('resolved', gettext_lazy('Resuelto')),
+        ('closed', gettext_lazy('Cerrado')),
     ]
     
     TYPE_CHOICES = [
-        ('desarrollo', 'Desarrollo'),
-        ('error', 'Error'),
+        ('desarrollo', gettext_lazy('Desarrollo')),
+        ('error', gettext_lazy('Error')),
     ]
     
-    title = models.CharField(max_length=200, verbose_name='Título')
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy('Título'))
     ticket_number = models.CharField(
         max_length=10, 
         unique=True,
         blank=True,
-        verbose_name='Número de Ticket',
-        help_text='Formato: XX-XXX (ID Usuario-Secuencia)'
+        verbose_name=gettext_lazy('Número de Ticket'),
+        help_text=gettext_lazy('Formato: XX-XXX (ID Usuario-Secuencia)')
     )
-    description = models.TextField(verbose_name='Descripción')
+    description = models.TextField(verbose_name=gettext_lazy('Descripción'))
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='tickets',
-        verbose_name='Categoría'
+        verbose_name=gettext_lazy('Categoría')
     )
     company = models.ForeignKey(
         'Company',
@@ -521,8 +522,8 @@ class Ticket(models.Model):
         null=True,
         blank=True,
         related_name='tickets',
-        verbose_name='Empresa/Cliente',
-        help_text='Empresa o cliente asociado al ticket'
+        verbose_name=gettext_lazy('Empresa/Cliente'),
+        help_text=gettext_lazy('Empresa o cliente asociado al ticket')
     )
     project = models.ForeignKey(
         Project,
@@ -530,32 +531,32 @@ class Ticket(models.Model):
         null=True,
         blank=True,
         related_name='tickets',
-        verbose_name='Proyecto',
-        help_text='Proyecto asociado al ticket (opcional)'
+        verbose_name=gettext_lazy('Proyecto'),
+        help_text=gettext_lazy('Proyecto asociado al ticket (opcional)')
     )
     priority = models.CharField(
         max_length=10, 
         choices=PRIORITY_CHOICES, 
         default='medium',
-        verbose_name='Prioridad'
+        verbose_name=gettext_lazy('Prioridad')
     )
     status = models.CharField(
         max_length=15, 
         choices=STATUS_CHOICES, 
         default='open',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     ticket_type = models.CharField(
         max_length=15,
         choices=TYPE_CHOICES,
         default='desarrollo',
-        verbose_name='Tipo'
+        verbose_name=gettext_lazy('Tipo')
     )
     created_by = models.ForeignKey(
         User, 
         on_delete=models.CASCADE, 
         related_name='created_tickets',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     assigned_to = models.ForeignKey(
         User, 
@@ -563,33 +564,33 @@ class Ticket(models.Model):
         null=True, 
         blank=True,
         related_name='assigned_tickets',
-        verbose_name='Asignado a'
+        verbose_name=gettext_lazy('Asignado a')
     )
     hours = models.DecimalField(
         max_digits=6,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Horas estimadas/trabajadas',
-        help_text='Cantidad de horas estimadas o trabajadas en el ticket'
+        verbose_name=gettext_lazy('Horas estimadas/trabajadas'),
+        help_text=gettext_lazy('Cantidad de horas estimadas o trabajadas en el ticket')
     )
     # Campo para enlace único público
     public_share_token = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
         editable=False,
-        verbose_name='Token de compartir',
-        help_text='Token único para compartir el ticket públicamente'
+        verbose_name=gettext_lazy('Token de compartir'),
+        help_text=gettext_lazy('Token único para compartir el ticket públicamente')
     )
     is_public_shareable = models.BooleanField(
         default=False,
-        verbose_name='Compartir públicamente',
-        help_text='Permite que este ticket sea visible mediante un enlace público'
+        verbose_name=gettext_lazy('Compartir públicamente'),
+        help_text=gettext_lazy('Permite que este ticket sea visible mediante un enlace público')
     )
     is_approved = models.BooleanField(
         default=False,
-        verbose_name='Aprobado',
-        help_text='Indica si el ticket ha sido aprobado por el cliente'
+        verbose_name=gettext_lazy('Aprobado'),
+        help_text=gettext_lazy('Indica si el ticket ha sido aprobado por el cliente')
     )
     approved_by = models.ForeignKey(
         User,
@@ -597,27 +598,27 @@ class Ticket(models.Model):
         null=True,
         blank=True,
         related_name='approved_tickets',
-        verbose_name='Aprobado por',
-        help_text='Usuario que aprobó el ticket'
+        verbose_name=gettext_lazy('Aprobado por'),
+        help_text=gettext_lazy('Usuario que aprobó el ticket')
     )
     approved_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de aprobación',
-        help_text='Fecha y hora en que fue aprobado el ticket'
+        verbose_name=gettext_lazy('Fecha de aprobación'),
+        help_text=gettext_lazy('Fecha y hora en que fue aprobado el ticket')
     )
     commit = models.CharField(
         max_length=500,
         blank=True,
         default='',
-        verbose_name='Commit',
-        help_text='Hash, URL o referencia del commit relacionado'
+        verbose_name=gettext_lazy('Commit'),
+        help_text=gettext_lazy('Hash, URL o referencia del commit relacionado')
     )
     rating = models.PositiveSmallIntegerField(
         null=True,
         blank=True,
-        verbose_name='Calificación',
-        help_text='Calificación del ticket de 1 a 5 estrellas'
+        verbose_name=gettext_lazy('Calificación'),
+        help_text=gettext_lazy('Calificación del ticket de 1 a 5 estrellas')
     )
     source_survey_line = models.ForeignKey(
         'ProcessSurveyLine',
@@ -625,16 +626,16 @@ class Ticket(models.Model):
         null=True,
         blank=True,
         related_name='tickets',
-        verbose_name='Línea de levantamiento origen',
-        help_text='Línea de levantamiento de procesos a partir de la cual se generó este ticket',
+        verbose_name=gettext_lazy('Línea de levantamiento origen'),
+        help_text=gettext_lazy('Línea de levantamiento de procesos a partir de la cual se generó este ticket'),
     )
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última actualización'))
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Ticket'
-        verbose_name_plural = 'Tickets'
+        verbose_name = gettext_lazy('Ticket')
+        verbose_name_plural = gettext_lazy('Tickets')
     
     def generate_ticket_number(self):
         """Genera un numero de ticket unico con formato XX-XXX"""
@@ -807,34 +808,34 @@ class TicketAttachment(models.Model):
         Ticket, 
         on_delete=models.CASCADE, 
         related_name='attachments',
-        verbose_name='Ticket'
+        verbose_name=gettext_lazy('Ticket')
     )
     file = models.FileField(
         upload_to=ticket_attachment_upload_path,
-        verbose_name='Archivo'
+        verbose_name=gettext_lazy('Archivo')
     )
     original_filename = models.CharField(
         max_length=255,
-        verbose_name='Nombre original'
+        verbose_name=gettext_lazy('Nombre original')
     )
     uploaded_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Subido por'
+        verbose_name=gettext_lazy('Subido por')
     )
     uploaded_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de subida'
+        verbose_name=gettext_lazy('Fecha de subida')
     )
     file_size = models.PositiveIntegerField(
         default=0,
-        verbose_name='Tamaño del archivo (bytes)'
+        verbose_name=gettext_lazy('Tamaño del archivo (bytes)')
     )
     
     class Meta:
         ordering = ['-uploaded_at']
-        verbose_name = 'Adjunto'
-        verbose_name_plural = 'Adjuntos'
+        verbose_name = gettext_lazy('Adjunto')
+        verbose_name_plural = gettext_lazy('Adjuntos')
     
     def __str__(self):
         return f"{self.original_filename} - Ticket #{self.ticket.id}"
@@ -866,37 +867,37 @@ class TicketComment(models.Model):
         Ticket,
         on_delete=models.CASCADE,
         related_name='comments',
-        verbose_name='Ticket'
+        verbose_name=gettext_lazy('Ticket')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     content = models.TextField(
-        verbose_name='Comentario',
-        help_text='Escribe tu comentario aquí'
+        verbose_name=gettext_lazy('Comentario'),
+        help_text=gettext_lazy('Escribe tu comentario aquí')
     )
     is_system = models.BooleanField(
         default=False,
-        verbose_name='Mensaje del sistema',
-        help_text='Comentario generado automáticamente por el sistema'
+        verbose_name=gettext_lazy('Mensaje del sistema'),
+        help_text=gettext_lazy('Comentario generado automáticamente por el sistema')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['created_at']
-        verbose_name = 'Comentario'
-        verbose_name_plural = 'Comentarios'
+        verbose_name = gettext_lazy('Comentario')
+        verbose_name_plural = gettext_lazy('Comentarios')
     
     def __str__(self):
         return f"Comentario de {self.user.username} en Ticket #{self.ticket.ticket_number}"
@@ -920,44 +921,44 @@ class TicketHourLine(models.Model):
         Ticket,
         on_delete=models.CASCADE,
         related_name='hour_lines',
-        verbose_name='Ticket'
+        verbose_name=gettext_lazy('Ticket')
     )
     description = models.CharField(
         max_length=300,
-        verbose_name='Descripción',
-        help_text='Descripción de la tarea o actividad realizada'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción de la tarea o actividad realizada')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='ticket_hour_lines',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     hours = models.DecimalField(
         max_digits=6,
         decimal_places=2,
-        verbose_name='Horas',
-        help_text='Cantidad de horas trabajadas en esta actividad'
+        verbose_name=gettext_lazy('Horas'),
+        help_text=gettext_lazy('Cantidad de horas trabajadas en esta actividad')
     )
     date = models.DateField(
         default=timezone.now,
-        verbose_name='Fecha'
+        verbose_name=gettext_lazy('Fecha')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_hour_lines',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
 
     class Meta:
         ordering = ['date', 'created_at']
-        verbose_name = 'Línea de Horas'
-        verbose_name_plural = 'Líneas de Horas'
+        verbose_name = gettext_lazy('Línea de Horas')
+        verbose_name_plural = gettext_lazy('Líneas de Horas')
 
     def __str__(self):
         return f"{self.description} - {self.user.get_full_name() or self.user.username} - {self.hours}h ({self.date})"
@@ -969,40 +970,40 @@ class UserProfile(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='profile',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     phone = models.CharField(
         max_length=20,
         blank=True,
         null=True,
-        verbose_name='Teléfono',
-        help_text='Número de teléfono de contacto'
+        verbose_name=gettext_lazy('Teléfono'),
+        help_text=gettext_lazy('Número de teléfono de contacto')
     )
     bio = models.TextField(
         max_length=500,
         blank=True,
-        verbose_name='Biografía',
-        help_text='Descripción corta del usuario'
+        verbose_name=gettext_lazy('Biografía'),
+        help_text=gettext_lazy('Descripción corta del usuario')
     )
     cargo = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        verbose_name='Cargo',
-        help_text='Cargo o posición del usuario en la empresa'
+        verbose_name=gettext_lazy('Cargo'),
+        help_text=gettext_lazy('Cargo o posición del usuario en la empresa')
     )
     descripcion_cargo = models.TextField(
         max_length=300,
         blank=True,
         null=True,
-        verbose_name='Descripción del Cargo',
-        help_text='Descripción detallada de las responsabilidades del cargo'
+        verbose_name=gettext_lazy('Descripción del Cargo'),
+        help_text=gettext_lazy('Descripción detallada de las responsabilidades del cargo')
     )
     notification_preferences = models.JSONField(
         default=dict,
         blank=True,
-        verbose_name='Preferencias de notificación',
-        help_text='Configuración de notificaciones del usuario'
+        verbose_name=gettext_lazy('Preferencias de notificación'),
+        help_text=gettext_lazy('Configuración de notificaciones del usuario')
     )
     company = models.ForeignKey(
         'Company',
@@ -1010,8 +1011,8 @@ class UserProfile(models.Model):
         null=True,
         blank=True,
         related_name='users',
-        verbose_name='Empresa',
-        help_text='Empresa a la que pertenece el usuario'
+        verbose_name=gettext_lazy('Empresa'),
+        help_text=gettext_lazy('Empresa a la que pertenece el usuario')
     )
     
     # Campos de facturación
@@ -1019,86 +1020,86 @@ class UserProfile(models.Model):
         max_digits=10,
         decimal_places=2,
         default=0.00,
-        verbose_name='Precio por hora',
-        help_text='Precio de venta por hora de trabajo (€)'
+        verbose_name=gettext_lazy('Precio por hora'),
+        help_text=gettext_lazy('Precio de venta por hora de trabajo (€)')
     )
     coste_hora = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0.00,
-        verbose_name='Coste por hora',
-        help_text='Coste interno por hora de trabajo (€)'
+        verbose_name=gettext_lazy('Coste por hora'),
+        help_text=gettext_lazy('Coste interno por hora de trabajo (€)')
     )
     
     # Token para acceso público a tareas
     public_token = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
-        verbose_name='Token público',
-        help_text='Token único para acceso público a tareas'
+        verbose_name=gettext_lazy('Token público'),
+        help_text=gettext_lazy('Token único para acceso público a tareas')
     )
     
     # Formulario de contacto público
     enable_public_contact_form = models.BooleanField(
         default=False,
-        verbose_name='Activar formulario de contacto público',
-        help_text='Permite que visitantes envíen formularios de contacto para crear empresas'
+        verbose_name=gettext_lazy('Activar formulario de contacto público'),
+        help_text=gettext_lazy('Permite que visitantes envíen formularios de contacto para crear empresas')
     )
     
     # Configuración de ubicación para el clima
     city = models.CharField(
         max_length=100,
         default='Valencia',
-        verbose_name='Ciudad',
-        help_text='Ciudad para mostrar información del clima'
+        verbose_name=gettext_lazy('Ciudad'),
+        help_text=gettext_lazy('Ciudad para mostrar información del clima')
     )
     country = models.CharField(
         max_length=100,
         default='España',
-        verbose_name='País',
-        help_text='País para mostrar información del clima'
+        verbose_name=gettext_lazy('País'),
+        help_text=gettext_lazy('País para mostrar información del clima')
     )
     country_code = models.CharField(
         max_length=2,
         default='ES',
-        verbose_name='Código de país',
-        help_text='Código ISO de 2 letras del país (ej: ES, US, FR)'
+        verbose_name=gettext_lazy('Código de país'),
+        help_text=gettext_lazy('Código ISO de 2 letras del país (ej: ES, US, FR)')
     )
     
     # Fecha de cumpleaños
     birth_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de cumpleaños',
-        help_text='Fecha de nacimiento del usuario'
+        verbose_name=gettext_lazy('Fecha de cumpleaños'),
+        help_text=gettext_lazy('Fecha de nacimiento del usuario')
     )
     
     # Términos y condiciones para cotizaciones
     quote_terms_conditions = models.TextField(
         blank=True,
-        verbose_name='Términos y Condiciones de Cotizaciones',
-        help_text='Términos y condiciones que se mostrarán en las cotizaciones rápidas'
+        verbose_name=gettext_lazy('Términos y Condiciones de Cotizaciones'),
+        help_text=gettext_lazy('Términos y condiciones que se mostrarán en las cotizaciones rápidas')
     )
     
     # Permisos de visibilidad de contactos
     can_see_all_contacts = models.BooleanField(
         default=False,
-        verbose_name='Ver todos los contactos',
-        help_text='Si está activo, el usuario puede ver todos los contactos. Si no, solo ve los que creó o tiene asignados.'
+        verbose_name=gettext_lazy('Ver todos los contactos'),
+        help_text=gettext_lazy('Si está activo, el usuario puede ver todos los contactos. Si no, solo ve los que creó o tiene asignados.')
     )
 
     # Campos para API REST
     enable_api_access = models.BooleanField(
         default=False,
-        verbose_name='Habilitar acceso a la API',
-        help_text='Permite que este usuario utilice la API REST del sistema'
+        verbose_name=gettext_lazy('Habilitar acceso a la API'),
+        help_text=gettext_lazy('Permite que este usuario utilice la API REST del sistema')
     )
     api_token = models.UUIDField(
         null=True,
         blank=True,
         unique=True,
-        verbose_name='Token de API',
-        help_text='Token único para autenticación en la API REST'
+        verbose_name=gettext_lazy('Token de API'),
+        help_text=gettext_lazy('Token único para autenticación en la API REST')
     )
     
     # Configuración de secuencia de facturas
@@ -1106,22 +1107,22 @@ class UserProfile(models.Model):
         max_length=50,
         blank=True,
         default='',
-        verbose_name='Prefijo de Secuencia de Factura',
-        help_text='Prefijo para la secuencia de facturas (ej: MCVARQ/2025/)'
+        verbose_name=gettext_lazy('Prefijo de Secuencia de Factura'),
+        help_text=gettext_lazy('Prefijo para la secuencia de facturas (ej: MCVARQ/2025/)')
     )
     invoice_next_number = models.IntegerField(
         default=1,
-        verbose_name='Próximo Número de Factura',
-        help_text='Próximo número secuencial para la factura'
+        verbose_name=gettext_lazy('Próximo Número de Factura'),
+        help_text=gettext_lazy('Próximo número secuencial para la factura')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     def get_total_hours(self):
@@ -1189,8 +1190,8 @@ class UserProfile(models.Model):
         return round(total_minutes / 60, 1)
     
     class Meta:
-        verbose_name = 'Perfil de Usuario'
-        verbose_name_plural = 'Perfiles de Usuario'
+        verbose_name = gettext_lazy('Perfil de Usuario')
+        verbose_name_plural = gettext_lazy('Perfiles de Usuario')
     
     def __str__(self):
         return f"Perfil de {self.user.username}"
@@ -1215,15 +1216,15 @@ class UserProfile(models.Model):
         upload_to='user_signatures/',
         null=True,
         blank=True,
-        verbose_name='Firma digital',
-        help_text='Imagen de la firma que se usará en contratos y documentos',
+        verbose_name=gettext_lazy('Firma digital'),
+        help_text=gettext_lazy('Imagen de la firma que se usará en contratos y documentos'),
     )
 
     # Bloqueo de acceso con error 401
     error_401 = models.BooleanField(
         default=False,
-        verbose_name='Error 401',
-        help_text='Si está activo, el usuario no podrá iniciar sesión y verá un mensaje de error 401'
+        verbose_name=gettext_lazy('Error 401'),
+        help_text=gettext_lazy('Si está activo, el usuario no podrá iniciar sesión y verá un mensaje de error 401')
     )
 
     def regenerate_api_token(self):
@@ -1239,27 +1240,27 @@ class BlockedLoginAttempt(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='blocked_login_attempts',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     attempted_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha y hora del intento'
+        verbose_name=gettext_lazy('Fecha y hora del intento')
     )
     ip_address = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     user_agent = models.CharField(
         max_length=512,
         blank=True,
         default='',
-        verbose_name='Agente de usuario'
+        verbose_name=gettext_lazy('Agente de usuario')
     )
 
     class Meta:
-        verbose_name = 'Intento de login bloqueado'
-        verbose_name_plural = 'Intentos de login bloqueados'
+        verbose_name = gettext_lazy('Intento de login bloqueado')
+        verbose_name_plural = gettext_lazy('Intentos de login bloqueados')
         ordering = ['-attempted_at']
 
     def __str__(self):
@@ -1286,78 +1287,78 @@ class UserNote(models.Model):
     """Modelo para notas internas asociadas a usuarios"""
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Título descriptivo de la nota'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Título descriptivo de la nota')
     )
     description = models.TextField(
-        verbose_name='Descripción',
-        help_text='Contenido detallado de la nota'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Contenido detallado de la nota')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='notes',
-        verbose_name='Usuario asociado',
-        help_text='Usuario al que está asociada esta nota'
+        verbose_name=gettext_lazy('Usuario asociado'),
+        help_text=gettext_lazy('Usuario al que está asociada esta nota')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_notes',
-        verbose_name='Creado por',
-        help_text='Agente que creó la nota'
+        verbose_name=gettext_lazy('Creado por'),
+        help_text=gettext_lazy('Agente que creó la nota')
     )
     company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
         blank=True,
         null=True,
-        verbose_name='Empresa',
-        help_text='Empresa asociada a esta nota'
+        verbose_name=gettext_lazy('Empresa'),
+        help_text=gettext_lazy('Empresa asociada a esta nota')
     )
     tickets = models.ManyToManyField(
         Ticket,
         blank=True,
         related_name='notes',
-        verbose_name='Tickets relacionados',
-        help_text='Tickets asociados a esta nota'
+        verbose_name=gettext_lazy('Tickets relacionados'),
+        help_text=gettext_lazy('Tickets asociados a esta nota')
     )
     is_private = models.BooleanField(
         default=False,
-        verbose_name='Nota privada',
-        help_text='Si está marcada, solo tú podrás ver, editar y eliminar esta nota'
+        verbose_name=gettext_lazy('Nota privada'),
+        help_text=gettext_lazy('Si está marcada, solo tú podrás ver, editar y eliminar esta nota')
     )
     share_token = models.CharField(
         max_length=50,
         blank=True,
         null=True,
         unique=True,
-        verbose_name='Token de compartir',
-        help_text='Token único para compartir la nota públicamente'
+        verbose_name=gettext_lazy('Token de compartir'),
+        help_text=gettext_lazy('Token único para compartir la nota públicamente')
     )
     is_shareable = models.BooleanField(
         default=False,
-        verbose_name='Compartible públicamente',
-        help_text='Si la nota puede ser compartida mediante un enlace público'
+        verbose_name=gettext_lazy('Compartible públicamente'),
+        help_text=gettext_lazy('Si la nota puede ser compartida mediante un enlace público')
     )
     view_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Número de visualizaciones',
-        help_text='Veces que la nota ha sido vista mediante enlace público'
+        verbose_name=gettext_lazy('Número de visualizaciones'),
+        help_text=gettext_lazy('Veces que la nota ha sido vista mediante enlace público')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Nota de Usuario'
-        verbose_name_plural = 'Notas de Usuario'
+        verbose_name = gettext_lazy('Nota de Usuario')
+        verbose_name_plural = gettext_lazy('Notas de Usuario')
     
     def __str__(self):
         return f"{self.title} - {self.user.username}"
@@ -1458,22 +1459,22 @@ class TimeEntry(models.Model):
     """Modelo para registrar entrada y salida de trabajo de empleados (agentes)"""
     
     END_REASON_CHOICES = [
-        ('comer', 'Comer'),
-        ('fin_jornada', 'Fin de Jornada'),
-        ('otro', 'Otro'),
+        ('comer', gettext_lazy('Comer')),
+        ('fin_jornada', gettext_lazy('Fin de Jornada')),
+        ('otro', gettext_lazy('Otro')),
     ]
     
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='time_entries',
-        verbose_name='Empleado'
+        verbose_name=gettext_lazy('Empleado')
     )
     project = models.ForeignKey(
         Project,
         on_delete=models.CASCADE,
         related_name='time_entries',
-        verbose_name='Proyecto',
+        verbose_name=gettext_lazy('Proyecto'),
         null=True,
         blank=True
     )
@@ -1481,64 +1482,64 @@ class TimeEntry(models.Model):
         'Ticket',
         on_delete=models.CASCADE,
         related_name='time_entries',
-        verbose_name='Ticket',
+        verbose_name=gettext_lazy('Ticket'),
         null=True,
         blank=True,
-        help_text='Ticket en el que se trabajará (opcional)'
+        help_text=gettext_lazy('Ticket en el que se trabajará (opcional)')
     )
     work_order = models.ForeignKey(
         'WorkOrder',
         on_delete=models.CASCADE,
         related_name='time_entries',
-        verbose_name='Orden de Trabajo',
+        verbose_name=gettext_lazy('Orden de Trabajo'),
         null=True,
         blank=True,
-        help_text='Orden de trabajo en la que se trabajará (opcional)'
+        help_text=gettext_lazy('Orden de trabajo en la que se trabajará (opcional)')
     )
     task = models.ForeignKey(
         'Task',
         on_delete=models.CASCADE,
         related_name='time_entries',
-        verbose_name='Tarea',
+        verbose_name=gettext_lazy('Tarea'),
         null=True,
         blank=True,
-        help_text='Tarea en la que se trabajará (opcional)'
+        help_text=gettext_lazy('Tarea en la que se trabajará (opcional)')
     )
     fecha_entrada = models.DateTimeField(
-        verbose_name='Fecha y hora de entrada'
+        verbose_name=gettext_lazy('Fecha y hora de entrada')
     )
     fecha_salida = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha y hora de salida'
+        verbose_name=gettext_lazy('Fecha y hora de salida')
     )
     end_reason = models.CharField(
         max_length=20,
         choices=END_REASON_CHOICES,
         null=True,
         blank=True,
-        verbose_name='Causa de finalización',
-        help_text='Motivo por el cual se finaliza la jornada'
+        verbose_name=gettext_lazy('Causa de finalización'),
+        help_text=gettext_lazy('Motivo por el cual se finaliza la jornada')
     )
     notas = models.TextField(
         blank=True,
         max_length=500,
-        verbose_name='Notas',
-        help_text='Comentarios opcionales sobre la jornada'
+        verbose_name=gettext_lazy('Notas'),
+        help_text=gettext_lazy('Comentarios opcionales sobre la jornada')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Registrado el'
+        verbose_name=gettext_lazy('Registrado el')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-fecha_entrada']
-        verbose_name = 'Registro de Horario'
-        verbose_name_plural = 'Registros de Horario'
+        verbose_name = gettext_lazy('Registro de Horario')
+        verbose_name_plural = gettext_lazy('Registros de Horario')
         unique_together = ['user', 'fecha_entrada']
     
     def __str__(self):
@@ -1659,42 +1660,42 @@ class TimeEntryAuditLog(models.Model):
         TimeEntry,
         on_delete=models.CASCADE,
         related_name='audit_logs',
-        verbose_name='Registro de Tiempo'
+        verbose_name=gettext_lazy('Registro de Tiempo')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Usuario que modificó'
+        verbose_name=gettext_lazy('Usuario que modificó')
     )
     timestamp = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha y hora de modificación'
+        verbose_name=gettext_lazy('Fecha y hora de modificación')
     )
     field_name = models.CharField(
         max_length=50,
-        verbose_name='Campo modificado'
+        verbose_name=gettext_lazy('Campo modificado')
     )
     old_value = models.TextField(
         null=True,
         blank=True,
-        verbose_name='Valor anterior'
+        verbose_name=gettext_lazy('Valor anterior')
     )
     new_value = models.TextField(
         null=True,
         blank=True,
-        verbose_name='Valor nuevo'
+        verbose_name=gettext_lazy('Valor nuevo')
     )
     change_reason = models.CharField(
         max_length=200,
         null=True,
         blank=True,
-        verbose_name='Razón del cambio'
+        verbose_name=gettext_lazy('Razón del cambio')
     )
     
     class Meta:
         ordering = ['-timestamp']
-        verbose_name = 'Log de Auditoría de Tiempo'
-        verbose_name_plural = 'Logs de Auditoría de Tiempo'
+        verbose_name = gettext_lazy('Log de Auditoría de Tiempo')
+        verbose_name_plural = gettext_lazy('Logs de Auditoría de Tiempo')
     
     def __str__(self):
         return f"{self.time_entry} - {self.field_name} - {self.timestamp.strftime('%d/%m/%Y %H:%M')}"
@@ -1707,44 +1708,44 @@ class PublicTimeAccess(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='public_time_access',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     token = models.CharField(
         max_length=100,
         unique=True,
-        verbose_name='Token de Acceso',
-        help_text='Token único para acceso público'
+        verbose_name=gettext_lazy('Token de Acceso'),
+        help_text=gettext_lazy('Token único para acceso público')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo',
-        help_text='Si está activo, el usuario puede usar el acceso público'
+        verbose_name=gettext_lazy('Activo'),
+        help_text=gettext_lazy('Si está activo, el usuario puede usar el acceso público')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Creado el'
+        verbose_name=gettext_lazy('Creado el')
     )
     last_used = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Último uso'
+        verbose_name=gettext_lazy('Último uso')
     )
     
     # Configuraciones adicionales
     require_location = models.BooleanField(
         default=False,
-        verbose_name='Requiere ubicación',
-        help_text='Si está activado, registrará la ubicación GPS al marcar entrada/salida'
+        verbose_name=gettext_lazy('Requiere ubicación'),
+        help_text=gettext_lazy('Si está activado, registrará la ubicación GPS al marcar entrada/salida')
     )
     allowed_ip_addresses = models.TextField(
         blank=True,
-        verbose_name='IPs permitidas',
-        help_text='Lista de IPs permitidas separadas por comas (opcional)'
+        verbose_name=gettext_lazy('IPs permitidas'),
+        help_text=gettext_lazy('Lista de IPs permitidas separadas por comas (opcional)')
     )
     
     class Meta:
-        verbose_name = 'Acceso Público de Horario'
-        verbose_name_plural = 'Accesos Públicos de Horario'
+        verbose_name = gettext_lazy('Acceso Público de Horario')
+        verbose_name_plural = gettext_lazy('Accesos Públicos de Horario')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -1783,200 +1784,200 @@ class SystemConfiguration(models.Model):
     # Configuración de registro de usuarios
     allow_user_registration = models.BooleanField(
         default=True,
-        verbose_name='Permitir registro de usuarios',
-        help_text='Permite que nuevos usuarios se registren en el sistema'
+        verbose_name=gettext_lazy('Permitir registro de usuarios'),
+        help_text=gettext_lazy('Permite que nuevos usuarios se registren en el sistema')
     )
     
     # Configuraciones adicionales que se pueden agregar en el futuro
     site_name = models.CharField(
         max_length=100,
         default='TicketPro',
-        verbose_name='Nombre del sitio',
-        help_text='Nombre que aparece en el encabezado del sistema'
+        verbose_name=gettext_lazy('Nombre del sitio'),
+        help_text=gettext_lazy('Nombre que aparece en el encabezado del sistema')
     )
     
     # Configuraciones de tickets
     default_ticket_priority = models.CharField(
         max_length=20,
         choices=[
-            ('low', 'Baja'),
-            ('medium', 'Media'),
-            ('high', 'Alta'),
-            ('urgent', 'Urgente')
+            ('low', gettext_lazy('Baja')),
+            ('medium', gettext_lazy('Media')),
+            ('high', gettext_lazy('Alta')),
+            ('urgent', gettext_lazy('Urgente'))
         ],
         default='medium',
-        verbose_name='Prioridad por defecto de tickets',
-        help_text='Prioridad asignada automáticamente a nuevos tickets'
+        verbose_name=gettext_lazy('Prioridad por defecto de tickets'),
+        help_text=gettext_lazy('Prioridad asignada automáticamente a nuevos tickets')
     )
     
     # Configuración de moneda
     default_currency = models.CharField(
         max_length=10,
         choices=[
-            ('EUR', 'Euro (€)'),
-            ('USD', 'Dólar Americano ($)'),
-            ('GBP', 'Libra Esterlina (£)'),
-            ('JPY', 'Yen Japonés (¥)'),
-            ('CAD', 'Dólar Canadiense (C$)'),
-            ('AUD', 'Dólar Australiano (A$)'),
-            ('CHF', 'Franco Suizo (CHF)'),
-            ('CNY', 'Yuan Chino (¥)'),
-            ('MXN', 'Peso Mexicano ($)'),
-            ('COP', 'Peso Colombiano ($)'),
+            ('EUR', gettext_lazy('Euro (€)')),
+            ('USD', gettext_lazy('Dólar Americano ($)')),
+            ('GBP', gettext_lazy('Libra Esterlina (£)')),
+            ('JPY', gettext_lazy('Yen Japonés (¥)')),
+            ('CAD', gettext_lazy('Dólar Canadiense (C$)')),
+            ('AUD', gettext_lazy('Dólar Australiano (A$)')),
+            ('CHF', gettext_lazy('Franco Suizo (CHF)')),
+            ('CNY', gettext_lazy('Yuan Chino (¥)')),
+            ('MXN', gettext_lazy('Peso Mexicano ($)')),
+            ('COP', gettext_lazy('Peso Colombiano ($)')),
         ],
         default='EUR',
-        verbose_name='Moneda por defecto',
-        help_text='Moneda utilizada para mostrar valores en el sistema'
+        verbose_name=gettext_lazy('Moneda por defecto'),
+        help_text=gettext_lazy('Moneda utilizada para mostrar valores en el sistema')
     )
     
     # Configuración de Chat IA
     openai_api_key = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='API Key de OpenAI',
-        help_text='Clave de API para conectar con ChatGPT'
+        verbose_name=gettext_lazy('API Key de OpenAI'),
+        help_text=gettext_lazy('Clave de API para conectar con ChatGPT')
     )
     
     openai_model = models.CharField(
         max_length=50,
         default='gpt-4o',
-        verbose_name='Modelo de OpenAI',
-        help_text='Modelo de IA a utilizar por defecto (ej: gpt-4o, gpt-3.5-turbo)'
+        verbose_name=gettext_lazy('Modelo de OpenAI'),
+        help_text=gettext_lazy('Modelo de IA a utilizar por defecto (ej: gpt-4o, gpt-3.5-turbo)')
     )
     
     ai_chat_enabled = models.BooleanField(
         default=False,
-        verbose_name='Chat IA habilitado',
-        help_text='Habilita o deshabilita la funcionalidad de chat con IA'
+        verbose_name=gettext_lazy('Chat IA habilitado'),
+        help_text=gettext_lazy('Habilita o deshabilita la funcionalidad de chat con IA')
     )
     
     # Configuración de análisis de empleados con IA
     ai_employee_analysis_prompt = models.TextField(
         default='Analiza el siguiente perfil de candidato y dame un resumen profesional y una puntuación del 1 al 10 para el cargo solicitado. Considera experiencia, formación, habilidades y adecuación al puesto.\n\nDatos del candidato:\n{datos}\n\nPor favor, responde en este formato:\nResumen: [Aquí tu análisis profesional del candidato]\nPuntuación: [Número del 1 al 10]',
-        verbose_name='Prompt para análisis de empleados',
-        help_text='Plantilla del prompt que se enviará a la IA para analizar candidatos. Usa {datos} donde se insertarán los datos del candidato.'
+        verbose_name=gettext_lazy('Prompt para análisis de empleados'),
+        help_text=gettext_lazy('Plantilla del prompt que se enviará a la IA para analizar candidatos. Usa {datos} donde se insertarán los datos del candidato.')
     )
     
     # Configuración de Telegram
     enable_telegram_notifications = models.BooleanField(
         default=False,
-        verbose_name='Activar notificaciones de Telegram',
-        help_text='Envía notificaciones a un grupo de Telegram cuando se crean tickets'
+        verbose_name=gettext_lazy('Activar notificaciones de Telegram'),
+        help_text=gettext_lazy('Envía notificaciones a un grupo de Telegram cuando se crean tickets')
     )
     telegram_bot_token = models.CharField(
         max_length=200,
         blank=True,
         null=True,
-        verbose_name='Token del Bot de Telegram',
-        help_text='Token del bot de Telegram proporcionado por @BotFather'
+        verbose_name=gettext_lazy('Token del Bot de Telegram'),
+        help_text=gettext_lazy('Token del bot de Telegram proporcionado por @BotFather')
     )
     telegram_chat_id = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        verbose_name='ID del Chat/Grupo de Telegram',
-        help_text='ID del grupo o chat donde enviar las notificaciones (ej: -100123456789)'
+        verbose_name=gettext_lazy('ID del Chat/Grupo de Telegram'),
+        help_text=gettext_lazy('ID del grupo o chat donde enviar las notificaciones (ej: -100123456789)')
     )
     
     # Configuración de OCR Facturas - Enlace Público
     ocr_public_upload_enabled = models.BooleanField(
         default=True,
-        verbose_name='Habilitar enlace público para subir facturas',
-        help_text='Permite activar o desactivar el enlace público para que usuarios suban facturas'
+        verbose_name=gettext_lazy('Habilitar enlace público para subir facturas'),
+        help_text=gettext_lazy('Permite activar o desactivar el enlace público para que usuarios suban facturas')
     )
     ocr_public_upload_token = models.CharField(
         max_length=100,
         blank=True,
         unique=True,
-        verbose_name='Token del enlace público',
-        help_text='Token autogenerado para acceso a la API de listado de facturas'
+        verbose_name=gettext_lazy('Token del enlace público'),
+        help_text=gettext_lazy('Token autogenerado para acceso a la API de listado de facturas')
     )
     
     # Configuración de Email
     enable_email_notifications = models.BooleanField(
         default=False,
-        verbose_name='Activar notificaciones por email',
-        help_text='Envía notificaciones por email cuando se reciben contactos desde la web'
+        verbose_name=gettext_lazy('Activar notificaciones por email'),
+        help_text=gettext_lazy('Envía notificaciones por email cuando se reciben contactos desde la web')
     )
     email_host = models.CharField(
         max_length=255,
         blank=True,
         default='smtp.gmail.com',
-        verbose_name='Servidor SMTP',
-        help_text='Servidor de correo saliente (ej: smtp.gmail.com, mail.tu-dominio.com)'
+        verbose_name=gettext_lazy('Servidor SMTP'),
+        help_text=gettext_lazy('Servidor de correo saliente (ej: smtp.gmail.com, mail.tu-dominio.com)')
     )
     email_port = models.IntegerField(
         blank=True,
         null=True,
         default=587,
-        verbose_name='Puerto SMTP',
-        help_text='Puerto del servidor SMTP (587 para TLS, 465 para SSL, 25 para sin cifrado)'
+        verbose_name=gettext_lazy('Puerto SMTP'),
+        help_text=gettext_lazy('Puerto del servidor SMTP (587 para TLS, 465 para SSL, 25 para sin cifrado)')
     )
     email_host_user = models.EmailField(
         blank=True,
-        verbose_name='Usuario SMTP',
-        help_text='Dirección de email para autenticación SMTP'
+        verbose_name=gettext_lazy('Usuario SMTP'),
+        help_text=gettext_lazy('Dirección de email para autenticación SMTP')
     )
     email_host_password = models.CharField(
         max_length=255,
         blank=True,
-        verbose_name='Contraseña SMTP',
-        help_text='Contraseña o token de aplicación para SMTP'
+        verbose_name=gettext_lazy('Contraseña SMTP'),
+        help_text=gettext_lazy('Contraseña o token de aplicación para SMTP')
     )
     email_use_tls = models.BooleanField(
         default=True,
-        verbose_name='Usar TLS',
-        help_text='Activar cifrado TLS (recomendado para puerto 587)'
+        verbose_name=gettext_lazy('Usar TLS'),
+        help_text=gettext_lazy('Activar cifrado TLS (recomendado para puerto 587)')
     )
     email_use_ssl = models.BooleanField(
         default=False,
-        verbose_name='Usar SSL',
-        help_text='Activar cifrado SSL (para puerto 465)'
+        verbose_name=gettext_lazy('Usar SSL'),
+        help_text=gettext_lazy('Activar cifrado SSL (para puerto 465)')
     )
     email_from = models.EmailField(
         blank=True,
-        verbose_name='Email remitente',
-        help_text='Dirección de email que aparecerá como remitente'
+        verbose_name=gettext_lazy('Email remitente'),
+        help_text=gettext_lazy('Dirección de email que aparecerá como remitente')
     )
     notification_emails = models.TextField(
         blank=True,
-        verbose_name='Emails de notificación',
-        help_text='Direcciones de email donde enviar notificaciones (una por línea)'
+        verbose_name=gettext_lazy('Emails de notificación'),
+        help_text=gettext_lazy('Direcciones de email donde enviar notificaciones (una por línea)')
     )
     
     # Configuración de PayPal
     paypal_enabled = models.BooleanField(
         default=False,
-        verbose_name='PayPal habilitado',
-        help_text='Habilita o deshabilita los pagos con PayPal'
+        verbose_name=gettext_lazy('PayPal habilitado'),
+        help_text=gettext_lazy('Habilita o deshabilita los pagos con PayPal')
     )
     paypal_mode = models.CharField(
         max_length=20,
         choices=[
-            ('sandbox', 'Sandbox (Pruebas)'),
-            ('live', 'Live (Producción)')
+            ('sandbox', gettext_lazy('Sandbox (Pruebas)')),
+            ('live', gettext_lazy('Live (Producción)'))
         ],
         default='sandbox',
-        verbose_name='Modo de PayPal',
-        help_text='Modo de operación de PayPal'
+        verbose_name=gettext_lazy('Modo de PayPal'),
+        help_text=gettext_lazy('Modo de operación de PayPal')
     )
     paypal_client_id = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='PayPal Client ID',
-        help_text='Client ID de la aplicación PayPal'
+        verbose_name=gettext_lazy('PayPal Client ID'),
+        help_text=gettext_lazy('Client ID de la aplicación PayPal')
     )
     paypal_client_secret = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='PayPal Client Secret',
-        help_text='Client Secret de la aplicación PayPal'
+        verbose_name=gettext_lazy('PayPal Client Secret'),
+        help_text=gettext_lazy('Client Secret de la aplicación PayPal')
     )
     paypal_webhook_id = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='PayPal Webhook ID',
-        help_text='ID del webhook configurado en PayPal para recibir notificaciones de pagos'
+        verbose_name=gettext_lazy('PayPal Webhook ID'),
+        help_text=gettext_lazy('ID del webhook configurado en PayPal para recibir notificaciones de pagos')
     )
     
     # Token público para catálogo de productos
@@ -1984,8 +1985,8 @@ class SystemConfiguration(models.Model):
         null=True,
         blank=True,
         unique=True,
-        verbose_name='Token del Catálogo Público',
-        help_text='Token único para acceso público al catálogo de productos'
+        verbose_name=gettext_lazy('Token del Catálogo Público'),
+        help_text=gettext_lazy('Token único para acceso público al catálogo de productos')
     )
 
     # Datos de contacto para cotizaciones
@@ -1993,36 +1994,36 @@ class SystemConfiguration(models.Model):
         max_length=150,
         blank=True,
         default='',
-        verbose_name='Nombre de contacto',
-        help_text='Nombre que aparece en la página de cotización para enviar comprobante de pago'
+        verbose_name=gettext_lazy('Nombre de contacto'),
+        help_text=gettext_lazy('Nombre que aparece en la página de cotización para enviar comprobante de pago')
     )
     contact_email = models.EmailField(
         blank=True,
         default='',
-        verbose_name='Email de contacto',
-        help_text='Correo al que los clientes deben enviar el comprobante de pago'
+        verbose_name=gettext_lazy('Email de contacto'),
+        help_text=gettext_lazy('Correo al que los clientes deben enviar el comprobante de pago')
     )
     paypal_payment_email = models.EmailField(
         blank=True,
         default='',
-        verbose_name='Email de PayPal para pagos',
-        help_text='Cuenta de PayPal a la que los clientes pueden enviar el pago de su cotización'
+        verbose_name=gettext_lazy('Email de PayPal para pagos'),
+        help_text=gettext_lazy('Cuenta de PayPal a la que los clientes pueden enviar el pago de su cotización')
     )
 
     forma_trabajo_url = models.URLField(
         blank=True,
         default='',
-        verbose_name='URL Forma de trabajo',
-        help_text='Enlace al documento o página que describe tu forma de trabajo (se mostrará en el formulario ¿Quién eres?)'
+        verbose_name=gettext_lazy('URL Forma de trabajo'),
+        help_text=gettext_lazy('Enlace al documento o página que describe tu forma de trabajo (se mostrará en el formulario ¿Quién eres?)')
     )
 
     # Metadatos
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última actualización'))
     
     class Meta:
-        verbose_name = 'Configuración del Sistema'
-        verbose_name_plural = 'Configuración del Sistema'
+        verbose_name = gettext_lazy('Configuración del Sistema')
+        verbose_name_plural = gettext_lazy('Configuración del Sistema')
     
     def __str__(self):
         return f'Configuración del Sistema - {self.site_name}'
@@ -2074,27 +2075,27 @@ class Document(models.Model):
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Nombre descriptivo del documento'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Nombre descriptivo del documento')
     )
     description = models.TextField(
         max_length=500,
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción opcional del contenido del documento'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción opcional del contenido del documento')
     )
     file = models.FileField(
         upload_to='documents/%Y/%m/',
-        verbose_name='Archivo',
-        help_text='Archivo de documentación (PDF, DOC, DOCX, TXT, etc.)'
+        verbose_name=gettext_lazy('Archivo'),
+        help_text=gettext_lazy('Archivo de documentación (PDF, DOC, DOCX, TXT, etc.)')
     )
     file_size = models.PositiveIntegerField(
-        verbose_name='Tamaño del archivo (bytes)',
+        verbose_name=gettext_lazy('Tamaño del archivo (bytes)'),
         editable=False
     )
     file_type = models.CharField(
         max_length=100,
-        verbose_name='Tipo de archivo',
+        verbose_name=gettext_lazy('Tipo de archivo'),
         editable=False
     )
     
@@ -2103,18 +2104,18 @@ class Document(models.Model):
         default=uuid.uuid4,
         unique=True,
         editable=False,
-        verbose_name='Token de compartir público',
-        help_text='Token único para compartir el documento públicamente'
+        verbose_name=gettext_lazy('Token de compartir público'),
+        help_text=gettext_lazy('Token único para compartir el documento públicamente')
     )
     is_public = models.BooleanField(
         default=True,
-        verbose_name='Disponible públicamente',
-        help_text='Si está marcado, el documento puede ser accedido sin autenticación'
+        verbose_name=gettext_lazy('Disponible públicamente'),
+        help_text=gettext_lazy('Si está marcado, el documento puede ser accedido sin autenticación')
     )
     download_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Número de descargas',
-        help_text='Contador de veces que se ha descargado el documento'
+        verbose_name=gettext_lazy('Número de descargas'),
+        help_text=gettext_lazy('Contador de veces que se ha descargado el documento')
     )
     
     # Metadatos del documento
@@ -2122,7 +2123,7 @@ class Document(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='created_documents',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     company = models.ForeignKey(
         'Company',
@@ -2130,30 +2131,30 @@ class Document(models.Model):
         null=True,
         blank=True,
         related_name='documents',
-        verbose_name='Empresa/Cliente',
-        help_text='Empresa o cliente asociado al documento'
+        verbose_name=gettext_lazy('Empresa/Cliente'),
+        help_text=gettext_lazy('Empresa o cliente asociado al documento')
     )
     tags = models.CharField(
         max_length=300,
         blank=True,
-        verbose_name='Etiquetas',
-        help_text='Etiquetas separadas por comas para categorizar el documento'
+        verbose_name=gettext_lazy('Etiquetas'),
+        help_text=gettext_lazy('Etiquetas separadas por comas para categorizar el documento')
     )
     
     # Timestamps
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Documento'
-        verbose_name_plural = 'Documentos'
+        verbose_name = gettext_lazy('Documento')
+        verbose_name_plural = gettext_lazy('Documentos')
     
     def __str__(self):
         return self.title
@@ -2198,74 +2199,74 @@ class UrlManager(models.Model):
     """Modelo para gestionar URLs con credenciales encriptadas"""
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Nombre descriptivo para la URL'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Nombre descriptivo para la URL')
     )
     url = models.URLField(
         max_length=500,
-        verbose_name='URL',
-        help_text='Dirección web completa (incluye http:// o https://)'
+        verbose_name=gettext_lazy('URL'),
+        help_text=gettext_lazy('Dirección web completa (incluye http:// o https://)')
     )
     username = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        verbose_name='Usuario',
-        help_text='Nombre de usuario para acceder'
+        verbose_name=gettext_lazy('Usuario'),
+        help_text=gettext_lazy('Nombre de usuario para acceder')
     )
     encrypted_password = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Contraseña encriptada',
-        help_text='Contraseña almacenada de forma segura'
+        verbose_name=gettext_lazy('Contraseña encriptada'),
+        help_text=gettext_lazy('Contraseña almacenada de forma segura')
     )
     description = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Descripción',
-        help_text='Información adicional sobre esta URL'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Información adicional sobre esta URL')
     )
     category = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        verbose_name='Categoría',
-        help_text='Ej: Servidor, Base de datos, Servicio web, etc.'
+        verbose_name=gettext_lazy('Categoría'),
+        help_text=gettext_lazy('Ej: Servidor, Base de datos, Servicio web, etc.')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo',
-        help_text='Indica si la URL está activa o no'
+        verbose_name=gettext_lazy('Activo'),
+        help_text=gettext_lazy('Indica si la URL está activa o no')
     )
     is_principal = models.BooleanField(
         default=False,
-        verbose_name='URL Principal',
-        help_text='Marcar como URL principal para mostrar en el dashboard'
+        verbose_name=gettext_lazy('URL Principal'),
+        help_text=gettext_lazy('Marcar como URL principal para mostrar en el dashboard')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_urls',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     last_accessed = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Último acceso'
+        verbose_name=gettext_lazy('Último acceso')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Gestor de URL'
-        verbose_name_plural = 'Gestores de URLs'
+        verbose_name = gettext_lazy('Gestor de URL')
+        verbose_name_plural = gettext_lazy('Gestores de URLs')
         indexes = [
             models.Index(fields=['category', 'is_active']),
             models.Index(fields=['created_by', 'is_active']),
@@ -2350,50 +2351,50 @@ class ApiEndpoint(models.Model):
     """Modelo para generar mini-APIs consultables vía GET a partir de un registro"""
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre',
-        help_text='Nombre descriptivo de la API'
+        verbose_name=gettext_lazy('Nombre'),
+        help_text=gettext_lazy('Nombre descriptivo de la API')
     )
     value = models.BooleanField(
         default=True,
-        choices=[(True, 'Verdadero'), (False, 'Falso')],
-        verbose_name='Valor',
-        help_text='Valor booleano que devolverá la API'
+        choices=[(True, gettext_lazy('Verdadero')), (False, gettext_lazy('Falso'))],
+        verbose_name=gettext_lazy('Valor'),
+        help_text=gettext_lazy('Valor booleano que devolverá la API')
     )
     text = models.TextField(
         blank=True,
-        verbose_name='Texto',
-        help_text='Contenido de texto largo que devolverá la API'
+        verbose_name=gettext_lazy('Texto'),
+        help_text=gettext_lazy('Contenido de texto largo que devolverá la API')
     )
     token = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
         editable=False,
-        verbose_name='Token'
+        verbose_name=gettext_lazy('Token')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo',
-        help_text='Si está desactivada, la API dejará de responder'
+        verbose_name=gettext_lazy('Activo'),
+        help_text=gettext_lazy('Si está desactivada, la API dejará de responder')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_api_endpoints',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'API'
-        verbose_name_plural = 'APIs'
+        verbose_name = gettext_lazy('API')
+        verbose_name_plural = gettext_lazy('APIs')
 
     def __str__(self):
         return self.name
@@ -2413,28 +2414,28 @@ class WorkOrder(models.Model):
     """Modelo para gestionar órdenes de trabajo"""
     
     STATUS_CHOICES = [
-        ('draft', 'Borrador'),
-        ('accepted', 'Aceptado'),
-        ('finished', 'Terminado'),
+        ('draft', gettext_lazy('Borrador')),
+        ('accepted', gettext_lazy('Aceptado')),
+        ('finished', gettext_lazy('Terminado')),
     ]
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Título descriptivo de la orden de trabajo'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Título descriptivo de la orden de trabajo')
     )
     description = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción detallada del trabajo a realizar'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción detallada del trabajo a realizar')
     )
     company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
         related_name='work_orders',
-        verbose_name='Empresa',
+        verbose_name=gettext_lazy('Empresa'),
         null=True,
         blank=True,
-        help_text='Empresa a la que se dirige la orden de trabajo'
+        help_text=gettext_lazy('Empresa a la que se dirige la orden de trabajo')
     )
     project = models.ForeignKey(
         Project,
@@ -2442,66 +2443,66 @@ class WorkOrder(models.Model):
         null=True,
         blank=True,
         related_name='work_orders',
-        verbose_name='Proyecto',
-        help_text='Proyecto asociado a la orden de trabajo (opcional)'
+        verbose_name=gettext_lazy('Proyecto'),
+        help_text=gettext_lazy('Proyecto asociado a la orden de trabajo (opcional)')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='draft',
-        verbose_name='Estado',
-        help_text='Estado actual de la orden de trabajo'
+        verbose_name=gettext_lazy('Estado'),
+        help_text=gettext_lazy('Estado actual de la orden de trabajo')
     )
     due_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de entrega',
-        help_text='Fecha límite para completar la orden (opcional)'
+        verbose_name=gettext_lazy('Fecha de entrega'),
+        help_text=gettext_lazy('Fecha límite para completar la orden (opcional)')
     )
     is_public = models.BooleanField(
         default=True,
-        verbose_name='Publicar públicamente',
-        help_text='Permite que esta orden sea visible públicamente'
+        verbose_name=gettext_lazy('Publicar públicamente'),
+        help_text=gettext_lazy('Permite que esta orden sea visible públicamente')
     )
     public_share_token = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
         editable=False,
-        verbose_name='Token de compartir público',
-        help_text='Token único para compartir la orden públicamente'
+        verbose_name=gettext_lazy('Token de compartir público'),
+        help_text=gettext_lazy('Token único para compartir la orden públicamente')
     )
     estimated_hours = models.DecimalField(
         max_digits=6,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Horas estimadas',
-        help_text='Tiempo estimado para completar la orden'
+        verbose_name=gettext_lazy('Horas estimadas'),
+        help_text=gettext_lazy('Tiempo estimado para completar la orden')
     )
     amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Importe',
-        help_text='Precio o costo de la orden de trabajo'
+        verbose_name=gettext_lazy('Importe'),
+        help_text=gettext_lazy('Precio o costo de la orden de trabajo')
     )
     priority = models.CharField(
         max_length=10,
         choices=[
-            ('low', 'Baja'),
-            ('medium', 'Media'),
-            ('high', 'Alta'),
-            ('urgent', 'Urgente'),
+            ('low', gettext_lazy('Baja')),
+            ('medium', gettext_lazy('Media')),
+            ('high', gettext_lazy('Alta')),
+            ('urgent', gettext_lazy('Urgente')),
         ],
         default='medium',
-        verbose_name='Prioridad'
+        verbose_name=gettext_lazy('Prioridad')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_work_orders',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     assigned_to = models.ForeignKey(
         User,
@@ -2509,27 +2510,27 @@ class WorkOrder(models.Model):
         null=True,
         blank=True,
         related_name='assigned_work_orders',
-        verbose_name='Asignado a',
-        help_text='Usuario responsable de la orden'
+        verbose_name=gettext_lazy('Asignado a'),
+        help_text=gettext_lazy('Usuario responsable de la orden')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     completed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de finalización'
+        verbose_name=gettext_lazy('Fecha de finalización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Orden de Trabajo'
-        verbose_name_plural = 'Órdenes de Trabajo'
+        verbose_name = gettext_lazy('Orden de Trabajo')
+        verbose_name_plural = gettext_lazy('Órdenes de Trabajo')
         indexes = [
             models.Index(fields=['status', 'company']),
             models.Index(fields=['due_date', 'status']),
@@ -2720,34 +2721,34 @@ class WorkOrderAttachment(models.Model):
         WorkOrder, 
         on_delete=models.CASCADE, 
         related_name='attachments',
-        verbose_name='Orden de Trabajo'
+        verbose_name=gettext_lazy('Orden de Trabajo')
     )
     file = models.FileField(
         upload_to=work_order_attachment_upload_path,
-        verbose_name='Archivo'
+        verbose_name=gettext_lazy('Archivo')
     )
     original_filename = models.CharField(
         max_length=255,
-        verbose_name='Nombre original'
+        verbose_name=gettext_lazy('Nombre original')
     )
     uploaded_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Subido por'
+        verbose_name=gettext_lazy('Subido por')
     )
     uploaded_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de subida'
+        verbose_name=gettext_lazy('Fecha de subida')
     )
     file_size = models.PositiveIntegerField(
         default=0,
-        verbose_name='Tamaño del archivo (bytes)'
+        verbose_name=gettext_lazy('Tamaño del archivo (bytes)')
     )
     
     class Meta:
         ordering = ['-uploaded_at']
-        verbose_name = 'Adjunto de Orden de Trabajo'
-        verbose_name_plural = 'Adjuntos de Órdenes de Trabajo'
+        verbose_name = gettext_lazy('Adjunto de Orden de Trabajo')
+        verbose_name_plural = gettext_lazy('Adjuntos de Órdenes de Trabajo')
     
     def __str__(self):
         return f'Adjunto: {self.original_filename} - OT: {self.work_order.title}'
@@ -2766,75 +2767,75 @@ class WorkOrderTask(models.Model):
     """Modelo para gestionar tareas específicas de órdenes de trabajo"""
     
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('in_progress', 'En Progreso'),
-        ('completed', 'Completada'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('in_progress', gettext_lazy('En Progreso')),
+        ('completed', gettext_lazy('Completada')),
     ]
     
     work_order = models.ForeignKey(
         WorkOrder,
         on_delete=models.CASCADE,
         related_name='tasks',
-        verbose_name='Orden de Trabajo'
+        verbose_name=gettext_lazy('Orden de Trabajo')
     )
     title = models.CharField(
         max_length=200,
-        verbose_name='Título de la Tarea'
+        verbose_name=gettext_lazy('Título de la Tarea')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción detallada de la tarea (opcional)'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción detallada de la tarea (opcional)')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     order = models.PositiveIntegerField(
         default=0,
-        verbose_name='Orden',
-        help_text='Orden de aparición de la tarea'
+        verbose_name=gettext_lazy('Orden'),
+        help_text=gettext_lazy('Orden de aparición de la tarea')
     )
     estimated_hours = models.DecimalField(
         max_digits=6,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Horas Estimadas',
-        help_text='Tiempo estimado para completar la tarea'
+        verbose_name=gettext_lazy('Horas Estimadas'),
+        help_text=gettext_lazy('Tiempo estimado para completar la tarea')
     )
     actual_hours = models.DecimalField(
         max_digits=6,
         decimal_places=2,
         default=0,
-        verbose_name='Horas Reales',
-        help_text='Tiempo real trabajado en la tarea'
+        verbose_name=gettext_lazy('Horas Reales'),
+        help_text=gettext_lazy('Tiempo real trabajado en la tarea')
     )
     started_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Iniciado en'
+        verbose_name=gettext_lazy('Iniciado en')
     )
     completed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Completado en'
+        verbose_name=gettext_lazy('Completado en')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['order', 'id']
-        verbose_name = 'Tarea de Orden de Trabajo'
-        verbose_name_plural = 'Tareas de Órdenes de Trabajo'
+        verbose_name = gettext_lazy('Tarea de Orden de Trabajo')
+        verbose_name_plural = gettext_lazy('Tareas de Órdenes de Trabajo')
         indexes = [
             models.Index(fields=['work_order', 'status']),
             models.Index(fields=['work_order', 'order']),
@@ -2927,31 +2928,31 @@ class WorkOrderTaskTimeEntry(models.Model):
         WorkOrderTask,
         on_delete=models.CASCADE,
         related_name='time_entries',
-        verbose_name='Tarea'
+        verbose_name=gettext_lazy('Tarea')
     )
     hours = models.DecimalField(
         max_digits=6,
         decimal_places=2,
-        verbose_name='Horas Trabajadas'
+        verbose_name=gettext_lazy('Horas Trabajadas')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción del Trabajo',
-        help_text='Descripción opcional del trabajo realizado'
+        verbose_name=gettext_lazy('Descripción del Trabajo'),
+        help_text=gettext_lazy('Descripción opcional del trabajo realizado')
     )
     date = models.DateField(
         default=timezone.now,
-        verbose_name='Fecha'
+        verbose_name=gettext_lazy('Fecha')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Registrado en'
+        verbose_name=gettext_lazy('Registrado en')
     )
     
     class Meta:
         ordering = ['-date', '-created_at']
-        verbose_name = 'Registro de Tiempo de Tarea'
-        verbose_name_plural = 'Registros de Tiempo de Tareas'
+        verbose_name = gettext_lazy('Registro de Tiempo de Tarea')
+        verbose_name_plural = gettext_lazy('Registros de Tiempo de Tareas')
         indexes = [
             models.Index(fields=['task', 'date']),
         ]
@@ -2967,38 +2968,38 @@ class WorkOrderTaskTimeSession(models.Model):
         WorkOrderTask,
         on_delete=models.CASCADE,
         related_name='active_sessions',
-        verbose_name='Tarea'
+        verbose_name=gettext_lazy('Tarea')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        verbose_name='Usuario',
-        help_text='Usuario que inició la sesión (puede ser vacío para sesiones públicas)'
+        verbose_name=gettext_lazy('Usuario'),
+        help_text=gettext_lazy('Usuario que inició la sesión (puede ser vacío para sesiones públicas)')
     )
     start_time = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Inicio'
+        verbose_name=gettext_lazy('Inicio')
     )
     end_time = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fin'
+        verbose_name=gettext_lazy('Fin')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activa'
+        verbose_name=gettext_lazy('Activa')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción del trabajo realizado'
+        verbose_name=gettext_lazy('Descripción del trabajo realizado')
     )
     
     class Meta:
         ordering = ['-start_time']
-        verbose_name = 'Sesión de Tiempo de Tarea'
-        verbose_name_plural = 'Sesiones de Tiempo de Tareas'
+        verbose_name = gettext_lazy('Sesión de Tiempo de Tarea')
+        verbose_name_plural = gettext_lazy('Sesiones de Tiempo de Tareas')
         indexes = [
             models.Index(fields=['task', 'is_active']),
             models.Index(fields=['user', 'is_active']),
@@ -3050,36 +3051,36 @@ class WorkOrderRating(models.Model):
         WorkOrder,
         on_delete=models.CASCADE,
         related_name='ratings',
-        verbose_name='Orden de Trabajo'
+        verbose_name=gettext_lazy('Orden de Trabajo')
     )
     rating = models.IntegerField(
-        verbose_name='Calificación',
-        help_text='Calificación de 1 a 5 estrellas',
-        choices=[(1, '1 estrella'), (2, '2 estrellas'), (3, '3 estrellas'), (4, '4 estrellas'), (5, '5 estrellas')]
+        verbose_name=gettext_lazy('Calificación'),
+        help_text=gettext_lazy('Calificación de 1 a 5 estrellas'),
+        choices=[(1, gettext_lazy('1 estrella')), (2, gettext_lazy('2 estrellas')), (3, gettext_lazy('3 estrellas')), (4, gettext_lazy('4 estrellas')), (5, gettext_lazy('5 estrellas'))]
     )
     comment = models.TextField(
         blank=True,
-        verbose_name='Comentario',
-        help_text='Comentario opcional sobre el servicio'
+        verbose_name=gettext_lazy('Comentario'),
+        help_text=gettext_lazy('Comentario opcional sobre el servicio')
     )
     rated_by_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre',
-        help_text='Nombre de quien califica'
+        verbose_name=gettext_lazy('Nombre'),
+        help_text=gettext_lazy('Nombre de quien califica')
     )
     rated_by_email = models.EmailField(
-        verbose_name='Email',
-        help_text='Email de quien califica'
+        verbose_name=gettext_lazy('Email'),
+        help_text=gettext_lazy('Email de quien califica')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de calificación'
+        verbose_name=gettext_lazy('Fecha de calificación')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Calificación de Orden de Trabajo'
-        verbose_name_plural = 'Calificaciones de Órdenes de Trabajo'
+        verbose_name = gettext_lazy('Calificación de Orden de Trabajo')
+        verbose_name_plural = gettext_lazy('Calificaciones de Órdenes de Trabajo')
     
     def __str__(self):
         return f"{self.work_order} - {self.rating} estrellas por {self.rated_by_name}"
@@ -3092,32 +3093,32 @@ class WorkOrderComment(models.Model):
         WorkOrder,
         on_delete=models.CASCADE,
         related_name='public_comments',
-        verbose_name='Orden de Trabajo'
+        verbose_name=gettext_lazy('Orden de Trabajo')
     )
     comment = models.TextField(
-        verbose_name='Comentario'
+        verbose_name=gettext_lazy('Comentario')
     )
     author_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del autor'
+        verbose_name=gettext_lazy('Nombre del autor')
     )
     author_email = models.EmailField(
-        verbose_name='Email del autor'
+        verbose_name=gettext_lazy('Email del autor')
     )
     is_public = models.BooleanField(
         default=True,
-        verbose_name='Visible públicamente',
-        help_text='Si está marcado, el comentario será visible en la vista pública'
+        verbose_name=gettext_lazy('Visible públicamente'),
+        help_text=gettext_lazy('Si está marcado, el comentario será visible en la vista pública')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Comentario de Orden de Trabajo'
-        verbose_name_plural = 'Comentarios de Órdenes de Trabajo'
+        verbose_name = gettext_lazy('Comentario de Orden de Trabajo')
+        verbose_name_plural = gettext_lazy('Comentarios de Órdenes de Trabajo')
     
     def __str__(self):
         return f"{self.work_order} - {self.author_name} ({self.created_at.strftime('%d/%m/%Y')})"
@@ -3127,81 +3128,81 @@ class Task(models.Model):
     """Modelo para gestionar tareas que pueden ser asignadas a múltiples usuarios"""
     
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('in_progress', 'En Progreso'),
-        ('completed', 'Completada'),
-        ('cancelled', 'Cancelada'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('in_progress', gettext_lazy('En Progreso')),
+        ('completed', gettext_lazy('Completada')),
+        ('cancelled', gettext_lazy('Cancelada')),
     ]
     
     PRIORITY_CHOICES = [
-        ('low', 'Baja'),
-        ('medium', 'Media'),
-        ('high', 'Alta'),
-        ('urgent', 'Urgente'),
+        ('low', gettext_lazy('Baja')),
+        ('medium', gettext_lazy('Media')),
+        ('high', gettext_lazy('Alta')),
+        ('urgent', gettext_lazy('Urgente')),
     ]
     
     task_number = models.CharField(
         max_length=20,
         unique=True,
         editable=False,
-        verbose_name='Número de Tarea',
+        verbose_name=gettext_lazy('Número de Tarea'),
         null=True,
         blank=True
     )
     title = models.CharField(
         max_length=200,
-        verbose_name='Título'
+        verbose_name=gettext_lazy('Título')
     )
     description = models.TextField(
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     priority = models.CharField(
         max_length=20,
         choices=PRIORITY_CHOICES,
         default='medium',
-        verbose_name='Prioridad'
+        verbose_name=gettext_lazy('Prioridad')
     )
     assigned_users = models.ManyToManyField(
         User,
         related_name='assigned_tasks',
         blank=True,
-        verbose_name='Usuarios Asignados'
+        verbose_name=gettext_lazy('Usuarios Asignados')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_tasks',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     due_date = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de vencimiento'
+        verbose_name=gettext_lazy('Fecha de vencimiento')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     completed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de finalización'
+        verbose_name=gettext_lazy('Fecha de finalización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Tarea'
-        verbose_name_plural = 'Tareas'
+        verbose_name = gettext_lazy('Tarea')
+        verbose_name_plural = gettext_lazy('Tareas')
     
     def save(self, *args, **kwargs):
         if not self.task_number:
@@ -3271,29 +3272,29 @@ class DailyTaskSession(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='daily_task_sessions',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     date = models.DateField(
-        verbose_name='Fecha de la sesión'
+        verbose_name=gettext_lazy('Fecha de la sesión')
     )
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas del día',
-        help_text='Notas generales sobre el plan del día'
+        verbose_name=gettext_lazy('Notas del día'),
+        help_text=gettext_lazy('Notas generales sobre el plan del día')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Creado en'
+        verbose_name=gettext_lazy('Creado en')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Actualizado en'
+        verbose_name=gettext_lazy('Actualizado en')
     )
     
     class Meta:
         ordering = ['-created_at', '-date']
-        verbose_name = 'Gestión de Tareas'
-        verbose_name_plural = 'Gestiones de Tareas'
+        verbose_name = gettext_lazy('Gestión de Tareas')
+        verbose_name_plural = gettext_lazy('Gestiones de Tareas')
     
     def __str__(self):
         return f'{self.user.username} - {self.date} ({self.created_at.strftime("%H:%M")})'
@@ -3325,38 +3326,38 @@ class DailyTaskItem(models.Model):
         DailyTaskSession,
         on_delete=models.CASCADE,
         related_name='daily_task_items',
-        verbose_name='Sesión diaria'
+        verbose_name=gettext_lazy('Sesión diaria')
     )
     task = models.ForeignKey(
         Task,
         on_delete=models.CASCADE,
         related_name='daily_items',
-        verbose_name='Tarea'
+        verbose_name=gettext_lazy('Tarea')
     )
     completed = models.BooleanField(
         default=False,
-        verbose_name='Completada'
+        verbose_name=gettext_lazy('Completada')
     )
     completed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Completada en'
+        verbose_name=gettext_lazy('Completada en')
     )
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas específicas',
-        help_text='Notas específicas sobre el trabajo en esta tarea'
+        verbose_name=gettext_lazy('Notas específicas'),
+        help_text=gettext_lazy('Notas específicas sobre el trabajo en esta tarea')
     )
     order = models.PositiveIntegerField(
         default=0,
-        verbose_name='Orden'
+        verbose_name=gettext_lazy('Orden')
     )
     
     class Meta:
         ordering = ['order', 'task__priority']
         unique_together = ['session', 'task']
-        verbose_name = 'Item de Tarea Diaria'
-        verbose_name_plural = 'Items de Tareas Diarias'
+        verbose_name = gettext_lazy('Item de Tarea Diaria')
+        verbose_name_plural = gettext_lazy('Items de Tareas Diarias')
     
     def __str__(self):
         status = "✓" if self.completed else "○"
@@ -3380,31 +3381,31 @@ class ChatRoom(models.Model):
     name = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Nombre de la sala'
+        verbose_name=gettext_lazy('Nombre de la sala')
     )
     participants = models.ManyToManyField(
         User,
         related_name='chat_rooms',
-        verbose_name='Participantes'
+        verbose_name=gettext_lazy('Participantes')
     )
     is_group = models.BooleanField(
         default=False,
-        verbose_name='Es grupo',
-        help_text='True para chats grupales, False para chats 1:1'
+        verbose_name=gettext_lazy('Es grupo'),
+        help_text=gettext_lazy('True para chats grupales, False para chats 1:1')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     last_activity = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Última actividad'
+        verbose_name=gettext_lazy('Última actividad')
     )
     
     class Meta:
         ordering = ['-last_activity']
-        verbose_name = 'Sala de Chat'
-        verbose_name_plural = 'Salas de Chat'
+        verbose_name = gettext_lazy('Sala de Chat')
+        verbose_name_plural = gettext_lazy('Salas de Chat')
     
     def __str__(self):
         if self.is_group and self.name:
@@ -3442,39 +3443,39 @@ class ChatMessage(models.Model):
         ChatRoom,
         on_delete=models.CASCADE,
         related_name='messages',
-        verbose_name='Sala de chat'
+        verbose_name=gettext_lazy('Sala de chat')
     )
     sender = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='chat_messages',
-        verbose_name='Remitente'
+        verbose_name=gettext_lazy('Remitente')
     )
     message = models.TextField(
         blank=True,
-        verbose_name='Mensaje'
+        verbose_name=gettext_lazy('Mensaje')
     )
     attachment = models.FileField(
         upload_to='chat_attachments/%Y/%m/%d/',
         blank=True,
         null=True,
-        verbose_name='Archivo adjunto'
+        verbose_name=gettext_lazy('Archivo adjunto')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de envío'
+        verbose_name=gettext_lazy('Fecha de envío')
     )
     read_by = models.ManyToManyField(
         User,
         blank=True,
         related_name='read_messages',
-        verbose_name='Leído por'
+        verbose_name=gettext_lazy('Leído por')
     )
     
     class Meta:
         ordering = ['created_at']
-        verbose_name = 'Mensaje de Chat'
-        verbose_name_plural = 'Mensajes de Chat'
+        verbose_name = gettext_lazy('Mensaje de Chat')
+        verbose_name_plural = gettext_lazy('Mensajes de Chat')
     
     def __str__(self):
         if self.message:
@@ -3513,89 +3514,89 @@ class Command(models.Model):
     """Modelo para gestionar biblioteca de comandos"""
     
     CATEGORY_CHOICES = [
-        ('linux', 'Linux/Unix'),
-        ('windows', 'Windows'),
-        ('docker', 'Docker'),
-        ('git', 'Git'),
-        ('python', 'Python'),
-        ('javascript', 'JavaScript'),
-        ('database', 'Base de Datos'),
-        ('network', 'Redes'),
-        ('security', 'Seguridad'),
-        ('devops', 'DevOps'),
-        ('web', 'Desarrollo Web'),
-        ('mobile', 'Desarrollo Móvil'),
-        ('other', 'Otros'),
+        ('linux', gettext_lazy('Linux/Unix')),
+        ('windows', gettext_lazy('Windows')),
+        ('docker', gettext_lazy('Docker')),
+        ('git', gettext_lazy('Git')),
+        ('python', gettext_lazy('Python')),
+        ('javascript', gettext_lazy('JavaScript')),
+        ('database', gettext_lazy('Base de Datos')),
+        ('network', gettext_lazy('Redes')),
+        ('security', gettext_lazy('Seguridad')),
+        ('devops', gettext_lazy('DevOps')),
+        ('web', gettext_lazy('Desarrollo Web')),
+        ('mobile', gettext_lazy('Desarrollo Móvil')),
+        ('other', gettext_lazy('Otros')),
     ]
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Título descriptivo del comando'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Título descriptivo del comando')
     )
     command = models.TextField(
-        verbose_name='Comando',
-        help_text='El comando completo con sus parámetros'
+        verbose_name=gettext_lazy('Comando'),
+        help_text=gettext_lazy('El comando completo con sus parámetros')
     )
     description = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción detallada de lo que hace el comando'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción detallada de lo que hace el comando')
     )
     category = models.CharField(
         max_length=20,
         choices=CATEGORY_CHOICES,
         default='other',
-        verbose_name='Categoría'
+        verbose_name=gettext_lazy('Categoría')
     )
     tags = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name='Etiquetas',
-        help_text='Etiquetas separadas por comas para facilitar la búsqueda'
+        verbose_name=gettext_lazy('Etiquetas'),
+        help_text=gettext_lazy('Etiquetas separadas por comas para facilitar la búsqueda')
     )
     example_usage = models.TextField(
         blank=True,
-        verbose_name='Ejemplo de uso',
-        help_text='Ejemplo práctico de cómo usar el comando'
+        verbose_name=gettext_lazy('Ejemplo de uso'),
+        help_text=gettext_lazy('Ejemplo práctico de cómo usar el comando')
     )
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas adicionales',
-        help_text='Notas importantes, advertencias o tips'
+        verbose_name=gettext_lazy('Notas adicionales'),
+        help_text=gettext_lazy('Notas importantes, advertencias o tips')
     )
     is_dangerous = models.BooleanField(
         default=False,
-        verbose_name='Comando peligroso',
-        help_text='Marcar si el comando puede ser destructivo o peligroso'
+        verbose_name=gettext_lazy('Comando peligroso'),
+        help_text=gettext_lazy('Marcar si el comando puede ser destructivo o peligroso')
     )
     is_favorite = models.BooleanField(
         default=False,
-        verbose_name='Favorito',
-        help_text='Marcar como comando favorito'
+        verbose_name=gettext_lazy('Favorito'),
+        help_text=gettext_lazy('Marcar como comando favorito')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     usage_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Veces usado',
-        help_text='Contador de cuántas veces se ha copiado/usado este comando'
+        verbose_name=gettext_lazy('Veces usado'),
+        help_text=gettext_lazy('Contador de cuántas veces se ha copiado/usado este comando')
     )
     
     class Meta:
         ordering = ['-is_favorite', '-usage_count', '-created_at']
-        verbose_name = 'Comando'
-        verbose_name_plural = 'Comandos'
+        verbose_name = gettext_lazy('Comando')
+        verbose_name_plural = gettext_lazy('Comandos')
         indexes = [
             models.Index(fields=['category']),
             models.Index(fields=['is_favorite']),
@@ -3651,42 +3652,42 @@ class ContactFormSubmission(models.Model):
     """Modelo para gestionar formularios de contacto público"""
     
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('approved', 'Aprobada'),
-        ('rejected', 'Rechazada'),
-        ('company_created', 'Empresa Creada'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('approved', gettext_lazy('Aprobada')),
+        ('rejected', gettext_lazy('Rechazada')),
+        ('company_created', gettext_lazy('Empresa Creada')),
     ]
     
     # Información del formulario de contacto
     company_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre de la Empresa'
+        verbose_name=gettext_lazy('Nombre de la Empresa')
     )
     contact_name = models.CharField(
         max_length=100,
-        verbose_name='Nombre del Contacto'
+        verbose_name=gettext_lazy('Nombre del Contacto')
     )
     email = models.EmailField(
-        verbose_name='Correo Electrónico'
+        verbose_name=gettext_lazy('Correo Electrónico')
     )
     phone = models.CharField(
         max_length=20,
         blank=True,
-        verbose_name='Teléfono'
+        verbose_name=gettext_lazy('Teléfono')
     )
     website = models.URLField(
         blank=True,
-        verbose_name='Sitio Web'
+        verbose_name=gettext_lazy('Sitio Web')
     )
     address = models.CharField(
         max_length=300,
         blank=True,
-        verbose_name='Dirección'
+        verbose_name=gettext_lazy('Dirección')
     )
     message = models.TextField(
         blank=True,
-        verbose_name='Mensaje Adicional',
-        help_text='Información adicional sobre la empresa o servicios requeridos'
+        verbose_name=gettext_lazy('Mensaje Adicional'),
+        help_text=gettext_lazy('Información adicional sobre la empresa o servicios requeridos')
     )
     
     # Metadatos del formulario
@@ -3694,26 +3695,26 @@ class ContactFormSubmission(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='contact_form_owner',
-        verbose_name='Propietario del formulario',
-        help_text='Usuario que tiene activado el formulario de contacto'
+        verbose_name=gettext_lazy('Propietario del formulario'),
+        help_text=gettext_lazy('Usuario que tiene activado el formulario de contacto')
     )
     
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     # Información de seguimiento
     ip_address = models.GenericIPAddressField(
         blank=True,
         null=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     user_agent = models.TextField(
         blank=True,
-        verbose_name='User Agent'
+        verbose_name=gettext_lazy('User Agent')
     )
     
     # Empresa creada (si se aprueba)
@@ -3722,18 +3723,18 @@ class ContactFormSubmission(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Empresa Creada'
+        verbose_name=gettext_lazy('Empresa Creada')
     )
     
     # Fechas
     submitted_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Envío'
+        verbose_name=gettext_lazy('Fecha de Envío')
     )
     processed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Procesamiento'
+        verbose_name=gettext_lazy('Fecha de Procesamiento')
     )
     processed_by = models.ForeignKey(
         User,
@@ -3741,20 +3742,20 @@ class ContactFormSubmission(models.Model):
         null=True,
         blank=True,
         related_name='processed_contact_forms',
-        verbose_name='Procesado por'
+        verbose_name=gettext_lazy('Procesado por')
     )
     
     # Notas internas
     admin_notes = models.TextField(
         blank=True,
-        verbose_name='Notas del Administrador',
-        help_text='Notas internas para el seguimiento de la solicitud'
+        verbose_name=gettext_lazy('Notas del Administrador'),
+        help_text=gettext_lazy('Notas internas para el seguimiento de la solicitud')
     )
     
     class Meta:
         ordering = ['-submitted_at']
-        verbose_name = 'Formulario de Contacto'
-        verbose_name_plural = 'Formularios de Contacto'
+        verbose_name = gettext_lazy('Formulario de Contacto')
+        verbose_name_plural = gettext_lazy('Formularios de Contacto')
         indexes = [
             models.Index(fields=['status']),
             models.Index(fields=['submitted_by_user']),
@@ -3792,46 +3793,46 @@ class OpportunityStatus(models.Model):
     name = models.CharField(
         max_length=100, 
         unique=True, 
-        verbose_name='Nombre del Estado'
+        verbose_name=gettext_lazy('Nombre del Estado')
     )
     description = models.TextField(
         blank=True, 
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     color = models.CharField(
         max_length=7, 
         default='#007bff',
-        help_text='Color en formato hexadecimal (ej: #007bff)',
-        verbose_name='Color'
+        help_text=gettext_lazy('Color en formato hexadecimal (ej: #007bff)'),
+        verbose_name=gettext_lazy('Color')
     )
     is_final = models.BooleanField(
         default=False,
-        verbose_name='Estado Final',
-        help_text='Indica si este estado representa el cierre de la oportunidad'
+        verbose_name=gettext_lazy('Estado Final'),
+        help_text=gettext_lazy('Indica si este estado representa el cierre de la oportunidad')
     )
     is_won = models.BooleanField(
         default=False,
-        verbose_name='Estado Ganado',
-        help_text='Indica si este estado representa una venta exitosa'
+        verbose_name=gettext_lazy('Estado Ganado'),
+        help_text=gettext_lazy('Indica si este estado representa una venta exitosa')
     )
     order = models.PositiveIntegerField(
         default=0,
-        verbose_name='Orden',
-        help_text='Orden de aparición en el pipeline'
+        verbose_name=gettext_lazy('Orden'),
+        help_text=gettext_lazy('Orden de aparición en el pipeline')
     )
-    is_active = models.BooleanField(default=True, verbose_name='Activo')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy('Activo'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
     created_by = models.ForeignKey(
         User, 
         on_delete=models.SET_NULL, 
         null=True, 
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     class Meta:
         ordering = ['order', 'name']
-        verbose_name = 'Estado de Oportunidad'
-        verbose_name_plural = 'Estados de Oportunidad'
+        verbose_name = gettext_lazy('Estado de Oportunidad')
+        verbose_name_plural = gettext_lazy('Estados de Oportunidad')
     
     def __str__(self):
         return self.name
@@ -3856,100 +3857,100 @@ class Opportunity(models.Model):
     
     name = models.CharField(
         max_length=200, 
-        verbose_name='Nombre de la Oportunidad'
+        verbose_name=gettext_lazy('Nombre de la Oportunidad')
     )
     description = models.TextField(
         blank=True, 
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
         related_name='opportunities',
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     contact_name = models.CharField(
         max_length=200,
-        verbose_name='Contacto Principal'
+        verbose_name=gettext_lazy('Contacto Principal')
     )
     contact_position = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Cargo del Contacto',
-        help_text='Posición o cargo del contacto en la empresa'
+        verbose_name=gettext_lazy('Cargo del Contacto'),
+        help_text=gettext_lazy('Posición o cargo del contacto en la empresa')
     )
     contact_email = models.EmailField(
         blank=True,
-        verbose_name='Email de Contacto'
+        verbose_name=gettext_lazy('Email de Contacto')
     )
     contact_phone = models.CharField(
         max_length=20,
         blank=True,
-        verbose_name='Teléfono de Contacto'
+        verbose_name=gettext_lazy('Teléfono de Contacto')
     )
     value = models.DecimalField(
         max_digits=12, 
         decimal_places=2,
-        verbose_name='Valor Estimado',
-        help_text='Valor estimado de la oportunidad'
+        verbose_name=gettext_lazy('Valor Estimado'),
+        help_text=gettext_lazy('Valor estimado de la oportunidad')
     )
     probability = models.IntegerField(
         choices=PROBABILITY_CHOICES,
         default=20,
-        verbose_name='Probabilidad de Cierre (%)'
+        verbose_name=gettext_lazy('Probabilidad de Cierre (%)')
     )
     status = models.ForeignKey(
         OpportunityStatus,
         on_delete=models.PROTECT,
         related_name='opportunities',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     expected_close_date = models.DateField(
-        verbose_name='Fecha Estimada de Cierre'
+        verbose_name=gettext_lazy('Fecha Estimada de Cierre')
     )
     actual_close_date = models.DateField(
         blank=True,
         null=True,
-        verbose_name='Fecha Real de Cierre'
+        verbose_name=gettext_lazy('Fecha Real de Cierre')
     )
     assigned_to = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         related_name='assigned_opportunities',
-        verbose_name='Asignado a'
+        verbose_name=gettext_lazy('Asignado a')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_opportunities',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última actualización'))
     
     # Campos de seguimiento
     last_contact_date = models.DateField(
         blank=True,
         null=True,
-        verbose_name='Último Contacto'
+        verbose_name=gettext_lazy('Último Contacto')
     )
     next_follow_up = models.DateField(
         blank=True,
         null=True,
-        verbose_name='Próximo Seguimiento'
+        verbose_name=gettext_lazy('Próximo Seguimiento')
     )
     source = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Fuente',
-        help_text='¿Cómo se originó esta oportunidad?'
+        verbose_name=gettext_lazy('Fuente'),
+        help_text=gettext_lazy('¿Cómo se originó esta oportunidad?')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Oportunidad'
-        verbose_name_plural = 'Oportunidades'
+        verbose_name = gettext_lazy('Oportunidad')
+        verbose_name_plural = gettext_lazy('Oportunidades')
         indexes = [
             models.Index(fields=['status']),
             models.Index(fields=['assigned_to']),
@@ -4001,25 +4002,25 @@ class OpportunityNote(models.Model):
         Opportunity,
         on_delete=models.CASCADE,
         related_name='notes',
-        verbose_name='Oportunidad'
+        verbose_name=gettext_lazy('Oportunidad')
     )
-    content = models.TextField(verbose_name='Contenido')
+    content = models.TextField(verbose_name=gettext_lazy('Contenido'))
     is_important = models.BooleanField(
         default=False,
-        verbose_name='Importante',
-        help_text='Marcar como nota importante'
+        verbose_name=gettext_lazy('Importante'),
+        help_text=gettext_lazy('Marcar como nota importante')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Nota de Oportunidad'
-        verbose_name_plural = 'Notas de Oportunidad'
+        verbose_name = gettext_lazy('Nota de Oportunidad')
+        verbose_name_plural = gettext_lazy('Notas de Oportunidad')
     
     def __str__(self):
         return f"Nota para {self.opportunity.name} - {self.created_at.strftime('%d/%m/%Y')}"
@@ -4032,7 +4033,7 @@ class OpportunityStatusHistory(models.Model):
         Opportunity,
         on_delete=models.CASCADE,
         related_name='status_history',
-        verbose_name='Oportunidad'
+        verbose_name=gettext_lazy('Oportunidad')
     )
     previous_status = models.ForeignKey(
         OpportunityStatus,
@@ -4040,30 +4041,30 @@ class OpportunityStatusHistory(models.Model):
         null=True,
         blank=True,
         related_name='previous_changes',
-        verbose_name='Estado Anterior'
+        verbose_name=gettext_lazy('Estado Anterior')
     )
     new_status = models.ForeignKey(
         OpportunityStatus,
         on_delete=models.CASCADE,
         related_name='new_changes',
-        verbose_name='Nuevo Estado'
+        verbose_name=gettext_lazy('Nuevo Estado')
     )
     changed_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Cambiado por'
+        verbose_name=gettext_lazy('Cambiado por')
     )
-    changed_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha del cambio')
+    changed_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha del cambio'))
     comment = models.TextField(
         blank=True,
-        verbose_name='Comentario',
-        help_text='Razón del cambio de estado'
+        verbose_name=gettext_lazy('Comentario'),
+        help_text=gettext_lazy('Razón del cambio de estado')
     )
     
     class Meta:
         ordering = ['-changed_at']
-        verbose_name = 'Historial de Estado'
-        verbose_name_plural = 'Historial de Estados'
+        verbose_name = gettext_lazy('Historial de Estado')
+        verbose_name_plural = gettext_lazy('Historial de Estados')
     
     def __str__(self):
         return f"{self.opportunity.name}: {self.previous_status} → {self.new_status}"
@@ -4073,36 +4074,36 @@ class OpportunityActivity(models.Model):
     """Modelo para actividades de seguimiento de oportunidades"""
     
     ACTIVITY_TYPE_CHOICES = [
-        ('call', 'Llamada'),
-        ('meeting', 'Reunión'),
-        ('email', 'Correo Electrónico'),
-        ('task', 'Tarea'),
-        ('demo', 'Demostración'),
-        ('proposal', 'Propuesta'),
-        ('follow_up', 'Seguimiento'),
-        ('other', 'Otro'),
+        ('call', gettext_lazy('Llamada')),
+        ('meeting', gettext_lazy('Reunión')),
+        ('email', gettext_lazy('Correo Electrónico')),
+        ('task', gettext_lazy('Tarea')),
+        ('demo', gettext_lazy('Demostración')),
+        ('proposal', gettext_lazy('Propuesta')),
+        ('follow_up', gettext_lazy('Seguimiento')),
+        ('other', gettext_lazy('Otro')),
     ]
     
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('in_progress', 'En Progreso'),
-        ('completed', 'Completada'),
-        ('cancelled', 'Cancelada'),
-        ('overdue', 'Vencida'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('in_progress', gettext_lazy('En Progreso')),
+        ('completed', gettext_lazy('Completada')),
+        ('cancelled', gettext_lazy('Cancelada')),
+        ('overdue', gettext_lazy('Vencida')),
     ]
     
     PRIORITY_CHOICES = [
-        ('low', 'Baja'),
-        ('medium', 'Media'),
-        ('high', 'Alta'),
-        ('urgent', 'Urgente'),
+        ('low', gettext_lazy('Baja')),
+        ('medium', gettext_lazy('Media')),
+        ('high', gettext_lazy('Alta')),
+        ('urgent', gettext_lazy('Urgente')),
     ]
     
     opportunity = models.ForeignKey(
         Opportunity,
         on_delete=models.CASCADE,
         related_name='activities',
-        verbose_name='Oportunidad',
+        verbose_name=gettext_lazy('Oportunidad'),
         null=True,
         blank=True
     )
@@ -4110,84 +4111,84 @@ class OpportunityActivity(models.Model):
         'Contact',
         on_delete=models.CASCADE,
         related_name='activities',
-        verbose_name='Contacto',
+        verbose_name=gettext_lazy('Contacto'),
         null=True,
         blank=True,
-        help_text='Contacto relacionado con esta actividad'
+        help_text=gettext_lazy('Contacto relacionado con esta actividad')
     )
     title = models.CharField(
         max_length=200,
-        verbose_name='Título de la Actividad'
+        verbose_name=gettext_lazy('Título de la Actividad')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     activity_type = models.CharField(
         max_length=20,
         choices=ACTIVITY_TYPE_CHOICES,
         default='task',
-        verbose_name='Tipo de Actividad'
+        verbose_name=gettext_lazy('Tipo de Actividad')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     priority = models.CharField(
         max_length=10,
         choices=PRIORITY_CHOICES,
         default='medium',
-        verbose_name='Prioridad'
+        verbose_name=gettext_lazy('Prioridad')
     )
     scheduled_date = models.DateTimeField(
-        verbose_name='Fecha Programada',
-        help_text='Fecha y hora cuando debe realizarse la actividad'
+        verbose_name=gettext_lazy('Fecha Programada'),
+        help_text=gettext_lazy('Fecha y hora cuando debe realizarse la actividad')
     )
     completed_date = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Completado'
+        verbose_name=gettext_lazy('Fecha de Completado')
     )
     assigned_to = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='assigned_activities',
-        verbose_name='Asignado a'
+        verbose_name=gettext_lazy('Asignado a')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_activities',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última actualización'))
     
     # Campos adicionales
     result = models.TextField(
         blank=True,
-        verbose_name='Resultado',
-        help_text='Resultado o notas de la actividad completada'
+        verbose_name=gettext_lazy('Resultado'),
+        help_text=gettext_lazy('Resultado o notas de la actividad completada')
     )
     duration_minutes = models.PositiveIntegerField(
         null=True,
         blank=True,
-        verbose_name='Duración (minutos)',
-        help_text='Duración estimada o real de la actividad'
+        verbose_name=gettext_lazy('Duración (minutos)'),
+        help_text=gettext_lazy('Duración estimada o real de la actividad')
     )
     location = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Ubicación',
-        help_text='Lugar donde se realizará la actividad'
+        verbose_name=gettext_lazy('Ubicación'),
+        help_text=gettext_lazy('Lugar donde se realizará la actividad')
     )
     
     class Meta:
         ordering = ['scheduled_date', '-priority']
-        verbose_name = 'Actividad de Oportunidad'
-        verbose_name_plural = 'Actividades de Oportunidades'
+        verbose_name = gettext_lazy('Actividad de Oportunidad')
+        verbose_name_plural = gettext_lazy('Actividades de Oportunidades')
         indexes = [
             models.Index(fields=['status']),
             models.Index(fields=['assigned_to']),
@@ -4261,27 +4262,27 @@ class Meeting(models.Model):
     """Modelo para gestionar reuniones"""
     
     STATUS_CHOICES = [
-        ('scheduled', 'Programada'),
-        ('in_progress', 'En progreso'),
-        ('finished', 'Finalizada'),
-        ('cancelled', 'Cancelada'),
+        ('scheduled', gettext_lazy('Programada')),
+        ('in_progress', gettext_lazy('En progreso')),
+        ('finished', gettext_lazy('Finalizada')),
+        ('cancelled', gettext_lazy('Cancelada')),
     ]
     
-    title = models.CharField(max_length=200, verbose_name='Título de la reunión')
-    description = models.TextField(blank=True, verbose_name='Descripción')
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy('Título de la reunión'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
     spin_methodology = models.TextField(
         blank=True, 
-        verbose_name='Metodología SPIN',
-        help_text='Preguntas generadas automáticamente usando la metodología SPIN de ventas'
+        verbose_name=gettext_lazy('Metodología SPIN'),
+        help_text=gettext_lazy('Preguntas generadas automáticamente usando la metodología SPIN de ventas')
     )
-    date = models.DateTimeField(verbose_name='Fecha y hora')
-    duration = models.IntegerField(default=60, verbose_name='Duración (minutos)')
-    location = models.CharField(max_length=200, blank=True, verbose_name='Ubicación')
+    date = models.DateTimeField(verbose_name=gettext_lazy('Fecha y hora'))
+    duration = models.IntegerField(default=60, verbose_name=gettext_lazy('Duración (minutos)'))
+    location = models.CharField(max_length=200, blank=True, verbose_name=gettext_lazy('Ubicación'))
     status = models.CharField(
         max_length=20, 
         choices=STATUS_CHOICES, 
         default='scheduled',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     # Organizador
@@ -4289,7 +4290,7 @@ class Meeting(models.Model):
         User, 
         on_delete=models.CASCADE, 
         related_name='organized_meetings',
-        verbose_name='Organizador'
+        verbose_name=gettext_lazy('Organizador')
     )
     
     # Empresa (opcional para uso interno)
@@ -4298,8 +4299,8 @@ class Meeting(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Empresa',
-        help_text='Empresa relacionada con la reunión (opcional)'
+        verbose_name=gettext_lazy('Empresa'),
+        help_text=gettext_lazy('Empresa relacionada con la reunión (opcional)')
     )
     
     # Producto relacionado con la reunión
@@ -4308,33 +4309,33 @@ class Meeting(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Producto',
-        help_text='Producto principal que se discutirá en la reunión'
+        verbose_name=gettext_lazy('Producto'),
+        help_text=gettext_lazy('Producto principal que se discutirá en la reunión')
     )
     
     # Link público único
     public_token = models.CharField(
         max_length=100, 
         unique=True, 
-        verbose_name='Token público'
+        verbose_name=gettext_lazy('Token público')
     )
     
     # Configuración
-    allow_questions = models.BooleanField(default=True, verbose_name='Permitir preguntas')
-    require_email = models.BooleanField(default=False, verbose_name='Requerir email')
-    is_active = models.BooleanField(default=True, verbose_name='Activa')
+    allow_questions = models.BooleanField(default=True, verbose_name=gettext_lazy('Permitir preguntas'))
+    require_email = models.BooleanField(default=False, verbose_name=gettext_lazy('Requerir email'))
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy('Activa'))
     
     # Estadísticas
-    public_views_count = models.IntegerField(default=0, verbose_name='Vistas del enlace público')
+    public_views_count = models.IntegerField(default=0, verbose_name=gettext_lazy('Vistas del enlace público'))
     
     # Metadata
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Creada el')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizada el')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Creada el'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Actualizada el'))
     
     class Meta:
         ordering = ['-date']
-        verbose_name = 'Reunión'
-        verbose_name_plural = 'Reuniones'
+        verbose_name = gettext_lazy('Reunión')
+        verbose_name_plural = gettext_lazy('Reuniones')
     
     def __str__(self):
         return f"{self.title} - {self.date.strftime('%d/%m/%Y %H:%M')}"
@@ -4366,29 +4367,29 @@ class MeetingAttendee(models.Model):
     """Modelo para asistentes a reuniones"""
     
     RESPONSE_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('accepted', 'Aceptada'),
-        ('declined', 'Rechazada'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('accepted', gettext_lazy('Aceptada')),
+        ('declined', gettext_lazy('Rechazada')),
     ]
     
-    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name='Reunión')
-    name = models.CharField(max_length=100, verbose_name='Nombre')
-    email = models.EmailField(blank=True, verbose_name='Email')
-    company = models.CharField(max_length=100, blank=True, verbose_name='Empresa')
-    registered_at = models.DateTimeField(default=timezone.now, verbose_name='Registrado el')
-    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
+    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name=gettext_lazy('Reunión'))
+    name = models.CharField(max_length=100, verbose_name=gettext_lazy('Nombre'))
+    email = models.EmailField(blank=True, verbose_name=gettext_lazy('Email'))
+    company = models.CharField(max_length=100, blank=True, verbose_name=gettext_lazy('Empresa'))
+    registered_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Registrado el'))
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name=gettext_lazy('IP'))
     response_status = models.CharField(
         max_length=20, 
         choices=RESPONSE_CHOICES, 
         default='pending',
-        verbose_name='Estado de respuesta'
+        verbose_name=gettext_lazy('Estado de respuesta')
     )
-    response_date = models.DateTimeField(null=True, blank=True, verbose_name='Fecha de respuesta')
+    response_date = models.DateTimeField(null=True, blank=True, verbose_name=gettext_lazy('Fecha de respuesta'))
     
     class Meta:
         ordering = ['registered_at']
-        verbose_name = 'Asistente'
-        verbose_name_plural = 'Asistentes'
+        verbose_name = gettext_lazy('Asistente')
+        verbose_name_plural = gettext_lazy('Asistentes')
         # Removido unique_together para permitir múltiples registros
     
     def __str__(self):
@@ -4399,48 +4400,48 @@ class MeetingQuestion(models.Model):
     """Modelo para preguntas en reuniones"""
     
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('answered', 'Respondida'),
-        ('ignored', 'Ignorada'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('answered', gettext_lazy('Respondida')),
+        ('ignored', gettext_lazy('Ignorada')),
     ]
     
-    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name='Reunión')
+    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name=gettext_lazy('Reunión'))
     attendee = models.ForeignKey(
         MeetingAttendee, 
         on_delete=models.CASCADE, 
         null=True, 
         blank=True,
-        verbose_name='Asistente'
+        verbose_name=gettext_lazy('Asistente')
     )
-    question = models.TextField(verbose_name='Pregunta')
-    answer = models.TextField(blank=True, verbose_name='Respuesta')
+    question = models.TextField(verbose_name=gettext_lazy('Pregunta'))
+    answer = models.TextField(blank=True, verbose_name=gettext_lazy('Respuesta'))
     status = models.CharField(
         max_length=20, 
         choices=STATUS_CHOICES, 
         default='pending',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     # Datos del preguntante (por si no está registrado como asistente)
-    asker_name = models.CharField(max_length=100, blank=True, verbose_name='Nombre del preguntante')
-    asker_email = models.EmailField(blank=True, verbose_name='Email del preguntante')
+    asker_name = models.CharField(max_length=100, blank=True, verbose_name=gettext_lazy('Nombre del preguntante'))
+    asker_email = models.EmailField(blank=True, verbose_name=gettext_lazy('Email del preguntante'))
     
     # Metadata
-    asked_at = models.DateTimeField(default=timezone.now, verbose_name='Preguntado el')
-    answered_at = models.DateTimeField(null=True, blank=True, verbose_name='Respondido el')
+    asked_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Preguntado el'))
+    answered_at = models.DateTimeField(null=True, blank=True, verbose_name=gettext_lazy('Respondido el'))
     answered_by = models.ForeignKey(
         User, 
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
-        verbose_name='Respondido por'
+        verbose_name=gettext_lazy('Respondido por')
     )
-    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name=gettext_lazy('IP'))
     
     class Meta:
         ordering = ['asked_at']
-        verbose_name = 'Pregunta de reunión'
-        verbose_name_plural = 'Preguntas de reuniones'
+        verbose_name = gettext_lazy('Pregunta de reunión')
+        verbose_name_plural = gettext_lazy('Preguntas de reuniones')
     
     def __str__(self):
         return f"Pregunta en {self.meeting.title}: {self.question[:50]}..."
@@ -4456,32 +4457,32 @@ class MeetingRating(models.Model):
     """Modelo para calificaciones de reuniones con caras (triste, neutro, feliz)"""
     
     RATING_CHOICES = [
-        ('sad', '😞 Triste'),
-        ('neutral', '😐 Neutro'),
-        ('happy', '😊 Feliz'),
+        ('sad', gettext_lazy('😞 Triste')),
+        ('neutral', gettext_lazy('😐 Neutro')),
+        ('happy', gettext_lazy('😊 Feliz')),
     ]
     
-    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name='Reunión', related_name='ratings')
+    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name=gettext_lazy('Reunión'), related_name='ratings')
     attendee = models.ForeignKey(
         MeetingAttendee, 
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Asistente'
+        verbose_name=gettext_lazy('Asistente')
     )
     rating = models.CharField(
         max_length=10,
         choices=RATING_CHOICES,
-        verbose_name='Calificación'
+        verbose_name=gettext_lazy('Calificación')
     )
-    comment = models.TextField(blank=True, verbose_name='Comentario')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de evaluación')
-    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
+    comment = models.TextField(blank=True, verbose_name=gettext_lazy('Comentario'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de evaluación'))
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name=gettext_lazy('IP'))
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Evaluación de reunión'
-        verbose_name_plural = 'Evaluaciones de reuniones'
+        verbose_name = gettext_lazy('Evaluación de reunión')
+        verbose_name_plural = gettext_lazy('Evaluaciones de reuniones')
         # Un asistente puede evaluar solo una vez
         unique_together = ['meeting', 'attendee']
     
@@ -4492,20 +4493,20 @@ class MeetingRating(models.Model):
 class MeetingAccessLog(models.Model):
     """Modelo para registrar estadísticas de acceso al enlace público de reuniones"""
     
-    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name='Reunión', related_name='access_logs')
-    ip_address = models.GenericIPAddressField(verbose_name='Dirección IP')
-    user_agent = models.TextField(blank=True, verbose_name='User Agent')
-    device_type = models.CharField(max_length=50, blank=True, verbose_name='Tipo de Dispositivo')  # mobile, tablet, desktop
-    browser = models.CharField(max_length=100, blank=True, verbose_name='Navegador')
-    os = models.CharField(max_length=100, blank=True, verbose_name='Sistema Operativo')
-    country = models.CharField(max_length=100, blank=True, verbose_name='País')
-    city = models.CharField(max_length=100, blank=True, verbose_name='Ciudad')
-    accessed_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha y hora de acceso')
+    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name=gettext_lazy('Reunión'), related_name='access_logs')
+    ip_address = models.GenericIPAddressField(verbose_name=gettext_lazy('Dirección IP'))
+    user_agent = models.TextField(blank=True, verbose_name=gettext_lazy('User Agent'))
+    device_type = models.CharField(max_length=50, blank=True, verbose_name=gettext_lazy('Tipo de Dispositivo'))  # mobile, tablet, desktop
+    browser = models.CharField(max_length=100, blank=True, verbose_name=gettext_lazy('Navegador'))
+    os = models.CharField(max_length=100, blank=True, verbose_name=gettext_lazy('Sistema Operativo'))
+    country = models.CharField(max_length=100, blank=True, verbose_name=gettext_lazy('País'))
+    city = models.CharField(max_length=100, blank=True, verbose_name=gettext_lazy('Ciudad'))
+    accessed_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha y hora de acceso'))
     
     class Meta:
         ordering = ['-accessed_at']
-        verbose_name = 'Registro de acceso'
-        verbose_name_plural = 'Registros de acceso'
+        verbose_name = gettext_lazy('Registro de acceso')
+        verbose_name_plural = gettext_lazy('Registros de acceso')
         indexes = [
             models.Index(fields=['meeting', '-accessed_at']),
             models.Index(fields=['country']),
@@ -4519,17 +4520,17 @@ class MeetingAccessLog(models.Model):
 class MeetingLink(models.Model):
     """Modelo para gestionar enlaces relacionados con reuniones"""
     
-    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name='Reunión', related_name='links')
-    title = models.CharField(max_length=200, verbose_name='Título del enlace')
-    url = models.URLField(max_length=500, verbose_name='URL')
-    description = models.TextField(blank=True, verbose_name='Descripción')
-    order = models.IntegerField(default=0, verbose_name='Orden')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Creado el')
+    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name=gettext_lazy('Reunión'), related_name='links')
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy('Título del enlace'))
+    url = models.URLField(max_length=500, verbose_name=gettext_lazy('URL'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
+    order = models.IntegerField(default=0, verbose_name=gettext_lazy('Orden'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Creado el'))
     
     class Meta:
         ordering = ['order', 'created_at']
-        verbose_name = 'Enlace de reunión'
-        verbose_name_plural = 'Enlaces de reunión'
+        verbose_name = gettext_lazy('Enlace de reunión')
+        verbose_name_plural = gettext_lazy('Enlaces de reunión')
     
     def __str__(self):
         return f"{self.meeting.title} - {self.title}"
@@ -4538,91 +4539,91 @@ class MeetingLink(models.Model):
 class Course(models.Model):
     """Modelo para gestionar cursos de capacitación"""
     
-    title = models.CharField(max_length=200, verbose_name='Título del Curso')
-    description = models.TextField(blank=True, verbose_name='Descripción')
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy('Título del Curso'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
     created_by = models.ForeignKey(
         User, 
         on_delete=models.CASCADE, 
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        verbose_name='Empresa',
-        help_text='Si se selecciona una empresa, solo los usuarios de esa empresa podrán ver este curso'
+        verbose_name=gettext_lazy('Empresa'),
+        help_text=gettext_lazy('Si se selecciona una empresa, solo los usuarios de esa empresa podrán ver este curso')
     )
     public_token = models.UUIDField(
         null=True,
         blank=True,
-        verbose_name='Token público',
-        help_text='Token para acceso público al curso sin autenticación'
+        verbose_name=gettext_lazy('Token público'),
+        help_text=gettext_lazy('Token para acceso público al curso sin autenticación')
     )
     is_public_enabled = models.BooleanField(
         default=False,
-        verbose_name='Acceso público habilitado',
-        help_text='Permite que el curso sea accesible públicamente mediante un enlace'
+        verbose_name=gettext_lazy('Acceso público habilitado'),
+        help_text=gettext_lazy('Permite que el curso sea accesible públicamente mediante un enlace')
     )
-    is_active = models.BooleanField(default=True, verbose_name='Activo')
-    view_count = models.PositiveIntegerField(default=0, verbose_name='Número de visitas')
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy('Activo'))
+    view_count = models.PositiveIntegerField(default=0, verbose_name=gettext_lazy('Número de visitas'))
     
     # Campos de acceso
     access_url = models.URLField(
         max_length=500,
         blank=True,
-        verbose_name='URL de acceso',
-        help_text='URL donde se accede al curso (opcional)'
+        verbose_name=gettext_lazy('URL de acceso'),
+        help_text=gettext_lazy('URL donde se accede al curso (opcional)')
     )
     access_username = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Usuario de acceso',
-        help_text='Usuario para acceder al curso (opcional)'
+        verbose_name=gettext_lazy('Usuario de acceso'),
+        help_text=gettext_lazy('Usuario para acceder al curso (opcional)')
     )
     access_password = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Contraseña de acceso',
-        help_text='Contraseña para acceder al curso (opcional)'
+        verbose_name=gettext_lazy('Contraseña de acceso'),
+        help_text=gettext_lazy('Contraseña para acceder al curso (opcional)')
     )
     
     # Campos de aprobación
     APPROVAL_CHOICES = [
-        ('pendiente', 'Pendiente'),
-        ('aprobado', 'Aprobado'),
-        ('desaprobado', 'Desaprobado'),
+        ('pendiente', gettext_lazy('Pendiente')),
+        ('aprobado', gettext_lazy('Aprobado')),
+        ('desaprobado', gettext_lazy('Desaprobado')),
     ]
     approval_status = models.CharField(
         max_length=20,
         choices=APPROVAL_CHOICES,
         default='pendiente',
-        verbose_name='Estado de aprobación'
+        verbose_name=gettext_lazy('Estado de aprobación')
     )
     approved_by_name = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Aprobado por (nombre)',
-        help_text='Nombre de la persona que aprobó/desaprobó'
+        verbose_name=gettext_lazy('Aprobado por (nombre)'),
+        help_text=gettext_lazy('Nombre de la persona que aprobó/desaprobó')
     )
     approved_by_email = models.EmailField(
         blank=True,
-        verbose_name='Aprobado por (correo)',
-        help_text='Correo de la persona que aprobó/desaprobó'
+        verbose_name=gettext_lazy('Aprobado por (correo)'),
+        help_text=gettext_lazy('Correo de la persona que aprobó/desaprobó')
     )
     approval_date = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de aprobación'
+        verbose_name=gettext_lazy('Fecha de aprobación')
     )
     
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última actualización'))
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Curso'
-        verbose_name_plural = 'Cursos'
+        verbose_name = gettext_lazy('Curso')
+        verbose_name_plural = gettext_lazy('Cursos')
     
     def __str__(self):
         return self.title
@@ -4681,37 +4682,37 @@ class CourseApproval(models.Model):
     """Modelo para registrar aprobaciones/desaprobaciones de cursos"""
     
     APPROVAL_CHOICES = [
-        ('aprobado', 'Aprobado'),
-        ('desaprobado', 'Desaprobado'),
+        ('aprobado', gettext_lazy('Aprobado')),
+        ('desaprobado', gettext_lazy('Desaprobado')),
     ]
     
     course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE,
         related_name='approvals',
-        verbose_name='Curso'
+        verbose_name=gettext_lazy('Curso')
     )
     status = models.CharField(
         max_length=20,
         choices=APPROVAL_CHOICES,
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     approved_by_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre'
+        verbose_name=gettext_lazy('Nombre')
     )
     approved_by_email = models.EmailField(
-        verbose_name='Correo electrónico'
+        verbose_name=gettext_lazy('Correo electrónico')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de aprobación'
+        verbose_name=gettext_lazy('Fecha de aprobación')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Aprobación de Curso'
-        verbose_name_plural = 'Aprobaciones de Cursos'
+        verbose_name = gettext_lazy('Aprobación de Curso')
+        verbose_name_plural = gettext_lazy('Aprobaciones de Cursos')
     
     def __str__(self):
         return f"{self.course.title} - {self.status} por {self.approved_by_name}"
@@ -4724,52 +4725,52 @@ class CourseRegistrationToken(models.Model):
         Course,
         on_delete=models.CASCADE,
         related_name='registration_tokens',
-        verbose_name='Curso'
+        verbose_name=gettext_lazy('Curso')
     )
     token = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name='Token'
+        verbose_name=gettext_lazy('Token')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     expires_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de expiración',
-        help_text='Dejar vacío para que no expire'
+        verbose_name=gettext_lazy('Fecha de expiración'),
+        help_text=gettext_lazy('Dejar vacío para que no expire')
     )
     max_registrations = models.PositiveIntegerField(
         null=True,
         blank=True,
-        verbose_name='Máximo de registros',
-        help_text='Número máximo de usuarios que pueden registrarse con este token'
+        verbose_name=gettext_lazy('Máximo de registros'),
+        help_text=gettext_lazy('Número máximo de usuarios que pueden registrarse con este token')
     )
     registration_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Registros realizados'
+        verbose_name=gettext_lazy('Registros realizados')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Token de Registro de Curso'
-        verbose_name_plural = 'Tokens de Registro de Curso'
+        verbose_name = gettext_lazy('Token de Registro de Curso')
+        verbose_name_plural = gettext_lazy('Tokens de Registro de Curso')
     
     def __str__(self):
         return f"Token para {self.course.title} - {self.token}"
@@ -4805,41 +4806,41 @@ class CourseClass(models.Model):
         Course, 
         on_delete=models.CASCADE, 
         related_name='classes',
-        verbose_name='Curso'
+        verbose_name=gettext_lazy('Curso')
     )
-    title = models.CharField(max_length=200, verbose_name='Título de la Clase')
-    description = models.TextField(blank=True, verbose_name='Descripción')
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy('Título de la Clase'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
     video_url = models.URLField(
         blank=True, 
         null=True,
-        verbose_name='URL del Video',
-        help_text='URL del video de la clase (YouTube, Vimeo, etc.)'
+        verbose_name=gettext_lazy('URL del Video'),
+        help_text=gettext_lazy('URL del video de la clase (YouTube, Vimeo, etc.)')
     )
     order = models.PositiveIntegerField(
         default=0, 
-        verbose_name='Orden',
-        help_text='Orden de la clase dentro del curso'
+        verbose_name=gettext_lazy('Orden'),
+        help_text=gettext_lazy('Orden de la clase dentro del curso')
     )
     duration_minutes = models.PositiveIntegerField(
         blank=True, 
         null=True,
-        verbose_name='Duración (minutos)',
-        help_text='Duración estimada de la clase en minutos'
+        verbose_name=gettext_lazy('Duración (minutos)'),
+        help_text=gettext_lazy('Duración estimada de la clase en minutos')
     )
-    is_active = models.BooleanField(default=True, verbose_name='Activa')
-    link_copy_count = models.PositiveIntegerField(default=0, verbose_name='Veces copiado el link')
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy('Activa'))
+    link_copy_count = models.PositiveIntegerField(default=0, verbose_name=gettext_lazy('Veces copiado el link'))
     created_by = models.ForeignKey(
         User, 
         on_delete=models.CASCADE, 
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última actualización'))
     
     class Meta:
         ordering = ['course', 'order', 'title']
-        verbose_name = 'Clase'
-        verbose_name_plural = 'Clases'
+        verbose_name = gettext_lazy('Clase')
+        verbose_name_plural = gettext_lazy('Clases')
         unique_together = ['course', 'order']
     
     def __str__(self):
@@ -4867,28 +4868,28 @@ class CourseClassView(models.Model):
         CourseClass,
         on_delete=models.CASCADE,
         related_name='views',
-        verbose_name='Clase'
+        verbose_name=gettext_lazy('Clase')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     viewed_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Visto el'
+        verbose_name=gettext_lazy('Visto el')
     )
     ip_address = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     
     class Meta:
         unique_together = ['course_class', 'user']
         ordering = ['-viewed_at']
-        verbose_name = 'Visualización de Clase'
-        verbose_name_plural = 'Visualizaciones de Clases'
+        verbose_name = gettext_lazy('Visualización de Clase')
+        verbose_name_plural = gettext_lazy('Visualizaciones de Clases')
     
     def __str__(self):
         return f"{self.user.username} vio {self.course_class.title}"
@@ -4898,55 +4899,55 @@ class CourseComment(models.Model):
     """Modelo para comentarios en clases de cursos públicos"""
     
     STATUS_CHOICES = [
-        ('creado', 'Creado'),
-        ('resuelto', 'Resuelto'),
+        ('creado', gettext_lazy('Creado')),
+        ('resuelto', gettext_lazy('Resuelto')),
     ]
     
     course_class = models.ForeignKey(
         CourseClass,
         on_delete=models.CASCADE,
         related_name='comments',
-        verbose_name='Clase'
+        verbose_name=gettext_lazy('Clase')
     )
-    name = models.CharField(max_length=200, verbose_name='Nombre')
-    email = models.EmailField(verbose_name='Email')
-    comment = models.TextField(verbose_name='Comentario')
+    name = models.CharField(max_length=200, verbose_name=gettext_lazy('Nombre'))
+    email = models.EmailField(verbose_name=gettext_lazy('Email'))
+    comment = models.TextField(verbose_name=gettext_lazy('Comentario'))
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='creado',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     ip_address = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
-    resolved_at = models.DateTimeField(null=True, blank=True, verbose_name='Resuelto el')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
+    resolved_at = models.DateTimeField(null=True, blank=True, verbose_name=gettext_lazy('Resuelto el'))
     resolved_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Resuelto por'
+        verbose_name=gettext_lazy('Resuelto por')
     )
     solution_link = models.URLField(
         max_length=500,
         null=True,
         blank=True,
-        verbose_name='Link de solución'
+        verbose_name=gettext_lazy('Link de solución')
     )
     solution_note = models.TextField(
         null=True,
         blank=True,
-        verbose_name='Nota de solución'
+        verbose_name=gettext_lazy('Nota de solución')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Comentario de Clase'
-        verbose_name_plural = 'Comentarios de Clases'
+        verbose_name = gettext_lazy('Comentario de Clase')
+        verbose_name_plural = gettext_lazy('Comentarios de Clases')
     
     def __str__(self):
         return f"Comentario de {self.name} en {self.course_class.title}"
@@ -4958,31 +4959,31 @@ class ContactTag(models.Model):
     name = models.CharField(
         max_length=50,
         unique=True,
-        verbose_name='Nombre'
+        verbose_name=gettext_lazy('Nombre')
     )
     
     color = models.CharField(
         max_length=7,
         default='#6c757d',
-        verbose_name='Color',
-        help_text='Color en formato hexadecimal (ej: #FF5733)'
+        verbose_name=gettext_lazy('Color'),
+        help_text=gettext_lazy('Color en formato hexadecimal (ej: #FF5733)')
     )
     
     description = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
         ordering = ['name']
-        verbose_name = 'Etiqueta de Contacto'
-        verbose_name_plural = 'Etiquetas de Contacto'
+        verbose_name = gettext_lazy('Etiqueta de Contacto')
+        verbose_name_plural = gettext_lazy('Etiquetas de Contacto')
     
     def __str__(self):
         return self.name
@@ -4992,77 +4993,77 @@ class Contact(models.Model):
     """Modelo para gestionar contactos de ventas"""
     
     STATUS_CHOICES = [
-        ('positive', 'Positivo'),
-        ('neutral', 'Neutral'),
-        ('negative', 'Negativo'),
-        ('not_now', 'No ahora'),
-        ('do_not_contact', 'No Contactar'),
-        ('won', 'Ganado'),
+        ('positive', gettext_lazy('Positivo')),
+        ('neutral', gettext_lazy('Neutral')),
+        ('negative', gettext_lazy('Negativo')),
+        ('not_now', gettext_lazy('No ahora')),
+        ('do_not_contact', gettext_lazy('No Contactar')),
+        ('won', gettext_lazy('Ganado')),
     ]
     
     COMPANY_SIZE_CHOICES = [
-        ('small', 'Pequeña (Menos de 10 empleados)'),
-        ('medium', 'Mediana (10 a 50 empleados)'),
-        ('large', 'Grande (Más de 50 empleados)'),
+        ('small', gettext_lazy('Pequeña (Menos de 10 empleados)')),
+        ('medium', gettext_lazy('Mediana (10 a 50 empleados)')),
+        ('large', gettext_lazy('Grande (Más de 50 empleados)')),
     ]
     
     name = models.CharField(
         max_length=100,
-        verbose_name='Nombre'
+        verbose_name=gettext_lazy('Nombre')
     )
     email = models.EmailField(
         blank=True,
         null=True,
-        verbose_name='Email'
+        verbose_name=gettext_lazy('Email')
     )
     phone = models.CharField(
         max_length=20,
         blank=True,
         null=True,
-        verbose_name='Teléfono'
+        verbose_name=gettext_lazy('Teléfono')
     )
     position = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        verbose_name='Cargo'
+        verbose_name=gettext_lazy('Cargo')
     )
     company = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     country = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        verbose_name='País',
-        help_text='País del contacto'
+        verbose_name=gettext_lazy('País'),
+        help_text=gettext_lazy('País del contacto')
     )
     erp = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        verbose_name='ERP',
-        help_text='Sistema ERP actual del contacto'
+        verbose_name=gettext_lazy('ERP'),
+        help_text=gettext_lazy('Sistema ERP actual del contacto')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='negative',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     STAGE_CHOICES = [
-        ('stage_1', '1er contacto - Presentación, apertura'),
-        ('stage_2', '2do contacto - Necesidades reales, diagnóstico'),
-        ('stage_3', '3er contacto - Demo o propuesta inicial'),
-        ('stage_4', '4to contacto - Ajustes, dudas, objeciones'),
-        ('stage_5', '5to contacto - Negociación y cierre'),
-        ('stage_6', '6to contacto - Negociación y cierre'),
-        ('stage_7', '7mo contacto - Negociación y cierre'),
-        ('stage_8', '8vo contacto - Negociación y cierre'),
+        ('stage_1', gettext_lazy('1er contacto - Presentación, apertura')),
+        ('stage_2', gettext_lazy('2do contacto - Necesidades reales, diagnóstico')),
+        ('stage_3', gettext_lazy('3er contacto - Demo o propuesta inicial')),
+        ('stage_4', gettext_lazy('4to contacto - Ajustes, dudas, objeciones')),
+        ('stage_5', gettext_lazy('5to contacto - Negociación y cierre')),
+        ('stage_6', gettext_lazy('6to contacto - Negociación y cierre')),
+        ('stage_7', gettext_lazy('7mo contacto - Negociación y cierre')),
+        ('stage_8', gettext_lazy('8vo contacto - Negociación y cierre')),
     ]
     
     stage = models.CharField(
@@ -5070,117 +5071,117 @@ class Contact(models.Model):
         choices=STAGE_CHOICES,
         blank=True,
         null=True,
-        verbose_name='Etapa',
-        help_text='Etapa del proceso de ventas'
+        verbose_name=gettext_lazy('Etapa'),
+        help_text=gettext_lazy('Etapa del proceso de ventas')
     )
     source = models.CharField(
         max_length=200,
         blank=True,
         null=True,
-        verbose_name='Fuente',
-        help_text='¿De dónde obtuviste este contacto?'
+        verbose_name=gettext_lazy('Fuente'),
+        help_text=gettext_lazy('¿De dónde obtuviste este contacto?')
     )
     company_size = models.CharField(
         max_length=10,
         choices=COMPANY_SIZE_CHOICES,
         default='small',
-        verbose_name='Tamaño de Empresa',
-        help_text='Tamaño de la empresa del contacto'
+        verbose_name=gettext_lazy('Tamaño de Empresa'),
+        help_text=gettext_lazy('Tamaño de la empresa del contacto')
     )
     notes = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Notas',
-        help_text='Notas adicionales sobre el contacto'
+        verbose_name=gettext_lazy('Notas'),
+        help_text=gettext_lazy('Notas adicionales sobre el contacto')
     )
     
     # Seguimiento de contacto
     contacted_by_phone = models.BooleanField(
         default=False,
-        verbose_name='Contactado por telefono',
-        help_text='Marcar si se contacto al cliente por telefono'
+        verbose_name=gettext_lazy('Contactado por telefono'),
+        help_text=gettext_lazy('Marcar si se contacto al cliente por telefono')
     )
     contacted_by_web = models.BooleanField(
         default=False,
-        verbose_name='Contactado por web/email',
-        help_text='Marcar si se contacto al cliente por web o email'
+        verbose_name=gettext_lazy('Contactado por web/email'),
+        help_text=gettext_lazy('Marcar si se contacto al cliente por web o email')
     )
     had_meeting = models.BooleanField(
         default=False,
-        verbose_name='Reunion realizada',
-        help_text='Marcar si se tuvo una reunion con este contacto'
+        verbose_name=gettext_lazy('Reunion realizada'),
+        help_text=gettext_lazy('Marcar si se tuvo una reunion con este contacto')
     )
     meeting_date = models.DateField(
         blank=True,
         null=True,
-        verbose_name='Fecha de reunion',
-        help_text='Fecha en la que se realizo la reunion'
+        verbose_name=gettext_lazy('Fecha de reunion'),
+        help_text=gettext_lazy('Fecha en la que se realizo la reunion')
     )
     contact_tracking_notes = models.TextField(
         blank=True,
-        verbose_name='Notas de seguimiento',
-        help_text='Notas sobre los contactos realizados'
+        verbose_name=gettext_lazy('Notas de seguimiento'),
+        help_text=gettext_lazy('Notas sobre los contactos realizados')
     )
     last_contact_date = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Fecha del ultimo contacto',
-        help_text='Fecha del ultimo contacto realizado'
+        verbose_name=gettext_lazy('Fecha del ultimo contacto'),
+        help_text=gettext_lazy('Fecha del ultimo contacto realizado')
     )
     
     # Redes sociales y web
     website = models.URLField(
         max_length=500,
         blank=True,
-        verbose_name='Sitio Web',
-        help_text='Sitio web de la empresa o contacto'
+        verbose_name=gettext_lazy('Sitio Web'),
+        help_text=gettext_lazy('Sitio web de la empresa o contacto')
     )
     facebook_url = models.URLField(
         max_length=500,
         blank=True,
-        verbose_name='Facebook',
-        help_text='URL del perfil de Facebook'
+        verbose_name=gettext_lazy('Facebook'),
+        help_text=gettext_lazy('URL del perfil de Facebook')
     )
     linkedin_url = models.URLField(
         max_length=500,
         blank=True,
-        verbose_name='LinkedIn',
-        help_text='URL del perfil de LinkedIn'
+        verbose_name=gettext_lazy('LinkedIn'),
+        help_text=gettext_lazy('URL del perfil de LinkedIn')
     )
     twitter_url = models.URLField(
         max_length=500,
         blank=True,
-        verbose_name='Twitter/X',
-        help_text='URL del perfil de Twitter/X'
+        verbose_name=gettext_lazy('Twitter/X'),
+        help_text=gettext_lazy('URL del perfil de Twitter/X')
     )
     instagram_url = models.URLField(
         max_length=500,
         blank=True,
-        verbose_name='Instagram',
-        help_text='URL del perfil de Instagram'
+        verbose_name=gettext_lazy('Instagram'),
+        help_text=gettext_lazy('URL del perfil de Instagram')
     )
     youtube_url = models.URLField(
         max_length=500,
         blank=True,
-        verbose_name='YouTube',
-        help_text='URL del canal de YouTube'
+        verbose_name=gettext_lazy('YouTube'),
+        help_text=gettext_lazy('URL del canal de YouTube')
     )
     tiktok_url = models.URLField(
         max_length=500,
         blank=True,
-        verbose_name='TikTok',
-        help_text='URL del perfil de TikTok'
+        verbose_name=gettext_lazy('TikTok'),
+        help_text=gettext_lazy('URL del perfil de TikTok')
     )
     
     contact_date = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Contacto'
+        verbose_name=gettext_lazy('Fecha de Contacto')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='contacts_created',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     assigned_to = models.ForeignKey(
         User,
@@ -5188,7 +5189,7 @@ class Contact(models.Model):
         null=True,
         blank=True,
         related_name='contacts_assigned',
-        verbose_name='Asignado a'
+        verbose_name=gettext_lazy('Asignado a')
     )
     
     linked_company = models.ForeignKey(
@@ -5197,31 +5198,31 @@ class Contact(models.Model):
         null=True,
         blank=True,
         related_name='contacts',
-        verbose_name='Empresa vinculada',
-        help_text='Empresa creada a partir de este contacto'
+        verbose_name=gettext_lazy('Empresa vinculada'),
+        help_text=gettext_lazy('Empresa creada a partir de este contacto')
     )
     
     tags = models.ManyToManyField(
         ContactTag,
         blank=True,
         related_name='contacts',
-        verbose_name='Etiquetas',
-        help_text='Etiquetas para categorizar este contacto'
+        verbose_name=gettext_lazy('Etiquetas'),
+        help_text=gettext_lazy('Etiquetas para categorizar este contacto')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-contact_date']
-        verbose_name = 'Contacto'
-        verbose_name_plural = 'Contactos'
+        verbose_name = gettext_lazy('Contacto')
+        verbose_name_plural = gettext_lazy('Contactos')
     
     def __str__(self):
         return f"{self.name} - {self.get_status_display()}"
@@ -5268,38 +5269,38 @@ class ContactComment(models.Model):
         Contact,
         on_delete=models.CASCADE,
         related_name='comments',
-        verbose_name='Contacto'
+        verbose_name=gettext_lazy('Contacto')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     content = models.TextField(
-        verbose_name='Comentario',
-        help_text='Escribe tu comentario aquí'
+        verbose_name=gettext_lazy('Comentario'),
+        help_text=gettext_lazy('Escribe tu comentario aquí')
     )
     stage = models.CharField(
         max_length=20,
         choices=Contact.STAGE_CHOICES,
         null=True,
         blank=True,
-        verbose_name='Etapa',
-        help_text='Etapa del contacto asociada a este comentario'
+        verbose_name=gettext_lazy('Etapa'),
+        help_text=gettext_lazy('Etapa del contacto asociada a este comentario')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['created_at']
-        verbose_name = 'Comentario de Contacto'
-        verbose_name_plural = 'Comentarios de Contacto'
+        verbose_name = gettext_lazy('Comentario de Contacto')
+        verbose_name_plural = gettext_lazy('Comentarios de Contacto')
     
     def __str__(self):
         return f"Comentario de {self.user.username} en Contacto {self.contact.name}"
@@ -5321,39 +5322,39 @@ class ContactAttachment(models.Model):
         Contact, 
         on_delete=models.CASCADE, 
         related_name='attachments',
-        verbose_name='Contacto'
+        verbose_name=gettext_lazy('Contacto')
     )
     file = models.FileField(
         upload_to=contact_attachment_upload_path,
-        verbose_name='Archivo'
+        verbose_name=gettext_lazy('Archivo')
     )
     original_filename = models.CharField(
         max_length=255,
-        verbose_name='Nombre original'
+        verbose_name=gettext_lazy('Nombre original')
     )
     uploaded_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Subido por'
+        verbose_name=gettext_lazy('Subido por')
     )
     uploaded_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de subida'
+        verbose_name=gettext_lazy('Fecha de subida')
     )
     file_size = models.PositiveIntegerField(
         default=0,
-        verbose_name='Tamaño del archivo (bytes)'
+        verbose_name=gettext_lazy('Tamaño del archivo (bytes)')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción opcional del adjunto'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción opcional del adjunto')
     )
     
     class Meta:
         ordering = ['-uploaded_at']
-        verbose_name = 'Adjunto de Contacto'
-        verbose_name_plural = 'Adjuntos de Contacto'
+        verbose_name = gettext_lazy('Adjunto de Contacto')
+        verbose_name_plural = gettext_lazy('Adjuntos de Contacto')
     
     def __str__(self):
         return f"{self.original_filename} - Contacto {self.contact.name}"
@@ -5385,45 +5386,45 @@ class SalesPlan(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='sales_plans',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     monthly_contact_goal = models.PositiveIntegerField(
         default=0,
-        verbose_name='Objetivo de contactos al mes',
-        help_text='Número de contactos nuevos que debe crear al mes'
+        verbose_name=gettext_lazy('Objetivo de contactos al mes'),
+        help_text=gettext_lazy('Número de contactos nuevos que debe crear al mes')
     )
     monthly_positive_contact_goal = models.PositiveIntegerField(
         default=0,
-        verbose_name='Objetivo de contactos positivos al mes',
-        help_text='Número de contactos positivos que debe conseguir al mes'
+        verbose_name=gettext_lazy('Objetivo de contactos positivos al mes'),
+        help_text=gettext_lazy('Número de contactos positivos que debe conseguir al mes')
     )
     monthly_meeting_goal = models.PositiveIntegerField(
         default=0,
-        verbose_name='Objetivo de reuniones mensuales',
-        help_text='Número de reuniones que debe realizar al mes'
+        verbose_name=gettext_lazy('Objetivo de reuniones mensuales'),
+        help_text=gettext_lazy('Número de reuniones que debe realizar al mes')
     )
     monthly_won_goal = models.PositiveIntegerField(
         default=0,
-        verbose_name='Objetivo de ganados al mes',
-        help_text='Número de contactos ganados que debe conseguir al mes'
+        verbose_name=gettext_lazy('Objetivo de ganados al mes'),
+        help_text=gettext_lazy('Número de contactos ganados que debe conseguir al mes')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Plan activo'
+        verbose_name=gettext_lazy('Plan activo')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Plan de Venta'
-        verbose_name_plural = 'Planes de Venta'
+        verbose_name = gettext_lazy('Plan de Venta')
+        verbose_name_plural = gettext_lazy('Planes de Venta')
     
     def __str__(self):
         return f"Plan de {self.user.get_full_name() or self.user.username}"
@@ -5550,42 +5551,42 @@ class BlogCategory(models.Model):
     name = models.CharField(
         max_length=100,
         unique=True,
-        verbose_name='Nombre'
+        verbose_name=gettext_lazy('Nombre')
     )
     slug = models.SlugField(
         max_length=100,
         unique=True,
-        verbose_name='Slug URL'
+        verbose_name=gettext_lazy('Slug URL')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     color = models.CharField(
         max_length=7,
         default='#007bff',
-        verbose_name='Color',
-        help_text='Color en formato hexadecimal (ej: #007bff)'
+        verbose_name=gettext_lazy('Color'),
+        help_text=gettext_lazy('Color en formato hexadecimal (ej: #007bff)')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activa'
+        verbose_name=gettext_lazy('Activa')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     class Meta:
         ordering = ['name']
-        verbose_name = 'Categoría de Blog'
-        verbose_name_plural = 'Categorías de Blog'
+        verbose_name = gettext_lazy('Categoría de Blog')
+        verbose_name_plural = gettext_lazy('Categorías de Blog')
     
     def __str__(self):
         return self.name
@@ -5595,91 +5596,91 @@ class BlogPost(models.Model):
     """Artículos del blog"""
     
     STATUS_CHOICES = [
-        ('draft', 'Borrador'),
-        ('published', 'Publicado'),
-        ('archived', 'Archivado'),
+        ('draft', gettext_lazy('Borrador')),
+        ('published', gettext_lazy('Publicado')),
+        ('archived', gettext_lazy('Archivado')),
     ]
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título'
+        verbose_name=gettext_lazy('Título')
     )
     slug = models.SlugField(
         max_length=200,
         unique=True,
-        verbose_name='Slug URL'
+        verbose_name=gettext_lazy('Slug URL')
     )
     excerpt = models.TextField(
         max_length=300,
-        verbose_name='Resumen',
-        help_text='Breve descripción del artículo (máx. 300 caracteres)'
+        verbose_name=gettext_lazy('Resumen'),
+        help_text=gettext_lazy('Breve descripción del artículo (máx. 300 caracteres)')
     )
     content = models.TextField(
-        verbose_name='Contenido'
+        verbose_name=gettext_lazy('Contenido')
     )
     featured_image = models.ImageField(
         upload_to='blog/images/',
         blank=True,
         null=True,
-        verbose_name='Imagen Principal'
+        verbose_name=gettext_lazy('Imagen Principal')
     )
     category = models.ForeignKey(
         BlogCategory,
         on_delete=models.SET_NULL,
         null=True,
         related_name='posts',
-        verbose_name='Categoría'
+        verbose_name=gettext_lazy('Categoría')
     )
     status = models.CharField(
         max_length=10,
         choices=STATUS_CHOICES,
         default='draft',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     tags = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Etiquetas',
-        help_text='Etiquetas separadas por comas'
+        verbose_name=gettext_lazy('Etiquetas'),
+        help_text=gettext_lazy('Etiquetas separadas por comas')
     )
     meta_description = models.CharField(
         max_length=160,
         blank=True,
-        verbose_name='Meta Descripción',
-        help_text='Descripción para SEO (máx. 160 caracteres)'
+        verbose_name=gettext_lazy('Meta Descripción'),
+        help_text=gettext_lazy('Descripción para SEO (máx. 160 caracteres)')
     )
     views_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Número de visualizaciones'
+        verbose_name=gettext_lazy('Número de visualizaciones')
     )
     is_featured = models.BooleanField(
         default=False,
-        verbose_name='Artículo Destacado'
+        verbose_name=gettext_lazy('Artículo Destacado')
     )
     published_at = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Fecha de publicación'
+        verbose_name=gettext_lazy('Fecha de publicación')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='blog_posts',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     class Meta:
         ordering = ['-published_at', '-created_at']
-        verbose_name = 'Artículo de Blog'
-        verbose_name_plural = 'Artículos de Blog'
+        verbose_name = gettext_lazy('Artículo de Blog')
+        verbose_name_plural = gettext_lazy('Artículos de Blog')
     
     def __str__(self):
         return self.title
@@ -5727,40 +5728,40 @@ class BlogComment(models.Model):
         BlogPost,
         on_delete=models.CASCADE,
         related_name='comments',
-        verbose_name='Artículo'
+        verbose_name=gettext_lazy('Artículo')
     )
     name = models.CharField(
         max_length=100,
-        verbose_name='Nombre'
+        verbose_name=gettext_lazy('Nombre')
     )
     email = models.EmailField(
-        verbose_name='Email'
+        verbose_name=gettext_lazy('Email')
     )
     website = models.URLField(
         blank=True,
-        verbose_name='Sitio Web'
+        verbose_name=gettext_lazy('Sitio Web')
     )
     content = models.TextField(
-        verbose_name='Comentario'
+        verbose_name=gettext_lazy('Comentario')
     )
     is_approved = models.BooleanField(
         default=False,
-        verbose_name='Aprobado'
+        verbose_name=gettext_lazy('Aprobado')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     ip_address = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Comentario de Blog'
-        verbose_name_plural = 'Comentarios de Blog'
+        verbose_name = gettext_lazy('Comentario de Blog')
+        verbose_name_plural = gettext_lazy('Comentarios de Blog')
     
     def __str__(self):
         return f"{self.name} en {self.post.title}"
@@ -5773,36 +5774,36 @@ class AIChatSession(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='ai_chat_sessions',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     title = models.CharField(
         max_length=200,
-        verbose_name='Título de la conversación',
-        help_text='Título descriptivo de la conversación'
+        verbose_name=gettext_lazy('Título de la conversación'),
+        help_text=gettext_lazy('Título descriptivo de la conversación')
     )
     ai_model = models.CharField(
         max_length=50,
         default='gpt-4o',
-        verbose_name='Modelo de IA',
-        help_text='Modelo utilizado para esta conversación'
+        verbose_name=gettext_lazy('Modelo de IA'),
+        help_text=gettext_lazy('Modelo utilizado para esta conversación')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Sesión activa'
+        verbose_name=gettext_lazy('Sesión activa')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-updated_at']
-        verbose_name = 'Sesión de Chat IA'
-        verbose_name_plural = 'Sesiones de Chat IA'
+        verbose_name = gettext_lazy('Sesión de Chat IA')
+        verbose_name_plural = gettext_lazy('Sesiones de Chat IA')
     
     def __str__(self):
         return f"{self.title} - {self.user.username}"
@@ -5820,39 +5821,39 @@ class AIChatMessage(models.Model):
     """Modelo para mensajes individuales del chat con IA"""
     
     ROLE_CHOICES = [
-        ('user', 'Usuario'),
-        ('assistant', 'IA'),
-        ('system', 'Sistema'),
+        ('user', gettext_lazy('Usuario')),
+        ('assistant', gettext_lazy('IA')),
+        ('system', gettext_lazy('Sistema')),
     ]
     
     session = models.ForeignKey(
         AIChatSession,
         on_delete=models.CASCADE,
         related_name='messages',
-        verbose_name='Sesión'
+        verbose_name=gettext_lazy('Sesión')
     )
     role = models.CharField(
         max_length=10,
         choices=ROLE_CHOICES,
-        verbose_name='Rol'
+        verbose_name=gettext_lazy('Rol')
     )
     content = models.TextField(
-        verbose_name='Contenido del mensaje'
+        verbose_name=gettext_lazy('Contenido del mensaje')
     )
     tokens_used = models.PositiveIntegerField(
         default=0,
-        verbose_name='Tokens utilizados',
-        help_text='Número de tokens consumidos para este mensaje'
+        verbose_name=gettext_lazy('Tokens utilizados'),
+        help_text=gettext_lazy('Número de tokens consumidos para este mensaje')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
         ordering = ['created_at']
-        verbose_name = 'Mensaje de Chat IA'
-        verbose_name_plural = 'Mensajes de Chat IA'
+        verbose_name = gettext_lazy('Mensaje de Chat IA')
+        verbose_name_plural = gettext_lazy('Mensajes de Chat IA')
     
     def __str__(self):
         return f"{self.get_role_display()}: {self.content[:50]}..."
@@ -5873,49 +5874,49 @@ class SharedAIChatMessage(models.Model):
         'AIChatMessage',
         on_delete=models.CASCADE,
         related_name='shared_instances_old',
-        verbose_name='Mensaje'
+        verbose_name=gettext_lazy('Mensaje')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='shared_ai_messages_old',
-        verbose_name='Usuario que compartió'
+        verbose_name=gettext_lazy('Usuario que compartió')
     )
     share_token = models.CharField(
         max_length=64,
         unique=True,
-        verbose_name='Token de compartición',
-        help_text='Token único para acceder al mensaje compartido'
+        verbose_name=gettext_lazy('Token de compartición'),
+        help_text=gettext_lazy('Token único para acceder al mensaje compartido')
     )
     title = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Título público',
-        help_text='Título opcional para el mensaje compartido'
+        verbose_name=gettext_lazy('Título público'),
+        help_text=gettext_lazy('Título opcional para el mensaje compartido')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Compartición activa'
+        verbose_name=gettext_lazy('Compartición activa')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de compartición'
+        verbose_name=gettext_lazy('Fecha de compartición')
     )
     views_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Número de vistas'
+        verbose_name=gettext_lazy('Número de vistas')
     )
     expires_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de expiración',
-        help_text='Fecha en que expira el enlace compartido (opcional)'
+        verbose_name=gettext_lazy('Fecha de expiración'),
+        help_text=gettext_lazy('Fecha en que expira el enlace compartido (opcional)')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Mensaje IA Compartido (Deprecated)'
-        verbose_name_plural = 'Mensajes IA Compartidos (Deprecated)'
+        verbose_name = gettext_lazy('Mensaje IA Compartido (Deprecated)')
+        verbose_name_plural = gettext_lazy('Mensajes IA Compartidos (Deprecated)')
         db_table = 'tickets_sharedaichatmessage_old'
     
     def __str__(self):
@@ -5946,52 +5947,52 @@ class PublicAIMessageShare(models.Model):
         'AIChatMessage',
         on_delete=models.CASCADE,
         related_name='public_shares',
-        verbose_name='Mensaje de Chat'
+        verbose_name=gettext_lazy('Mensaje de Chat')
     )
     shared_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='ai_message_shares',
-        verbose_name='Compartido por'
+        verbose_name=gettext_lazy('Compartido por')
     )
     token = models.CharField(
         max_length=64,
         unique=True,
         db_index=True,
-        verbose_name='Token de compartición',
-        help_text='Token único para acceder al mensaje compartido'
+        verbose_name=gettext_lazy('Token de compartición'),
+        help_text=gettext_lazy('Token único para acceder al mensaje compartido')
     )
     public_title = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Título público',
-        help_text='Título opcional para el mensaje compartido'
+        verbose_name=gettext_lazy('Título público'),
+        help_text=gettext_lazy('Título opcional para el mensaje compartido')
     )
     is_active = models.BooleanField(
         default=True,
         db_index=True,
-        verbose_name='Compartición activa'
+        verbose_name=gettext_lazy('Compartición activa')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
         db_index=True,
-        verbose_name='Fecha de compartición'
+        verbose_name=gettext_lazy('Fecha de compartición')
     )
     views_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Número de vistas'
+        verbose_name=gettext_lazy('Número de vistas')
     )
     expiration_date = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de expiración',
-        help_text='Fecha en que expira el enlace compartido (opcional)'
+        verbose_name=gettext_lazy('Fecha de expiración'),
+        help_text=gettext_lazy('Fecha en que expira el enlace compartido (opcional)')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Compartición de Mensaje IA'
-        verbose_name_plural = 'Comparticiones de Mensajes IA'
+        verbose_name = gettext_lazy('Compartición de Mensaje IA')
+        verbose_name_plural = gettext_lazy('Comparticiones de Mensajes IA')
         indexes = [
             models.Index(fields=['token']),
             models.Index(fields=['shared_by', '-created_at']),
@@ -6026,48 +6027,48 @@ class Concept(models.Model):
     term = models.CharField(
         max_length=200,
         unique=True,
-        verbose_name='Término',
-        help_text='El concepto o término a definir'
+        verbose_name=gettext_lazy('Término'),
+        help_text=gettext_lazy('El concepto o término a definir')
     )
     definition = models.TextField(
-        verbose_name='Definición',
-        help_text='Explicación del concepto'
+        verbose_name=gettext_lazy('Definición'),
+        help_text=gettext_lazy('Explicación del concepto')
     )
     category = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Categoría',
-        help_text='Categoría del concepto (opcional)'
+        verbose_name=gettext_lazy('Categoría'),
+        help_text=gettext_lazy('Categoría del concepto (opcional)')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo',
-        help_text='Si el concepto debe mostrarse en el home'
+        verbose_name=gettext_lazy('Activo'),
+        help_text=gettext_lazy('Si el concepto debe mostrarse en el home')
     )
     order = models.PositiveIntegerField(
         default=0,
-        verbose_name='Orden',
-        help_text='Orden de aparición (menor número aparece primero)'
+        verbose_name=gettext_lazy('Orden'),
+        help_text=gettext_lazy('Orden de aparición (menor número aparece primero)')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='concepts_created',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     class Meta:
         ordering = ['order', 'term']
-        verbose_name = 'Concepto'
-        verbose_name_plural = 'Conceptos'
+        verbose_name = gettext_lazy('Concepto')
+        verbose_name_plural = gettext_lazy('Conceptos')
     
     def __str__(self):
         return f"{self.term}: {self.definition[:50]}..."
@@ -6078,44 +6079,44 @@ class Exam(models.Model):
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título del Examen'
+        verbose_name=gettext_lazy('Título del Examen')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     is_public = models.BooleanField(
         default=False,
-        verbose_name='¿Es público?'
+        verbose_name=gettext_lazy('¿Es público?')
     )
     public_token = models.CharField(
         max_length=50,
         unique=True,
         blank=True,
         null=True,
-        verbose_name='Token público'
+        verbose_name=gettext_lazy('Token público')
     )
     passing_score = models.IntegerField(
         default=70,
-        verbose_name='Puntuación mínima para aprobar (%)'
+        verbose_name=gettext_lazy('Puntuación mínima para aprobar (%)')
     )
     time_limit = models.IntegerField(
         blank=True,
         null=True,
-        verbose_name='Tiempo límite (minutos)',
-        help_text='Dejar vacío para sin límite de tiempo'
+        verbose_name=gettext_lazy('Tiempo límite (minutos)'),
+        help_text=gettext_lazy('Dejar vacío para sin límite de tiempo')
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        verbose_name = 'Examen'
-        verbose_name_plural = 'Exámenes'
+        verbose_name = gettext_lazy('Examen')
+        verbose_name_plural = gettext_lazy('Exámenes')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -6143,37 +6144,37 @@ class ExamQuestion(models.Model):
         Exam,
         on_delete=models.CASCADE,
         related_name='questions',
-        verbose_name='Examen'
+        verbose_name=gettext_lazy('Examen')
     )
     question_text = models.TextField(
-        verbose_name='Pregunta'
+        verbose_name=gettext_lazy('Pregunta')
     )
     option_a = models.CharField(
         max_length=500,
-        verbose_name='Opción A'
+        verbose_name=gettext_lazy('Opción A')
     )
     option_b = models.CharField(
         max_length=500,
-        verbose_name='Opción B'
+        verbose_name=gettext_lazy('Opción B')
     )
     option_c = models.CharField(
         max_length=500,
-        verbose_name='Opción C'
+        verbose_name=gettext_lazy('Opción C')
     )
     correct_option = models.CharField(
         max_length=1,
-        choices=[('A', 'Opción A'), ('B', 'Opción B'), ('C', 'Opción C')],
-        verbose_name='Opción correcta'
+        choices=[('A', gettext_lazy('Opción A')), ('B', gettext_lazy('Opción B')), ('C', gettext_lazy('Opción C'))],
+        verbose_name=gettext_lazy('Opción correcta')
     )
     order = models.PositiveIntegerField(
         default=1,
-        verbose_name='Orden'
+        verbose_name=gettext_lazy('Orden')
     )
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        verbose_name = 'Pregunta del Examen'
-        verbose_name_plural = 'Preguntas del Examen'
+        verbose_name = gettext_lazy('Pregunta del Examen')
+        verbose_name_plural = gettext_lazy('Preguntas del Examen')
         ordering = ['order']
     
     def __str__(self):
@@ -6187,61 +6188,61 @@ class ExamAttempt(models.Model):
         Exam,
         on_delete=models.CASCADE,
         related_name='attempts',
-        verbose_name='Examen'
+        verbose_name=gettext_lazy('Examen')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         blank=True,
         null=True,
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     participant_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del participante'
+        verbose_name=gettext_lazy('Nombre del participante')
     )
     participant_email = models.EmailField(
-        verbose_name='Email del participante'
+        verbose_name=gettext_lazy('Email del participante')
     )
     score = models.FloatField(
-        verbose_name='Puntuación (%)'
+        verbose_name=gettext_lazy('Puntuación (%)')
     )
     total_questions = models.IntegerField(
-        verbose_name='Total de preguntas'
+        verbose_name=gettext_lazy('Total de preguntas')
     )
     correct_answers = models.IntegerField(
-        verbose_name='Respuestas correctas'
+        verbose_name=gettext_lazy('Respuestas correctas')
     )
     started_at = models.DateTimeField(
-        verbose_name='Iniciado en'
+        verbose_name=gettext_lazy('Iniciado en')
     )
     completed_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Completado en'
+        verbose_name=gettext_lazy('Completado en')
     )
     time_taken = models.IntegerField(
-        verbose_name='Tiempo tomado (segundos)'
+        verbose_name=gettext_lazy('Tiempo tomado (segundos)')
     )
     passed = models.BooleanField(
         default=False,
-        verbose_name='¿Aprobado?'
+        verbose_name=gettext_lazy('¿Aprobado?')
     )
     certificate_token = models.CharField(
         max_length=100,
         unique=True,
         blank=True,
         null=True,
-        verbose_name='Token del certificado'
+        verbose_name=gettext_lazy('Token del certificado')
     )
     certificate_generated_at = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Certificado generado en'
+        verbose_name=gettext_lazy('Certificado generado en')
     )
     
     class Meta:
-        verbose_name = 'Intento de Examen'
-        verbose_name_plural = 'Intentos de Examen'
+        verbose_name = gettext_lazy('Intento de Examen')
+        verbose_name_plural = gettext_lazy('Intentos de Examen')
         ordering = ['-completed_at']
     
     def __str__(self):
@@ -6298,26 +6299,26 @@ class ExamAnswer(models.Model):
         ExamAttempt,
         on_delete=models.CASCADE,
         related_name='answers',
-        verbose_name='Intento'
+        verbose_name=gettext_lazy('Intento')
     )
     question = models.ForeignKey(
         ExamQuestion,
         on_delete=models.CASCADE,
-        verbose_name='Pregunta'
+        verbose_name=gettext_lazy('Pregunta')
     )
     selected_option = models.CharField(
         max_length=1,
-        choices=[('A', 'Opción A'), ('B', 'Opción B'), ('C', 'Opción C')],
-        verbose_name='Opción seleccionada'
+        choices=[('A', gettext_lazy('Opción A')), ('B', gettext_lazy('Opción B')), ('C', gettext_lazy('Opción C'))],
+        verbose_name=gettext_lazy('Opción seleccionada')
     )
     is_correct = models.BooleanField(
         default=False,
-        verbose_name='¿Es correcta?'
+        verbose_name=gettext_lazy('¿Es correcta?')
     )
     
     class Meta:
-        verbose_name = 'Respuesta del Examen'
-        verbose_name_plural = 'Respuestas del Examen'
+        verbose_name = gettext_lazy('Respuesta del Examen')
+        verbose_name_plural = gettext_lazy('Respuestas del Examen')
         unique_together = ['attempt', 'question']
     
     def __str__(self):
@@ -6329,56 +6330,56 @@ class ContactoWeb(models.Model):
     
     nombre = models.CharField(
         max_length=100,
-        verbose_name='Nombre completo'
+        verbose_name=gettext_lazy('Nombre completo')
     )
     email = models.EmailField(
-        verbose_name='Correo electrónico'
+        verbose_name=gettext_lazy('Correo electrónico')
     )
     telefono = models.CharField(
         max_length=20,
         blank=True,
         null=True,
-        verbose_name='Teléfono'
+        verbose_name=gettext_lazy('Teléfono')
     )
     empresa = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     asunto = models.CharField(
         max_length=200,
-        verbose_name='Asunto'
+        verbose_name=gettext_lazy('Asunto')
     )
     mensaje = models.TextField(
-        verbose_name='Mensaje'
+        verbose_name=gettext_lazy('Mensaje')
     )
     fecha_creacion = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     leido = models.BooleanField(
         default=False,
-        verbose_name='Leído'
+        verbose_name=gettext_lazy('Leído')
     )
     respondido = models.BooleanField(
         default=False,
-        verbose_name='Respondido'
+        verbose_name=gettext_lazy('Respondido')
     )
     ip_address = models.GenericIPAddressField(
         blank=True,
         null=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     user_agent = models.TextField(
         blank=True,
         null=True,
-        verbose_name='User Agent'
+        verbose_name=gettext_lazy('User Agent')
     )
     
     class Meta:
-        verbose_name = 'Contacto Web'
-        verbose_name_plural = 'Contactos Web'
+        verbose_name = gettext_lazy('Contacto Web')
+        verbose_name_plural = gettext_lazy('Contactos Web')
         ordering = ['-fecha_creacion']
     
     def __str__(self):
@@ -6393,20 +6394,20 @@ class PublicDocumentUpload(models.Model):
         default=uuid.uuid4,
         unique=True,
         editable=False,
-        verbose_name='Token de subida',
-        help_text='Token único para la URL pública de subida'
+        verbose_name=gettext_lazy('Token de subida'),
+        help_text=gettext_lazy('Token único para la URL pública de subida')
     )
     
     # Configuración de la URL
     title = models.CharField(
         max_length=200,
-        verbose_name='Título de la subida',
-        help_text='Descripción de qué tipo de documentos se esperan'
+        verbose_name=gettext_lazy('Título de la subida'),
+        help_text=gettext_lazy('Descripción de qué tipo de documentos se esperan')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Instrucciones',
-        help_text='Instrucciones para quien vaya a subir el documento'
+        verbose_name=gettext_lazy('Instrucciones'),
+        help_text=gettext_lazy('Instrucciones para quien vaya a subir el documento')
     )
     
     # Usuario que creó la URL
@@ -6414,7 +6415,7 @@ class PublicDocumentUpload(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='public_upload_urls',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     # Empresa asociada (opcional)
@@ -6424,53 +6425,53 @@ class PublicDocumentUpload(models.Model):
         null=True,
         blank=True,
         related_name='public_upload_urls',
-        verbose_name='Empresa/Cliente',
-        help_text='Empresa o cliente para el cual se subirán los documentos'
+        verbose_name=gettext_lazy('Empresa/Cliente'),
+        help_text=gettext_lazy('Empresa o cliente para el cual se subirán los documentos')
     )
     
     # Configuración de expiración
     expires_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de expiración',
-        help_text='Opcional: fecha límite para usar esta URL'
+        verbose_name=gettext_lazy('Fecha de expiración'),
+        help_text=gettext_lazy('Opcional: fecha límite para usar esta URL')
     )
     
     # Estado
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activa',
-        help_text='Si está desactivada, no se pueden subir más documentos'
+        verbose_name=gettext_lazy('Activa'),
+        help_text=gettext_lazy('Si está desactivada, no se pueden subir más documentos')
     )
     
     # Configuración de límites
     max_uploads = models.PositiveIntegerField(
         null=True,
         blank=True,
-        verbose_name='Máximo de subidas',
-        help_text='Opcional: límite de documentos que se pueden subir'
+        verbose_name=gettext_lazy('Máximo de subidas'),
+        help_text=gettext_lazy('Opcional: límite de documentos que se pueden subir')
     )
     upload_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Documentos subidos',
-        help_text='Contador de documentos subidos usando esta URL'
+        verbose_name=gettext_lazy('Documentos subidos'),
+        help_text=gettext_lazy('Contador de documentos subidos usando esta URL')
     )
     
     # Timestamps
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     last_used_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Último uso'
+        verbose_name=gettext_lazy('Último uso')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'URL Pública de Subida'
-        verbose_name_plural = 'URLs Públicas de Subida'
+        verbose_name = gettext_lazy('URL Pública de Subida')
+        verbose_name_plural = gettext_lazy('URLs Públicas de Subida')
     
     def __str__(self):
         return f"{self.title} - {self.upload_token}"
@@ -6500,37 +6501,37 @@ class Employee(models.Model):
     # Información personal básica
     first_name = models.CharField(
         max_length=100,
-        verbose_name='Nombre'
+        verbose_name=gettext_lazy('Nombre')
     )
     last_name = models.CharField(
         max_length=100,
-        verbose_name='Apellidos'
+        verbose_name=gettext_lazy('Apellidos')
     )
     email = models.EmailField(
         unique=True,
-        verbose_name='Correo electrónico'
+        verbose_name=gettext_lazy('Correo electrónico')
     )
     phone = models.CharField(
         max_length=20,
         blank=True,
-        verbose_name='Teléfono'
+        verbose_name=gettext_lazy('Teléfono')
     )
     
     # Información profesional
     position = models.CharField(
         max_length=150,
-        verbose_name='Cargo'
+        verbose_name=gettext_lazy('Cargo')
     )
     salary_euros = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Salario (EUR)'
+        verbose_name=gettext_lazy('Salario (EUR)')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción/Experiencia'
+        verbose_name=gettext_lazy('Descripción/Experiencia')
     )
     
     # Currículo
@@ -6538,27 +6539,27 @@ class Employee(models.Model):
         upload_to='resumes/',
         null=True,
         blank=True,
-        verbose_name='Archivo de currículo'
+        verbose_name=gettext_lazy('Archivo de currículo')
     )
     
     # Análisis de IA
     ai_analysis = models.TextField(
         blank=True,
-        verbose_name='Análisis de IA',
-        help_text='Resumen automático generado por IA'
+        verbose_name=gettext_lazy('Análisis de IA'),
+        help_text=gettext_lazy('Resumen automático generado por IA')
     )
     ai_score = models.PositiveIntegerField(
         null=True,
         blank=True,
-        verbose_name='Puntuación IA (1-10)',
-        help_text='Puntuación automática del candidato'
+        verbose_name=gettext_lazy('Puntuación IA (1-10)'),
+        help_text=gettext_lazy('Puntuación automática del candidato')
     )
     
     # Opinión de reunión de contratación
     hiring_meeting_opinion = models.TextField(
         blank=True,
-        verbose_name='Opinión de reunión de contratación',
-        help_text='Comentarios y evaluación de la reunión/entrevista de contratación'
+        verbose_name=gettext_lazy('Opinión de reunión de contratación'),
+        help_text=gettext_lazy('Comentarios y evaluación de la reunión/entrevista de contratación')
     )
     
     # Relaciones
@@ -6566,7 +6567,7 @@ class Employee(models.Model):
         'Company',
         on_delete=models.CASCADE,
         related_name='employees',
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     created_by = models.ForeignKey(
         User,
@@ -6574,37 +6575,37 @@ class Employee(models.Model):
         null=True,
         blank=True,
         related_name='created_employees',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     # Estados
     STATUS_CHOICES = [
-        ('candidate', 'Candidato'),
-        ('in_process', 'En trámites'),
-        ('employee', 'Empleado'),
-        ('not_employee', 'No empleado'),
+        ('candidate', gettext_lazy('Candidato')),
+        ('in_process', gettext_lazy('En trámites')),
+        ('employee', gettext_lazy('Empleado')),
+        ('not_employee', gettext_lazy('No empleado')),
     ]
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='candidate',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     # Timestamps
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de aplicación'
+        verbose_name=gettext_lazy('Fecha de aplicación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Empleado'
-        verbose_name_plural = 'Empleados'
+        verbose_name = gettext_lazy('Empleado')
+        verbose_name_plural = gettext_lazy('Empleados')
     
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.position}"
@@ -6643,31 +6644,31 @@ class EmployeePayroll(models.Model):
         Employee,
         on_delete=models.CASCADE,
         related_name='payrolls',
-        verbose_name='Empleado'
+        verbose_name=gettext_lazy('Empleado')
     )
     
     # Información de la nómina
     period_month = models.PositiveIntegerField(
-        verbose_name='Mes',
-        help_text='Mes de la nómina (1-12)'
+        verbose_name=gettext_lazy('Mes'),
+        help_text=gettext_lazy('Mes de la nómina (1-12)')
     )
     period_year = models.PositiveIntegerField(
-        verbose_name='Año',
-        help_text='Año de la nómina'
+        verbose_name=gettext_lazy('Año'),
+        help_text=gettext_lazy('Año de la nómina')
     )
     
     # Archivos
     payroll_pdf = models.FileField(
         upload_to='payrolls/',
-        verbose_name='Nómina (PDF)',
-        help_text='Archivo PDF de la nómina'
+        verbose_name=gettext_lazy('Nómina (PDF)'),
+        help_text=gettext_lazy('Archivo PDF de la nómina')
     )
     payment_receipt = models.FileField(
         upload_to='payment_receipts/',
         null=True,
         blank=True,
-        verbose_name='Comprobante de pago',
-        help_text='Archivo del comprobante de pago (opcional)'
+        verbose_name=gettext_lazy('Comprobante de pago'),
+        help_text=gettext_lazy('Archivo del comprobante de pago (opcional)')
     )
     
     # Información adicional
@@ -6676,19 +6677,19 @@ class EmployeePayroll(models.Model):
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Salario bruto'
+        verbose_name=gettext_lazy('Salario bruto')
     )
     net_salary = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Salario neto'
+        verbose_name=gettext_lazy('Salario neto')
     )
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas',
-        help_text='Notas adicionales sobre esta nómina'
+        verbose_name=gettext_lazy('Notas'),
+        help_text=gettext_lazy('Notas adicionales sobre esta nómina')
     )
     
     # Control
@@ -6698,23 +6699,23 @@ class EmployeePayroll(models.Model):
         null=True,
         blank=True,
         related_name='created_payrolls',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     # Timestamps
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de registro'
+        verbose_name=gettext_lazy('Fecha de registro')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-period_year', '-period_month', '-created_at']
-        verbose_name = 'Nómina de Empleado'
-        verbose_name_plural = 'Nóminas de Empleados'
+        verbose_name = gettext_lazy('Nómina de Empleado')
+        verbose_name_plural = gettext_lazy('Nóminas de Empleados')
         unique_together = ['employee', 'period_month', 'period_year']
     
     def __str__(self):
@@ -6742,24 +6743,24 @@ class JobApplicationToken(models.Model):
         default=uuid.uuid4,
         unique=True,
         editable=False,
-        verbose_name='Token de aplicación'
+        verbose_name=gettext_lazy('Token de aplicación')
     )
     
     # Información del puesto
     job_title = models.CharField(
         max_length=150,
-        verbose_name='Título del puesto'
+        verbose_name=gettext_lazy('Título del puesto')
     )
     job_description = models.TextField(
-        verbose_name='Descripción del puesto'
+        verbose_name=gettext_lazy('Descripción del puesto')
     )
     proposed_salary_euros = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Salario propuesto (EUR)',
-        help_text='Salario que la empresa está dispuesta a pagar'
+        verbose_name=gettext_lazy('Salario propuesto (EUR)'),
+        help_text=gettext_lazy('Salario que la empresa está dispuesta a pagar')
     )
     
     # Configuración
@@ -6767,45 +6768,45 @@ class JobApplicationToken(models.Model):
         'Company',
         on_delete=models.CASCADE,
         related_name='job_application_tokens',
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_job_tokens',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     # Estado y expiración
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     expires_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de expiración'
+        verbose_name=gettext_lazy('Fecha de expiración')
     )
     max_applications = models.PositiveIntegerField(
         null=True,
         blank=True,
-        verbose_name='Máximo de aplicaciones'
+        verbose_name=gettext_lazy('Máximo de aplicaciones')
     )
     application_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Aplicaciones recibidas'
+        verbose_name=gettext_lazy('Aplicaciones recibidas')
     )
     
     # Timestamps
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Token de Aplicación de Empleo'
-        verbose_name_plural = 'Tokens de Aplicación de Empleo'
+        verbose_name = gettext_lazy('Token de Aplicación de Empleo')
+        verbose_name_plural = gettext_lazy('Tokens de Aplicación de Empleo')
     
     def __str__(self):
         return f"{self.job_title} - {self.application_token}"
@@ -6842,20 +6843,20 @@ class Agreement(models.Model):
     """Modelo para gestionar acuerdos/contratos con firma digital"""
     
     STATUS_CHOICES = [
-        ('draft', 'Borrador'),
-        ('published', 'Publicado'),
-        ('signed', 'Firmado'),
-        ('cancelled', 'Cancelado'),
+        ('draft', gettext_lazy('Borrador')),
+        ('published', gettext_lazy('Publicado')),
+        ('signed', gettext_lazy('Firmado')),
+        ('cancelled', gettext_lazy('Cancelado')),
     ]
     
     # Información básica del acuerdo
     title = models.CharField(
         max_length=200,
-        verbose_name='Título del Acuerdo'
+        verbose_name=gettext_lazy('Título del Acuerdo')
     )
     body = models.TextField(
-        verbose_name='Cuerpo del Acuerdo',
-        help_text='Contenido completo del acuerdo/contrato'
+        verbose_name=gettext_lazy('Cuerpo del Acuerdo'),
+        help_text=gettext_lazy('Contenido completo del acuerdo/contrato')
     )
     
     # Control de estado
@@ -6863,14 +6864,14 @@ class Agreement(models.Model):
         max_length=20,
         choices=STATUS_CHOICES,
         default='draft',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     # URLs y tokens
     public_token = models.CharField(
         max_length=100,
         unique=True,
-        verbose_name='Token Público'
+        verbose_name=gettext_lazy('Token Público')
     )
     
     # Metadatos
@@ -6879,7 +6880,7 @@ class Agreement(models.Model):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     created_by = models.ForeignKey(
         User,
@@ -6887,45 +6888,45 @@ class Agreement(models.Model):
         null=True,
         blank=True,
         related_name='created_agreements',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     # Control de fechas
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     published_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de publicación'
+        verbose_name=gettext_lazy('Fecha de publicación')
     )
     expires_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de expiración'
+        verbose_name=gettext_lazy('Fecha de expiración')
     )
     
     # Configuración
     max_signers = models.PositiveIntegerField(
         default=10,
-        verbose_name='Máximo de firmantes',
-        help_text='Número máximo de personas que pueden firmar este acuerdo'
+        verbose_name=gettext_lazy('Máximo de firmantes'),
+        help_text=gettext_lazy('Número máximo de personas que pueden firmar este acuerdo')
     )
     requires_approval = models.BooleanField(
         default=False,
-        verbose_name='Requiere aprobación',
-        help_text='Las firmas requieren aprobación antes de ser válidas'
+        verbose_name=gettext_lazy('Requiere aprobación'),
+        help_text=gettext_lazy('Las firmas requieren aprobación antes de ser válidas')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Acuerdo'
-        verbose_name_plural = 'Acuerdos'
+        verbose_name = gettext_lazy('Acuerdo')
+        verbose_name_plural = gettext_lazy('Acuerdos')
     
     def __str__(self):
         return self.title
@@ -7028,46 +7029,46 @@ class AgreementSignature(models.Model):
         Agreement,
         on_delete=models.CASCADE,
         related_name='signatures',
-        verbose_name='Acuerdo'
+        verbose_name=gettext_lazy('Acuerdo')
     )
     
     # Información del firmante
     signer_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del firmante'
+        verbose_name=gettext_lazy('Nombre del firmante')
     )
     signer_email = models.EmailField(
-        verbose_name='Email del firmante'
+        verbose_name=gettext_lazy('Email del firmante')
     )
     signature_data = models.TextField(
-        verbose_name='Datos de la firma',
-        help_text='Datos de la firma digital (base64)'
+        verbose_name=gettext_lazy('Datos de la firma'),
+        help_text=gettext_lazy('Datos de la firma digital (base64)')
     )
     
     # Control de firma
     signed_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de firma'
+        verbose_name=gettext_lazy('Fecha de firma')
     )
     ip_address = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     user_agent = models.TextField(
         null=True,
         blank=True,
-        verbose_name='User Agent'
+        verbose_name=gettext_lazy('User Agent')
     )
     
     # Estado de la firma
     is_valid = models.BooleanField(
         default=True,
-        verbose_name='Firma válida'
+        verbose_name=gettext_lazy('Firma válida')
     )
     is_approved = models.BooleanField(
         default=True,
-        verbose_name='Firma aprobada'
+        verbose_name=gettext_lazy('Firma aprobada')
     )
     approved_by = models.ForeignKey(
         User,
@@ -7075,29 +7076,29 @@ class AgreementSignature(models.Model):
         null=True,
         blank=True,
         related_name='approved_signatures',
-        verbose_name='Aprobado por'
+        verbose_name=gettext_lazy('Aprobado por')
     )
     approved_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de aprobación'
+        verbose_name=gettext_lazy('Fecha de aprobación')
     )
     
     # Descarga del PDF
     pdf_downloaded_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='PDF descargado en'
+        verbose_name=gettext_lazy('PDF descargado en')
     )
     download_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Veces descargado'
+        verbose_name=gettext_lazy('Veces descargado')
     )
     
     class Meta:
         ordering = ['-signed_at']
-        verbose_name = 'Firma de Acuerdo'
-        verbose_name_plural = 'Firmas de Acuerdos'
+        verbose_name = gettext_lazy('Firma de Acuerdo')
+        verbose_name_plural = gettext_lazy('Firmas de Acuerdos')
         unique_together = ['agreement', 'signer_email']
     
     def __str__(self):
@@ -7121,26 +7122,26 @@ class LandingPage(models.Model):
     # Información básica
     nombre_producto = models.CharField(
         max_length=200,
-        verbose_name='Nombre del Producto'
+        verbose_name=gettext_lazy('Nombre del Producto')
     )
     descripcion = models.TextField(
-        verbose_name='Descripción del Producto',
-        help_text='Descripción que aparecerá en la landing page'
+        verbose_name=gettext_lazy('Descripción del Producto'),
+        help_text=gettext_lazy('Descripción que aparecerá en la landing page')
     )
     imagen = models.ImageField(
         upload_to='landing_pages/',
         blank=True,
         null=True,
-        verbose_name='Imagen del Producto',
-        help_text='Imagen principal de la landing page'
+        verbose_name=gettext_lazy('Imagen del Producto'),
+        help_text=gettext_lazy('Imagen principal de la landing page')
     )
     
     # Configuración de URL pública
     slug = models.SlugField(
         max_length=200,
         unique=True,
-        verbose_name='URL de la Landing Page',
-        help_text='URL única para acceder a la landing page (ej: mi-producto)'
+        verbose_name=gettext_lazy('URL de la Landing Page'),
+        help_text=gettext_lazy('URL única para acceder a la landing page (ej: mi-producto)')
     )
     
     # Token de API para seguridad
@@ -7148,107 +7149,107 @@ class LandingPage(models.Model):
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name='Token de API',
-        help_text='Token único para autenticar llamadas a la API de esta landing page'
+        verbose_name=gettext_lazy('Token de API'),
+        help_text=gettext_lazy('Token único para autenticar llamadas a la API de esta landing page')
     )
     
     # Estado
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Página Activa',
-        help_text='Si está activa, la landing page será accesible públicamente'
+        verbose_name=gettext_lazy('Página Activa'),
+        help_text=gettext_lazy('Si está activa, la landing page será accesible públicamente')
     )
     
     # Configuración de diseño
     color_principal = models.CharField(
         max_length=7,
         default='#00A651',
-        verbose_name='Color Principal',
-        help_text='Color principal de la landing page (formato HEX: #00A651)'
+        verbose_name=gettext_lazy('Color Principal'),
+        help_text=gettext_lazy('Color principal de la landing page (formato HEX: #00A651)')
     )
     color_secundario = models.CharField(
         max_length=7,
         default='#E8F5E8',
-        verbose_name='Color Secundario',
-        help_text='Color secundario para fondos (formato HEX: #E8F5E8)'
+        verbose_name=gettext_lazy('Color Secundario'),
+        help_text=gettext_lazy('Color secundario para fondos (formato HEX: #E8F5E8)')
     )
     
     # Configuración del formulario
     titulo_formulario = models.CharField(
         max_length=200,
         default='VEA TODAS LAS DEMOSTRACIONES',
-        verbose_name='Título del Formulario'
+        verbose_name=gettext_lazy('Título del Formulario')
     )
     subtitulo_formulario = models.TextField(
         default='Salesforce acerca a las empresas con sus clientes. Vea nuestras demostraciones gratuitas y obtenga más información sobre cómo podemos ayudar a su negocio.',
-        verbose_name='Subtítulo del Formulario'
+        verbose_name=gettext_lazy('Subtítulo del Formulario')
     )
     
     # Configuración de empresa/campaña
     empresa_campana = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Empresa de la Campaña',
-        help_text='Nombre de la empresa que ejecuta la campaña'
+        verbose_name=gettext_lazy('Empresa de la Campaña'),
+        help_text=gettext_lazy('Nombre de la empresa que ejecuta la campaña')
     )
     
     # Configuración de Telegram
     telegram_bot_token = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Bot Token de Telegram',
-        help_text='Token del bot de Telegram para enviar notificaciones (ej: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz)'
+        verbose_name=gettext_lazy('Bot Token de Telegram'),
+        help_text=gettext_lazy('Token del bot de Telegram para enviar notificaciones (ej: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz)')
     )
     telegram_chat_id = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Chat ID de Telegram',
-        help_text='ID del chat o canal donde enviar las notificaciones (ej: -1001234567890 o @mi_canal)'
+        verbose_name=gettext_lazy('Chat ID de Telegram'),
+        help_text=gettext_lazy('ID del chat o canal donde enviar las notificaciones (ej: -1001234567890 o @mi_canal)')
     )
     
     # URL de reunión
     meeting_url = models.URLField(
         blank=True,
-        verbose_name='URL de Reunión',
-        help_text='URL para planificar reuniones (ej: Calendly, Google Meet, Zoom, etc.)'
+        verbose_name=gettext_lazy('URL de Reunión'),
+        help_text=gettext_lazy('URL para planificar reuniones (ej: Calendly, Google Meet, Zoom, etc.)')
     )
     
     # Metadatos
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     # Estadísticas
     views_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Número de visitas'
+        verbose_name=gettext_lazy('Número de visitas')
     )
     submissions_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Formularios enviados'
+        verbose_name=gettext_lazy('Formularios enviados')
     )
     meeting_button_clicks = models.PositiveIntegerField(
         default=0,
-        verbose_name='Clics en "Planificar Reunión"'
+        verbose_name=gettext_lazy('Clics en "Planificar Reunión"')
     )
     contact_button_clicks = models.PositiveIntegerField(
         default=0,
-        verbose_name='Clics en "Contactar"'
+        verbose_name=gettext_lazy('Clics en "Contactar"')
     )
     
     class Meta:
-        verbose_name = 'Landing Page'
-        verbose_name_plural = 'Landing Pages'
+        verbose_name = gettext_lazy('Landing Page')
+        verbose_name_plural = gettext_lazy('Landing Pages')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -7299,95 +7300,95 @@ class LandingPageSubmission(models.Model):
         LandingPage,
         on_delete=models.CASCADE,
         related_name='submissions',
-        verbose_name='Landing Page'
+        verbose_name=gettext_lazy('Landing Page')
     )
     
     # Datos del formulario
     nombre = models.CharField(
         max_length=100,
-        verbose_name='Nombre'
+        verbose_name=gettext_lazy('Nombre')
     )
     apellido = models.CharField(
         max_length=100,
-        verbose_name='Apellido'
+        verbose_name=gettext_lazy('Apellido')
     )
     email = models.EmailField(
-        verbose_name='Email'
+        verbose_name=gettext_lazy('Email')
     )
     telefono = models.CharField(
         max_length=20,
-        verbose_name='Teléfono'
+        verbose_name=gettext_lazy('Teléfono')
     )
     empresa = models.CharField(
         max_length=200,
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     cargo = models.CharField(
         max_length=100,
-        verbose_name='Cargo'
+        verbose_name=gettext_lazy('Cargo')
     )
     mensaje = models.TextField(
-        verbose_name='Mensaje o comentarios',
-        help_text='Cuéntanos más sobre tus necesidades o proyecto'
+        verbose_name=gettext_lazy('Mensaje o comentarios'),
+        help_text=gettext_lazy('Cuéntanos más sobre tus necesidades o proyecto')
     )
     
     # Preferencias de contacto
     preferred_contact_time = models.CharField(
         max_length=20,
         choices=[
-            ('asap', 'Lo antes posible'),
-            ('monday', 'El próximo lunes'),
-            ('tuesday', 'El próximo martes'),
-            ('wednesday', 'El próximo miércoles'),
-            ('thursday', 'El próximo jueves'),
-            ('friday', 'El próximo viernes'),
-            ('next_week', 'La próxima semana'),
-            ('flexible', 'Horario flexible'),
+            ('asap', gettext_lazy('Lo antes posible')),
+            ('monday', gettext_lazy('El próximo lunes')),
+            ('tuesday', gettext_lazy('El próximo martes')),
+            ('wednesday', gettext_lazy('El próximo miércoles')),
+            ('thursday', gettext_lazy('El próximo jueves')),
+            ('friday', gettext_lazy('El próximo viernes')),
+            ('next_week', gettext_lazy('La próxima semana')),
+            ('flexible', gettext_lazy('Horario flexible')),
         ],
         default='asap',
-        verbose_name='Cuándo prefieres que te contactemos'
+        verbose_name=gettext_lazy('Cuándo prefieres que te contactemos')
     )
     
     # Metadatos de seguimiento
     ip_address = models.GenericIPAddressField(
         blank=True,
         null=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     user_agent = models.TextField(
         blank=True,
         null=True,
-        verbose_name='User Agent'
+        verbose_name=gettext_lazy('User Agent')
     )
     utm_source = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='UTM Source'
+        verbose_name=gettext_lazy('UTM Source')
     )
     utm_medium = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='UTM Medium'
+        verbose_name=gettext_lazy('UTM Medium')
     )
     utm_campaign = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='UTM Campaign'
+        verbose_name=gettext_lazy('UTM Campaign')
     )
     
     # Estado
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de envío'
+        verbose_name=gettext_lazy('Fecha de envío')
     )
     processed = models.BooleanField(
         default=False,
-        verbose_name='Procesado'
+        verbose_name=gettext_lazy('Procesado')
     )
     processed_at = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Fecha de procesamiento'
+        verbose_name=gettext_lazy('Fecha de procesamiento')
     )
     processed_by = models.ForeignKey(
         'auth.User',
@@ -7395,79 +7396,79 @@ class LandingPageSubmission(models.Model):
         blank=True,
         null=True,
         related_name='processed_submissions',
-        verbose_name='Procesado por'
+        verbose_name=gettext_lazy('Procesado por')
     )
     
     # Evaluación de IA
     ai_evaluated = models.BooleanField(
         default=False,
-        verbose_name='Evaluado por IA'
+        verbose_name=gettext_lazy('Evaluado por IA')
     )
     ai_evaluation_date = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Fecha de evaluación IA'
+        verbose_name=gettext_lazy('Fecha de evaluación IA')
     )
     ai_company_score = models.IntegerField(
         blank=True,
         null=True,
-        verbose_name='Puntuación Empresa (1-10)',
-        help_text='Evaluación de la calidad/seriedad de la empresa'
+        verbose_name=gettext_lazy('Puntuación Empresa (1-10)'),
+        help_text=gettext_lazy('Evaluación de la calidad/seriedad de la empresa')
     )
     ai_contact_score = models.IntegerField(
         blank=True,
         null=True,
-        verbose_name='Puntuación Contacto (1-10)',
-        help_text='Evaluación de la calidad del contacto'
+        verbose_name=gettext_lazy('Puntuación Contacto (1-10)'),
+        help_text=gettext_lazy('Evaluación de la calidad del contacto')
     )
     ai_project_score = models.IntegerField(
         blank=True,
         null=True,
-        verbose_name='Puntuación Proyecto (1-10)',
-        help_text='Evaluación del potencial del proyecto'
+        verbose_name=gettext_lazy('Puntuación Proyecto (1-10)'),
+        help_text=gettext_lazy('Evaluación del potencial del proyecto')
     )
     ai_overall_score = models.FloatField(
         blank=True,
         null=True,
-        verbose_name='Puntuación General',
-        help_text='Puntuación promedio general'
+        verbose_name=gettext_lazy('Puntuación General'),
+        help_text=gettext_lazy('Puntuación promedio general')
     )
     ai_evaluation_summary = models.TextField(
         blank=True,
-        verbose_name='Resumen de Evaluación IA',
-        help_text='Resumen detallado de la evaluación'
+        verbose_name=gettext_lazy('Resumen de Evaluación IA'),
+        help_text=gettext_lazy('Resumen detallado de la evaluación')
     )
     ai_recommendations = models.TextField(
         blank=True,
-        verbose_name='Recomendaciones IA',
-        help_text='Recomendaciones de seguimiento'
+        verbose_name=gettext_lazy('Recomendaciones IA'),
+        help_text=gettext_lazy('Recomendaciones de seguimiento')
     )
     ai_priority_level = models.CharField(
         max_length=20,
         choices=[
-            ('low', 'Baja'),
-            ('medium', 'Media'),
-            ('high', 'Alta'),
-            ('urgent', 'Urgente'),
+            ('low', gettext_lazy('Baja')),
+            ('medium', gettext_lazy('Media')),
+            ('high', gettext_lazy('Alta')),
+            ('urgent', gettext_lazy('Urgente')),
         ],
         blank=True,
-        verbose_name='Nivel de Prioridad IA'
+        verbose_name=gettext_lazy('Nivel de Prioridad IA')
     )
 
     # Detección de spam
     is_spam = models.BooleanField(
         default=False,
-        verbose_name='Es Spam'
+        verbose_name=gettext_lazy('Es Spam')
     )
     spam_reason = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name='Motivo de Spam'
+        verbose_name=gettext_lazy('Motivo de Spam')
     )
 
     class Meta:
-        verbose_name = 'Envío de Landing Page'
-        verbose_name_plural = 'Envíos de Landing Pages'
+        verbose_name = gettext_lazy('Envío de Landing Page')
+        verbose_name_plural = gettext_lazy('Envíos de Landing Pages')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -7503,40 +7504,40 @@ class RegistroEntrada(models.Model):
     """Registro de visitas/entradas al local o empresa"""
 
     DOCUMENTO_CHOICES = [
-        ('dni', 'DNI'),
-        ('nie', 'NIE'),
-        ('pasaporte', 'Pasaporte'),
-        ('otro', 'Otro'),
+        ('dni', gettext_lazy('DNI')),
+        ('nie', gettext_lazy('NIE')),
+        ('pasaporte', gettext_lazy('Pasaporte')),
+        ('otro', gettext_lazy('Otro')),
     ]
 
-    nombre = models.CharField(max_length=100, verbose_name='Nombre')
-    apellido = models.CharField(max_length=100, verbose_name='Apellido')
+    nombre = models.CharField(max_length=100, verbose_name=gettext_lazy('Nombre'))
+    apellido = models.CharField(max_length=100, verbose_name=gettext_lazy('Apellido'))
     tipo_documento = models.CharField(
         max_length=20,
         choices=DOCUMENTO_CHOICES,
         default='dni',
-        verbose_name='Tipo de Documento'
+        verbose_name=gettext_lazy('Tipo de Documento')
     )
     numero_documento = models.CharField(
         max_length=50,
-        verbose_name='Número de Documento'
+        verbose_name=gettext_lazy('Número de Documento')
     )
-    que_hara = models.TextField(verbose_name='¿Qué hará?')
-    telefono = models.CharField(max_length=20, verbose_name='Teléfono')
+    que_hara = models.TextField(verbose_name=gettext_lazy('¿Qué hará?'))
+    telefono = models.CharField(max_length=20, verbose_name=gettext_lazy('Teléfono'))
     direccion = models.CharField(
         max_length=300,
         blank=True,
-        verbose_name='Dirección'
+        verbose_name=gettext_lazy('Dirección')
     )
-    fecha = models.DateField(auto_now_add=True, verbose_name='Fecha')
-    hora = models.TimeField(auto_now_add=True, verbose_name='Hora')
+    fecha = models.DateField(auto_now_add=True, verbose_name=gettext_lazy('Fecha'))
+    hora = models.TimeField(auto_now_add=True, verbose_name=gettext_lazy('Hora'))
     ip_address = models.GenericIPAddressField(
-        blank=True, null=True, verbose_name='IP'
+        blank=True, null=True, verbose_name=gettext_lazy('IP')
     )
 
     class Meta:
-        verbose_name = 'Registro de Entrada'
-        verbose_name_plural = 'Registros de Entrada'
+        verbose_name = gettext_lazy('Registro de Entrada')
+        verbose_name_plural = gettext_lazy('Registros de Entrada')
         ordering = ['-fecha', '-hora']
 
     def __str__(self):
@@ -7549,15 +7550,15 @@ class RegistroEntradaConfig(models.Model):
     public_token = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
-        verbose_name='Token Público'
+        verbose_name=gettext_lazy('Token Público')
     )
-    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy('Activo'))
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = 'Configuración Registro de Entrada'
-        verbose_name_plural = 'Configuración Registro de Entrada'
+        verbose_name = gettext_lazy('Configuración Registro de Entrada')
+        verbose_name_plural = gettext_lazy('Configuración Registro de Entrada')
 
     def __str__(self):
         return f"Token: {self.public_token}"
@@ -7579,22 +7580,22 @@ class SharedFile(models.Model):
 
     title = models.CharField(
         max_length=200,
-        verbose_name='Título del Archivo'
+        verbose_name=gettext_lazy('Título del Archivo')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción opcional del archivo'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción opcional del archivo')
     )
     file = models.FileField(
         upload_to='shared_files/%Y/%m/',
-        verbose_name='Archivo'
+        verbose_name=gettext_lazy('Archivo')
     )
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
         related_name='shared_files',
-        verbose_name='Empresa',
+        verbose_name=gettext_lazy('Empresa'),
         null=True,
         blank=True
     )
@@ -7602,42 +7603,42 @@ class SharedFile(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='uploaded_files',
-        verbose_name='Subido por',
+        verbose_name=gettext_lazy('Subido por'),
         null=True,
         blank=True
     )
     is_public = models.BooleanField(
         default=False,
-        verbose_name='Público',
-        help_text='Si está marcado, todos los usuarios de la empresa pueden ver este archivo'
+        verbose_name=gettext_lazy('Público'),
+        help_text=gettext_lazy('Si está marcado, todos los usuarios de la empresa pueden ver este archivo')
     )
     file_size = models.PositiveIntegerField(
         null=True,
         blank=True,
-        verbose_name='Tamaño del archivo (bytes)'
+        verbose_name=gettext_lazy('Tamaño del archivo (bytes)')
     )
     file_type = models.CharField(
         max_length=50,
         blank=True,
-        verbose_name='Tipo de archivo'
+        verbose_name=gettext_lazy('Tipo de archivo')
     )
     download_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Número de descargas'
+        verbose_name=gettext_lazy('Número de descargas')
     )
     created_at = models.DateTimeField(
         default=timezone.now, 
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True, 
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Archivo Compartido'
-        verbose_name_plural = 'Archivos Compartidos'
+        verbose_name = gettext_lazy('Archivo Compartido')
+        verbose_name_plural = gettext_lazy('Archivos Compartidos')
     
     def __str__(self):
         return f"{self.title} - {self.company.name}"
@@ -7696,32 +7697,32 @@ class SharedFileDownload(models.Model):
         SharedFile,
         on_delete=models.CASCADE,
         related_name='downloads',
-        verbose_name='Archivo Compartido'
+        verbose_name=gettext_lazy('Archivo Compartido')
     )
     downloaded_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='file_downloads',
-        verbose_name='Descargado por',
+        verbose_name=gettext_lazy('Descargado por'),
         null=True,
         blank=True
     )
     ip_address = models.GenericIPAddressField(
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     user_agent = models.TextField(
         blank=True,
-        verbose_name='User Agent'
+        verbose_name=gettext_lazy('User Agent')
     )
     downloaded_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de descarga'
+        verbose_name=gettext_lazy('Fecha de descarga')
     )
     
     class Meta:
         ordering = ['-downloaded_at']
-        verbose_name = 'Descarga de Archivo'
-        verbose_name_plural = 'Descargas de Archivos'
+        verbose_name = gettext_lazy('Descarga de Archivo')
+        verbose_name_plural = gettext_lazy('Descargas de Archivos')
     
     def __str__(self):
         user = self.downloaded_by.username if self.downloaded_by else 'Anónimo'
@@ -7732,30 +7733,30 @@ class Recording(models.Model):
     """Modelo para gestionar grabaciones de audio con transcripción IA"""
     
     TRANSCRIPTION_STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('processing', 'Procesando'),
-        ('completed', 'Completada'),
-        ('failed', 'Fallida'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('processing', gettext_lazy('Procesando')),
+        ('completed', gettext_lazy('Completada')),
+        ('failed', gettext_lazy('Fallida')),
     ]
     
     title = models.CharField(
         max_length=200, 
-        verbose_name='Título de la grabación'
+        verbose_name=gettext_lazy('Título de la grabación')
     )
     description = models.TextField(
         blank=True, 
-        verbose_name='Descripción',
-        help_text='Descripción opcional de la grabación'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción opcional de la grabación')
     )
     audio_file = models.FileField(
         upload_to='recordings/%Y/%m/',
-        verbose_name='Archivo de audio'
+        verbose_name=gettext_lazy('Archivo de audio')
     )
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
         related_name='recordings',
-        verbose_name='Empresa',
+        verbose_name=gettext_lazy('Empresa'),
         null=True,
         blank=True
     )
@@ -7763,24 +7764,24 @@ class Recording(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='uploaded_recordings',
-        verbose_name='Subido por',
+        verbose_name=gettext_lazy('Subido por'),
         null=True,
         blank=True
     )
     is_public = models.BooleanField(
         default=False,
-        verbose_name='Público',
-        help_text='Si está marcado, todos los usuarios de la empresa pueden ver esta grabación'
+        verbose_name=gettext_lazy('Público'),
+        help_text=gettext_lazy('Si está marcado, todos los usuarios de la empresa pueden ver esta grabación')
     )
     file_size = models.PositiveIntegerField(
         null=True,
         blank=True,
-        verbose_name='Tamaño del archivo (bytes)'
+        verbose_name=gettext_lazy('Tamaño del archivo (bytes)')
     )
     duration_seconds = models.PositiveIntegerField(
         null=True,
         blank=True,
-        verbose_name='Duración en segundos'
+        verbose_name=gettext_lazy('Duración en segundos')
     )
     
     # Campos de transcripción
@@ -7788,43 +7789,43 @@ class Recording(models.Model):
         max_length=20,
         choices=TRANSCRIPTION_STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado de transcripción'
+        verbose_name=gettext_lazy('Estado de transcripción')
     )
     transcription_text = models.TextField(
         blank=True,
-        verbose_name='Texto transcrito'
+        verbose_name=gettext_lazy('Texto transcrito')
     )
     transcription_confidence = models.FloatField(
         null=True,
         blank=True,
-        verbose_name='Confianza de transcripción (%)',
-        help_text='Porcentaje de confianza de la transcripción'
+        verbose_name=gettext_lazy('Confianza de transcripción (%)'),
+        help_text=gettext_lazy('Porcentaje de confianza de la transcripción')
     )
     transcription_language = models.CharField(
         max_length=10,
         default='es',
-        verbose_name='Idioma detectado'
+        verbose_name=gettext_lazy('Idioma detectado')
     )
     
     # Metadatos
     created_at = models.DateTimeField(
         default=timezone.now, 
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True, 
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     transcribed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de transcripción'
+        verbose_name=gettext_lazy('Fecha de transcripción')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Grabación'
-        verbose_name_plural = 'Grabaciones'
+        verbose_name = gettext_lazy('Grabación')
+        verbose_name_plural = gettext_lazy('Grabaciones')
     
     def __str__(self):
         company_name = self.company.name if self.company else 'Sin empresa'
@@ -7877,34 +7878,34 @@ class RecordingPlayback(models.Model):
         Recording,
         on_delete=models.CASCADE,
         related_name='playbacks',
-        verbose_name='Grabación'
+        verbose_name=gettext_lazy('Grabación')
     )
     played_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='recording_playbacks',
-        verbose_name='Reproducido por',
+        verbose_name=gettext_lazy('Reproducido por'),
         null=True,
         blank=True
     )
     played_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de reproducción'
+        verbose_name=gettext_lazy('Fecha de reproducción')
     )
     ip_address = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     user_agent = models.TextField(
         blank=True,
-        verbose_name='User Agent'
+        verbose_name=gettext_lazy('User Agent')
     )
     
     class Meta:
         ordering = ['-played_at']
-        verbose_name = 'Reproducción'
-        verbose_name_plural = 'Reproducciones'
+        verbose_name = gettext_lazy('Reproducción')
+        verbose_name_plural = gettext_lazy('Reproducciones')
     
     def __str__(self):
         user = self.played_by.username if self.played_by else 'Anónimo'
@@ -7915,139 +7916,139 @@ class PageVisit(models.Model):
     """Modelo para registrar visitas a páginas públicas"""
     
     PAGE_CHOICES = [
-        ('home', 'Página de Inicio'),
-        ('blog', 'Blog'),
-        ('blog_post', 'Artículo de Blog'),
-        ('conceptos', 'Conceptos Públicos'),
-        ('contact', 'Contacto'),
-        ('landing', 'Landing Page'),
-        ('course_public', 'Curso Público'),
-        ('ticket_public', 'Ticket Público'),
-        ('other', 'Otra'),
+        ('home', gettext_lazy('Página de Inicio')),
+        ('blog', gettext_lazy('Blog')),
+        ('blog_post', gettext_lazy('Artículo de Blog')),
+        ('conceptos', gettext_lazy('Conceptos Públicos')),
+        ('contact', gettext_lazy('Contacto')),
+        ('landing', gettext_lazy('Landing Page')),
+        ('course_public', gettext_lazy('Curso Público')),
+        ('ticket_public', gettext_lazy('Ticket Público')),
+        ('other', gettext_lazy('Otra')),
     ]
     
     # Información de la página visitada
     page_type = models.CharField(
         max_length=50,
         choices=PAGE_CHOICES,
-        verbose_name='Tipo de Página'
+        verbose_name=gettext_lazy('Tipo de Página')
     )
     page_url = models.URLField(
         max_length=500,
-        verbose_name='URL Visitada'
+        verbose_name=gettext_lazy('URL Visitada')
     )
     page_title = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Título de la Página'
+        verbose_name=gettext_lazy('Título de la Página')
     )
     
     # Información del visitante
     ip_address = models.GenericIPAddressField(
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     country = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='País'
+        verbose_name=gettext_lazy('País')
     )
     country_code = models.CharField(
         max_length=2,
         blank=True,
-        verbose_name='Código de País'
+        verbose_name=gettext_lazy('Código de País')
     )
     city = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Ciudad'
+        verbose_name=gettext_lazy('Ciudad')
     )
     region = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Región/Estado'
+        verbose_name=gettext_lazy('Región/Estado')
     )
     
     # Información técnica
     user_agent = models.TextField(
-        verbose_name='User Agent'
+        verbose_name=gettext_lazy('User Agent')
     )
     browser = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Navegador'
+        verbose_name=gettext_lazy('Navegador')
     )
     browser_version = models.CharField(
         max_length=50,
         blank=True,
-        verbose_name='Versión del Navegador'
+        verbose_name=gettext_lazy('Versión del Navegador')
     )
     operating_system = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Sistema Operativo'
+        verbose_name=gettext_lazy('Sistema Operativo')
     )
     device_type = models.CharField(
         max_length=50,
         blank=True,
-        verbose_name='Tipo de Dispositivo'
+        verbose_name=gettext_lazy('Tipo de Dispositivo')
     )
     is_mobile = models.BooleanField(
         default=False,
-        verbose_name='Es Móvil'
+        verbose_name=gettext_lazy('Es Móvil')
     )
     is_bot = models.BooleanField(
         default=False,
-        verbose_name='Es Bot'
+        verbose_name=gettext_lazy('Es Bot')
     )
     
     # Información de referencia
     referrer = models.URLField(
         max_length=500,
         blank=True,
-        verbose_name='Página de Referencia'
+        verbose_name=gettext_lazy('Página de Referencia')
     )
     utm_source = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='UTM Source'
+        verbose_name=gettext_lazy('UTM Source')
     )
     utm_medium = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='UTM Medium'
+        verbose_name=gettext_lazy('UTM Medium')
     )
     utm_campaign = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='UTM Campaign'
+        verbose_name=gettext_lazy('UTM Campaign')
     )
     
     # Información de sesión
     session_id = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='ID de Sesión'
+        verbose_name=gettext_lazy('ID de Sesión')
     )
     duration_seconds = models.PositiveIntegerField(
         null=True,
         blank=True,
-        verbose_name='Duración en Segundos'
+        verbose_name=gettext_lazy('Duración en Segundos')
     )
     
     # Metadatos
     visited_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Visita'
+        verbose_name=gettext_lazy('Fecha de Visita')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     class Meta:
         ordering = ['-visited_at']
-        verbose_name = 'Visita a Página'
-        verbose_name_plural = 'Visitas a Páginas'
+        verbose_name = gettext_lazy('Visita a Página')
+        verbose_name_plural = gettext_lazy('Visitas a Páginas')
         indexes = [
             models.Index(fields=['page_type', 'visited_at']),
             models.Index(fields=['ip_address', 'visited_at']),
@@ -8086,75 +8087,75 @@ class AIBlogConfigurator(models.Model):
     # Información básica
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del Configurador',
-        help_text='Nombre descriptivo para identificar este configurador'
+        verbose_name=gettext_lazy('Nombre del Configurador'),
+        help_text=gettext_lazy('Nombre descriptivo para identificar este configurador')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción opcional de qué tipo de contenido genera'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción opcional de qué tipo de contenido genera')
     )
     
     # Configuración de palabras clave
     keywords = models.TextField(
-        verbose_name='Palabras Clave',
-        help_text='Palabras clave separadas por comas para generar contenido (ej: tecnología, desarrollo, python)'
+        verbose_name=gettext_lazy('Palabras Clave'),
+        help_text=gettext_lazy('Palabras clave separadas por comas para generar contenido (ej: tecnología, desarrollo, python)')
     )
     
     # Configuración de generación
     topic_template = models.TextField(
         default='Escribe un artículo completo sobre {keyword} con ejemplos prácticos y consejos útiles.',
-        verbose_name='Plantilla de Tema',
-        help_text='Plantilla para generar el prompt. Usa {keyword} donde quieras insertar la palabra clave'
+        verbose_name=gettext_lazy('Plantilla de Tema'),
+        help_text=gettext_lazy('Plantilla para generar el prompt. Usa {keyword} donde quieras insertar la palabra clave')
     )
     
     content_length = models.CharField(
         max_length=50,
         choices=[
-            ('short', 'Corto (500-800 palabras)'),
-            ('medium', 'Medio (800-1200 palabras)'),
-            ('long', 'Largo (1200-2000 palabras)'),
+            ('short', gettext_lazy('Corto (500-800 palabras)')),
+            ('medium', gettext_lazy('Medio (800-1200 palabras)')),
+            ('long', gettext_lazy('Largo (1200-2000 palabras)')),
         ],
         default='medium',
-        verbose_name='Longitud del Contenido'
+        verbose_name=gettext_lazy('Longitud del Contenido')
     )
     
     content_style = models.CharField(
         max_length=50,
         choices=[
-            ('professional', 'Profesional'),
-            ('casual', 'Casual'),
-            ('technical', 'Técnico'),
-            ('educational', 'Educativo'),
-            ('news', 'Noticia'),
+            ('professional', gettext_lazy('Profesional')),
+            ('casual', gettext_lazy('Casual')),
+            ('technical', gettext_lazy('Técnico')),
+            ('educational', gettext_lazy('Educativo')),
+            ('news', gettext_lazy('Noticia')),
         ],
         default='professional',
-        verbose_name='Estilo del Contenido'
+        verbose_name=gettext_lazy('Estilo del Contenido')
     )
     
     # Configuración de programación
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo',
-        help_text='Si está activo, el configurador puede generar contenido automáticamente'
+        verbose_name=gettext_lazy('Activo'),
+        help_text=gettext_lazy('Si está activo, el configurador puede generar contenido automáticamente')
     )
     
     schedule_time = models.TimeField(
         default='10:00',
-        verbose_name='Hora de Ejecución',
-        help_text='Hora del día para ejecutar la generación automática (formato 24h)'
+        verbose_name=gettext_lazy('Hora de Ejecución'),
+        help_text=gettext_lazy('Hora del día para ejecutar la generación automática (formato 24h)')
     )
     
     frequency_days = models.PositiveIntegerField(
         default=1,
-        verbose_name='Frecuencia (días)',
-        help_text='Cada cuántos días ejecutar (1 = diario, 7 = semanal, etc.)'
+        verbose_name=gettext_lazy('Frecuencia (días)'),
+        help_text=gettext_lazy('Cada cuántos días ejecutar (1 = diario, 7 = semanal, etc.)')
     )
     
     max_posts_per_run = models.PositiveIntegerField(
         default=1,
-        verbose_name='Máximo Posts por Ejecución',
-        help_text='Número máximo de posts a generar en cada ejecución'
+        verbose_name=gettext_lazy('Máximo Posts por Ejecución'),
+        help_text=gettext_lazy('Número máximo de posts a generar en cada ejecución')
     )
     
     # Configuración de categoría
@@ -8163,32 +8164,32 @@ class AIBlogConfigurator(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Categoría por Defecto',
-        help_text='Categoría a asignar a los posts generados'
+        verbose_name=gettext_lazy('Categoría por Defecto'),
+        help_text=gettext_lazy('Categoría a asignar a los posts generados')
     )
     
     # Metadatos
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última Actualización'
+        verbose_name=gettext_lazy('Última Actualización')
     )
     last_run = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Última Ejecución'
+        verbose_name=gettext_lazy('Última Ejecución')
     )
     total_posts_generated = models.PositiveIntegerField(
         default=0,
-        verbose_name='Total Posts Generados'
+        verbose_name=gettext_lazy('Total Posts Generados')
     )
     
     class Meta:
-        verbose_name = 'Configurador de IA para Blog'
-        verbose_name_plural = 'Configuradores de IA para Blog'
+        verbose_name = gettext_lazy('Configurador de IA para Blog')
+        verbose_name_plural = gettext_lazy('Configuradores de IA para Blog')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -8248,12 +8249,12 @@ class AIBlogGenerationLog(models.Model):
         AIBlogConfigurator,
         on_delete=models.CASCADE,
         related_name='generation_logs',
-        verbose_name='Configurador'
+        verbose_name=gettext_lazy('Configurador')
     )
     
     keyword_used = models.CharField(
         max_length=200,
-        verbose_name='Palabra Clave Utilizada'
+        verbose_name=gettext_lazy('Palabra Clave Utilizada')
     )
     
     generated_post = models.ForeignKey(
@@ -8261,43 +8262,43 @@ class AIBlogGenerationLog(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Post Generado'
+        verbose_name=gettext_lazy('Post Generado')
     )
     
     prompt_used = models.TextField(
-        verbose_name='Prompt Utilizado'
+        verbose_name=gettext_lazy('Prompt Utilizado')
     )
     
     generation_status = models.CharField(
         max_length=20,
         choices=[
-            ('success', 'Exitoso'),
-            ('error', 'Error'),
-            ('pending', 'Pendiente'),
+            ('success', gettext_lazy('Exitoso')),
+            ('error', gettext_lazy('Error')),
+            ('pending', gettext_lazy('Pendiente')),
         ],
         default='pending',
-        verbose_name='Estado de Generación'
+        verbose_name=gettext_lazy('Estado de Generación')
     )
     
     error_message = models.TextField(
         blank=True,
-        verbose_name='Mensaje de Error'
+        verbose_name=gettext_lazy('Mensaje de Error')
     )
     
     execution_time_seconds = models.FloatField(
         null=True,
         blank=True,
-        verbose_name='Tiempo de Ejecución (segundos)'
+        verbose_name=gettext_lazy('Tiempo de Ejecución (segundos)')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     class Meta:
-        verbose_name = 'Log de Generación IA'
-        verbose_name_plural = 'Logs de Generación IA'
+        verbose_name = gettext_lazy('Log de Generación IA')
+        verbose_name_plural = gettext_lazy('Logs de Generación IA')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -8310,60 +8311,60 @@ class MultipleDocumentation(models.Model):
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título de la Documentación'
+        verbose_name=gettext_lazy('Título de la Documentación')
     )
     
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción de qué contiene esta documentación'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción de qué contiene esta documentación')
     )
     
     public_token = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
-        verbose_name='Token Público',
-        help_text='Token único para acceso público'
+        verbose_name=gettext_lazy('Token Público'),
+        help_text=gettext_lazy('Token único para acceso público')
     )
     
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo',
-        help_text='Si está activo, se puede acceder públicamente'
+        verbose_name=gettext_lazy('Activo'),
+        help_text=gettext_lazy('Si está activo, se puede acceder públicamente')
     )
     
     # Protección con contraseña
     password_protected = models.BooleanField(
         default=False,
-        verbose_name='Protegido con contraseña',
-        help_text='Si está marcado, se requerirá una contraseña para acceder'
+        verbose_name=gettext_lazy('Protegido con contraseña'),
+        help_text=gettext_lazy('Si está marcado, se requerirá una contraseña para acceder')
     )
     access_password = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Contraseña de acceso',
-        help_text='Contraseña requerida para acceder a la documentación pública'
+        verbose_name=gettext_lazy('Contraseña de acceso'),
+        help_text=gettext_lazy('Contraseña requerida para acceder a la documentación pública')
     )
     
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Fecha de Actualización'
+        verbose_name=gettext_lazy('Fecha de Actualización')
     )
     
     class Meta:
-        verbose_name = 'Documentación Múltiple'
-        verbose_name_plural = 'Documentaciones Múltiples'
+        verbose_name = gettext_lazy('Documentación Múltiple')
+        verbose_name_plural = gettext_lazy('Documentaciones Múltiples')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -8382,52 +8383,52 @@ class MultipleDocumentationItem(models.Model):
         MultipleDocumentation,
         on_delete=models.CASCADE,
         related_name='items',
-        verbose_name='Documentación'
+        verbose_name=gettext_lazy('Documentación')
     )
     
     number = models.PositiveIntegerField(
-        verbose_name='Número',
-        help_text='Número de orden del documento'
+        verbose_name=gettext_lazy('Número'),
+        help_text=gettext_lazy('Número de orden del documento')
     )
     
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del Documento'
+        verbose_name=gettext_lazy('Nombre del Documento')
     )
     
     file = models.FileField(
         upload_to='multiple_documentation/',
-        verbose_name='Archivo',
-        help_text='Archivo a compartir'
+        verbose_name=gettext_lazy('Archivo'),
+        help_text=gettext_lazy('Archivo a compartir')
     )
     
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción del archivo'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción del archivo')
     )
     
     download_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Contador de Descargas',
-        help_text='Número de veces que se ha descargado este archivo'
+        verbose_name=gettext_lazy('Contador de Descargas'),
+        help_text=gettext_lazy('Número de veces que se ha descargado este archivo')
     )
     
     expiration_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Vencimiento',
-        help_text='Fecha de vencimiento del documento (opcional)'
+        verbose_name=gettext_lazy('Fecha de Vencimiento'),
+        help_text=gettext_lazy('Fecha de vencimiento del documento (opcional)')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     class Meta:
-        verbose_name = 'Item de Documentación'
-        verbose_name_plural = 'Items de Documentación'
+        verbose_name = gettext_lazy('Item de Documentación')
+        verbose_name_plural = gettext_lazy('Items de Documentación')
         ordering = ['number']
         unique_together = ['documentation', 'number']
     
@@ -8474,62 +8475,62 @@ class MultipleDocumentationStats(models.Model):
         MultipleDocumentation,
         on_delete=models.CASCADE,
         related_name='stats',
-        verbose_name='Documentación'
+        verbose_name=gettext_lazy('Documentación')
     )
     
     # Estadísticas de página
     page_views = models.PositiveIntegerField(
         default=0,
-        verbose_name='Visualizaciones de Página',
-        help_text='Número total de veces que se ha visitado la página pública'
+        verbose_name=gettext_lazy('Visualizaciones de Página'),
+        help_text=gettext_lazy('Número total de veces que se ha visitado la página pública')
     )
     
     unique_visitors = models.PositiveIntegerField(
         default=0,
-        verbose_name='Visitantes Únicos',
-        help_text='Número de visitantes únicos (basado en IP)'
+        verbose_name=gettext_lazy('Visitantes Únicos'),
+        help_text=gettext_lazy('Número de visitantes únicos (basado en IP)')
     )
     
     # Estadísticas de descargas
     total_downloads = models.PositiveIntegerField(
         default=0,
-        verbose_name='Descargas Totales',
-        help_text='Número total de archivos descargados'
+        verbose_name=gettext_lazy('Descargas Totales'),
+        help_text=gettext_lazy('Número total de archivos descargados')
     )
     
     # Fechas de seguimiento
     first_view_date = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Primera Visualización'
+        verbose_name=gettext_lazy('Primera Visualización')
     )
     
     last_view_date = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Última Visualización'
+        verbose_name=gettext_lazy('Última Visualización')
     )
     
     last_download_date = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Última Descarga'
+        verbose_name=gettext_lazy('Última Descarga')
     )
     
     # Timestamps
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Fecha de Actualización'
+        verbose_name=gettext_lazy('Fecha de Actualización')
     )
     
     class Meta:
-        verbose_name = 'Estadística de Documentación'
-        verbose_name_plural = 'Estadísticas de Documentación'
+        verbose_name = gettext_lazy('Estadística de Documentación')
+        verbose_name_plural = gettext_lazy('Estadísticas de Documentación')
         unique_together = ['documentation']
     
     def __str__(self):
@@ -8559,45 +8560,45 @@ class MultipleDocumentationItemStats(models.Model):
         MultipleDocumentationItem,
         on_delete=models.CASCADE,
         related_name='stats',
-        verbose_name='Archivo'
+        verbose_name=gettext_lazy('Archivo')
     )
     
     download_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Número de Descargas'
+        verbose_name=gettext_lazy('Número de Descargas')
     )
     
     unique_downloaders = models.PositiveIntegerField(
         default=0,
-        verbose_name='Descargadores Únicos',
-        help_text='Número de IPs únicas que han descargado este archivo'
+        verbose_name=gettext_lazy('Descargadores Únicos'),
+        help_text=gettext_lazy('Número de IPs únicas que han descargado este archivo')
     )
     
     first_download_date = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Primera Descarga'
+        verbose_name=gettext_lazy('Primera Descarga')
     )
     
     last_download_date = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Última Descarga'
+        verbose_name=gettext_lazy('Última Descarga')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Fecha de Actualización'
+        verbose_name=gettext_lazy('Fecha de Actualización')
     )
     
     class Meta:
-        verbose_name = 'Estadística de Archivo'
-        verbose_name_plural = 'Estadísticas de Archivos'
+        verbose_name = gettext_lazy('Estadística de Archivo')
+        verbose_name_plural = gettext_lazy('Estadísticas de Archivos')
     
     def __str__(self):
         return f"Stats: {self.item.name} ({self.download_count} descargas)"
@@ -8617,32 +8618,32 @@ class MultipleDocumentationVisit(models.Model):
         MultipleDocumentation,
         on_delete=models.CASCADE,
         related_name='visits',
-        verbose_name='Documentación'
+        verbose_name=gettext_lazy('Documentación')
     )
     
     ip_address = models.GenericIPAddressField(
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     
     user_agent = models.TextField(
         blank=True,
-        verbose_name='User Agent'
+        verbose_name=gettext_lazy('User Agent')
     )
     
     referer = models.URLField(
         blank=True,
         null=True,
-        verbose_name='Referente'
+        verbose_name=gettext_lazy('Referente')
     )
     
     timestamp = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha y Hora'
+        verbose_name=gettext_lazy('Fecha y Hora')
     )
     
     class Meta:
-        verbose_name = 'Visita a Documentación'
-        verbose_name_plural = 'Visitas a Documentación'
+        verbose_name = gettext_lazy('Visita a Documentación')
+        verbose_name_plural = gettext_lazy('Visitas a Documentación')
         ordering = ['-timestamp']
     
     def __str__(self):
@@ -8656,32 +8657,32 @@ class MultipleDocumentationDownload(models.Model):
         MultipleDocumentationItem,
         on_delete=models.CASCADE,
         related_name='downloads',
-        verbose_name='Archivo'
+        verbose_name=gettext_lazy('Archivo')
     )
     
     ip_address = models.GenericIPAddressField(
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     
     user_agent = models.TextField(
         blank=True,
-        verbose_name='User Agent'
+        verbose_name=gettext_lazy('User Agent')
     )
     
     referer = models.URLField(
         blank=True,
         null=True,
-        verbose_name='Referente'
+        verbose_name=gettext_lazy('Referente')
     )
     
     timestamp = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha y Hora'
+        verbose_name=gettext_lazy('Fecha y Hora')
     )
     
     class Meta:
-        verbose_name = 'Descarga de Archivo'
-        verbose_name_plural = 'Descargas de Archivos'
+        verbose_name = gettext_lazy('Descarga de Archivo')
+        verbose_name_plural = gettext_lazy('Descargas de Archivos')
         ordering = ['-timestamp']
     
     def __str__(self):
@@ -8693,62 +8694,62 @@ class TaskSchedule(models.Model):
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título del Cronograma'
+        verbose_name=gettext_lazy('Título del Cronograma')
     )
     
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
         related_name='task_schedules',
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_schedules',
-        verbose_name='Creado Por'
+        verbose_name=gettext_lazy('Creado Por')
     )
     
     start_date = models.DateField(
-        verbose_name='Fecha de Inicio'
+        verbose_name=gettext_lazy('Fecha de Inicio')
     )
     
     end_date = models.DateField(
-        verbose_name='Fecha de Fin'
+        verbose_name=gettext_lazy('Fecha de Fin')
     )
     
     is_public = models.BooleanField(
         default=False,
-        verbose_name='Público',
-        help_text='Si está activo, el cronograma será accesible públicamente'
+        verbose_name=gettext_lazy('Público'),
+        help_text=gettext_lazy('Si está activo, el cronograma será accesible públicamente')
     )
     
     public_token = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
         editable=False,
-        verbose_name='Token Público'
+        verbose_name=gettext_lazy('Token Público')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última Actualización'
+        verbose_name=gettext_lazy('Última Actualización')
     )
     
     class Meta:
-        verbose_name = 'Cronograma de Tareas'
-        verbose_name_plural = 'Cronogramas de Tareas'
+        verbose_name = gettext_lazy('Cronograma de Tareas')
+        verbose_name_plural = gettext_lazy('Cronogramas de Tareas')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -8858,42 +8859,42 @@ class ScheduleTask(models.Model):
     """Modelo para las tareas individuales del cronograma"""
     
     PRIORITY_CHOICES = [
-        ('low', 'Baja'),
-        ('medium', 'Media'),
-        ('high', 'Alta'),
-        ('critical', 'Crítica'),
+        ('low', gettext_lazy('Baja')),
+        ('medium', gettext_lazy('Media')),
+        ('high', gettext_lazy('Alta')),
+        ('critical', gettext_lazy('Crítica')),
     ]
     
     schedule = models.ForeignKey(
         TaskSchedule,
         on_delete=models.CASCADE,
         related_name='tasks',
-        verbose_name='Cronograma'
+        verbose_name=gettext_lazy('Cronograma')
     )
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título de la Tarea'
+        verbose_name=gettext_lazy('Título de la Tarea')
     )
     
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     
     start_date = models.DateField(
-        verbose_name='Fecha de Inicio'
+        verbose_name=gettext_lazy('Fecha de Inicio')
     )
     
     end_date = models.DateField(
-        verbose_name='Fecha de Fin'
+        verbose_name=gettext_lazy('Fecha de Fin')
     )
     
     priority = models.CharField(
         max_length=10,
         choices=PRIORITY_CHOICES,
         default='medium',
-        verbose_name='Prioridad'
+        verbose_name=gettext_lazy('Prioridad')
     )
     
     assigned_to = models.ForeignKey(
@@ -8902,24 +8903,24 @@ class ScheduleTask(models.Model):
         null=True,
         blank=True,
         related_name='schedule_tasks_assigned',
-        verbose_name='Asignado A'
+        verbose_name=gettext_lazy('Asignado A')
     )
     
     is_completed = models.BooleanField(
         default=False,
-        verbose_name='Completada'
+        verbose_name=gettext_lazy('Completada')
     )
     
     completed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Completada el'
+        verbose_name=gettext_lazy('Completada el')
     )
     
     progress_percentage = models.IntegerField(
         default=0,
-        verbose_name='Porcentaje de Progreso',
-        help_text='Progreso de 0 a 100'
+        verbose_name=gettext_lazy('Porcentaje de Progreso'),
+        help_text=gettext_lazy('Progreso de 0 a 100')
     )
     
     dependencies = models.ManyToManyField(
@@ -8927,22 +8928,22 @@ class ScheduleTask(models.Model):
         symmetrical=False,
         blank=True,
         related_name='dependent_tasks',
-        verbose_name='Dependencias'
+        verbose_name=gettext_lazy('Dependencias')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última Actualización'
+        verbose_name=gettext_lazy('Última Actualización')
     )
     
     class Meta:
-        verbose_name = 'Tarea del Cronograma'
-        verbose_name_plural = 'Tareas del Cronograma'
+        verbose_name = gettext_lazy('Tarea del Cronograma')
+        verbose_name_plural = gettext_lazy('Tareas del Cronograma')
         ordering = ['start_date']
     
     def __str__(self):
@@ -9000,27 +9001,27 @@ class ScheduleComment(models.Model):
         ScheduleTask,
         on_delete=models.CASCADE,
         related_name='comments',
-        verbose_name='Tarea'
+        verbose_name=gettext_lazy('Tarea')
     )
     
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     
     comment = models.TextField(
-        verbose_name='Comentario'
+        verbose_name=gettext_lazy('Comentario')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     class Meta:
-        verbose_name = 'Comentario de Tarea'
-        verbose_name_plural = 'Comentarios de Tareas'
+        verbose_name = gettext_lazy('Comentario de Tarea')
+        verbose_name_plural = gettext_lazy('Comentarios de Tareas')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -9034,37 +9035,37 @@ class TicketApproval(models.Model):
         Ticket,
         on_delete=models.CASCADE,
         related_name='client_approval',
-        verbose_name='Ticket'
+        verbose_name=gettext_lazy('Ticket')
     )
     
     client_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del Cliente'
+        verbose_name=gettext_lazy('Nombre del Cliente')
     )
     
     client_email = models.EmailField(
-        verbose_name='Correo del Cliente'
+        verbose_name=gettext_lazy('Correo del Cliente')
     )
     
     approved_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de Aprobación'
+        verbose_name=gettext_lazy('Fecha de Aprobación')
     )
     
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas Adicionales',
-        help_text='Comentarios adicionales del cliente'
+        verbose_name=gettext_lazy('Notas Adicionales'),
+        help_text=gettext_lazy('Comentarios adicionales del cliente')
     )
     
     ip_address = models.GenericIPAddressField(
-        verbose_name='Dirección IP',
-        help_text='IP desde donde se realizó la aprobación'
+        verbose_name=gettext_lazy('Dirección IP'),
+        help_text=gettext_lazy('IP desde donde se realizó la aprobación')
     )
     
     class Meta:
-        verbose_name = 'Aprobación de Cliente'
-        verbose_name_plural = 'Aprobaciones de Clientes'
+        verbose_name = gettext_lazy('Aprobación de Cliente')
+        verbose_name_plural = gettext_lazy('Aprobaciones de Clientes')
         ordering = ['-approved_at']
     
     def __str__(self):
@@ -9075,122 +9076,122 @@ class SatisfactionSurvey(models.Model):
     """Modelo para encuestas de satisfacción de clientes"""
     
     RATING_CHOICES = [
-        (1, '1 - Muy Insatisfecho'),
-        (2, '2 - Insatisfecho'),
-        (3, '3 - Neutral'),
-        (4, '4 - Satisfecho'),
-        (5, '5 - Muy Satisfecho'),
+        (1, gettext_lazy('1 - Muy Insatisfecho')),
+        (2, gettext_lazy('2 - Insatisfecho')),
+        (3, gettext_lazy('3 - Neutral')),
+        (4, gettext_lazy('4 - Satisfecho')),
+        (5, gettext_lazy('5 - Muy Satisfecho')),
     ]
     
     RESOLUTION_QUALITY_CHOICES = [
-        (1, '1 - Muy Mala'),
-        (2, '2 - Mala'),
-        (3, '3 - Regular'),
-        (4, '4 - Buena'),
-        (5, '5 - Excelente'),
+        (1, gettext_lazy('1 - Muy Mala')),
+        (2, gettext_lazy('2 - Mala')),
+        (3, gettext_lazy('3 - Regular')),
+        (4, gettext_lazy('4 - Buena')),
+        (5, gettext_lazy('5 - Excelente')),
     ]
     
     RESPONSE_TIME_CHOICES = [
-        (1, '1 - Muy Lento'),
-        (2, '2 - Lento'),
-        (3, '3 - Aceptable'),
-        (4, '4 - Rápido'),
-        (5, '5 - Muy Rápido'),
+        (1, gettext_lazy('1 - Muy Lento')),
+        (2, gettext_lazy('2 - Lento')),
+        (3, gettext_lazy('3 - Aceptable')),
+        (4, gettext_lazy('4 - Rápido')),
+        (5, gettext_lazy('5 - Muy Rápido')),
     ]
     
     ticket = models.OneToOneField(
         Ticket,
         on_delete=models.CASCADE,
         related_name='satisfaction_survey',
-        verbose_name='Ticket'
+        verbose_name=gettext_lazy('Ticket')
     )
     
     client_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del Cliente'
+        verbose_name=gettext_lazy('Nombre del Cliente')
     )
     
     client_email = models.EmailField(
-        verbose_name='Correo del Cliente'
+        verbose_name=gettext_lazy('Correo del Cliente')
     )
     
     # Calificaciones
     overall_satisfaction = models.IntegerField(
         choices=RATING_CHOICES,
-        verbose_name='Satisfacción General',
-        help_text="¿Qué tan satisfecho está con el servicio general?"
+        verbose_name=gettext_lazy('Satisfacción General'),
+        help_text=gettext_lazy("¿Qué tan satisfecho está con el servicio general?")
     )
     
     resolution_quality = models.IntegerField(
         choices=RESOLUTION_QUALITY_CHOICES,
-        verbose_name='Calidad de la Solución',
-        help_text="¿Cómo califica la calidad de la solución proporcionada?"
+        verbose_name=gettext_lazy('Calidad de la Solución'),
+        help_text=gettext_lazy("¿Cómo califica la calidad de la solución proporcionada?")
     )
     
     response_time = models.IntegerField(
         choices=RESPONSE_TIME_CHOICES,
-        verbose_name='Tiempo de Respuesta',
-        help_text="¿Cómo califica nuestro tiempo de respuesta?"
+        verbose_name=gettext_lazy('Tiempo de Respuesta'),
+        help_text=gettext_lazy("¿Cómo califica nuestro tiempo de respuesta?")
     )
     
     communication = models.IntegerField(
         choices=RATING_CHOICES,
-        verbose_name='Calidad de la Comunicación',
-        help_text="¿Cómo califica la comunicación durante el proceso?"
+        verbose_name=gettext_lazy('Calidad de la Comunicación'),
+        help_text=gettext_lazy("¿Cómo califica la comunicación durante el proceso?")
     )
     
     # Comentarios
     what_went_well = models.TextField(
         blank=True,
         null=True,
-        verbose_name='¿Qué funcionó bien?',
-        help_text='Describa los aspectos positivos de nuestro servicio'
+        verbose_name=gettext_lazy('¿Qué funcionó bien?'),
+        help_text=gettext_lazy('Describa los aspectos positivos de nuestro servicio')
     )
     
     what_could_improve = models.TextField(
         blank=True,
         null=True,
-        verbose_name='¿Qué se podría mejorar?',
-        help_text='Sugerencias para mejorar nuestro servicio'
+        verbose_name=gettext_lazy('¿Qué se podría mejorar?'),
+        help_text=gettext_lazy('Sugerencias para mejorar nuestro servicio')
     )
     
     additional_comments = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Comentarios Adicionales',
-        help_text='Cualquier otro comentario que desee compartir'
+        verbose_name=gettext_lazy('Comentarios Adicionales'),
+        help_text=gettext_lazy('Cualquier otro comentario que desee compartir')
     )
     
     # Recomendación
     would_recommend = models.BooleanField(
         default=True,
-        verbose_name='¿Recomendaría nuestros servicios?',
-        help_text="¿Recomendaría nuestros servicios a otros?"
+        verbose_name=gettext_lazy('¿Recomendaría nuestros servicios?'),
+        help_text=gettext_lazy("¿Recomendaría nuestros servicios a otros?")
     )
     
     recommendation_reason = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Razón de recomendación',
-        help_text='¿Por qué sí o por qué no recomendaría nuestros servicios?'
+        verbose_name=gettext_lazy('Razón de recomendación'),
+        help_text=gettext_lazy('¿Por qué sí o por qué no recomendaría nuestros servicios?')
     )
     
     # Metadatos
     submitted_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de Envío'
+        verbose_name=gettext_lazy('Fecha de Envío')
     )
     
     ip_address = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='Dirección IP',
-        help_text='IP desde donde se realizó la encuesta'
+        verbose_name=gettext_lazy('Dirección IP'),
+        help_text=gettext_lazy('IP desde donde se realizó la encuesta')
     )
     
     class Meta:
-        verbose_name = "Encuesta de Satisfacción"
-        verbose_name_plural = "Encuestas de Satisfacción"
+        verbose_name = gettext_lazy("Encuesta de Satisfacción")
+        verbose_name_plural = gettext_lazy("Encuestas de Satisfacción")
         ordering = ['-submitted_at']
     
     def __str__(self):
@@ -9253,14 +9254,14 @@ class FinancialAction(models.Model):
     symbol = models.CharField(
         max_length=20,
         unique=True,
-        verbose_name='Símbolo',
-        help_text='Símbolo de la acción (ej: EUR/USD, AAPL, GOOGL)'
+        verbose_name=gettext_lazy('Símbolo'),
+        help_text=gettext_lazy('Símbolo de la acción (ej: EUR/USD, AAPL, GOOGL)')
     )
     
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre',
-        help_text='Nombre completo de la acción o par de divisas'
+        verbose_name=gettext_lazy('Nombre'),
+        help_text=gettext_lazy('Nombre completo de la acción o par de divisas')
     )
     
     current_price = models.DecimalField(
@@ -9268,8 +9269,8 @@ class FinancialAction(models.Model):
         decimal_places=4,
         null=True,
         blank=True,
-        verbose_name='Precio Actual',
-        help_text='Se actualiza automáticamente desde APIs externas'
+        verbose_name=gettext_lazy('Precio Actual'),
+        help_text=gettext_lazy('Se actualiza automáticamente desde APIs externas')
     )
     
     previous_price = models.DecimalField(
@@ -9277,43 +9278,43 @@ class FinancialAction(models.Model):
         decimal_places=4,
         null=True,
         blank=True,
-        verbose_name='Precio Anterior',
-        help_text='Se actualiza automáticamente desde APIs externas'
+        verbose_name=gettext_lazy('Precio Anterior'),
+        help_text=gettext_lazy('Se actualiza automáticamente desde APIs externas')
     )
     
     currency = models.CharField(
         max_length=10,
         default='USD',
-        verbose_name='Moneda',
-        help_text='Moneda en la que se cotiza (USD, EUR, etc.)'
+        verbose_name=gettext_lazy('Moneda'),
+        help_text=gettext_lazy('Moneda en la que se cotiza (USD, EUR, etc.)')
     )
     
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activa',
-        help_text='Si está activa se muestra en el ticker'
+        verbose_name=gettext_lazy('Activa'),
+        help_text=gettext_lazy('Si está activa se muestra en el ticker')
     )
     
     order = models.PositiveIntegerField(
         default=0,
-        verbose_name='Orden',
-        help_text='Orden de aparición en el ticker (menor número = primera)'
+        verbose_name=gettext_lazy('Orden'),
+        help_text=gettext_lazy('Orden de aparición en el ticker (menor número = primera)')
     )
     
     last_updated = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última Actualización'
+        verbose_name=gettext_lazy('Última Actualización')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     class Meta:
         ordering = ['order', 'symbol']
-        verbose_name = 'Acción Financiera'
-        verbose_name_plural = 'Acciones Financieras'
+        verbose_name = gettext_lazy('Acción Financiera')
+        verbose_name_plural = gettext_lazy('Acciones Financieras')
     
     def __str__(self):
         price_display = self.current_price if self.current_price is not None else "N/A"
@@ -9389,7 +9390,7 @@ class FinancialPriceHistory(models.Model):
         FinancialAction,
         on_delete=models.CASCADE,
         related_name='price_history',
-        verbose_name='Acción Financiera'
+        verbose_name=gettext_lazy('Acción Financiera')
     )
     
     price = models.DecimalField(
@@ -9397,18 +9398,18 @@ class FinancialPriceHistory(models.Model):
         decimal_places=4,
         null=True,
         blank=True,
-        verbose_name='Precio'
+        verbose_name=gettext_lazy('Precio')
     )
     
     recorded_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Registro'
+        verbose_name=gettext_lazy('Fecha de Registro')
     )
     
     class Meta:
         ordering = ['-recorded_at']
-        verbose_name = 'Historial de Precio'
-        verbose_name_plural = 'Historiales de Precios'
+        verbose_name = gettext_lazy('Historial de Precio')
+        verbose_name_plural = gettext_lazy('Historiales de Precios')
         unique_together = ['financial_action', 'recorded_at']
     
     def __str__(self):
@@ -9417,18 +9418,18 @@ class FinancialPriceHistory(models.Model):
 
 class ProductCategory(models.Model):
     """Categoría de producto"""
-    name = models.CharField(max_length=100, verbose_name='Nombre', unique=True)
-    description = models.TextField(blank=True, verbose_name='Descripción')
+    name = models.CharField(max_length=100, verbose_name=gettext_lazy('Nombre'), unique=True)
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
     color = models.CharField(
-        max_length=7, default='#0d6efd', verbose_name='Color',
-        help_text='Color en formato hexadecimal, ej: #ff5733'
+        max_length=7, default='#0d6efd', verbose_name=gettext_lazy('Color'),
+        help_text=gettext_lazy('Color en formato hexadecimal, ej: #ff5733')
     )
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['name']
-        verbose_name = 'Categoría de Producto'
-        verbose_name_plural = 'Categorías de Producto'
+        verbose_name = gettext_lazy('Categoría de Producto')
+        verbose_name_plural = gettext_lazy('Categorías de Producto')
 
     def __str__(self):
         return self.name
@@ -9440,71 +9441,71 @@ class Product(models.Model):
     """
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del Producto'
+        verbose_name=gettext_lazy('Nombre del Producto')
     )
 
     technical_name = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Nombre Técnico',
-        help_text='Nombre técnico o código interno del producto'
+        verbose_name=gettext_lazy('Nombre Técnico'),
+        help_text=gettext_lazy('Nombre técnico o código interno del producto')
     )
     
     price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name='Precio',
-        help_text='Precio del producto'
+        verbose_name=gettext_lazy('Precio'),
+        help_text=gettext_lazy('Precio del producto')
     )
     
     description = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción detallada del producto'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción detallada del producto')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Fecha de Actualización'
+        verbose_name=gettext_lazy('Fecha de Actualización')
     )
     
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo',
-        help_text='Si está marcado, el producto estará disponible'
+        verbose_name=gettext_lazy('Activo'),
+        help_text=gettext_lazy('Si está marcado, el producto estará disponible')
     )
 
     is_public = models.BooleanField(
         default=False,
-        verbose_name='Visible en catálogo público',
-        help_text='Si está marcado, este producto podrá verse en los catálogos públicos'
+        verbose_name=gettext_lazy('Visible en catálogo público'),
+        help_text=gettext_lazy('Si está marcado, este producto podrá verse en los catálogos públicos')
     )
 
-    view_count = models.PositiveIntegerField(default=0, verbose_name='Vistas del producto')
+    view_count = models.PositiveIntegerField(default=0, verbose_name=gettext_lazy('Vistas del producto'))
 
     category = models.ForeignKey(
         'ProductCategory',
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='products',
-        verbose_name='Categoría'
+        verbose_name=gettext_lazy('Categoría')
     )
     
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_products',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Producto'
-        verbose_name_plural = 'Productos'
+        verbose_name = gettext_lazy('Producto')
+        verbose_name_plural = gettext_lazy('Productos')
     
     def __str__(self):
         return self.name
@@ -9553,16 +9554,16 @@ class ProductVideo(models.Model):
         Product,
         on_delete=models.CASCADE,
         related_name='videos',
-        verbose_name='Producto'
+        verbose_name=gettext_lazy('Producto')
     )
-    title = models.CharField(max_length=200, blank=True, verbose_name='Título')
-    url = models.URLField(max_length=500, verbose_name='URL del Video')
+    title = models.CharField(max_length=200, blank=True, verbose_name=gettext_lazy('Título'))
+    url = models.URLField(max_length=500, verbose_name=gettext_lazy('URL del Video'))
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['created_at']
-        verbose_name = 'Video de Producto'
-        verbose_name_plural = 'Videos de Producto'
+        verbose_name = gettext_lazy('Video de Producto')
+        verbose_name_plural = gettext_lazy('Videos de Producto')
 
     def __str__(self):
         return f"{self.product.name} — {self.title or self.url}"
@@ -9601,24 +9602,24 @@ class ProductVideo(models.Model):
 
 class AppCatalog(models.Model):
     """Catálogo de Apps: agrupa productos en una colección presentable"""
-    name = models.CharField(max_length=200, verbose_name='Nombre del Catálogo')
-    description = models.TextField(blank=True, verbose_name='Descripción')
-    is_active = models.BooleanField(default=True, verbose_name='Activo')
-    is_public = models.BooleanField(default=False, verbose_name='Público', help_text='Si está marcado, aparecerá en la página pública de catálogos')
+    name = models.CharField(max_length=200, verbose_name=gettext_lazy('Nombre del Catálogo'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy('Activo'))
+    is_public = models.BooleanField(default=False, verbose_name=gettext_lazy('Público'), help_text=gettext_lazy('Si está marcado, aparecerá en la página pública de catálogos'))
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='app_catalogs',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
-    view_count = models.PositiveIntegerField(default=0, verbose_name='Vistas del catálogo')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de Creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última actualización'))
+    view_count = models.PositiveIntegerField(default=0, verbose_name=gettext_lazy('Vistas del catálogo'))
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Catálogo de Apps'
-        verbose_name_plural = 'Catálogos de Apps'
+        verbose_name = gettext_lazy('Catálogo de Apps')
+        verbose_name_plural = gettext_lazy('Catálogos de Apps')
 
     def __str__(self):
         return self.name
@@ -9633,23 +9634,23 @@ class AppCatalogLine(models.Model):
         AppCatalog,
         on_delete=models.CASCADE,
         related_name='lines',
-        verbose_name='Catálogo'
+        verbose_name=gettext_lazy('Catálogo')
     )
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
         related_name='catalog_lines',
-        verbose_name='Producto'
+        verbose_name=gettext_lazy('Producto')
     )
-    quantity = models.PositiveIntegerField(default=1, verbose_name='Cantidad')
-    notes = models.TextField(blank=True, verbose_name='Notas')
-    order = models.IntegerField(default=0, verbose_name='Orden')
+    quantity = models.PositiveIntegerField(default=1, verbose_name=gettext_lazy('Cantidad'))
+    notes = models.TextField(blank=True, verbose_name=gettext_lazy('Notas'))
+    order = models.IntegerField(default=0, verbose_name=gettext_lazy('Orden'))
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['order', 'created_at']
-        verbose_name = 'Línea de Catálogo'
-        verbose_name_plural = 'Líneas de Catálogo'
+        verbose_name = gettext_lazy('Línea de Catálogo')
+        verbose_name_plural = gettext_lazy('Líneas de Catálogo')
 
     def __str__(self):
         return f"{self.catalog.name} — {self.product.name}"
@@ -9665,53 +9666,53 @@ class ClientProjectAccess(models.Model):
         Project,
         on_delete=models.CASCADE,
         related_name='client_access',
-        verbose_name='Proyecto'
+        verbose_name=gettext_lazy('Proyecto')
     )
     public_token = models.CharField(
         max_length=64,
         unique=True,
-        verbose_name='Token Público',
-        help_text='Token único para acceso público al formulario de horas'
+        verbose_name=gettext_lazy('Token Público'),
+        help_text=gettext_lazy('Token único para acceso público al formulario de horas')
     )
     dashboard_token = models.CharField(
         max_length=64,
         unique=True,
         blank=True,
         null=True,
-        verbose_name='Token Dashboard Público',
-        help_text='Token único para acceso público al dashboard de estadísticas'
+        verbose_name=gettext_lazy('Token Dashboard Público'),
+        help_text=gettext_lazy('Token único para acceso público al dashboard de estadísticas')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo',
-        help_text='Si está desactivado, el enlace público no funcionará'
+        verbose_name=gettext_lazy('Activo'),
+        help_text=gettext_lazy('Si está desactivado, el enlace público no funcionará')
     )
     max_entries_per_day = models.PositiveIntegerField(
         default=50,
-        verbose_name='Máximo de entradas por día',
-        help_text='Límite de entradas de tiempo que se pueden crear por día'
+        verbose_name=gettext_lazy('Máximo de entradas por día'),
+        help_text=gettext_lazy('Límite de entradas de tiempo que se pueden crear por día')
     )
     requires_phone = models.BooleanField(
         default=True,
-        verbose_name='Requiere teléfono',
-        help_text='Si es obligatorio que el cliente proporcione su teléfono'
+        verbose_name=gettext_lazy('Requiere teléfono'),
+        help_text=gettext_lazy('Si es obligatorio que el cliente proporcione su teléfono')
     )
     allowed_categories = models.JSONField(
         default=list,
-        verbose_name='Categorías permitidas',
-        help_text='Lista de categorías que el cliente puede seleccionar'
+        verbose_name=gettext_lazy('Categorías permitidas'),
+        help_text=gettext_lazy('Lista de categorías que el cliente puede seleccionar')
     )
     instructions = models.TextField(
         blank=True,
-        verbose_name='Instrucciones',
-        help_text='Instrucciones que verá el cliente en el formulario'
+        verbose_name=gettext_lazy('Instrucciones'),
+        help_text=gettext_lazy('Instrucciones que verá el cliente en el formulario')
     )
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última actualización'))
     
     class Meta:
-        verbose_name = 'Acceso Público de Cliente'
-        verbose_name_plural = 'Accesos Públicos de Clientes'
+        verbose_name = gettext_lazy('Acceso Público de Cliente')
+        verbose_name_plural = gettext_lazy('Accesos Públicos de Clientes')
     
     def __str__(self):
         return f"Acceso público para {self.project.name}"
@@ -9755,71 +9756,71 @@ class ClientTimeEntry(models.Model):
     """Modelo para almacenar las entradas de tiempo de clientes"""
     
     CATEGORY_CHOICES = [
-        ('capacitacion', 'Capacitación'),
-        ('pruebas', 'Pruebas'),
-        ('uso', 'Uso'),
+        ('capacitacion', gettext_lazy('Capacitación')),
+        ('pruebas', gettext_lazy('Pruebas')),
+        ('uso', gettext_lazy('Uso')),
     ]
     
     project = models.ForeignKey(
         Project,
         on_delete=models.CASCADE,
         related_name='client_time_entries',
-        verbose_name='Proyecto'
+        verbose_name=gettext_lazy('Proyecto')
     )
     client_name = models.CharField(
         max_length=100,
-        verbose_name='Nombre del Cliente',
-        help_text='Nombre completo del cliente'
+        verbose_name=gettext_lazy('Nombre del Cliente'),
+        help_text=gettext_lazy('Nombre completo del cliente')
     )
     client_email = models.EmailField(
-        verbose_name='Correo del Cliente',
-        help_text='Correo electrónico del cliente'
+        verbose_name=gettext_lazy('Correo del Cliente'),
+        help_text=gettext_lazy('Correo electrónico del cliente')
     )
     client_phone = models.CharField(
         max_length=20,
         blank=True,
-        verbose_name='Teléfono del Cliente',
-        help_text='Número de teléfono del cliente (opcional)'
+        verbose_name=gettext_lazy('Teléfono del Cliente'),
+        help_text=gettext_lazy('Número de teléfono del cliente (opcional)')
     )
     hours = models.DecimalField(
         max_digits=5,
         decimal_places=2,
-        verbose_name='Horas',
-        help_text='Cantidad de horas a imputar (ej: 2.5)'
+        verbose_name=gettext_lazy('Horas'),
+        help_text=gettext_lazy('Cantidad de horas a imputar (ej: 2.5)')
     )
     category = models.CharField(
         max_length=20,
         choices=CATEGORY_CHOICES,
-        verbose_name='Categoría',
-        help_text='Categoría de las horas imputadas'
+        verbose_name=gettext_lazy('Categoría'),
+        help_text=gettext_lazy('Categoría de las horas imputadas')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción opcional del trabajo realizado'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción opcional del trabajo realizado')
     )
     entry_date = models.DateField(
         default=timezone.now,
-        verbose_name='Fecha de las horas',
-        help_text='Fecha cuando se realizaron las horas de trabajo'
+        verbose_name=gettext_lazy('Fecha de las horas'),
+        help_text=gettext_lazy('Fecha cuando se realizaron las horas de trabajo')
     )
     client_ip = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='IP del Cliente',
-        help_text='Dirección IP desde donde se registró la entrada'
+        verbose_name=gettext_lazy('IP del Cliente'),
+        help_text=gettext_lazy('Dirección IP desde donde se registró la entrada')
     )
     user_agent = models.TextField(
         blank=True,
-        verbose_name='User Agent',
-        help_text='Información del navegador del cliente'
+        verbose_name=gettext_lazy('User Agent'),
+        help_text=gettext_lazy('Información del navegador del cliente')
     )
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última actualización'))
     
     class Meta:
-        verbose_name = 'Entrada de Tiempo de Cliente'
-        verbose_name_plural = 'Entradas de Tiempo de Clientes'
+        verbose_name = gettext_lazy('Entrada de Tiempo de Cliente')
+        verbose_name_plural = gettext_lazy('Entradas de Tiempo de Clientes')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -9837,65 +9838,65 @@ class ShortUrl(models.Model):
     
     original_url = models.URLField(
         max_length=2000,
-        verbose_name='URL Original',
-        help_text='La URL larga que se quiere acortar'
+        verbose_name=gettext_lazy('URL Original'),
+        help_text=gettext_lazy('La URL larga que se quiere acortar')
     )
     short_code = models.CharField(
         max_length=10,
         unique=True,
-        verbose_name='Código Corto',
-        help_text='Código único para la URL corta'
+        verbose_name=gettext_lazy('Código Corto'),
+        help_text=gettext_lazy('Código único para la URL corta')
     )
     title = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Título',
-        help_text='Título descriptivo opcional para la URL'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Título descriptivo opcional para la URL')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción opcional de la URL'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción opcional de la URL')
     )
     clicks = models.PositiveIntegerField(
         default=0,
-        verbose_name='Clics',
-        help_text='Número de veces que se ha accedido a la URL corta'
+        verbose_name=gettext_lazy('Clics'),
+        help_text=gettext_lazy('Número de veces que se ha accedido a la URL corta')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activa',
-        help_text='Si la URL corta está activa o deshabilitada'
+        verbose_name=gettext_lazy('Activa'),
+        help_text=gettext_lazy('Si la URL corta está activa o deshabilitada')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por',
-        help_text='Usuario que creó la URL corta'
+        verbose_name=gettext_lazy('Creado por'),
+        help_text=gettext_lazy('Usuario que creó la URL corta')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     expires_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de expiración',
-        help_text='Fecha opcional cuando expira la URL corta'
+        verbose_name=gettext_lazy('Fecha de expiración'),
+        help_text=gettext_lazy('Fecha opcional cuando expira la URL corta')
     )
     is_sales_kpi = models.BooleanField(
         default=False,
-        verbose_name='KPI de Ventas',
-        help_text='Marcar si esta URL es parte del seguimiento de KPIs de ventas'
+        verbose_name=gettext_lazy('KPI de Ventas'),
+        help_text=gettext_lazy('Marcar si esta URL es parte del seguimiento de KPIs de ventas')
     )
     
     class Meta:
-        verbose_name = 'URL Corta'
-        verbose_name_plural = 'URLs Cortas'
+        verbose_name = gettext_lazy('URL Corta')
+        verbose_name_plural = gettext_lazy('URLs Cortas')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -9947,42 +9948,42 @@ class ShortUrlClick(models.Model):
         ShortUrl,
         on_delete=models.CASCADE,
         related_name='click_records',
-        verbose_name='URL Corta'
+        verbose_name=gettext_lazy('URL Corta')
     )
     clicked_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha del clic',
+        verbose_name=gettext_lazy('Fecha del clic'),
         db_index=True
     )
     ip_address = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     country = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='País',
+        verbose_name=gettext_lazy('País'),
         db_index=True
     )
     city = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Ciudad'
+        verbose_name=gettext_lazy('Ciudad')
     )
     user_agent = models.TextField(
         blank=True,
-        verbose_name='User Agent'
+        verbose_name=gettext_lazy('User Agent')
     )
     referer = models.URLField(
         max_length=500,
         blank=True,
-        verbose_name='Referer'
+        verbose_name=gettext_lazy('Referer')
     )
     
     class Meta:
-        verbose_name = 'Clic de URL Corta'
-        verbose_name_plural = 'Clics de URLs Cortas'
+        verbose_name = gettext_lazy('Clic de URL Corta')
+        verbose_name_plural = gettext_lazy('Clics de URLs Cortas')
         ordering = ['-clicked_at']
         indexes = [
             models.Index(fields=['short_url', '-clicked_at']),
@@ -9999,66 +10000,66 @@ class ClientRequest(models.Model):
     sequence = models.CharField(
         max_length=50,
         unique=True,
-        verbose_name='Secuencia',
-        help_text='Número de secuencia único de la solicitud'
+        verbose_name=gettext_lazy('Secuencia'),
+        help_text=gettext_lazy('Número de secuencia único de la solicitud')
     )
     title = models.CharField(
         max_length=200,
-        verbose_name='Título'
+        verbose_name=gettext_lazy('Título')
     )
     description = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción de lo que se solicita'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción de lo que se solicita')
     )
     requested_to = models.CharField(
         max_length=200,
-        verbose_name='Solicitado a',
-        help_text='Nombre de la persona a quien se solicita'
+        verbose_name=gettext_lazy('Solicitado a'),
+        help_text=gettext_lazy('Nombre de la persona a quien se solicita')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='client_requests_created',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        verbose_name='Empresa',
-        help_text='Empresa asociada a la solicitud'
+        verbose_name=gettext_lazy('Empresa'),
+        help_text=gettext_lazy('Empresa asociada a la solicitud')
     )
     status = models.CharField(
         max_length=20,
         choices=[
-            ('pending', 'Pendiente'),
-            ('in_progress', 'En Progreso'),
-            ('completed', 'Completada'),
-            ('cancelled', 'Cancelada')
+            ('pending', gettext_lazy('Pendiente')),
+            ('in_progress', gettext_lazy('En Progreso')),
+            ('completed', gettext_lazy('Completada')),
+            ('cancelled', gettext_lazy('Cancelada'))
         ],
         default='pending',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Fecha de actualización'
+        verbose_name=gettext_lazy('Fecha de actualización')
     )
     attachment = models.FileField(
         upload_to='client_request_attachments/',
         null=True,
         blank=True,
-        verbose_name='Archivo adjunto',
-        help_text='Documento o archivo de referencia para el cliente'
+        verbose_name=gettext_lazy('Archivo adjunto'),
+        help_text=gettext_lazy('Documento o archivo de referencia para el cliente')
     )
     
     class Meta:
-        verbose_name = 'Solicitud al Cliente'
-        verbose_name_plural = 'Solicitudes a Clientes'
+        verbose_name = gettext_lazy('Solicitud al Cliente')
+        verbose_name_plural = gettext_lazy('Solicitudes a Clientes')
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['sequence']),
@@ -10096,33 +10097,33 @@ class ClientRequestResponse(models.Model):
         ClientRequest,
         on_delete=models.CASCADE,
         related_name='response',
-        verbose_name='Solicitud'
+        verbose_name=gettext_lazy('Solicitud')
     )
     response_text = models.TextField(
-        verbose_name='Respuesta',
-        help_text='Texto de la respuesta del cliente'
+        verbose_name=gettext_lazy('Respuesta'),
+        help_text=gettext_lazy('Texto de la respuesta del cliente')
     )
     attachment = models.FileField(
         upload_to='client_request_attachments/%Y/%m/',
         null=True,
         blank=True,
-        verbose_name='Adjunto'
+        verbose_name=gettext_lazy('Adjunto')
     )
     responded_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Respondido por'
+        verbose_name=gettext_lazy('Respondido por')
     )
     responded_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de respuesta'
+        verbose_name=gettext_lazy('Fecha de respuesta')
     )
     
     class Meta:
-        verbose_name = 'Respuesta de Solicitud'
-        verbose_name_plural = 'Respuestas de Solicitudes'
+        verbose_name = gettext_lazy('Respuesta de Solicitud')
+        verbose_name_plural = gettext_lazy('Respuestas de Solicitudes')
         ordering = ['-responded_at']
     
     def __str__(self):
@@ -10134,37 +10135,37 @@ class ClientRequestTemplate(models.Model):
     
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre de la Plantilla',
-        help_text='Nombre descriptivo para identificar este conjunto de solicitudes'
+        verbose_name=gettext_lazy('Nombre de la Plantilla'),
+        help_text=gettext_lazy('Nombre descriptivo para identificar este conjunto de solicitudes')
     )
     description = models.TextField(
-        verbose_name='Descripción',
+        verbose_name=gettext_lazy('Descripción'),
         blank=True,
-        help_text='Descripción de para qué sirve esta plantilla'
+        help_text=gettext_lazy('Descripción de para qué sirve esta plantilla')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='client_request_templates',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Fecha de actualización'
+        verbose_name=gettext_lazy('Fecha de actualización')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activa',
-        help_text='Si está activa, se puede usar para crear solicitudes'
+        verbose_name=gettext_lazy('Activa'),
+        help_text=gettext_lazy('Si está activa, se puede usar para crear solicitudes')
     )
     
     class Meta:
-        verbose_name = 'Plantilla de Solicitud'
-        verbose_name_plural = 'Plantillas de Solicitudes'
+        verbose_name = gettext_lazy('Plantilla de Solicitud')
+        verbose_name_plural = gettext_lazy('Plantillas de Solicitudes')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -10178,36 +10179,36 @@ class ClientRequestTemplateItem(models.Model):
         ClientRequestTemplate,
         on_delete=models.CASCADE,
         related_name='items',
-        verbose_name='Plantilla'
+        verbose_name=gettext_lazy('Plantilla')
     )
     title = models.CharField(
         max_length=200,
-        verbose_name='Título'
+        verbose_name=gettext_lazy('Título')
     )
     description = models.TextField(
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     requested_to = models.CharField(
         max_length=200,
-        verbose_name='Solicitado a',
-        help_text='Nombre de la persona a quien se solicita'
+        verbose_name=gettext_lazy('Solicitado a'),
+        help_text=gettext_lazy('Nombre de la persona a quien se solicita')
     )
     order = models.IntegerField(
         default=0,
-        verbose_name='Orden',
-        help_text='Orden de aparición en la lista'
+        verbose_name=gettext_lazy('Orden'),
+        help_text=gettext_lazy('Orden de aparición en la lista')
     )
     attachment = models.FileField(
         upload_to='client_request_template_attachments/',
         null=True,
         blank=True,
-        verbose_name='Archivo adjunto',
-        help_text='Documento de referencia para esta solicitud'
+        verbose_name=gettext_lazy('Archivo adjunto'),
+        help_text=gettext_lazy('Documento de referencia para esta solicitud')
     )
     
     class Meta:
-        verbose_name = 'Item de Plantilla'
-        verbose_name_plural = 'Items de Plantilla'
+        verbose_name = gettext_lazy('Item de Plantilla')
+        verbose_name_plural = gettext_lazy('Items de Plantilla')
         ordering = ['order', 'id']
     
     def __str__(self):
@@ -10219,56 +10220,56 @@ class ProductSet(models.Model):
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Nombre del conjunto de productos'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Nombre del conjunto de productos')
     )
     description = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción detallada del conjunto de productos'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción detallada del conjunto de productos')
     )
     is_public = models.BooleanField(
         default=False,
-        verbose_name='Público',
-        help_text='Si está marcado, los clientes podrán ver este conjunto'
+        verbose_name=gettext_lazy('Público'),
+        help_text=gettext_lazy('Si está marcado, los clientes podrán ver este conjunto')
     )
     public_token = models.CharField(
         max_length=32,
         unique=True,
         blank=True,
-        verbose_name='Token Público',
-        help_text='Token único para acceso público'
+        verbose_name=gettext_lazy('Token Público'),
+        help_text=gettext_lazy('Token único para acceso público')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por',
-        help_text='Usuario que creó el conjunto'
+        verbose_name=gettext_lazy('Creado por'),
+        help_text=gettext_lazy('Usuario que creó el conjunto')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     # Campos de estadísticas
     view_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Vistas',
-        help_text='Número de veces que se ha visto el conjunto público'
+        verbose_name=gettext_lazy('Vistas'),
+        help_text=gettext_lazy('Número de veces que se ha visto el conjunto público')
     )
     last_viewed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Última vista',
-        help_text='Fecha y hora de la última vista pública'
+        verbose_name=gettext_lazy('Última vista'),
+        help_text=gettext_lazy('Fecha y hora de la última vista pública')
     )
     
     class Meta:
-        verbose_name = 'Conjunto de Productos'
-        verbose_name_plural = 'Conjuntos de Productos'
+        verbose_name = gettext_lazy('Conjunto de Productos')
+        verbose_name_plural = gettext_lazy('Conjuntos de Productos')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -10306,42 +10307,42 @@ class ProductItem(models.Model):
         ProductSet,
         on_delete=models.CASCADE,
         related_name='products',
-        verbose_name='Conjunto de Productos'
+        verbose_name=gettext_lazy('Conjunto de Productos')
     )
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del Producto',
-        help_text='Nombre descriptivo del producto'
+        verbose_name=gettext_lazy('Nombre del Producto'),
+        help_text=gettext_lazy('Nombre descriptivo del producto')
     )
     description = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción detallada del producto'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción detallada del producto')
     )
     video_link = models.URLField(
         blank=True,
-        verbose_name='Link del Video',
-        help_text='URL del video demostrativo (opcional)'
+        verbose_name=gettext_lazy('Link del Video'),
+        help_text=gettext_lazy('URL del video demostrativo (opcional)')
     )
     order = models.PositiveIntegerField(
         default=0,
-        verbose_name='Orden',
-        help_text='Orden de aparición en la lista'
+        verbose_name=gettext_lazy('Orden'),
+        help_text=gettext_lazy('Orden de aparición en la lista')
     )
     price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0.00,
-        verbose_name='Precio',
-        help_text='Precio del producto individual'
+        verbose_name=gettext_lazy('Precio'),
+        help_text=gettext_lazy('Precio del producto individual')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
-        verbose_name = 'Producto'
-        verbose_name_plural = 'Productos'
+        verbose_name = gettext_lazy('Producto')
+        verbose_name_plural = gettext_lazy('Productos')
         ordering = ['order', 'name']
     
     def __str__(self):
@@ -10368,32 +10369,32 @@ class Precotizador(models.Model):
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título del Precotizador',
-        help_text='Nombre descriptivo del precotizador'
+        verbose_name=gettext_lazy('Título del Precotizador'),
+        help_text=gettext_lazy('Nombre descriptivo del precotizador')
     )
     client_description = models.TextField(
-        verbose_name='Descripción del Cliente',
-        help_text='Descripción detallada del tipo de cliente y sus necesidades'
+        verbose_name=gettext_lazy('Descripción del Cliente'),
+        help_text=gettext_lazy('Descripción detallada del tipo de cliente y sus necesidades')
     )
     hourly_rate = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name='Precio por Hora',
-        help_text='Tu tarifa por hora para este tipo de trabajo'
+        verbose_name=gettext_lazy('Precio por Hora'),
+        help_text=gettext_lazy('Tu tarifa por hora para este tipo de trabajo')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por',
-        help_text='Usuario que creó el precotizador'
+        verbose_name=gettext_lazy('Creado por'),
+        help_text=gettext_lazy('Usuario que creó el precotizador')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     # Campos para enlace público de solicitud
@@ -10402,18 +10403,18 @@ class Precotizador(models.Model):
         blank=True,
         null=True,
         unique=True,
-        verbose_name='Token de Solicitud Pública',
-        help_text='Token único para el enlace público donde clientes pueden solicitar cotizaciones'
+        verbose_name=gettext_lazy('Token de Solicitud Pública'),
+        help_text=gettext_lazy('Token único para el enlace público donde clientes pueden solicitar cotizaciones')
     )
     allow_public_requests = models.BooleanField(
         default=False,
-        verbose_name='Permitir Solicitudes Públicas',
-        help_text='Permite que los clientes soliciten cotizaciones a través de un enlace público'
+        verbose_name=gettext_lazy('Permitir Solicitudes Públicas'),
+        help_text=gettext_lazy('Permite que los clientes soliciten cotizaciones a través de un enlace público')
     )
     
     class Meta:
-        verbose_name = 'Precotizador'
-        verbose_name_plural = 'Precotizadores'
+        verbose_name = gettext_lazy('Precotizador')
+        verbose_name_plural = gettext_lazy('Precotizadores')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -10458,31 +10459,31 @@ class PrecotizadorExample(models.Model):
         Precotizador,
         on_delete=models.CASCADE,
         related_name='examples',
-        verbose_name='Precotizador'
+        verbose_name=gettext_lazy('Precotizador')
     )
     description = models.TextField(
-        verbose_name='Descripción del Caso',
-        help_text='Descripción detallada del trabajo a realizar'
+        verbose_name=gettext_lazy('Descripción del Caso'),
+        help_text=gettext_lazy('Descripción detallada del trabajo a realizar')
     )
     estimated_hours = models.DecimalField(
         max_digits=8,
         decimal_places=2,
-        verbose_name='Horas Estimadas',
-        help_text='Número de horas estimadas para completar el trabajo'
+        verbose_name=gettext_lazy('Horas Estimadas'),
+        help_text=gettext_lazy('Número de horas estimadas para completar el trabajo')
     )
     order = models.PositiveIntegerField(
         default=0,
-        verbose_name='Orden',
-        help_text='Orden de aparición en la lista'
+        verbose_name=gettext_lazy('Orden'),
+        help_text=gettext_lazy('Orden de aparición en la lista')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
-        verbose_name = 'Ejemplo de Caso'
-        verbose_name_plural = 'Ejemplos de Casos'
+        verbose_name = gettext_lazy('Ejemplo de Caso')
+        verbose_name_plural = gettext_lazy('Ejemplos de Casos')
         ordering = ['order', 'created_at']
     
     def __str__(self):
@@ -10509,31 +10510,31 @@ class PrecotizadorQuote(models.Model):
         Precotizador,
         on_delete=models.CASCADE,
         related_name='quotes',
-        verbose_name='Precotizador'
+        verbose_name=gettext_lazy('Precotizador')
     )
     client_request = models.TextField(
-        verbose_name='Solicitud del Cliente',
-        help_text='Descripción del trabajo solicitado por el cliente'
+        verbose_name=gettext_lazy('Solicitud del Cliente'),
+        help_text=gettext_lazy('Descripción del trabajo solicitado por el cliente')
     )
     ai_estimated_hours = models.DecimalField(
         max_digits=8,
         decimal_places=2,
-        verbose_name='Horas Estimadas por IA',
-        help_text='Número de horas estimadas por la IA'
+        verbose_name=gettext_lazy('Horas Estimadas por IA'),
+        help_text=gettext_lazy('Número de horas estimadas por la IA')
     )
     ai_detailed_description = models.TextField(
-        verbose_name='Descripción Detallada por IA',
-        help_text='Descripción detallada del trabajo generada por la IA'
+        verbose_name=gettext_lazy('Descripción Detallada por IA'),
+        help_text=gettext_lazy('Descripción detallada del trabajo generada por la IA')
     )
     ai_reasoning = models.TextField(
         blank=True,
-        verbose_name='Razonamiento de la IA',
-        help_text='Explicación del razonamiento de la IA para la estimación'
+        verbose_name=gettext_lazy('Razonamiento de la IA'),
+        help_text=gettext_lazy('Explicación del razonamiento de la IA para la estimación')
     )
     ai_full_response = models.TextField(
         blank=True,
-        verbose_name='Respuesta Completa de la IA',
-        help_text='Respuesta completa de la IA en formato texto plano'
+        verbose_name=gettext_lazy('Respuesta Completa de la IA'),
+        help_text=gettext_lazy('Respuesta completa de la IA en formato texto plano')
     )
     
     # Campos para compartir públicamente
@@ -10542,51 +10543,51 @@ class PrecotizadorQuote(models.Model):
         unique=True,
         blank=True,
         null=True,
-        verbose_name='Token de Compartir Público',
-        help_text='Token único para compartir la cotización públicamente'
+        verbose_name=gettext_lazy('Token de Compartir Público'),
+        help_text=gettext_lazy('Token único para compartir la cotización públicamente')
     )
     is_public = models.BooleanField(
         default=False,
-        verbose_name='Es Público',
-        help_text='Si la cotización puede ser vista públicamente'
+        verbose_name=gettext_lazy('Es Público'),
+        help_text=gettext_lazy('Si la cotización puede ser vista públicamente')
     )
     
     # Estado de la cotización
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('accepted', 'Aceptada por el Cliente'),
-        ('rejected', 'Rechazada por el Cliente'),
-        ('expired', 'Expirada'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('accepted', gettext_lazy('Aceptada por el Cliente')),
+        ('rejected', gettext_lazy('Rechazada por el Cliente')),
+        ('expired', gettext_lazy('Expirada')),
     ]
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado',
-        help_text='Estado actual de la cotización'
+        verbose_name=gettext_lazy('Estado'),
+        help_text=gettext_lazy('Estado actual de la cotización')
     )
     
     # Información del cliente
     client_response_date = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Fecha de Respuesta del Cliente',
-        help_text='Fecha en que el cliente respondió'
+        verbose_name=gettext_lazy('Fecha de Respuesta del Cliente'),
+        help_text=gettext_lazy('Fecha en que el cliente respondió')
     )
     client_comments = models.TextField(
         blank=True,
-        verbose_name='Comentarios del Cliente',
-        help_text='Comentarios adicionales del cliente'
+        verbose_name=gettext_lazy('Comentarios del Cliente'),
+        help_text=gettext_lazy('Comentarios adicionales del cliente')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
-        verbose_name = 'Cotización IA'
-        verbose_name_plural = 'Cotizaciones IA'
+        verbose_name = gettext_lazy('Cotización IA')
+        verbose_name_plural = gettext_lazy('Cotizaciones IA')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -10697,32 +10698,32 @@ class PrecotizadorQuote(models.Model):
 class CompanyDocumentation(models.Model):
     """Documentación múltiple para empresas con URLs y contraseñas"""
     
-    title = models.CharField(max_length=200, verbose_name="Título")
-    description = models.TextField(blank=True, verbose_name="Descripción")
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy("Título"))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy("Descripción"))
     company = models.ForeignKey(
         Company, 
         on_delete=models.CASCADE,
         related_name='documentations',
-        verbose_name="Empresa"
+        verbose_name=gettext_lazy("Empresa")
     )
-    is_public = models.BooleanField(default=False, verbose_name="Es público")
+    is_public = models.BooleanField(default=False, verbose_name=gettext_lazy("Es público"))
     public_token = models.UUIDField(
         default=uuid.uuid4, 
         editable=False, 
         unique=True,
-        verbose_name="Token público"
+        verbose_name=gettext_lazy("Token público")
     )
     created_by = models.ForeignKey(
         User, 
         on_delete=models.CASCADE,
-        verbose_name="Creado por"
+        verbose_name=gettext_lazy("Creado por")
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de actualización")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy("Fecha de creación"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy("Fecha de actualización"))
     
     class Meta:
-        verbose_name = "Documentación de Empresa"
-        verbose_name_plural = "Documentaciones de Empresas"
+        verbose_name = gettext_lazy("Documentación de Empresa")
+        verbose_name_plural = gettext_lazy("Documentaciones de Empresas")
         ordering = ['-created_at']
     
     def __str__(self):
@@ -10744,21 +10745,21 @@ class CompanyDocumentationURL(models.Model):
         CompanyDocumentation,
         on_delete=models.CASCADE,
         related_name='urls',
-        verbose_name="Documentación"
+        verbose_name=gettext_lazy("Documentación")
     )
-    title = models.CharField(max_length=200, verbose_name="Título del enlace")
-    url = models.URLField(verbose_name="URL")
-    description = models.TextField(blank=True, verbose_name="Descripción")
-    username = models.CharField(max_length=100, blank=True, verbose_name="Usuario")
-    password = models.CharField(max_length=200, blank=True, verbose_name="Contraseña")
-    notes = models.TextField(blank=True, verbose_name="Notas adicionales")
-    is_active = models.BooleanField(default=True, verbose_name="Está activo")
-    order = models.PositiveIntegerField(default=0, verbose_name="Orden")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy("Título del enlace"))
+    url = models.URLField(verbose_name=gettext_lazy("URL"))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy("Descripción"))
+    username = models.CharField(max_length=100, blank=True, verbose_name=gettext_lazy("Usuario"))
+    password = models.CharField(max_length=200, blank=True, verbose_name=gettext_lazy("Contraseña"))
+    notes = models.TextField(blank=True, verbose_name=gettext_lazy("Notas adicionales"))
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy("Está activo"))
+    order = models.PositiveIntegerField(default=0, verbose_name=gettext_lazy("Orden"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy("Fecha de creación"))
     
     class Meta:
-        verbose_name = "URL de Documentación"
-        verbose_name_plural = "URLs de Documentación"
+        verbose_name = gettext_lazy("URL de Documentación")
+        verbose_name_plural = gettext_lazy("URLs de Documentación")
         ordering = ['order', 'title']
     
     def __str__(self):
@@ -10772,24 +10773,24 @@ class CompanyDocumentationURL(models.Model):
 class TermsOfUse(models.Model):
     """Condiciones de uso de la aplicación"""
     
-    title = models.CharField(max_length=200, verbose_name="Título")
-    content = models.TextField(verbose_name="Contenido")
-    effective_date = models.DateField(verbose_name="Fecha de vigencia")
-    is_active = models.BooleanField(default=True, verbose_name="Está activo")
-    version = models.CharField(max_length=50, blank=True, verbose_name="Versión")
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy("Título"))
+    content = models.TextField(verbose_name=gettext_lazy("Contenido"))
+    effective_date = models.DateField(verbose_name=gettext_lazy("Fecha de vigencia"))
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy("Está activo"))
+    version = models.CharField(max_length=50, blank=True, verbose_name=gettext_lazy("Versión"))
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         related_name='terms_created',
-        verbose_name="Creado por"
+        verbose_name=gettext_lazy("Creado por")
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Última actualización")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy("Fecha de creación"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy("Última actualización"))
     
     class Meta:
-        verbose_name = "Condición de Uso"
-        verbose_name_plural = "Condiciones de Uso"
+        verbose_name = gettext_lazy("Condición de Uso")
+        verbose_name_plural = gettext_lazy("Condiciones de Uso")
         ordering = ['-effective_date', '-created_at']
     
     def __str__(self):
@@ -10805,57 +10806,57 @@ class TermsOfUse(models.Model):
 class ContactGenerator(models.Model):
     """Generador de contactos con URL pública"""
     
-    title = models.CharField(max_length=200, verbose_name="Título")
-    description = models.TextField(blank=True, verbose_name="Descripción")
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy("Título"))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy("Descripción"))
     company = models.ForeignKey(
         Company, 
         on_delete=models.CASCADE,
         related_name='contact_generators',
-        verbose_name="Empresa"
+        verbose_name=gettext_lazy("Empresa")
     )
-    is_active = models.BooleanField(default=True, verbose_name="Está activo")
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy("Está activo"))
     public_token = models.UUIDField(
         default=uuid.uuid4, 
         editable=False, 
         unique=True,
-        verbose_name="Token público"
+        verbose_name=gettext_lazy("Token público")
     )
     
     # Campos personalizables del formulario
-    collect_phone = models.BooleanField(default=False, verbose_name="Recopilar teléfono")
-    collect_company = models.BooleanField(default=True, verbose_name="Recopilar empresa")
-    collect_position = models.BooleanField(default=True, verbose_name="Recopilar cargo")
-    collect_notes = models.BooleanField(default=False, verbose_name="Recopilar notas")
+    collect_phone = models.BooleanField(default=False, verbose_name=gettext_lazy("Recopilar teléfono"))
+    collect_company = models.BooleanField(default=True, verbose_name=gettext_lazy("Recopilar empresa"))
+    collect_position = models.BooleanField(default=True, verbose_name=gettext_lazy("Recopilar cargo"))
+    collect_notes = models.BooleanField(default=False, verbose_name=gettext_lazy("Recopilar notas"))
     
     # Mensajes personalizables
     welcome_message = models.TextField(
         default="¡Gracias por tu interés! Por favor, completa la siguiente información para que podamos contactarte.",
-        verbose_name="Mensaje de bienvenida"
+        verbose_name=gettext_lazy("Mensaje de bienvenida")
     )
     success_message = models.TextField(
         default="¡Gracias! Hemos recibido tu información y nos pondremos en contacto contigo pronto.",
-        verbose_name="Mensaje de éxito"
+        verbose_name=gettext_lazy("Mensaje de éxito")
     )
     
     # Configuración de diseño
     background_color = models.CharField(
         max_length=7, 
         default="#007bff", 
-        verbose_name="Color de fondo",
-        help_text="Color en formato hexadecimal (ej: #007bff)"
+        verbose_name=gettext_lazy("Color de fondo"),
+        help_text=gettext_lazy("Color en formato hexadecimal (ej: #007bff)")
     )
     
     created_by = models.ForeignKey(
         User, 
         on_delete=models.CASCADE,
-        verbose_name="Creado por"
+        verbose_name=gettext_lazy("Creado por")
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de actualización")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy("Fecha de creación"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy("Fecha de actualización"))
     
     class Meta:
-        verbose_name = "Generador de Contactos"
-        verbose_name_plural = "Generadores de Contactos"
+        verbose_name = gettext_lazy("Generador de Contactos")
+        verbose_name_plural = gettext_lazy("Generadores de Contactos")
         ordering = ['-created_at']
     
     def __str__(self):
@@ -10880,20 +10881,20 @@ class ContactGenerator(models.Model):
 class CompanyRequestGenerator(models.Model):
     """Generador de formularios de Solicitudes de Empresas"""
 
-    title = models.CharField(max_length=200, verbose_name="Título")
-    description = models.TextField(blank=True, verbose_name="Descripción")
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy("Título"))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy("Descripción"))
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
         related_name='company_request_generators',
-        verbose_name="Empresa"
+        verbose_name=gettext_lazy("Empresa")
     )
-    is_active = models.BooleanField(default=True, verbose_name="Está activo")
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy("Está activo"))
     public_token = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name="Token público"
+        verbose_name=gettext_lazy("Token público")
     )
 
     # Secuencia y prefijo
@@ -10901,41 +10902,41 @@ class CompanyRequestGenerator(models.Model):
         max_length=20,
         blank=True,
         default='',
-        verbose_name='Prefijo de Secuencia',
-        help_text='Prefijo que se antepone al número de solicitud (ej: SR-)'
+        verbose_name=gettext_lazy('Prefijo de Secuencia'),
+        help_text=gettext_lazy('Prefijo que se antepone al número de solicitud (ej: SR-)')
     )
     next_sequence = models.PositiveIntegerField(
         default=1,
-        verbose_name='Siguiente secuencia',
-        help_text='Número secuencial que se incrementa por cada solicitud'
+        verbose_name=gettext_lazy('Siguiente secuencia'),
+        help_text=gettext_lazy('Número secuencial que se incrementa por cada solicitud')
     )
 
     # Campos personalizables del formulario
-    collect_date = models.BooleanField(default=True, verbose_name="Incluir fecha")
-    collect_text = models.BooleanField(default=True, verbose_name="Incluir texto de solicitud")
-    collect_url = models.BooleanField(default=False, verbose_name="Incluir URL relacionada")
+    collect_date = models.BooleanField(default=True, verbose_name=gettext_lazy("Incluir fecha"))
+    collect_text = models.BooleanField(default=True, verbose_name=gettext_lazy("Incluir texto de solicitud"))
+    collect_url = models.BooleanField(default=False, verbose_name=gettext_lazy("Incluir URL relacionada"))
 
     # Mensajes personalizables
     welcome_message = models.TextField(
         default="Por favor, envía tu solicitud y nuestro equipo la revisará.",
-        verbose_name="Mensaje de bienvenida"
+        verbose_name=gettext_lazy("Mensaje de bienvenida")
     )
     success_message = models.TextField(
         default="Solicitud recibida. Te contactaremos pronto.",
-        verbose_name="Mensaje de éxito"
+        verbose_name=gettext_lazy("Mensaje de éxito")
     )
 
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name="Creado por"
+        verbose_name=gettext_lazy("Creado por")
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de actualización")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy("Fecha de creación"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy("Fecha de actualización"))
 
     class Meta:
-        verbose_name = "Generador de Solicitudes Empresa"
-        verbose_name_plural = "Generadores de Solicitudes Empresas"
+        verbose_name = gettext_lazy("Generador de Solicitudes Empresa")
+        verbose_name_plural = gettext_lazy("Generadores de Solicitudes Empresas")
         ordering = ['-created_at']
 
     def __str__(self):
@@ -10970,48 +10971,48 @@ class CompanyRequest(models.Model):
     """Registro de una solicitud enviada mediante un generador"""
 
     STATUS_CHOICES = [
-        ('new', 'Nueva'),
-        ('review', 'En revisión'),
-        ('accepted', 'Aceptada'),
-        ('executed', 'Ejecutada'),
-        ('rejected', 'Rechazada'),
-        ('closed', 'Cerrada'),
+        ('new', gettext_lazy('Nueva')),
+        ('review', gettext_lazy('En revisión')),
+        ('accepted', gettext_lazy('Aceptada')),
+        ('executed', gettext_lazy('Ejecutada')),
+        ('rejected', gettext_lazy('Rechazada')),
+        ('closed', gettext_lazy('Cerrada')),
     ]
 
-    sequence = models.CharField(max_length=50, verbose_name='Número de solicitud', unique=True)
+    sequence = models.CharField(max_length=50, verbose_name=gettext_lazy('Número de solicitud'), unique=True)
     generator = models.ForeignKey(
         CompanyRequestGenerator,
         on_delete=models.CASCADE,
         related_name='requests',
-        verbose_name='Generador'
+        verbose_name=gettext_lazy('Generador')
     )
-    request_date = models.DateTimeField(default=timezone.now, verbose_name='Fecha de solicitud')
-    text = models.TextField(blank=True, verbose_name='Texto de la solicitud')
-    url = models.URLField(blank=True, verbose_name='URL relacionada')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name='Estado')
-    executed_at = models.DateTimeField(null=True, blank=True, verbose_name='Fecha de ejecución')
+    request_date = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de solicitud'))
+    text = models.TextField(blank=True, verbose_name=gettext_lazy('Texto de la solicitud'))
+    url = models.URLField(blank=True, verbose_name=gettext_lazy('URL relacionada'))
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name=gettext_lazy('Estado'))
+    executed_at = models.DateTimeField(null=True, blank=True, verbose_name=gettext_lazy('Fecha de ejecución'))
     executed_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='executed_company_requests',
-        verbose_name='Ejecutado por'
+        verbose_name=gettext_lazy('Ejecutado por')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última actualización'))
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Solicitud de Empresa'
-        verbose_name_plural = 'Solicitudes de Empresas'
+        verbose_name = gettext_lazy('Solicitud de Empresa')
+        verbose_name_plural = gettext_lazy('Solicitudes de Empresas')
 
     def __str__(self):
         return f"{self.sequence} - {self.generator.title}"
@@ -11027,16 +11028,16 @@ class CompanyRequestComment(models.Model):
         CompanyRequest,
         on_delete=models.CASCADE,
         related_name='comments',
-        verbose_name='Solicitud'
+        verbose_name=gettext_lazy('Solicitud')
     )
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Usuario')
-    content = models.TextField(verbose_name='Comentario')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=gettext_lazy('Usuario'))
+    content = models.TextField(verbose_name=gettext_lazy('Comentario'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
 
     class Meta:
         ordering = ['created_at']
-        verbose_name = 'Comentario de Solicitud'
-        verbose_name_plural = 'Comentarios de Solicitudes'
+        verbose_name = gettext_lazy('Comentario de Solicitud')
+        verbose_name_plural = gettext_lazy('Comentarios de Solicitudes')
 
     def __str__(self):
         return f"Comentario de {self.user.username} en {self.request.sequence}"
@@ -11047,43 +11048,43 @@ class CompanyRequestComment(models.Model):
 class Form(models.Model):
     """Formulario con múltiples preguntas"""
     
-    title = models.CharField(max_length=200, verbose_name='Título del formulario')
-    description = models.TextField(blank=True, verbose_name='Descripción')
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy('Título del formulario'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
     theme = models.CharField(
         max_length=20,
         choices=[
-            ('blue', 'Azul Clásico'),
-            ('green', 'Verde Moderno'),
-            ('sunset', 'Sunset'),
-            ('ocean', 'Océano'),
-            ('purple', 'Púrpura'),
-            ('pink', 'Rosa'),
-            ('minimal', 'Minimal'),
+            ('blue', gettext_lazy('Azul Clásico')),
+            ('green', gettext_lazy('Verde Moderno')),
+            ('sunset', gettext_lazy('Sunset')),
+            ('ocean', gettext_lazy('Océano')),
+            ('purple', gettext_lazy('Púrpura')),
+            ('pink', gettext_lazy('Rosa')),
+            ('minimal', gettext_lazy('Minimal')),
         ],
         default='blue',
-        verbose_name='Tema visual'
+        verbose_name=gettext_lazy('Tema visual')
     )
     company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
         related_name='forms',
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
-    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy('Activo'))
     public_token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='forms_created',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última actualización'))
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Formulario'
-        verbose_name_plural = 'Formularios'
+        verbose_name = gettext_lazy('Formulario')
+        verbose_name_plural = gettext_lazy('Formularios')
 
     def __str__(self):
         return f"{self.title} - {self.company.name}"
@@ -11119,22 +11120,22 @@ class FormQuestion(models.Model):
         Form,
         on_delete=models.CASCADE,
         related_name='questions',
-        verbose_name='Formulario'
+        verbose_name=gettext_lazy('Formulario')
     )
-    question_text = models.TextField(verbose_name='Texto de la pregunta')
+    question_text = models.TextField(verbose_name=gettext_lazy('Texto de la pregunta'))
     question_type = models.CharField(
         max_length=20,
         choices=QUESTION_TYPES,
-        verbose_name='Tipo de pregunta'
+        verbose_name=gettext_lazy('Tipo de pregunta')
     )
-    is_required = models.BooleanField(default=True, verbose_name='Obligatoria')
-    order = models.PositiveIntegerField(default=0, verbose_name='Orden')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+    is_required = models.BooleanField(default=True, verbose_name=gettext_lazy('Obligatoria'))
+    order = models.PositiveIntegerField(default=0, verbose_name=gettext_lazy('Orden'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de creación'))
 
     class Meta:
         ordering = ['order', 'created_at']
-        verbose_name = 'Pregunta'
-        verbose_name_plural = 'Preguntas'
+        verbose_name = gettext_lazy('Pregunta')
+        verbose_name_plural = gettext_lazy('Preguntas')
 
     def __str__(self):
         return f"{self.form.title} - {self.question_text[:50]}..."
@@ -11147,16 +11148,16 @@ class FormQuestionOption(models.Model):
         FormQuestion,
         on_delete=models.CASCADE,
         related_name='options',
-        verbose_name='Pregunta'
+        verbose_name=gettext_lazy('Pregunta')
     )
-    option_text = models.CharField(max_length=200, verbose_name='Texto de la opción')
-    score = models.IntegerField(default=0, verbose_name='Puntuación')
-    order = models.PositiveIntegerField(default=0, verbose_name='Orden')
+    option_text = models.CharField(max_length=200, verbose_name=gettext_lazy('Texto de la opción'))
+    score = models.IntegerField(default=0, verbose_name=gettext_lazy('Puntuación'))
+    order = models.PositiveIntegerField(default=0, verbose_name=gettext_lazy('Orden'))
 
     class Meta:
         ordering = ['order']
-        verbose_name = 'Opción de Pregunta'
-        verbose_name_plural = 'Opciones de Preguntas'
+        verbose_name = gettext_lazy('Opción de Pregunta')
+        verbose_name_plural = gettext_lazy('Opciones de Preguntas')
 
     def __str__(self):
         return f"{self.option_text} ({self.score} pts)"
@@ -11169,17 +11170,17 @@ class FormResponse(models.Model):
         Form,
         on_delete=models.CASCADE,
         related_name='responses',
-        verbose_name='Formulario'
+        verbose_name=gettext_lazy('Formulario')
     )
-    respondent_name = models.CharField(max_length=100, blank=True, verbose_name='Nombre del encuestado')
-    respondent_email = models.EmailField(blank=True, verbose_name='Email del encuestado')
-    total_score = models.IntegerField(default=0, verbose_name='Puntuación total')
-    response_date = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de respuesta')
+    respondent_name = models.CharField(max_length=100, blank=True, verbose_name=gettext_lazy('Nombre del encuestado'))
+    respondent_email = models.EmailField(blank=True, verbose_name=gettext_lazy('Email del encuestado'))
+    total_score = models.IntegerField(default=0, verbose_name=gettext_lazy('Puntuación total'))
+    response_date = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de respuesta'))
 
     class Meta:
         ordering = ['-response_date']
-        verbose_name = 'Respuesta al Formulario'
-        verbose_name_plural = 'Respuestas a Formularios'
+        verbose_name = gettext_lazy('Respuesta al Formulario')
+        verbose_name_plural = gettext_lazy('Respuestas a Formularios')
 
     def __str__(self):
         return f"Respuesta de {self.respondent_name or 'Anónimo'} - {self.form.title}"
@@ -11202,22 +11203,22 @@ class FormAnswer(models.Model):
         FormResponse,
         on_delete=models.CASCADE,
         related_name='answers',
-        verbose_name='Respuesta al formulario'
+        verbose_name=gettext_lazy('Respuesta al formulario')
     )
     question = models.ForeignKey(
         FormQuestion,
         on_delete=models.CASCADE,
-        verbose_name='Pregunta'
+        verbose_name=gettext_lazy('Pregunta')
     )
     # Para preguntas de texto
-    text_answer = models.TextField(blank=True, verbose_name='Respuesta de texto')
+    text_answer = models.TextField(blank=True, verbose_name=gettext_lazy('Respuesta de texto'))
     # Para preguntas de número
     number_answer = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Respuesta numérica'
+        verbose_name=gettext_lazy('Respuesta numérica')
     )
     # Para preguntas de selección múltiple
     selected_option = models.ForeignKey(
@@ -11225,13 +11226,13 @@ class FormAnswer(models.Model):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        verbose_name='Opción seleccionada'
+        verbose_name=gettext_lazy('Opción seleccionada')
     )
 
     class Meta:
         unique_together = ('response', 'question')
-        verbose_name = 'Respuesta Individual'
-        verbose_name_plural = 'Respuestas Individuales'
+        verbose_name = gettext_lazy('Respuesta Individual')
+        verbose_name_plural = gettext_lazy('Respuestas Individuales')
 
     def __str__(self):
         return f"Respuesta a: {self.question.question_text[:30]}..."
@@ -11254,56 +11255,56 @@ class FormAIAnalysis(models.Model):
         Form,
         on_delete=models.CASCADE,
         related_name='ai_analyses',
-        verbose_name='Formulario'
+        verbose_name=gettext_lazy('Formulario')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de análisis'
+        verbose_name=gettext_lazy('Fecha de análisis')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Analizado por'
+        verbose_name=gettext_lazy('Analizado por')
     )
     
     # Campos del análisis
     overall_score = models.DecimalField(
         max_digits=3,
         decimal_places=1,
-        verbose_name='Puntuación general'
+        verbose_name=gettext_lazy('Puntuación general')
     )
     problems = models.JSONField(
         default=list,
-        verbose_name='Problemas identificados',
-        help_text='Lista de problemas encontrados en formato JSON'
+        verbose_name=gettext_lazy('Problemas identificados'),
+        help_text=gettext_lazy('Lista de problemas encontrados en formato JSON')
     )
     improvements = models.JSONField(
         default=list,
-        verbose_name='Mejoras sugeridas',
-        help_text='Lista de mejoras sugeridas en formato JSON'
+        verbose_name=gettext_lazy('Mejoras sugeridas'),
+        help_text=gettext_lazy('Lista de mejoras sugeridas en formato JSON')
     )
     strengths = models.JSONField(
         default=list,
-        verbose_name='Fortalezas',
-        help_text='Lista de fortalezas identificadas'
+        verbose_name=gettext_lazy('Fortalezas'),
+        help_text=gettext_lazy('Lista de fortalezas identificadas')
     )
     main_recommendation = models.TextField(
-        verbose_name='Recomendación principal'
+        verbose_name=gettext_lazy('Recomendación principal')
     )
     
     # Metadatos del análisis
     total_responses = models.IntegerField(
-        verbose_name='Total de respuestas analizadas'
+        verbose_name=gettext_lazy('Total de respuestas analizadas')
     )
     analysis_version = models.CharField(
         max_length=10,
         default='1.0',
-        verbose_name='Versión del análisis'
+        verbose_name=gettext_lazy('Versión del análisis')
     )
     
     class Meta:
-        verbose_name = 'Análisis de IA'
-        verbose_name_plural = 'Análisis de IA'
+        verbose_name = gettext_lazy('Análisis de IA')
+        verbose_name_plural = gettext_lazy('Análisis de IA')
         ordering = ['-created_at']
         
     def __str__(self):
@@ -11329,24 +11330,24 @@ class FormAIAnalysis(models.Model):
 
 # Modelo de Alcance
 class Alcance(models.Model):
-    titulo = models.CharField(max_length=200, verbose_name='Título')
-    categoria = models.CharField(max_length=100, verbose_name='Categoría')
-    descripcion = models.TextField(verbose_name='Descripción')
-    url = models.URLField(max_length=500, blank=True, null=True, verbose_name='URL del artículo relacionado')
-    publico = models.BooleanField(default=True, verbose_name='¿Es público?')
+    titulo = models.CharField(max_length=200, verbose_name=gettext_lazy('Título'))
+    categoria = models.CharField(max_length=100, verbose_name=gettext_lazy('Categoría'))
+    descripcion = models.TextField(verbose_name=gettext_lazy('Descripción'))
+    url = models.URLField(max_length=500, blank=True, null=True, verbose_name=gettext_lazy('URL del artículo relacionado'))
+    publico = models.BooleanField(default=True, verbose_name=gettext_lazy('¿Es público?'))
     creado_por = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
-    creado_en = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
-    actualizado_en = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    creado_en = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de creación'))
+    actualizado_en = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última actualización'))
 
     class Meta:
-        verbose_name = 'Alcance'
-        verbose_name_plural = 'Alcances'
+        verbose_name = gettext_lazy('Alcance')
+        verbose_name_plural = gettext_lazy('Alcances')
         ordering = ['-creado_en']
 
     def __str__(self):
@@ -11359,60 +11360,60 @@ class License(models.Model):
     """Modelo para gestionar licencias de productos"""
     
     STATUS_CHOICES = [
-        ('active', 'Activa'),
-        ('expired', 'Expirada'),
-        ('suspended', 'Suspendida'),
-        ('revoked', 'Revocada'),
+        ('active', gettext_lazy('Activa')),
+        ('expired', gettext_lazy('Expirada')),
+        ('suspended', gettext_lazy('Suspendida')),
+        ('revoked', gettext_lazy('Revocada')),
     ]
     
     license_key = models.CharField(
         max_length=12,
         unique=True,
-        verbose_name='Clave de Licencia',
-        help_text='Clave alfanumérica de 12 caracteres en mayúsculas'
+        verbose_name=gettext_lazy('Clave de Licencia'),
+        help_text=gettext_lazy('Clave alfanumérica de 12 caracteres en mayúsculas')
     )
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
-        verbose_name='Empresa',
+        verbose_name=gettext_lazy('Empresa'),
         related_name='licenses'
     )
     product = models.CharField(
         max_length=200,
-        verbose_name='Producto'
+        verbose_name=gettext_lazy('Producto')
     )
     start_date = models.DateField(
-        verbose_name='Fecha de Inicio'
+        verbose_name=gettext_lazy('Fecha de Inicio')
     )
     end_date = models.DateField(
-        verbose_name='Fecha de Vencimiento'
+        verbose_name=gettext_lazy('Fecha de Vencimiento')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='active',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas',
-        help_text='Notas adicionales sobre la licencia'
+        verbose_name=gettext_lazy('Notas'),
+        help_text=gettext_lazy('Notas adicionales sobre la licencia')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Creado por',
+        verbose_name=gettext_lazy('Creado por'),
         related_name='created_licenses'
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     # UUID para acceso público
@@ -11420,12 +11421,12 @@ class License(models.Model):
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name='UUID Público'
+        verbose_name=gettext_lazy('UUID Público')
     )
     
     class Meta:
-        verbose_name = 'Licencia'
-        verbose_name_plural = 'Licencias'
+        verbose_name = gettext_lazy('Licencia')
+        verbose_name_plural = gettext_lazy('Licencias')
         ordering = ['-created_at']
         
     def __str__(self):
@@ -11514,61 +11515,61 @@ class License(models.Model):
 class WhatsAppConnection(models.Model):
     """Modelo para gestionar la conexión de WhatsApp"""
     STATUS_CHOICES = [
-        ('disconnected', 'Desconectado'),
-        ('connecting', 'Conectando'),
-        ('connected', 'Conectado'),
-        ('qr_pending', 'QR Pendiente'),
-        ('error', 'Error'),
+        ('disconnected', gettext_lazy('Desconectado')),
+        ('connecting', gettext_lazy('Conectando')),
+        ('connected', gettext_lazy('Conectado')),
+        ('qr_pending', gettext_lazy('QR Pendiente')),
+        ('error', gettext_lazy('Error')),
     ]
     
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='disconnected',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     qr_code = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Código QR'
+        verbose_name=gettext_lazy('Código QR')
     )
     phone_number = models.CharField(
         max_length=20,
         blank=True,
         null=True,
-        verbose_name='Número de teléfono'
+        verbose_name=gettext_lazy('Número de teléfono')
     )
     session_data = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Datos de sesión'
+        verbose_name=gettext_lazy('Datos de sesión')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     last_connected = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Última conexión'
+        verbose_name=gettext_lazy('Última conexión')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
 
     class Meta:
-        verbose_name = 'Conexión WhatsApp'
-        verbose_name_plural = 'Conexiones WhatsApp'
+        verbose_name = gettext_lazy('Conexión WhatsApp')
+        verbose_name_plural = gettext_lazy('Conexiones WhatsApp')
         ordering = ['-created_at']
 
     def __str__(self):
@@ -11581,49 +11582,49 @@ class WhatsAppKeyword(models.Model):
         WhatsAppConnection,
         on_delete=models.CASCADE,
         related_name='keywords',
-        verbose_name='Conexión'
+        verbose_name=gettext_lazy('Conexión')
     )
     keyword = models.CharField(
         max_length=200,
-        verbose_name='Palabra clave'
+        verbose_name=gettext_lazy('Palabra clave')
     )
     response = models.TextField(
-        verbose_name='Respuesta'
+        verbose_name=gettext_lazy('Respuesta')
     )
     is_exact_match = models.BooleanField(
         default=False,
-        verbose_name='Coincidencia exacta',
-        help_text='Si es verdadero, debe coincidir exactamente. Si es falso, busca la palabra en el mensaje.'
+        verbose_name=gettext_lazy('Coincidencia exacta'),
+        help_text=gettext_lazy('Si es verdadero, debe coincidir exactamente. Si es falso, busca la palabra en el mensaje.')
     )
     is_case_sensitive = models.BooleanField(
         default=False,
-        verbose_name='Sensible a mayúsculas'
+        verbose_name=gettext_lazy('Sensible a mayúsculas')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     priority = models.IntegerField(
         default=0,
-        verbose_name='Prioridad',
-        help_text='Mayor número = mayor prioridad'
+        verbose_name=gettext_lazy('Prioridad'),
+        help_text=gettext_lazy('Mayor número = mayor prioridad')
     )
     use_count = models.IntegerField(
         default=0,
-        verbose_name='Veces usado'
+        verbose_name=gettext_lazy('Veces usado')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
 
     class Meta:
-        verbose_name = 'Palabra Clave WhatsApp'
-        verbose_name_plural = 'Palabras Clave WhatsApp'
+        verbose_name = gettext_lazy('Palabra Clave WhatsApp')
+        verbose_name_plural = gettext_lazy('Palabras Clave WhatsApp')
         ordering = ['-priority', 'keyword']
         unique_together = ['connection', 'keyword']
 
@@ -11639,48 +11640,48 @@ class WhatsAppKeyword(models.Model):
 class WhatsAppMessage(models.Model):
     """Modelo para registrar mensajes de WhatsApp"""
     MESSAGE_TYPE_CHOICES = [
-        ('received', 'Recibido'),
-        ('sent', 'Enviado'),
-        ('auto_reply', 'Respuesta Automática'),
+        ('received', gettext_lazy('Recibido')),
+        ('sent', gettext_lazy('Enviado')),
+        ('auto_reply', gettext_lazy('Respuesta Automática')),
     ]
     
     connection = models.ForeignKey(
         WhatsAppConnection,
         on_delete=models.CASCADE,
         related_name='messages',
-        verbose_name='Conexión'
+        verbose_name=gettext_lazy('Conexión')
     )
     message_type = models.CharField(
         max_length=20,
         choices=MESSAGE_TYPE_CHOICES,
-        verbose_name='Tipo de mensaje'
+        verbose_name=gettext_lazy('Tipo de mensaje')
     )
     from_number = models.CharField(
         max_length=50,
-        verbose_name='De'
+        verbose_name=gettext_lazy('De')
     )
     to_number = models.CharField(
         max_length=50,
-        verbose_name='Para'
+        verbose_name=gettext_lazy('Para')
     )
     message_text = models.TextField(
-        verbose_name='Mensaje'
+        verbose_name=gettext_lazy('Mensaje')
     )
     keyword_matched = models.ForeignKey(
         WhatsAppKeyword,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Palabra clave coincidente'
+        verbose_name=gettext_lazy('Palabra clave coincidente')
     )
     timestamp = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha y hora'
+        verbose_name=gettext_lazy('Fecha y hora')
     )
 
     class Meta:
-        verbose_name = 'Mensaje WhatsApp'
-        verbose_name_plural = 'Mensajes WhatsApp'
+        verbose_name = gettext_lazy('Mensaje WhatsApp')
+        verbose_name_plural = gettext_lazy('Mensajes WhatsApp')
         ordering = ['-timestamp']
 
     def __str__(self):
@@ -11695,57 +11696,57 @@ class ImagePrompt(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='image_prompts',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Título descriptivo para identificar esta imagen'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Título descriptivo para identificar esta imagen')
     )
     image = models.ImageField(
         upload_to='image_prompts/%Y/%m/',
-        verbose_name='Imagen',
-        help_text='Sube una imagen para generar un prompt'
+        verbose_name=gettext_lazy('Imagen'),
+        help_text=gettext_lazy('Sube una imagen para generar un prompt')
     )
     generated_prompt = models.TextField(
-        verbose_name='Prompt Generado',
+        verbose_name=gettext_lazy('Prompt Generado'),
         blank=True,
-        help_text='Prompt generado automáticamente por IA'
+        help_text=gettext_lazy('Prompt generado automáticamente por IA')
     )
     custom_prompt = models.TextField(
-        verbose_name='Prompt Personalizado',
+        verbose_name=gettext_lazy('Prompt Personalizado'),
         blank=True,
         null=True,
-        help_text='Prompt editado manualmente por el usuario'
+        help_text=gettext_lazy('Prompt editado manualmente por el usuario')
     )
     tags = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name='Etiquetas',
-        help_text='Etiquetas separadas por comas para organizar'
+        verbose_name=gettext_lazy('Etiquetas'),
+        help_text=gettext_lazy('Etiquetas separadas por comas para organizar')
     )
     is_public = models.BooleanField(
         default=False,
-        verbose_name='¿Es público?',
-        help_text='Si está marcado, otros usuarios pueden ver este prompt'
+        verbose_name=gettext_lazy('¿Es público?'),
+        help_text=gettext_lazy('Si está marcado, otros usuarios pueden ver este prompt')
     )
     tokens_used = models.IntegerField(
         default=0,
-        verbose_name='Tokens usados',
-        help_text='Cantidad de tokens de IA utilizados'
+        verbose_name=gettext_lazy('Tokens usados'),
+        help_text=gettext_lazy('Cantidad de tokens de IA utilizados')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
 
     class Meta:
-        verbose_name = 'Image to Prompt'
-        verbose_name_plural = 'Image to Prompts'
+        verbose_name = gettext_lazy('Image to Prompt')
+        verbose_name_plural = gettext_lazy('Image to Prompts')
         ordering = ['-created_at']
         
     def __str__(self):
@@ -11767,68 +11768,68 @@ class ImagePrompt(models.Model):
 class AIManager(models.Model):
     """Modelo para Gerentes de IA por empresa"""
     CATEGORY_CHOICES = [
-        ('ventas', 'Ventas'),
-        ('compras', 'Compras'),
-        ('contabilidad', 'Contabilidad'),
-        ('crm', 'CRM'),
-        ('inventario', 'Inventario'),
-        ('rrhh', 'Recursos Humanos'),
-        ('marketing', 'Marketing'),
-        ('operaciones', 'Operaciones'),
-        ('finanzas', 'Finanzas'),
-        ('ti', 'Tecnología'),
-        ('otro', 'Otro'),
+        ('ventas', gettext_lazy('Ventas')),
+        ('compras', gettext_lazy('Compras')),
+        ('contabilidad', gettext_lazy('Contabilidad')),
+        ('crm', gettext_lazy('CRM')),
+        ('inventario', gettext_lazy('Inventario')),
+        ('rrhh', gettext_lazy('Recursos Humanos')),
+        ('marketing', gettext_lazy('Marketing')),
+        ('operaciones', gettext_lazy('Operaciones')),
+        ('finanzas', gettext_lazy('Finanzas')),
+        ('ti', gettext_lazy('Tecnología')),
+        ('otro', gettext_lazy('Otro')),
     ]
     
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
         related_name='ai_managers',
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del Gerente IA',
-        help_text='Ejemplo: Gerente de Ventas IA'
+        verbose_name=gettext_lazy('Nombre del Gerente IA'),
+        help_text=gettext_lazy('Ejemplo: Gerente de Ventas IA')
     )
     category = models.CharField(
         max_length=50,
         choices=CATEGORY_CHOICES,
         default='otro',
-        verbose_name='Categoría'
+        verbose_name=gettext_lazy('Categoría')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Describe el rol y responsabilidades de este gerente IA'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Describe el rol y responsabilidades de este gerente IA')
     )
     instructions = models.TextField(
-        verbose_name='Instrucciones para la IA',
-        help_text='Contexto y personalidad del gerente IA',
+        verbose_name=gettext_lazy('Instrucciones para la IA'),
+        help_text=gettext_lazy('Contexto y personalidad del gerente IA'),
         default='Eres un gerente experimentado y empático. Tu objetivo es ayudar al equipo a mejorar.'
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     
     # Integración con Telegram
     telegram_enabled = models.BooleanField(
         default=False,
-        verbose_name='Telegram Habilitado',
-        help_text='Enviar resúmenes automáticamente por Telegram'
+        verbose_name=gettext_lazy('Telegram Habilitado'),
+        help_text=gettext_lazy('Enviar resúmenes automáticamente por Telegram')
     )
     telegram_bot_token = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Token del Bot de Telegram',
-        help_text='Token único del bot de Telegram para este gerente'
+        verbose_name=gettext_lazy('Token del Bot de Telegram'),
+        help_text=gettext_lazy('Token único del bot de Telegram para este gerente')
     )
     telegram_chat_id = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Chat ID de Telegram',
-        help_text='ID del chat o canal donde se enviarán los resúmenes'
+        verbose_name=gettext_lazy('Chat ID de Telegram'),
+        help_text=gettext_lazy('ID del chat o canal donde se enviarán los resúmenes')
     )
     
     created_by = models.ForeignKey(
@@ -11836,20 +11837,20 @@ class AIManager(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name='created_ai_managers',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
-        verbose_name = 'Gerente IA'
-        verbose_name_plural = 'Gerentes IA'
+        verbose_name = gettext_lazy('Gerente IA')
+        verbose_name_plural = gettext_lazy('Gerentes IA')
         ordering = ['company', 'category', 'name']
         unique_together = ['company', 'name']
     
@@ -11868,68 +11869,68 @@ class AIManager(models.Model):
 class AIManagerMeeting(models.Model):
     """Modelo para reuniones entre usuarios y gerentes IA"""
     INPUT_TYPE_CHOICES = [
-        ('text', 'Texto'),
-        ('audio', 'Audio'),
+        ('text', gettext_lazy('Texto')),
+        ('audio', gettext_lazy('Audio')),
     ]
     
     ai_manager = models.ForeignKey(
         AIManager,
         on_delete=models.CASCADE,
         related_name='meetings',
-        verbose_name='Gerente IA'
+        verbose_name=gettext_lazy('Gerente IA')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='ai_manager_meetings',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     title = models.CharField(
         max_length=300,
-        verbose_name='Título',
-        help_text='Resumen breve de la reunión'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Resumen breve de la reunión')
     )
     input_type = models.CharField(
         max_length=10,
         choices=INPUT_TYPE_CHOICES,
         default='text',
-        verbose_name='Tipo de entrada'
+        verbose_name=gettext_lazy('Tipo de entrada')
     )
     user_input = models.TextField(
-        verbose_name='Entrada del usuario',
-        help_text='Lo que el usuario escribió o transcripción del audio'
+        verbose_name=gettext_lazy('Entrada del usuario'),
+        help_text=gettext_lazy('Lo que el usuario escribió o transcripción del audio')
     )
     audio_file = models.FileField(
         upload_to='ai_manager_meetings/%Y/%m/',
         blank=True,
         null=True,
-        verbose_name='Archivo de audio'
+        verbose_name=gettext_lazy('Archivo de audio')
     )
     ai_response = models.TextField(
-        verbose_name='Respuesta de la IA',
-        help_text='Análisis y recomendaciones del gerente IA'
+        verbose_name=gettext_lazy('Respuesta de la IA'),
+        help_text=gettext_lazy('Análisis y recomendaciones del gerente IA')
     )
     ai_summary = models.TextField(
-        verbose_name='Resumen de la IA',
-        help_text='Resumen corto de la reunión'
+        verbose_name=gettext_lazy('Resumen de la IA'),
+        help_text=gettext_lazy('Resumen corto de la reunión')
     )
     improvement_areas = models.TextField(
         blank=True,
-        verbose_name='Áreas de mejora',
-        help_text='Áreas identificadas para mejorar'
+        verbose_name=gettext_lazy('Áreas de mejora'),
+        help_text=gettext_lazy('Áreas identificadas para mejorar')
     )
     tokens_used = models.IntegerField(
         default=0,
-        verbose_name='Tokens usados'
+        verbose_name=gettext_lazy('Tokens usados')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de reunión'
+        verbose_name=gettext_lazy('Fecha de reunión')
     )
     
     class Meta:
-        verbose_name = 'Reunión con Gerente IA'
-        verbose_name_plural = 'Reuniones con Gerentes IA'
+        verbose_name = gettext_lazy('Reunión con Gerente IA')
+        verbose_name_plural = gettext_lazy('Reuniones con Gerentes IA')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -11949,34 +11950,34 @@ class AIManagerMeetingAttachment(models.Model):
         AIManagerMeeting,
         on_delete=models.CASCADE,
         related_name='attachments',
-        verbose_name='Reunión'
+        verbose_name=gettext_lazy('Reunión')
     )
     file = models.FileField(
         upload_to='ai_manager_meeting_attachments/%Y/%m/',
-        verbose_name='Archivo adjunto',
-        help_text='Documentos, imágenes, PDFs que el gerente debe considerar'
+        verbose_name=gettext_lazy('Archivo adjunto'),
+        help_text=gettext_lazy('Documentos, imágenes, PDFs que el gerente debe considerar')
     )
     file_name = models.CharField(
         max_length=255,
-        verbose_name='Nombre del archivo'
+        verbose_name=gettext_lazy('Nombre del archivo')
     )
     file_type = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Tipo de archivo'
+        verbose_name=gettext_lazy('Tipo de archivo')
     )
     file_size = models.IntegerField(
         default=0,
-        verbose_name='Tamaño del archivo (bytes)'
+        verbose_name=gettext_lazy('Tamaño del archivo (bytes)')
     )
     uploaded_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de carga'
+        verbose_name=gettext_lazy('Fecha de carga')
     )
     
     class Meta:
-        verbose_name = 'Adjunto de Reunión IA'
-        verbose_name_plural = 'Adjuntos de Reuniones IA'
+        verbose_name = gettext_lazy('Adjunto de Reunión IA')
+        verbose_name_plural = gettext_lazy('Adjuntos de Reuniones IA')
         ordering = ['uploaded_at']
     
     def __str__(self):
@@ -12012,46 +12013,46 @@ class AIManagerSummary(models.Model):
         AIManager,
         on_delete=models.CASCADE,
         related_name='summaries',
-        verbose_name='Gerente IA'
+        verbose_name=gettext_lazy('Gerente IA')
     )
     period_start = models.DateField(
-        verbose_name='Inicio del período'
+        verbose_name=gettext_lazy('Inicio del período')
     )
     period_end = models.DateField(
-        verbose_name='Fin del período'
+        verbose_name=gettext_lazy('Fin del período')
     )
     summary_text = models.TextField(
-        verbose_name='Resumen general',
-        help_text='Resumen de todas las reuniones del período'
+        verbose_name=gettext_lazy('Resumen general'),
+        help_text=gettext_lazy('Resumen de todas las reuniones del período')
     )
     key_insights = models.TextField(
-        verbose_name='Insights clave',
-        help_text='Puntos clave identificados'
+        verbose_name=gettext_lazy('Insights clave'),
+        help_text=gettext_lazy('Puntos clave identificados')
     )
     recommendations = models.TextField(
-        verbose_name='Recomendaciones',
-        help_text='Recomendaciones para la empresa'
+        verbose_name=gettext_lazy('Recomendaciones'),
+        help_text=gettext_lazy('Recomendaciones para la empresa')
     )
     total_meetings = models.IntegerField(
         default=0,
-        verbose_name='Total de reuniones'
+        verbose_name=gettext_lazy('Total de reuniones')
     )
     participants_count = models.IntegerField(
         default=0,
-        verbose_name='Participantes únicos'
+        verbose_name=gettext_lazy('Participantes únicos')
     )
     tokens_used = models.IntegerField(
         default=0,
-        verbose_name='Tokens usados'
+        verbose_name=gettext_lazy('Tokens usados')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
-        verbose_name = 'Resumen del Gerente IA'
-        verbose_name_plural = 'Resúmenes del Gerente IA'
+        verbose_name = gettext_lazy('Resumen del Gerente IA')
+        verbose_name_plural = gettext_lazy('Resúmenes del Gerente IA')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -12064,64 +12065,64 @@ class CompanyAISummary(models.Model):
         Company,
         on_delete=models.CASCADE,
         related_name='ai_summaries',
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     period_start = models.DateField(
-        verbose_name='Inicio del período'
+        verbose_name=gettext_lazy('Inicio del período')
     )
     period_end = models.DateField(
-        verbose_name='Fin del período'
+        verbose_name=gettext_lazy('Fin del período')
     )
     executive_summary = models.TextField(
-        verbose_name='Resumen ejecutivo',
-        help_text='Resumen general de toda la empresa'
+        verbose_name=gettext_lazy('Resumen ejecutivo'),
+        help_text=gettext_lazy('Resumen general de toda la empresa')
     )
     key_metrics = models.TextField(
-        verbose_name='Métricas clave',
-        help_text='KPIs y métricas importantes'
+        verbose_name=gettext_lazy('Métricas clave'),
+        help_text=gettext_lazy('KPIs y métricas importantes')
     )
     department_highlights = models.TextField(
-        verbose_name='Destacados por departamento',
-        help_text='Logros por área/gerente'
+        verbose_name=gettext_lazy('Destacados por departamento'),
+        help_text=gettext_lazy('Logros por área/gerente')
     )
     challenges = models.TextField(
-        verbose_name='Desafíos identificados',
-        help_text='Principales retos de la empresa'
+        verbose_name=gettext_lazy('Desafíos identificados'),
+        help_text=gettext_lazy('Principales retos de la empresa')
     )
     strategic_recommendations = models.TextField(
-        verbose_name='Recomendaciones estratégicas',
-        help_text='Acciones recomendadas para la dirección'
+        verbose_name=gettext_lazy('Recomendaciones estratégicas'),
+        help_text=gettext_lazy('Acciones recomendadas para la dirección')
     )
     total_managers = models.IntegerField(
         default=0,
-        verbose_name='Total de gerentes'
+        verbose_name=gettext_lazy('Total de gerentes')
     )
     total_meetings = models.IntegerField(
         default=0,
-        verbose_name='Total de reuniones'
+        verbose_name=gettext_lazy('Total de reuniones')
     )
     total_participants = models.IntegerField(
         default=0,
-        verbose_name='Total de participantes'
+        verbose_name=gettext_lazy('Total de participantes')
     )
     tokens_used = models.IntegerField(
         default=0,
-        verbose_name='Tokens usados'
+        verbose_name=gettext_lazy('Tokens usados')
     )
     generated_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
-        verbose_name='Generado por'
+        verbose_name=gettext_lazy('Generado por')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
-        verbose_name = 'Resumen Empresarial IA'
-        verbose_name_plural = 'Resúmenes Empresariales IA'
+        verbose_name = gettext_lazy('Resumen Empresarial IA')
+        verbose_name_plural = gettext_lazy('Resúmenes Empresariales IA')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -12134,89 +12135,89 @@ class UserAIPerformanceEvaluation(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='ai_performance_evaluations',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
         related_name='user_evaluations',
-        verbose_name='Empresa',
+        verbose_name=gettext_lazy('Empresa'),
         null=True,
         blank=True
     )
     evaluation_date = models.DateField(
-        verbose_name='Fecha de evaluación'
+        verbose_name=gettext_lazy('Fecha de evaluación')
     )
     overall_score = models.IntegerField(
-        verbose_name='Puntuación general (1-100)',
-        help_text='Calificación automática generada por IA'
+        verbose_name=gettext_lazy('Puntuación general (1-100)'),
+        help_text=gettext_lazy('Calificación automática generada por IA')
     )
     productivity_score = models.IntegerField(
         default=0,
-        verbose_name='Productividad (1-100)'
+        verbose_name=gettext_lazy('Productividad (1-100)')
     )
     communication_score = models.IntegerField(
         default=0,
-        verbose_name='Comunicación (1-100)'
+        verbose_name=gettext_lazy('Comunicación (1-100)')
     )
     goal_achievement_score = models.IntegerField(
         default=0,
-        verbose_name='Logro de objetivos (1-100)'
+        verbose_name=gettext_lazy('Logro de objetivos (1-100)')
     )
     consistency_score = models.IntegerField(
         default=0,
-        verbose_name='Consistencia (1-100)'
+        verbose_name=gettext_lazy('Consistencia (1-100)')
     )
     improvement_areas = models.TextField(
-        verbose_name='Áreas de mejora',
-        help_text='Áreas identificadas que necesitan mejora'
+        verbose_name=gettext_lazy('Áreas de mejora'),
+        help_text=gettext_lazy('Áreas identificadas que necesitan mejora')
     )
     training_recommendations = models.TextField(
-        verbose_name='Recomendaciones de capacitación',
-        help_text='Cursos o entrenamientos sugeridos'
+        verbose_name=gettext_lazy('Recomendaciones de capacitación'),
+        help_text=gettext_lazy('Cursos o entrenamientos sugeridos')
     )
     strengths = models.TextField(
-        verbose_name='Fortalezas identificadas',
-        help_text='Puntos fuertes del usuario'
+        verbose_name=gettext_lazy('Fortalezas identificadas'),
+        help_text=gettext_lazy('Puntos fuertes del usuario')
     )
     meetings_analyzed = models.IntegerField(
         default=0,
-        verbose_name='Reuniones analizadas'
+        verbose_name=gettext_lazy('Reuniones analizadas')
     )
     period_start = models.DateField(
-        verbose_name='Inicio del período',
+        verbose_name=gettext_lazy('Inicio del período'),
         null=True,
         blank=True
     )
     period_end = models.DateField(
-        verbose_name='Fin del período',
+        verbose_name=gettext_lazy('Fin del período'),
         null=True,
         blank=True
     )
     ai_summary = models.TextField(
-        verbose_name='Resumen IA',
-        help_text='Resumen narrativo generado por IA',
+        verbose_name=gettext_lazy('Resumen IA'),
+        help_text=gettext_lazy('Resumen narrativo generado por IA'),
         blank=True
     )
     tokens_used = models.IntegerField(
         default=0,
-        verbose_name='Tokens usados'
+        verbose_name=gettext_lazy('Tokens usados')
     )
     generated_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         related_name='generated_evaluations',
-        verbose_name='Generado por'
+        verbose_name=gettext_lazy('Generado por')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
-        verbose_name = 'Evaluación de Desempeño IA'
-        verbose_name_plural = 'Evaluaciones de Desempeño IA'
+        verbose_name = gettext_lazy('Evaluación de Desempeño IA')
+        verbose_name_plural = gettext_lazy('Evaluaciones de Desempeño IA')
         ordering = ['-evaluation_date', '-created_at']
         unique_together = ['user', 'evaluation_date']
     
@@ -12252,148 +12253,148 @@ class WebsiteTracker(models.Model):
     # Información básica
     target = models.CharField(
         max_length=500,
-        verbose_name='URL o IP',
-        help_text='URL completa (https://ejemplo.com) o dirección IP'
+        verbose_name=gettext_lazy('URL o IP'),
+        help_text=gettext_lazy('URL completa (https://ejemplo.com) o dirección IP')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='website_trackers',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     
     # Información de conectividad
     is_active = models.BooleanField(
         default=False,
-        verbose_name='Está activo'
+        verbose_name=gettext_lazy('Está activo')
     )
     ping_response_time = models.FloatField(
         null=True,
         blank=True,
-        verbose_name='Tiempo de respuesta (ms)',
-        help_text='Tiempo de respuesta del ping en milisegundos'
+        verbose_name=gettext_lazy('Tiempo de respuesta (ms)'),
+        help_text=gettext_lazy('Tiempo de respuesta del ping en milisegundos')
     )
     
     # Información de DNS
     ip_address = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     cname_records = models.JSONField(
         default=list,
         blank=True,
-        verbose_name='Registros CNAME'
+        verbose_name=gettext_lazy('Registros CNAME')
     )
     txt_records = models.JSONField(
         default=list,
         blank=True,
-        verbose_name='Registros TXT'
+        verbose_name=gettext_lazy('Registros TXT')
     )
     mx_records = models.JSONField(
         default=list,
         blank=True,
-        verbose_name='Registros MX'
+        verbose_name=gettext_lazy('Registros MX')
     )
     ns_records = models.JSONField(
         default=list,
         blank=True,
-        verbose_name='Registros NS'
+        verbose_name=gettext_lazy('Registros NS')
     )
     
     # Información HTTP
     http_status_code = models.IntegerField(
         null=True,
         blank=True,
-        verbose_name='Código de estado HTTP'
+        verbose_name=gettext_lazy('Código de estado HTTP')
     )
     http_headers = models.JSONField(
         default=dict,
         blank=True,
-        verbose_name='Headers HTTP'
+        verbose_name=gettext_lazy('Headers HTTP')
     )
     redirect_url = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name='URL de redirección'
+        verbose_name=gettext_lazy('URL de redirección')
     )
     
     # Información del servidor
     server_software = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Software del servidor'
+        verbose_name=gettext_lazy('Software del servidor')
     )
     technologies = models.JSONField(
         default=list,
         blank=True,
-        verbose_name='Tecnologías detectadas',
-        help_text='Frameworks, CMS, librerías detectadas'
+        verbose_name=gettext_lazy('Tecnologías detectadas'),
+        help_text=gettext_lazy('Frameworks, CMS, librerías detectadas')
     )
     
     # Información de seguridad
     ssl_valid = models.BooleanField(
         null=True,
         blank=True,
-        verbose_name='SSL válido'
+        verbose_name=gettext_lazy('SSL válido')
     )
     ssl_issuer = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Emisor del certificado SSL'
+        verbose_name=gettext_lazy('Emisor del certificado SSL')
     )
     ssl_expiry_date = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de expiración SSL'
+        verbose_name=gettext_lazy('Fecha de expiración SSL')
     )
     
     # Información de contenido
     page_title = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name='Título de la página'
+        verbose_name=gettext_lazy('Título de la página')
     )
     meta_description = models.TextField(
         blank=True,
-        verbose_name='Meta descripción'
+        verbose_name=gettext_lazy('Meta descripción')
     )
     page_size = models.IntegerField(
         null=True,
         blank=True,
-        verbose_name='Tamaño de página (bytes)'
+        verbose_name=gettext_lazy('Tamaño de página (bytes)')
     )
     load_time = models.FloatField(
         null=True,
         blank=True,
-        verbose_name='Tiempo de carga (s)'
+        verbose_name=gettext_lazy('Tiempo de carga (s)')
     )
     
     # Información adicional
     whois_data = models.JSONField(
         default=dict,
         blank=True,
-        verbose_name='Datos WHOIS'
+        verbose_name=gettext_lazy('Datos WHOIS')
     )
     error_message = models.TextField(
         blank=True,
-        verbose_name='Mensaje de error',
-        help_text='Si ocurre algún error durante el rastreo'
+        verbose_name=gettext_lazy('Mensaje de error'),
+        help_text=gettext_lazy('Si ocurre algún error durante el rastreo')
     )
     
     # Metadatos
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de rastreo'
+        verbose_name=gettext_lazy('Fecha de rastreo')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
-        verbose_name = 'Rastreador Web'
-        verbose_name_plural = 'Rastreadores Web'
+        verbose_name = gettext_lazy('Rastreador Web')
+        verbose_name_plural = gettext_lazy('Rastreadores Web')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -12424,13 +12425,13 @@ class LegalContract(models.Model):
     # Información básica
     name = models.CharField(
         max_length=255,
-        verbose_name='Nombre del contrato',
-        help_text='Ej: Contrato de Soporte de Software'
+        verbose_name=gettext_lazy('Nombre del contrato'),
+        help_text=gettext_lazy('Ej: Contrato de Soporte de Software')
     )
     contract_type = models.CharField(
         max_length=100,
-        verbose_name='Tipo de contrato',
-        help_text='Ej: Soporte de software, Desarrollo, Consultoría, etc.'
+        verbose_name=gettext_lazy('Tipo de contrato'),
+        help_text=gettext_lazy('Ej: Soporte de software, Desarrollo, Consultoría, etc.')
     )
     
     # Partes del contrato
@@ -12438,52 +12439,52 @@ class LegalContract(models.Model):
         'Company',
         on_delete=models.CASCADE,
         related_name='legal_contracts_as_provider',
-        verbose_name='Empresa proveedora',
-        help_text='Tu empresa que provee el servicio'
+        verbose_name=gettext_lazy('Empresa proveedora'),
+        help_text=gettext_lazy('Tu empresa que provee el servicio')
     )
     client_company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
         related_name='legal_contracts_as_client',
-        verbose_name='Empresa cliente',
-        help_text='La empresa que contrata el servicio'
+        verbose_name=gettext_lazy('Empresa cliente'),
+        help_text=gettext_lazy('La empresa que contrata el servicio')
     )
     
     # Prompt y generación
     objective_prompt = models.TextField(
-        verbose_name='Objetivo del contrato',
-        help_text='Describe el objetivo y alcance del contrato. Ej: Soporte técnico 24/7 para sistema ERP'
+        verbose_name=gettext_lazy('Objetivo del contrato'),
+        help_text=gettext_lazy('Describe el objetivo y alcance del contrato. Ej: Soporte técnico 24/7 para sistema ERP')
     )
     generated_content = models.TextField(
         blank=True,
-        verbose_name='Contenido generado',
-        help_text='Contenido del contrato generado por IA'
+        verbose_name=gettext_lazy('Contenido generado'),
+        help_text=gettext_lazy('Contenido del contrato generado por IA')
     )
     
     # Detalles del contrato
     start_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de inicio'
+        verbose_name=gettext_lazy('Fecha de inicio')
     )
     end_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de finalización'
+        verbose_name=gettext_lazy('Fecha de finalización')
     )
     amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Monto del contrato',
-        help_text='Valor económico del contrato'
+        verbose_name=gettext_lazy('Monto del contrato'),
+        help_text=gettext_lazy('Valor económico del contrato')
     )
     currency = models.CharField(
         max_length=3,
         default='USD',
-        verbose_name='Moneda',
-        help_text='Código de moneda (USD, EUR, MXN, etc.)'
+        verbose_name=gettext_lazy('Moneda'),
+        help_text=gettext_lazy('Código de moneda (USD, EUR, MXN, etc.)')
     )
     
     # Control de acceso
@@ -12491,63 +12492,63 @@ class LegalContract(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='legal_contracts',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     public_token = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
         editable=False,
-        verbose_name='Token público',
-        help_text='Token único para compartir el contrato públicamente'
+        verbose_name=gettext_lazy('Token público'),
+        help_text=gettext_lazy('Token único para compartir el contrato públicamente')
     )
     is_public = models.BooleanField(
         default=False,
-        verbose_name='Público',
-        help_text='Si está marcado, el contrato se puede ver públicamente con el enlace'
+        verbose_name=gettext_lazy('Público'),
+        help_text=gettext_lazy('Si está marcado, el contrato se puede ver públicamente con el enlace')
     )
     
     # Estado
     status = models.CharField(
         max_length=20,
         choices=[
-            ('draft', 'Borrador'),
-            ('generated', 'Generado'),
-            ('sent', 'Enviado'),
-            ('signed', 'Firmado'),
-            ('active', 'Activo'),
-            ('completed', 'Completado'),
-            ('cancelled', 'Cancelado'),
+            ('draft', gettext_lazy('Borrador')),
+            ('generated', gettext_lazy('Generado')),
+            ('sent', gettext_lazy('Enviado')),
+            ('signed', gettext_lazy('Firmado')),
+            ('active', gettext_lazy('Activo')),
+            ('completed', gettext_lazy('Completado')),
+            ('cancelled', gettext_lazy('Cancelado')),
         ],
         default='draft',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     # Metadatos
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     generated_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de generación',
-        help_text='Cuándo se generó el contenido con IA'
+        verbose_name=gettext_lazy('Fecha de generación'),
+        help_text=gettext_lazy('Cuándo se generó el contenido con IA')
     )
     
     # Configuración adicional
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas internas',
-        help_text='Notas privadas sobre el contrato'
+        verbose_name=gettext_lazy('Notas internas'),
+        help_text=gettext_lazy('Notas privadas sobre el contrato')
     )
     
     class Meta:
-        verbose_name = 'Contrato Legal'
-        verbose_name_plural = 'Contratos Legales'
+        verbose_name = gettext_lazy('Contrato Legal')
+        verbose_name_plural = gettext_lazy('Contratos Legales')
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['public_token']),
@@ -12681,50 +12682,50 @@ class SupplierContractReview(models.Model):
     """Modelo para revisar contratos de proveedores con IA"""
     
     REVIEW_STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('reviewed', 'Revisado'),
-        ('approved', 'Aprobado'),
-        ('rejected', 'Rechazado'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('reviewed', gettext_lazy('Revisado')),
+        ('approved', gettext_lazy('Aprobado')),
+        ('rejected', gettext_lazy('Rechazado')),
     ]
     
     RISK_LEVEL_CHOICES = [
-        ('low', 'Bajo'),
-        ('medium', 'Medio'),
-        ('high', 'Alto'),
-        ('critical', 'Crítico'),
+        ('low', gettext_lazy('Bajo')),
+        ('medium', gettext_lazy('Medio')),
+        ('high', gettext_lazy('Alto')),
+        ('critical', gettext_lazy('Crítico')),
     ]
     
     # Información básica
-    name = models.CharField(max_length=200, verbose_name="Nombre del Contrato")
-    supplier_name = models.CharField(max_length=200, verbose_name="Nombre del Proveedor")
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='supplier_contract_reviews', verbose_name="Empresa Revisora")
+    name = models.CharField(max_length=200, verbose_name=gettext_lazy("Nombre del Contrato"))
+    supplier_name = models.CharField(max_length=200, verbose_name=gettext_lazy("Nombre del Proveedor"))
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='supplier_contract_reviews', verbose_name=gettext_lazy("Empresa Revisora"))
     
     # Contenido del contrato
-    contract_text = models.TextField(verbose_name="Texto del Contrato", help_text="Pegue aquí el texto del contrato o déjelo vacío si subirá un archivo")
-    contract_file = models.FileField(upload_to='contract_reviews/%Y/%m/', blank=True, null=True, verbose_name="Archivo del Contrato")
+    contract_text = models.TextField(verbose_name=gettext_lazy("Texto del Contrato"), help_text=gettext_lazy("Pegue aquí el texto del contrato o déjelo vacío si subirá un archivo"))
+    contract_file = models.FileField(upload_to='contract_reviews/%Y/%m/', blank=True, null=True, verbose_name=gettext_lazy("Archivo del Contrato"))
     
     # Análisis de IA
-    ai_review = models.TextField(blank=True, verbose_name="Revisión de IA", help_text="Análisis generado por IA")
-    risk_assessment = models.TextField(blank=True, verbose_name="Evaluación de Riesgos")
-    key_clauses = models.TextField(blank=True, verbose_name="Cláusulas Clave Identificadas")
-    recommendations = models.TextField(blank=True, verbose_name="Recomendaciones")
-    risk_level = models.CharField(max_length=20, choices=RISK_LEVEL_CHOICES, default='medium', verbose_name="Nivel de Riesgo")
+    ai_review = models.TextField(blank=True, verbose_name=gettext_lazy("Revisión de IA"), help_text=gettext_lazy("Análisis generado por IA"))
+    risk_assessment = models.TextField(blank=True, verbose_name=gettext_lazy("Evaluación de Riesgos"))
+    key_clauses = models.TextField(blank=True, verbose_name=gettext_lazy("Cláusulas Clave Identificadas"))
+    recommendations = models.TextField(blank=True, verbose_name=gettext_lazy("Recomendaciones"))
+    risk_level = models.CharField(max_length=20, choices=RISK_LEVEL_CHOICES, default='medium', verbose_name=gettext_lazy("Nivel de Riesgo"))
     
     # Estado y seguimiento
-    status = models.CharField(max_length=20, choices=REVIEW_STATUS_CHOICES, default='pending', verbose_name="Estado")
-    reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Revisión")
+    status = models.CharField(max_length=20, choices=REVIEW_STATUS_CHOICES, default='pending', verbose_name=gettext_lazy("Estado"))
+    reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name=gettext_lazy("Fecha de Revisión"))
     
     # Notas internas
-    internal_notes = models.TextField(blank=True, verbose_name="Notas Internas")
+    internal_notes = models.TextField(blank=True, verbose_name=gettext_lazy("Notas Internas"))
     
     # Metadatos
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuario")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=gettext_lazy("Usuario"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy("Fecha de Creación"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy("Última Actualización"))
     
     class Meta:
-        verbose_name = "Revisión de Contrato de Proveedor"
-        verbose_name_plural = "Revisiones de Contratos de Proveedores"
+        verbose_name = gettext_lazy("Revisión de Contrato de Proveedor")
+        verbose_name_plural = gettext_lazy("Revisiones de Contratos de Proveedores")
         ordering = ['-created_at']
     
     def __str__(self):
@@ -12900,30 +12901,30 @@ class PayPalPaymentLink(models.Model):
     """Modelo para enlaces de pago de PayPal"""
     
     STATUS_CHOICES = [
-        ('active', 'Activo'),
-        ('paid', 'Pagado'),
-        ('expired', 'Expirado'),
-        ('cancelled', 'Cancelado'),
+        ('active', gettext_lazy('Activo')),
+        ('paid', gettext_lazy('Pagado')),
+        ('expired', gettext_lazy('Expirado')),
+        ('cancelled', gettext_lazy('Cancelado')),
     ]
     
     # Información básica
-    product_name = models.CharField(max_length=200, verbose_name="Nombre del Producto/Servicio")
-    description = models.TextField(blank=True, verbose_name="Descripción")
-    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Importe (EUR)")
+    product_name = models.CharField(max_length=200, verbose_name=gettext_lazy("Nombre del Producto/Servicio"))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy("Descripción"))
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=gettext_lazy("Importe (EUR)"))
     
     # Archivo adjunto
     attachment = models.FileField(
         upload_to='paypal_attachments/%Y/%m/',
         blank=True,
         null=True,
-        verbose_name="Archivo Adjunto",
-        help_text="Archivo que el cliente podrá descargar después del pago"
+        verbose_name=gettext_lazy("Archivo Adjunto"),
+        help_text=gettext_lazy("Archivo que el cliente podrá descargar después del pago")
     )
     attachment_name = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name="Nombre del archivo",
-        help_text="Nombre descriptivo del archivo adjunto"
+        verbose_name=gettext_lazy("Nombre del archivo"),
+        help_text=gettext_lazy("Nombre descriptivo del archivo adjunto")
     )
     
     # URL y token
@@ -12931,60 +12932,60 @@ class PayPalPaymentLink(models.Model):
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name="Token Público"
+        verbose_name=gettext_lazy("Token Público")
     )
-    public_url = models.URLField(blank=True, verbose_name="URL Pública")
+    public_url = models.URLField(blank=True, verbose_name=gettext_lazy("URL Pública"))
     
     # Información del pago
-    paypal_order_id = models.CharField(max_length=200, blank=True, verbose_name="ID de Orden PayPal")
-    paypal_payer_id = models.CharField(max_length=200, blank=True, verbose_name="ID del Pagador")
-    paypal_payer_email = models.EmailField(blank=True, verbose_name="Email del Pagador")
-    paypal_payer_name = models.CharField(max_length=200, blank=True, verbose_name="Nombre del Pagador")
-    paypal_payment_status = models.CharField(max_length=50, blank=True, verbose_name="Estado del Pago PayPal")
-    payment_date = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Pago")
+    paypal_order_id = models.CharField(max_length=200, blank=True, verbose_name=gettext_lazy("ID de Orden PayPal"))
+    paypal_payer_id = models.CharField(max_length=200, blank=True, verbose_name=gettext_lazy("ID del Pagador"))
+    paypal_payer_email = models.EmailField(blank=True, verbose_name=gettext_lazy("Email del Pagador"))
+    paypal_payer_name = models.CharField(max_length=200, blank=True, verbose_name=gettext_lazy("Nombre del Pagador"))
+    paypal_payment_status = models.CharField(max_length=50, blank=True, verbose_name=gettext_lazy("Estado del Pago PayPal"))
+    payment_date = models.DateTimeField(null=True, blank=True, verbose_name=gettext_lazy("Fecha de Pago"))
     
     # Estado y seguimiento
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='active',
-        verbose_name="Estado"
+        verbose_name=gettext_lazy("Estado")
     )
-    download_count = models.IntegerField(default=0, verbose_name="Número de Descargas")
+    download_count = models.IntegerField(default=0, verbose_name=gettext_lazy("Número de Descargas"))
     
     # Token temporal de descarga (válido por 72 horas después del pago)
     download_token = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name="Token de Descarga Temporal"
+        verbose_name=gettext_lazy("Token de Descarga Temporal")
     )
     download_token_expires_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name="Fecha de Expiración del Token de Descarga"
+        verbose_name=gettext_lazy("Fecha de Expiración del Token de Descarga")
     )
     
     # Metadatos
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuario Creador")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=gettext_lazy("Usuario Creador"))
     company = models.ForeignKey(
         Company,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name="Empresa",
-        help_text="Empresa asociada (opcional)"
+        verbose_name=gettext_lazy("Empresa"),
+        help_text=gettext_lazy("Empresa asociada (opcional)")
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
-    expires_at = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Expiración")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy("Fecha de Creación"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy("Última Actualización"))
+    expires_at = models.DateTimeField(null=True, blank=True, verbose_name=gettext_lazy("Fecha de Expiración"))
     
     # Notas internas
-    notes = models.TextField(blank=True, verbose_name="Notas Internas")
+    notes = models.TextField(blank=True, verbose_name=gettext_lazy("Notas Internas"))
     
     class Meta:
-        verbose_name = "Enlace de Pago PayPal"
-        verbose_name_plural = "Enlaces de Pago PayPal"
+        verbose_name = gettext_lazy("Enlace de Pago PayPal")
+        verbose_name_plural = gettext_lazy("Enlaces de Pago PayPal")
         ordering = ['-created_at']
     
     def __str__(self):
@@ -13100,10 +13101,10 @@ class PayPalOrder(models.Model):
     """Modelo para órdenes individuales de pago (cada compra genera una orden)"""
     
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('paid', 'Pagado'),
-        ('failed', 'Fallido'),
-        ('refunded', 'Reembolsado'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('paid', gettext_lazy('Pagado')),
+        ('failed', gettext_lazy('Fallido')),
+        ('refunded', gettext_lazy('Reembolsado')),
     ]
     
     # Relación con el enlace de pago original (plantilla)
@@ -13111,8 +13112,8 @@ class PayPalOrder(models.Model):
         PayPalPaymentLink,
         on_delete=models.CASCADE,
         related_name='orders',
-        verbose_name='Enlace de Pago',
-        help_text='Enlace de pago desde el cual se generó esta orden'
+        verbose_name=gettext_lazy('Enlace de Pago'),
+        help_text=gettext_lazy('Enlace de pago desde el cual se generó esta orden')
     )
     
     # Token único para esta orden
@@ -13120,32 +13121,32 @@ class PayPalOrder(models.Model):
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name='Token de Orden',
-        help_text='Token único para acceder a esta orden específica'
+        verbose_name=gettext_lazy('Token de Orden'),
+        help_text=gettext_lazy('Token único para acceder a esta orden específica')
     )
     
     # Información del producto (copiada del enlace al momento de la compra)
-    product_name = models.CharField(max_length=200, verbose_name='Producto')
-    description = models.TextField(blank=True, verbose_name='Descripción')
-    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Importe (EUR)')
+    product_name = models.CharField(max_length=200, verbose_name=gettext_lazy('Producto'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=gettext_lazy('Importe (EUR)'))
     
     # Información del pago
     paypal_order_id = models.CharField(
         max_length=200,
         unique=True,
-        verbose_name='ID de Orden PayPal'
+        verbose_name=gettext_lazy('ID de Orden PayPal')
     )
-    paypal_payer_id = models.CharField(max_length=200, blank=True, verbose_name='ID del Pagador')
-    paypal_payer_email = models.EmailField(blank=True, verbose_name='Email del Pagador')
-    paypal_payer_name = models.CharField(max_length=200, blank=True, verbose_name='Nombre del Pagador')
-    payment_date = models.DateTimeField(null=True, blank=True, verbose_name='Fecha de Pago')
+    paypal_payer_id = models.CharField(max_length=200, blank=True, verbose_name=gettext_lazy('ID del Pagador'))
+    paypal_payer_email = models.EmailField(blank=True, verbose_name=gettext_lazy('Email del Pagador'))
+    paypal_payer_name = models.CharField(max_length=200, blank=True, verbose_name=gettext_lazy('Nombre del Pagador'))
+    payment_date = models.DateTimeField(null=True, blank=True, verbose_name=gettext_lazy('Fecha de Pago'))
     
     # Estado
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     # Token de descarga temporal (válido 72 horas)
@@ -13153,22 +13154,22 @@ class PayPalOrder(models.Model):
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name='Token de Descarga'
+        verbose_name=gettext_lazy('Token de Descarga')
     )
     download_token_expires_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Expiración Token de Descarga'
+        verbose_name=gettext_lazy('Expiración Token de Descarga')
     )
-    download_count = models.IntegerField(default=0, verbose_name='Número de Descargas')
+    download_count = models.IntegerField(default=0, verbose_name=gettext_lazy('Número de Descargas'))
     
     # Metadatos
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última Actualización')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de Creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última Actualización'))
     
     class Meta:
-        verbose_name = 'Orden de Pago PayPal'
-        verbose_name_plural = 'Órdenes de Pago PayPal'
+        verbose_name = gettext_lazy('Orden de Pago PayPal')
+        verbose_name_plural = gettext_lazy('Órdenes de Pago PayPal')
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['paypal_order_id']),
@@ -13258,40 +13259,40 @@ class TodoItem(models.Model):
         Ticket,
         on_delete=models.CASCADE,
         related_name='todo_items',
-        verbose_name='Ticket'
+        verbose_name=gettext_lazy('Ticket')
     )
     text = models.CharField(
         max_length=500,
-        verbose_name='Tarea'
+        verbose_name=gettext_lazy('Tarea')
     )
     is_completed = models.BooleanField(
         default=False,
-        verbose_name='Completada'
+        verbose_name=gettext_lazy('Completada')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='todo_items_created',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     completed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de completado'
+        verbose_name=gettext_lazy('Fecha de completado')
     )
     order = models.IntegerField(
         default=0,
-        verbose_name='Orden'
+        verbose_name=gettext_lazy('Orden')
     )
     
     class Meta:
         ordering = ['order', 'created_at']
-        verbose_name = 'Item de TODO'
-        verbose_name_plural = 'Items de TODO'
+        verbose_name = gettext_lazy('Item de TODO')
+        verbose_name_plural = gettext_lazy('Items de TODO')
     
     def __str__(self):
         status = "✓" if self.is_completed else "○"
@@ -13311,37 +13312,37 @@ class AIBook(models.Model):
     """Modelo para libros generados con IA"""
     
     STATUS_CHOICES = [
-        ('draft', 'Borrador'),
-        ('chapters_proposed', 'Capítulos Propuestos'),
-        ('in_progress', 'En Progreso'),
-        ('completed', 'Completado'),
+        ('draft', gettext_lazy('Borrador')),
+        ('chapters_proposed', gettext_lazy('Capítulos Propuestos')),
+        ('in_progress', gettext_lazy('En Progreso')),
+        ('completed', gettext_lazy('Completado')),
     ]
     
     title = models.CharField(
         max_length=500,
-        verbose_name='Título del Libro'
+        verbose_name=gettext_lazy('Título del Libro')
     )
     author = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Autor',
-        help_text='Nombre del autor del libro'
+        verbose_name=gettext_lazy('Autor'),
+        help_text=gettext_lazy('Nombre del autor del libro')
     )
     topic = models.TextField(
-        verbose_name='Tema/Descripción',
-        help_text='Describe de qué quieres que trate el libro'
+        verbose_name=gettext_lazy('Tema/Descripción'),
+        help_text=gettext_lazy('Describe de qué quieres que trate el libro')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='draft',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='ai_books',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     company = models.ForeignKey(
         Company,
@@ -13349,21 +13350,21 @@ class AIBook(models.Model):
         null=True,
         blank=True,
         related_name='ai_books',
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Libro IA'
-        verbose_name_plural = 'Libros IA'
+        verbose_name = gettext_lazy('Libro IA')
+        verbose_name_plural = gettext_lazy('Libros IA')
     
     def __str__(self):
         return self.title
@@ -13405,59 +13406,59 @@ class AIBookChapter(models.Model):
     """Modelo para capítulos de libros generados con IA"""
     
     STATUS_CHOICES = [
-        ('proposed', 'Propuesto'),
-        ('summary_created', 'Resumen Creado'),
-        ('content_generated', 'Contenido Generado'),
-        ('completed', 'Completado'),
+        ('proposed', gettext_lazy('Propuesto')),
+        ('summary_created', gettext_lazy('Resumen Creado')),
+        ('content_generated', gettext_lazy('Contenido Generado')),
+        ('completed', gettext_lazy('Completado')),
     ]
     
     book = models.ForeignKey(
         AIBook,
         on_delete=models.CASCADE,
         related_name='chapters',
-        verbose_name='Libro'
+        verbose_name=gettext_lazy('Libro')
     )
     title = models.CharField(
         max_length=500,
-        verbose_name='Título del Capítulo'
+        verbose_name=gettext_lazy('Título del Capítulo')
     )
     order = models.IntegerField(
         default=0,
-        verbose_name='Orden'
+        verbose_name=gettext_lazy('Orden')
     )
     summary = models.TextField(
         blank=True,
-        verbose_name='Resumen del Capítulo',
-        help_text='Resumen breve de lo que tratará el capítulo'
+        verbose_name=gettext_lazy('Resumen del Capítulo'),
+        help_text=gettext_lazy('Resumen breve de lo que tratará el capítulo')
     )
     content = models.TextField(
         blank=True,
-        verbose_name='Contenido del Capítulo',
-        help_text='Contenido completo en texto plano (sin formato Markdown)'
+        verbose_name=gettext_lazy('Contenido del Capítulo'),
+        help_text=gettext_lazy('Contenido completo en texto plano (sin formato Markdown)')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='proposed',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     word_count = models.IntegerField(
         default=0,
-        verbose_name='Conteo de Palabras'
+        verbose_name=gettext_lazy('Conteo de Palabras')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['book', 'order']
-        verbose_name = 'Capítulo de Libro IA'
-        verbose_name_plural = 'Capítulos de Libros IA'
+        verbose_name = gettext_lazy('Capítulo de Libro IA')
+        verbose_name_plural = gettext_lazy('Capítulos de Libros IA')
     
     def __str__(self):
         return f"{self.book.title} - Cap. {self.order}: {self.title}"
@@ -13491,43 +13492,43 @@ class AIArticleProject(models.Model):
     """Modelo para proyectos de generación de artículos con IA"""
     
     STATUS_CHOICES = [
-        ('draft', 'Borrador'),
-        ('articles_proposed', 'Artículos Propuestos'),
-        ('in_progress', 'En Progreso'),
-        ('completed', 'Completado'),
+        ('draft', gettext_lazy('Borrador')),
+        ('articles_proposed', gettext_lazy('Artículos Propuestos')),
+        ('in_progress', gettext_lazy('En Progreso')),
+        ('completed', gettext_lazy('Completado')),
     ]
     
     FORMAT_CHOICES = [
-        ('plain', 'Texto Plano'),
-        ('markdown', 'Markdown'),
+        ('plain', gettext_lazy('Texto Plano')),
+        ('markdown', gettext_lazy('Markdown')),
     ]
     
     title = models.CharField(
         max_length=500,
-        verbose_name='Título del Proyecto'
+        verbose_name=gettext_lazy('Título del Proyecto')
     )
     main_topic = models.TextField(
-        verbose_name='Tema Principal',
-        help_text='Describe el tema principal sobre el cual quieres generar artículos'
+        verbose_name=gettext_lazy('Tema Principal'),
+        help_text=gettext_lazy('Describe el tema principal sobre el cual quieres generar artículos')
     )
     content_format = models.CharField(
         max_length=20,
         choices=FORMAT_CHOICES,
         default='plain',
-        verbose_name='Formato de Contenido',
-        help_text='Formato en el que se generará el contenido de los artículos'
+        verbose_name=gettext_lazy('Formato de Contenido'),
+        help_text=gettext_lazy('Formato en el que se generará el contenido de los artículos')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='draft',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='ai_article_projects',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     company = models.ForeignKey(
         Company,
@@ -13535,21 +13536,21 @@ class AIArticleProject(models.Model):
         null=True,
         blank=True,
         related_name='ai_article_projects',
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Proyecto de Artículos IA'
-        verbose_name_plural = 'Proyectos de Artículos IA'
+        verbose_name = gettext_lazy('Proyecto de Artículos IA')
+        verbose_name_plural = gettext_lazy('Proyectos de Artículos IA')
     
     def __str__(self):
         return self.title
@@ -13591,59 +13592,59 @@ class AIArticle(models.Model):
     """Modelo para artículos individuales generados con IA"""
     
     STATUS_CHOICES = [
-        ('proposed', 'Propuesto'),
-        ('content_generated', 'Contenido Generado'),
-        ('completed', 'Completado'),
+        ('proposed', gettext_lazy('Propuesto')),
+        ('content_generated', gettext_lazy('Contenido Generado')),
+        ('completed', gettext_lazy('Completado')),
     ]
     
     project = models.ForeignKey(
         AIArticleProject,
         on_delete=models.CASCADE,
         related_name='articles',
-        verbose_name='Proyecto'
+        verbose_name=gettext_lazy('Proyecto')
     )
     title = models.CharField(
         max_length=500,
-        verbose_name='Título del Artículo'
+        verbose_name=gettext_lazy('Título del Artículo')
     )
     keywords = models.CharField(
         max_length=1000,
         blank=True,
-        verbose_name='Palabras Clave',
-        help_text='Palabras clave separadas por comas'
+        verbose_name=gettext_lazy('Palabras Clave'),
+        help_text=gettext_lazy('Palabras clave separadas por comas')
     )
     content = models.TextField(
         blank=True,
-        verbose_name='Contenido del Artículo',
-        help_text='Contenido completo en texto plano'
+        verbose_name=gettext_lazy('Contenido del Artículo'),
+        help_text=gettext_lazy('Contenido completo en texto plano')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='proposed',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     word_count = models.IntegerField(
         default=0,
-        verbose_name='Conteo de Palabras'
+        verbose_name=gettext_lazy('Conteo de Palabras')
     )
     order = models.IntegerField(
         default=0,
-        verbose_name='Orden'
+        verbose_name=gettext_lazy('Orden')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['project', 'order']
-        verbose_name = 'Artículo IA'
-        verbose_name_plural = 'Artículos IA'
+        verbose_name = gettext_lazy('Artículo IA')
+        verbose_name_plural = gettext_lazy('Artículos IA')
     
     def __str__(self):
         return f"{self.project.title} - {self.title}"
@@ -13674,61 +13675,61 @@ class EmployeeRequest(models.Model):
     """Modelo para las solicitudes de empleados"""
     
     STATUS_CHOICES = [
-        ('draft', 'Borrador'),
-        ('approved', 'Aprobada'),
-        ('rejected', 'Rechazada'),
+        ('draft', gettext_lazy('Borrador')),
+        ('approved', gettext_lazy('Aprobada')),
+        ('rejected', gettext_lazy('Rechazada')),
     ]
     
     sequence = models.PositiveIntegerField(
-        verbose_name='Secuencia',
-        help_text='Número de secuencia de la solicitud'
+        verbose_name=gettext_lazy('Secuencia'),
+        help_text=gettext_lazy('Número de secuencia de la solicitud')
     )
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Título de la solicitud'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Título de la solicitud')
     )
     
     text = models.TextField(
-        verbose_name='Texto',
-        help_text='Descripción detallada de la solicitud'
+        verbose_name=gettext_lazy('Texto'),
+        help_text=gettext_lazy('Descripción detallada de la solicitud')
     )
     
     date = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha',
-        help_text='Fecha de creación de la solicitud'
+        verbose_name=gettext_lazy('Fecha'),
+        help_text=gettext_lazy('Fecha de creación de la solicitud')
     )
     
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='draft',
-        verbose_name='Estado',
-        help_text='Estado actual de la solicitud'
+        verbose_name=gettext_lazy('Estado'),
+        help_text=gettext_lazy('Estado actual de la solicitud')
     )
     
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='employee_requests',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Fecha de Actualización'
+        verbose_name=gettext_lazy('Fecha de Actualización')
     )
     
     class Meta:
-        verbose_name = 'Solicitud de Empleado'
-        verbose_name_plural = 'Solicitudes de Empleados'
+        verbose_name = gettext_lazy('Solicitud de Empleado')
+        verbose_name_plural = gettext_lazy('Solicitudes de Empleados')
         ordering = ['-sequence', '-created_at']
         unique_together = ['sequence']
     
@@ -13766,106 +13767,106 @@ class InternalAgreement(models.Model):
     """Modelo para gestionar acuerdos internos de la empresa"""
     
     STATUS_CHOICES = [
-        ('draft', 'Borrador'),
-        ('review', 'En Revisión'),
-        ('approved', 'Aprobado'),
-        ('rejected', 'Rechazado'),
-        ('active', 'Activo'),
-        ('expired', 'Expirado'),
-        ('cancelled', 'Cancelado'),
+        ('draft', gettext_lazy('Borrador')),
+        ('review', gettext_lazy('En Revisión')),
+        ('approved', gettext_lazy('Aprobado')),
+        ('rejected', gettext_lazy('Rechazado')),
+        ('active', gettext_lazy('Activo')),
+        ('expired', gettext_lazy('Expirado')),
+        ('cancelled', gettext_lazy('Cancelado')),
     ]
     
     TYPE_CHOICES = [
-        ('policy', 'Política'),
-        ('procedure', 'Procedimiento'),
-        ('contract', 'Contrato'),
-        ('guideline', 'Directriz'),
-        ('agreement', 'Acuerdo'),
-        ('regulation', 'Reglamento'),
+        ('policy', gettext_lazy('Política')),
+        ('procedure', gettext_lazy('Procedimiento')),
+        ('contract', gettext_lazy('Contrato')),
+        ('guideline', gettext_lazy('Directriz')),
+        ('agreement', gettext_lazy('Acuerdo')),
+        ('regulation', gettext_lazy('Reglamento')),
     ]
     
     PRIORITY_CHOICES = [
-        ('low', 'Baja'),
-        ('medium', 'Media'),
-        ('high', 'Alta'),
-        ('critical', 'Crítica'),
+        ('low', gettext_lazy('Baja')),
+        ('medium', gettext_lazy('Media')),
+        ('high', gettext_lazy('Alta')),
+        ('critical', gettext_lazy('Crítica')),
     ]
     
     sequence = models.PositiveIntegerField(
         unique=True,
-        verbose_name='Número de Secuencia',
-        help_text='Número único auto-generado'
+        verbose_name=gettext_lazy('Número de Secuencia'),
+        help_text=gettext_lazy('Número único auto-generado')
     )
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Título descriptivo del acuerdo interno'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Título descriptivo del acuerdo interno')
     )
     
     description = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción detallada del acuerdo interno'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción detallada del acuerdo interno')
     )
     
     content = models.TextField(
-        verbose_name='Contenido',
-        help_text='Contenido completo del acuerdo interno'
+        verbose_name=gettext_lazy('Contenido'),
+        help_text=gettext_lazy('Contenido completo del acuerdo interno')
     )
     
     agreement_type = models.CharField(
         max_length=20,
         choices=TYPE_CHOICES,
         default='agreement',
-        verbose_name='Tipo de Acuerdo'
+        verbose_name=gettext_lazy('Tipo de Acuerdo')
     )
     
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='draft',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     priority = models.CharField(
         max_length=20,
         choices=PRIORITY_CHOICES,
         default='medium',
-        verbose_name='Prioridad'
+        verbose_name=gettext_lazy('Prioridad')
     )
     
     effective_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Vigencia',
-        help_text='Fecha en que el acuerdo entra en vigencia'
+        verbose_name=gettext_lazy('Fecha de Vigencia'),
+        help_text=gettext_lazy('Fecha en que el acuerdo entra en vigencia')
     )
     
     expiration_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Expiración',
-        help_text='Fecha en que el acuerdo expira (opcional)'
+        verbose_name=gettext_lazy('Fecha de Expiración'),
+        help_text=gettext_lazy('Fecha en que el acuerdo expira (opcional)')
     )
     
     department = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Departamento',
-        help_text='Departamento al que aplica el acuerdo'
+        verbose_name=gettext_lazy('Departamento'),
+        help_text=gettext_lazy('Departamento al que aplica el acuerdo')
     )
     
     applies_to_all = models.BooleanField(
         default=True,
-        verbose_name='Aplica a Todos',
-        help_text='Si el acuerdo aplica a todos los empleados'
+        verbose_name=gettext_lazy('Aplica a Todos'),
+        help_text=gettext_lazy('Si el acuerdo aplica a todos los empleados')
     )
     
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='internal_agreements_created',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     approved_by = models.ForeignKey(
@@ -13874,13 +13875,13 @@ class InternalAgreement(models.Model):
         null=True,
         blank=True,
         related_name='internal_agreements_approved',
-        verbose_name='Aprobado por'
+        verbose_name=gettext_lazy('Aprobado por')
     )
     
     approved_date = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Aprobación'
+        verbose_name=gettext_lazy('Fecha de Aprobación')
     )
     
     # Campos para firmantes del acuerdo
@@ -13890,15 +13891,15 @@ class InternalAgreement(models.Model):
         null=True,
         blank=True,
         related_name='internal_agreements_signed_1',
-        verbose_name='Primer Firmante',
-        help_text='Usuario que firma el acuerdo como primer firmante'
+        verbose_name=gettext_lazy('Primer Firmante'),
+        help_text=gettext_lazy('Usuario que firma el acuerdo como primer firmante')
     )
     
     signer_1_date = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Firma 1',
-        help_text='Fecha en que el primer firmante firmó el acuerdo'
+        verbose_name=gettext_lazy('Fecha de Firma 1'),
+        help_text=gettext_lazy('Fecha en que el primer firmante firmó el acuerdo')
     )
     
     signer_2 = models.ForeignKey(
@@ -13907,45 +13908,45 @@ class InternalAgreement(models.Model):
         null=True,
         blank=True,
         related_name='internal_agreements_signed_2',
-        verbose_name='Segundo Firmante',
-        help_text='Usuario que firma el acuerdo como segundo firmante'
+        verbose_name=gettext_lazy('Segundo Firmante'),
+        help_text=gettext_lazy('Usuario que firma el acuerdo como segundo firmante')
     )
     
     signer_2_date = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Firma 2',
-        help_text='Fecha en que el segundo firmante firmó el acuerdo'
+        verbose_name=gettext_lazy('Fecha de Firma 2'),
+        help_text=gettext_lazy('Fecha en que el segundo firmante firmó el acuerdo')
     )
     
     tags = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name='Etiquetas',
-        help_text='Etiquetas separadas por comas para facilitar búsquedas'
+        verbose_name=gettext_lazy('Etiquetas'),
+        help_text=gettext_lazy('Etiquetas separadas por comas para facilitar búsquedas')
     )
     
     version = models.CharField(
         max_length=20,
         default='1.0',
-        verbose_name='Versión',
-        help_text='Versión del acuerdo'
+        verbose_name=gettext_lazy('Versión'),
+        help_text=gettext_lazy('Versión del acuerdo')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última Actualización'
+        verbose_name=gettext_lazy('Última Actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Acuerdo Interno'
-        verbose_name_plural = 'Acuerdos Internos'
+        verbose_name = gettext_lazy('Acuerdo Interno')
+        verbose_name_plural = gettext_lazy('Acuerdos Internos')
         indexes = [
             models.Index(fields=['status', 'agreement_type']),
             models.Index(fields=['effective_date', 'expiration_date']),
@@ -14125,17 +14126,17 @@ class InternalAgreement(models.Model):
 
 class TrainingPlan(models.Model):
     """Plan de Capacitación"""
-    sequence = models.PositiveIntegerField(unique=True, verbose_name='Secuencia')
-    title = models.CharField(max_length=200, verbose_name='Título del Plan')
-    description = models.TextField(blank=True, verbose_name='Descripción')
-    is_active = models.BooleanField(default=True, verbose_name='Activo')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Fecha de actualización')
-    created_by = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, verbose_name='Creado por')
+    sequence = models.PositiveIntegerField(unique=True, verbose_name=gettext_lazy('Secuencia'))
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy('Título del Plan'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy('Activo'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Fecha de actualización'))
+    created_by = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, verbose_name=gettext_lazy('Creado por'))
 
     class Meta:
-        verbose_name = 'Plan de Capacitación'
-        verbose_name_plural = 'Planes de Capacitación'
+        verbose_name = gettext_lazy('Plan de Capacitación')
+        verbose_name_plural = gettext_lazy('Planes de Capacitación')
         ordering = ['sequence']
 
     def __str__(self):
@@ -14171,18 +14172,18 @@ class TrainingPlan(models.Model):
 
 class TrainingLink(models.Model):
     """Enlace de Capacitación"""
-    plan = models.ForeignKey(TrainingPlan, on_delete=models.CASCADE, related_name='links', verbose_name='Plan de Capacitación')
-    title = models.CharField(max_length=200, verbose_name='Título del Enlace')
-    url = models.URLField(verbose_name='URL')
-    description = models.TextField(blank=True, verbose_name='Descripción')
-    order = models.PositiveIntegerField(default=0, verbose_name='Orden')
-    is_required = models.BooleanField(default=True, verbose_name='Requerido')
-    estimated_hours = models.PositiveIntegerField(default=1, verbose_name='Horas estimadas')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+    plan = models.ForeignKey(TrainingPlan, on_delete=models.CASCADE, related_name='links', verbose_name=gettext_lazy('Plan de Capacitación'))
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy('Título del Enlace'))
+    url = models.URLField(verbose_name=gettext_lazy('URL'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
+    order = models.PositiveIntegerField(default=0, verbose_name=gettext_lazy('Orden'))
+    is_required = models.BooleanField(default=True, verbose_name=gettext_lazy('Requerido'))
+    estimated_hours = models.PositiveIntegerField(default=1, verbose_name=gettext_lazy('Horas estimadas'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de creación'))
 
     class Meta:
-        verbose_name = 'Enlace de Capacitación'
-        verbose_name_plural = 'Enlaces de Capacitación'
+        verbose_name = gettext_lazy('Enlace de Capacitación')
+        verbose_name_plural = gettext_lazy('Enlaces de Capacitación')
         ordering = ['order', 'id']
 
     def __str__(self):
@@ -14196,21 +14197,21 @@ class TrainingLink(models.Model):
 class EmployeeTrainingProgress(models.Model):
     """Progreso de Capacitación por Empleado"""
     STATUS_CHOICES = [
-        ('not_started', 'No iniciado'),
-        ('in_progress', 'En progreso'),
-        ('completed', 'Completado'),
+        ('not_started', gettext_lazy('No iniciado')),
+        ('in_progress', gettext_lazy('En progreso')),
+        ('completed', gettext_lazy('Completado')),
     ]
     
-    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='training_progress', verbose_name='Empleado')
-    plan = models.ForeignKey(TrainingPlan, on_delete=models.CASCADE, related_name='employee_progress', verbose_name='Plan de Capacitación')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='not_started', verbose_name='Estado')
-    started_at = models.DateTimeField(blank=True, null=True, verbose_name='Iniciado el')
-    completed_at = models.DateTimeField(blank=True, null=True, verbose_name='Completado el')
-    notes = models.TextField(blank=True, verbose_name='Notas')
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='training_progress', verbose_name=gettext_lazy('Empleado'))
+    plan = models.ForeignKey(TrainingPlan, on_delete=models.CASCADE, related_name='employee_progress', verbose_name=gettext_lazy('Plan de Capacitación'))
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='not_started', verbose_name=gettext_lazy('Estado'))
+    started_at = models.DateTimeField(blank=True, null=True, verbose_name=gettext_lazy('Iniciado el'))
+    completed_at = models.DateTimeField(blank=True, null=True, verbose_name=gettext_lazy('Completado el'))
+    notes = models.TextField(blank=True, verbose_name=gettext_lazy('Notas'))
 
     class Meta:
-        verbose_name = 'Progreso de Capacitación'
-        verbose_name_plural = 'Progreso de Capacitaciones'
+        verbose_name = gettext_lazy('Progreso de Capacitación')
+        verbose_name_plural = gettext_lazy('Progreso de Capacitaciones')
         unique_together = ('employee', 'plan')
 
     def __str__(self):
@@ -14250,16 +14251,16 @@ class EmployeeTrainingProgress(models.Model):
 
 class EmployeeLinkProgress(models.Model):
     """Progreso individual de cada enlace por empleado"""
-    employee = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Empleado')
-    link = models.ForeignKey(TrainingLink, on_delete=models.CASCADE, related_name='employee_progress', verbose_name='Enlace')
-    training_progress = models.ForeignKey(EmployeeTrainingProgress, on_delete=models.CASCADE, related_name='completed_links', verbose_name='Progreso de Capacitación')
-    completed_at = models.DateTimeField(auto_now_add=True, verbose_name='Completado el')
-    time_spent_hours = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name='Tiempo invertido (horas)')
-    notes = models.TextField(blank=True, verbose_name='Notas')
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=gettext_lazy('Empleado'))
+    link = models.ForeignKey(TrainingLink, on_delete=models.CASCADE, related_name='employee_progress', verbose_name=gettext_lazy('Enlace'))
+    training_progress = models.ForeignKey(EmployeeTrainingProgress, on_delete=models.CASCADE, related_name='completed_links', verbose_name=gettext_lazy('Progreso de Capacitación'))
+    completed_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Completado el'))
+    time_spent_hours = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name=gettext_lazy('Tiempo invertido (horas)'))
+    notes = models.TextField(blank=True, verbose_name=gettext_lazy('Notas'))
 
     class Meta:
-        verbose_name = 'Progreso de Enlace'
-        verbose_name_plural = 'Progreso de Enlaces'
+        verbose_name = gettext_lazy('Progreso de Enlace')
+        verbose_name_plural = gettext_lazy('Progreso de Enlaces')
         unique_together = ('employee', 'link')
 
     def __str__(self):
@@ -14278,37 +14279,37 @@ class AIRecommendation(models.Model):
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Título descriptivo de la recomendación'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Título descriptivo de la recomendación')
     )
     context_text = models.TextField(
-        verbose_name='Texto de Contexto',
-        help_text='Contexto base que usará la IA para generar respuestas'
+        verbose_name=gettext_lazy('Texto de Contexto'),
+        help_text=gettext_lazy('Contexto base que usará la IA para generar respuestas')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activa',
-        help_text='Si está activa, podrá ser usada para generar respuestas'
+        verbose_name=gettext_lazy('Activa'),
+        help_text=gettext_lazy('Si está activa, podrá ser usada para generar respuestas')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_recommendations',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Recomendación IA'
-        verbose_name_plural = 'Recomendaciones IA'
+        verbose_name = gettext_lazy('Recomendación IA')
+        verbose_name_plural = gettext_lazy('Recomendaciones IA')
     
     def __str__(self):
         return self.title
@@ -14325,41 +14326,41 @@ class AIRecommendationUsage(models.Model):
         AIRecommendation,
         on_delete=models.CASCADE,
         related_name='usage_logs',
-        verbose_name='Recomendación'
+        verbose_name=gettext_lazy('Recomendación')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='ai_recommendation_usage',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     client_case = models.TextField(
-        verbose_name='Caso del Cliente',
-        help_text='Caso específico o situación del cliente enviada para análisis'
+        verbose_name=gettext_lazy('Caso del Cliente'),
+        help_text=gettext_lazy('Caso específico o situación del cliente enviada para análisis')
     )
     ai_response = models.TextField(
-        verbose_name='Respuesta de IA',
-        help_text='Respuesta generada por la IA basada en el contexto y caso'
+        verbose_name=gettext_lazy('Respuesta de IA'),
+        help_text=gettext_lazy('Respuesta generada por la IA basada en el contexto y caso')
     )
     is_helpful = models.BooleanField(
         default=True,
-        verbose_name='¿Fue útil?',
-        help_text='Calificación de utilidad de la respuesta'
+        verbose_name=gettext_lazy('¿Fue útil?'),
+        help_text=gettext_lazy('Calificación de utilidad de la respuesta')
     )
     feedback = models.TextField(
         blank=True,
-        verbose_name='Comentarios',
-        help_text='Comentarios adicionales del usuario sobre la respuesta'
+        verbose_name=gettext_lazy('Comentarios'),
+        help_text=gettext_lazy('Comentarios adicionales del usuario sobre la respuesta')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de uso'
+        verbose_name=gettext_lazy('Fecha de uso')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Uso de Recomendación IA'
-        verbose_name_plural = 'Usos de Recomendaciones IA'
+        verbose_name = gettext_lazy('Uso de Recomendación IA')
+        verbose_name_plural = gettext_lazy('Usos de Recomendaciones IA')
     
     def __str__(self):
         return f"{self.recommendation.title} - {self.user.username} ({self.created_at.strftime('%d/%m/%Y')})"
@@ -14373,50 +14374,50 @@ class AbsenceType(models.Model):
     name = models.CharField(
         max_length=100,
         unique=True,
-        verbose_name='Nombre del Tipo',
-        help_text='Ej: Vacaciones, Enfermedad, Permiso Personal'
+        verbose_name=gettext_lazy('Nombre del Tipo'),
+        help_text=gettext_lazy('Ej: Vacaciones, Enfermedad, Permiso Personal')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción detallada del tipo de ausencia'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción detallada del tipo de ausencia')
     )
     requires_documentation = models.BooleanField(
         default=False,
-        verbose_name='Requiere Documentación',
-        help_text='Si se requiere documentación de respaldo (ej: certificado médico)'
+        verbose_name=gettext_lazy('Requiere Documentación'),
+        help_text=gettext_lazy('Si se requiere documentación de respaldo (ej: certificado médico)')
     )
     is_paid = models.BooleanField(
         default=True,
-        verbose_name='Es Remunerado',
-        help_text='Si la ausencia es con goce de sueldo'
+        verbose_name=gettext_lazy('Es Remunerado'),
+        help_text=gettext_lazy('Si la ausencia es con goce de sueldo')
     )
     max_days_per_year = models.PositiveIntegerField(
         blank=True,
         null=True,
-        verbose_name='Máximo Días por Año',
-        help_text='Límite anual de días para este tipo de ausencia (opcional)'
+        verbose_name=gettext_lazy('Máximo Días por Año'),
+        help_text=gettext_lazy('Límite anual de días para este tipo de ausencia (opcional)')
     )
     color = models.CharField(
         max_length=7,
         default='#007bff',
-        verbose_name='Color',
-        help_text='Color para mostrar en el calendario (formato hex: #RRGGBB)'
+        verbose_name=gettext_lazy('Color'),
+        help_text=gettext_lazy('Color para mostrar en el calendario (formato hex: #RRGGBB)')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo',
-        help_text='Si este tipo de ausencia está disponible para uso'
+        verbose_name=gettext_lazy('Activo'),
+        help_text=gettext_lazy('Si este tipo de ausencia está disponible para uso')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
         ordering = ['name']
-        verbose_name = 'Tipo de Ausencia'
-        verbose_name_plural = 'Tipos de Ausencias'
+        verbose_name = gettext_lazy('Tipo de Ausencia')
+        verbose_name_plural = gettext_lazy('Tipos de Ausencias')
     
     def __str__(self):
         return self.name
@@ -14430,55 +14431,55 @@ class EmployeeAbsence(models.Model):
     """Registro de ausencias de empleados"""
     
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('approved', 'Aprobada'),
-        ('rejected', 'Rechazada'),
-        ('cancelled', 'Cancelada'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('approved', gettext_lazy('Aprobada')),
+        ('rejected', gettext_lazy('Rechazada')),
+        ('cancelled', gettext_lazy('Cancelada')),
     ]
     
     employee = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='absences',
-        verbose_name='Empleado'
+        verbose_name=gettext_lazy('Empleado')
     )
     absence_type = models.ForeignKey(
         AbsenceType,
         on_delete=models.CASCADE,
         related_name='absences',
-        verbose_name='Tipo de Ausencia'
+        verbose_name=gettext_lazy('Tipo de Ausencia')
     )
     start_date = models.DateField(
-        verbose_name='Fecha de Inicio',
-        help_text='Primer día de ausencia'
+        verbose_name=gettext_lazy('Fecha de Inicio'),
+        help_text=gettext_lazy('Primer día de ausencia')
     )
     end_date = models.DateField(
-        verbose_name='Fecha de Fin',
-        help_text='Último día de ausencia'
+        verbose_name=gettext_lazy('Fecha de Fin'),
+        help_text=gettext_lazy('Último día de ausencia')
     )
     lost_hours = models.DecimalField(
         max_digits=8,
         decimal_places=2,
         default=0.00,
-        verbose_name='Horas Perdidas',
-        help_text='Total de horas laborales perdidas por la ausencia'
+        verbose_name=gettext_lazy('Horas Perdidas'),
+        help_text=gettext_lazy('Total de horas laborales perdidas por la ausencia')
     )
     reason = models.TextField(
-        verbose_name='Motivo',
-        help_text='Explicación detallada del motivo de la ausencia'
+        verbose_name=gettext_lazy('Motivo'),
+        help_text=gettext_lazy('Explicación detallada del motivo de la ausencia')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     documentation_file = models.FileField(
         upload_to='absence_documentation/%Y/%m/',
         blank=True,
         null=True,
-        verbose_name='Documentación',
-        help_text='Archivo de respaldo (certificado médico, etc.)'
+        verbose_name=gettext_lazy('Documentación'),
+        help_text=gettext_lazy('Archivo de respaldo (certificado médico, etc.)')
     )
     approved_by = models.ForeignKey(
         User,
@@ -14486,36 +14487,36 @@ class EmployeeAbsence(models.Model):
         null=True,
         blank=True,
         related_name='approved_absences',
-        verbose_name='Aprobado por'
+        verbose_name=gettext_lazy('Aprobado por')
     )
     approved_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de aprobación'
+        verbose_name=gettext_lazy('Fecha de aprobación')
     )
     rejection_reason = models.TextField(
         blank=True,
-        verbose_name='Motivo de rechazo',
-        help_text='Razón por la cual se rechazó la ausencia'
+        verbose_name=gettext_lazy('Motivo de rechazo'),
+        help_text=gettext_lazy('Razón por la cual se rechazó la ausencia')
     )
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas adicionales',
-        help_text='Comentarios internos sobre la ausencia'
+        verbose_name=gettext_lazy('Notas adicionales'),
+        help_text=gettext_lazy('Comentarios internos sobre la ausencia')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de solicitud'
+        verbose_name=gettext_lazy('Fecha de solicitud')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-start_date', '-created_at']
-        verbose_name = 'Ausencia de Empleado'
-        verbose_name_plural = 'Ausencias de Empleados'
+        verbose_name = gettext_lazy('Ausencia de Empleado')
+        verbose_name_plural = gettext_lazy('Ausencias de Empleados')
     
     def __str__(self):
         return f"{self.employee.get_full_name() or self.employee.username} - {self.absence_type.name} ({self.start_date} a {self.end_date})"
@@ -14595,72 +14596,72 @@ class CompanyProtocol(models.Model):
         'Company',
         on_delete=models.CASCADE,
         related_name='protocols',
-        verbose_name='Empresa',
-        help_text='Empresa a la que pertenece este protocolo',
+        verbose_name=gettext_lazy('Empresa'),
+        help_text=gettext_lazy('Empresa a la que pertenece este protocolo'),
         null=True,
         blank=True
     )
     title = models.CharField(
         max_length=200,
-        verbose_name='Título del Protocolo',
-        help_text='Título descriptivo del protocolo empresarial'
+        verbose_name=gettext_lazy('Título del Protocolo'),
+        help_text=gettext_lazy('Título descriptivo del protocolo empresarial')
     )
     content = models.TextField(
-        verbose_name='Contenido del Protocolo',
-        help_text='Contenido completo del protocolo. Puedes usar formato básico.'
+        verbose_name=gettext_lazy('Contenido del Protocolo'),
+        help_text=gettext_lazy('Contenido completo del protocolo. Puedes usar formato básico.')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_protocols',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo',
-        help_text='Indica si el protocolo está activo y disponible'
+        verbose_name=gettext_lazy('Activo'),
+        help_text=gettext_lazy('Indica si el protocolo está activo y disponible')
     )
     version = models.CharField(
         max_length=10,
         default='1.0',
-        verbose_name='Versión',
-        help_text='Versión del protocolo (ej: 1.0, 1.1, 2.0)'
+        verbose_name=gettext_lazy('Versión'),
+        help_text=gettext_lazy('Versión del protocolo (ej: 1.0, 1.1, 2.0)')
     )
     is_public = models.BooleanField(
         default=False,
-        verbose_name='Compartir públicamente',
-        help_text='Permite que este protocolo sea accesible públicamente sin autenticación'
+        verbose_name=gettext_lazy('Compartir públicamente'),
+        help_text=gettext_lazy('Permite que este protocolo sea accesible públicamente sin autenticación')
     )
     public_uuid = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
-        verbose_name='UUID público',
-        help_text='Identificador único para acceso público'
+        verbose_name=gettext_lazy('UUID público'),
+        help_text=gettext_lazy('Identificador único para acceso público')
     )
     public_shared_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Compartido públicamente en',
-        help_text='Fecha cuando se compartió públicamente por primera vez'
+        verbose_name=gettext_lazy('Compartido públicamente en'),
+        help_text=gettext_lazy('Fecha cuando se compartió públicamente por primera vez')
     )
     public_views_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Vistas públicas',
-        help_text='Número de veces que se ha visto públicamente este protocolo'
+        verbose_name=gettext_lazy('Vistas públicas'),
+        help_text=gettext_lazy('Número de veces que se ha visto públicamente este protocolo')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Protocolo de Empresa'
-        verbose_name_plural = 'Protocolos de Empresa'
+        verbose_name = gettext_lazy('Protocolo de Empresa')
+        verbose_name_plural = gettext_lazy('Protocolos de Empresa')
     
     def __str__(self):
         return f"{self.title} (v{self.version})"
@@ -15034,59 +15035,59 @@ class QAComplaint(models.Model):
     """Modelo para gestionar quejas y sugerencias de QA asociadas a empresas"""
     
     TYPE_CHOICES = [
-        ('complaint', 'Queja'),
-        ('suggestion', 'Sugerencia'),
-        ('feedback', 'Retroalimentación'),
-        ('improvement', 'Mejora'),
-        ('quality_issue', 'Problema de Calidad'),
+        ('complaint', gettext_lazy('Queja')),
+        ('suggestion', gettext_lazy('Sugerencia')),
+        ('feedback', gettext_lazy('Retroalimentación')),
+        ('improvement', gettext_lazy('Mejora')),
+        ('quality_issue', gettext_lazy('Problema de Calidad')),
     ]
     
     PRIORITY_CHOICES = [
-        ('low', 'Baja'),
-        ('medium', 'Media'),
-        ('high', 'Alta'),
-        ('critical', 'Crítica'),
+        ('low', gettext_lazy('Baja')),
+        ('medium', gettext_lazy('Media')),
+        ('high', gettext_lazy('Alta')),
+        ('critical', gettext_lazy('Crítica')),
     ]
     
     STATUS_CHOICES = [
-        ('open', 'Abierto'),
-        ('in_progress', 'En Progreso'),
-        ('pending_review', 'Pendiente de Revisión'),
-        ('resolved', 'Resuelto'),
-        ('closed', 'Cerrado'),
-        ('rejected', 'Rechazado'),
+        ('open', gettext_lazy('Abierto')),
+        ('in_progress', gettext_lazy('En Progreso')),
+        ('pending_review', gettext_lazy('Pendiente de Revisión')),
+        ('resolved', gettext_lazy('Resuelto')),
+        ('closed', gettext_lazy('Cerrado')),
+        ('rejected', gettext_lazy('Rechazado')),
     ]
     
     # Campos principales
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Título descriptivo de la queja o sugerencia'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Título descriptivo de la queja o sugerencia')
     )
     description = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción detallada del problema o sugerencia'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción detallada del problema o sugerencia')
     )
     type = models.CharField(
         max_length=20,
         choices=TYPE_CHOICES,
         default='complaint',
-        verbose_name='Tipo',
-        help_text='Tipo de reporte: queja, sugerencia, etc.'
+        verbose_name=gettext_lazy('Tipo'),
+        help_text=gettext_lazy('Tipo de reporte: queja, sugerencia, etc.')
     )
     priority = models.CharField(
         max_length=10,
         choices=PRIORITY_CHOICES,
         default='medium',
-        verbose_name='Prioridad',
-        help_text='Nivel de prioridad del reporte'
+        verbose_name=gettext_lazy('Prioridad'),
+        help_text=gettext_lazy('Nivel de prioridad del reporte')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='open',
-        verbose_name='Estado',
-        help_text='Estado actual del reporte'
+        verbose_name=gettext_lazy('Estado'),
+        help_text=gettext_lazy('Estado actual del reporte')
     )
     
     # Relaciones
@@ -15094,15 +15095,15 @@ class QAComplaint(models.Model):
         'Company',
         on_delete=models.CASCADE,
         related_name='qa_complaints',
-        verbose_name='Empresa',
-        help_text='Empresa asociada a esta queja o sugerencia'
+        verbose_name=gettext_lazy('Empresa'),
+        help_text=gettext_lazy('Empresa asociada a esta queja o sugerencia')
     )
     reported_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='reported_complaints',
-        verbose_name='Reportado por',
-        help_text='Usuario que reportó la queja o sugerencia'
+        verbose_name=gettext_lazy('Reportado por'),
+        help_text=gettext_lazy('Usuario que reportó la queja o sugerencia')
     )
     assigned_to = models.ForeignKey(
         User,
@@ -15110,33 +15111,33 @@ class QAComplaint(models.Model):
         null=True,
         blank=True,
         related_name='assigned_complaints',
-        verbose_name='Asignado a',
-        help_text='Usuario responsable de resolver la queja'
+        verbose_name=gettext_lazy('Asignado a'),
+        help_text=gettext_lazy('Usuario responsable de resolver la queja')
     )
     
     # Campos adicionales
     contact_email = models.EmailField(
         blank=True,
-        verbose_name='Email de contacto',
-        help_text='Email del cliente o usuario que reporta (opcional)'
+        verbose_name=gettext_lazy('Email de contacto'),
+        help_text=gettext_lazy('Email del cliente o usuario que reporta (opcional)')
     )
     contact_phone = models.CharField(
         max_length=20,
         blank=True,
-        verbose_name='Teléfono de contacto',
-        help_text='Teléfono del cliente o usuario que reporta (opcional)'
+        verbose_name=gettext_lazy('Teléfono de contacto'),
+        help_text=gettext_lazy('Teléfono del cliente o usuario que reporta (opcional)')
     )
     
     # Campos de seguimiento
     resolution = models.TextField(
         blank=True,
-        verbose_name='Resolución',
-        help_text='Descripción de cómo se resolvió la queja o implementó la sugerencia'
+        verbose_name=gettext_lazy('Resolución'),
+        help_text=gettext_lazy('Descripción de cómo se resolvió la queja o implementó la sugerencia')
     )
     resolution_date = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de resolución'
+        verbose_name=gettext_lazy('Fecha de resolución')
     )
     resolved_by = models.ForeignKey(
         User,
@@ -15144,18 +15145,18 @@ class QAComplaint(models.Model):
         null=True,
         blank=True,
         related_name='resolved_complaints',
-        verbose_name='Resuelto por',
-        help_text='Usuario que resolvió la queja'
+        verbose_name=gettext_lazy('Resuelto por'),
+        help_text=gettext_lazy('Usuario que resolvió la queja')
     )
     
     # Campos de auditoría
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     # Campos de archivo
@@ -15163,14 +15164,14 @@ class QAComplaint(models.Model):
         upload_to='qa_complaints/%Y/%m/',
         blank=True,
         null=True,
-        verbose_name='Archivo adjunto',
-        help_text='Imagen, documento o archivo relacionado con la queja'
+        verbose_name=gettext_lazy('Archivo adjunto'),
+        help_text=gettext_lazy('Imagen, documento o archivo relacionado con la queja')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Queja/Sugerencia QA'
-        verbose_name_plural = 'Quejas/Sugerencias QA'
+        verbose_name = gettext_lazy('Queja/Sugerencia QA')
+        verbose_name_plural = gettext_lazy('Quejas/Sugerencias QA')
     
     def __str__(self):
         return f"{self.get_type_display()}: {self.title} ({self.company.name})"
@@ -15267,31 +15268,31 @@ class QAComplaintComment(models.Model):
         QAComplaint,
         on_delete=models.CASCADE,
         related_name='comments',
-        verbose_name='Queja/Sugerencia'
+        verbose_name=gettext_lazy('Queja/Sugerencia')
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Autor'
+        verbose_name=gettext_lazy('Autor')
     )
     content = models.TextField(
-        verbose_name='Comentario',
-        help_text='Contenido del comentario o nota'
+        verbose_name=gettext_lazy('Comentario'),
+        help_text=gettext_lazy('Contenido del comentario o nota')
     )
     is_internal = models.BooleanField(
         default=False,
-        verbose_name='Comentario interno',
-        help_text='Marca si es un comentario interno (no visible para el cliente)'
+        verbose_name=gettext_lazy('Comentario interno'),
+        help_text=gettext_lazy('Marca si es un comentario interno (no visible para el cliente)')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
         ordering = ['created_at']
-        verbose_name = 'Comentario QA'
-        verbose_name_plural = 'Comentarios QA'
+        verbose_name = gettext_lazy('Comentario QA')
+        verbose_name_plural = gettext_lazy('Comentarios QA')
     
     def __str__(self):
         return f"Comentario de {self.author.username} en {self.complaint.title[:50]}"
@@ -15302,39 +15303,39 @@ class QAComplaintComment(models.Model):
 class Asset(models.Model):
     """Modelo para gestionar activos de la empresa"""
     STATUS_CHOICES = [
-        ('available', 'Disponible'),
-        ('assigned', 'Asignado'),
-        ('maintenance', 'En Mantenimiento'),
-        ('retired', 'Dado de Baja'),
-        ('lost', 'Perdido'),
-        ('damaged', 'Dañado'),
+        ('available', gettext_lazy('Disponible')),
+        ('assigned', gettext_lazy('Asignado')),
+        ('maintenance', gettext_lazy('En Mantenimiento')),
+        ('retired', gettext_lazy('Dado de Baja')),
+        ('lost', gettext_lazy('Perdido')),
+        ('damaged', gettext_lazy('Dañado')),
     ]
     
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del Activo',
-        help_text='Nombre descriptivo del activo'
+        verbose_name=gettext_lazy('Nombre del Activo'),
+        help_text=gettext_lazy('Nombre descriptivo del activo')
     )
     manufacturer = models.CharField(
         max_length=100,
-        verbose_name='Fabricante',
-        help_text='Marca o fabricante del activo'
+        verbose_name=gettext_lazy('Fabricante'),
+        help_text=gettext_lazy('Marca o fabricante del activo')
     )
     description = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción detallada del activo'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción detallada del activo')
     )
     serial_number = models.CharField(
         max_length=100,
         unique=True,
-        verbose_name='Número de Serie',
-        help_text='Número de serie único del activo'
+        verbose_name=gettext_lazy('Número de Serie'),
+        help_text=gettext_lazy('Número de serie único del activo')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='available',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     assigned_to = models.ForeignKey(
         User,
@@ -15342,56 +15343,56 @@ class Asset(models.Model):
         null=True,
         blank=True,
         related_name='assigned_assets',
-        verbose_name='Asignado a'
+        verbose_name=gettext_lazy('Asignado a')
     )
     purchase_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Compra'
+        verbose_name=gettext_lazy('Fecha de Compra')
     )
     purchase_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Precio de Compra'
+        verbose_name=gettext_lazy('Precio de Compra')
     )
     warranty_expiry = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Vencimiento de Garantía'
+        verbose_name=gettext_lazy('Vencimiento de Garantía')
     )
     location = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Ubicación',
-        help_text='Ubicación física del activo'
+        verbose_name=gettext_lazy('Ubicación'),
+        help_text=gettext_lazy('Ubicación física del activo')
     )
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas',
-        help_text='Notas adicionales sobre el activo'
+        verbose_name=gettext_lazy('Notas'),
+        help_text=gettext_lazy('Notas adicionales sobre el activo')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última Actualización'
+        verbose_name=gettext_lazy('Última Actualización')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         related_name='created_assets',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Activo'
-        verbose_name_plural = 'Activos'
+        verbose_name = gettext_lazy('Activo')
+        verbose_name_plural = gettext_lazy('Activos')
         indexes = [
             models.Index(fields=['serial_number']),
             models.Index(fields=['status']),
@@ -15436,26 +15437,26 @@ class Asset(models.Model):
 class AssetHistory(models.Model):
     """Modelo para el historial de asignaciones de activos"""
     ACTION_CHOICES = [
-        ('created', 'Creado'),
-        ('assigned', 'Asignado'),
-        ('unassigned', 'Desasignado'),
-        ('transferred', 'Transferido'),
-        ('maintenance', 'Enviado a Mantenimiento'),
-        ('returned', 'Devuelto de Mantenimiento'),
-        ('retired', 'Dado de Baja'),
-        ('status_changed', 'Cambio de Estado'),
+        ('created', gettext_lazy('Creado')),
+        ('assigned', gettext_lazy('Asignado')),
+        ('unassigned', gettext_lazy('Desasignado')),
+        ('transferred', gettext_lazy('Transferido')),
+        ('maintenance', gettext_lazy('Enviado a Mantenimiento')),
+        ('returned', gettext_lazy('Devuelto de Mantenimiento')),
+        ('retired', gettext_lazy('Dado de Baja')),
+        ('status_changed', gettext_lazy('Cambio de Estado')),
     ]
     
     asset = models.ForeignKey(
         Asset,
         on_delete=models.CASCADE,
         related_name='history',
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     action = models.CharField(
         max_length=20,
         choices=ACTION_CHOICES,
-        verbose_name='Acción'
+        verbose_name=gettext_lazy('Acción')
     )
     previous_employee = models.ForeignKey(
         User,
@@ -15463,7 +15464,7 @@ class AssetHistory(models.Model):
         null=True,
         blank=True,
         related_name='asset_history_previous',
-        verbose_name='Usuario Anterior'
+        verbose_name=gettext_lazy('Usuario Anterior')
     )
     new_employee = models.ForeignKey(
         User,
@@ -15471,43 +15472,43 @@ class AssetHistory(models.Model):
         null=True,
         blank=True,
         related_name='asset_history_new',
-        verbose_name='Nuevo Usuario'
+        verbose_name=gettext_lazy('Nuevo Usuario')
     )
     previous_status = models.CharField(
         max_length=20,
         choices=Asset.STATUS_CHOICES,
         null=True,
         blank=True,
-        verbose_name='Estado Anterior'
+        verbose_name=gettext_lazy('Estado Anterior')
     )
     new_status = models.CharField(
         max_length=20,
         choices=Asset.STATUS_CHOICES,
         null=True,
         blank=True,
-        verbose_name='Nuevo Estado'
+        verbose_name=gettext_lazy('Nuevo Estado')
     )
     reason = models.TextField(
         blank=True,
-        verbose_name='Motivo',
-        help_text='Motivo del cambio o acción'
+        verbose_name=gettext_lazy('Motivo'),
+        help_text=gettext_lazy('Motivo del cambio o acción')
     )
     date = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha'
+        verbose_name=gettext_lazy('Fecha')
     )
     performed_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         related_name='asset_actions',
-        verbose_name='Realizado por'
+        verbose_name=gettext_lazy('Realizado por')
     )
     
     class Meta:
         ordering = ['-date']
-        verbose_name = 'Historial de Activo'
-        verbose_name_plural = 'Historiales de Activos'
+        verbose_name = gettext_lazy('Historial de Activo')
+        verbose_name_plural = gettext_lazy('Historiales de Activos')
         indexes = [
             models.Index(fields=['asset', '-date']),
             models.Index(fields=['action']),
@@ -15539,36 +15540,36 @@ class AITutor(models.Model):
     """Modelo para el sistema de Tutor IA"""
     
     STATUS_CHOICES = [
-        ('active', 'Activo'),
-        ('completed', 'Completado'),
-        ('paused', 'Pausado'),
-        ('cancelled', 'Cancelado'),
+        ('active', gettext_lazy('Activo')),
+        ('completed', gettext_lazy('Completado')),
+        ('paused', gettext_lazy('Pausado')),
+        ('cancelled', gettext_lazy('Cancelado')),
     ]
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título del Objetivo',
-        help_text='Título descriptivo de lo que quieres lograr'
+        verbose_name=gettext_lazy('Título del Objetivo'),
+        help_text=gettext_lazy('Título descriptivo de lo que quieres lograr')
     )
     
     objective = models.TextField(
-        verbose_name='Objetivo',
-        help_text='Describe claramente qué quieres lograr'
+        verbose_name=gettext_lazy('Objetivo'),
+        help_text=gettext_lazy('Describe claramente qué quieres lograr')
     )
     
     current_state = models.TextField(
-        verbose_name='Estado Actual',
-        help_text='Describe dónde estás ahora en relación a tu objetivo'
+        verbose_name=gettext_lazy('Estado Actual'),
+        help_text=gettext_lazy('Describe dónde estás ahora en relación a tu objetivo')
     )
     
     context = models.TextField(
-        verbose_name='Contexto',
-        help_text='Proporciona contexto adicional relevante (experiencia, recursos, limitaciones, etc.)'
+        verbose_name=gettext_lazy('Contexto'),
+        help_text=gettext_lazy('Proporciona contexto adicional relevante (experiencia, recursos, limitaciones, etc.)')
     )
     
     tutor_persona = models.TextField(
-        verbose_name='Personalidad del Tutor',
-        help_text='Describe qué tipo de tutor quieres (ej: un experimentado profesor de Django, un mentor de carrera, etc.)',
+        verbose_name=gettext_lazy('Personalidad del Tutor'),
+        help_text=gettext_lazy('Describe qué tipo de tutor quieres (ej: un experimentado profesor de Django, un mentor de carrera, etc.)'),
         default='Un experimentado mentor y profesor'
     )
     
@@ -15576,36 +15577,36 @@ class AITutor(models.Model):
         max_length=20,
         choices=STATUS_CHOICES,
         default='active',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     is_private = models.BooleanField(
         default=False,
-        verbose_name='Privado',
-        help_text='Si está marcado, solo tú podrás ver este tutor'
+        verbose_name=gettext_lazy('Privado'),
+        help_text=gettext_lazy('Si está marcado, solo tú podrás ver este tutor')
     )
     
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='ai_tutors',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última Actualización'
+        verbose_name=gettext_lazy('Última Actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Tutor IA'
-        verbose_name_plural = 'Tutores IA'
+        verbose_name = gettext_lazy('Tutor IA')
+        verbose_name_plural = gettext_lazy('Tutores IA')
         indexes = [
             models.Index(fields=['created_by']),
             models.Index(fields=['status']),
@@ -15637,48 +15638,48 @@ class AITutorProgressReport(models.Model):
         AITutor,
         on_delete=models.CASCADE,
         related_name='progress_reports',
-        verbose_name='Tutor IA'
+        verbose_name=gettext_lazy('Tutor IA')
     )
     
     progress_description = models.TextField(
-        verbose_name='Descripción del Avance',
-        help_text='Describe qué has logrado desde tu último reporte'
+        verbose_name=gettext_lazy('Descripción del Avance'),
+        help_text=gettext_lazy('Describe qué has logrado desde tu último reporte')
     )
     
     challenges = models.TextField(
         blank=True,
-        verbose_name='Desafíos Encontrados',
-        help_text='Describe los obstáculos o dificultades que has enfrentado (opcional)'
+        verbose_name=gettext_lazy('Desafíos Encontrados'),
+        help_text=gettext_lazy('Describe los obstáculos o dificultades que has enfrentado (opcional)')
     )
     
     ai_feedback = models.TextField(
         blank=True,
-        verbose_name='Retroalimentación de la IA',
-        help_text='Recomendaciones y consejos generados por la IA'
+        verbose_name=gettext_lazy('Retroalimentación de la IA'),
+        help_text=gettext_lazy('Recomendaciones y consejos generados por la IA')
     )
     
     ai_recommendations = models.TextField(
         blank=True,
-        verbose_name='Recomendaciones de Mejora',
-        help_text='Sugerencias específicas para mejorar'
+        verbose_name=gettext_lazy('Recomendaciones de Mejora'),
+        help_text=gettext_lazy('Sugerencias específicas para mejorar')
     )
     
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='tutor_progress_reports',
-        verbose_name='Reportado por'
+        verbose_name=gettext_lazy('Reportado por')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha del Reporte'
+        verbose_name=gettext_lazy('Fecha del Reporte')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Reporte de Progreso'
-        verbose_name_plural = 'Reportes de Progreso'
+        verbose_name = gettext_lazy('Reporte de Progreso')
+        verbose_name_plural = gettext_lazy('Reportes de Progreso')
         indexes = [
             models.Index(fields=['tutor']),
             models.Index(fields=['created_by']),
@@ -15695,7 +15696,7 @@ class AITutorAttachment(models.Model):
         AITutor,
         on_delete=models.CASCADE,
         related_name='attachments',
-        verbose_name='Tutor IA',
+        verbose_name=gettext_lazy('Tutor IA'),
         null=True,
         blank=True
     )
@@ -15704,60 +15705,60 @@ class AITutorAttachment(models.Model):
         AITutorProgressReport,
         on_delete=models.CASCADE,
         related_name='attachments',
-        verbose_name='Reporte de Progreso',
+        verbose_name=gettext_lazy('Reporte de Progreso'),
         null=True,
         blank=True
     )
     
     file = models.FileField(
         upload_to='tutor_attachments/%Y/%m/',
-        verbose_name='Archivo'
+        verbose_name=gettext_lazy('Archivo')
     )
     
     original_filename = models.CharField(
         max_length=255,
-        verbose_name='Nombre Original'
+        verbose_name=gettext_lazy('Nombre Original')
     )
     
     file_size = models.PositiveIntegerField(
-        verbose_name='Tamaño del Archivo',
-        help_text='Tamaño en bytes'
+        verbose_name=gettext_lazy('Tamaño del Archivo'),
+        help_text=gettext_lazy('Tamaño en bytes')
     )
     
     file_type = models.CharField(
         max_length=100,
-        verbose_name='Tipo de Archivo'
+        verbose_name=gettext_lazy('Tipo de Archivo')
     )
     
     description = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción opcional del archivo'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción opcional del archivo')
     )
     
     ai_analysis = models.TextField(
         blank=True,
-        verbose_name='Análisis de la IA',
-        help_text='Análisis del archivo generado por la IA'
+        verbose_name=gettext_lazy('Análisis de la IA'),
+        help_text=gettext_lazy('Análisis del archivo generado por la IA')
     )
     
     uploaded_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='tutor_attachments',
-        verbose_name='Subido por'
+        verbose_name=gettext_lazy('Subido por')
     )
     
     uploaded_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Subida'
+        verbose_name=gettext_lazy('Fecha de Subida')
     )
     
     class Meta:
         ordering = ['-uploaded_at']
-        verbose_name = 'Adjunto del Tutor'
-        verbose_name_plural = 'Adjuntos del Tutor'
+        verbose_name = gettext_lazy('Adjunto del Tutor')
+        verbose_name_plural = gettext_lazy('Adjuntos del Tutor')
         indexes = [
             models.Index(fields=['tutor']),
             models.Index(fields=['progress_report']),
@@ -15790,35 +15791,35 @@ class AITutorAttachment(models.Model):
 class ExpenseReport(models.Model):
     """Modelo para rendición de gastos de empleados"""
     STATUS_CHOICES = [
-        ('draft', 'Borrador'),
-        ('submitted', 'Enviado'),
-        ('approved', 'Aprobado'),
-        ('rejected', 'Rechazado'),
-        ('paid', 'Pagado'),
+        ('draft', gettext_lazy('Borrador')),
+        ('submitted', gettext_lazy('Enviado')),
+        ('approved', gettext_lazy('Aprobado')),
+        ('rejected', gettext_lazy('Rechazado')),
+        ('paid', gettext_lazy('Pagado')),
     ]
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título de la rendición',
-        help_text='Título descriptivo de la rendición de gastos'
+        verbose_name=gettext_lazy('Título de la rendición'),
+        help_text=gettext_lazy('Título descriptivo de la rendición de gastos')
     )
     description = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Descripción',
-        help_text='Descripción general de los gastos'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción general de los gastos')
     )
     employee = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='expense_reports',
-        verbose_name='Empleado'
+        verbose_name=gettext_lazy('Empleado')
     )
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
         related_name='expense_reports',
-        verbose_name='Empresa',
+        verbose_name=gettext_lazy('Empresa'),
         blank=True,
         null=True
     )
@@ -15826,31 +15827,31 @@ class ExpenseReport(models.Model):
         max_length=20,
         choices=STATUS_CHOICES,
         default='draft',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     start_date = models.DateField(
-        verbose_name='Fecha inicio',
-        help_text='Fecha de inicio del período de gastos'
+        verbose_name=gettext_lazy('Fecha inicio'),
+        help_text=gettext_lazy('Fecha de inicio del período de gastos')
     )
     end_date = models.DateField(
-        verbose_name='Fecha fin',
-        help_text='Fecha de fin del período de gastos'
+        verbose_name=gettext_lazy('Fecha fin'),
+        help_text=gettext_lazy('Fecha de fin del período de gastos')
     )
     total_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0,
-        verbose_name='Monto total'
+        verbose_name=gettext_lazy('Monto total')
     )
     currency = models.CharField(
         max_length=3,
         default='USD',
-        verbose_name='Moneda'
+        verbose_name=gettext_lazy('Moneda')
     )
     submitted_at = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Fecha de envío'
+        verbose_name=gettext_lazy('Fecha de envío')
     )
     approved_by = models.ForeignKey(
         User,
@@ -15858,42 +15859,42 @@ class ExpenseReport(models.Model):
         blank=True,
         null=True,
         related_name='approved_expense_reports',
-        verbose_name='Aprobado por'
+        verbose_name=gettext_lazy('Aprobado por')
     )
     approved_at = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Fecha de aprobación'
+        verbose_name=gettext_lazy('Fecha de aprobación')
     )
     rejection_reason = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Motivo de rechazo'
+        verbose_name=gettext_lazy('Motivo de rechazo')
     )
     payment_reference = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        verbose_name='Referencia de pago'
+        verbose_name=gettext_lazy('Referencia de pago')
     )
     paid_at = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Fecha de pago'
+        verbose_name=gettext_lazy('Fecha de pago')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Rendición de Gastos'
-        verbose_name_plural = 'Rendiciones de Gastos'
+        verbose_name = gettext_lazy('Rendición de Gastos')
+        verbose_name_plural = gettext_lazy('Rendiciones de Gastos')
         indexes = [
             models.Index(fields=['employee', 'status']),
             models.Index(fields=['company', 'status']),
@@ -15933,93 +15934,93 @@ class ExpenseReport(models.Model):
 class ExpenseItem(models.Model):
     """Modelo para items individuales de gastos"""
     CATEGORY_CHOICES = [
-        ('food', 'Comida'),
-        ('transport', 'Transporte'),
-        ('hotel', 'Hotel/Alojamiento'),
-        ('fuel', 'Combustible'),
-        ('materials', 'Materiales'),
-        ('entertainment', 'Entretenimiento'),
-        ('communication', 'Comunicaciones'),
-        ('office', 'Oficina/Suministros'),
-        ('medical', 'Gastos médicos'),
-        ('training', 'Capacitación'),
-        ('direct_salary', 'Salarios Directos'),
-        ('indirect_salary', 'Salarios Indirectos'),
-        ('asset_purchase', 'Compra de Activos'),
-        ('marketing', 'Marketing'),
-        ('software', 'Software'),
-        ('other', 'Otros'),
+        ('food', gettext_lazy('Comida')),
+        ('transport', gettext_lazy('Transporte')),
+        ('hotel', gettext_lazy('Hotel/Alojamiento')),
+        ('fuel', gettext_lazy('Combustible')),
+        ('materials', gettext_lazy('Materiales')),
+        ('entertainment', gettext_lazy('Entretenimiento')),
+        ('communication', gettext_lazy('Comunicaciones')),
+        ('office', gettext_lazy('Oficina/Suministros')),
+        ('medical', gettext_lazy('Gastos médicos')),
+        ('training', gettext_lazy('Capacitación')),
+        ('direct_salary', gettext_lazy('Salarios Directos')),
+        ('indirect_salary', gettext_lazy('Salarios Indirectos')),
+        ('asset_purchase', gettext_lazy('Compra de Activos')),
+        ('marketing', gettext_lazy('Marketing')),
+        ('software', gettext_lazy('Software')),
+        ('other', gettext_lazy('Otros')),
     ]
     
     expense_report = models.ForeignKey(
         ExpenseReport,
         on_delete=models.CASCADE,
         related_name='expense_items',
-        verbose_name='Rendición de gastos'
+        verbose_name=gettext_lazy('Rendición de gastos')
     )
     date = models.DateField(
-        verbose_name='Fecha del gasto'
+        verbose_name=gettext_lazy('Fecha del gasto')
     )
     category = models.CharField(
         max_length=20,
         choices=CATEGORY_CHOICES,
-        verbose_name='Categoría'
+        verbose_name=gettext_lazy('Categoría')
     )
     description = models.CharField(
         max_length=200,
-        verbose_name='Descripción del gasto'
+        verbose_name=gettext_lazy('Descripción del gasto')
     )
     amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name='Monto'
+        verbose_name=gettext_lazy('Monto')
     )
     currency = models.CharField(
         max_length=3,
         default='USD',
-        verbose_name='Moneda'
+        verbose_name=gettext_lazy('Moneda')
     )
     vendor = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        verbose_name='Proveedor/Comercio'
+        verbose_name=gettext_lazy('Proveedor/Comercio')
     )
     location = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        verbose_name='Ubicación'
+        verbose_name=gettext_lazy('Ubicación')
     )
     notes = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Notas adicionales'
+        verbose_name=gettext_lazy('Notas adicionales')
     )
     receipt_file = models.FileField(
         upload_to='expense_receipts/',
         blank=True,
         null=True,
-        verbose_name='Comprobante/Recibo'
+        verbose_name=gettext_lazy('Comprobante/Recibo')
     )
     is_reimbursable = models.BooleanField(
         default=True,
-        verbose_name='Reembolsable',
-        help_text='Marcar si este gasto debe ser reembolsado'
+        verbose_name=gettext_lazy('Reembolsable'),
+        help_text=gettext_lazy('Marcar si este gasto debe ser reembolsado')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-date', '-created_at']
-        verbose_name = 'Item de Gasto'
-        verbose_name_plural = 'Items de Gastos'
+        verbose_name = gettext_lazy('Item de Gasto')
+        verbose_name_plural = gettext_lazy('Items de Gastos')
         indexes = [
             models.Index(fields=['expense_report', 'category']),
             models.Index(fields=['date', 'category']),
@@ -16063,30 +16064,30 @@ class ExpenseComment(models.Model):
         ExpenseReport,
         on_delete=models.CASCADE,
         related_name='comments',
-        verbose_name='Rendición de gastos'
+        verbose_name=gettext_lazy('Rendición de gastos')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     comment = models.TextField(
-        verbose_name='Comentario'
+        verbose_name=gettext_lazy('Comentario')
     )
     is_internal = models.BooleanField(
         default=False,
-        verbose_name='Comentario interno',
-        help_text='Solo visible para administradores'
+        verbose_name=gettext_lazy('Comentario interno'),
+        help_text=gettext_lazy('Solo visible para administradores')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Comentario de Gasto'
-        verbose_name_plural = 'Comentarios de Gastos'
+        verbose_name = gettext_lazy('Comentario de Gasto')
+        verbose_name_plural = gettext_lazy('Comentarios de Gastos')
     
     def __str__(self):
         return f"Comentario de {self.user.get_full_name() or self.user.username} - {self.created_at.strftime('%d/%m/%Y')}"
@@ -16095,63 +16096,63 @@ class ExpenseComment(models.Model):
 class ExpenseFund(models.Model):
     """Modelo para registrar el dinero disponible/asignado a una rendición de gastos"""
     SOURCE_CHOICES = [
-        ('cash', 'Efectivo'),
-        ('bank_transfer', 'Transferencia Bancaria'),
-        ('corporate_card', 'Tarjeta Corporativa'),
-        ('advance', 'Anticipo de Viaje'),
-        ('other', 'Otro'),
+        ('cash', gettext_lazy('Efectivo')),
+        ('bank_transfer', gettext_lazy('Transferencia Bancaria')),
+        ('corporate_card', gettext_lazy('Tarjeta Corporativa')),
+        ('advance', gettext_lazy('Anticipo de Viaje')),
+        ('other', gettext_lazy('Otro')),
     ]
 
     expense_report = models.ForeignKey(
         ExpenseReport,
         on_delete=models.CASCADE,
         related_name='funds',
-        verbose_name='Rendición de gastos'
+        verbose_name=gettext_lazy('Rendición de gastos')
     )
     amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name='Monto'
+        verbose_name=gettext_lazy('Monto')
     )
     source_name = models.CharField(
         max_length=100,
-        verbose_name='Fuente / Banco',
-        help_text='Ej: BBVA, efectivo, tarjeta corporativa…'
+        verbose_name=gettext_lazy('Fuente / Banco'),
+        help_text=gettext_lazy('Ej: BBVA, efectivo, tarjeta corporativa…')
     )
     source_type = models.CharField(
         max_length=20,
         choices=SOURCE_CHOICES,
         default='bank_transfer',
-        verbose_name='Tipo de fuente'
+        verbose_name=gettext_lazy('Tipo de fuente')
     )
     invoice_reference = models.CharField(
         max_length=200,
         blank=True,
         null=True,
-        verbose_name='Referencia de factura / comprobante',
-        help_text='Número de factura, transferencia o comprobante'
+        verbose_name=gettext_lazy('Referencia de factura / comprobante'),
+        help_text=gettext_lazy('Número de factura, transferencia o comprobante')
     )
     notes = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Notas'
+        verbose_name=gettext_lazy('Notas')
     )
     received_at = models.DateField(
-        verbose_name='Fecha de recepción'
+        verbose_name=gettext_lazy('Fecha de recepción')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
 
     class Meta:
         ordering = ['-received_at', '-created_at']
-        verbose_name = 'Fondo de Rendición'
-        verbose_name_plural = 'Fondos de Rendición'
+        verbose_name = gettext_lazy('Fondo de Rendición')
+        verbose_name_plural = gettext_lazy('Fondos de Rendición')
 
     def __str__(self):
         return f"{self.amount} de {self.source_name} ({self.expense_report.title})"
@@ -16160,67 +16161,67 @@ class ExpenseFund(models.Model):
 class VideoMeeting(models.Model):
     """Modelo para gestionar reuniones de video y transcripciones"""
     MEETING_STATUS_CHOICES = [
-        ('scheduled', 'Programada'),
-        ('in_progress', 'En progreso'),
-        ('completed', 'Completada'),
-        ('cancelled', 'Cancelada'),
+        ('scheduled', gettext_lazy('Programada')),
+        ('in_progress', gettext_lazy('En progreso')),
+        ('completed', gettext_lazy('Completada')),
+        ('cancelled', gettext_lazy('Cancelada')),
     ]
     
     TRANSCRIPTION_STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('processing', 'Procesando'),
-        ('completed', 'Completada'),
-        ('failed', 'Falló'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('processing', gettext_lazy('Procesando')),
+        ('completed', gettext_lazy('Completada')),
+        ('failed', gettext_lazy('Falló')),
     ]
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título de la reunión'
+        verbose_name=gettext_lazy('Título de la reunión')
     )
     description = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     organizer = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='organized_video_meetings',
-        verbose_name='Organizador'
+        verbose_name=gettext_lazy('Organizador')
     )
     participants = models.ManyToManyField(
         User,
         related_name='attended_meetings',
         blank=True,
-        verbose_name='Participantes'
+        verbose_name=gettext_lazy('Participantes')
     )
     company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
         blank=True,
         null=True,
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     scheduled_date = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Fecha programada'
+        verbose_name=gettext_lazy('Fecha programada')
     )
     duration_minutes = models.PositiveIntegerField(
         blank=True,
         null=True,
-        verbose_name='Duración en minutos'
+        verbose_name=gettext_lazy('Duración en minutos')
     )
     status = models.CharField(
         max_length=20,
         choices=MEETING_STATUS_CHOICES,
         default='scheduled',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     meeting_url = models.URLField(
         blank=True,
         null=True,
-        verbose_name='URL de la reunión'
+        verbose_name=gettext_lazy('URL de la reunión')
     )
     
     # Archivo de video/audio
@@ -16228,8 +16229,8 @@ class VideoMeeting(models.Model):
         upload_to='meeting_recordings/',
         blank=True,
         null=True,
-        verbose_name='Archivo de grabación',
-        help_text='Formatos soportados: MP4, AVI, MOV, MP3, WAV, M4A, WebM'
+        verbose_name=gettext_lazy('Archivo de grabación'),
+        help_text=gettext_lazy('Formatos soportados: MP4, AVI, MOV, MP3, WAV, M4A, WebM')
     )
     
     # Transcripción
@@ -16237,66 +16238,66 @@ class VideoMeeting(models.Model):
         max_length=20,
         choices=TRANSCRIPTION_STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado de transcripción'
+        verbose_name=gettext_lazy('Estado de transcripción')
     )
     transcription_text = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Transcripción'
+        verbose_name=gettext_lazy('Transcripción')
     )
     transcription_confidence = models.FloatField(
         blank=True,
         null=True,
-        verbose_name='Confianza de transcripción (%)'
+        verbose_name=gettext_lazy('Confianza de transcripción (%)')
     )
     transcription_date = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Fecha de transcripción'
+        verbose_name=gettext_lazy('Fecha de transcripción')
     )
     
     # Resumen automático generado por IA
     transcription_summary = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Resumen de transcripción'
+        verbose_name=gettext_lazy('Resumen de transcripción')
     )
     
     # Resumen automático generado por IA
     ai_summary = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Resumen generado por IA'
+        verbose_name=gettext_lazy('Resumen generado por IA')
     )
     
     # Puntos clave extraídos por IA
     key_points = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Puntos clave'
+        verbose_name=gettext_lazy('Puntos clave')
     )
     
     # Acciones identificadas por IA
     action_items = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Elementos de acción'
+        verbose_name=gettext_lazy('Elementos de acción')
     )
     
     # Metadatos
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Fecha de actualización'
+        verbose_name=gettext_lazy('Fecha de actualización')
     )
     
     class Meta:
         ordering = ['-scheduled_date', '-created_at']
-        verbose_name = 'Reunión de Video'
-        verbose_name_plural = 'Reuniones de Video'
+        verbose_name = gettext_lazy('Reunión de Video')
+        verbose_name_plural = gettext_lazy('Reuniones de Video')
     
     def __str__(self):
         return f"{self.title} - {self.organizer.get_full_name() or self.organizer.username}"
@@ -16370,34 +16371,34 @@ class MeetingNote(models.Model):
         VideoMeeting,
         on_delete=models.CASCADE,
         related_name='notes',
-        verbose_name='Reunión'
+        verbose_name=gettext_lazy('Reunión')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     content = models.TextField(
-        verbose_name='Contenido de la nota'
+        verbose_name=gettext_lazy('Contenido de la nota')
     )
     is_private = models.BooleanField(
         default=False,
-        verbose_name='Nota privada',
-        help_text='Solo visible para el autor'
+        verbose_name=gettext_lazy('Nota privada'),
+        help_text=gettext_lazy('Solo visible para el autor')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Fecha de actualización'
+        verbose_name=gettext_lazy('Fecha de actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Nota de Reunión'
-        verbose_name_plural = 'Notas de Reunión'
+        verbose_name = gettext_lazy('Nota de Reunión')
+        verbose_name_plural = gettext_lazy('Notas de Reunión')
     
     def __str__(self):
         return f"Nota de {self.user.get_full_name() or self.user.username} - {self.meeting.title}"
@@ -16409,35 +16410,35 @@ class MeetingAttachment(models.Model):
         VideoMeeting,
         on_delete=models.CASCADE,
         related_name='attachments',
-        verbose_name='Reunión'
+        verbose_name=gettext_lazy('Reunión')
     )
     file = models.FileField(
         upload_to='meeting_recordings/',
-        verbose_name='Archivo adjunto'
+        verbose_name=gettext_lazy('Archivo adjunto')
     )
     filename = models.CharField(
         max_length=255,
-        verbose_name='Nombre del archivo'
+        verbose_name=gettext_lazy('Nombre del archivo')
     )
     file_size = models.BigIntegerField(
         default=0,
-        verbose_name='Tamaño del archivo (bytes)'
+        verbose_name=gettext_lazy('Tamaño del archivo (bytes)')
     )
     uploaded_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
-        verbose_name='Subido por'
+        verbose_name=gettext_lazy('Subido por')
     )
     uploaded_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de subida'
+        verbose_name=gettext_lazy('Fecha de subida')
     )
     
     class Meta:
         ordering = ['-uploaded_at']
-        verbose_name = 'Adjunto de Reunión'
-        verbose_name_plural = 'Adjuntos de Reunión'
+        verbose_name = gettext_lazy('Adjunto de Reunión')
+        verbose_name_plural = gettext_lazy('Adjuntos de Reunión')
     
     def __str__(self):
         return f"{self.filename} - {self.meeting.title}"
@@ -16456,48 +16457,48 @@ class QuoteGenerator(models.Model):
     """Modelo para generar citas temáticas con IA"""
     title = models.CharField(
         max_length=200,
-        verbose_name='Título del generador'
+        verbose_name=gettext_lazy('Título del generador')
     )
     topic = models.CharField(
         max_length=500,
-        verbose_name='Tema de las citas',
-        help_text='Ej: "citas de Einstein sobre el amor", "frases motivacionales de líderes", etc.'
+        verbose_name=gettext_lazy('Tema de las citas'),
+        help_text=gettext_lazy('Ej: "citas de Einstein sobre el amor", "frases motivacionales de líderes", etc.')
     )
     generated_quotes = models.TextField(
         blank=True,
-        verbose_name='Citas generadas (JSON)',
-        help_text='Almacena las citas en formato JSON'
+        verbose_name=gettext_lazy('Citas generadas (JSON)'),
+        help_text=gettext_lazy('Almacena las citas en formato JSON')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
         blank=True,
         null=True,
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo',
-        help_text='Si está activo, las citas aparecerán en el dashboard'
+        verbose_name=gettext_lazy('Activo'),
+        help_text=gettext_lazy('Si está activo, las citas aparecerán en el dashboard')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Fecha de actualización'
+        verbose_name=gettext_lazy('Fecha de actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Generador de Citas'
-        verbose_name_plural = 'Generadores de Citas'
+        verbose_name = gettext_lazy('Generador de Citas')
+        verbose_name_plural = gettext_lazy('Generadores de Citas')
     
     def __str__(self):
         return f"{self.title} - {self.topic[:50]}"
@@ -16523,53 +16524,53 @@ class CountdownTimer(models.Model):
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Nombre descriptivo para la cuenta regresiva'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Nombre descriptivo para la cuenta regresiva')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción opcional del evento'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción opcional del evento')
     )
     target_date = models.DateTimeField(
-        verbose_name='Fecha objetivo',
-        help_text='Fecha y hora del evento'
+        verbose_name=gettext_lazy('Fecha objetivo'),
+        help_text=gettext_lazy('Fecha y hora del evento')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
         blank=True,
         null=True,
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo',
-        help_text='Si está activo, la cuenta regresiva será visible'
+        verbose_name=gettext_lazy('Activo'),
+        help_text=gettext_lazy('Si está activo, la cuenta regresiva será visible')
     )
     is_private = models.BooleanField(
         default=False,
-        verbose_name='Privada',
-        help_text='Si está marcada como privada, solo el creador podrá verla'
+        verbose_name=gettext_lazy('Privada'),
+        help_text=gettext_lazy('Si está marcada como privada, solo el creador podrá verla')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Fecha de actualización'
+        verbose_name=gettext_lazy('Fecha de actualización')
     )
     
     class Meta:
         ordering = ['target_date']
-        verbose_name = 'Cuenta Regresiva'
-        verbose_name_plural = 'Cuentas Regresivas'
+        verbose_name = gettext_lazy('Cuenta Regresiva')
+        verbose_name_plural = gettext_lazy('Cuentas Regresivas')
     
     def __str__(self):
         return f"{self.title} - {self.target_date.strftime('%d/%m/%Y')}"
@@ -16619,63 +16620,63 @@ class Procedure(models.Model):
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Título descriptivo del procedimiento'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Título descriptivo del procedimiento')
     )
     url = models.URLField(
         blank=True,
-        verbose_name='URL',
-        help_text='Enlace externo relacionado al procedimiento (opcional)'
+        verbose_name=gettext_lazy('URL'),
+        help_text=gettext_lazy('Enlace externo relacionado al procedimiento (opcional)')
     )
     attachment = models.FileField(
         upload_to='procedures/',
         blank=True,
-        verbose_name='Adjunto',
-        help_text='Archivo del procedimiento (PDF, DOC, etc.) - Opcional'
+        verbose_name=gettext_lazy('Adjunto'),
+        help_text=gettext_lazy('Archivo del procedimiento (PDF, DOC, etc.) - Opcional')
     )
     sequence = models.PositiveIntegerField(
         default=1,
-        verbose_name='Secuencia',
-        help_text='Orden de visualización del procedimiento'
+        verbose_name=gettext_lazy('Secuencia'),
+        help_text=gettext_lazy('Orden de visualización del procedimiento')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción detallada del procedimiento'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción detallada del procedimiento')
     )
     company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
         blank=True,
         null=True,
-        verbose_name='Empresa',
-        help_text='Empresa a la que pertenece el procedimiento (opcional)',
+        verbose_name=gettext_lazy('Empresa'),
+        help_text=gettext_lazy('Empresa a la que pertenece el procedimiento (opcional)'),
         related_name='procedures'
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo',
-        help_text='Si está marcado, el procedimiento será visible'
+        verbose_name=gettext_lazy('Activo'),
+        help_text=gettext_lazy('Si está marcado, el procedimiento será visible')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por',
+        verbose_name=gettext_lazy('Creado por'),
         related_name='created_procedures'
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Fecha de actualización'
+        verbose_name=gettext_lazy('Fecha de actualización')
     )
     
     class Meta:
         ordering = ['sequence', 'title']
-        verbose_name = 'Procedimiento'
-        verbose_name_plural = 'Procedimientos'
+        verbose_name = gettext_lazy('Procedimiento')
+        verbose_name_plural = gettext_lazy('Procedimientos')
     
     def __str__(self):
         return f"{self.sequence}. {self.title}"
@@ -16726,63 +16727,63 @@ class Procedure(models.Model):
 class MonthlyCumplimiento(models.Model):
     """Modelo para gestionar metas de cumplimiento mensual"""
     FREQUENCY_CHOICES = [
-        ('daily', 'Todos los días'),
-        ('specific', 'Número específico de días'),
+        ('daily', gettext_lazy('Todos los días')),
+        ('specific', gettext_lazy('Número específico de días')),
     ]
     
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre de la meta',
-        help_text='Ejemplo: Ejercicio diario, Lectura, Meditación'
+        verbose_name=gettext_lazy('Nombre de la meta'),
+        help_text=gettext_lazy('Ejemplo: Ejercicio diario, Lectura, Meditación')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Usuario',
-        help_text='Usuario que debe cumplir esta meta',
+        verbose_name=gettext_lazy('Usuario'),
+        help_text=gettext_lazy('Usuario que debe cumplir esta meta'),
         related_name='monthly_cumplimientos'
     )
     frequency_type = models.CharField(
         max_length=20,
         choices=FREQUENCY_CHOICES,
         default='daily',
-        verbose_name='Tipo de frecuencia'
+        verbose_name=gettext_lazy('Tipo de frecuencia')
     )
     target_days = models.PositiveIntegerField(
         default=30,
-        verbose_name='Días objetivo',
-        help_text='Número de días que debe cumplir en el mes (solo para tipo específico)'
+        verbose_name=gettext_lazy('Días objetivo'),
+        help_text=gettext_lazy('Número de días que debe cumplir en el mes (solo para tipo específico)')
     )
     description = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Descripción',
-        help_text='Descripción detallada de la meta'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción detallada de la meta')
     )
     public_uuid = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
-        verbose_name='ID público',
-        help_text='ID único para acceso público'
+        verbose_name=gettext_lazy('ID público'),
+        help_text=gettext_lazy('ID único para acceso público')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Cumplimiento Mensual'
-        verbose_name_plural = 'Cumplimientos Mensuales'
+        verbose_name = gettext_lazy('Cumplimiento Mensual')
+        verbose_name_plural = gettext_lazy('Cumplimientos Mensuales')
         indexes = [
             models.Index(fields=['public_uuid']),
             models.Index(fields=['created_by', 'is_active']),
@@ -16855,34 +16856,34 @@ class DailyCumplimiento(models.Model):
         MonthlyCumplimiento,
         on_delete=models.CASCADE,
         related_name='daily_cumplimientos',
-        verbose_name='Cumplimiento mensual'
+        verbose_name=gettext_lazy('Cumplimiento mensual')
     )
     date = models.DateField(
-        verbose_name='Fecha'
+        verbose_name=gettext_lazy('Fecha')
     )
     completed = models.BooleanField(
         default=False,
-        verbose_name='Cumplido'
+        verbose_name=gettext_lazy('Cumplido')
     )
     notes = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Notas',
-        help_text='Notas adicionales sobre el cumplimiento de este día'
+        verbose_name=gettext_lazy('Notas'),
+        help_text=gettext_lazy('Notas adicionales sobre el cumplimiento de este día')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Registrado el'
+        verbose_name=gettext_lazy('Registrado el')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Actualizado el'
+        verbose_name=gettext_lazy('Actualizado el')
     )
     
     class Meta:
         ordering = ['-date']
-        verbose_name = 'Cumplimiento Diario'
-        verbose_name_plural = 'Cumplimientos Diarios'
+        verbose_name = gettext_lazy('Cumplimiento Diario')
+        verbose_name_plural = gettext_lazy('Cumplimientos Diarios')
         unique_together = ['monthly_cumplimiento', 'date']
         indexes = [
             models.Index(fields=['monthly_cumplimiento', 'date']),
@@ -16892,33 +16893,33 @@ class DailyCumplimiento(models.Model):
 
 class QRCode(models.Model):
     """Modelo para generar y almacenar códigos QR"""
-    title = models.CharField(max_length=200, verbose_name='Título')
-    content = models.TextField(verbose_name='Contenido', help_text='URL, texto o datos para generar el QR')
-    description = models.TextField(blank=True, null=True, verbose_name='Descripción')
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy('Título'))
+    content = models.TextField(verbose_name=gettext_lazy('Contenido'), help_text=gettext_lazy('URL, texto o datos para generar el QR'))
+    description = models.TextField(blank=True, null=True, verbose_name=gettext_lazy('Descripción'))
     qr_type = models.CharField(
         max_length=20,
         choices=[
-            ('url', 'URL/Enlace'),
-            ('text', 'Texto'),
-            ('email', 'Email'),
-            ('phone', 'Teléfono'),
-            ('sms', 'SMS'),
-            ('wifi', 'WiFi'),
-            ('vcard', 'Tarjeta de Contacto'),
+            ('url', gettext_lazy('URL/Enlace')),
+            ('text', gettext_lazy('Texto')),
+            ('email', gettext_lazy('Email')),
+            ('phone', gettext_lazy('Teléfono')),
+            ('sms', gettext_lazy('SMS')),
+            ('wifi', gettext_lazy('WiFi')),
+            ('vcard', gettext_lazy('Tarjeta de Contacto')),
         ],
         default='text',
-        verbose_name='Tipo de QR'
+        verbose_name=gettext_lazy('Tipo de QR')
     )
-    size = models.IntegerField(default=256, verbose_name='Tamaño (px)')
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Creado por')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
-    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    size = models.IntegerField(default=256, verbose_name=gettext_lazy('Tamaño (px)'))
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=gettext_lazy('Creado por'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de creación'))
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy('Activo'))
     
     # Campos para URL pública
-    is_public = models.BooleanField(default=False, verbose_name='Público')
-    public_uuid = models.UUIDField(default=uuid.uuid4, null=True, blank=True, verbose_name='UUID público')
-    public_token = models.CharField(max_length=32, null=True, blank=True, unique=True, verbose_name='Token público')
-    public_views = models.PositiveIntegerField(default=0, verbose_name='Vistas públicas')
+    is_public = models.BooleanField(default=False, verbose_name=gettext_lazy('Público'))
+    public_uuid = models.UUIDField(default=uuid.uuid4, null=True, blank=True, verbose_name=gettext_lazy('UUID público'))
+    public_token = models.CharField(max_length=32, null=True, blank=True, unique=True, verbose_name=gettext_lazy('Token público'))
+    public_views = models.PositiveIntegerField(default=0, verbose_name=gettext_lazy('Vistas públicas'))
 
     def __str__(self):
         return f"{self.title} ({self.qr_type})"
@@ -16969,38 +16970,38 @@ class QRCode(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Código QR'
-        verbose_name_plural = 'Códigos QR'
+        verbose_name = gettext_lazy('Código QR')
+        verbose_name_plural = gettext_lazy('Códigos QR')
 
 
 class QuickTodo(models.Model):
     """Modelo para tareas rápidas (TODO list simple)"""
     text = models.CharField(
         max_length=500,
-        verbose_name='Tarea'
+        verbose_name=gettext_lazy('Tarea')
     )
     completed = models.BooleanField(
         default=False,
-        verbose_name='Completada'
+        verbose_name=gettext_lazy('Completada')
     )
     created_by = models.ForeignKey(
         User, 
         on_delete=models.CASCADE,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['completed', '-created_at']
-        verbose_name = 'Tarea Rápida'
-        verbose_name_plural = 'Tareas Rápidas'
+        verbose_name = gettext_lazy('Tarea Rápida')
+        verbose_name_plural = gettext_lazy('Tareas Rápidas')
         indexes = [
             models.Index(fields=['created_by', 'completed']),
             models.Index(fields=['created_at']),
@@ -17015,11 +17016,11 @@ class Quotation(models.Model):
     """Modelo para gestionar cotizaciones"""
     
     STATUS_CHOICES = [
-        ('draft', 'Borrador'),
-        ('sent', 'Enviada'),
-        ('approved', 'Aprobada'),
-        ('rejected', 'Rechazada'),
-        ('expired', 'Expirada'),
+        ('draft', gettext_lazy('Borrador')),
+        ('sent', gettext_lazy('Enviada')),
+        ('approved', gettext_lazy('Aprobada')),
+        ('rejected', gettext_lazy('Rechazada')),
+        ('expired', gettext_lazy('Expirada')),
     ]
     
     # Secuencia automática
@@ -17027,14 +17028,14 @@ class Quotation(models.Model):
         max_length=20, 
         unique=True, 
         blank=True,
-        verbose_name='Secuencia'
+        verbose_name=gettext_lazy('Secuencia')
     )
     
     # Empresa cliente
     company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
-        verbose_name='Empresa',
+        verbose_name=gettext_lazy('Empresa'),
         related_name='quotations'
     )
     
@@ -17042,22 +17043,22 @@ class Quotation(models.Model):
     salesperson = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Vendedor',
+        verbose_name=gettext_lazy('Vendedor'),
         related_name='quotations'
     )
     
     # Fecha de cotización
     date = models.DateField(
         default=timezone.now,
-        verbose_name='Fecha'
+        verbose_name=gettext_lazy('Fecha')
     )
     
     # Fecha de vencimiento (por defecto 30 días después de la fecha de cotización)
     expiry_date = models.DateField(
         blank=True,
         null=True,
-        verbose_name='Fecha de Vencimiento',
-        help_text='Fecha límite para aceptar esta cotización'
+        verbose_name=gettext_lazy('Fecha de Vencimiento'),
+        help_text=gettext_lazy('Fecha límite para aceptar esta cotización')
     )
     
     # Estado
@@ -17065,28 +17066,28 @@ class Quotation(models.Model):
         max_length=20,
         choices=STATUS_CHOICES,
         default='draft',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     # Campos adicionales
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     
     # Fechas del servicio (opcional para servicios con duración específica)
     service_start_date = models.DateField(
         blank=True,
         null=True,
-        verbose_name='Fecha de Inicio del Servicio',
-        help_text='Fecha en que comenzará el servicio (opcional)'
+        verbose_name=gettext_lazy('Fecha de Inicio del Servicio'),
+        help_text=gettext_lazy('Fecha en que comenzará el servicio (opcional)')
     )
     
     service_end_date = models.DateField(
         blank=True,
         null=True,
-        verbose_name='Fecha de Fin del Servicio', 
-        help_text='Fecha estimada de finalización del servicio (opcional)'
+        verbose_name=gettext_lazy('Fecha de Fin del Servicio'), 
+        help_text=gettext_lazy('Fecha estimada de finalización del servicio (opcional)')
     )
     
     # Token para acceso público
@@ -17095,66 +17096,66 @@ class Quotation(models.Model):
         unique=True,
         blank=True,
         null=True,
-        verbose_name='Token Público',
-        help_text='Token único para compartir la cotización públicamente'
+        verbose_name=gettext_lazy('Token Público'),
+        help_text=gettext_lazy('Token único para compartir la cotización públicamente')
     )
     
     # Estado del cliente (respuesta pública)
     CLIENT_STATUS_CHOICES = [
-        ('pending', 'Pendiente de Respuesta'),
-        ('accepted', 'Aceptada por Cliente'),
-        ('rejected', 'Rechazada por Cliente'),
+        ('pending', gettext_lazy('Pendiente de Respuesta')),
+        ('accepted', gettext_lazy('Aceptada por Cliente')),
+        ('rejected', gettext_lazy('Rechazada por Cliente')),
     ]
     
     client_status = models.CharField(
         max_length=20,
         choices=CLIENT_STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado del Cliente',
-        help_text='Estado de la respuesta del cliente a la cotización'
+        verbose_name=gettext_lazy('Estado del Cliente'),
+        help_text=gettext_lazy('Estado de la respuesta del cliente a la cotización')
     )
     
     # Información de respuesta del cliente
     client_response_name = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Nombre del Cliente',
-        help_text='Nombre de quien respondió a la cotización'
+        verbose_name=gettext_lazy('Nombre del Cliente'),
+        help_text=gettext_lazy('Nombre de quien respondió a la cotización')
     )
     
     client_response_email = models.EmailField(
         blank=True,
-        verbose_name='Email del Cliente',
-        help_text='Email de quien respondió a la cotización'
+        verbose_name=gettext_lazy('Email del Cliente'),
+        help_text=gettext_lazy('Email de quien respondió a la cotización')
     )
     
     client_response_comments = models.TextField(
         blank=True,
-        verbose_name='Comentarios del Cliente',
-        help_text='Comentarios adicionales del cliente'
+        verbose_name=gettext_lazy('Comentarios del Cliente'),
+        help_text=gettext_lazy('Comentarios adicionales del cliente')
     )
     
     client_response_date = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Fecha de Respuesta del Cliente',
-        help_text='Fecha y hora en que el cliente respondió'
+        verbose_name=gettext_lazy('Fecha de Respuesta del Cliente'),
+        help_text=gettext_lazy('Fecha y hora en que el cliente respondió')
     )
     
     # Metadatos
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Cotización'
-        verbose_name_plural = 'Cotizaciones'
+        verbose_name = gettext_lazy('Cotización')
+        verbose_name_plural = gettext_lazy('Cotizaciones')
         indexes = [
             models.Index(fields=['sequence']),
             models.Index(fields=['company']),
@@ -17300,44 +17301,44 @@ class QuotationView(models.Model):
     quotation = models.ForeignKey(
         'Quotation',
         on_delete=models.CASCADE,
-        verbose_name='Cotizacion',
+        verbose_name=gettext_lazy('Cotizacion'),
         related_name='views'
     )
     
     viewed_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Visita'
+        verbose_name=gettext_lazy('Fecha de Visita')
     )
     
     ip_address = models.GenericIPAddressField(
-        verbose_name='Direccion IP',
+        verbose_name=gettext_lazy('Direccion IP'),
         null=True,
         blank=True
     )
     
     country = models.CharField(
         max_length=100,
-        verbose_name='Pais',
+        verbose_name=gettext_lazy('Pais'),
         blank=True,
-        help_text='Pais desde donde se accedio'
+        help_text=gettext_lazy('Pais desde donde se accedio')
     )
     
     country_code = models.CharField(
         max_length=2,
-        verbose_name='Codigo de Pais',
+        verbose_name=gettext_lazy('Codigo de Pais'),
         blank=True,
-        help_text='Codigo ISO del pais (ej: US, MX, ES)'
+        help_text=gettext_lazy('Codigo ISO del pais (ej: US, MX, ES)')
     )
     
     user_agent = models.TextField(
-        verbose_name='Navegador/Dispositivo',
+        verbose_name=gettext_lazy('Navegador/Dispositivo'),
         blank=True
     )
     
     class Meta:
         ordering = ['-viewed_at']
-        verbose_name = 'Visita a Cotizacion'
-        verbose_name_plural = 'Visitas a Cotizaciones'
+        verbose_name = gettext_lazy('Visita a Cotizacion')
+        verbose_name_plural = gettext_lazy('Visitas a Cotizaciones')
         indexes = [
             models.Index(fields=['quotation']),
             models.Index(fields=['viewed_at']),
@@ -17354,53 +17355,53 @@ class QuotationLine(models.Model):
     quotation = models.ForeignKey(
         'Quotation',
         on_delete=models.CASCADE,
-        verbose_name='Cotización',
+        verbose_name=gettext_lazy('Cotización'),
         related_name='lines'
     )
     
     product = models.ForeignKey(
         'Product',
         on_delete=models.CASCADE,
-        verbose_name='Producto'
+        verbose_name=gettext_lazy('Producto')
     )
     
     quantity = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=1,
-        verbose_name='Cantidad'
+        verbose_name=gettext_lazy('Cantidad')
     )
     
     unit_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name='Precio Unitario'
+        verbose_name=gettext_lazy('Precio Unitario')
     )
     
     discount_percentage = models.DecimalField(
         max_digits=5,
         decimal_places=2,
         default=0,
-        verbose_name='Descuento (%)',
-        help_text='Porcentaje de descuento sobre el precio unitario'
+        verbose_name=gettext_lazy('Descuento (%)'),
+        help_text=gettext_lazy('Porcentaje de descuento sobre el precio unitario')
     )
     
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción adicional o personalizada del producto'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción adicional o personalizada del producto')
     )
     
     # Metadatos
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
         ordering = ['id']
-        verbose_name = 'Línea de Cotización'
-        verbose_name_plural = 'Líneas de Cotización'
+        verbose_name = gettext_lazy('Línea de Cotización')
+        verbose_name_plural = gettext_lazy('Líneas de Cotización')
         indexes = [
             models.Index(fields=['quotation']),
             models.Index(fields=['product']),
@@ -17435,7 +17436,7 @@ class QuotationTemplate(models.Model):
     template_quotation = models.ForeignKey(
         'Quotation',
         on_delete=models.CASCADE,
-        verbose_name='Cotización Plantilla',
+        verbose_name=gettext_lazy('Cotización Plantilla'),
         related_name='public_templates'
     )
     
@@ -17443,59 +17444,59 @@ class QuotationTemplate(models.Model):
     public_token = models.CharField(
         max_length=50,
         unique=True,
-        verbose_name='Token Público',
-        help_text='Token único para el enlace público'
+        verbose_name=gettext_lazy('Token Público'),
+        help_text=gettext_lazy('Token único para el enlace público')
     )
     
     # Información del enlace
     title = models.CharField(
         max_length=200,
-        verbose_name='Título del Enlace',
-        help_text='Título descriptivo para el cliente'
+        verbose_name=gettext_lazy('Título del Enlace'),
+        help_text=gettext_lazy('Título descriptivo para el cliente')
     )
     
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción que verá el cliente al acceder al enlace'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción que verá el cliente al acceder al enlace')
     )
     
     # Estado
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo',
-        help_text='Si el enlace está activo y acepta nuevas solicitudes'
+        verbose_name=gettext_lazy('Activo'),
+        help_text=gettext_lazy('Si el enlace está activo y acepta nuevas solicitudes')
     )
     
     # Estadísticas
     views_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Número de Vistas',
-        help_text='Cuántas veces se ha visitado el enlace'
+        verbose_name=gettext_lazy('Número de Vistas'),
+        help_text=gettext_lazy('Cuántas veces se ha visitado el enlace')
     )
     
     conversions_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Conversiones',
-        help_text='Cuántas cotizaciones se han generado desde este enlace'
+        verbose_name=gettext_lazy('Conversiones'),
+        help_text=gettext_lazy('Cuántas cotizaciones se han generado desde este enlace')
     )
     
     # Metadatos
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por',
+        verbose_name=gettext_lazy('Creado por'),
         related_name='quotation_templates'
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Plantilla de Cotización Pública'
-        verbose_name_plural = 'Plantillas de Cotización Públicas'
+        verbose_name = gettext_lazy('Plantilla de Cotización Pública')
+        verbose_name_plural = gettext_lazy('Plantillas de Cotización Públicas')
         indexes = [
             models.Index(fields=['public_token']),
             models.Index(fields=['is_active']),
@@ -17542,36 +17543,36 @@ class QuotationTemplateRequest(models.Model):
     template = models.ForeignKey(
         'QuotationTemplate',
         on_delete=models.CASCADE,
-        verbose_name='Plantilla',
+        verbose_name=gettext_lazy('Plantilla'),
         related_name='requests'
     )
     
     # Datos del cliente
     client_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del Cliente'
+        verbose_name=gettext_lazy('Nombre del Cliente')
     )
     
     client_email = models.EmailField(
-        verbose_name='Email del Cliente'
+        verbose_name=gettext_lazy('Email del Cliente')
     )
     
     client_phone = models.CharField(
         max_length=50,
         blank=True,
-        verbose_name='Teléfono del Cliente'
+        verbose_name=gettext_lazy('Teléfono del Cliente')
     )
     
     client_company = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Empresa del Cliente'
+        verbose_name=gettext_lazy('Empresa del Cliente')
     )
     
     # Comentarios del cliente
     client_comments = models.TextField(
         blank=True,
-        verbose_name='Comentarios del Cliente'
+        verbose_name=gettext_lazy('Comentarios del Cliente')
     )
     
     # Cotización generada
@@ -17580,34 +17581,34 @@ class QuotationTemplateRequest(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Cotización Generada',
+        verbose_name=gettext_lazy('Cotización Generada'),
         related_name='template_requests'
     )
     
     # Estado
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('processed', 'Procesada'),
-        ('quoted', 'Cotizada'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('processed', gettext_lazy('Procesada')),
+        ('quoted', gettext_lazy('Cotizada')),
     ]
     
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     # Metadatos
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de solicitud'
+        verbose_name=gettext_lazy('Fecha de solicitud')
     )
     
     processed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de procesamiento'
+        verbose_name=gettext_lazy('Fecha de procesamiento')
     )
     
     processed_by = models.ForeignKey(
@@ -17615,14 +17616,14 @@ class QuotationTemplateRequest(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Procesado por',
+        verbose_name=gettext_lazy('Procesado por'),
         related_name='processed_template_requests'
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Solicitud de Plantilla'
-        verbose_name_plural = 'Solicitudes de Plantillas'
+        verbose_name = gettext_lazy('Solicitud de Plantilla')
+        verbose_name_plural = gettext_lazy('Solicitudes de Plantillas')
         indexes = [
             models.Index(fields=['template']),
             models.Index(fields=['status']),
@@ -17708,42 +17709,42 @@ class CrmQuestion(models.Model):
     """Modelo para gestionar preguntas del CRM"""
     
     sequence = models.PositiveIntegerField(
-        verbose_name='Secuencia',
-        help_text='Número de secuencia de la pregunta'
+        verbose_name=gettext_lazy('Secuencia'),
+        help_text=gettext_lazy('Número de secuencia de la pregunta')
     )
     company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
         related_name='crm_questions',
-        verbose_name='Empresa',
-        help_text='Empresa asociada a la pregunta'
+        verbose_name=gettext_lazy('Empresa'),
+        help_text=gettext_lazy('Empresa asociada a la pregunta')
     )
     question = models.TextField(
-        verbose_name='Pregunta',
-        help_text='Contenido de la pregunta'
+        verbose_name=gettext_lazy('Pregunta'),
+        help_text=gettext_lazy('Contenido de la pregunta')
     )
     answer = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Respuesta',
-        help_text='Respuesta a la pregunta'
+        verbose_name=gettext_lazy('Respuesta'),
+        help_text=gettext_lazy('Respuesta a la pregunta')
     )
     person_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre de la persona',
-        help_text='Nombre completo de quien hace la pregunta'
+        verbose_name=gettext_lazy('Nombre de la persona'),
+        help_text=gettext_lazy('Nombre completo de quien hace la pregunta')
     )
     person_email = models.EmailField(
-        verbose_name='Email de la persona',
-        help_text='Correo electrónico de quien hace la pregunta'
+        verbose_name=gettext_lazy('Email de la persona'),
+        help_text=gettext_lazy('Correo electrónico de quien hace la pregunta')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     created_by = models.ForeignKey(
         User,
@@ -17751,8 +17752,8 @@ class CrmQuestion(models.Model):
         null=True,
         blank=True,
         related_name='crm_questions_created',
-        verbose_name='Creado por',
-        help_text='Usuario que creó la pregunta (NULL para preguntas públicas)'
+        verbose_name=gettext_lazy('Creado por'),
+        help_text=gettext_lazy('Usuario que creó la pregunta (NULL para preguntas públicas)')
     )
     answered_by = models.ForeignKey(
         User,
@@ -17760,18 +17761,18 @@ class CrmQuestion(models.Model):
         null=True,
         blank=True,
         related_name='crm_questions_answered',
-        verbose_name='Respondido por'
+        verbose_name=gettext_lazy('Respondido por')
     )
     answered_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de respuesta'
+        verbose_name=gettext_lazy('Fecha de respuesta')
     )
     
     class Meta:
         ordering = ['sequence', '-created_at']
-        verbose_name = 'Pregunta CRM'
-        verbose_name_plural = 'Preguntas CRM'
+        verbose_name = gettext_lazy('Pregunta CRM')
+        verbose_name_plural = gettext_lazy('Preguntas CRM')
         unique_together = [['company', 'sequence']]
     
     def __str__(self):
@@ -17869,41 +17870,41 @@ class SupportMeeting(models.Model):
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
-        verbose_name='Empresa',
-        help_text='Empresa para la cual se realiza la reunión'
+        verbose_name=gettext_lazy('Empresa'),
+        help_text=gettext_lazy('Empresa para la cual se realiza la reunión')
     )
     sequence = models.PositiveIntegerField(
-        verbose_name='Secuencia',
-        help_text='Número secuencial de la reunión'
+        verbose_name=gettext_lazy('Secuencia'),
+        help_text=gettext_lazy('Número secuencial de la reunión')
     )
     date = models.DateField(
         default=timezone.now,
-        verbose_name='Fecha',
-        help_text='Fecha de la reunión'
+        verbose_name=gettext_lazy('Fecha'),
+        help_text=gettext_lazy('Fecha de la reunión')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por',
-        help_text='Usuario que creó la reunión'
+        verbose_name=gettext_lazy('Creado por'),
+        help_text=gettext_lazy('Usuario que creó la reunión')
     )
     description = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción de lo que se vio en la reunión'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción de lo que se vio en la reunión')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['company', '-sequence']
-        verbose_name = 'Reunión de Soporte'
-        verbose_name_plural = 'Reuniones de Soporte'
+        verbose_name = gettext_lazy('Reunión de Soporte')
+        verbose_name_plural = gettext_lazy('Reuniones de Soporte')
         unique_together = [['company', 'sequence']]
     
     def __str__(self):
@@ -17932,43 +17933,43 @@ class SupportMeetingPoint(models.Model):
     """Modelo para los puntos de las reuniones de soporte"""
     
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('in_progress', 'En Progreso'),
-        ('completed', 'Completado'),
-        ('cancelled', 'Cancelado'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('in_progress', gettext_lazy('En Progreso')),
+        ('completed', gettext_lazy('Completado')),
+        ('cancelled', gettext_lazy('Cancelado')),
     ]
     
     meeting = models.ForeignKey(
         SupportMeeting,
         on_delete=models.CASCADE,
         related_name='support_meeting_points',
-        verbose_name='Reunión'
+        verbose_name=gettext_lazy('Reunión')
     )
     description = models.TextField(
-        verbose_name='Descripción del punto',
-        help_text='Descripción detallada del punto'
+        verbose_name=gettext_lazy('Descripción del punto'),
+        help_text=gettext_lazy('Descripción detallada del punto')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado',
-        help_text='Estado actual del punto'
+        verbose_name=gettext_lazy('Estado'),
+        help_text=gettext_lazy('Estado actual del punto')
     )
     is_selected = models.BooleanField(
         default=False,
-        verbose_name='Seleccionado',
-        help_text='Marcar para crear como ticket'
+        verbose_name=gettext_lazy('Seleccionado'),
+        help_text=gettext_lazy('Marcar para crear como ticket')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
         ordering = ['created_at']
-        verbose_name = 'Punto de Reunión'
-        verbose_name_plural = 'Puntos de Reunión'
+        verbose_name = gettext_lazy('Punto de Reunión')
+        verbose_name_plural = gettext_lazy('Puntos de Reunión')
     
     def __str__(self):
         return f"{self.meeting} - {self.description[:50]}..."
@@ -17991,45 +17992,45 @@ class SupportMeetingPublicLink(models.Model):
         SupportMeeting,
         on_delete=models.CASCADE,
         related_name='public_link',
-        verbose_name='Reunión'
+        verbose_name=gettext_lazy('Reunión')
     )
     token = models.CharField(
         max_length=64,
         unique=True,
-        verbose_name='Token de acceso'
+        verbose_name=gettext_lazy('Token de acceso')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     show_company_meetings = models.BooleanField(
         default=True,
-        verbose_name='Mostrar otras reuniones de la empresa',
-        help_text='Si está marcado, se mostrarán todas las reuniones públicas de la empresa'
+        verbose_name=gettext_lazy('Mostrar otras reuniones de la empresa'),
+        help_text=gettext_lazy('Si está marcado, se mostrarán todas las reuniones públicas de la empresa')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     last_accessed = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Último acceso'
+        verbose_name=gettext_lazy('Último acceso')
     )
     access_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Número de accesos'
+        verbose_name=gettext_lazy('Número de accesos')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Enlace Público de Reunión'
-        verbose_name_plural = 'Enlaces Públicos de Reuniones'
+        verbose_name = gettext_lazy('Enlace Público de Reunión')
+        verbose_name_plural = gettext_lazy('Enlaces Públicos de Reuniones')
     
     def __str__(self):
         return f"Enlace público - {self.meeting}"
@@ -18067,57 +18068,57 @@ class EmailTemplate(models.Model):
     """Modelo para plantillas de correo electrónico"""
     
     CATEGORY_CHOICES = [
-        ('general', 'General'),
-        ('ventas', 'Ventas'),
-        ('soporte', 'Soporte'),
-        ('marketing', 'Marketing'),
-        ('seguimiento', 'Seguimiento'),
-        ('recordatorio', 'Recordatorio'),
+        ('general', gettext_lazy('General')),
+        ('ventas', gettext_lazy('Ventas')),
+        ('soporte', gettext_lazy('Soporte')),
+        ('marketing', gettext_lazy('Marketing')),
+        ('seguimiento', gettext_lazy('Seguimiento')),
+        ('recordatorio', gettext_lazy('Recordatorio')),
     ]
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Título descriptivo de la plantilla'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Título descriptivo de la plantilla')
     )
     body = models.TextField(
-        verbose_name='Cuerpo del mensaje',
-        help_text='Contenido del correo electrónico'
+        verbose_name=gettext_lazy('Cuerpo del mensaje'),
+        help_text=gettext_lazy('Contenido del correo electrónico')
     )
     category = models.CharField(
         max_length=50,
         choices=CATEGORY_CHOICES,
         default='general',
-        verbose_name='Categoría'
+        verbose_name=gettext_lazy('Categoría')
     )
     order = models.PositiveIntegerField(
         default=1,
-        verbose_name='Orden',
-        help_text='Orden de visualización (menor número = mayor prioridad)'
+        verbose_name=gettext_lazy('Orden'),
+        help_text=gettext_lazy('Orden de visualización (menor número = mayor prioridad)')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_email_templates',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['order', 'title']
-        verbose_name = 'Plantilla de Correo'
-        verbose_name_plural = 'Plantillas de Correo'
+        verbose_name = gettext_lazy('Plantilla de Correo')
+        verbose_name_plural = gettext_lazy('Plantillas de Correo')
     
     def __str__(self):
         return f"{self.title} ({self.get_category_display()})"
@@ -18130,41 +18131,41 @@ class EmailTemplateHistory(models.Model):
         EmailTemplate,
         on_delete=models.CASCADE,
         related_name='history',
-        verbose_name='Plantilla'
+        verbose_name=gettext_lazy('Plantilla')
     )
     title = models.CharField(
         max_length=200,
-        verbose_name='Título'
+        verbose_name=gettext_lazy('Título')
     )
     body = models.TextField(
-        verbose_name='Cuerpo del mensaje'
+        verbose_name=gettext_lazy('Cuerpo del mensaje')
     )
     category = models.CharField(
         max_length=50,
-        verbose_name='Categoría'
+        verbose_name=gettext_lazy('Categoría')
     )
     order = models.PositiveIntegerField(
-        verbose_name='Orden'
+        verbose_name=gettext_lazy('Orden')
     )
     changed_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Modificado por'
+        verbose_name=gettext_lazy('Modificado por')
     )
     changed_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de modificación'
+        verbose_name=gettext_lazy('Fecha de modificación')
     )
     change_reason = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Motivo del cambio'
+        verbose_name=gettext_lazy('Motivo del cambio')
     )
     
     class Meta:
         ordering = ['-changed_at']
-        verbose_name = 'Historial de Plantilla'
-        verbose_name_plural = 'Historiales de Plantillas'
+        verbose_name = gettext_lazy('Historial de Plantilla')
+        verbose_name_plural = gettext_lazy('Historiales de Plantillas')
     
     def __str__(self):
         return f"{self.template.title} - {self.changed_at.strftime('%d/%m/%Y %H:%M')}"
@@ -18175,44 +18176,44 @@ class Counter(models.Model):
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Nombre del contador'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Nombre del contador')
     )
     value = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=0,
-        verbose_name='Valor',
-        help_text='Valor del contador'
+        verbose_name=gettext_lazy('Valor'),
+        help_text=gettext_lazy('Valor del contador')
     )
     date = models.DateField(
-        verbose_name='Fecha',
-        help_text='Fecha del contador'
+        verbose_name=gettext_lazy('Fecha'),
+        help_text=gettext_lazy('Fecha del contador')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='counters',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas',
-        help_text='Notas adicionales (opcional)'
+        verbose_name=gettext_lazy('Notas'),
+        help_text=gettext_lazy('Notas adicionales (opcional)')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-date', 'title']
-        verbose_name = 'Contador'
-        verbose_name_plural = 'Contadores'
+        verbose_name = gettext_lazy('Contador')
+        verbose_name_plural = gettext_lazy('Contadores')
         unique_together = ['title', 'date', 'user']
     
     def __str__(self):
@@ -18226,35 +18227,35 @@ class CounterHistory(models.Model):
         Counter,
         on_delete=models.CASCADE,
         related_name='history',
-        verbose_name='Contador'
+        verbose_name=gettext_lazy('Contador')
     )
     value = models.DecimalField(
         max_digits=12,
         decimal_places=2,
-        verbose_name='Valor',
-        help_text='Valor ingresado'
+        verbose_name=gettext_lazy('Valor'),
+        help_text=gettext_lazy('Valor ingresado')
     )
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas',
-        help_text='Notas sobre este cambio (opcional)'
+        verbose_name=gettext_lazy('Notas'),
+        help_text=gettext_lazy('Notas sobre este cambio (opcional)')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='counter_history',
-        verbose_name='Usuario',
-        help_text='Usuario que realizó el cambio'
+        verbose_name=gettext_lazy('Usuario'),
+        help_text=gettext_lazy('Usuario que realizó el cambio')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha y hora'
+        verbose_name=gettext_lazy('Fecha y hora')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Historial de Contador'
-        verbose_name_plural = 'Historiales de Contadores'
+        verbose_name = gettext_lazy('Historial de Contador')
+        verbose_name_plural = gettext_lazy('Historiales de Contadores')
     
     def __str__(self):
         return f"{self.counter.title} - {self.value} ({self.created_at.strftime('%d/%m/%Y %H:%M')})"
@@ -18264,85 +18265,85 @@ class OCRInvoice(models.Model):
     """Modelo para facturas procesadas con OCR"""
     
     STATUS_CHOICES = [
-        ('draft', 'Borrador'),
-        ('scanned', 'Escaneado'),
-        ('downloaded', 'Descargada'),
+        ('draft', gettext_lazy('Borrador')),
+        ('scanned', gettext_lazy('Escaneado')),
+        ('downloaded', gettext_lazy('Descargada')),
     ]
     
     sequence_number = models.CharField(
         max_length=50,
         unique=True,
-        verbose_name='Número de Secuencia',
-        help_text='Número de secuencia interno autogenerado'
+        verbose_name=gettext_lazy('Número de Secuencia'),
+        help_text=gettext_lazy('Número de secuencia interno autogenerado')
     )
     number = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        verbose_name='Número de Factura',
-        help_text='Número de la factura (se extrae automáticamente del OCR)'
+        verbose_name=gettext_lazy('Número de Factura'),
+        help_text=gettext_lazy('Número de la factura (se extrae automáticamente del OCR)')
     )
     supplier = models.CharField(
         max_length=200,
         blank=True,
         null=True,
-        verbose_name='Proveedor',
-        help_text='Nombre del proveedor (se extrae automáticamente del OCR)'
+        verbose_name=gettext_lazy('Proveedor'),
+        help_text=gettext_lazy('Nombre del proveedor (se extrae automáticamente del OCR)')
     )
     amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=0,
         blank=True,
-        verbose_name='Importe',
-        help_text='Importe total de la factura (se extrae automáticamente del OCR)'
+        verbose_name=gettext_lazy('Importe'),
+        help_text=gettext_lazy('Importe total de la factura (se extrae automáticamente del OCR)')
     )
     neto = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=0,
         blank=True,
-        verbose_name='Neto',
-        help_text='Importe neto sin impuestos'
+        verbose_name=gettext_lazy('Neto'),
+        help_text=gettext_lazy('Importe neto sin impuestos')
     )
     impuesto = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=0,
         blank=True,
-        verbose_name='Impuesto',
-        help_text='Importe del impuesto (IVA, etc.)'
+        verbose_name=gettext_lazy('Impuesto'),
+        help_text=gettext_lazy('Importe del impuesto (IVA, etc.)')
     )
     total = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=0,
         blank=True,
-        verbose_name='Total',
-        help_text='Importe total con impuestos'
+        verbose_name=gettext_lazy('Total'),
+        help_text=gettext_lazy('Importe total con impuestos')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='draft',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     image = models.ImageField(
         upload_to='invoices/%Y/%m/',
-        verbose_name='Imagen de la factura',
-        help_text='Imagen escaneada de la factura'
+        verbose_name=gettext_lazy('Imagen de la factura'),
+        help_text=gettext_lazy('Imagen escaneada de la factura')
     )
     json_data = models.JSONField(
         null=True,
         blank=True,
-        verbose_name='Datos OCR',
-        help_text='Datos extraídos por OCR en formato JSON'
+        verbose_name=gettext_lazy('Datos OCR'),
+        help_text=gettext_lazy('Datos extraídos por OCR en formato JSON')
     )
     public_token = models.CharField(
         max_length=100,
         unique=True,
-        verbose_name='Token público',
-        help_text='Token para acceso público y API'
+        verbose_name=gettext_lazy('Token público'),
+        help_text=gettext_lazy('Token para acceso público y API')
     )
     uploaded_by = models.ForeignKey(
         User,
@@ -18350,32 +18351,32 @@ class OCRInvoice(models.Model):
         null=True,
         blank=True,
         related_name='uploaded_invoices',
-        verbose_name='Subido por'
+        verbose_name=gettext_lazy('Subido por')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     downloaded = models.BooleanField(
         default=False,
-        verbose_name='Descargada',
-        help_text='Indica si la factura ha sido descargada vía API'
+        verbose_name=gettext_lazy('Descargada'),
+        help_text=gettext_lazy('Indica si la factura ha sido descargada vía API')
     )
     downloaded_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de descarga',
-        help_text='Fecha y hora en que se descargó la factura por primera vez'
+        verbose_name=gettext_lazy('Fecha de descarga'),
+        help_text=gettext_lazy('Fecha y hora en que se descargó la factura por primera vez')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Factura OCR'
-        verbose_name_plural = 'Facturas OCR'
+        verbose_name = gettext_lazy('Factura OCR')
+        verbose_name_plural = gettext_lazy('Facturas OCR')
     
     def __str__(self):
         number = self.number or 'Sin número'
@@ -18418,67 +18419,67 @@ class ScheduledTask(models.Model):
     """Modelo para tareas programadas"""
     
     FREQUENCY_UNIT_CHOICES = [
-        ('minute', 'Minuto'),
-        ('hour', 'Hora'),  
-        ('day', 'Día'),
-        ('month', 'Mes'),
+        ('minute', gettext_lazy('Minuto')),
+        ('hour', gettext_lazy('Hora')),  
+        ('day', gettext_lazy('Día')),
+        ('month', gettext_lazy('Mes')),
     ]
     
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre de la Tarea'
+        verbose_name=gettext_lazy('Nombre de la Tarea')
     )
     frequency = models.PositiveIntegerField(
-        verbose_name='Frecuencia',
-        help_text='Cada cuántas unidades de tiempo se ejecuta'
+        verbose_name=gettext_lazy('Frecuencia'),
+        help_text=gettext_lazy('Cada cuántas unidades de tiempo se ejecuta')
     )
     frequency_unit = models.CharField(
         max_length=10,
         choices=FREQUENCY_UNIT_CHOICES,
         default='hour',
-        verbose_name='Unidad de Frecuencia'
+        verbose_name=gettext_lazy('Unidad de Frecuencia')
     )
     code = models.TextField(
-        verbose_name='Código a Ejecutar',
-        help_text='Código Python que se ejecutará en cada iteración'
+        verbose_name=gettext_lazy('Código a Ejecutar'),
+        help_text=gettext_lazy('Código Python que se ejecutará en cada iteración')
     )
     is_active = models.BooleanField(
         default=False,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     last_execution = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Última Ejecución'
+        verbose_name=gettext_lazy('Última Ejecución')
     )
     last_result = models.TextField(
         blank=True,
-        verbose_name='Último Resultado',
-        help_text='Resultado de la última ejecución'
+        verbose_name=gettext_lazy('Último Resultado'),
+        help_text=gettext_lazy('Resultado de la última ejecución')
     )
     success_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Ejecuciones Exitosas'
+        verbose_name=gettext_lazy('Ejecuciones Exitosas')
     )
     error_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Ejecuciones con Error'
+        verbose_name=gettext_lazy('Ejecuciones con Error')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_scheduled_tasks',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Tarea Programada'
-        verbose_name_plural = 'Tareas Programadas'
+        verbose_name = gettext_lazy('Tarea Programada')
+        verbose_name_plural = gettext_lazy('Tareas Programadas')
     
     def __str__(self):
         return f"{self.name} (cada {self.frequency} {self.get_frequency_unit_display().lower()})"
@@ -18512,40 +18513,40 @@ class ScheduledTaskExecution(models.Model):
     """Historial de ejecuciones de tareas programadas"""
     
     STATUS_CHOICES = [
-        ('success', 'Exitosa'),
-        ('error', 'Error'),
-        ('timeout', 'Timeout'),
+        ('success', gettext_lazy('Exitosa')),
+        ('error', gettext_lazy('Error')),
+        ('timeout', gettext_lazy('Timeout')),
     ]
     
     task = models.ForeignKey(
         ScheduledTask,
         on_delete=models.CASCADE,
         related_name='executions',
-        verbose_name='Tarea'
+        verbose_name=gettext_lazy('Tarea')
     )
     executed_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Ejecutado en'
+        verbose_name=gettext_lazy('Ejecutado en')
     )
     status = models.CharField(
         max_length=10,
         choices=STATUS_CHOICES,
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     result = models.TextField(
         blank=True,
-        verbose_name='Resultado'
+        verbose_name=gettext_lazy('Resultado')
     )
     execution_time = models.FloatField(
         null=True,
         blank=True,
-        verbose_name='Tiempo de Ejecución (segundos)'
+        verbose_name=gettext_lazy('Tiempo de Ejecución (segundos)')
     )
     
     class Meta:
         ordering = ['-executed_at']
-        verbose_name = 'Ejecución de Tarea'
-        verbose_name_plural = 'Ejecuciones de Tareas'
+        verbose_name = gettext_lazy('Ejecución de Tarea')
+        verbose_name_plural = gettext_lazy('Ejecuciones de Tareas')
     
     def __str__(self):
         return f"{self.task.name} - {self.executed_at.strftime('%d/%m/%Y %H:%M')} ({self.get_status_display()})"
@@ -18555,41 +18556,41 @@ class CourseRating(models.Model):
     """Modelo para calificaciones de cursos con caras (triste, neutro, feliz)"""
     
     RATING_CHOICES = [
-        ('sad', '😞 Triste'),
-        ('neutral', '😐 Neutro'),
-        ('happy', '😊 Feliz'),
+        ('sad', gettext_lazy('😞 Triste')),
+        ('neutral', gettext_lazy('😐 Neutro')),
+        ('happy', gettext_lazy('😊 Feliz')),
     ]
     
     course = models.ForeignKey(
         'Course',
         on_delete=models.CASCADE,
         related_name='ratings',
-        verbose_name='Curso'
+        verbose_name=gettext_lazy('Curso')
     )
     rating = models.CharField(
         max_length=10,
         choices=RATING_CHOICES,
-        verbose_name='Calificación'
+        verbose_name=gettext_lazy('Calificación')
     )
     ip_address = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     user_agent = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name='User Agent'
+        verbose_name=gettext_lazy('User Agent')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Calificación de Curso'
-        verbose_name_plural = 'Calificaciones de Cursos'
+        verbose_name = gettext_lazy('Calificación de Curso')
+        verbose_name_plural = gettext_lazy('Calificaciones de Cursos')
     
     def __str__(self):
         return f"{self.get_rating_display()} - {self.course.title}"
@@ -18599,36 +18600,36 @@ class QARating(models.Model):
     """Modelo para calificaciones de QA con caras (triste, neutro, feliz)"""
     
     RATING_CHOICES = [
-        ('sad', '😞 Triste'),
-        ('neutral', '😐 Neutro'),
-        ('happy', '😊 Feliz'),
+        ('sad', gettext_lazy('😞 Triste')),
+        ('neutral', gettext_lazy('😐 Neutro')),
+        ('happy', gettext_lazy('😊 Feliz')),
     ]
     
     # Calificación principal
     rating = models.CharField(
         max_length=10,
         choices=RATING_CHOICES,
-        verbose_name='Calificación',
-        help_text='Calificación: triste, neutro o feliz'
+        verbose_name=gettext_lazy('Calificación'),
+        help_text=gettext_lazy('Calificación: triste, neutro o feliz')
     )
     
     # Opinión
     opinion = models.TextField(
-        verbose_name='Opinión',
-        help_text='Tu opinión sobre el servicio de QA'
+        verbose_name=gettext_lazy('Opinión'),
+        help_text=gettext_lazy('Tu opinión sobre el servicio de QA')
     )
     
     # Información opcional del usuario
     name = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Nombre',
-        help_text='Tu nombre (opcional)'
+        verbose_name=gettext_lazy('Nombre'),
+        help_text=gettext_lazy('Tu nombre (opcional)')
     )
     email = models.EmailField(
         blank=True,
-        verbose_name='Correo electrónico',
-        help_text='Tu correo electrónico (opcional)'
+        verbose_name=gettext_lazy('Correo electrónico'),
+        help_text=gettext_lazy('Tu correo electrónico (opcional)')
     )
     
     # Relación opcional con empresa
@@ -18638,8 +18639,8 @@ class QARating(models.Model):
         null=True,
         blank=True,
         related_name='qa_ratings',
-        verbose_name='Empresa',
-        help_text='Empresa asociada a esta calificación (opcional)'
+        verbose_name=gettext_lazy('Empresa'),
+        help_text=gettext_lazy('Empresa asociada a esta calificación (opcional)')
     )
     
     # Usuario registrado (si aplica)
@@ -18649,37 +18650,37 @@ class QARating(models.Model):
         null=True,
         blank=True,
         related_name='qa_ratings',
-        verbose_name='Usuario',
-        help_text='Usuario registrado que dejó la calificación'
+        verbose_name=gettext_lazy('Usuario'),
+        help_text=gettext_lazy('Usuario registrado que dejó la calificación')
     )
     
     # Metadatos
     ip_address = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='Dirección IP',
-        help_text='IP desde donde se realizó la calificación'
+        verbose_name=gettext_lazy('Dirección IP'),
+        help_text=gettext_lazy('IP desde donde se realizó la calificación')
     )
     user_agent = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name='User Agent',
-        help_text='Información del navegador'
+        verbose_name=gettext_lazy('User Agent'),
+        help_text=gettext_lazy('Información del navegador')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     is_public = models.BooleanField(
         default=True,
-        verbose_name='Visible públicamente',
-        help_text='Si la calificación puede mostrarse públicamente'
+        verbose_name=gettext_lazy('Visible públicamente'),
+        help_text=gettext_lazy('Si la calificación puede mostrarse públicamente')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Calificación QA'
-        verbose_name_plural = 'Calificaciones QA'
+        verbose_name = gettext_lazy('Calificación QA')
+        verbose_name_plural = gettext_lazy('Calificaciones QA')
     
     def __str__(self):
         name_display = self.name or self.email or 'Anónimo'
@@ -18708,36 +18709,36 @@ class GameCounter(models.Model):
     """Modelo para contador de juegos de pádel"""
     
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('in_progress', 'En Progreso'),
-        ('finished', 'Finalizado'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('in_progress', gettext_lazy('En Progreso')),
+        ('finished', gettext_lazy('Finalizado')),
     ]
     
     # Información del juego
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del Juego',
-        help_text='Nombre descriptivo del juego (ej: Final Torneo 2025)'
+        verbose_name=gettext_lazy('Nombre del Juego'),
+        help_text=gettext_lazy('Nombre descriptivo del juego (ej: Final Torneo 2025)')
     )
     player1_name = models.CharField(
         max_length=100,
-        verbose_name='Jugador 1',
-        help_text='Nombre del primer jugador'
+        verbose_name=gettext_lazy('Jugador 1'),
+        help_text=gettext_lazy('Nombre del primer jugador')
     )
     player2_name = models.CharField(
         max_length=100,
-        verbose_name='Jugador 2',
-        help_text='Nombre del segundo jugador'
+        verbose_name=gettext_lazy('Jugador 2'),
+        help_text=gettext_lazy('Nombre del segundo jugador')
     )
     
     # Puntuación
     player1_score = models.IntegerField(
         default=0,
-        verbose_name='Puntos Jugador 1'
+        verbose_name=gettext_lazy('Puntos Jugador 1')
     )
     player2_score = models.IntegerField(
         default=0,
-        verbose_name='Puntos Jugador 2'
+        verbose_name=gettext_lazy('Puntos Jugador 2')
     )
     
     # Estado
@@ -18745,7 +18746,7 @@ class GameCounter(models.Model):
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado del Juego'
+        verbose_name=gettext_lazy('Estado del Juego')
     )
     
     # URL pública
@@ -18753,8 +18754,8 @@ class GameCounter(models.Model):
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name='UUID Público',
-        help_text='Identificador único para acceso público'
+        verbose_name=gettext_lazy('UUID Público'),
+        help_text=gettext_lazy('Identificador único para acceso público')
     )
     
     # Metadatos
@@ -18764,7 +18765,7 @@ class GameCounter(models.Model):
         null=True,
         blank=True,
         related_name='created_games',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     company = models.ForeignKey(
         'Company',
@@ -18772,39 +18773,39 @@ class GameCounter(models.Model):
         null=True,
         blank=True,
         related_name='games',
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     started_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de inicio'
+        verbose_name=gettext_lazy('Fecha de inicio')
     )
     finished_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de finalización'
+        verbose_name=gettext_lazy('Fecha de finalización')
     )
     
     # Configuración opcional
     max_points = models.IntegerField(
         default=0,
-        verbose_name='Puntos máximos',
-        help_text='0 = sin límite'
+        verbose_name=gettext_lazy('Puntos máximos'),
+        help_text=gettext_lazy('0 = sin límite')
     )
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas',
-        help_text='Notas adicionales sobre el juego'
+        verbose_name=gettext_lazy('Notas'),
+        help_text=gettext_lazy('Notas adicionales sobre el juego')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Contador de Juego'
-        verbose_name_plural = 'Contadores de Juegos'
+        verbose_name = gettext_lazy('Contador de Juego')
+        verbose_name_plural = gettext_lazy('Contadores de Juegos')
     
     def __str__(self):
         return f"{self.name} - {self.player1_name} vs {self.player2_name}"
@@ -18873,36 +18874,36 @@ class ExerciseCounter(models.Model):
     """Modelo para contador de ejercicios deportivos"""
     
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('in_progress', 'En Progreso'),
-        ('paused', 'Pausado'),
-        ('finished', 'Finalizado'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('in_progress', gettext_lazy('En Progreso')),
+        ('paused', gettext_lazy('Pausado')),
+        ('finished', gettext_lazy('Finalizado')),
     ]
     
     # Información del ejercicio
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Nombre del ejercicio (ej: Rutina de Flexiones)'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Nombre del ejercicio (ej: Rutina de Flexiones)')
     )
     
     # Contadores
     sets_target = models.IntegerField(
-        verbose_name='Tandas Objetivo',
-        help_text='Número de tandas objetivo'
+        verbose_name=gettext_lazy('Tandas Objetivo'),
+        help_text=gettext_lazy('Número de tandas objetivo')
     )
     reps_target = models.IntegerField(
-        verbose_name='Repeticiones Objetivo',
-        help_text='Número de repeticiones objetivo por tanda'
+        verbose_name=gettext_lazy('Repeticiones Objetivo'),
+        help_text=gettext_lazy('Número de repeticiones objetivo por tanda')
     )
     
     current_sets = models.IntegerField(
         default=0,
-        verbose_name='Tandas Actuales'
+        verbose_name=gettext_lazy('Tandas Actuales')
     )
     current_reps = models.IntegerField(
         default=0,
-        verbose_name='Repeticiones Actuales'
+        verbose_name=gettext_lazy('Repeticiones Actuales')
     )
     
     # Estado
@@ -18910,7 +18911,7 @@ class ExerciseCounter(models.Model):
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     # URL pública
@@ -18918,8 +18919,8 @@ class ExerciseCounter(models.Model):
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name='UUID Público',
-        help_text='Identificador único para acceso público'
+        verbose_name=gettext_lazy('UUID Público'),
+        help_text=gettext_lazy('Identificador único para acceso público')
     )
     
     # Metadatos
@@ -18929,7 +18930,7 @@ class ExerciseCounter(models.Model):
         null=True,
         blank=True,
         related_name='created_exercises',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     company = models.ForeignKey(
         'Company',
@@ -18937,33 +18938,33 @@ class ExerciseCounter(models.Model):
         null=True,
         blank=True,
         related_name='exercises',
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     started_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de inicio'
+        verbose_name=gettext_lazy('Fecha de inicio')
     )
     finished_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de finalización'
+        verbose_name=gettext_lazy('Fecha de finalización')
     )
     
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas',
-        help_text='Notas adicionales sobre el ejercicio'
+        verbose_name=gettext_lazy('Notas'),
+        help_text=gettext_lazy('Notas adicionales sobre el ejercicio')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Contador de Ejercicio'
-        verbose_name_plural = 'Contadores de Ejercicios'
+        verbose_name = gettext_lazy('Contador de Ejercicio')
+        verbose_name_plural = gettext_lazy('Contadores de Ejercicios')
     
     def __str__(self):
         return f"{self.title} - {self.current_sets}/{self.sets_target} tandas"
@@ -19047,20 +19048,20 @@ class SportGoal(models.Model):
     # Información del objetivo
     title = models.CharField(
         max_length=200,
-        verbose_name='Título del Objetivo',
-        help_text='Nombre del objetivo deportivo (ej: Correr 5K en menos de 30 minutos)'
+        verbose_name=gettext_lazy('Título del Objetivo'),
+        help_text=gettext_lazy('Nombre del objetivo deportivo (ej: Correr 5K en menos de 30 minutos)')
     )
     
     player_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del Jugador',
-        help_text='Nombre de la persona que realizará el objetivo'
+        verbose_name=gettext_lazy('Nombre del Jugador'),
+        help_text=gettext_lazy('Nombre de la persona que realizará el objetivo')
     )
     
     # Objetivos
     target_time = models.IntegerField(
-        verbose_name='Tiempo Objetivo (segundos)',
-        help_text='Tiempo objetivo en segundos para completar el objetivo',
+        verbose_name=gettext_lazy('Tiempo Objetivo (segundos)'),
+        help_text=gettext_lazy('Tiempo objetivo en segundos para completar el objetivo'),
         null=True,
         blank=True
     )
@@ -19068,8 +19069,8 @@ class SportGoal(models.Model):
     target_distance = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name='Distancia Objetivo (km)',
-        help_text='Distancia objetivo en kilómetros',
+        verbose_name=gettext_lazy('Distancia Objetivo (km)'),
+        help_text=gettext_lazy('Distancia objetivo en kilómetros'),
         null=True,
         blank=True
     )
@@ -19079,8 +19080,8 @@ class SportGoal(models.Model):
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name='UUID Público',
-        help_text='Identificador único para acceso público'
+        verbose_name=gettext_lazy('UUID Público'),
+        help_text=gettext_lazy('Identificador único para acceso público')
     )
     
     # Metadatos
@@ -19090,7 +19091,7 @@ class SportGoal(models.Model):
         null=True,
         blank=True,
         related_name='created_sport_goals',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     company = models.ForeignKey(
@@ -19099,24 +19100,24 @@ class SportGoal(models.Model):
         null=True,
         blank=True,
         related_name='sport_goals',
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas',
-        help_text='Notas adicionales sobre el objetivo'
+        verbose_name=gettext_lazy('Notas'),
+        help_text=gettext_lazy('Notas adicionales sobre el objetivo')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Objetivo Deportivo'
-        verbose_name_plural = 'Objetivos Deportivos'
+        verbose_name = gettext_lazy('Objetivo Deportivo')
+        verbose_name_plural = gettext_lazy('Objetivos Deportivos')
     
     def __str__(self):
         return f"{self.title} - {self.player_name}"
@@ -19169,13 +19170,13 @@ class SportGoalRecord(models.Model):
         SportGoal,
         on_delete=models.CASCADE,
         related_name='records',
-        verbose_name='Objetivo Deportivo'
+        verbose_name=gettext_lazy('Objetivo Deportivo')
     )
     
     # Registros reales
     actual_time = models.IntegerField(
-        verbose_name='Tiempo Real (segundos)',
-        help_text='Tiempo real en segundos que tomó completar',
+        verbose_name=gettext_lazy('Tiempo Real (segundos)'),
+        help_text=gettext_lazy('Tiempo real en segundos que tomó completar'),
         null=True,
         blank=True
     )
@@ -19183,8 +19184,8 @@ class SportGoalRecord(models.Model):
     actual_distance = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name='Distancia Real (km)',
-        help_text='Distancia real recorrida en kilómetros',
+        verbose_name=gettext_lazy('Distancia Real (km)'),
+        help_text=gettext_lazy('Distancia real recorrida en kilómetros'),
         null=True,
         blank=True
     )
@@ -19192,19 +19193,19 @@ class SportGoalRecord(models.Model):
     # Metadatos
     recorded_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de registro'
+        verbose_name=gettext_lazy('Fecha de registro')
     )
     
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas',
-        help_text='Notas sobre este intento específico'
+        verbose_name=gettext_lazy('Notas'),
+        help_text=gettext_lazy('Notas sobre este intento específico')
     )
     
     class Meta:
         ordering = ['-recorded_at']
-        verbose_name = 'Registro de Objetivo'
-        verbose_name_plural = 'Registros de Objetivos'
+        verbose_name = gettext_lazy('Registro de Objetivo')
+        verbose_name_plural = gettext_lazy('Registros de Objetivos')
     
     def __str__(self):
         return f"{self.sport_goal.title} - {self.recorded_at.strftime('%Y-%m-%d %H:%M')}"
@@ -19242,39 +19243,39 @@ class Event(models.Model):
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Título del evento'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Título del evento')
     )
     
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción detallada del evento'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción detallada del evento')
     )
     
     event_date = models.DateTimeField(
-        verbose_name='Fecha y Hora',
-        help_text='Fecha y hora del evento'
+        verbose_name=gettext_lazy('Fecha y Hora'),
+        help_text=gettext_lazy('Fecha y hora del evento')
     )
     
     location = models.CharField(
         max_length=300,
         blank=True,
-        verbose_name='Ubicación',
-        help_text='Lugar donde se realizará el evento'
+        verbose_name=gettext_lazy('Ubicación'),
+        help_text=gettext_lazy('Lugar donde se realizará el evento')
     )
     
     color = models.CharField(
         max_length=7,
         default='#007bff',
-        verbose_name='Color',
-        help_text='Color del evento en el calendario (formato hexadecimal)'
+        verbose_name=gettext_lazy('Color'),
+        help_text=gettext_lazy('Color del evento en el calendario (formato hexadecimal)')
     )
     
     is_all_day = models.BooleanField(
         default=False,
-        verbose_name='Todo el día',
-        help_text='Marcar si el evento dura todo el día'
+        verbose_name=gettext_lazy('Todo el día'),
+        help_text=gettext_lazy('Marcar si el evento dura todo el día')
     )
     
     created_by = models.ForeignKey(
@@ -19282,23 +19283,23 @@ class Event(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name='created_events',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['event_date']
-        verbose_name = 'Evento'
-        verbose_name_plural = 'Eventos'
+        verbose_name = gettext_lazy('Evento')
+        verbose_name_plural = gettext_lazy('Eventos')
     
     def __str__(self):
         return f"{self.title} - {self.event_date.strftime('%Y-%m-%d %H:%M')}"
@@ -19309,65 +19310,65 @@ class Trip(models.Model):
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título del Viaje'
+        verbose_name=gettext_lazy('Título del Viaje')
     )
     
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     
     destination = models.CharField(
         max_length=200,
-        verbose_name='Destino Principal'
+        verbose_name=gettext_lazy('Destino Principal')
     )
     
     start_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Inicio'
+        verbose_name=gettext_lazy('Fecha de Inicio')
     )
     
     end_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Fin'
+        verbose_name=gettext_lazy('Fecha de Fin')
     )
     
     is_public = models.BooleanField(
         default=False,
-        verbose_name='Público',
-        help_text='Permitir que el viaje sea visible públicamente'
+        verbose_name=gettext_lazy('Público'),
+        help_text=gettext_lazy('Permitir que el viaje sea visible públicamente')
     )
     
     public_token = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
-        verbose_name='Token Público',
-        help_text='Token para compartir el viaje públicamente'
+        verbose_name=gettext_lazy('Token Público'),
+        help_text=gettext_lazy('Token para compartir el viaje públicamente')
     )
     
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='trips',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Viaje'
-        verbose_name_plural = 'Viajes'
+        verbose_name = gettext_lazy('Viaje')
+        verbose_name_plural = gettext_lazy('Viajes')
     
     def __str__(self):
         return f"{self.title} - {self.destination}"
@@ -19385,23 +19386,23 @@ class TripStop(models.Model):
         Trip,
         on_delete=models.CASCADE,
         related_name='stops',
-        verbose_name='Viaje'
+        verbose_name=gettext_lazy('Viaje')
     )
     
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del Lugar'
+        verbose_name=gettext_lazy('Nombre del Lugar')
     )
     
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     
     address = models.CharField(
         max_length=300,
         blank=True,
-        verbose_name='Dirección'
+        verbose_name=gettext_lazy('Dirección')
     )
     
     latitude = models.DecimalField(
@@ -19409,7 +19410,7 @@ class TripStop(models.Model):
         decimal_places=6,
         null=True,
         blank=True,
-        verbose_name='Latitud'
+        verbose_name=gettext_lazy('Latitud')
     )
     
     longitude = models.DecimalField(
@@ -19417,55 +19418,55 @@ class TripStop(models.Model):
         decimal_places=6,
         null=True,
         blank=True,
-        verbose_name='Longitud'
+        verbose_name=gettext_lazy('Longitud')
     )
     
     order = models.PositiveIntegerField(
         default=0,
-        verbose_name='Orden',
-        help_text='Orden de visita en el itinerario'
+        verbose_name=gettext_lazy('Orden'),
+        help_text=gettext_lazy('Orden de visita en el itinerario')
     )
     
     visit_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Visita'
+        verbose_name=gettext_lazy('Fecha de Visita')
     )
     
     visit_time = models.TimeField(
         null=True,
         blank=True,
-        verbose_name='Hora de Visita'
+        verbose_name=gettext_lazy('Hora de Visita')
     )
     
     duration_minutes = models.PositiveIntegerField(
         null=True,
         blank=True,
-        verbose_name='Duración (minutos)',
-        help_text='Tiempo estimado de visita en minutos'
+        verbose_name=gettext_lazy('Duración (minutos)'),
+        help_text=gettext_lazy('Tiempo estimado de visita en minutos')
     )
     
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas',
-        help_text='Notas adicionales sobre el lugar'
+        verbose_name=gettext_lazy('Notas'),
+        help_text=gettext_lazy('Notas adicionales sobre el lugar')
     )
     
     historical_info = models.TextField(
         blank=True,
-        verbose_name='Información Histórica',
-        help_text='Historia e información interesante sobre el lugar (aprox. 200 palabras)'
+        verbose_name=gettext_lazy('Información Histórica'),
+        help_text=gettext_lazy('Historia e información interesante sobre el lugar (aprox. 200 palabras)')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
         ordering = ['trip', 'order']
-        verbose_name = 'Parada de Viaje'
-        verbose_name_plural = 'Paradas de Viaje'
+        verbose_name = gettext_lazy('Parada de Viaje')
+        verbose_name_plural = gettext_lazy('Paradas de Viaje')
     
     def __str__(self):
         return f"{self.order}. {self.name} - {self.trip.title}"
@@ -19486,53 +19487,53 @@ class WebCounter(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Usuario',
+        verbose_name=gettext_lazy('Usuario'),
         related_name='web_counters'
     )
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título del Contador'
+        verbose_name=gettext_lazy('Título del Contador')
     )
     
     token = models.CharField(
         max_length=64,
         unique=True,
-        verbose_name='Token',
-        help_text='Token único para identificar este contador'
+        verbose_name=gettext_lazy('Token'),
+        help_text=gettext_lazy('Token único para identificar este contador')
     )
     
     domain = models.CharField(
         max_length=255,
         blank=True,
-        verbose_name='Dominio',
-        help_text='Dominio donde se instalará el contador (opcional)'
+        verbose_name=gettext_lazy('Dominio'),
+        help_text=gettext_lazy('Dominio donde se instalará el contador (opcional)')
     )
     
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     total_visits = models.PositiveIntegerField(
         default=0,
-        verbose_name='Total de Visitas'
+        verbose_name=gettext_lazy('Total de Visitas')
     )
     
     total_page_views = models.PositiveIntegerField(
         default=0,
-        verbose_name='Total de Páginas Vistas'
+        verbose_name=gettext_lazy('Total de Páginas Vistas')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Contador Web'
-        verbose_name_plural = 'Contadores Web'
+        verbose_name = gettext_lazy('Contador Web')
+        verbose_name_plural = gettext_lazy('Contadores Web')
     
     def __str__(self):
         return f"{self.title} ({self.token})"
@@ -19567,88 +19568,88 @@ class WebCounterVisit(models.Model):
         WebCounter,
         on_delete=models.CASCADE,
         related_name='visits',
-        verbose_name='Contador'
+        verbose_name=gettext_lazy('Contador')
     )
     
     url = models.CharField(
         max_length=2048,
-        verbose_name='URL Visitada'
+        verbose_name=gettext_lazy('URL Visitada')
     )
     
     referrer = models.CharField(
         max_length=2048,
         blank=True,
-        verbose_name='Referrer'
+        verbose_name=gettext_lazy('Referrer')
     )
     
     ip_address = models.GenericIPAddressField(
-        verbose_name='IP'
+        verbose_name=gettext_lazy('IP')
     )
     
     country = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='País'
+        verbose_name=gettext_lazy('País')
     )
     
     city = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Ciudad'
+        verbose_name=gettext_lazy('Ciudad')
     )
     
     user_agent = models.TextField(
         blank=True,
-        verbose_name='User Agent'
+        verbose_name=gettext_lazy('User Agent')
     )
     
     browser = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Navegador'
+        verbose_name=gettext_lazy('Navegador')
     )
     
     os = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Sistema Operativo'
+        verbose_name=gettext_lazy('Sistema Operativo')
     )
     
     device_type = models.CharField(
         max_length=50,
         blank=True,
-        verbose_name='Tipo de Dispositivo',
-        help_text='mobile, tablet, desktop'
+        verbose_name=gettext_lazy('Tipo de Dispositivo'),
+        help_text=gettext_lazy('mobile, tablet, desktop')
     )
     
     screen_resolution = models.CharField(
         max_length=50,
         blank=True,
-        verbose_name='Resolución de Pantalla'
+        verbose_name=gettext_lazy('Resolución de Pantalla')
     )
     
     language = models.CharField(
         max_length=10,
         blank=True,
-        verbose_name='Idioma'
+        verbose_name=gettext_lazy('Idioma')
     )
     
     session_id = models.CharField(
         max_length=64,
         blank=True,
-        verbose_name='ID de Sesión'
+        verbose_name=gettext_lazy('ID de Sesión')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Visita',
+        verbose_name=gettext_lazy('Fecha de Visita'),
         db_index=True
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Visita de Contador Web'
-        verbose_name_plural = 'Visitas de Contadores Web'
+        verbose_name = gettext_lazy('Visita de Contador Web')
+        verbose_name_plural = gettext_lazy('Visitas de Contadores Web')
         indexes = [
             models.Index(fields=['-created_at', 'counter']),
             models.Index(fields=['counter', 'session_id']),
@@ -19662,47 +19663,47 @@ class QuickQuote(models.Model):
     """Modelo para cotizaciones rápidas"""
     
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('accepted', 'Aceptado'),
-        ('rejected', 'Rechazado'),
-        ('expired', 'Expirado'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('accepted', gettext_lazy('Aceptado')),
+        ('rejected', gettext_lazy('Rechazado')),
+        ('expired', gettext_lazy('Expirado')),
     ]
     
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='quick_quotes',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     
     sequence_number = models.CharField(
         max_length=20,
         blank=True,
-        verbose_name='Número de Secuencia',
-        help_text='Formato: CR-YYYY-XX'
+        verbose_name=gettext_lazy('Número de Secuencia'),
+        help_text=gettext_lazy('Formato: CR-YYYY-XX')
     )
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título'
+        verbose_name=gettext_lazy('Título')
     )
     
     hours = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name='Cantidad de Horas'
+        verbose_name=gettext_lazy('Cantidad de Horas')
     )
     
     hourly_rate = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name='Costo por Hora'
+        verbose_name=gettext_lazy('Costo por Hora')
     )
     
     total_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name='Importe Total',
+        verbose_name=gettext_lazy('Importe Total'),
         editable=False
     )
     
@@ -19710,23 +19711,23 @@ class QuickQuote(models.Model):
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     valid_until = models.DateTimeField(
-        verbose_name='Válido Hasta'
+        verbose_name=gettext_lazy('Válido Hasta')
     )
     
     public_token = models.CharField(
         max_length=64,
         unique=True,
-        verbose_name='Token Público',
-        help_text='Token único para acceso público'
+        verbose_name=gettext_lazy('Token Público'),
+        help_text=gettext_lazy('Token único para acceso público')
     )
     
     company = models.ForeignKey(
@@ -19735,40 +19736,40 @@ class QuickQuote(models.Model):
         null=True,
         blank=True,
         related_name='quick_quotes',
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     
     client_name = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Nombre del Cliente'
+        verbose_name=gettext_lazy('Nombre del Cliente')
     )
     
     client_email = models.EmailField(
         blank=True,
-        verbose_name='Email del Cliente'
+        verbose_name=gettext_lazy('Email del Cliente')
     )
     
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas'
+        verbose_name=gettext_lazy('Notas')
     )
     
     response_date = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Respuesta'
+        verbose_name=gettext_lazy('Fecha de Respuesta')
     )
     
     response_notes = models.TextField(
         blank=True,
-        verbose_name='Notas de Respuesta del Cliente'
+        verbose_name=gettext_lazy('Notas de Respuesta del Cliente')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Cotización Rápida'
-        verbose_name_plural = 'Cotizaciones Rápidas'
+        verbose_name = gettext_lazy('Cotización Rápida')
+        verbose_name_plural = gettext_lazy('Cotizaciones Rápidas')
     
     def save(self, *args, **kwargs):
         # Calcular el total automáticamente
@@ -19832,36 +19833,36 @@ class QuickQuoteComment(models.Model):
         QuickQuote,
         on_delete=models.CASCADE,
         related_name='comments',
-        verbose_name='Cotización'
+        verbose_name=gettext_lazy('Cotización')
     )
     
     author_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre'
+        verbose_name=gettext_lazy('Nombre')
     )
     
     author_email = models.EmailField(
-        verbose_name='Email'
+        verbose_name=gettext_lazy('Email')
     )
     
     comment = models.TextField(
-        verbose_name='Comentario'
+        verbose_name=gettext_lazy('Comentario')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     ip_address = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     
     class Meta:
-        verbose_name = 'Comentario de Cotización'
-        verbose_name_plural = 'Comentarios de Cotizaciones'
+        verbose_name = gettext_lazy('Comentario de Cotización')
+        verbose_name_plural = gettext_lazy('Comentarios de Cotizaciones')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -19875,53 +19876,53 @@ class QuickQuoteView(models.Model):
         QuickQuote,
         on_delete=models.CASCADE,
         related_name='views',
-        verbose_name='Cotización'
+        verbose_name=gettext_lazy('Cotización')
     )
     
     viewed_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Visualización'
+        verbose_name=gettext_lazy('Fecha de Visualización')
     )
     
     ip_address = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     
     user_agent = models.TextField(
         blank=True,
-        verbose_name='User Agent'
+        verbose_name=gettext_lazy('User Agent')
     )
     
     country = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='País'
+        verbose_name=gettext_lazy('País')
     )
     
     city = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Ciudad'
+        verbose_name=gettext_lazy('Ciudad')
     )
     
     browser = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Navegador'
+        verbose_name=gettext_lazy('Navegador')
     )
     
     device_type = models.CharField(
         max_length=50,
         blank=True,
-        verbose_name='Tipo de Dispositivo'
+        verbose_name=gettext_lazy('Tipo de Dispositivo')
     )
     
     class Meta:
         ordering = ['-viewed_at']
-        verbose_name = 'Visualización de Cotización'
-        verbose_name_plural = 'Visualizaciones de Cotizaciones'
+        verbose_name = gettext_lazy('Visualización de Cotización')
+        verbose_name_plural = gettext_lazy('Visualizaciones de Cotizaciones')
     
     def __str__(self):
         return f"Vista de {self.quote.title} - {self.viewed_at.strftime('%d/%m/%Y %H:%M')}"
@@ -19931,34 +19932,34 @@ class SupportContract(models.Model):
     """Modelo para contratos de soporte"""
     
     STATUS_CHOICES = [
-        ('draft', 'Borrador'),
-        ('pending', 'Pendiente de Firma'),
-        ('signed', 'Firmado'),
-        ('active', 'Activo'),
-        ('expired', 'Expirado'),
-        ('cancelled', 'Cancelado'),
+        ('draft', gettext_lazy('Borrador')),
+        ('pending', gettext_lazy('Pendiente de Firma')),
+        ('signed', gettext_lazy('Firmado')),
+        ('active', gettext_lazy('Activo')),
+        ('expired', gettext_lazy('Expirado')),
+        ('cancelled', gettext_lazy('Cancelado')),
     ]
     
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='support_contracts',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     
     sequence_number = models.CharField(
         max_length=20,
         blank=True,
-        verbose_name='Número de Secuencia',
-        help_text='Formato: CS-YYYY-XX'
+        verbose_name=gettext_lazy('Número de Secuencia'),
+        help_text=gettext_lazy('Formato: CS-YYYY-XX')
     )
     
     provider_company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
         related_name='provided_support_contracts',
-        verbose_name='Compañía Proveedora',
-        help_text='Compañía que ofrece el servicio',
+        verbose_name=gettext_lazy('Compañía Proveedora'),
+        help_text=gettext_lazy('Compañía que ofrece el servicio'),
         null=True,
         blank=True
     )
@@ -19967,51 +19968,51 @@ class SupportContract(models.Model):
         'Company',
         on_delete=models.CASCADE,
         related_name='support_contracts',
-        verbose_name='Cliente',
-        help_text='Empresa cliente del servicio'
+        verbose_name=gettext_lazy('Cliente'),
+        help_text=gettext_lazy('Empresa cliente del servicio')
     )
     
     start_date = models.DateField(
-        verbose_name='Fecha de Inicio'
+        verbose_name=gettext_lazy('Fecha de Inicio')
     )
     
     end_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Fin'
+        verbose_name=gettext_lazy('Fecha de Fin')
     )
     
     description = models.TextField(
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='draft',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     total_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name='Monto Total'
+        verbose_name=gettext_lazy('Monto Total')
     )
     
     payment_frequency = models.CharField(
         max_length=20,
         choices=[
-            ('monthly', 'Mensual'),
-            ('quarterly', 'Trimestral'),
-            ('biannual', 'Semestral'),
-            ('annual', 'Anual'),
+            ('monthly', gettext_lazy('Mensual')),
+            ('quarterly', gettext_lazy('Trimestral')),
+            ('biannual', gettext_lazy('Semestral')),
+            ('annual', gettext_lazy('Anual')),
         ],
         default='monthly',
-        verbose_name='Frecuencia de Pago'
+        verbose_name=gettext_lazy('Frecuencia de Pago')
     )
     
     number_of_payments = models.IntegerField(
-        verbose_name='Número de Cuotas',
+        verbose_name=gettext_lazy('Número de Cuotas'),
         default=12
     )
     
@@ -20019,42 +20020,42 @@ class SupportContract(models.Model):
         max_length=64,
         unique=True,
         blank=True,
-        verbose_name='Token Público',
-        help_text='Token único para acceso público'
+        verbose_name=gettext_lazy('Token Público'),
+        help_text=gettext_lazy('Token único para acceso público')
     )
     
     # Campos de firma
     signed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Firma'
+        verbose_name=gettext_lazy('Fecha de Firma')
     )
     
     signed_by_name = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Firmado por (Nombre)'
+        verbose_name=gettext_lazy('Firmado por (Nombre)')
     )
     
     signed_by_email = models.EmailField(
         blank=True,
-        verbose_name='Firmado por (Email)'
+        verbose_name=gettext_lazy('Firmado por (Email)')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Fecha de Actualización'
+        verbose_name=gettext_lazy('Fecha de Actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Contrato de Soporte'
-        verbose_name_plural = 'Contratos de Soporte'
+        verbose_name = gettext_lazy('Contrato de Soporte')
+        verbose_name_plural = gettext_lazy('Contratos de Soporte')
     
     def save(self, *args, **kwargs):
         # Generar token público si no existe
@@ -20106,66 +20107,66 @@ class SupportContractPayment(models.Model):
     """Modelo para las cuotas/pagos de los contratos de soporte"""
     
     PAYMENT_STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('paid', 'Pagado'),
-        ('overdue', 'Vencido'),
-        ('cancelled', 'Cancelado'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('paid', gettext_lazy('Pagado')),
+        ('overdue', gettext_lazy('Vencido')),
+        ('cancelled', gettext_lazy('Cancelado')),
     ]
     
     contract = models.ForeignKey(
         SupportContract,
         on_delete=models.CASCADE,
         related_name='payments',
-        verbose_name='Contrato'
+        verbose_name=gettext_lazy('Contrato')
     )
     
     payment_number = models.IntegerField(
-        verbose_name='Número de Cuota'
+        verbose_name=gettext_lazy('Número de Cuota')
     )
     
     due_date = models.DateField(
-        verbose_name='Fecha de Vencimiento'
+        verbose_name=gettext_lazy('Fecha de Vencimiento')
     )
     
     amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name='Monto'
+        verbose_name=gettext_lazy('Monto')
     )
     
     status = models.CharField(
         max_length=20,
         choices=PAYMENT_STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     paid_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Pago'
+        verbose_name=gettext_lazy('Fecha de Pago')
     )
     
     payment_method = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Método de Pago'
+        verbose_name=gettext_lazy('Método de Pago')
     )
     
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas'
+        verbose_name=gettext_lazy('Notas')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     class Meta:
         ordering = ['due_date', 'payment_number']
-        verbose_name = 'Pago de Contrato'
-        verbose_name_plural = 'Pagos de Contratos'
+        verbose_name = gettext_lazy('Pago de Contrato')
+        verbose_name_plural = gettext_lazy('Pagos de Contratos')
     
     def is_overdue(self):
         """Verifica si el pago está vencido"""
@@ -20183,72 +20184,72 @@ class MultiMeasurement(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='multi_measurements',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     
     sequence_number = models.CharField(
         max_length=20,
         blank=True,
-        verbose_name='Número de Secuencia',
-        help_text='Formato: MM-YYYY-XX'
+        verbose_name=gettext_lazy('Número de Secuencia'),
+        help_text=gettext_lazy('Formato: MM-YYYY-XX')
     )
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título'
+        verbose_name=gettext_lazy('Título')
     )
     
     public_token = models.CharField(
         max_length=64,
         unique=True,
-        verbose_name='Token Público',
-        help_text='Token único para acceso público'
+        verbose_name=gettext_lazy('Token Público'),
+        help_text=gettext_lazy('Token único para acceso público')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     
     # Etiquetas para las 5 mediciones
     label_1 = models.CharField(
         max_length=100,
         default='Medición 1',
-        verbose_name='Etiqueta Medición 1'
+        verbose_name=gettext_lazy('Etiqueta Medición 1')
     )
     
     label_2 = models.CharField(
         max_length=100,
         default='Medición 2',
-        verbose_name='Etiqueta Medición 2'
+        verbose_name=gettext_lazy('Etiqueta Medición 2')
     )
     
     label_3 = models.CharField(
         max_length=100,
         default='Medición 3',
-        verbose_name='Etiqueta Medición 3'
+        verbose_name=gettext_lazy('Etiqueta Medición 3')
     )
     
     label_4 = models.CharField(
         max_length=100,
         default='Medición 4',
-        verbose_name='Etiqueta Medición 4'
+        verbose_name=gettext_lazy('Etiqueta Medición 4')
     )
     
     label_5 = models.CharField(
         max_length=100,
         default='Medición 5',
-        verbose_name='Etiqueta Medición 5'
+        verbose_name=gettext_lazy('Etiqueta Medición 5')
     )
     
     class Meta:
-        verbose_name = 'Medición Múltiple'
-        verbose_name_plural = 'Mediciones Múltiples'
+        verbose_name = gettext_lazy('Medición Múltiple')
+        verbose_name_plural = gettext_lazy('Mediciones Múltiples')
         ordering = ['-created_at']
     
     def save(self, *args, **kwargs):
@@ -20300,12 +20301,12 @@ class MultiMeasurementRecord(models.Model):
         MultiMeasurement,
         on_delete=models.CASCADE,
         related_name='records',
-        verbose_name='Medición'
+        verbose_name=gettext_lazy('Medición')
     )
     
     date = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha y Hora'
+        verbose_name=gettext_lazy('Fecha y Hora')
     )
     
     value_1 = models.DecimalField(
@@ -20313,7 +20314,7 @@ class MultiMeasurementRecord(models.Model):
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Valor 1'
+        verbose_name=gettext_lazy('Valor 1')
     )
     
     value_2 = models.DecimalField(
@@ -20321,7 +20322,7 @@ class MultiMeasurementRecord(models.Model):
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Valor 2'
+        verbose_name=gettext_lazy('Valor 2')
     )
     
     value_3 = models.DecimalField(
@@ -20329,7 +20330,7 @@ class MultiMeasurementRecord(models.Model):
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Valor 3'
+        verbose_name=gettext_lazy('Valor 3')
     )
     
     value_4 = models.DecimalField(
@@ -20337,7 +20338,7 @@ class MultiMeasurementRecord(models.Model):
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Valor 4'
+        verbose_name=gettext_lazy('Valor 4')
     )
     
     value_5 = models.DecimalField(
@@ -20345,28 +20346,28 @@ class MultiMeasurementRecord(models.Model):
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Valor 5'
+        verbose_name=gettext_lazy('Valor 5')
     )
     
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas'
+        verbose_name=gettext_lazy('Notas')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     ip_address = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     
     class Meta:
-        verbose_name = 'Registro de Medición'
-        verbose_name_plural = 'Registros de Mediciones'
+        verbose_name = gettext_lazy('Registro de Medición')
+        verbose_name_plural = gettext_lazy('Registros de Mediciones')
         ordering = ['-date']
     
     def __str__(self):
@@ -20380,37 +20381,37 @@ class PersonalBudget(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='personal_budgets',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del Presupuesto'
+        verbose_name=gettext_lazy('Nombre del Presupuesto')
     )
     
     year = models.IntegerField(
-        verbose_name='Año'
+        verbose_name=gettext_lazy('Año')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     
     is_private = models.BooleanField(
         default=True,
-        verbose_name='Privado',
-        help_text='Si está marcado, solo el creador puede ver este presupuesto'
+        verbose_name=gettext_lazy('Privado'),
+        help_text=gettext_lazy('Si está marcado, solo el creador puede ver este presupuesto')
     )
     
     class Meta:
-        verbose_name = 'Presupuesto Personal'
-        verbose_name_plural = 'Presupuestos Personales'
+        verbose_name = gettext_lazy('Presupuesto Personal')
+        verbose_name_plural = gettext_lazy('Presupuestos Personales')
         ordering = ['-year', 'name']
         unique_together = ['user', 'name', 'year']
     
@@ -20461,30 +20462,30 @@ class BudgetIncomeItem(models.Model):
         PersonalBudget,
         on_delete=models.CASCADE,
         related_name='income_items',
-        verbose_name='Presupuesto'
+        verbose_name=gettext_lazy('Presupuesto')
     )
     
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre de la Partida'
+        verbose_name=gettext_lazy('Nombre de la Partida')
     )
     
     budgeted_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0,
-        verbose_name='Monto Presupuestado Mensual (€)',
-        help_text='Monto mensual en euros para esta partida'
+        verbose_name=gettext_lazy('Monto Presupuestado Mensual (€)'),
+        help_text=gettext_lazy('Monto mensual en euros para esta partida')
     )
     
     order = models.IntegerField(
         default=0,
-        verbose_name='Orden'
+        verbose_name=gettext_lazy('Orden')
     )
     
     class Meta:
-        verbose_name = 'Partida de Ingreso'
-        verbose_name_plural = 'Partidas de Ingresos'
+        verbose_name = gettext_lazy('Partida de Ingreso')
+        verbose_name_plural = gettext_lazy('Partidas de Ingresos')
         ordering = ['order', 'name']
     
     def __str__(self):
@@ -20520,30 +20521,30 @@ class BudgetExpenseItem(models.Model):
         PersonalBudget,
         on_delete=models.CASCADE,
         related_name='expense_items',
-        verbose_name='Presupuesto'
+        verbose_name=gettext_lazy('Presupuesto')
     )
     
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre de la Partida'
+        verbose_name=gettext_lazy('Nombre de la Partida')
     )
     
     budgeted_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0,
-        verbose_name='Monto Presupuestado Mensual (€)',
-        help_text='Monto mensual en euros para esta partida'
+        verbose_name=gettext_lazy('Monto Presupuestado Mensual (€)'),
+        help_text=gettext_lazy('Monto mensual en euros para esta partida')
     )
     
     order = models.IntegerField(
         default=0,
-        verbose_name='Orden'
+        verbose_name=gettext_lazy('Orden')
     )
     
     class Meta:
-        verbose_name = 'Partida de Egreso'
-        verbose_name_plural = 'Partidas de Egresos'
+        verbose_name = gettext_lazy('Partida de Egreso')
+        verbose_name_plural = gettext_lazy('Partidas de Egresos')
         ordering = ['order', 'name']
     
     def __str__(self):
@@ -20576,21 +20577,21 @@ class BudgetTransaction(models.Model):
     """Transacciones (ingresos o egresos) del presupuesto"""
     
     TRANSACTION_TYPE_CHOICES = [
-        ('income', 'Ingreso'),
-        ('expense', 'Egreso'),
+        ('income', gettext_lazy('Ingreso')),
+        ('expense', gettext_lazy('Egreso')),
     ]
     
     budget = models.ForeignKey(
         PersonalBudget,
         on_delete=models.CASCADE,
         related_name='transactions',
-        verbose_name='Presupuesto'
+        verbose_name=gettext_lazy('Presupuesto')
     )
     
     transaction_type = models.CharField(
         max_length=10,
         choices=TRANSACTION_TYPE_CHOICES,
-        verbose_name='Tipo'
+        verbose_name=gettext_lazy('Tipo')
     )
     
     income_item = models.ForeignKey(
@@ -20599,7 +20600,7 @@ class BudgetTransaction(models.Model):
         null=True,
         blank=True,
         related_name='transactions',
-        verbose_name='Partida de Ingreso'
+        verbose_name=gettext_lazy('Partida de Ingreso')
     )
     
     expense_item = models.ForeignKey(
@@ -20608,45 +20609,45 @@ class BudgetTransaction(models.Model):
         null=True,
         blank=True,
         related_name='transactions',
-        verbose_name='Partida de Egreso'
+        verbose_name=gettext_lazy('Partida de Egreso')
     )
     
     amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name='Monto'
+        verbose_name=gettext_lazy('Monto')
     )
     
     description = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     
     transaction_date = models.DateField(
-        verbose_name='Fecha de Transacción'
+        verbose_name=gettext_lazy('Fecha de Transacción')
     )
     
     month = models.IntegerField(
         default=1,
-        verbose_name='Mes',
-        help_text='Mes de la transacción (1-12)'
+        verbose_name=gettext_lazy('Mes'),
+        help_text=gettext_lazy('Mes de la transacción (1-12)')
     )
     
     year = models.IntegerField(
         default=2025,
-        verbose_name='Año',
-        help_text='Año de la transacción'
+        verbose_name=gettext_lazy('Año'),
+        help_text=gettext_lazy('Año de la transacción')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Registro'
+        verbose_name=gettext_lazy('Fecha de Registro')
     )
     
     class Meta:
-        verbose_name = 'Transacción'
-        verbose_name_plural = 'Transacciones'
+        verbose_name = gettext_lazy('Transacción')
+        verbose_name_plural = gettext_lazy('Transacciones')
         ordering = ['-transaction_date', '-created_at']
     
     def __str__(self):
@@ -20675,100 +20676,100 @@ class DynamicTable(models.Model):
     name = models.CharField(
         max_length=100,
         unique=True,
-        verbose_name='Nombre de la tabla',
-        help_text='Nombre único de la tabla (ej: usuarios, comentarios)'
+        verbose_name=gettext_lazy('Nombre de la tabla'),
+        help_text=gettext_lazy('Nombre único de la tabla (ej: usuarios, comentarios)')
     )
     display_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre de visualización',
-        help_text='Nombre amigable para mostrar'
+        verbose_name=gettext_lazy('Nombre de visualización'),
+        help_text=gettext_lazy('Nombre amigable para mostrar')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción del propósito de la tabla'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción del propósito de la tabla')
     )
     api_token = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
         editable=False,
-        verbose_name='Token de API',
-        help_text='Token de seguridad para acceder a la API de esta tabla'
+        verbose_name=gettext_lazy('Token de API'),
+        help_text=gettext_lazy('Token de seguridad para acceder a la API de esta tabla')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activa',
-        help_text='Si la tabla y su API están activas'
+        verbose_name=gettext_lazy('Activa'),
+        help_text=gettext_lazy('Si la tabla y su API están activas')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         related_name='dynamic_tables_created',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     # Configuración de permisos
     allow_public_read = models.BooleanField(
         default=False,
-        verbose_name='Permitir lectura pública',
-        help_text='Permitir GET sin autenticación'
+        verbose_name=gettext_lazy('Permitir lectura pública'),
+        help_text=gettext_lazy('Permitir GET sin autenticación')
     )
     allow_public_create = models.BooleanField(
         default=False,
-        verbose_name='Permitir creación pública',
-        help_text='Permitir POST sin autenticación'
+        verbose_name=gettext_lazy('Permitir creación pública'),
+        help_text=gettext_lazy('Permitir POST sin autenticación')
     )
     
     # Configuración de formulario público móvil
     public_form_enabled = models.BooleanField(
         default=False,
-        verbose_name='Formulario público habilitado',
-        help_text='Habilitar formulario web público para crear registros'
+        verbose_name=gettext_lazy('Formulario público habilitado'),
+        help_text=gettext_lazy('Habilitar formulario web público para crear registros')
     )
     public_form_token = models.UUIDField(
         default=uuid.uuid4,
         null=True,
         blank=True,
         unique=True,
-        verbose_name='Token del formulario público',
-        help_text='Token único para acceder al formulario público'
+        verbose_name=gettext_lazy('Token del formulario público'),
+        help_text=gettext_lazy('Token único para acceder al formulario público')
     )
     public_form_password = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Contraseña del formulario',
-        help_text='Contraseña opcional para proteger el formulario público'
+        verbose_name=gettext_lazy('Contraseña del formulario'),
+        help_text=gettext_lazy('Contraseña opcional para proteger el formulario público')
     )
     public_form_title = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Título del formulario',
-        help_text='Título personalizado para el formulario público'
+        verbose_name=gettext_lazy('Título del formulario'),
+        help_text=gettext_lazy('Título personalizado para el formulario público')
     )
     public_form_description = models.TextField(
         blank=True,
-        verbose_name='Descripción del formulario',
-        help_text='Texto descriptivo que se muestra en el formulario'
+        verbose_name=gettext_lazy('Descripción del formulario'),
+        help_text=gettext_lazy('Texto descriptivo que se muestra en el formulario')
     )
     public_form_success_message = models.CharField(
         max_length=500,
         default='¡Gracias! Tu información ha sido registrada correctamente.',
-        verbose_name='Mensaje de éxito',
-        help_text='Mensaje que se muestra después de enviar el formulario'
+        verbose_name=gettext_lazy('Mensaje de éxito'),
+        help_text=gettext_lazy('Mensaje que se muestra después de enviar el formulario')
     )
     
     class Meta:
-        verbose_name = 'Tabla Dinámica'
-        verbose_name_plural = 'Tablas Dinámicas'
+        verbose_name = gettext_lazy('Tabla Dinámica')
+        verbose_name_plural = gettext_lazy('Tablas Dinámicas')
         ordering = ['-created_at']
     
     def __str__(self):
@@ -20815,66 +20816,66 @@ class DynamicTableField(models.Model):
         DynamicTable,
         on_delete=models.CASCADE,
         related_name='fields',
-        verbose_name='Tabla'
+        verbose_name=gettext_lazy('Tabla')
     )
     name = models.CharField(
         max_length=100,
-        verbose_name='Nombre del campo',
-        help_text='Nombre del campo (ej: titulo, email, contenido)'
+        verbose_name=gettext_lazy('Nombre del campo'),
+        help_text=gettext_lazy('Nombre del campo (ej: titulo, email, contenido)')
     )
     display_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre de visualización',
-        help_text='Nombre amigable para mostrar'
+        verbose_name=gettext_lazy('Nombre de visualización'),
+        help_text=gettext_lazy('Nombre amigable para mostrar')
     )
     field_type = models.CharField(
         max_length=20,
         choices=FIELD_TYPES,
         default='text',
-        verbose_name='Tipo de campo'
+        verbose_name=gettext_lazy('Tipo de campo')
     )
     is_required = models.BooleanField(
         default=False,
-        verbose_name='Requerido',
-        help_text='Si el campo es obligatorio'
+        verbose_name=gettext_lazy('Requerido'),
+        help_text=gettext_lazy('Si el campo es obligatorio')
     )
     default_value = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Valor por defecto',
-        help_text='Valor por defecto del campo'
+        verbose_name=gettext_lazy('Valor por defecto'),
+        help_text=gettext_lazy('Valor por defecto del campo')
     )
     max_length = models.IntegerField(
         null=True,
         blank=True,
-        verbose_name='Longitud máxima',
-        help_text='Longitud máxima para campos de texto'
+        verbose_name=gettext_lazy('Longitud máxima'),
+        help_text=gettext_lazy('Longitud máxima para campos de texto')
     )
     help_text = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name='Texto de ayuda',
-        help_text='Descripción o ayuda del campo'
+        verbose_name=gettext_lazy('Texto de ayuda'),
+        help_text=gettext_lazy('Descripción o ayuda del campo')
     )
     order = models.IntegerField(
         default=0,
-        verbose_name='Orden',
-        help_text='Orden de visualización del campo'
+        verbose_name=gettext_lazy('Orden'),
+        help_text=gettext_lazy('Orden de visualización del campo')
     )
     is_unique = models.BooleanField(
         default=False,
-        verbose_name='Único',
-        help_text='Si el valor debe ser único en la tabla'
+        verbose_name=gettext_lazy('Único'),
+        help_text=gettext_lazy('Si el valor debe ser único en la tabla')
     )
     is_indexed = models.BooleanField(
         default=False,
-        verbose_name='Indexado',
-        help_text='Si el campo debe ser indexado para búsquedas rápidas'
+        verbose_name=gettext_lazy('Indexado'),
+        help_text=gettext_lazy('Si el campo debe ser indexado para búsquedas rápidas')
     )
     
     class Meta:
-        verbose_name = 'Campo de Tabla'
-        verbose_name_plural = 'Campos de Tablas'
+        verbose_name = gettext_lazy('Campo de Tabla')
+        verbose_name_plural = gettext_lazy('Campos de Tablas')
         ordering = ['table', 'order', 'id']
         unique_together = [['table', 'name']]
     
@@ -20889,30 +20890,30 @@ class DynamicTableRecord(models.Model):
         DynamicTable,
         on_delete=models.CASCADE,
         related_name='records',
-        verbose_name='Tabla'
+        verbose_name=gettext_lazy('Tabla')
     )
     data = models.JSONField(
-        verbose_name='Datos',
-        help_text='Datos del registro en formato JSON'
+        verbose_name=gettext_lazy('Datos'),
+        help_text=gettext_lazy('Datos del registro en formato JSON')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     created_by_ip = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='IP de creación',
-        help_text='Dirección IP desde donde se creó el registro'
+        verbose_name=gettext_lazy('IP de creación'),
+        help_text=gettext_lazy('Dirección IP desde donde se creó el registro')
     )
     
     class Meta:
-        verbose_name = 'Registro de Tabla'
-        verbose_name_plural = 'Registros de Tablas'
+        verbose_name = gettext_lazy('Registro de Tabla')
+        verbose_name_plural = gettext_lazy('Registros de Tablas')
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['table', '-created_at']),
@@ -20927,50 +20928,50 @@ class SavedApiRequest(models.Model):
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Nombre descriptivo para identificar esta petición'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Nombre descriptivo para identificar esta petición')
     )
     url = models.URLField(
         max_length=500,
-        verbose_name='URL',
-        help_text='URL completa del endpoint'
+        verbose_name=gettext_lazy('URL'),
+        help_text=gettext_lazy('URL completa del endpoint')
     )
     method = models.CharField(
         max_length=10,
         choices=[
-            ('GET', 'GET'),
-            ('POST', 'POST'),
-            ('PUT', 'PUT'),
-            ('PATCH', 'PATCH'),
-            ('DELETE', 'DELETE'),
+            ('GET', gettext_lazy('GET')),
+            ('POST', gettext_lazy('POST')),
+            ('PUT', gettext_lazy('PUT')),
+            ('PATCH', gettext_lazy('PATCH')),
+            ('DELETE', gettext_lazy('DELETE')),
         ],
         default='GET',
-        verbose_name='Método HTTP'
+        verbose_name=gettext_lazy('Método HTTP')
     )
     headers = models.TextField(
         blank=True,
-        verbose_name='Headers',
-        help_text='Headers personalizados (formato: Name: Value, uno por línea)'
+        verbose_name=gettext_lazy('Headers'),
+        help_text=gettext_lazy('Headers personalizados (formato: Name: Value, uno por línea)')
     )
     body = models.TextField(
         blank=True,
-        verbose_name='Body',
-        help_text='Cuerpo de la petición (JSON)'
+        verbose_name=gettext_lazy('Body'),
+        help_text=gettext_lazy('Cuerpo de la petición (JSON)')
     )
     token = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name='Token',
-        help_text='Token de autenticación (Bearer, API Key, etc.)'
+        verbose_name=gettext_lazy('Token'),
+        help_text=gettext_lazy('Token de autenticación (Bearer, API Key, etc.)')
     )
     api_type = models.CharField(
         max_length=20,
         choices=[
-            ('internal', 'API Interna'),
-            ('external', 'API Externa'),
+            ('internal', gettext_lazy('API Interna')),
+            ('external', gettext_lazy('API Externa')),
         ],
         default='external',
-        verbose_name='Tipo de API'
+        verbose_name=gettext_lazy('Tipo de API')
     )
     dynamic_table = models.ForeignKey(
         DynamicTable,
@@ -20978,43 +20979,43 @@ class SavedApiRequest(models.Model):
         null=True,
         blank=True,
         related_name='saved_requests',
-        verbose_name='Tabla Dinámica',
-        help_text='Solo si es API interna'
+        verbose_name=gettext_lazy('Tabla Dinámica'),
+        help_text=gettext_lazy('Solo si es API interna')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Notas sobre esta petición'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Notas sobre esta petición')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='saved_api_requests',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     is_favorite = models.BooleanField(
         default=False,
-        verbose_name='Favorito',
-        help_text='Marcar como favorito para acceso rápido'
+        verbose_name=gettext_lazy('Favorito'),
+        help_text=gettext_lazy('Marcar como favorito para acceso rápido')
     )
     last_used = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Último uso',
-        help_text='Última vez que se ejecutó esta petición'
+        verbose_name=gettext_lazy('Último uso'),
+        help_text=gettext_lazy('Última vez que se ejecutó esta petición')
     )
     
     class Meta:
-        verbose_name = 'API Guardada'
-        verbose_name_plural = 'APIs Guardadas'
+        verbose_name = gettext_lazy('API Guardada')
+        verbose_name_plural = gettext_lazy('APIs Guardadas')
         ordering = ['-is_favorite', '-last_used', '-created_at']
         indexes = [
             models.Index(fields=['created_by', '-created_at']),
@@ -21037,65 +21038,65 @@ class SocialPost(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='social_posts',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     content = models.TextField(
         blank=True,
-        verbose_name='Contenido',
-        help_text='Texto de la publicación'
+        verbose_name=gettext_lazy('Contenido'),
+        help_text=gettext_lazy('Texto de la publicación')
     )
     image = models.ImageField(
         upload_to='social_posts/%Y/%m/',
         blank=True,
         null=True,
-        verbose_name='Imagen',
-        help_text='Imagen de la publicación'
+        verbose_name=gettext_lazy('Imagen'),
+        help_text=gettext_lazy('Imagen de la publicación')
     )
     youtube_url = models.URLField(
         blank=True,
         null=True,
-        verbose_name='URL de YouTube',
-        help_text='URL del video de YouTube'
+        verbose_name=gettext_lazy('URL de YouTube'),
+        help_text=gettext_lazy('URL del video de YouTube')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     is_private = models.BooleanField(
         default=False,
-        verbose_name='Privado',
-        help_text='Solo visible para el creador'
+        verbose_name=gettext_lazy('Privado'),
+        help_text=gettext_lazy('Solo visible para el creador')
     )
     share_token = models.CharField(
         max_length=100,
         blank=True,
         null=True,
         unique=True,
-        verbose_name='Token de compartir',
-        help_text='Token único para compartir públicamente'
+        verbose_name=gettext_lazy('Token de compartir'),
+        help_text=gettext_lazy('Token único para compartir públicamente')
     )
     company_only = models.BooleanField(
         default=True,
-        verbose_name='Solo mi empresa',
-        help_text='Si está marcado, solo los usuarios de la misma empresa pueden ver esta publicación'
+        verbose_name=gettext_lazy('Solo mi empresa'),
+        help_text=gettext_lazy('Si está marcado, solo los usuarios de la misma empresa pueden ver esta publicación')
     )
     public_views_count = models.PositiveIntegerField(
         default=0,
-        verbose_name='Vistas públicas',
-        help_text='Número de veces que se ha visto la publicación pública'
+        verbose_name=gettext_lazy('Vistas públicas'),
+        help_text=gettext_lazy('Número de veces que se ha visto la publicación pública')
     )
     
     class Meta:
-        verbose_name = 'Publicación Social'
-        verbose_name_plural = 'Publicaciones Sociales'
+        verbose_name = gettext_lazy('Publicación Social')
+        verbose_name_plural = gettext_lazy('Publicaciones Sociales')
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['-created_at']),
@@ -21171,37 +21172,37 @@ class SocialPostLike(models.Model):
     """Reacción en una publicación"""
     
     REACTION_CHOICES = [
-        ('like', 'Me gusta'),
-        ('love', 'Me encanta'),
-        ('dislike', 'No me gusta'),
+        ('like', gettext_lazy('Me gusta')),
+        ('love', gettext_lazy('Me encanta')),
+        ('dislike', gettext_lazy('No me gusta')),
     ]
     
     post = models.ForeignKey(
         SocialPost,
         on_delete=models.CASCADE,
         related_name='likes',
-        verbose_name='Publicación'
+        verbose_name=gettext_lazy('Publicación')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='social_likes',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     reaction_type = models.CharField(
         max_length=10,
         choices=REACTION_CHOICES,
         default='like',
-        verbose_name='Tipo de reacción'
+        verbose_name=gettext_lazy('Tipo de reacción')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha'
+        verbose_name=gettext_lazy('Fecha')
     )
     
     class Meta:
-        verbose_name = 'Like'
-        verbose_name_plural = 'Likes'
+        verbose_name = gettext_lazy('Like')
+        verbose_name_plural = gettext_lazy('Likes')
         unique_together = ('post', 'user')
         ordering = ['-created_at']
         indexes = [
@@ -21219,13 +21220,13 @@ class SocialPostComment(models.Model):
         SocialPost,
         on_delete=models.CASCADE,
         related_name='comments',
-        verbose_name='Publicación'
+        verbose_name=gettext_lazy('Publicación')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='social_comments',
-        verbose_name='Usuario',
+        verbose_name=gettext_lazy('Usuario'),
         blank=True,
         null=True
     )
@@ -21234,32 +21235,32 @@ class SocialPostComment(models.Model):
         max_length=100,
         blank=True,
         null=True,
-        verbose_name='Nombre del invitado'
+        verbose_name=gettext_lazy('Nombre del invitado')
     )
     guest_email = models.EmailField(
         blank=True,
         null=True,
-        verbose_name='Email del invitado'
+        verbose_name=gettext_lazy('Email del invitado')
     )
     content = models.TextField(
-        verbose_name='Comentario'
+        verbose_name=gettext_lazy('Comentario')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     
     class Meta:
-        verbose_name = 'Comentario'
-        verbose_name_plural = 'Comentarios'
+        verbose_name = gettext_lazy('Comentario')
+        verbose_name_plural = gettext_lazy('Comentarios')
         ordering = ['created_at']
         indexes = [
             models.Index(fields=['post', 'created_at']),
@@ -21293,37 +21294,37 @@ class SocialCommentReaction(models.Model):
     """Reacción en un comentario"""
     
     REACTION_CHOICES = [
-        ('like', 'Me gusta'),
-        ('love', 'Me encanta'),
-        ('dislike', 'No me gusta'),
+        ('like', gettext_lazy('Me gusta')),
+        ('love', gettext_lazy('Me encanta')),
+        ('dislike', gettext_lazy('No me gusta')),
     ]
     
     comment = models.ForeignKey(
         SocialPostComment,
         on_delete=models.CASCADE,
         related_name='comment_reactions',
-        verbose_name='Comentario'
+        verbose_name=gettext_lazy('Comentario')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='social_comment_reactions',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     reaction_type = models.CharField(
         max_length=10,
         choices=REACTION_CHOICES,
         default='like',
-        verbose_name='Tipo de reacción'
+        verbose_name=gettext_lazy('Tipo de reacción')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha'
+        verbose_name=gettext_lazy('Fecha')
     )
     
     class Meta:
-        verbose_name = 'Reacción de Comentario'
-        verbose_name_plural = 'Reacciones de Comentarios'
+        verbose_name = gettext_lazy('Reacción de Comentario')
+        verbose_name_plural = gettext_lazy('Reacciones de Comentarios')
         unique_together = ('comment', 'user')
         ordering = ['-created_at']
         indexes = [
@@ -21341,22 +21342,22 @@ class SocialPostFavorite(models.Model):
         SocialPost,
         on_delete=models.CASCADE,
         related_name='favorites',
-        verbose_name='Publicación'
+        verbose_name=gettext_lazy('Publicación')
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='favorite_posts',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha'
+        verbose_name=gettext_lazy('Fecha')
     )
     
     class Meta:
-        verbose_name = 'Favorito'
-        verbose_name_plural = 'Favoritos'
+        verbose_name = gettext_lazy('Favorito')
+        verbose_name_plural = gettext_lazy('Favoritos')
         unique_together = ('post', 'user')
         ordering = ['-created_at']
         indexes = [
@@ -21375,29 +21376,29 @@ class FunctionalRequirementDocument(models.Model):
         Company,
         on_delete=models.CASCADE,
         related_name='functional_requirement_documents',
-        verbose_name='Empresa',
+        verbose_name=gettext_lazy('Empresa'),
         null=True,
         blank=True
     )
     company_name = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Nombre de Empresa',
-        help_text='Nombre libre de la empresa si no está en el listado'
+        verbose_name=gettext_lazy('Nombre de Empresa'),
+        help_text=gettext_lazy('Nombre libre de la empresa si no está en el listado')
     )
     title = models.CharField(
         max_length=300,
-        verbose_name='Título'
+        verbose_name=gettext_lazy('Título')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción General',
-        help_text='Descripción general del proyecto o alcance'
+        verbose_name=gettext_lazy('Descripción General'),
+        help_text=gettext_lazy('Descripción general del proyecto o alcance')
     )
     sequence = models.CharField(
         max_length=50,
-        verbose_name='Secuencia',
-        help_text='Se genera automáticamente',
+        verbose_name=gettext_lazy('Secuencia'),
+        help_text=gettext_lazy('Se genera automáticamente'),
         unique=True,
         editable=False
     )
@@ -21405,62 +21406,62 @@ class FunctionalRequirementDocument(models.Model):
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name='Token público'
+        verbose_name=gettext_lazy('Token público')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         related_name='created_frd_documents',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     
     # Campos de aceptación/rechazo del documento completo
     document_status = models.CharField(
         max_length=20,
         choices=[
-            ('pending', 'Pendiente'),
-            ('accepted', 'Aceptado'),
-            ('rejected', 'Rechazado')
+            ('pending', gettext_lazy('Pendiente')),
+            ('accepted', gettext_lazy('Aceptado')),
+            ('rejected', gettext_lazy('Rechazado'))
         ],
         default='pending',
-        verbose_name='Estado del Documento'
+        verbose_name=gettext_lazy('Estado del Documento')
     )
     document_reviewed_by_name = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Revisado por'
+        verbose_name=gettext_lazy('Revisado por')
     )
     document_reviewed_by_email = models.EmailField(
         blank=True,
-        verbose_name='Email del revisor'
+        verbose_name=gettext_lazy('Email del revisor')
     )
     document_reviewed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de revisión'
+        verbose_name=gettext_lazy('Fecha de revisión')
     )
     document_review_comments = models.TextField(
         blank=True,
-        verbose_name='Comentarios de revisión'
+        verbose_name=gettext_lazy('Comentarios de revisión')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Documento de Requerimientos Funcionales'
-        verbose_name_plural = 'Documentos de Requerimientos Funcionales'
+        verbose_name = gettext_lazy('Documento de Requerimientos Funcionales')
+        verbose_name_plural = gettext_lazy('Documentos de Requerimientos Funcionales')
     
     def __str__(self):
         return f"{self.sequence} - {self.title}"
@@ -21576,53 +21577,53 @@ class FunctionalRequirement(models.Model):
         FunctionalRequirementDocument,
         on_delete=models.CASCADE,
         related_name='requirements',
-        verbose_name='Documento'
+        verbose_name=gettext_lazy('Documento')
     )
     number = models.PositiveIntegerField(
-        verbose_name='Número',
-        help_text='Número secuencial del requerimiento'
+        verbose_name=gettext_lazy('Número'),
+        help_text=gettext_lazy('Número secuencial del requerimiento')
     )
     title = models.CharField(
         max_length=300,
         blank=True,
-        verbose_name='Título',
-        help_text='Título breve del requerimiento'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Título breve del requerimiento')
     )
     description = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción del alcance o requerimiento'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción del alcance o requerimiento')
     )
     is_approved = models.BooleanField(
         default=False,
-        verbose_name='Aprobado'
+        verbose_name=gettext_lazy('Aprobado')
     )
     approved_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de aprobación'
+        verbose_name=gettext_lazy('Fecha de aprobación')
     )
     approved_by_name = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Aprobado por (nombre)'
+        verbose_name=gettext_lazy('Aprobado por (nombre)')
     )
     approved_by_email = models.EmailField(
         blank=True,
-        verbose_name='Aprobado por (email)'
+        verbose_name=gettext_lazy('Aprobado por (email)')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['document', 'number']
-        verbose_name = 'Requerimiento Funcional'
-        verbose_name_plural = 'Requerimientos Funcionales'
+        verbose_name = gettext_lazy('Requerimiento Funcional')
+        verbose_name_plural = gettext_lazy('Requerimientos Funcionales')
         unique_together = ['document', 'number']
     
     def __str__(self):
@@ -21644,31 +21645,31 @@ class FunctionalRequirementDocumentView(models.Model):
         FunctionalRequirementDocument,
         on_delete=models.CASCADE,
         related_name='views',
-        verbose_name='Documento'
+        verbose_name=gettext_lazy('Documento')
     )
     ip_address = models.GenericIPAddressField(
-        verbose_name='Dirección IP',
+        verbose_name=gettext_lazy('Dirección IP'),
         null=True,
         blank=True
     )
     user_agent = models.TextField(
-        verbose_name='User Agent',
+        verbose_name=gettext_lazy('User Agent'),
         blank=True
     )
     referrer = models.URLField(
-        verbose_name='Referrer',
+        verbose_name=gettext_lazy('Referrer'),
         blank=True,
         max_length=500
     )
     viewed_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de visita'
+        verbose_name=gettext_lazy('Fecha de visita')
     )
     
     class Meta:
         ordering = ['-viewed_at']
-        verbose_name = 'Vista de DRF'
-        verbose_name_plural = 'Vistas de DRF'
+        verbose_name = gettext_lazy('Vista de DRF')
+        verbose_name_plural = gettext_lazy('Vistas de DRF')
     
     def __str__(self):
         return f"{self.document.sequence} - {self.viewed_at.strftime('%d/%m/%Y %H:%M')}"
@@ -21681,27 +21682,27 @@ class FunctionalRequirementComment(models.Model):
         FunctionalRequirement,
         on_delete=models.CASCADE,
         related_name='comments',
-        verbose_name='Requerimiento'
+        verbose_name=gettext_lazy('Requerimiento')
     )
     author_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del autor'
+        verbose_name=gettext_lazy('Nombre del autor')
     )
     author_email = models.EmailField(
-        verbose_name='Email del autor'
+        verbose_name=gettext_lazy('Email del autor')
     )
     comment = models.TextField(
-        verbose_name='Comentario'
+        verbose_name=gettext_lazy('Comentario')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
         ordering = ['created_at']
-        verbose_name = 'Comentario de Requerimiento'
-        verbose_name_plural = 'Comentarios de Requerimientos'
+        verbose_name = gettext_lazy('Comentario de Requerimiento')
+        verbose_name_plural = gettext_lazy('Comentarios de Requerimientos')
     
     def __str__(self):
         return f"Comentario de {self.author_name} en Req #{self.requirement.number}"
@@ -21709,19 +21710,19 @@ class FunctionalRequirementComment(models.Model):
 
 class AccessGroup(models.Model):
     """Modelo para grupos de accesos rápidos"""
-    title = models.CharField(max_length=200, verbose_name='Título del Grupo')
-    description = models.TextField(blank=True, verbose_name='Descripción')
-    is_public = models.BooleanField(default=False, verbose_name='Público')
-    share_token = models.CharField(max_length=50, unique=True, blank=True, verbose_name='Token de Compartir')
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='access_groups', verbose_name='Creado por')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última Actualización')
-    order = models.IntegerField(default=0, verbose_name='Orden')
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy('Título del Grupo'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
+    is_public = models.BooleanField(default=False, verbose_name=gettext_lazy('Público'))
+    share_token = models.CharField(max_length=50, unique=True, blank=True, verbose_name=gettext_lazy('Token de Compartir'))
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='access_groups', verbose_name=gettext_lazy('Creado por'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de Creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última Actualización'))
+    order = models.IntegerField(default=0, verbose_name=gettext_lazy('Orden'))
     
     class Meta:
         ordering = ['order', '-created_at']
-        verbose_name = 'Grupo de Accesos'
-        verbose_name_plural = 'Grupos de Accesos'
+        verbose_name = gettext_lazy('Grupo de Accesos')
+        verbose_name_plural = gettext_lazy('Grupos de Accesos')
     
     def __str__(self):
         return self.title
@@ -21741,30 +21742,30 @@ class AccessGroup(models.Model):
 
 class AccessLink(models.Model):
     """Modelo para enlaces dentro de un grupo de accesos"""
-    group = models.ForeignKey(AccessGroup, on_delete=models.CASCADE, related_name='links', verbose_name='Grupo')
-    title = models.CharField(max_length=200, verbose_name='Título del Enlace')
-    url = models.URLField(max_length=500, verbose_name='URL')
-    description = models.TextField(blank=True, verbose_name='Descripción')
+    group = models.ForeignKey(AccessGroup, on_delete=models.CASCADE, related_name='links', verbose_name=gettext_lazy('Grupo'))
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy('Título del Enlace'))
+    url = models.URLField(max_length=500, verbose_name=gettext_lazy('URL'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
     icon = models.CharField(
         max_length=50, 
         blank=True, 
-        verbose_name='Icono',
-        help_text='Clase de icono Bootstrap (ej: bi-link-45deg)'
+        verbose_name=gettext_lazy('Icono'),
+        help_text=gettext_lazy('Clase de icono Bootstrap (ej: bi-link-45deg)')
     )
     color = models.CharField(
         max_length=20,
         default='primary',
-        verbose_name='Color',
-        help_text='Color del botón (primary, success, info, warning, danger, etc.)'
+        verbose_name=gettext_lazy('Color'),
+        help_text=gettext_lazy('Color del botón (primary, success, info, warning, danger, etc.)')
     )
-    order = models.IntegerField(default=0, verbose_name='Orden')
-    is_active = models.BooleanField(default=True, verbose_name='Activo')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
+    order = models.IntegerField(default=0, verbose_name=gettext_lazy('Orden'))
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy('Activo'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de Creación'))
     
     class Meta:
         ordering = ['order', 'created_at']
-        verbose_name = 'Enlace de Acceso'
-        verbose_name_plural = 'Enlaces de Acceso'
+        verbose_name = gettext_lazy('Enlace de Acceso')
+        verbose_name_plural = gettext_lazy('Enlaces de Acceso')
     
     def __str__(self):
         return f"{self.title} ({self.group.title})"
@@ -21774,18 +21775,18 @@ class AccessLink(models.Model):
 
 class TaskPlan(models.Model):
     """Modelo para plan de tareas con días"""
-    title = models.CharField(max_length=200, verbose_name='Título del Plan')
-    description = models.TextField(blank=True, verbose_name='Descripción')
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='task_plans', verbose_name='Creado por')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última Actualización')
-    is_public = models.BooleanField(default=False, verbose_name='Vista Pública Activada')
-    share_token = models.CharField(max_length=50, unique=True, blank=True, verbose_name='Token de Compartir')
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy('Título del Plan'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='task_plans', verbose_name=gettext_lazy('Creado por'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de Creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última Actualización'))
+    is_public = models.BooleanField(default=False, verbose_name=gettext_lazy('Vista Pública Activada'))
+    share_token = models.CharField(max_length=50, unique=True, blank=True, verbose_name=gettext_lazy('Token de Compartir'))
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Plan de Tareas'
-        verbose_name_plural = 'Planes de Tareas'
+        verbose_name = gettext_lazy('Plan de Tareas')
+        verbose_name_plural = gettext_lazy('Planes de Tareas')
     
     def __str__(self):
         return self.title
@@ -21805,16 +21806,16 @@ class TaskPlan(models.Model):
 
 class TaskPlanDay(models.Model):
     """Modelo para días dentro de un plan de tareas"""
-    plan = models.ForeignKey(TaskPlan, on_delete=models.CASCADE, related_name='days', verbose_name='Plan')
-    title = models.CharField(max_length=100, verbose_name='Título del Día', help_text='Ej: Día 1, Lunes, Semana 1')
-    description = models.TextField(blank=True, verbose_name='Descripción del Día')
-    order = models.IntegerField(default=0, verbose_name='Orden')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
+    plan = models.ForeignKey(TaskPlan, on_delete=models.CASCADE, related_name='days', verbose_name=gettext_lazy('Plan'))
+    title = models.CharField(max_length=100, verbose_name=gettext_lazy('Título del Día'), help_text=gettext_lazy('Ej: Día 1, Lunes, Semana 1'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción del Día'))
+    order = models.IntegerField(default=0, verbose_name=gettext_lazy('Orden'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de Creación'))
     
     class Meta:
         ordering = ['order', 'created_at']
-        verbose_name = 'Día del Plan'
-        verbose_name_plural = 'Días del Plan'
+        verbose_name = gettext_lazy('Día del Plan')
+        verbose_name_plural = gettext_lazy('Días del Plan')
         unique_together = ['plan', 'order']
     
     def __str__(self):
@@ -21823,13 +21824,13 @@ class TaskPlanDay(models.Model):
 
 class TaskPlanItem(models.Model):
     """Modelo para tareas individuales dentro de un día"""
-    day = models.ForeignKey(TaskPlanDay, on_delete=models.CASCADE, related_name='tasks', verbose_name='Día')
-    title = models.CharField(max_length=300, verbose_name='Título de la Tarea')
-    description = models.TextField(blank=True, verbose_name='Descripción')
-    order = models.IntegerField(default=0, verbose_name='Orden')
-    is_completed = models.BooleanField(default=False, verbose_name='Completada')
-    completed_at = models.DateTimeField(null=True, blank=True, verbose_name='Completada el')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
+    day = models.ForeignKey(TaskPlanDay, on_delete=models.CASCADE, related_name='tasks', verbose_name=gettext_lazy('Día'))
+    title = models.CharField(max_length=300, verbose_name=gettext_lazy('Título de la Tarea'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
+    order = models.IntegerField(default=0, verbose_name=gettext_lazy('Orden'))
+    is_completed = models.BooleanField(default=False, verbose_name=gettext_lazy('Completada'))
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name=gettext_lazy('Completada el'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de Creación'))
     
     # Campos opcionales para mayor detalle
     estimated_hours = models.DecimalField(
@@ -21837,24 +21838,24 @@ class TaskPlanItem(models.Model):
         decimal_places=2, 
         null=True, 
         blank=True, 
-        verbose_name='Horas Estimadas'
+        verbose_name=gettext_lazy('Horas Estimadas')
     )
     priority = models.CharField(
         max_length=20,
         choices=[
-            ('low', 'Baja'),
-            ('medium', 'Media'),
-            ('high', 'Alta'),
-            ('critical', 'Crítica')
+            ('low', gettext_lazy('Baja')),
+            ('medium', gettext_lazy('Media')),
+            ('high', gettext_lazy('Alta')),
+            ('critical', gettext_lazy('Crítica'))
         ],
         default='medium',
-        verbose_name='Prioridad'
+        verbose_name=gettext_lazy('Prioridad')
     )
     
     class Meta:
         ordering = ['order', 'created_at']
-        verbose_name = 'Tarea del Plan'
-        verbose_name_plural = 'Tareas del Plan'
+        verbose_name = gettext_lazy('Tarea del Plan')
+        verbose_name_plural = gettext_lazy('Tareas del Plan')
     
     def __str__(self):
         return f"{self.title} ({self.day.title})"
@@ -21866,29 +21867,29 @@ class TaskPlanItem(models.Model):
 
 class Checklist(models.Model):
     """Modelo para checklist con tareas"""
-    title = models.CharField(max_length=300, verbose_name='Título del Checklist')
-    company = models.CharField(max_length=200, blank=True, verbose_name='Empresa')
-    description = models.TextField(blank=True, verbose_name='Descripción')
+    title = models.CharField(max_length=300, verbose_name=gettext_lazy('Título del Checklist'))
+    company = models.CharField(max_length=200, blank=True, verbose_name=gettext_lazy('Empresa'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
     assigned_user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='checklists_assigned',
-        verbose_name='Usuario Asignado'
+        verbose_name=gettext_lazy('Usuario Asignado')
     )
-    is_public = models.BooleanField(default=False, verbose_name='Público')
-    public_can_toggle = models.BooleanField(default=True, verbose_name='Permitir marcar tareas públicamente')
-    share_token = models.CharField(max_length=100, unique=True, blank=True, verbose_name='Token de Compartir')
-    views_count = models.IntegerField(default=0, verbose_name='Visualizaciones')
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Creado por')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última Actualización')
+    is_public = models.BooleanField(default=False, verbose_name=gettext_lazy('Público'))
+    public_can_toggle = models.BooleanField(default=True, verbose_name=gettext_lazy('Permitir marcar tareas públicamente'))
+    share_token = models.CharField(max_length=100, unique=True, blank=True, verbose_name=gettext_lazy('Token de Compartir'))
+    views_count = models.IntegerField(default=0, verbose_name=gettext_lazy('Visualizaciones'))
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=gettext_lazy('Creado por'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de Creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última Actualización'))
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Checklist'
-        verbose_name_plural = 'Checklists'
+        verbose_name = gettext_lazy('Checklist')
+        verbose_name_plural = gettext_lazy('Checklists')
     
     def __str__(self):
         return f"{self.title} - {self.company}" if self.company else self.title
@@ -21912,21 +21913,21 @@ class Checklist(models.Model):
 
 class ChecklistItem(models.Model):
     """Modelo para items individuales del checklist"""
-    checklist = models.ForeignKey(Checklist, on_delete=models.CASCADE, related_name='items', verbose_name='Checklist')
-    title = models.CharField(max_length=500, verbose_name='Título de la Tarea')
-    description = models.TextField(blank=True, verbose_name='Descripción')
-    notes = models.TextField(blank=True, verbose_name='Notas adicionales')
-    url = models.URLField(blank=True, verbose_name='Enlace URL')
-    cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='Costo')
-    order = models.IntegerField(default=0, verbose_name='Orden')
-    is_completed = models.BooleanField(default=False, verbose_name='Completada')
-    completed_at = models.DateTimeField(null=True, blank=True, verbose_name='Completada el')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
+    checklist = models.ForeignKey(Checklist, on_delete=models.CASCADE, related_name='items', verbose_name=gettext_lazy('Checklist'))
+    title = models.CharField(max_length=500, verbose_name=gettext_lazy('Título de la Tarea'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
+    notes = models.TextField(blank=True, verbose_name=gettext_lazy('Notas adicionales'))
+    url = models.URLField(blank=True, verbose_name=gettext_lazy('Enlace URL'))
+    cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=gettext_lazy('Costo'))
+    order = models.IntegerField(default=0, verbose_name=gettext_lazy('Orden'))
+    is_completed = models.BooleanField(default=False, verbose_name=gettext_lazy('Completada'))
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name=gettext_lazy('Completada el'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de Creación'))
     
     class Meta:
         ordering = ['order', 'created_at']
-        verbose_name = 'Item del Checklist'
-        verbose_name_plural = 'Items del Checklist'
+        verbose_name = gettext_lazy('Item del Checklist')
+        verbose_name_plural = gettext_lazy('Items del Checklist')
     
     def __str__(self):
         return f"{self.title} ({self.checklist.title})"
@@ -21938,46 +21939,46 @@ class Transaction(models.Model):
     code = models.CharField(
         max_length=50,
         unique=True,
-        verbose_name='Código',
-        help_text='Código único de la transacción (ej: T001, TICKET, REPORTE)'
+        verbose_name=gettext_lazy('Código'),
+        help_text=gettext_lazy('Código único de la transacción (ej: T001, TICKET, REPORTE)')
     )
     
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre',
-        help_text='Nombre descriptivo de la transacción'
+        verbose_name=gettext_lazy('Nombre'),
+        help_text=gettext_lazy('Nombre descriptivo de la transacción')
     )
     
     url = models.CharField(
         max_length=500,
-        verbose_name='URL',
-        help_text='URL de acceso (puede ser relativa o absoluta)'
+        verbose_name=gettext_lazy('URL'),
+        help_text=gettext_lazy('URL de acceso (puede ser relativa o absoluta)')
     )
     
     visible_for_all = models.BooleanField(
         default=True,
-        verbose_name='Visible para Todos',
-        help_text='Si está marcado, todos pueden ver esta transacción. Si no, solo agentes.'
+        verbose_name=gettext_lazy('Visible para Todos'),
+        help_text=gettext_lazy('Si está marcado, todos pueden ver esta transacción. Si no, solo agentes.')
     )
     
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción opcional de la transacción'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción opcional de la transacción')
     )
     
     icon = models.CharField(
         max_length=50,
         blank=True,
         default='bi-link-45deg',
-        verbose_name='Ícono Bootstrap',
-        help_text='Clase del ícono Bootstrap (ej: bi-link-45deg, bi-file-text)'
+        verbose_name=gettext_lazy('Ícono Bootstrap'),
+        help_text=gettext_lazy('Clase del ícono Bootstrap (ej: bi-link-45deg, bi-file-text)')
     )
     
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activa',
-        help_text='Solo las transacciones activas aparecen en la búsqueda'
+        verbose_name=gettext_lazy('Activa'),
+        help_text=gettext_lazy('Solo las transacciones activas aparecen en la búsqueda')
     )
     
     created_by = models.ForeignKey(
@@ -21985,16 +21986,16 @@ class Transaction(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name='created_transactions',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última Actualización')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de Creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última Actualización'))
     
     class Meta:
         ordering = ['code']
-        verbose_name = 'Transacción'
-        verbose_name_plural = 'Transacciones'
+        verbose_name = gettext_lazy('Transacción')
+        verbose_name_plural = gettext_lazy('Transacciones')
         indexes = [
             models.Index(fields=['code']),
             models.Index(fields=['name']),
@@ -22010,39 +22011,39 @@ class KnowledgeBase(models.Model):
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título',
-        help_text='Título del concepto o tema'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Título del concepto o tema')
     )
     
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción detallada del concepto'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción detallada del concepto')
     )
     
     source_code = models.TextField(
         blank=True,
-        verbose_name='Código Fuente',
-        help_text='Código fuente de ejemplo o snippet'
+        verbose_name=gettext_lazy('Código Fuente'),
+        help_text=gettext_lazy('Código fuente de ejemplo o snippet')
     )
     
     tags = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name='Etiquetas',
-        help_text='Etiquetas separadas por comas (ej: python, django, api)'
+        verbose_name=gettext_lazy('Etiquetas'),
+        help_text=gettext_lazy('Etiquetas separadas por comas (ej: python, django, api)')
     )
     
     category = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Categoría',
-        help_text='Categoría del conocimiento (ej: Backend, Frontend, Base de Datos)'
+        verbose_name=gettext_lazy('Categoría'),
+        help_text=gettext_lazy('Categoría del conocimiento (ej: Backend, Frontend, Base de Datos)')
     )
     
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     
     created_by = models.ForeignKey(
@@ -22050,22 +22051,22 @@ class KnowledgeBase(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name='knowledge_bases_created',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de Creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última Actualización')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de Creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última Actualización'))
     
     # Campos para compartir públicamente
-    public_share_enabled = models.BooleanField(default=False, verbose_name='Compartir Públicamente')
-    public_share_token = models.CharField(max_length=64, unique=True, null=True, blank=True, verbose_name='Token de Compartir')
-    public_share_password = models.CharField(max_length=128, blank=True, verbose_name='Contraseña de Acceso')
-    public_share_expires_at = models.DateTimeField(null=True, blank=True, verbose_name='Fecha de Expiración')
+    public_share_enabled = models.BooleanField(default=False, verbose_name=gettext_lazy('Compartir Públicamente'))
+    public_share_token = models.CharField(max_length=64, unique=True, null=True, blank=True, verbose_name=gettext_lazy('Token de Compartir'))
+    public_share_password = models.CharField(max_length=128, blank=True, verbose_name=gettext_lazy('Contraseña de Acceso'))
+    public_share_expires_at = models.DateTimeField(null=True, blank=True, verbose_name=gettext_lazy('Fecha de Expiración'))
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Base de Conocimiento'
-        verbose_name_plural = 'Base de Conocimientos'
+        verbose_name = gettext_lazy('Base de Conocimiento')
+        verbose_name_plural = gettext_lazy('Base de Conocimientos')
         indexes = [
             models.Index(fields=['title']),
             models.Index(fields=['category']),
@@ -22141,36 +22142,36 @@ class Translation(models.Model):
         max_length=10,
         choices=LANGUAGES,
         default='en',
-        verbose_name='Idioma Origen'
+        verbose_name=gettext_lazy('Idioma Origen')
     )
     
     target_language = models.CharField(
         max_length=10,
         choices=LANGUAGES,
         default='es',
-        verbose_name='Idioma Destino'
+        verbose_name=gettext_lazy('Idioma Destino')
     )
     
     source_text = models.TextField(
-        verbose_name='Texto Original',
-        help_text='Texto a traducir'
+        verbose_name=gettext_lazy('Texto Original'),
+        help_text=gettext_lazy('Texto a traducir')
     )
     
     translated_text = models.TextField(
-        verbose_name='Texto Traducido',
-        help_text='Resultado de la traducción'
+        verbose_name=gettext_lazy('Texto Traducido'),
+        help_text=gettext_lazy('Resultado de la traducción')
     )
     
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     class Meta:
@@ -22180,8 +22181,8 @@ class Translation(models.Model):
             models.Index(fields=['target_language']),
             models.Index(fields=['created_at']),
         ]
-        verbose_name = 'Traducción'
-        verbose_name_plural = 'Traducciones'
+        verbose_name = gettext_lazy('Traducción')
+        verbose_name_plural = gettext_lazy('Traducciones')
     
     def __str__(self):
         return f"{self.get_source_language_display()} → {self.get_target_language_display()} ({self.created_at.strftime('%Y-%m-%d')})"
@@ -22192,32 +22193,32 @@ class SQLQuery(models.Model):
     
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre de la Consulta',
-        help_text='Nombre descriptivo para identificar la consulta'
+        verbose_name=gettext_lazy('Nombre de la Consulta'),
+        help_text=gettext_lazy('Nombre descriptivo para identificar la consulta')
     )
     
     query = models.TextField(
-        verbose_name='Consulta SQL',
-        help_text='Solo se permiten consultas SELECT'
+        verbose_name=gettext_lazy('Consulta SQL'),
+        help_text=gettext_lazy('Solo se permiten consultas SELECT')
     )
     
     result = models.TextField(
         blank=True,
         null=True,
-        verbose_name='Resultado',
-        help_text='Resultado de la última ejecución'
+        verbose_name=gettext_lazy('Resultado'),
+        help_text=gettext_lazy('Resultado de la última ejecución')
     )
     
     row_count = models.IntegerField(
         default=0,
-        verbose_name='Cantidad de Filas',
-        help_text='Número de filas retornadas'
+        verbose_name=gettext_lazy('Cantidad de Filas'),
+        help_text=gettext_lazy('Número de filas retornadas')
     )
     
     execution_time = models.FloatField(
         default=0.0,
-        verbose_name='Tiempo de Ejecución',
-        help_text='Tiempo de ejecución en segundos'
+        verbose_name=gettext_lazy('Tiempo de Ejecución'),
+        help_text=gettext_lazy('Tiempo de ejecución en segundos')
     )
     
     created_by = models.ForeignKey(
@@ -22225,23 +22226,23 @@ class SQLQuery(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name='sql_queries',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     last_executed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Última ejecución'
+        verbose_name=gettext_lazy('Última ejecución')
     )
     
     is_favorite = models.BooleanField(
         default=False,
-        verbose_name='Favorito'
+        verbose_name=gettext_lazy('Favorito')
     )
     
     class Meta:
@@ -22251,8 +22252,8 @@ class SQLQuery(models.Model):
             models.Index(fields=['created_at']),
             models.Index(fields=['is_favorite']),
         ]
-        verbose_name = 'Consulta SQL'
-        verbose_name_plural = 'Consultas SQL'
+        verbose_name = gettext_lazy('Consulta SQL')
+        verbose_name_plural = gettext_lazy('Consultas SQL')
     
     def __str__(self):
         return f"{self.name} ({self.created_at.strftime('%Y-%m-%d')})"
@@ -22263,48 +22264,48 @@ class OdooConnection(models.Model):
     
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre de la Conexión',
-        help_text='Nombre descriptivo para identificar esta conexión'
+        verbose_name=gettext_lazy('Nombre de la Conexión'),
+        help_text=gettext_lazy('Nombre descriptivo para identificar esta conexión')
     )
     
     url = models.URLField(
-        verbose_name='URL de Odoo',
-        help_text='URL completa del servidor Odoo (ej: https://miodoo.com)'
+        verbose_name=gettext_lazy('URL de Odoo'),
+        help_text=gettext_lazy('URL completa del servidor Odoo (ej: https://miodoo.com)')
     )
     
     port = models.IntegerField(
         default=8069,
-        verbose_name='Puerto',
-        help_text='Puerto del servidor Odoo'
+        verbose_name=gettext_lazy('Puerto'),
+        help_text=gettext_lazy('Puerto del servidor Odoo')
     )
     
     database = models.CharField(
         max_length=200,
-        verbose_name='Base de Datos',
-        help_text='Nombre de la base de datos en Odoo'
+        verbose_name=gettext_lazy('Base de Datos'),
+        help_text=gettext_lazy('Nombre de la base de datos en Odoo')
     )
     
     username = models.CharField(
         max_length=200,
-        verbose_name='Usuario',
-        help_text='Usuario de Odoo'
+        verbose_name=gettext_lazy('Usuario'),
+        help_text=gettext_lazy('Usuario de Odoo')
     )
     
     password = models.CharField(
         max_length=200,
-        verbose_name='Contraseña',
-        help_text='Contraseña del usuario'
+        verbose_name=gettext_lazy('Contraseña'),
+        help_text=gettext_lazy('Contraseña del usuario')
     )
     
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     
     is_private = models.BooleanField(
         default=False,
-        verbose_name='Privada',
-        help_text='Si está marcada como privada, solo el usuario creador puede verla y usarla'
+        verbose_name=gettext_lazy('Privada'),
+        help_text=gettext_lazy('Si está marcada como privada, solo el usuario creador puede verla y usarla')
     )
     
     created_by = models.ForeignKey(
@@ -22312,36 +22313,36 @@ class OdooConnection(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name='odoo_connections',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     last_tested_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Última prueba de conexión'
+        verbose_name=gettext_lazy('Última prueba de conexión')
     )
     
     connection_status = models.CharField(
         max_length=50,
         default='not_tested',
         choices=[
-            ('not_tested', 'No probada'),
-            ('success', 'Exitosa'),
-            ('failed', 'Fallida'),
+            ('not_tested', gettext_lazy('No probada')),
+            ('success', gettext_lazy('Exitosa')),
+            ('failed', gettext_lazy('Fallida')),
         ],
-        verbose_name='Estado de Conexión'
+        verbose_name=gettext_lazy('Estado de Conexión')
     )
     
     # Portal público para todas las tablas
     public_portal_enabled = models.BooleanField(
         default=False,
-        verbose_name='Portal Público Habilitado',
-        help_text='Permite acceso público a todas las tablas de esta conexión'
+        verbose_name=gettext_lazy('Portal Público Habilitado'),
+        help_text=gettext_lazy('Permite acceso público a todas las tablas de esta conexión')
     )
     
     public_portal_token = models.CharField(
@@ -22349,35 +22350,35 @@ class OdooConnection(models.Model):
         blank=True,
         unique=True,
         null=True,
-        verbose_name='Token del Portal Público',
-        help_text='Token único para acceso al portal público'
+        verbose_name=gettext_lazy('Token del Portal Público'),
+        help_text=gettext_lazy('Token único para acceso al portal público')
     )
     
     public_portal_password = models.CharField(
         max_length=128,
         blank=True,
-        verbose_name='Contraseña del Portal',
-        help_text='Dejar en blanco para permitir acceso sin contraseña'
+        verbose_name=gettext_lazy('Contraseña del Portal'),
+        help_text=gettext_lazy('Dejar en blanco para permitir acceso sin contraseña')
     )
     
     public_portal_expires_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Expiración del Portal',
-        help_text='Fecha en que expira el acceso al portal (opcional)'
+        verbose_name=gettext_lazy('Fecha de Expiración del Portal'),
+        help_text=gettext_lazy('Fecha en que expira el acceso al portal (opcional)')
     )
     
     public_portal_allow_import = models.BooleanField(
         default=True,
-        verbose_name='Permitir Importación',
-        help_text='Si está activo, los usuarios pueden importar datos. Si no, solo pueden descargar plantillas'
+        verbose_name=gettext_lazy('Permitir Importación'),
+        help_text=gettext_lazy('Si está activo, los usuarios pueden importar datos. Si no, solo pueden descargar plantillas')
     )
     
     # Portal público de operaciones RPC
     public_operations_enabled = models.BooleanField(
         default=False,
-        verbose_name='Portal de Operaciones Público Habilitado',
-        help_text='Permite acceso público al portal de operaciones RPC'
+        verbose_name=gettext_lazy('Portal de Operaciones Público Habilitado'),
+        help_text=gettext_lazy('Permite acceso público al portal de operaciones RPC')
     )
     
     public_operations_token = models.CharField(
@@ -22385,34 +22386,34 @@ class OdooConnection(models.Model):
         blank=True,
         unique=True,
         null=True,
-        verbose_name='Token del Portal de Operaciones',
-        help_text='Token único para acceso al portal de operaciones RPC'
+        verbose_name=gettext_lazy('Token del Portal de Operaciones'),
+        help_text=gettext_lazy('Token único para acceso al portal de operaciones RPC')
     )
     
     public_operations_password = models.CharField(
         max_length=128,
         blank=True,
-        verbose_name='Contraseña del Portal de Operaciones',
-        help_text='Dejar en blanco para permitir acceso sin contraseña'
+        verbose_name=gettext_lazy('Contraseña del Portal de Operaciones'),
+        help_text=gettext_lazy('Dejar en blanco para permitir acceso sin contraseña')
     )
     
     public_operations_expires_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Expiración del Portal de Operaciones',
-        help_text='Fecha en que expira el acceso al portal de operaciones (opcional)'
+        verbose_name=gettext_lazy('Fecha de Expiración del Portal de Operaciones'),
+        help_text=gettext_lazy('Fecha en que expira el acceso al portal de operaciones (opcional)')
     )
     
     public_operations_read_only = models.BooleanField(
         default=False,
-        verbose_name='Portal de Operaciones Solo Lectura',
-        help_text='Si está activo, solo permite operaciones de búsqueda (no crear, actualizar o eliminar)'
+        verbose_name=gettext_lazy('Portal de Operaciones Solo Lectura'),
+        help_text=gettext_lazy('Si está activo, solo permite operaciones de búsqueda (no crear, actualizar o eliminar)')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Conexión Odoo'
-        verbose_name_plural = 'Conexiones Odoo'
+        verbose_name = gettext_lazy('Conexión Odoo')
+        verbose_name_plural = gettext_lazy('Conexiones Odoo')
     
     def __str__(self):
         return f"{self.name} ({self.database})"
@@ -22483,30 +22484,30 @@ class OdooRPCTable(models.Model):
         OdooConnection,
         on_delete=models.CASCADE,
         related_name='rpc_tables',
-        verbose_name='Conexión'
+        verbose_name=gettext_lazy('Conexión')
     )
     
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre Descriptivo',
-        help_text='Nombre descriptivo de la tabla'
+        verbose_name=gettext_lazy('Nombre Descriptivo'),
+        help_text=gettext_lazy('Nombre descriptivo de la tabla')
     )
     
     odoo_model = models.CharField(
         max_length=200,
-        verbose_name='Modelo Odoo',
-        help_text='Nombre del modelo en Odoo (ej: product.product, res.partner)'
+        verbose_name=gettext_lazy('Modelo Odoo'),
+        help_text=gettext_lazy('Nombre del modelo en Odoo (ej: product.product, res.partner)')
     )
     
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción de la tabla y su propósito'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción de la tabla y su propósito')
     )
     
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     
     created_by = models.ForeignKey(
@@ -22514,19 +22515,19 @@ class OdooRPCTable(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name='odoo_rpc_tables',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     # Campos para URL pública
     public_url_enabled = models.BooleanField(
         default=False,
-        verbose_name='URL Pública Habilitada',
-        help_text='Permite acceso público para importar datos'
+        verbose_name=gettext_lazy('URL Pública Habilitada'),
+        help_text=gettext_lazy('Permite acceso público para importar datos')
     )
     
     public_url_token = models.CharField(
@@ -22534,29 +22535,29 @@ class OdooRPCTable(models.Model):
         blank=True,
         unique=True,
         null=True,
-        verbose_name='Token de URL Pública',
-        help_text='Token único para acceso público'
+        verbose_name=gettext_lazy('Token de URL Pública'),
+        help_text=gettext_lazy('Token único para acceso público')
     )
     
     public_url_password = models.CharField(
         max_length=128,
         blank=True,
-        verbose_name='Contraseña de URL Pública',
-        help_text='Dejar en blanco para permitir acceso sin contraseña'
+        verbose_name=gettext_lazy('Contraseña de URL Pública'),
+        help_text=gettext_lazy('Dejar en blanco para permitir acceso sin contraseña')
     )
     
     public_url_expires_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Expiración',
-        help_text='Fecha en que expira el acceso público (opcional)'
+        verbose_name=gettext_lazy('Fecha de Expiración'),
+        help_text=gettext_lazy('Fecha en que expira el acceso público (opcional)')
     )
     
     # Campos para formulario público de creación
     public_form_enabled = models.BooleanField(
         default=False,
-        verbose_name='Formulario Público Habilitado',
-        help_text='Permite crear registros vía formulario público'
+        verbose_name=gettext_lazy('Formulario Público Habilitado'),
+        help_text=gettext_lazy('Permite crear registros vía formulario público')
     )
     
     public_form_token = models.CharField(
@@ -22564,29 +22565,29 @@ class OdooRPCTable(models.Model):
         blank=True,
         unique=True,
         null=True,
-        verbose_name='Token de Formulario Público',
-        help_text='Token único para formulario público'
+        verbose_name=gettext_lazy('Token de Formulario Público'),
+        help_text=gettext_lazy('Token único para formulario público')
     )
     
     public_form_password = models.CharField(
         max_length=128,
         blank=True,
-        verbose_name='Contraseña de Formulario Público',
-        help_text='Dejar en blanco para permitir acceso sin contraseña'
+        verbose_name=gettext_lazy('Contraseña de Formulario Público'),
+        help_text=gettext_lazy('Dejar en blanco para permitir acceso sin contraseña')
     )
     
     public_form_expires_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Expiración del Formulario',
-        help_text='Fecha en que expira el formulario público (opcional)'
+        verbose_name=gettext_lazy('Fecha de Expiración del Formulario'),
+        help_text=gettext_lazy('Fecha en que expira el formulario público (opcional)')
     )
     
     class Meta:
         ordering = ['name']
         unique_together = ['connection', 'odoo_model']
-        verbose_name = 'Tabla RPC Odoo'
-        verbose_name_plural = 'Tablas RPC Odoo'
+        verbose_name = gettext_lazy('Tabla RPC Odoo')
+        verbose_name_plural = gettext_lazy('Tablas RPC Odoo')
     
     def __str__(self):
         return f"{self.name} ({self.odoo_model})"
@@ -22670,51 +22671,51 @@ class OdooRPCField(models.Model):
         OdooRPCTable,
         on_delete=models.CASCADE,
         related_name='rpc_fields',
-        verbose_name='Tabla'
+        verbose_name=gettext_lazy('Tabla')
     )
     
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre Descriptivo',
-        help_text='Nombre descriptivo del campo'
+        verbose_name=gettext_lazy('Nombre Descriptivo'),
+        help_text=gettext_lazy('Nombre descriptivo del campo')
     )
     
     odoo_field_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre del Campo en Odoo',
-        help_text='Nombre técnico del campo en Odoo (ej: name, default_code)'
+        verbose_name=gettext_lazy('Nombre del Campo en Odoo'),
+        help_text=gettext_lazy('Nombre técnico del campo en Odoo (ej: name, default_code)')
     )
     
     field_type = models.CharField(
         max_length=50,
         choices=FIELD_TYPES,
         default='char',
-        verbose_name='Tipo de Campo'
+        verbose_name=gettext_lazy('Tipo de Campo')
     )
     
     is_required = models.BooleanField(
         default=False,
-        verbose_name='Requerido',
-        help_text='Si el campo es obligatorio'
+        verbose_name=gettext_lazy('Requerido'),
+        help_text=gettext_lazy('Si el campo es obligatorio')
     )
     
     order = models.IntegerField(
         default=0,
-        verbose_name='Orden',
-        help_text='Orden de aparición en Excel'
+        verbose_name=gettext_lazy('Orden'),
+        help_text=gettext_lazy('Orden de aparición en Excel')
     )
     
     help_text = models.TextField(
         blank=True,
-        verbose_name='Texto de Ayuda',
-        help_text='Instrucciones para llenar este campo'
+        verbose_name=gettext_lazy('Texto de Ayuda'),
+        help_text=gettext_lazy('Instrucciones para llenar este campo')
     )
     
     class Meta:
         ordering = ['table', 'order', 'name']
         unique_together = ['table', 'odoo_field_name']
-        verbose_name = 'Campo RPC Odoo'
-        verbose_name_plural = 'Campos RPC Odoo'
+        verbose_name = gettext_lazy('Campo RPC Odoo')
+        verbose_name_plural = gettext_lazy('Campos RPC Odoo')
     
     def __str__(self):
         return f"{self.name} ({self.odoo_field_name})"
@@ -22724,43 +22725,43 @@ class OdooRPCData(models.Model):
     """Modelo para almacenar datos temporales antes de enviar a Odoo"""
     
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('processing', 'Procesando'),
-        ('success', 'Exitoso'),
-        ('failed', 'Fallido'),
-        ('fetched', 'Obtenido'),
+        ('pending', gettext_lazy('Pendiente')),
+        ('processing', gettext_lazy('Procesando')),
+        ('success', gettext_lazy('Exitoso')),
+        ('failed', gettext_lazy('Fallido')),
+        ('fetched', gettext_lazy('Obtenido')),
     ]
     
     table = models.ForeignKey(
         OdooRPCTable,
         on_delete=models.CASCADE,
         related_name='rpc_data',
-        verbose_name='Tabla'
+        verbose_name=gettext_lazy('Tabla')
     )
     
     data = models.JSONField(
-        verbose_name='Datos',
-        help_text='Datos en formato JSON para enviar a Odoo'
+        verbose_name=gettext_lazy('Datos'),
+        help_text=gettext_lazy('Datos en formato JSON para enviar a Odoo')
     )
     
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     odoo_id = models.IntegerField(
         null=True,
         blank=True,
-        verbose_name='ID en Odoo',
-        help_text='ID del registro creado en Odoo'
+        verbose_name=gettext_lazy('ID en Odoo'),
+        help_text=gettext_lazy('ID del registro creado en Odoo')
     )
     
     error_message = models.TextField(
         blank=True,
-        verbose_name='Mensaje de Error',
-        help_text='Mensaje de error si la sincronización falló'
+        verbose_name=gettext_lazy('Mensaje de Error'),
+        help_text=gettext_lazy('Mensaje de error si la sincronización falló')
     )
     
     created_by = models.ForeignKey(
@@ -22768,24 +22769,24 @@ class OdooRPCData(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name='odoo_rpc_data',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     processed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de procesamiento'
+        verbose_name=gettext_lazy('Fecha de procesamiento')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Dato RPC Odoo'
-        verbose_name_plural = 'Datos RPC Odoo'
+        verbose_name = gettext_lazy('Dato RPC Odoo')
+        verbose_name_plural = gettext_lazy('Datos RPC Odoo')
     
     def __str__(self):
         return f"{self.table.name} - {self.status} ({self.created_at.strftime('%Y-%m-%d')})"
@@ -22798,17 +22799,17 @@ class OdooRPCImportFile(models.Model):
         OdooRPCTable,
         on_delete=models.CASCADE,
         related_name='import_files',
-        verbose_name='Tabla'
+        verbose_name=gettext_lazy('Tabla')
     )
     
     file = models.FileField(
         upload_to='odoo_rpc_imports/%Y/%m/',
-        verbose_name='Archivo'
+        verbose_name=gettext_lazy('Archivo')
     )
     
     original_filename = models.CharField(
         max_length=255,
-        verbose_name='Nombre Original'
+        verbose_name=gettext_lazy('Nombre Original')
     )
     
     uploaded_by = models.ForeignKey(
@@ -22816,33 +22817,33 @@ class OdooRPCImportFile(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name='odoo_rpc_imports',
-        verbose_name='Subido por'
+        verbose_name=gettext_lazy('Subido por')
     )
     
     uploaded_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de subida'
+        verbose_name=gettext_lazy('Fecha de subida')
     )
     
     records_imported = models.IntegerField(
         default=0,
-        verbose_name='Registros importados'
+        verbose_name=gettext_lazy('Registros importados')
     )
     
     records_success = models.IntegerField(
         default=0,
-        verbose_name='Registros exitosos'
+        verbose_name=gettext_lazy('Registros exitosos')
     )
     
     records_failed = models.IntegerField(
         default=0,
-        verbose_name='Registros fallidos'
+        verbose_name=gettext_lazy('Registros fallidos')
     )
     
     class Meta:
         ordering = ['-uploaded_at']
-        verbose_name = 'Archivo de Importación RPC'
-        verbose_name_plural = 'Archivos de Importación RPC'
+        verbose_name = gettext_lazy('Archivo de Importación RPC')
+        verbose_name_plural = gettext_lazy('Archivos de Importación RPC')
     
     def __str__(self):
         return f"{self.original_filename} - {self.uploaded_at.strftime('%Y-%m-%d %H:%M')}"
@@ -22854,99 +22855,99 @@ class Chatbot(models.Model):
     """Modelo para chatbots configurables"""
     
     TYPE_CHOICES = [
-        ('internal', 'Interno (Solo esta web)'),
-        ('external', 'Externo (Script integrable)'),
+        ('internal', gettext_lazy('Interno (Solo esta web)')),
+        ('external', gettext_lazy('Externo (Script integrable)')),
     ]
     
     title = models.CharField(
         max_length=200,
-        verbose_name='Título del Chatbot'
+        verbose_name=gettext_lazy('Título del Chatbot')
     )
     
     type = models.CharField(
         max_length=20,
         choices=TYPE_CHOICES,
         default='internal',
-        verbose_name='Tipo de Chatbot'
+        verbose_name=gettext_lazy('Tipo de Chatbot')
     )
     
     description = models.TextField(
-        verbose_name='Descripción',
-        help_text='Describe el propósito del chatbot (ej: Agente de ventas que se dedica a captar leads)'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Describe el propósito del chatbot (ej: Agente de ventas que se dedica a captar leads)')
     )
     
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     
     use_ai = models.BooleanField(
         default=True,
-        verbose_name='Usar IA',
-        help_text='Habilitar asistencia de IA para respuestas no configuradas'
+        verbose_name=gettext_lazy('Usar IA'),
+        help_text=gettext_lazy('Habilitar asistencia de IA para respuestas no configuradas')
     )
     
     ai_context = models.TextField(
         blank=True,
-        verbose_name='Contexto para IA',
-        help_text='Información adicional para que la IA entienda el contexto del negocio'
+        verbose_name=gettext_lazy('Contexto para IA'),
+        help_text=gettext_lazy('Información adicional para que la IA entienda el contexto del negocio')
     )
     
     welcome_message = models.TextField(
         default='¡Hola! ¿En qué puedo ayudarte?',
-        verbose_name='Mensaje de bienvenida'
+        verbose_name=gettext_lazy('Mensaje de bienvenida')
     )
     
     # Personalización visual
     primary_color = models.CharField(
         max_length=7,
         default='#007bff',
-        verbose_name='Color primario',
-        help_text='Color del botón y encabezado (formato: #RRGGBB)'
+        verbose_name=gettext_lazy('Color primario'),
+        help_text=gettext_lazy('Color del botón y encabezado (formato: #RRGGBB)')
     )
     
     secondary_color = models.CharField(
         max_length=7,
         default='#0056b3',
-        verbose_name='Color secundario',
-        help_text='Color secundario para efectos hover (formato: #RRGGBB)'
+        verbose_name=gettext_lazy('Color secundario'),
+        help_text=gettext_lazy('Color secundario para efectos hover (formato: #RRGGBB)')
     )
     
     bot_message_color = models.CharField(
         max_length=7,
         default='#f0f0f0',
-        verbose_name='Color mensajes del bot',
-        help_text='Color de fondo para los mensajes del bot (formato: #RRGGBB)'
+        verbose_name=gettext_lazy('Color mensajes del bot'),
+        help_text=gettext_lazy('Color de fondo para los mensajes del bot (formato: #RRGGBB)')
     )
     
     user_message_color = models.CharField(
         max_length=7,
         default='#007bff',
-        verbose_name='Color mensajes del usuario',
-        help_text='Color de fondo para los mensajes del usuario (formato: #RRGGBB)'
+        verbose_name=gettext_lazy('Color mensajes del usuario'),
+        help_text=gettext_lazy('Color de fondo para los mensajes del usuario (formato: #RRGGBB)')
     )
     
     icon_choice = models.CharField(
         max_length=20,
         choices=[
-            ('chat', 'Chat (por defecto)'),
-            ('robot', 'Robot'),
-            ('headset', 'Auriculares'),
-            ('person', 'Persona'),
+            ('chat', gettext_lazy('Chat (por defecto)')),
+            ('robot', gettext_lazy('Robot')),
+            ('headset', gettext_lazy('Auriculares')),
+            ('person', gettext_lazy('Persona')),
         ],
         default='chat',
-        verbose_name='Icono del botón',
-        help_text='Icono que se muestra en el botón flotante'
+        verbose_name=gettext_lazy('Icono del botón'),
+        help_text=gettext_lazy('Icono que se muestra en el botón flotante')
     )
     
     position = models.CharField(
         max_length=20,
         choices=[
-            ('bottom-right', 'Inferior Derecha'),
-            ('bottom-left', 'Inferior Izquierda'),
+            ('bottom-right', gettext_lazy('Inferior Derecha')),
+            ('bottom-left', gettext_lazy('Inferior Izquierda')),
         ],
         default='bottom-right',
-        verbose_name='Posición en pantalla'
+        verbose_name=gettext_lazy('Posición en pantalla')
     )
     
     # Integración externa
@@ -22954,61 +22955,61 @@ class Chatbot(models.Model):
         max_length=64,
         unique=True,
         blank=True,
-        verbose_name='Token de script',
-        help_text='Token único para integración externa'
+        verbose_name=gettext_lazy('Token de script'),
+        help_text=gettext_lazy('Token único para integración externa')
     )
     
     allowed_domains = models.TextField(
         blank=True,
-        verbose_name='Dominios permitidos',
-        help_text='Dominios donde se puede integrar (uno por línea). Dejar vacío para permitir todos.'
+        verbose_name=gettext_lazy('Dominios permitidos'),
+        help_text=gettext_lazy('Dominios donde se puede integrar (uno por línea). Dejar vacío para permitir todos.')
     )
     
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='chatbots_created',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     # Comportamiento
     response_delay = models.IntegerField(
         default=0,
-        verbose_name='Tiempo de espera (segundos)',
-        help_text='Segundos que espera el bot antes de responder (0 = inmediato)'
+        verbose_name=gettext_lazy('Tiempo de espera (segundos)'),
+        help_text=gettext_lazy('Segundos que espera el bot antes de responder (0 = inmediato)')
     )
     
     # Estadísticas
     total_conversations = models.IntegerField(
         default=0,
-        verbose_name='Total de conversaciones'
+        verbose_name=gettext_lazy('Total de conversaciones')
     )
     
     total_messages = models.IntegerField(
         default=0,
-        verbose_name='Total de mensajes'
+        verbose_name=gettext_lazy('Total de mensajes')
     )
     
     total_clicks = models.IntegerField(
         default=0,
-        verbose_name='Total de clicks en el botón',
-        help_text='Número de veces que han dado click para abrir el chat'
+        verbose_name=gettext_lazy('Total de clicks en el botón'),
+        help_text=gettext_lazy('Número de veces que han dado click para abrir el chat')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Chatbot'
-        verbose_name_plural = 'Chatbots'
+        verbose_name = gettext_lazy('Chatbot')
+        verbose_name_plural = gettext_lazy('Chatbots')
     
     def __str__(self):
         return self.title
@@ -23035,64 +23036,64 @@ class ChatbotQuestion(models.Model):
         Chatbot,
         on_delete=models.CASCADE,
         related_name='questions',
-        verbose_name='Chatbot'
+        verbose_name=gettext_lazy('Chatbot')
     )
     
     question = models.CharField(
         max_length=500,
-        verbose_name='Pregunta',
-        help_text='Pregunta que el usuario puede hacer'
+        verbose_name=gettext_lazy('Pregunta'),
+        help_text=gettext_lazy('Pregunta que el usuario puede hacer')
     )
     
     keywords = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name='Palabras clave',
-        help_text='Palabras clave separadas por comas para detectar esta pregunta'
+        verbose_name=gettext_lazy('Palabras clave'),
+        help_text=gettext_lazy('Palabras clave separadas por comas para detectar esta pregunta')
     )
     
     answer = models.TextField(
-        verbose_name='Respuesta',
-        help_text='Respuesta que el chatbot dará'
+        verbose_name=gettext_lazy('Respuesta'),
+        help_text=gettext_lazy('Respuesta que el chatbot dará')
     )
     
     order = models.IntegerField(
         default=0,
-        verbose_name='Orden',
-        help_text='Orden de aparición en sugerencias'
+        verbose_name=gettext_lazy('Orden'),
+        help_text=gettext_lazy('Orden de aparición en sugerencias')
     )
     
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activa'
+        verbose_name=gettext_lazy('Activa')
     )
     
     use_ai = models.BooleanField(
         default=False,
-        verbose_name='Mejorar con IA',
-        help_text='La IA puede expandir o mejorar esta respuesta'
+        verbose_name=gettext_lazy('Mejorar con IA'),
+        help_text=gettext_lazy('La IA puede expandir o mejorar esta respuesta')
     )
     
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     # Estadísticas
     times_used = models.IntegerField(
         default=0,
-        verbose_name='Veces utilizada'
+        verbose_name=gettext_lazy('Veces utilizada')
     )
     
     class Meta:
         ordering = ['order', '-created_at']
-        verbose_name = 'Pregunta del Chatbot'
-        verbose_name_plural = 'Preguntas del Chatbot'
+        verbose_name = gettext_lazy('Pregunta del Chatbot')
+        verbose_name_plural = gettext_lazy('Preguntas del Chatbot')
     
     def __str__(self):
         return f"{self.question[:50]}..."
@@ -23111,96 +23112,96 @@ class ChatbotConversation(models.Model):
         Chatbot,
         on_delete=models.CASCADE,
         related_name='conversations',
-        verbose_name='Chatbot'
+        verbose_name=gettext_lazy('Chatbot')
     )
     
     session_id = models.CharField(
         max_length=100,
-        verbose_name='ID de sesión'
+        verbose_name=gettext_lazy('ID de sesión')
     )
     
     user_email = models.EmailField(
         blank=True,
-        verbose_name='Email del usuario',
-        help_text='Email capturado durante la conversación'
+        verbose_name=gettext_lazy('Email del usuario'),
+        help_text=gettext_lazy('Email capturado durante la conversación')
     )
     
     user_name = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Nombre del usuario'
+        verbose_name=gettext_lazy('Nombre del usuario')
     )
     
     user_phone = models.CharField(
         max_length=50,
         blank=True,
-        verbose_name='Teléfono del usuario'
+        verbose_name=gettext_lazy('Teléfono del usuario')
     )
     
     ip_address = models.GenericIPAddressField(
         blank=True,
         null=True,
-        verbose_name='Dirección IP',
-        help_text='IP del usuario en la sesión'
+        verbose_name=gettext_lazy('Dirección IP'),
+        help_text=gettext_lazy('IP del usuario en la sesión')
     )
     
     country = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='País',
-        help_text='País detectado del usuario'
+        verbose_name=gettext_lazy('País'),
+        help_text=gettext_lazy('País detectado del usuario')
     )
     
     city = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Ciudad',
-        help_text='Ciudad detectada del usuario'
+        verbose_name=gettext_lazy('Ciudad'),
+        help_text=gettext_lazy('Ciudad detectada del usuario')
     )
     
     started_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Inicio de conversación'
+        verbose_name=gettext_lazy('Inicio de conversación')
     )
     
     last_activity = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actividad'
+        verbose_name=gettext_lazy('Última actividad')
     )
     
     is_lead = models.BooleanField(
         default=False,
-        verbose_name='Es lead',
-        help_text='Marcado si se capturó información de contacto'
+        verbose_name=gettext_lazy('Es lead'),
+        help_text=gettext_lazy('Marcado si se capturó información de contacto')
     )
     
     lead_quality = models.CharField(
         max_length=20,
         choices=[
-            ('hot', 'Caliente'),
-            ('warm', 'Tibio'),
-            ('cold', 'Frío'),
+            ('hot', gettext_lazy('Caliente')),
+            ('warm', gettext_lazy('Tibio')),
+            ('cold', gettext_lazy('Frío')),
         ],
         blank=True,
-        verbose_name='Calidad del lead'
+        verbose_name=gettext_lazy('Calidad del lead')
     )
     
     hide_chat = models.BooleanField(
         default=False,
-        verbose_name='Ocultar chat',
-        help_text='Si está marcado, el chat no se mostrará a este usuario'
+        verbose_name=gettext_lazy('Ocultar chat'),
+        help_text=gettext_lazy('Si está marcado, el chat no se mostrará a este usuario')
     )
     
     reviewed = models.BooleanField(
         default=False,
-        verbose_name='Revisada',
-        help_text='Marca si la conversación ya fue revisada por un administrador'
+        verbose_name=gettext_lazy('Revisada'),
+        help_text=gettext_lazy('Marca si la conversación ya fue revisada por un administrador')
     )
     
     reviewed_at = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Fecha de revisión'
+        verbose_name=gettext_lazy('Fecha de revisión')
     )
     
     reviewed_by = models.ForeignKey(
@@ -23208,13 +23209,13 @@ class ChatbotConversation(models.Model):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        verbose_name='Revisada por'
+        verbose_name=gettext_lazy('Revisada por')
     )
     
     class Meta:
         ordering = ['-started_at']
-        verbose_name = 'Conversación del Chatbot'
-        verbose_name_plural = 'Conversaciones del Chatbot'
+        verbose_name = gettext_lazy('Conversación del Chatbot')
+        verbose_name_plural = gettext_lazy('Conversaciones del Chatbot')
     
     def __str__(self):
         return f"Conversación {self.session_id[:8]} - {self.started_at.strftime('%Y-%m-%d %H:%M')}"
@@ -23227,16 +23228,16 @@ class ChatbotMessage(models.Model):
         ChatbotConversation,
         on_delete=models.CASCADE,
         related_name='messages',
-        verbose_name='Conversación'
+        verbose_name=gettext_lazy('Conversación')
     )
     
     is_bot = models.BooleanField(
-        verbose_name='Es del bot',
-        help_text='True si es mensaje del bot, False si es del usuario'
+        verbose_name=gettext_lazy('Es del bot'),
+        help_text=gettext_lazy('True si es mensaje del bot, False si es del usuario')
     )
     
     message = models.TextField(
-        verbose_name='Mensaje'
+        verbose_name=gettext_lazy('Mensaje')
     )
     
     matched_question = models.ForeignKey(
@@ -23245,24 +23246,24 @@ class ChatbotMessage(models.Model):
         null=True,
         blank=True,
         related_name='matched_messages',
-        verbose_name='Pregunta coincidente'
+        verbose_name=gettext_lazy('Pregunta coincidente')
     )
     
     used_ai = models.BooleanField(
         default=False,
-        verbose_name='Usó IA',
-        help_text='True si la respuesta fue generada por IA'
+        verbose_name=gettext_lazy('Usó IA'),
+        help_text=gettext_lazy('True si la respuesta fue generada por IA')
     )
     
     timestamp = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Hora del mensaje'
+        verbose_name=gettext_lazy('Hora del mensaje')
     )
     
     class Meta:
         ordering = ['timestamp']
-        verbose_name = 'Mensaje del Chatbot'
-        verbose_name_plural = 'Mensajes del Chatbot'
+        verbose_name = gettext_lazy('Mensaje del Chatbot')
+        verbose_name_plural = gettext_lazy('Mensajes del Chatbot')
     
     def __str__(self):
         sender = "Bot" if self.is_bot else "Usuario"
@@ -23276,30 +23277,30 @@ class ChatbotClick(models.Model):
         Chatbot,
         on_delete=models.CASCADE,
         related_name='clicks',
-        verbose_name='Chatbot'
+        verbose_name=gettext_lazy('Chatbot')
     )
     
     clicked_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha del click'
+        verbose_name=gettext_lazy('Fecha del click')
     )
     
     ip_address = models.GenericIPAddressField(
         null=True,
         blank=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     
     user_agent = models.TextField(
         null=True,
         blank=True,
-        verbose_name='User Agent'
+        verbose_name=gettext_lazy('User Agent')
     )
     
     class Meta:
         ordering = ['-clicked_at']
-        verbose_name = 'Click del Chatbot'
-        verbose_name_plural = 'Clicks del Chatbot'
+        verbose_name = gettext_lazy('Click del Chatbot')
+        verbose_name_plural = gettext_lazy('Clicks del Chatbot')
         indexes = [
             models.Index(fields=['chatbot', '-clicked_at']),
         ]
@@ -23313,23 +23314,23 @@ class PrivacyPolicy(models.Model):
     title = models.CharField(
         max_length=200,
         unique=True,
-        verbose_name='Título',
-        help_text='Título de la política de privacidad'
+        verbose_name=gettext_lazy('Título'),
+        help_text=gettext_lazy('Título de la política de privacidad')
     )
     slug = models.SlugField(
         max_length=200,
         unique=True,
-        verbose_name='Slug',
-        help_text='URL amigable (se genera automáticamente del título)'
+        verbose_name=gettext_lazy('Slug'),
+        help_text=gettext_lazy('URL amigable (se genera automáticamente del título)')
     )
     content = models.TextField(
-        verbose_name='Contenido',
-        help_text='Contenido completo de la política de privacidad'
+        verbose_name=gettext_lazy('Contenido'),
+        help_text=gettext_lazy('Contenido completo de la política de privacidad')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activa',
-        help_text='Indica si la política está activa y visible públicamente'
+        verbose_name=gettext_lazy('Activa'),
+        help_text=gettext_lazy('Indica si la política está activa y visible públicamente')
     )
     created_by = models.ForeignKey(
         User,
@@ -23337,21 +23338,21 @@ class PrivacyPolicy(models.Model):
         null=True,
         blank=True,
         related_name='created_privacy_policies',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última actualización'
+        verbose_name=gettext_lazy('Última actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Política de Privacidad'
-        verbose_name_plural = 'Políticas de Privacidad'
+        verbose_name = gettext_lazy('Política de Privacidad')
+        verbose_name_plural = gettext_lazy('Políticas de Privacidad')
     
     def __str__(self):
         return self.title
@@ -23373,115 +23374,115 @@ class Invoice(models.Model):
     sequence = models.CharField(
         max_length=50,
         unique=True,
-        verbose_name='Secuencia/Número',
-        help_text='Número de factura (ej: FAC-2025-001)'
+        verbose_name=gettext_lazy('Secuencia/Número'),
+        help_text=gettext_lazy('Número de factura (ej: FAC-2025-001)')
     )
     
     company = models.ForeignKey(
         Company,
         on_delete=models.PROTECT,
         related_name='invoices',
-        verbose_name='Cliente/Empresa',
-        help_text='Empresa a la que se factura'
+        verbose_name=gettext_lazy('Cliente/Empresa'),
+        help_text=gettext_lazy('Empresa a la que se factura')
     )
     
     invoice_date = models.DateField(
         default=timezone.now,
-        verbose_name='Fecha de Factura'
+        verbose_name=gettext_lazy('Fecha de Factura')
     )
     
     due_date = models.DateField(
         blank=True,
         null=True,
-        verbose_name='Fecha de Vencimiento',
-        help_text='Fecha límite de pago (opcional)'
+        verbose_name=gettext_lazy('Fecha de Vencimiento'),
+        help_text=gettext_lazy('Fecha límite de pago (opcional)')
     )
     
     notes = models.TextField(
         blank=True,
-        verbose_name='Notas',
-        help_text='Notas o comentarios adicionales'
+        verbose_name=gettext_lazy('Notas'),
+        help_text=gettext_lazy('Notas o comentarios adicionales')
     )
     
     footer_message = models.TextField(
         blank=True,
-        verbose_name='Mensaje al pie',
-        help_text='Mensaje que aparecerá al final de la factura (condiciones de pago, términos, etc.)'
+        verbose_name=gettext_lazy('Mensaje al pie'),
+        help_text=gettext_lazy('Mensaje que aparecerá al final de la factura (condiciones de pago, términos, etc.)')
     )
     
     subtotal = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=0,
-        verbose_name='Subtotal'
+        verbose_name=gettext_lazy('Subtotal')
     )
     
     tax_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=0,
-        verbose_name='Impuestos'
+        verbose_name=gettext_lazy('Impuestos')
     )
     
     total = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=0,
-        verbose_name='Total'
+        verbose_name=gettext_lazy('Total')
     )
     
     currency = models.CharField(
         max_length=10,
         choices=[
-            ('EUR', 'Euro (€)'),
-            ('USD', 'Dólar Americano ($)'),
-            ('GBP', 'Libra Esterlina (£)'),
-            ('JPY', 'Yen Japonés (¥)'),
-            ('CAD', 'Dólar Canadiense (C$)'),
-            ('AUD', 'Dólar Australiano (A$)'),
-            ('CHF', 'Franco Suizo (CHF)'),
-            ('CNY', 'Yuan Chino (¥)'),
-            ('MXN', 'Peso Mexicano ($)'),
-            ('COP', 'Peso Colombiano ($)'),
+            ('EUR', gettext_lazy('Euro (€)')),
+            ('USD', gettext_lazy('Dólar Americano ($)')),
+            ('GBP', gettext_lazy('Libra Esterlina (£)')),
+            ('JPY', gettext_lazy('Yen Japonés (¥)')),
+            ('CAD', gettext_lazy('Dólar Canadiense (C$)')),
+            ('AUD', gettext_lazy('Dólar Australiano (A$)')),
+            ('CHF', gettext_lazy('Franco Suizo (CHF)')),
+            ('CNY', gettext_lazy('Yuan Chino (¥)')),
+            ('MXN', gettext_lazy('Peso Mexicano ($)')),
+            ('COP', gettext_lazy('Peso Colombiano ($)')),
         ],
         default='USD',
-        verbose_name='Moneda',
-        help_text='Moneda en la que se factura'
+        verbose_name=gettext_lazy('Moneda'),
+        help_text=gettext_lazy('Moneda en la que se factura')
     )
     
     status = models.CharField(
         max_length=20,
         choices=[
-            ('draft', 'Borrador'),
-            ('sent', 'Enviada'),
-            ('paid', 'Pagada'),
-            ('cancelled', 'Cancelada'),
+            ('draft', gettext_lazy('Borrador')),
+            ('sent', gettext_lazy('Enviada')),
+            ('paid', gettext_lazy('Pagada')),
+            ('cancelled', gettext_lazy('Cancelada')),
         ],
         default='draft',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='created_invoices',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Última Actualización'
+        verbose_name=gettext_lazy('Última Actualización')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Factura de 3ros'
-        verbose_name_plural = 'Facturas de 3ros'
+        verbose_name = gettext_lazy('Factura de 3ros')
+        verbose_name_plural = gettext_lazy('Facturas de 3ros')
     
     def __str__(self):
         return f"{self.sequence} - {self.company.name}"
@@ -23560,74 +23561,74 @@ class InvoiceLine(models.Model):
         Invoice,
         on_delete=models.CASCADE,
         related_name='lines',
-        verbose_name='Factura'
+        verbose_name=gettext_lazy('Factura')
     )
     
     product = models.ForeignKey(
         Product,
         on_delete=models.PROTECT,
         related_name='invoice_lines',
-        verbose_name='Producto',
-        help_text='Producto o servicio facturado'
+        verbose_name=gettext_lazy('Producto'),
+        help_text=gettext_lazy('Producto o servicio facturado')
     )
     
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción adicional del producto/servicio'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción adicional del producto/servicio')
     )
     
     quantity = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=1,
-        verbose_name='Cantidad'
+        verbose_name=gettext_lazy('Cantidad')
     )
     
     unit_price = models.DecimalField(
         max_digits=12,
         decimal_places=2,
-        verbose_name='Precio Unitario'
+        verbose_name=gettext_lazy('Precio Unitario')
     )
     
     tax_rate = models.DecimalField(
         max_digits=5,
         decimal_places=2,
         default=0,
-        verbose_name='Tasa de Impuesto (%)',
-        help_text='Porcentaje de impuesto (ej: 21 para IVA 21%)'
+        verbose_name=gettext_lazy('Tasa de Impuesto (%)'),
+        help_text=gettext_lazy('Porcentaje de impuesto (ej: 21 para IVA 21%)')
     )
     
     subtotal = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=0,
-        verbose_name='Subtotal'
+        verbose_name=gettext_lazy('Subtotal')
     )
     
     tax_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=0,
-        verbose_name='Impuestos'
+        verbose_name=gettext_lazy('Impuestos')
     )
     
     line_total = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=0,
-        verbose_name='Total Línea'
+        verbose_name=gettext_lazy('Total Línea')
     )
     
     line_number = models.IntegerField(
         default=1,
-        verbose_name='Número de Línea'
+        verbose_name=gettext_lazy('Número de Línea')
     )
     
     class Meta:
         ordering = ['line_number']
-        verbose_name = 'Línea de Factura'
-        verbose_name_plural = 'Líneas de Factura'
+        verbose_name = gettext_lazy('Línea de Factura')
+        verbose_name_plural = gettext_lazy('Líneas de Factura')
     
     def __str__(self):
         return f"{self.invoice.sequence} - Línea {self.line_number}: {self.product.name}"
@@ -23657,30 +23658,30 @@ class InvoiceMessage(models.Model):
         Invoice,
         on_delete=models.CASCADE,
         related_name='messages',
-        verbose_name='Factura'
+        verbose_name=gettext_lazy('Factura')
     )
     
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='invoice_messages',
-        verbose_name='Usuario'
+        verbose_name=gettext_lazy('Usuario')
     )
     
     message = models.TextField(
-        verbose_name='Mensaje',
-        help_text='Mensaje o comentario sobre la factura'
+        verbose_name=gettext_lazy('Mensaje'),
+        help_text=gettext_lazy('Mensaje o comentario sobre la factura')
     )
     
     created_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de Creación'
+        verbose_name=gettext_lazy('Fecha de Creación')
     )
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Mensaje de Factura'
-        verbose_name_plural = 'Mensajes de Facturas'
+        verbose_name = gettext_lazy('Mensaje de Factura')
+        verbose_name_plural = gettext_lazy('Mensajes de Facturas')
     
     def __str__(self):
         return f"Mensaje de {self.user.username} en {self.invoice.sequence}"
@@ -23691,33 +23692,33 @@ class Manual(models.Model):
 
     title = models.CharField(
         max_length=200,
-        verbose_name='Título'
+        verbose_name=gettext_lazy('Título')
     )
     url = models.URLField(
-        verbose_name='URL del Manual',
-        help_text='Enlace directo al manual (PDF, sitio web, etc.)'
+        verbose_name=gettext_lazy('URL del Manual'),
+        help_text=gettext_lazy('Enlace directo al manual (PDF, sitio web, etc.)')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción'
+        verbose_name=gettext_lazy('Descripción')
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = 'Manual'
-        verbose_name_plural = 'Manuales'
+        verbose_name = gettext_lazy('Manual')
+        verbose_name_plural = gettext_lazy('Manuales')
         ordering = ['-created_at']
 
     def __str__(self):
@@ -23734,7 +23735,7 @@ class ManualAccess(models.Model):
         Manual,
         on_delete=models.CASCADE,
         related_name='accesses',
-        verbose_name='Manual'
+        verbose_name=gettext_lazy('Manual')
     )
     accessed_by = models.ForeignKey(
         User,
@@ -23742,26 +23743,26 @@ class ManualAccess(models.Model):
         null=True,
         blank=True,
         related_name='manual_accesses',
-        verbose_name='Accedido por'
+        verbose_name=gettext_lazy('Accedido por')
     )
     ip_address = models.GenericIPAddressField(
         blank=True,
         null=True,
-        verbose_name='Dirección IP'
+        verbose_name=gettext_lazy('Dirección IP')
     )
     user_agent = models.TextField(
         blank=True,
-        verbose_name='User Agent'
+        verbose_name=gettext_lazy('User Agent')
     )
     accessed_at = models.DateTimeField(
         default=timezone.now,
-        verbose_name='Fecha de acceso'
+        verbose_name=gettext_lazy('Fecha de acceso')
     )
 
     class Meta:
         ordering = ['-accessed_at']
-        verbose_name = 'Acceso a Manual'
-        verbose_name_plural = 'Accesos a Manuales'
+        verbose_name = gettext_lazy('Acceso a Manual')
+        verbose_name_plural = gettext_lazy('Accesos a Manuales')
 
     def __str__(self):
         user = self.accessed_by.username if self.accessed_by else 'Anónimo'
@@ -23772,20 +23773,20 @@ class ProjectBook(models.Model):
     """Libro de Proyecto: documento colaborativo con trazabilidad por empresa"""
 
     STATUS_CHOICES = [
-        ('active', 'Activo'),
-        ('on_hold', 'En Pausa'),
-        ('completed', 'Completado'),
-        ('cancelled', 'Cancelado'),
+        ('active', gettext_lazy('Activo')),
+        ('on_hold', gettext_lazy('En Pausa')),
+        ('completed', gettext_lazy('Completado')),
+        ('cancelled', gettext_lazy('Cancelado')),
     ]
 
     title = models.CharField(
         max_length=300,
-        verbose_name='Título'
+        verbose_name=gettext_lazy('Título')
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
-        help_text='Descripción general del proyecto'
+        verbose_name=gettext_lazy('Descripción'),
+        help_text=gettext_lazy('Descripción general del proyecto')
     )
     company = models.ForeignKey(
         'Company',
@@ -23793,7 +23794,7 @@ class ProjectBook(models.Model):
         null=True,
         blank=True,
         related_name='project_books',
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     assigned_user = models.ForeignKey(
         User,
@@ -23801,7 +23802,7 @@ class ProjectBook(models.Model):
         null=True,
         blank=True,
         related_name='assigned_project_books',
-        verbose_name='Usuario asignado'
+        verbose_name=gettext_lazy('Usuario asignado')
     )
     created_by = models.ForeignKey(
         User,
@@ -23809,46 +23810,46 @@ class ProjectBook(models.Model):
         null=True,
         blank=True,
         related_name='created_project_books',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='active',
-        verbose_name='Estado'
+        verbose_name=gettext_lazy('Estado')
     )
     start_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de inicio'
+        verbose_name=gettext_lazy('Fecha de inicio')
     )
     end_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de cierre estimada'
+        verbose_name=gettext_lazy('Fecha de cierre estimada')
     )
     share_token = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name='Token de compartir'
+        verbose_name=gettext_lazy('Token de compartir')
     )
     tags = models.CharField(
         max_length=300,
         blank=True,
-        verbose_name='Etiquetas',
-        help_text='Etiquetas separadas por coma'
+        verbose_name=gettext_lazy('Etiquetas'),
+        help_text=gettext_lazy('Etiquetas separadas por coma')
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name='Activo'
+        verbose_name=gettext_lazy('Activo')
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Creado el')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado el')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Creado el'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Actualizado el'))
 
     class Meta:
-        verbose_name = 'Libro de Proyecto'
-        verbose_name_plural = 'Libros de Proyecto'
+        verbose_name = gettext_lazy('Libro de Proyecto')
+        verbose_name_plural = gettext_lazy('Libros de Proyecto')
         ordering = ['-created_at']
 
     def __str__(self):
@@ -23876,7 +23877,7 @@ class ProjectBookEntry(models.Model):
         ProjectBook,
         on_delete=models.CASCADE,
         related_name='entries',
-        verbose_name='Libro de Proyecto'
+        verbose_name=gettext_lazy('Libro de Proyecto')
     )
     author = models.ForeignKey(
         User,
@@ -23884,26 +23885,26 @@ class ProjectBookEntry(models.Model):
         null=True,
         blank=True,
         related_name='project_book_entries',
-        verbose_name='Autor'
+        verbose_name=gettext_lazy('Autor')
     )
-    content = models.TextField(verbose_name='Contenido')
+    content = models.TextField(verbose_name=gettext_lazy('Contenido'))
     is_agent_entry = models.BooleanField(
         default=False,
-        verbose_name='Entrada de agente',
-        help_text='Indica si fue escrita por un agente'
+        verbose_name=gettext_lazy('Entrada de agente'),
+        help_text=gettext_lazy('Indica si fue escrita por un agente')
     )
     attachment = models.FileField(
         upload_to='project_book_attachments/%Y/',
         null=True,
         blank=True,
-        verbose_name='Archivo adjunto'
+        verbose_name=gettext_lazy('Archivo adjunto')
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha'))
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = 'Entrada de Libro de Proyecto'
-        verbose_name_plural = 'Entradas de Libros de Proyecto'
+        verbose_name = gettext_lazy('Entrada de Libro de Proyecto')
+        verbose_name_plural = gettext_lazy('Entradas de Libros de Proyecto')
         ordering = ['created_at']
 
     def __str__(self):
@@ -23918,14 +23919,14 @@ class RFI(models.Model):
         max_length=10,
         unique=True,
         blank=True,
-        verbose_name='Código'
+        verbose_name=gettext_lazy('Código')
     )
     title = models.CharField(
         max_length=300,
-        verbose_name='Título'
+        verbose_name=gettext_lazy('Título')
     )
     text = models.TextField(
-        verbose_name='Texto'
+        verbose_name=gettext_lazy('Texto')
     )
     created_by = models.ForeignKey(
         User,
@@ -23933,7 +23934,7 @@ class RFI(models.Model):
         null=True,
         blank=True,
         related_name='rfis',
-        verbose_name='Creado por'
+        verbose_name=gettext_lazy('Creado por')
     )
     company = models.ForeignKey(
         'Company',
@@ -23941,7 +23942,7 @@ class RFI(models.Model):
         null=True,
         blank=True,
         related_name='rfis',
-        verbose_name='Empresa'
+        verbose_name=gettext_lazy('Empresa')
     )
     assigned_user = models.ForeignKey(
         User,
@@ -23949,27 +23950,27 @@ class RFI(models.Model):
         null=True,
         blank=True,
         related_name='rfis_assigned',
-        verbose_name='Usuario asignado'
+        verbose_name=gettext_lazy('Usuario asignado')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha de creación'
+        verbose_name=gettext_lazy('Fecha de creación')
     )
     closed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de cierre'
+        verbose_name=gettext_lazy('Fecha de cierre')
     )
     public_token = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
         editable=False,
-        verbose_name='Token público'
+        verbose_name=gettext_lazy('Token público')
     )
 
     class Meta:
-        verbose_name = 'RFI'
-        verbose_name_plural = 'RFIs'
+        verbose_name = gettext_lazy('RFI')
+        verbose_name_plural = gettext_lazy('RFIs')
         ordering = ['-created_at']
 
     @property
@@ -24007,7 +24008,7 @@ class RFIComment(models.Model):
         RFI,
         on_delete=models.CASCADE,
         related_name='comments',
-        verbose_name='RFI'
+        verbose_name=gettext_lazy('RFI')
     )
     author = models.ForeignKey(
         User,
@@ -24015,25 +24016,25 @@ class RFIComment(models.Model):
         null=True,
         blank=True,
         related_name='rfi_comments',
-        verbose_name='Autor'
+        verbose_name=gettext_lazy('Autor')
     )
     guest_name = models.CharField(
         max_length=150,
         blank=True,
         default='',
-        verbose_name='Nombre (invitado)'
+        verbose_name=gettext_lazy('Nombre (invitado)')
     )
     guest_email = models.EmailField(
         blank=True,
         default='',
-        verbose_name='Correo (invitado)'
+        verbose_name=gettext_lazy('Correo (invitado)')
     )
-    text = models.TextField(verbose_name='Comentario')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha')
+    text = models.TextField(verbose_name=gettext_lazy('Comentario'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha'))
 
     class Meta:
-        verbose_name = 'Comentario RFI'
-        verbose_name_plural = 'Comentarios RFI'
+        verbose_name = gettext_lazy('Comentario RFI')
+        verbose_name_plural = gettext_lazy('Comentarios RFI')
         ordering = ['created_at']
 
     def __str__(self):
@@ -24047,11 +24048,11 @@ class RFIComment(models.Model):
 class Capacitacion(models.Model):
     """Capacitación asignable a usuarios y/o empresas"""
 
-    titulo = models.CharField(max_length=300, verbose_name='Título')
+    titulo = models.CharField(max_length=300, verbose_name=gettext_lazy('Título'))
     temas = models.TextField(
         blank=True,
-        verbose_name='Temas',
-        help_text='Descripción general de los temas que cubre la capacitación',
+        verbose_name=gettext_lazy('Temas'),
+        help_text=gettext_lazy('Descripción general de los temas que cubre la capacitación'),
     )
     created_by = models.ForeignKey(
         User,
@@ -24059,33 +24060,33 @@ class Capacitacion(models.Model):
         null=True,
         blank=True,
         related_name='capacitaciones_creadas',
-        verbose_name='Creado por',
+        verbose_name=gettext_lazy('Creado por'),
     )
     assigned_users = models.ManyToManyField(
         User,
         blank=True,
         related_name='capacitaciones_asignadas',
-        verbose_name='Usuarios asignados',
+        verbose_name=gettext_lazy('Usuarios asignados'),
     )
     assigned_companies = models.ManyToManyField(
         'Company',
         blank=True,
         related_name='capacitaciones_asignadas',
-        verbose_name='Empresas asignadas',
+        verbose_name=gettext_lazy('Empresas asignadas'),
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
-    is_active = models.BooleanField(default=True, verbose_name='Activa')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de creación'))
+    is_active = models.BooleanField(default=True, verbose_name=gettext_lazy('Activa'))
     public_token = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
         editable=False,
-        verbose_name='Token público',
+        verbose_name=gettext_lazy('Token público'),
     )
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Capacitación'
-        verbose_name_plural = 'Capacitaciones'
+        verbose_name = gettext_lazy('Capacitación')
+        verbose_name_plural = gettext_lazy('Capacitaciones')
 
     def __str__(self):
         return self.titulo
@@ -24110,19 +24111,19 @@ class CapacitacionEnlace(models.Model):
         Capacitacion,
         on_delete=models.CASCADE,
         related_name='enlaces',
-        verbose_name='Capacitación',
+        verbose_name=gettext_lazy('Capacitación'),
     )
-    orden = models.PositiveIntegerField(default=0, verbose_name='Orden')
-    titulo = models.CharField(max_length=200, verbose_name='Título')
-    url = models.URLField(verbose_name='URL')
-    usuario = models.CharField(max_length=150, blank=True, verbose_name='Usuario')
-    contrasena = models.CharField(max_length=150, blank=True, verbose_name='Contraseña')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+    orden = models.PositiveIntegerField(default=0, verbose_name=gettext_lazy('Orden'))
+    titulo = models.CharField(max_length=200, verbose_name=gettext_lazy('Título'))
+    url = models.URLField(verbose_name=gettext_lazy('URL'))
+    usuario = models.CharField(max_length=150, blank=True, verbose_name=gettext_lazy('Usuario'))
+    contrasena = models.CharField(max_length=150, blank=True, verbose_name=gettext_lazy('Contraseña'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de creación'))
 
     class Meta:
         ordering = ['orden', 'created_at']
-        verbose_name = 'Enlace de Capacitación'
-        verbose_name_plural = 'Enlaces de Capacitación'
+        verbose_name = gettext_lazy('Enlace de Capacitación')
+        verbose_name_plural = gettext_lazy('Enlaces de Capacitación')
 
     def __str__(self):
         return f"{self.capacitacion} – {self.titulo}"
@@ -24135,26 +24136,26 @@ class CapacitacionLinea(models.Model):
         Capacitacion,
         on_delete=models.CASCADE,
         related_name='lineas',
-        verbose_name='Capacitación',
+        verbose_name=gettext_lazy('Capacitación'),
     )
-    orden = models.PositiveIntegerField(default=0, verbose_name='Orden')
-    tarea = models.CharField(max_length=500, verbose_name='Tarea')
-    descripcion = models.TextField(blank=True, verbose_name='Descripción')
-    fecha = models.DateField(null=True, blank=True, verbose_name='Fecha')
+    orden = models.PositiveIntegerField(default=0, verbose_name=gettext_lazy('Orden'))
+    tarea = models.CharField(max_length=500, verbose_name=gettext_lazy('Tarea'))
+    descripcion = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
+    fecha = models.DateField(null=True, blank=True, verbose_name=gettext_lazy('Fecha'))
     clase = models.ForeignKey(
         'CapacitacionClase',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='tareas',
-        verbose_name='Clase',
+        verbose_name=gettext_lazy('Clase'),
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de creación'))
 
     class Meta:
         ordering = ['orden', 'created_at']
-        verbose_name = 'Línea de Capacitación'
-        verbose_name_plural = 'Líneas de Capacitación'
+        verbose_name = gettext_lazy('Línea de Capacitación')
+        verbose_name_plural = gettext_lazy('Líneas de Capacitación')
 
     def __str__(self):
         return f"{self.capacitacion} – {self.tarea}"
@@ -24167,26 +24168,26 @@ class CapacitacionClase(models.Model):
         Capacitacion,
         on_delete=models.CASCADE,
         related_name='clases',
-        verbose_name='Capacitación',
+        verbose_name=gettext_lazy('Capacitación'),
     )
-    orden = models.PositiveIntegerField(default=0, verbose_name='Orden')
-    titulo = models.CharField(max_length=300, verbose_name='Título')
-    fecha = models.DateField(null=True, blank=True, verbose_name='Fecha')
-    enlace = models.URLField(blank=True, verbose_name='Enlace / URL')
-    descripcion = models.TextField(blank=True, verbose_name='Descripción')
-    resumen = models.TextField(blank=True, verbose_name='Resumen de la clase')
+    orden = models.PositiveIntegerField(default=0, verbose_name=gettext_lazy('Orden'))
+    titulo = models.CharField(max_length=300, verbose_name=gettext_lazy('Título'))
+    fecha = models.DateField(null=True, blank=True, verbose_name=gettext_lazy('Fecha'))
+    enlace = models.URLField(blank=True, verbose_name=gettext_lazy('Enlace / URL'))
+    descripcion = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
+    resumen = models.TextField(blank=True, verbose_name=gettext_lazy('Resumen de la clase'))
     public_token = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
         editable=False,
-        verbose_name='Token público',
+        verbose_name=gettext_lazy('Token público'),
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de creación'))
 
     class Meta:
         ordering = ['orden', 'fecha', 'created_at']
-        verbose_name = 'Clase de Capacitación'
-        verbose_name_plural = 'Clases de Capacitación'
+        verbose_name = gettext_lazy('Clase de Capacitación')
+        verbose_name_plural = gettext_lazy('Clases de Capacitación')
 
     def __str__(self):
         return f"{self.capacitacion} – {self.titulo}"
@@ -24199,18 +24200,18 @@ class CapacitacionAsistencia(models.Model):
         CapacitacionClase,
         on_delete=models.CASCADE,
         related_name='asistencias',
-        verbose_name='Clase',
+        verbose_name=gettext_lazy('Clase'),
     )
-    nombre = models.CharField(max_length=200, verbose_name='Nombre')
-    email = models.EmailField(blank=True, verbose_name='Email')
-    telefono = models.CharField(max_length=50, blank=True, verbose_name='Teléfono')
-    cargo = models.CharField(max_length=150, blank=True, verbose_name='Cargo')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de registro')
+    nombre = models.CharField(max_length=200, verbose_name=gettext_lazy('Nombre'))
+    email = models.EmailField(blank=True, verbose_name=gettext_lazy('Email'))
+    telefono = models.CharField(max_length=50, blank=True, verbose_name=gettext_lazy('Teléfono'))
+    cargo = models.CharField(max_length=150, blank=True, verbose_name=gettext_lazy('Cargo'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de registro'))
 
     class Meta:
         ordering = ['nombre']
-        verbose_name = 'Asistencia a Clase'
-        verbose_name_plural = 'Asistencias a Clases'
+        verbose_name = gettext_lazy('Asistencia a Clase')
+        verbose_name_plural = gettext_lazy('Asistencias a Clases')
 
     def __str__(self):
         return f"{self.nombre} – {self.clase}"
@@ -24223,18 +24224,18 @@ class CapacitacionSolicitudCambio(models.Model):
         CapacitacionClase,
         on_delete=models.CASCADE,
         related_name='solicitudes',
-        verbose_name='Clase',
+        verbose_name=gettext_lazy('Clase'),
     )
-    nombre = models.CharField(max_length=200, verbose_name='Nombre')
-    email = models.EmailField(blank=True, verbose_name='Email')
-    mensaje = models.TextField(verbose_name='Cambio solicitado')
-    atendida = models.BooleanField(default=False, verbose_name='Atendida')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de solicitud')
+    nombre = models.CharField(max_length=200, verbose_name=gettext_lazy('Nombre'))
+    email = models.EmailField(blank=True, verbose_name=gettext_lazy('Email'))
+    mensaje = models.TextField(verbose_name=gettext_lazy('Cambio solicitado'))
+    atendida = models.BooleanField(default=False, verbose_name=gettext_lazy('Atendida'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de solicitud'))
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Solicitud de Cambio de Clase'
-        verbose_name_plural = 'Solicitudes de Cambio de Clase'
+        verbose_name = gettext_lazy('Solicitud de Cambio de Clase')
+        verbose_name_plural = gettext_lazy('Solicitudes de Cambio de Clase')
 
     def __str__(self):
         return f"{self.nombre} – {self.clase}"
@@ -24244,23 +24245,23 @@ class CapacitacionClaseReaccion(models.Model):
     """Reacción (me gusta / no me gusta) de un usuario público a una clase"""
 
     TIPO_CHOICES = [
-        ('like', 'Me gusta'),
-        ('dislike', 'No me gusta'),
+        ('like', gettext_lazy('Me gusta')),
+        ('dislike', gettext_lazy('No me gusta')),
     ]
 
     clase = models.ForeignKey(
         CapacitacionClase,
         on_delete=models.CASCADE,
         related_name='reacciones',
-        verbose_name='Clase',
+        verbose_name=gettext_lazy('Clase'),
     )
-    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, verbose_name='Tipo')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha')
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, verbose_name=gettext_lazy('Tipo'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha'))
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Reacción a Clase'
-        verbose_name_plural = 'Reacciones a Clases'
+        verbose_name = gettext_lazy('Reacción a Clase')
+        verbose_name_plural = gettext_lazy('Reacciones a Clases')
 
     def __str__(self):
         return f"{self.clase} – {self.get_tipo_display()}"
@@ -24273,17 +24274,17 @@ class CapacitacionClaseComentario(models.Model):
         CapacitacionClase,
         on_delete=models.CASCADE,
         related_name='comentarios',
-        verbose_name='Clase',
+        verbose_name=gettext_lazy('Clase'),
     )
-    nombre = models.CharField(max_length=200, verbose_name='Nombre')
-    email = models.EmailField(verbose_name='Email')
-    comentario = models.TextField(verbose_name='Comentario')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha')
+    nombre = models.CharField(max_length=200, verbose_name=gettext_lazy('Nombre'))
+    email = models.EmailField(verbose_name=gettext_lazy('Email'))
+    comentario = models.TextField(verbose_name=gettext_lazy('Comentario'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha'))
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Comentario de Clase'
-        verbose_name_plural = 'Comentarios de Clase'
+        verbose_name = gettext_lazy('Comentario de Clase')
+        verbose_name_plural = gettext_lazy('Comentarios de Clase')
 
     def __str__(self):
         return f"{self.nombre} – {self.clase}"
@@ -24296,24 +24297,24 @@ class CapacitacionRespuesta(models.Model):
         CapacitacionLinea,
         on_delete=models.CASCADE,
         related_name='respuestas',
-        verbose_name='Línea',
+        verbose_name=gettext_lazy('Línea'),
     )
-    nombre = models.CharField(max_length=200, verbose_name='Nombre')
-    enlace = models.URLField(verbose_name='Enlace / URL')
+    nombre = models.CharField(max_length=200, verbose_name=gettext_lazy('Nombre'))
+    enlace = models.URLField(verbose_name=gettext_lazy('Enlace / URL'))
     submitted_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='capacitacion_respuestas',
-        verbose_name='Enviado por',
+        verbose_name=gettext_lazy('Enviado por'),
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de envío')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=gettext_lazy('Fecha de envío'))
 
     class Meta:
         ordering = ['created_at']
-        verbose_name = 'Respuesta de Capacitación'
-        verbose_name_plural = 'Respuestas de Capacitación'
+        verbose_name = gettext_lazy('Respuesta de Capacitación')
+        verbose_name_plural = gettext_lazy('Respuestas de Capacitación')
 
     def __str__(self):
         return f"{self.nombre} → {self.enlace}"
@@ -24327,21 +24328,21 @@ class CartQuotation(models.Model):
     """Cotización generada desde el carrito de compras público"""
 
     reference = models.CharField(
-        max_length=20, unique=True, verbose_name='Referencia',
-        help_text='Número de cotización, ej: COT-2026-001'
+        max_length=20, unique=True, verbose_name=gettext_lazy('Referencia'),
+        help_text=gettext_lazy('Número de cotización, ej: COT-2026-001')
     )
-    customer_name = models.CharField(max_length=200, verbose_name='Nombre')
-    customer_email = models.EmailField(verbose_name='Correo electrónico')
-    customer_phone = models.CharField(max_length=50, blank=True, verbose_name='Teléfono')
-    customer_company = models.CharField(max_length=200, blank=True, verbose_name='Empresa')
-    notes = models.TextField(blank=True, verbose_name='Notas adicionales')
-    total = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='Total')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha')
+    customer_name = models.CharField(max_length=200, verbose_name=gettext_lazy('Nombre'))
+    customer_email = models.EmailField(verbose_name=gettext_lazy('Correo electrónico'))
+    customer_phone = models.CharField(max_length=50, blank=True, verbose_name=gettext_lazy('Teléfono'))
+    customer_company = models.CharField(max_length=200, blank=True, verbose_name=gettext_lazy('Empresa'))
+    notes = models.TextField(blank=True, verbose_name=gettext_lazy('Notas adicionales'))
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name=gettext_lazy('Total'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha'))
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Cotización de Carrito'
-        verbose_name_plural = 'Cotizaciones de Carrito'
+        verbose_name = gettext_lazy('Cotización de Carrito')
+        verbose_name_plural = gettext_lazy('Cotizaciones de Carrito')
 
     def __str__(self):
         return f'{self.reference} – {self.customer_name}'
@@ -24359,19 +24360,19 @@ class CartQuotationItem(models.Model):
     """Línea de producto dentro de una cotización de carrito"""
 
     quotation = models.ForeignKey(
-        CartQuotation, on_delete=models.CASCADE, related_name='items', verbose_name='Cotización'
+        CartQuotation, on_delete=models.CASCADE, related_name='items', verbose_name=gettext_lazy('Cotización')
     )
     product = models.ForeignKey(
-        'Product', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Producto'
+        'Product', on_delete=models.SET_NULL, null=True, blank=True, verbose_name=gettext_lazy('Producto')
     )
-    product_name = models.CharField(max_length=200, verbose_name='Nombre del producto')
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Precio unitario')
-    quantity = models.PositiveIntegerField(default=1, verbose_name='Cantidad')
-    subtotal = models.DecimalField(max_digits=12, decimal_places=2, verbose_name='Subtotal')
+    product_name = models.CharField(max_length=200, verbose_name=gettext_lazy('Nombre del producto'))
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=gettext_lazy('Precio unitario'))
+    quantity = models.PositiveIntegerField(default=1, verbose_name=gettext_lazy('Cantidad'))
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, verbose_name=gettext_lazy('Subtotal'))
 
     class Meta:
-        verbose_name = 'Línea de Cotización'
-        verbose_name_plural = 'Líneas de Cotización'
+        verbose_name = gettext_lazy('Línea de Cotización')
+        verbose_name_plural = gettext_lazy('Líneas de Cotización')
 
     def __str__(self):
         return f'{self.product_name} x{self.quantity}'
@@ -24388,21 +24389,21 @@ class ProcessSurvey(models.Model):
 
     name = models.CharField(
         max_length=200,
-        verbose_name='Nombre',
+        verbose_name=gettext_lazy('Nombre'),
     )
     folio = models.CharField(
         max_length=20,
         unique=True,
         blank=True,
-        verbose_name='Folio',
-        help_text='Generado automáticamente. Formato: LP-0001',
+        verbose_name=gettext_lazy('Folio'),
+        help_text=gettext_lazy('Generado automáticamente. Formato: LP-0001'),
     )
     date = models.DateField(
-        verbose_name='Fecha',
+        verbose_name=gettext_lazy('Fecha'),
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción del proyecto',
+        verbose_name=gettext_lazy('Descripción del proyecto'),
     )
     company = models.ForeignKey(
         'Company',
@@ -24410,20 +24411,20 @@ class ProcessSurvey(models.Model):
         null=True,
         blank=True,
         related_name='process_surveys',
-        verbose_name='Empresa',
+        verbose_name=gettext_lazy('Empresa'),
     )
     public_share_token = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name='Token público',
+        verbose_name=gettext_lazy('Token público'),
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         related_name='process_surveys_created',
-        verbose_name='Creado por',
+        verbose_name=gettext_lazy('Creado por'),
     )
     responsible = models.ForeignKey(
         User,
@@ -24431,106 +24432,106 @@ class ProcessSurvey(models.Model):
         null=True,
         blank=True,
         related_name='process_surveys_responsible',
-        verbose_name='Responsable',
+        verbose_name=gettext_lazy('Responsable'),
     )
     # Datos del solicitante (intake público)
-    requester_name = models.CharField(max_length=200, blank=True, verbose_name='Nombre del solicitante')
-    requester_email = models.EmailField(blank=True, verbose_name='Email del solicitante')
-    requester_phone = models.CharField(max_length=50, blank=True, verbose_name='Teléfono del solicitante')
-    requester_country = models.CharField(max_length=100, blank=True, verbose_name='País del solicitante')
-    requester_company_name = models.CharField(max_length=200, blank=True, verbose_name='Empresa del solicitante')
+    requester_name = models.CharField(max_length=200, blank=True, verbose_name=gettext_lazy('Nombre del solicitante'))
+    requester_email = models.EmailField(blank=True, verbose_name=gettext_lazy('Email del solicitante'))
+    requester_phone = models.CharField(max_length=50, blank=True, verbose_name=gettext_lazy('Teléfono del solicitante'))
+    requester_country = models.CharField(max_length=100, blank=True, verbose_name=gettext_lazy('País del solicitante'))
+    requester_company_name = models.CharField(max_length=200, blank=True, verbose_name=gettext_lazy('Empresa del solicitante'))
 
     STATUS_PROCESO = 'proceso'
     STATUS_ACEPTADO = 'aceptado'
     STATUS_RECHAZADO = 'rechazado'
     STATUS_CHOICES = [
-        (STATUS_PROCESO, 'En proceso'),
-        (STATUS_ACEPTADO, 'Aceptado'),
-        (STATUS_RECHAZADO, 'Rechazado'),
+        (STATUS_PROCESO, gettext_lazy('En proceso')),
+        (STATUS_ACEPTADO, gettext_lazy('Aceptado')),
+        (STATUS_RECHAZADO, gettext_lazy('Rechazado')),
     ]
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default=STATUS_PROCESO,
-        verbose_name='Estado',
+        verbose_name=gettext_lazy('Estado'),
     )
     rejection_reason = models.TextField(
         blank=True,
-        verbose_name='Motivo de rechazo',
+        verbose_name=gettext_lazy('Motivo de rechazo'),
     )
     importe = models.DecimalField(
         max_digits=14,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Importe',
+        verbose_name=gettext_lazy('Importe'),
     )
     importe_currency = models.CharField(
         max_length=10,
         default='USD',
         blank=True,
-        verbose_name='Moneda',
+        verbose_name=gettext_lazy('Moneda'),
     )
 
     contract_title = models.CharField(
         max_length=300,
         blank=True,
-        verbose_name='Título del contrato',
+        verbose_name=gettext_lazy('Título del contrato'),
     )
     contract_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha del contrato',
+        verbose_name=gettext_lazy('Fecha del contrato'),
     )
     contract_expiration_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de vencimiento del contrato',
+        verbose_name=gettext_lazy('Fecha de vencimiento del contrato'),
     )
     client_signature_image = models.ImageField(
         upload_to='contract_client_signatures/',
         null=True,
         blank=True,
-        verbose_name='Firma del cliente',
+        verbose_name=gettext_lazy('Firma del cliente'),
     )
     client_signed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de firma del cliente',
+        verbose_name=gettext_lazy('Fecha de firma del cliente'),
     )
     client_signed_name = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Nombre del firmante (cliente)',
+        verbose_name=gettext_lazy('Nombre del firmante (cliente)'),
     )
     client_signed_email = models.EmailField(
         blank=True,
-        verbose_name='Email del firmante (cliente)',
+        verbose_name=gettext_lazy('Email del firmante (cliente)'),
     )
 
     # ── Identificación de partes (contrato) ──
-    provider_nif = models.CharField(max_length=50, blank=True, verbose_name='NIF/DNI/Pasaporte del proveedor')
-    provider_nationality = models.CharField(max_length=100, blank=True, verbose_name='Nacionalidad del proveedor')
-    provider_civil_status = models.CharField(max_length=80, blank=True, verbose_name='Estado civil del proveedor')
-    provider_occupation = models.CharField(max_length=100, blank=True, default='Autónomo', verbose_name='Ocupación del proveedor')
-    provider_address = models.CharField(max_length=300, blank=True, verbose_name='Domicilio del proveedor')
-    client_rep_name = models.CharField(max_length=200, blank=True, verbose_name='Nombre del representante cliente')
-    client_rep_id = models.CharField(max_length=80, blank=True, verbose_name='ID/NUE del representante cliente')
-    client_rep_role = models.CharField(max_length=150, blank=True, verbose_name='Cargo del representante cliente')
+    provider_nif = models.CharField(max_length=50, blank=True, verbose_name=gettext_lazy('NIF/DNI/Pasaporte del proveedor'))
+    provider_nationality = models.CharField(max_length=100, blank=True, verbose_name=gettext_lazy('Nacionalidad del proveedor'))
+    provider_civil_status = models.CharField(max_length=80, blank=True, verbose_name=gettext_lazy('Estado civil del proveedor'))
+    provider_occupation = models.CharField(max_length=100, blank=True, default='Autónomo', verbose_name=gettext_lazy('Ocupación del proveedor'))
+    provider_address = models.CharField(max_length=300, blank=True, verbose_name=gettext_lazy('Domicilio del proveedor'))
+    client_rep_name = models.CharField(max_length=200, blank=True, verbose_name=gettext_lazy('Nombre del representante cliente'))
+    client_rep_id = models.CharField(max_length=80, blank=True, verbose_name=gettext_lazy('ID/NUE del representante cliente'))
+    client_rep_role = models.CharField(max_length=150, blank=True, verbose_name=gettext_lazy('Cargo del representante cliente'))
 
     is_public_contract = models.BooleanField(
         default=True,
-        verbose_name='Contrato público',
-        help_text='Si está desactivado, el enlace público no permite ver ni firmar el contrato.',
+        verbose_name=gettext_lazy('Contrato público'),
+        help_text=gettext_lazy('Si está desactivado, el enlace público no permite ver ni firmar el contrato.'),
     )
 
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última actualización'))
 
     class Meta:
         ordering = ['-date', '-created_at']
-        verbose_name = 'Levantamiento de Procesos'
-        verbose_name_plural = 'Levantamientos de Procesos'
+        verbose_name = gettext_lazy('Levantamiento de Procesos')
+        verbose_name_plural = gettext_lazy('Levantamientos de Procesos')
 
     def __str__(self):
         return f'{self.name} ({self.date})'
@@ -24567,13 +24568,13 @@ class ProcessSurveyLineCategory(models.Model):
 
     name = models.CharField(
         max_length=100,
-        verbose_name='Nombre',
+        verbose_name=gettext_lazy('Nombre'),
     )
     color = models.CharField(
         max_length=20,
         default='#6c757d',
-        verbose_name='Color',
-        help_text='Color en formato hexadecimal, ej: #0d6efd',
+        verbose_name=gettext_lazy('Color'),
+        help_text=gettext_lazy('Color en formato hexadecimal, ej: #0d6efd'),
     )
     created_by = models.ForeignKey(
         User,
@@ -24581,14 +24582,14 @@ class ProcessSurveyLineCategory(models.Model):
         null=True,
         blank=True,
         related_name='survey_line_categories',
-        verbose_name='Creado por',
+        verbose_name=gettext_lazy('Creado por'),
     )
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
 
     class Meta:
         ordering = ['name']
-        verbose_name = 'Categoría de Línea'
-        verbose_name_plural = 'Categorías de Línea'
+        verbose_name = gettext_lazy('Categoría de Línea')
+        verbose_name_plural = gettext_lazy('Categorías de Línea')
 
     def __str__(self):
         return self.name
@@ -24601,49 +24602,49 @@ class ProcessSurveyLine(models.Model):
         ProcessSurvey,
         on_delete=models.CASCADE,
         related_name='lines',
-        verbose_name='Levantamiento',
+        verbose_name=gettext_lazy('Levantamiento'),
     )
     order = models.PositiveIntegerField(
         default=0,
-        verbose_name='Orden',
+        verbose_name=gettext_lazy('Orden'),
     )
     title = models.CharField(
         max_length=300,
-        verbose_name='Título',
+        verbose_name=gettext_lazy('Título'),
     )
     description = models.TextField(
         blank=True,
-        verbose_name='Descripción',
+        verbose_name=gettext_lazy('Descripción'),
     )
 
     STATUS_PENDING = 'pending'
     STATUS_ACCEPTED = 'accepted'
     STATUS_REJECTED = 'rejected'
     STATUS_CHOICES = [
-        (STATUS_PENDING, 'Pendiente'),
-        (STATUS_ACCEPTED, 'Aceptado'),
-        (STATUS_REJECTED, 'Rechazado'),
+        (STATUS_PENDING, gettext_lazy('Pendiente')),
+        (STATUS_ACCEPTED, gettext_lazy('Aceptado')),
+        (STATUS_REJECTED, gettext_lazy('Rechazado')),
     ]
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default=STATUS_PENDING,
-        verbose_name='Estado',
+        verbose_name=gettext_lazy('Estado'),
     )
     is_hidden = models.BooleanField(
         default=False,
-        verbose_name='Oculto en vista pública',
+        verbose_name=gettext_lazy('Oculto en vista pública'),
     )
     complexity = models.PositiveSmallIntegerField(
         null=True,
         blank=True,
-        verbose_name='Complejidad',
-        help_text='Nivel de complejidad del proceso: 1 (muy simple) a 10 (muy complejo)',
+        verbose_name=gettext_lazy('Complejidad'),
+        help_text=gettext_lazy('Nivel de complejidad del proceso: 1 (muy simple) a 10 (muy complejo)'),
     )
     version = models.PositiveSmallIntegerField(
         default=1,
-        verbose_name='Versión',
-        help_text='Número de versión del levantamiento (máx. 10)',
+        verbose_name=gettext_lazy('Versión'),
+        help_text=gettext_lazy('Número de versión del levantamiento (máx. 10)'),
     )
     category = models.ForeignKey(
         'ProcessSurveyLineCategory',
@@ -24651,13 +24652,13 @@ class ProcessSurveyLine(models.Model):
         null=True,
         blank=True,
         related_name='lines',
-        verbose_name='Categoría',
+        verbose_name=gettext_lazy('Categoría'),
     )
 
     class Meta:
         ordering = ['version', 'order', 'pk']
-        verbose_name = 'Línea de Levantamiento'
-        verbose_name_plural = 'Líneas de Levantamiento'
+        verbose_name = gettext_lazy('Línea de Levantamiento')
+        verbose_name_plural = gettext_lazy('Líneas de Levantamiento')
 
     def __str__(self):
         return f'{self.survey} – {self.title}'
@@ -24670,32 +24671,32 @@ class ProcessSurveyLineComment(models.Model):
         ProcessSurveyLine,
         on_delete=models.CASCADE,
         related_name='comments',
-        verbose_name='Línea',
+        verbose_name=gettext_lazy('Línea'),
     )
     author_name = models.CharField(
         max_length=200,
-        verbose_name='Nombre',
+        verbose_name=gettext_lazy('Nombre'),
     )
     author_email = models.EmailField(
         blank=True,
-        verbose_name='Email',
+        verbose_name=gettext_lazy('Email'),
     )
     body = models.TextField(
         blank=True,
-        verbose_name='Comentario',
+        verbose_name=gettext_lazy('Comentario'),
     )
     attachment = models.FileField(
         upload_to='process_survey_attachments/%Y/%m/',
         blank=True,
         null=True,
-        verbose_name='Adjunto',
+        verbose_name=gettext_lazy('Adjunto'),
     )
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha'))
 
     class Meta:
         ordering = ['created_at']
-        verbose_name = 'Comentario de Línea'
-        verbose_name_plural = 'Comentarios de Línea'
+        verbose_name = gettext_lazy('Comentario de Línea')
+        verbose_name_plural = gettext_lazy('Comentarios de Línea')
 
     def __str__(self):
         return f'{self.author_name} – {self.line.title}'
@@ -24708,26 +24709,26 @@ class ProcessSurveyURL(models.Model):
         ProcessSurvey,
         on_delete=models.CASCADE,
         related_name='urls',
-        verbose_name='Levantamiento',
+        verbose_name=gettext_lazy('Levantamiento'),
     )
     label = models.CharField(
         max_length=300,
-        verbose_name='Etiqueta',
-        help_text='Nombre descriptivo del enlace',
+        verbose_name=gettext_lazy('Etiqueta'),
+        help_text=gettext_lazy('Nombre descriptivo del enlace'),
     )
     url = models.URLField(
         max_length=2000,
-        verbose_name='URL',
+        verbose_name=gettext_lazy('URL'),
     )
     order = models.PositiveIntegerField(
         default=0,
-        verbose_name='Orden',
+        verbose_name=gettext_lazy('Orden'),
     )
 
     class Meta:
         ordering = ['order', 'pk']
-        verbose_name = 'URL de Levantamiento'
-        verbose_name_plural = 'URLs de Levantamiento'
+        verbose_name = gettext_lazy('URL de Levantamiento')
+        verbose_name_plural = gettext_lazy('URLs de Levantamiento')
 
     def __str__(self):
         return f'{self.label} ({self.survey})'
@@ -24740,17 +24741,17 @@ class ProcessSurveyAIAnalysis(models.Model):
         ProcessSurvey,
         on_delete=models.CASCADE,
         related_name='ai_analyses',
-        verbose_name='Levantamiento',
+        verbose_name=gettext_lazy('Levantamiento'),
     )
-    version = models.PositiveSmallIntegerField(verbose_name='Versión analizada')
-    total_lines = models.PositiveSmallIntegerField(default=0, verbose_name='Total de procesos')
-    analysis_text = models.TextField(verbose_name='Análisis')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha')
+    version = models.PositiveSmallIntegerField(verbose_name=gettext_lazy('Versión analizada'))
+    total_lines = models.PositiveSmallIntegerField(default=0, verbose_name=gettext_lazy('Total de procesos'))
+    analysis_text = models.TextField(verbose_name=gettext_lazy('Análisis'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha'))
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Análisis IA de Levantamiento'
-        verbose_name_plural = 'Análisis IA de Levantamientos'
+        verbose_name = gettext_lazy('Análisis IA de Levantamiento')
+        verbose_name_plural = gettext_lazy('Análisis IA de Levantamientos')
 
     def __str__(self):
         return f'Análisis v{self.version} — {self.survey} ({self.created_at:%d/%m/%Y %H:%M})'
@@ -24763,20 +24764,20 @@ class ProcessSurveySignature(models.Model):
         ProcessSurvey,
         on_delete=models.CASCADE,
         related_name='signatures',
-        verbose_name='Levantamiento',
+        verbose_name=gettext_lazy('Levantamiento'),
     )
-    signer_name = models.CharField(max_length=200, verbose_name='Nombre')
-    signer_email = models.EmailField(blank=True, verbose_name='Email')
-    signer_phone = models.CharField(max_length=50, blank=True, verbose_name='Teléfono')
+    signer_name = models.CharField(max_length=200, verbose_name=gettext_lazy('Nombre'))
+    signer_email = models.EmailField(blank=True, verbose_name=gettext_lazy('Email'))
+    signer_phone = models.CharField(max_length=50, blank=True, verbose_name=gettext_lazy('Teléfono'))
     # Firma dibujada almacenada como data URL (PNG base64)
-    signature_data = models.TextField(verbose_name='Firma (base64)')
-    signed_at = models.DateTimeField(default=timezone.now, verbose_name='Firmado el')
-    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
+    signature_data = models.TextField(verbose_name=gettext_lazy('Firma (base64)'))
+    signed_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Firmado el'))
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name=gettext_lazy('IP'))
 
     class Meta:
         ordering = ['signed_at']
-        verbose_name = 'Firma'
-        verbose_name_plural = 'Firmas'
+        verbose_name = gettext_lazy('Firma')
+        verbose_name_plural = gettext_lazy('Firmas')
 
     def __str__(self):
         return f'{self.signer_name} – {self.survey.name}'
@@ -24789,24 +24790,24 @@ class ProcessSurveyPageView(models.Model):
         ProcessSurvey,
         on_delete=models.CASCADE,
         related_name='page_views',
-        verbose_name='Levantamiento',
+        verbose_name=gettext_lazy('Levantamiento'),
     )
     status_at_view = models.CharField(
         max_length=20,
         blank=True,
         default='',
-        verbose_name='Estado al momento de la visita',
+        verbose_name=gettext_lazy('Estado al momento de la visita'),
     )
-    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
-    country = models.CharField(max_length=100, blank=True, verbose_name='País')
-    city = models.CharField(max_length=100, blank=True, verbose_name='Ciudad')
-    user_agent = models.CharField(max_length=500, blank=True, verbose_name='Navegador')
-    viewed_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha y hora')
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name=gettext_lazy('IP'))
+    country = models.CharField(max_length=100, blank=True, verbose_name=gettext_lazy('País'))
+    city = models.CharField(max_length=100, blank=True, verbose_name=gettext_lazy('Ciudad'))
+    user_agent = models.CharField(max_length=500, blank=True, verbose_name=gettext_lazy('Navegador'))
+    viewed_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha y hora'))
 
     class Meta:
         ordering = ['-viewed_at']
-        verbose_name = 'Apertura'
-        verbose_name_plural = 'Aperturas'
+        verbose_name = gettext_lazy('Apertura')
+        verbose_name_plural = gettext_lazy('Aperturas')
 
     def __str__(self):
         return f'{self.survey.folio} – {self.ip_address} – {self.viewed_at:%d/%m/%Y %H:%M}'
@@ -24819,19 +24820,19 @@ class ProcessSurveyContractView(models.Model):
         ProcessSurvey,
         on_delete=models.CASCADE,
         related_name='contract_views',
-        verbose_name='Levantamiento',
+        verbose_name=gettext_lazy('Levantamiento'),
     )
-    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
-    country = models.CharField(max_length=100, blank=True, verbose_name='País')
-    city = models.CharField(max_length=100, blank=True, verbose_name='Ciudad')
-    user_agent = models.CharField(max_length=500, blank=True, verbose_name='User-Agent')
-    device_type = models.CharField(max_length=50, blank=True, verbose_name='Dispositivo')
-    viewed_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha y hora')
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name=gettext_lazy('IP'))
+    country = models.CharField(max_length=100, blank=True, verbose_name=gettext_lazy('País'))
+    city = models.CharField(max_length=100, blank=True, verbose_name=gettext_lazy('Ciudad'))
+    user_agent = models.CharField(max_length=500, blank=True, verbose_name=gettext_lazy('User-Agent'))
+    device_type = models.CharField(max_length=50, blank=True, verbose_name=gettext_lazy('Dispositivo'))
+    viewed_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha y hora'))
 
     class Meta:
         ordering = ['-viewed_at']
-        verbose_name = 'Apertura de contrato'
-        verbose_name_plural = 'Aperturas de contrato'
+        verbose_name = gettext_lazy('Apertura de contrato')
+        verbose_name_plural = gettext_lazy('Aperturas de contrato')
 
     def __str__(self):
         return f'{self.survey.folio} – {self.ip_address} – {self.viewed_at:%d/%m/%Y %H:%M}'
@@ -24844,19 +24845,19 @@ class ProcessSurveyContractVisitor(models.Model):
         ProcessSurvey,
         on_delete=models.CASCADE,
         related_name='contract_visitors',
-        verbose_name='Levantamiento',
+        verbose_name=gettext_lazy('Levantamiento'),
     )
-    name = models.CharField(max_length=200, verbose_name='Nombre')
-    email = models.EmailField(verbose_name='Email')
-    phone = models.CharField(max_length=50, blank=True, verbose_name='Teléfono')
-    company_name = models.CharField(max_length=200, blank=True, verbose_name='Empresa')
-    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de acceso')
+    name = models.CharField(max_length=200, verbose_name=gettext_lazy('Nombre'))
+    email = models.EmailField(verbose_name=gettext_lazy('Email'))
+    phone = models.CharField(max_length=50, blank=True, verbose_name=gettext_lazy('Teléfono'))
+    company_name = models.CharField(max_length=200, blank=True, verbose_name=gettext_lazy('Empresa'))
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name=gettext_lazy('IP'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de acceso'))
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Visitante de contrato'
-        verbose_name_plural = 'Visitantes de contrato'
+        verbose_name = gettext_lazy('Visitante de contrato')
+        verbose_name_plural = gettext_lazy('Visitantes de contrato')
 
     def __str__(self):
         return f'{self.name} – {self.survey.folio} – {self.created_at:%d/%m/%Y %H:%M}'
@@ -24869,33 +24870,33 @@ class ProcessSurveyClause(models.Model):
         ProcessSurvey,
         on_delete=models.CASCADE,
         related_name='clauses',
-        verbose_name='Levantamiento',
+        verbose_name=gettext_lazy('Levantamiento'),
     )
     order = models.PositiveIntegerField(
         default=0,
-        verbose_name='Orden',
+        verbose_name=gettext_lazy('Orden'),
     )
     title = models.CharField(
         max_length=300,
         blank=True,
-        verbose_name='Título de la cláusula',
-        help_text='Ej: Objeto del contrato, Vigencia, Confidencialidad…',
+        verbose_name=gettext_lazy('Título de la cláusula'),
+        help_text=gettext_lazy('Ej: Objeto del contrato, Vigencia, Confidencialidad…'),
     )
     body = models.TextField(
-        verbose_name='Texto de la cláusula',
+        verbose_name=gettext_lazy('Texto de la cláusula'),
     )
     is_hidden_public = models.BooleanField(
         default=False,
-        verbose_name='No visible en público',
-        help_text='Si está activado, esta cláusula aparece borrosa en el contrato público.',
+        verbose_name=gettext_lazy('No visible en público'),
+        help_text=gettext_lazy('Si está activado, esta cláusula aparece borrosa en el contrato público.'),
     )
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['order', 'created_at']
-        verbose_name = 'Cláusula'
-        verbose_name_plural = 'Cláusulas'
+        verbose_name = gettext_lazy('Cláusula')
+        verbose_name_plural = gettext_lazy('Cláusulas')
 
     def __str__(self):
         label = self.title or f'Cláusula {self.order}'
@@ -24909,21 +24910,21 @@ class ProcessSurveyClauseHistory(models.Model):
         ProcessSurveyClause,
         on_delete=models.CASCADE,
         related_name='history',
-        verbose_name='Cláusula',
+        verbose_name=gettext_lazy('Cláusula'),
     )
-    body_before = models.TextField(verbose_name='Texto anterior')
-    body_after = models.TextField(verbose_name='Texto nuevo')
+    body_before = models.TextField(verbose_name=gettext_lazy('Texto anterior'))
+    body_after = models.TextField(verbose_name=gettext_lazy('Texto nuevo'))
     edited_by_name = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Editado por',
+        verbose_name=gettext_lazy('Editado por'),
     )
-    edited_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de edición')
+    edited_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de edición'))
 
     class Meta:
         ordering = ['-edited_at']
-        verbose_name = 'Historial de cláusula'
-        verbose_name_plural = 'Historial de cláusulas'
+        verbose_name = gettext_lazy('Historial de cláusula')
+        verbose_name_plural = gettext_lazy('Historial de cláusulas')
 
     def __str__(self):
         return f'Cambio en {self.clause} — {self.edited_at:%d/%m/%Y %H:%M}'
@@ -24934,20 +24935,20 @@ class ProcessSurveyClauseHistory(models.Model):
 class ProjectInfo(models.Model):
     """Información general de un proyecto: nombre, empresa, folio y líneas de contenido."""
 
-    name = models.CharField(max_length=200, verbose_name='Nombre del proyecto')
-    description = models.TextField(blank=True, verbose_name='Descripción del proyecto')
+    name = models.CharField(max_length=200, verbose_name=gettext_lazy('Nombre del proyecto'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción del proyecto'))
     pin = models.CharField(
         max_length=20,
         blank=True,
-        verbose_name='PIN de acceso',
-        help_text='Si se establece, la vista pública solicitará este PIN.',
+        verbose_name=gettext_lazy('PIN de acceso'),
+        help_text=gettext_lazy('Si se establece, la vista pública solicitará este PIN.'),
     )
     folio = models.CharField(
         max_length=20,
         unique=True,
         blank=True,
-        verbose_name='Folio',
-        help_text='Generado automáticamente. Formato: PI-0001',
+        verbose_name=gettext_lazy('Folio'),
+        help_text=gettext_lazy('Generado automáticamente. Formato: PI-0001'),
     )
     company = models.ForeignKey(
         'Company',
@@ -24955,28 +24956,28 @@ class ProjectInfo(models.Model):
         null=True,
         blank=True,
         related_name='project_infos',
-        verbose_name='Empresa',
+        verbose_name=gettext_lazy('Empresa'),
     )
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         related_name='project_infos_created',
-        verbose_name='Creado por',
+        verbose_name=gettext_lazy('Creado por'),
     )
     public_share_token = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name='Token público',
+        verbose_name=gettext_lazy('Token público'),
     )
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Fecha de creación'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Última actualización'))
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Información de Proyecto'
-        verbose_name_plural = 'Información de Proyectos'
+        verbose_name = gettext_lazy('Información de Proyecto')
+        verbose_name_plural = gettext_lazy('Información de Proyectos')
 
     def __str__(self):
         return f'{self.folio} – {self.name}'
@@ -25002,32 +25003,32 @@ class ProjectInfoLine(models.Model):
         ProjectInfo,
         on_delete=models.CASCADE,
         related_name='lines',
-        verbose_name='Proyecto',
+        verbose_name=gettext_lazy('Proyecto'),
     )
-    order = models.PositiveIntegerField(default=0, verbose_name='Orden')
-    title = models.CharField(max_length=300, verbose_name='Título')
-    body = models.TextField(blank=True, verbose_name='Texto')
+    order = models.PositiveIntegerField(default=0, verbose_name=gettext_lazy('Orden'))
+    title = models.CharField(max_length=300, verbose_name=gettext_lazy('Título'))
+    body = models.TextField(blank=True, verbose_name=gettext_lazy('Texto'))
     category = models.ForeignKey(
         'ProcessSurveyLineCategory',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='project_info_lines',
-        verbose_name='Categoría',
+        verbose_name=gettext_lazy('Categoría'),
     )
     public_share_token = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name='Token público de línea',
+        verbose_name=gettext_lazy('Token público de línea'),
     )
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Creado')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Creado'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=gettext_lazy('Actualizado'))
 
     class Meta:
         ordering = ['order', 'pk']
-        verbose_name = 'Línea de Proyecto'
-        verbose_name_plural = 'Líneas de Proyecto'
+        verbose_name = gettext_lazy('Línea de Proyecto')
+        verbose_name_plural = gettext_lazy('Líneas de Proyecto')
 
     def __str__(self):
         return f'{self.project.folio} – {self.title}'
@@ -25040,26 +25041,26 @@ class ProjectInfoResponsible(models.Model):
         ProjectInfo,
         on_delete=models.CASCADE,
         related_name='responsibles',
-        verbose_name='Proyecto',
+        verbose_name=gettext_lazy('Proyecto'),
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='project_info_responsibilities',
-        verbose_name='Usuario',
+        verbose_name=gettext_lazy('Usuario'),
     )
     role_override = models.CharField(
         max_length=150,
         blank=True,
-        verbose_name='Cargo (sobreescribe perfil)',
+        verbose_name=gettext_lazy('Cargo (sobreescribe perfil)'),
     )
     added_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         unique_together = [('project', 'user')]
         ordering = ['added_at']
-        verbose_name = 'Responsable de Proyecto'
-        verbose_name_plural = 'Responsables de Proyecto'
+        verbose_name = gettext_lazy('Responsable de Proyecto')
+        verbose_name_plural = gettext_lazy('Responsables de Proyecto')
 
     def __str__(self):
         return f'{self.project.folio} – {self.user.get_full_name() or self.user.username}'
@@ -25088,16 +25089,16 @@ class ProjectInfoLink(models.Model):
         ProjectInfo,
         on_delete=models.CASCADE,
         related_name='links',
-        verbose_name='Proyecto',
+        verbose_name=gettext_lazy('Proyecto'),
     )
-    name = models.CharField(max_length=200, verbose_name='Nombre')
-    url = models.URLField(max_length=500, verbose_name='URL')
-    description = models.TextField(blank=True, verbose_name='Descripción')
+    name = models.CharField(max_length=200, verbose_name=gettext_lazy('Nombre'))
+    url = models.URLField(max_length=500, verbose_name=gettext_lazy('URL'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción'))
     public_share_token = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        verbose_name='Token público de enlace',
+        verbose_name=gettext_lazy('Token público de enlace'),
     )
     created_by = models.ForeignKey(
         User,
@@ -25105,14 +25106,14 @@ class ProjectInfoLink(models.Model):
         null=True,
         blank=True,
         related_name='project_info_links_created',
-        verbose_name='Creado por',
+        verbose_name=gettext_lazy('Creado por'),
     )
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Creado')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Creado'))
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Enlace de Proyecto'
-        verbose_name_plural = 'Enlaces de Proyecto'
+        verbose_name = gettext_lazy('Enlace de Proyecto')
+        verbose_name_plural = gettext_lazy('Enlaces de Proyecto')
 
     def __str__(self):
         return f'{self.project.folio} – {self.name}'
@@ -25125,16 +25126,16 @@ class ProjectInfoLinkVisit(models.Model):
         ProjectInfoLink,
         on_delete=models.CASCADE,
         related_name='visits',
-        verbose_name='Enlace',
+        verbose_name=gettext_lazy('Enlace'),
     )
-    ip_address = models.GenericIPAddressField(verbose_name='IP')
-    user_agent = models.CharField(max_length=500, blank=True, verbose_name='User-Agent')
-    visited_at = models.DateTimeField(default=timezone.now, verbose_name='Apertura')
+    ip_address = models.GenericIPAddressField(verbose_name=gettext_lazy('IP'))
+    user_agent = models.CharField(max_length=500, blank=True, verbose_name=gettext_lazy('User-Agent'))
+    visited_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Apertura'))
 
     class Meta:
         ordering = ['-visited_at']
-        verbose_name = 'Visita de Enlace'
-        verbose_name_plural = 'Visitas de Enlace'
+        verbose_name = gettext_lazy('Visita de Enlace')
+        verbose_name_plural = gettext_lazy('Visitas de Enlace')
 
     def __str__(self):
         return f'{self.link.name} – {self.ip_address} – {self.visited_at:%d/%m/%Y %H:%M}'
@@ -25147,16 +25148,16 @@ class ProjectInfoVisit(models.Model):
         ProjectInfo,
         on_delete=models.CASCADE,
         related_name='visits',
-        verbose_name='Proyecto',
+        verbose_name=gettext_lazy('Proyecto'),
     )
-    ip_address = models.GenericIPAddressField(verbose_name='IP')
-    user_agent = models.CharField(max_length=500, blank=True, verbose_name='User-Agent')
-    visited_at = models.DateTimeField(default=timezone.now, verbose_name='Apertura')
+    ip_address = models.GenericIPAddressField(verbose_name=gettext_lazy('IP'))
+    user_agent = models.CharField(max_length=500, blank=True, verbose_name=gettext_lazy('User-Agent'))
+    visited_at = models.DateTimeField(default=timezone.now, verbose_name=gettext_lazy('Apertura'))
 
     class Meta:
         ordering = ['-visited_at']
-        verbose_name = 'Visita Pública'
-        verbose_name_plural = 'Visitas Públicas'
+        verbose_name = gettext_lazy('Visita Pública')
+        verbose_name_plural = gettext_lazy('Visitas Públicas')
 
     def __str__(self):
         return f'{self.project.folio} – {self.ip_address} – {self.visited_at:%d/%m/%Y %H:%M}'
@@ -25174,9 +25175,9 @@ class ProjectInfoLineComment(models.Model):
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='pi_line_comments',
     )
-    author_name  = models.CharField(max_length=100, blank=True, verbose_name='Nombre público')
-    author_email = models.EmailField(blank=True, verbose_name='Email público')
-    body = models.TextField(verbose_name='Comentario')
+    author_name  = models.CharField(max_length=100, blank=True, verbose_name=gettext_lazy('Nombre público'))
+    author_email = models.EmailField(blank=True, verbose_name=gettext_lazy('Email público'))
+    body = models.TextField(verbose_name=gettext_lazy('Comentario'))
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:

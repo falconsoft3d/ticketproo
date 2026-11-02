@@ -1,17 +1,18 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Dashboard - TicketProo{% endblock %}
+{% block title %}{% translate "Dashboard - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col">
             <h1 class="mb-4">
-        <i class="bi bi-speedometer2"></i> Dashboard - TicketProo
+        <i class="bi bi-speedometer2"></i> {% translate "Dashboard - TicketProo" %}
     </h1>
         <p class="lead text-muted">
             Bienvenido, {{ user.first_name|default:user.username }}
             {% if is_agent %}
-                - Panel de Administración
+                {% translate "- Panel de Administración" %}
             {% endif %}
         </p>
         
@@ -37,18 +38,18 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
-                    <i class="bi bi-calendar-check"></i> Actividad
+                    <i class="bi bi-calendar-check"></i> {% translate "Actividad" %}
                     {% if is_agent %}
-                        <span id="activity-title">- General</span>
+                        <span id="activity-title">{% translate "- General" %}</span>
                     {% else %}
-                        - Personal
+                        {% translate "- Personal" %}
                     {% endif %}
                 </h5>
                 {% if is_agent %}
                 <div class="d-flex gap-2">
                     <select id="user-selector" class="form-select form-select-sm" style="width: auto;">
-                        <option value="all">Todos los usuarios</option>
-                        <option value="{{ user.id }}" selected>Mi actividad</option>
+                        <option value="all">{% translate "Todos los usuarios" %}</option>
+                        <option value="{{ user.id }}" selected>{% translate "Mi actividad" %}</option>
                         {% for agent in all_users %}
                             {% if agent.id != user.id %}
                                 <option value="{{ agent.id }}">{{ agent.get_full_name|default:agent.username }}</option>
@@ -56,10 +57,10 @@
                         {% endfor %}
                     </select>
                     <select id="period-selector" class="form-select form-select-sm" style="width: auto;">
-                        <option value="365" selected>Último año</option>
-                        <option value="180">Últimos 6 meses</option>
-                        <option value="90">Últimos 3 meses</option>
-                        <option value="30">Último mes</option>
+                        <option value="365" selected>{% translate "Último año" %}</option>
+                        <option value="180">{% translate "Últimos 6 meses" %}</option>
+                        <option value="90">{% translate "Últimos 3 meses" %}</option>
+                        <option value="30">{% translate "Último mes" %}</option>
                     </select>
                 </div>
                 {% endif %}
@@ -67,10 +68,10 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div class="text-muted small">
-                        <span id="activity-stats">Cargando...</span>
+                        <span id="activity-stats">{% translate "Cargando..." %}</span>
                     </div>
                     <div class="d-flex align-items-center gap-2 text-muted small">
-                        <span>Menos</span>
+                        <span>{% translate "Menos" %}</span>
                         <div class="d-flex gap-1">
                             <div class="activity-square level-0"></div>
                             <div class="activity-square level-1"></div>
@@ -78,7 +79,7 @@
                             <div class="activity-square level-3"></div>
                             <div class="activity-square level-4"></div>
                         </div>
-                        <span>Más</span>
+                        <span>{% translate "Más" %}</span>
                     </div>
                 </div>
                 
@@ -198,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="d-flex justify-content-between">
                         <div>
                             <h6 class="card-title">
-                                {% if is_agent %}Total Tickets{% else %}Mis Tickets{% endif %}
+                                {% if is_agent %}{% translate "Total Tickets" %}{% else %}{% translate "Mis Tickets" %}{% endif %}
                             </h6>
                             <h2 class="mb-0">{{ total_tickets }}</h2>
                         </div>
@@ -217,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h6 class="card-title">Abiertos</h6>
+                            <h6 class="card-title">{% translate "Abiertos" %}</h6>
                             <h2 class="mb-0">{{ open_tickets }}</h2>
                         </div>
                         <div class="align-self-center">
@@ -235,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h6 class="card-title">En Progreso</h6>
+                            <h6 class="card-title">{% translate "En Progreso" %}</h6>
                             <h2 class="mb-0">{{ in_progress_tickets }}</h2>
                         </div>
                         <div class="align-self-center">
@@ -253,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h6 class="card-title">Resueltos</h6>
+                            <h6 class="card-title">{% translate "Resueltos" %}</h6>
                             <h2 class="mb-0">{{ resolved_tickets }}</h2>
                         </div>
                         <div class="align-self-center">
@@ -275,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h6 class="card-title">Sin Asignar</h6>
+                            <h6 class="card-title">{% translate "Sin Asignar" %}</h6>
                             <h2 class="mb-0">{{ unassigned_tickets }}</h2>
                         </div>
                         <div class="align-self-center">
@@ -293,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h6 class="card-title">Asignados a Mí</h6>
+                            <h6 class="card-title">{% translate "Asignados a Mí" %}</h6>
                             <h2 class="mb-0">{{ my_assigned_tickets }}</h2>
                         </div>
                         <div class="align-self-center">
@@ -314,10 +315,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="card border-light">
                 <div class="card-header bg-white text-dark border-bottom d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-clock text-success"></i> Control de Horario
+                        <i class="bi bi-clock text-success"></i> {% translate "Control de Horario" %}
                     </h5>
                     <a href="{% url 'time_clock' %}" class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-gear"></i> Gestión Completa
+                        <i class="bi bi-gear"></i> {% translate "Gestión Completa" %}
                     </a>
                 </div>
         {% else %}
@@ -325,10 +326,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="card border-light">
                 <div class="card-header bg-white text-dark border-bottom d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-clock text-secondary"></i> Control de Horario
+                        <i class="bi bi-clock text-secondary"></i> {% translate "Control de Horario" %}
                     </h5>
                     <a href="{% url 'time_clock' %}" class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-gear"></i> Gestión Completa
+                        <i class="bi bi-gear"></i> {% translate "Gestión Completa" %}
                     </a>
                 </div>
         {% endif %}
@@ -340,15 +341,15 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="d-flex align-items-center">
                                     <div class="flex-grow-1">
                                         <h6 class="mb-1">
-                                            <i class="bi bi-play-fill text-success"></i> Jornada Activa
+                                            <i class="bi bi-play-fill text-success"></i> {% translate "Jornada Activa" %}
                                         </h6>
                                         <p class="mb-0">
-                                            <strong>Inicio:</strong> {{ active_time_entry.fecha_entrada|date:"H:i" }}
+                                            <strong>{% translate "Inicio:" %}</strong> {{ active_time_entry.fecha_entrada|date:"H:i" }}
                                             <br>
-                                            <strong>Tiempo:</strong> <span id="tiempo-activo">{{ active_time_entry.duracion_formateada }}</span>
+                                            <strong>{% translate "Tiempo:" %}</strong> <span id="tiempo-activo">{{ active_time_entry.duracion_formateada }}</span>
                                             {% if active_time_entry.project %}
                                             <br>
-                                            <strong>Proyecto:</strong> {{ active_time_entry.project.name }}
+                                            <strong>{% translate "Proyecto:" %}</strong> {{ active_time_entry.project.name }}
                                             {% endif %}
                                         </p>
                                     </div>
@@ -357,9 +358,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         {% else %}
                             <div class="alert alert-light border border-light bg-white">
                                 <h6 class="mb-1">
-                                    <i class="bi bi-pause-fill text-secondary"></i> Fuera de Horario
+                                    <i class="bi bi-pause-fill text-secondary"></i> {% translate "Fuera de Horario" %}
                                 </h6>
-                                <p class="mb-0 text-muted">No hay jornada activa</p>
+                                <p class="mb-0 text-muted">{% translate "No hay jornada activa" %}</p>
                             </div>
                         {% endif %}
                     </div>
@@ -367,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="col-md-6 text-center">
                         <div class="alert alert-light border border-light bg-white mb-3">
                             <h6 class="mb-1">
-                                <i class="bi bi-clock-history text-secondary"></i> Horas Trabajadas Hoy
+                                <i class="bi bi-clock-history text-secondary"></i> {% translate "Horas Trabajadas Hoy" %}
                             </h6>
                             <h4 class="mb-0 text-dark">
                                 {{ daily_hours|default:"0" }} horas
@@ -377,17 +378,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div>
                             {% if active_time_entry %}
                                 <a href="{% url 'time_entries_list' %}" class="btn btn-sm btn-outline-dark me-2">
-                                    <i class="bi bi-list"></i> Mis Registros
+                                    <i class="bi bi-list"></i> {% translate "Mis Registros" %}
                                 </a>
                                 <a href="{% url 'attendance_overview' %}" class="btn btn-sm btn-outline-dark">
-                                    <i class="bi bi-people-fill"></i> Ver Todos
+                                    <i class="bi bi-people-fill"></i> {% translate "Ver Todos" %}
                                 </a>
                             {% else %}
                                 <a href="{% url 'time_entries_list' %}" class="btn btn-sm btn-outline-dark me-2">
-                                    <i class="bi bi-list"></i> Mis Registros
+                                    <i class="bi bi-list"></i> {% translate "Mis Registros" %}
                                 </a>
                                 <a href="{% url 'attendance_overview' %}" class="btn btn-sm btn-outline-dark">
-                                    <i class="bi bi-people-fill"></i> Ver Todos
+                                    <i class="bi bi-people-fill"></i> {% translate "Ver Todos" %}
                                 </a>
                             {% endif %}
                         </div>
@@ -404,10 +405,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="card border-light">
             <div class="card-header bg-white text-dark border-bottom d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
-                    <i class="bi bi-folder text-secondary"></i> Gestión de Proyectos
+                    <i class="bi bi-folder text-secondary"></i> {% translate "Gestión de Proyectos" %}
                 </h5>
                 <a href="{% url 'project_create' %}" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-plus"></i> Nuevo Proyecto
+                    <i class="bi bi-plus"></i> {% translate "Nuevo Proyecto" %}
                 </a>
             </div>
             <div class="card-body">
@@ -415,21 +416,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="col-md-6">
                         <div class="d-grid gap-2">
                             <a href="{% url 'project_list' %}" class="btn btn-outline-dark">
-                                <i class="bi bi-list"></i> Ver Todos los Proyectos
+                                <i class="bi bi-list"></i> {% translate "Ver Todos los Proyectos" %}
                             </a>
                             <a href="{% url 'project_create' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-plus-circle"></i> Crear Nuevo Proyecto
+                                <i class="bi bi-plus-circle"></i> {% translate "Crear Nuevo Proyecto" %}
                             </a>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="border rounded p-3 bg-white border-light">
                             <h6 class="text-muted mb-2">
-                                <i class="bi bi-info-circle text-secondary"></i> Información
+                                <i class="bi bi-info-circle text-secondary"></i> {% translate "Información" %}
                             </h6>
                             <p class="mb-0 small text-muted">
-                                Los proyectos te permiten organizar el tiempo de trabajo. 
-                                Cada vez que inicies una jornada laboral deberás seleccionar un proyecto.
+                                {% translate "Los proyectos te permiten organizar el tiempo de trabajo. Cada vez que inicies una jornada laboral deberás seleccionar un proyecto." %}
                             </p>
                         </div>
                         </div>
@@ -448,21 +448,21 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
-                    <i class="bi bi-clock-history"></i> Tickets Recientes
+                    <i class="bi bi-clock-history"></i> {% translate "Tickets Recientes" %}
                 </h5>
-                <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-outline-primary">Ver todos</a>
+                <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-outline-primary">{% translate "Ver todos" %}</a>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Número</th>
-                                <th>Título</th>
-                                <th>Prioridad</th>
-                                <th>Estado</th>
-                                {% if is_agent %}<th>Horas</th>{% endif %}
-                                <th>Fecha</th>
+                                <th>{% translate "Número" %}</th>
+                                <th>{% translate "Título" %}</th>
+                                <th>{% translate "Prioridad" %}</th>
+                                <th>{% translate "Estado" %}</th>
+                                {% if is_agent %}<th>{% translate "Horas" %}</th>{% endif %}
+                                <th>{% translate "Fecha" %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -515,10 +515,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="card">
             <div class="card-body text-center py-5">
                 <i class="bi bi-inbox display-4 text-muted mb-3"></i>
-                <h5 class="text-muted">No tienes tickets aún</h5>
-                <p class="text-muted">Crea tu primer ticket para comenzar.</p>
+                <h5 class="text-muted">{% translate "No tienes tickets aún" %}</h5>
+                <p class="text-muted">{% translate "Crea tu primer ticket para comenzar." %}</p>
                 <a href="{% url 'ticket_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus"></i> Crear Primer Ticket
+                    <i class="bi bi-plus"></i> {% translate "Crear Primer Ticket" %}
                 </a>
             </div>
         </div>
@@ -562,7 +562,7 @@ function renderActivityChart(activityData) {
     
     if (!activityData || activityData.length === 0) {
         console.log('No hay datos de actividad, mostrando mensaje');
-        container.innerHTML = '<div class="text-center py-4 text-muted">No hay datos de actividad disponibles</div>';
+        container.innerHTML = '<div class="text-center py-4 text-muted">{% translate "No hay datos de actividad disponibles" %}</div>';
         return;
     }
     

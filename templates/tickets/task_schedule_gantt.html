@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -28,10 +29,10 @@
         </div>
         <div class="btn-group">
             <a href="{% url 'task_schedule_detail' schedule.pk %}" class="btn btn-secondary">
-                <i class="fas fa-list"></i> Vista Lista
+                <i class="fas fa-list"></i> {% translate "Vista Lista" %}
             </a>
             <a href="{% url 'schedule_task_create' schedule.pk %}" class="btn btn-success">
-                <i class="fas fa-plus"></i> Nueva Tarea
+                <i class="fas fa-plus"></i> {% translate "Nueva Tarea" %}
             </a>
         </div>
     </div>
@@ -42,7 +43,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body py-2">
                     <h4 class="text-primary mb-0">{{ kpis.total_tasks }}</h4>
-                    <small class="text-muted">Total</small>
+                    <small class="text-muted">{% translate "Total" %}</small>
                 </div>
             </div>
         </div>
@@ -50,7 +51,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body py-2">
                     <h4 class="text-success mb-0">{{ kpis.completed_tasks }}</h4>
-                    <small class="text-muted">Completadas</small>
+                    <small class="text-muted">{% translate "Completadas" %}</small>
                 </div>
             </div>
         </div>
@@ -58,7 +59,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body py-2">
                     <h4 class="text-warning mb-0">{{ kpis.pending_tasks }}</h4>
-                    <small class="text-muted">Pendientes</small>
+                    <small class="text-muted">{% translate "Pendientes" %}</small>
                 </div>
             </div>
         </div>
@@ -66,7 +67,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body py-2">
                     <h4 class="text-danger mb-0">{{ kpis.overdue_tasks }}</h4>
-                    <small class="text-muted">Vencidas</small>
+                    <small class="text-muted">{% translate "Vencidas" %}</small>
                 </div>
             </div>
         </div>
@@ -74,7 +75,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body py-2">
                     <h4 class="text-info mb-0">{{ kpis.progress_percentage|floatformat:0 }}%</h4>
-                    <small class="text-muted">Progreso</small>
+                    <small class="text-muted">{% translate "Progreso" %}</small>
                 </div>
             </div>
         </div>
@@ -82,7 +83,7 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body py-2">
                     <h4 class="text-primary mb-0">{{ kpis.on_time_rate|floatformat:0 }}%</h4>
-                    <small class="text-muted">A Tiempo</small>
+                    <small class="text-muted">{% translate "A Tiempo" %}</small>
                 </div>
             </div>
         </div>
@@ -92,10 +93,10 @@
     <div class="card shadow">
         <div class="card-body text-center py-5">
             <i class="fas fa-chart-gantt fa-3x text-muted mb-3"></i>
-            <h4>Vista Gantt</h4>
+            <h4>{% translate "Vista Gantt" %}</h4>
             <p class="text-muted">
-                La vista de diagrama Gantt está temporalmente deshabilitada.<br>
-                Puedes ver las tareas en la <a href="{% url 'task_schedule_detail' schedule.pk %}" class="text-decoration-none">vista de lista</a>.
+                {% translate "La vista de diagrama Gantt está temporalmente deshabilitada." %}<br>
+                {% translate "Puedes ver las tareas en la" %} <a href="{% url 'task_schedule_detail' schedule.pk %}" class="text-decoration-none">{% translate "vista de lista" %}</a>.
             </p>
         </div>
     </div>

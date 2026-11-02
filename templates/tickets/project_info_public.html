@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -228,8 +229,8 @@
         <div class="cat-card">
           <div class="cat-card-header">
             <span class="cat-dot-sm"></span>
-            {% if category %}{{ category.name }}{% else %}Sin categoría{% endif %}
-            <span class="ms-auto opacity-75" style="font-size:.72rem;font-weight:400;">{{ cat_lines|length }} ítem{% if cat_lines|length != 1 %}s{% endif %}</span>
+            {% if category %}{{ category.name }}{% else %}{% translate "Sin categoría" %}{% endif %}
+            <span class="ms-auto opacity-75" style="font-size:.72rem;font-weight:400;">{{ cat_lines|length }} ítem{% if cat_lines|length != 1 %}{% translate "s" %}{% endif %}</span>
           </div>
           {% for line in cat_lines %}
           <div class="line-item">
@@ -241,12 +242,12 @@
                    target="_blank"
                    onclick="event.stopPropagation();"
                    style="color:#714B67;font-size:.85rem;"
-                   title="Ver página de esta línea"><i class="bi bi-box-arrow-up-right"></i></a>
+                   title="{% translate 'Ver página de esta línea' %}"><i class="bi bi-box-arrow-up-right"></i></a>
               </span>
               <i class="bi bi-chevron-down line-chevron"></i>
             </button>
             <div class="line-body">
-              {% if line.body %}<div>{{ line.body|trim }}</div>{% else %}<div class="text-muted fst-italic">Sin descripción.</div>{% endif %}
+              {% if line.body %}<div>{{ line.body|trim }}</div>{% else %}<div class="text-muted fst-italic">{% translate "Sin descripción." %}</div>{% endif %}
               {% with line_comments=line.comments.all %}
               {% if line_comments %}
               <div class="line-comments-header"><i class="bi bi-chat-left-text me-1"></i>Comentarios ({{ line_comments|length }})</div>
@@ -260,7 +261,7 @@
               {% endif %}
               {% endwith %}
               <a href="{% url 'project_info_line_public' line.public_share_token %}" target="_blank" class="btn-ver-linea">
-                <i class="bi bi-chat-square-text"></i> Comentar en esta línea
+                <i class="bi bi-chat-square-text"></i> {% translate "Comentar en esta línea" %}
               </a>
             </div>
           </div>
@@ -279,8 +280,8 @@
         <div class="cat-card">
           <div class="cat-card-header">
             <span class="cat-dot-sm"></span>
-            {% if category %}{{ category.name }}{% else %}Sin categoría{% endif %}
-            <span class="ms-auto opacity-75" style="font-size:.72rem;font-weight:400;">{{ cat_lines|length }} ítem{% if cat_lines|length != 1 %}s{% endif %}</span>
+            {% if category %}{{ category.name }}{% else %}{% translate "Sin categoría" %}{% endif %}
+            <span class="ms-auto opacity-75" style="font-size:.72rem;font-weight:400;">{{ cat_lines|length }} ítem{% if cat_lines|length != 1 %}{% translate "s" %}{% endif %}</span>
           </div>
           {% for line in cat_lines %}
           <div class="line-item">
@@ -292,12 +293,12 @@
                    target="_blank"
                    onclick="event.stopPropagation();"
                    style="color:#714B67;font-size:.85rem;"
-                   title="Ver página de esta línea"><i class="bi bi-box-arrow-up-right"></i></a>
+                   title="{% translate 'Ver página de esta línea' %}"><i class="bi bi-box-arrow-up-right"></i></a>
               </span>
               <i class="bi bi-chevron-down line-chevron"></i>
             </button>
             <div class="line-body">
-              {% if line.body %}<div>{{ line.body|trim }}</div>{% else %}<div class="text-muted fst-italic">Sin descripción.</div>{% endif %}
+              {% if line.body %}<div>{{ line.body|trim }}</div>{% else %}<div class="text-muted fst-italic">{% translate "Sin descripción." %}</div>{% endif %}
               {% with line_comments=line.comments.all %}
               {% if line_comments %}
               <div class="line-comments-header"><i class="bi bi-chat-left-text me-1"></i>Comentarios ({{ line_comments|length }})</div>
@@ -311,7 +312,7 @@
               {% endif %}
               {% endwith %}
               <a href="{% url 'project_info_line_public' line.public_share_token %}" target="_blank" class="btn-ver-linea">
-                <i class="bi bi-chat-square-text"></i> Comentar en esta línea
+                <i class="bi bi-chat-square-text"></i> {% translate "Comentar en esta línea" %}
               </a>
             </div>
           </div>
@@ -325,7 +326,7 @@
   {% else %}
   <div class="text-center py-5" style="color:#94a3b8;">
     <i class="bi bi-folder-open display-3 d-block mb-3"></i>
-    Este proyecto no tiene líneas aún.
+    {% translate "Este proyecto no tiene líneas aún." %}
   </div>
   {% endif %}
 
@@ -333,7 +334,7 @@
   <!-- Enlaces — minimizado solo si hay pocos (< 10), se puede ampliar -->
   <div class="links-collapse-wrap mt-4">
     <button type="button" class="links-toggle-btn{% if links|length >= 10 %} open{% endif %}" onclick="toggleLinks(this)">
-      <span><i class="bi bi-link-45deg me-2"></i>Enlaces<span class="links-count">{{ links|length }}</span></span>
+      <span><i class="bi bi-link-45deg me-2"></i>{% translate "Enlaces" %}<span class="links-count">{{ links|length }}</span></span>
       <i class="bi bi-chevron-down links-chevron"></i>
     </button>
     <div class="links-panel{% if links|length >= 10 %} show{% endif %}">
@@ -351,7 +352,7 @@
             <a href="{% url 'project_info_link_public' l.public_share_token %}"
                class="btn btn-sm flex-shrink-0"
                style="background:#714B67;color:#fff;">
-              <i class="bi bi-box-arrow-up-right me-1"></i>Ver
+              <i class="bi bi-box-arrow-up-right me-1"></i>{% translate "Ver" %}
             </a>
           </div>
         </div>

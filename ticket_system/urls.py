@@ -27,6 +27,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('tickets.urls')),
     path('login/', CustomLoginView.as_view(), name='login'),
+    path('i18n/', include('django.conf.urls.i18n')),  # set_language
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
 ]
 

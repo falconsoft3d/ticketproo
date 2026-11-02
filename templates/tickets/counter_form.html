@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -7,7 +8,7 @@
         <div class="col-lg-8">
             <div class="mb-4">
                 <a href="{% url 'counter_list' %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-1"></i> Volver a la lista
+                    <i class="bi bi-arrow-left me-1"></i> {% translate "Volver a la lista" %}
                 </a>
             </div>
 
@@ -87,10 +88,10 @@
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'counter_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                                <i class="bi bi-x-circle me-1"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-1"></i> Guardar
+                                <i class="bi bi-check-circle me-1"></i> {% translate "Guardar" %}
                             </button>
                         </div>
                     </form>

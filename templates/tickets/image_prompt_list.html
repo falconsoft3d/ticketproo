@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Mis Prompts de Imágenes{% endblock %}
+{% block title %}{% translate "Mis Prompts de Imágenes" %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row mb-4">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Mis Prompts</li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                    <li class="breadcrumb-item active">{% translate "Mis Prompts" %}</li>
                 </ol>
             </nav>
         </div>
@@ -18,12 +19,12 @@
 
     <div class="row mb-4">
         <div class="col-md-6">
-            <h2><i class="bi bi-list-task text-primary"></i> Mis Prompts de Imágenes</h2>
+            <h2><i class="bi bi-list-task text-primary"></i> {% translate "Mis Prompts de Imágenes" %}</h2>
             <p class="text-muted">Total: {{ total_prompts }} prompt{{ total_prompts|pluralize }}</p>
         </div>
         <div class="col-md-6 text-end">
             <a href="{% url 'image_prompt_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Generar Nuevo Prompt
+                <i class="bi bi-plus-circle"></i> {% translate "Generar Nuevo Prompt" %}
             </a>
         </div>
     </div>
@@ -34,14 +35,14 @@
                 <div class="card-body">
                     <div class="input-group">
                         <input type="text" name="search" class="form-control" 
-                               placeholder="Buscar por título, prompt o etiquetas..." 
+                               placeholder="{% translate 'Buscar por título, prompt o etiquetas...' %}" 
                                value="{{ search }}">
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-search"></i> Buscar
+                            <i class="bi bi-search"></i> {% translate "Buscar" %}
                         </button>
                         {% if search %}
                         <a href="{% url 'image_prompt_list' %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Limpiar
+                            <i class="bi bi-x-circle"></i> {% translate "Limpiar" %}
                         </a>
                         {% endif %}
                     </div>
@@ -61,7 +62,7 @@
                              style="height: 250px; object-fit: cover;" alt="{{ prompt.title }}">
                         {% if prompt.is_public %}
                         <span class="badge bg-success position-absolute top-0 end-0 m-2">
-                            <i class="bi bi-eye"></i> Público
+                            <i class="bi bi-eye"></i> {% translate "Público" %}
                         </span>
                         {% endif %}
                     </div>
@@ -90,10 +91,10 @@
                 <div class="card-footer bg-transparent border-0 pt-0">
                     <div class="btn-group w-100" role="group">
                         <a href="{% url 'image_prompt_detail' prompt.pk %}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye"></i> Ver
+                            <i class="bi bi-eye"></i> {% translate "Ver" %}
                         </a>
                         <a href="{% url 'image_prompt_edit' prompt.pk %}" class="btn btn-sm btn-outline-warning">
-                            <i class="bi bi-pencil"></i> Editar
+                            <i class="bi bi-pencil"></i> {% translate "Editar" %}
                         </a>
                         <a href="{% url 'image_prompt_delete' prompt.pk %}" class="btn btn-sm btn-outline-danger">
                             <i class="bi bi-trash"></i>
@@ -107,14 +108,14 @@
 
     <!-- Paginación -->
     {% if page_obj.has_other_pages %}
-    <nav aria-label="Page navigation" class="mt-5">
+    <nav aria-label="{% translate 'Page navigation' %}" class="mt-5">
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}">Primera</a>
+                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}">{% translate "Primera" %}</a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">Anterior</a>
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">{% translate "Anterior" %}</a>
             </li>
             {% endif %}
 
@@ -124,10 +125,10 @@
 
             {% if page_obj.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}">Siguiente</a>
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}">{% translate "Siguiente" %}</a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}">Última</a>
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}">{% translate "Última" %}</a>
             </li>
             {% endif %}
         </ul>
@@ -139,10 +140,10 @@
         <div class="col-12">
             <div class="alert alert-info text-center">
                 <i class="bi bi-info-circle fs-1"></i>
-                <h4 class="mt-3">No tienes prompts generados aún</h4>
-                <p>¡Comienza subiendo tu primera imagen!</p>
+                <h4 class="mt-3">{% translate "No tienes prompts generados aún" %}</h4>
+                <p>{% translate "¡Comienza subiendo tu primera imagen!" %}</p>
                 <a href="{% url 'image_prompt_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Generar Primer Prompt
+                    <i class="bi bi-plus-circle"></i> {% translate "Generar Primer Prompt" %}
                 </a>
             </div>
         </div>

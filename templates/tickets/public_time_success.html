@@ -1,7 +1,8 @@
 {% extends 'mobile_base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Registro Exitoso - Control de Horario{% endblock %}
+{% block title %}{% translate "Registro Exitoso - Control de Horario" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -192,9 +193,9 @@
         <!-- Título Principal -->
         <h2 class="success-title">
             {% if action == 'entrada' %}
-                ¡Entrada Registrada!
+                {% translate "¡Entrada Registrada!" %}
             {% else %}
-                ¡Salida Registrada!
+                {% translate "¡Salida Registrada!" %}
             {% endif %}
         </h2>
         
@@ -212,12 +213,12 @@
         <!-- Información Específica de la Acción -->
         <div class="action-info">
             {% if action == 'entrada' %}
-                <h5><i class="fas fa-clock me-2"></i>Jornada Iniciada</h5>
-                <p class="mb-0">Tu jornada laboral ha comenzado exitosamente.</p>
-                <small class="text-muted">Recuerda registrar tu salida al finalizar.</small>
+                <h5><i class="fas fa-clock me-2"></i>{% translate "Jornada Iniciada" %}</h5>
+                <p class="mb-0">{% translate "Tu jornada laboral ha comenzado exitosamente." %}</p>
+                <small class="text-muted">{% translate "Recuerda registrar tu salida al finalizar." %}</small>
             {% else %}
-                <h5><i class="fas fa-check-circle me-2"></i>Jornada Finalizada</h5>
-                <p class="mb-0">Tu jornada laboral ha sido completada.</p>
+                <h5><i class="fas fa-check-circle me-2"></i>{% translate "Jornada Finalizada" %}</h5>
+                <p class="mb-0">{% translate "Tu jornada laboral ha sido completada." %}</p>
                 
                 {% if duration %}
                     <div class="duration-highlight">
@@ -231,7 +232,7 @@
         <!-- Mostrar Notas si las hay -->
         {% if notes %}
             <div class="notes-display">
-                <h6><i class="fas fa-sticky-note me-2"></i>Notas:</h6>
+                <h6><i class="fas fa-sticky-note me-2"></i>{% translate "Notas:" %}</h6>
                 <p class="mb-0">{{ notes }}</p>
             </div>
         {% endif %}
@@ -239,13 +240,13 @@
         <!-- Botones de Acción -->
         <a href="{% url 'public_time_clock' token %}" class="btn btn-return">
             <i class="fas fa-arrow-left me-2"></i>
-            Volver al Control de Horario
+            {% translate "Volver al Control de Horario" %}
         </a>
         
         <!-- Información de Auto-redirección -->
         <div class="countdown-info">
             <i class="fas fa-clock me-1"></i>
-            Redirigiendo automáticamente en <span id="countdown">8</span> segundos...
+            {% translate "Redirigiendo automáticamente en" %} <span id="countdown">8</span> {% translate "segundos..." %}
         </div>
     </div>
 </div>

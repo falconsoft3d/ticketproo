@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -10,32 +11,32 @@
                     <h4 class="mb-0">
                         <i class="bi bi-paypal"></i> {{ link.product_name }}
                     </h4>
-                    <small class="text-white-50">Producto de Pago Reutilizable</small>
+                    <small class="text-white-50">{% translate "Producto de Pago Reutilizable" %}</small>
                 </div>
                 <div class="card-body">
                     <div class="row mb-4">
                         <div class="col-md-3 text-center">
                             <h3 class="text-primary mb-0">${{ link.amount }}</h3>
-                            <small class="text-muted">Precio</small>
+                            <small class="text-muted">{% translate "Precio" %}</small>
                         </div>
                         <div class="col-md-3 text-center">
                             <h3 class="text-success mb-0">{{ link.get_total_orders_count }}</h3>
-                            <small class="text-muted">Órdenes Totales</small>
+                            <small class="text-muted">{% translate "Órdenes Totales" %}</small>
                         </div>
                         <div class="col-md-3 text-center">
                             <h3 class="text-info mb-0">${{ link.get_total_revenue|floatformat:2 }}</h3>
-                            <small class="text-muted">Revenue Total</small>
+                            <small class="text-muted">{% translate "Revenue Total" %}</small>
                         </div>
                         <div class="col-md-3 text-center">
                             <a href="{% url 'paypal_link_orders' link.public_token %}" class="btn btn-sm btn-primary">
-                                <i class="bi bi-list-ul"></i> Ver Órdenes
+                                <i class="bi bi-list-ul"></i> {% translate "Ver Órdenes" %}
                             </a>
                         </div>
                     </div>
                     
                     {% if link.description %}
                     <div class="mb-4">
-                        <h6 class="text-muted">Descripción</h6>
+                        <h6 class="text-muted">{% translate "Descripción" %}</h6>
                         <p>{{ link.description|linebreaks }}</p>
                     </div>
                     {% endif %}
@@ -43,7 +44,7 @@
                     <div class="row mb-4">
                         <div class="col-md-6 mb-3">
                             <h6 class="text-muted mb-2">
-                                <i class="bi bi-calendar"></i> Fecha de Creación
+                                <i class="bi bi-calendar"></i> {% translate "Fecha de Creación" %}
                             </h6>
                             <p class="mb-0">{{ link.created_at|date:"d/m/Y H:i" }}</p>
                         </div>
@@ -51,7 +52,7 @@
                         {% if link.expires_at %}
                         <div class="col-md-6 mb-3">
                             <h6 class="text-muted mb-2">
-                                <i class="bi bi-clock"></i> Fecha de Expiración
+                                <i class="bi bi-clock"></i> {% translate "Fecha de Expiración" %}
                             </h6>
                             <p class="mb-0">{{ link.expires_at|date:"d/m/Y" }}</p>
                         </div>
@@ -60,7 +61,7 @@
                         {% if link.company %}
                         <div class="col-md-6 mb-3">
                             <h6 class="text-muted mb-2">
-                                <i class="bi bi-building"></i> Empresa
+                                <i class="bi bi-building"></i> {% translate "Empresa" %}
                             </h6>
                             <p class="mb-0">{{ link.company.name }}</p>
                         </div>
@@ -69,7 +70,7 @@
                         {% if link.attachment %}
                         <div class="col-md-6 mb-3">
                             <h6 class="text-muted mb-2">
-                                <i class="bi bi-paperclip"></i> Archivo Adjunto
+                                <i class="bi bi-paperclip"></i> {% translate "Archivo Adjunto" %}
                             </h6>
                             <p class="mb-0">
                                 <span class="badge bg-success">
@@ -85,7 +86,7 @@
                     {% if link.notes %}
                     <div class="alert alert-info">
                         <h6 class="alert-heading">
-                            <i class="bi bi-journal-text"></i> Notas Internas
+                            <i class="bi bi-journal-text"></i> {% translate "Notas Internas" %}
                         </h6>
                         <p class="mb-0">{{ link.notes|linebreaks }}</p>
                     </div>
@@ -99,7 +100,7 @@
             <div class="card shadow mb-4">
                 <div class="card-header bg-light">
                     <h6 class="mb-0">
-                        <i class="bi bi-link-45deg"></i> URL de Pago Pública
+                        <i class="bi bi-link-45deg"></i> {% translate "URL de Pago Pública" %}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -111,13 +112,13 @@
                         </button>
                     </div>
                     <div class="alert alert-info small mb-2">
-                        <i class="bi bi-info-circle"></i> <strong>Producto Reutilizable:</strong> Este enlace puede ser usado múltiples veces. Cada compra crea una orden individual.
+                        <i class="bi bi-info-circle"></i> <strong>{% translate "Producto Reutilizable:" %}</strong> {% translate "Este enlace puede ser usado múltiples veces. Cada compra crea una orden individual." %}
                     </div>
                     <a href="{% url 'paypal_link_orders' link.public_token %}" class="btn btn-sm btn-outline-primary w-100 mb-2">
-                        <i class="bi bi-list-ul"></i> Ver Todas las Órdenes
+                        <i class="bi bi-list-ul"></i> {% translate "Ver Todas las Órdenes" %}
                     </a>
                     <a href="{{ link.public_url }}" target="_blank" class="btn btn-sm btn-outline-success w-100">
-                        <i class="bi bi-eye"></i> Ver Página de Pago
+                        <i class="bi bi-eye"></i> {% translate "Ver Página de Pago" %}
                     </a>
                 </div>
             </div>
@@ -126,25 +127,25 @@
             <div class="card shadow mb-4">
                 <div class="card-header bg-light">
                     <h6 class="mb-0">
-                        <i class="bi bi-gear"></i> Acciones
+                        <i class="bi bi-gear"></i> {% translate "Acciones" %}
                     </h6>
                 </div>
                 <div class="card-body d-grid gap-2">
                     <a href="{% url 'paypal_link_edit' link.pk %}" class="btn btn-primary">
-                        <i class="bi bi-pencil"></i> Editar Producto
+                        <i class="bi bi-pencil"></i> {% translate "Editar Producto" %}
                     </a>
                     
                     <a href="{% url 'paypal_link_orders' link.public_token %}" class="btn btn-success">
-                        <i class="bi bi-list-check"></i> Ver Todas las Órdenes
+                        <i class="bi bi-list-check"></i> {% translate "Ver Todas las Órdenes" %}
                     </a>
                     
                     <a href="{% url 'paypal_link_delete' link.pk %}" class="btn btn-danger"
                        onclick="return confirm('¿Eliminar este producto? Las órdenes existentes NO se eliminarán.');">
-                        <i class="bi bi-trash"></i> Eliminar Producto
+                        <i class="bi bi-trash"></i> {% translate "Eliminar Producto" %}
                     </a>
                     
                     <a href="{% url 'paypal_link_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver a Lista
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver a Lista" %}
                     </a>
                 </div>
             </div>
@@ -153,17 +154,17 @@
             <div class="card shadow">
                 <div class="card-header bg-light">
                     <h6 class="mb-0">
-                        <i class="bi bi-info-circle"></i> Información
+                        <i class="bi bi-info-circle"></i> {% translate "Información" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <small class="text-muted d-block">Token Público</small>
+                        <small class="text-muted d-block">{% translate "Token Público" %}</small>
                         <code class="small">{{ link.public_token }}</code>
                     </div>
                     
                     <div class="mb-0">
-                        <small class="text-muted d-block">Última Actualización</small>
+                        <small class="text-muted d-block">{% translate "Última Actualización" %}</small>
                         {{ link.updated_at|date:"d/m/Y H:i" }}
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -12,9 +13,9 @@
                 <div>
                     <h1 class="h3 mb-0">
                         <i class="bi bi-trash text-danger"></i>
-                        Eliminar Cotización
+                        {% translate "Eliminar Cotización" %}
                     </h1>
-                    <p class="text-muted mb-0">Esta acción no se puede deshacer</p>
+                    <p class="text-muted mb-0">{% translate "Esta acción no se puede deshacer" %}</p>
                 </div>
             </div>
 
@@ -23,24 +24,24 @@
                 <div class="card-header bg-danger text-white">
                     <h5 class="mb-0">
                         <i class="bi bi-exclamation-triangle"></i>
-                        Confirmar Eliminación
+                        {% translate "Confirmar Eliminación" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-danger" role="alert">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>¿Está seguro que desea eliminar esta cotización?</strong>
+                        <strong>{% translate "¿Está seguro que desea eliminar esta cotización?" %}</strong>
                         <br>
-                        Esta acción es <strong>irreversible</strong> y eliminará permanentemente toda la información asociada.
+                        {% translate "Esta acción es" %} <strong>{% translate "irreversible" %}</strong> {% translate "y eliminará permanentemente toda la información asociada." %}
                     </div>
 
                     <!-- Información de la cotización -->
                     <div class="bg-light p-3 rounded mb-4">
-                        <h6 class="fw-bold mb-3">Información de la cotización a eliminar:</h6>
+                        <h6 class="fw-bold mb-3">{% translate "Información de la cotización a eliminar:" %}</h6>
                         
                         <div class="row">
                             <div class="col-sm-4">
-                                <strong>Secuencia:</strong>
+                                <strong>{% translate "Secuencia:" %}</strong>
                             </div>
                             <div class="col-sm-8">
                                 {{ quotation.sequence }}
@@ -49,7 +50,7 @@
                         
                         <div class="row">
                             <div class="col-sm-4">
-                                <strong>Empresa:</strong>
+                                <strong>{% translate "Empresa:" %}</strong>
                             </div>
                             <div class="col-sm-8">
                                 {{ quotation.company.name }}
@@ -58,7 +59,7 @@
                         
                         <div class="row">
                             <div class="col-sm-4">
-                                <strong>Vendedor:</strong>
+                                <strong>{% translate "Vendedor:" %}</strong>
                             </div>
                             <div class="col-sm-8">
                                 {{ quotation.salesperson.get_full_name|default:quotation.salesperson.username }}
@@ -67,7 +68,7 @@
                         
                         <div class="row">
                             <div class="col-sm-4">
-                                <strong>Fecha:</strong>
+                                <strong>{% translate "Fecha:" %}</strong>
                             </div>
                             <div class="col-sm-8">
                                 {{ quotation.date|date:"d/m/Y" }}
@@ -76,26 +77,26 @@
                         
                         <div class="row">
                             <div class="col-sm-4">
-                                <strong>Estado:</strong>
+                                <strong>{% translate "Estado:" %}</strong>
                             </div>
                             <div class="col-sm-8">
                                 {% if quotation.status == 'draft' %}
-                                    <span class="badge bg-secondary">Borrador</span>
+                                    <span class="badge bg-secondary">{% translate "Borrador" %}</span>
                                 {% elif quotation.status == 'sent' %}
-                                    <span class="badge bg-primary">Enviada</span>
+                                    <span class="badge bg-primary">{% translate "Enviada" %}</span>
                                 {% elif quotation.status == 'approved' %}
-                                    <span class="badge bg-success">Aprobada</span>
+                                    <span class="badge bg-success">{% translate "Aprobada" %}</span>
                                 {% elif quotation.status == 'rejected' %}
-                                    <span class="badge bg-danger">Rechazada</span>
+                                    <span class="badge bg-danger">{% translate "Rechazada" %}</span>
                                 {% elif quotation.status == 'expired' %}
-                                    <span class="badge bg-warning">Expirada</span>
+                                    <span class="badge bg-warning">{% translate "Expirada" %}</span>
                                 {% endif %}
                             </div>
                         </div>
                         
                         <div class="row">
                             <div class="col-sm-4">
-                                <strong>Creada:</strong>
+                                <strong>{% translate "Creada:" %}</strong>
                             </div>
                             <div class="col-sm-8">
                                 {{ quotation.created_at|date:"d/m/Y H:i" }}
@@ -109,11 +110,11 @@
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-danger">
                                 <i class="bi bi-trash"></i>
-                                Sí, Eliminar Cotización
+                                {% translate "Sí, Eliminar Cotización" %}
                             </button>
                             <a href="{% url 'quotation_detail' quotation.id %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle"></i>
-                                Cancelar
+                                {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>
@@ -125,12 +126,12 @@
                 <div class="card-body">
                     <h6 class="fw-bold mb-2">
                         <i class="bi bi-info-circle text-primary"></i>
-                        Qué se eliminará:
+                        {% translate "Qué se eliminará:" %}
                     </h6>
                     <ul class="mb-0">
-                        <li>La cotización y toda su información</li>
-                        <li>Los datos asociados (descripción, fechas, etc.)</li>
-                        <li>Referencias en el historial del sistema</li>
+                        <li>{% translate "La cotización y toda su información" %}</li>
+                        <li>{% translate "Los datos asociados (descripción, fechas, etc.)" %}</li>
+                        <li>{% translate "Referencias en el historial del sistema" %}</li>
                     </ul>
                 </div>
             </div>

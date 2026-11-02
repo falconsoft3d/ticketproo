@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}{% if form.instance.pk %}Editar Reunión{% else %}Nueva Reunión{% endif %}{% endblock %}
+{% block title %}{% if form.instance.pk %}{% translate "Editar Reunión" %}{% else %}{% translate "Nueva Reunión" %}{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -106,7 +107,7 @@
                 <div class="card-header">
                     <h3 class="mb-0">
                         <i class="fas fa-calendar-alt"></i> 
-                        {% if form.instance.pk %}Editar Reunión{% else %}Nueva Reunión{% endif %}
+                        {% if form.instance.pk %}{% translate "Editar Reunión" %}{% else %}{% translate "Nueva Reunión" %}{% endif %}
                     </h3>
                 </div>
                 <div class="card-body">
@@ -123,7 +124,7 @@
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label for="{{ form.title.id_for_label }}" class="form-label required">
-                                        <i class="fas fa-heading"></i> Título de la Reunión
+                                        <i class="fas fa-heading"></i> {% translate "Título de la Reunión" %}
                                     </label>
                                     {{ form.title }}
                                     {% if form.title.errors %}
@@ -131,7 +132,7 @@
                                             {{ form.title.errors }}
                                         </div>
                                     {% endif %}
-                                    <small class="form-text text-muted">Ingresa un título descriptivo para la reunión</small>
+                                    <small class="form-text text-muted">{% translate "Ingresa un título descriptivo para la reunión" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -140,12 +141,12 @@
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label for="{{ form.description.id_for_label }}" class="form-label">
-                                        <i class="fas fa-align-left"></i> Descripción
+                                        <i class="fas fa-align-left"></i> {% translate "Descripción" %}
                                         <button type="button" class="btn btn-success btn-sm ms-2" id="improveDescriptionBtn" onclick="improveDescription()">
-                                            <i class="fas fa-magic"></i> Mejorar con IA
+                                            <i class="fas fa-magic"></i> {% translate "Mejorar con IA" %}
                                         </button>
                                         <button type="button" class="btn btn-info btn-sm ms-2" id="voiceAssistantBtn" onclick="toggleVoiceAssistant()">
-                                            <i class="fas fa-microphone" id="micIcon"></i> <span id="voiceButtonText">Activar IA de Voz</span>
+                                            <i class="fas fa-microphone" id="micIcon"></i> <span id="voiceButtonText">{% translate "Activar IA de Voz" %}</span>
                                         </button>
                                     </label>
                                     {{ form.description }}
@@ -155,15 +156,15 @@
                                         </div>
                                     {% endif %}
                                     <small class="form-text text-muted">
-                                        Describe el objetivo y agenda de la reunión. 
-                                        <strong>Tip:</strong> Usa el botón de IA de Voz para dictar y obtener recomendaciones automáticas.
+                                        {% translate "Describe el objetivo y agenda de la reunión." %} 
+                                        <strong>{% translate "Tip:" %}</strong> {% translate "Usa el botón de IA de Voz para dictar y obtener recomendaciones automáticas." %}
                                     </small>
                                     
                                     <!-- Indicador de estado de voz -->
                                     <div id="voiceStatus" class="mt-2" style="display: none;">
                                         <div class="alert alert-info d-flex align-items-center">
                                             <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                                            <span id="voiceStatusText">Iniciando reconocimiento de voz...</span>
+                                            <span id="voiceStatusText">{% translate "Iniciando reconocimiento de voz..." %}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -176,15 +177,15 @@
                                 <div class="card border-primary">
                                     <div class="card-header bg-primary text-white">
                                         <h6 class="mb-0">
-                                            <i class="fas fa-robot"></i> Recomendaciones de IA
-                                            <small class="float-end">Basado en el contexto detectado</small>
+                                            <i class="fas fa-robot"></i> {% translate "Recomendaciones de IA" %}
+                                            <small class="float-end">{% translate "Basado en el contexto detectado" %}</small>
                                         </h6>
                                     </div>
                                     <div class="card-body">
                                         <div id="aiRecommendations">
                                             <div class="text-center text-muted">
                                                 <i class="fas fa-brain fa-2x mb-2"></i>
-                                                <p>La IA analizará tu contenido y generará recomendaciones inteligentes...</p>
+                                                <p>{% translate "La IA analizará tu contenido y generará recomendaciones inteligentes..." %}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -197,9 +198,9 @@
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label for="{{ form.spin_methodology.id_for_label }}" class="form-label">
-                                        <i class="fas fa-question-circle"></i> Metodología SPIN
+                                        <i class="fas fa-question-circle"></i> {% translate "Metodología SPIN" %}
                                         <button type="button" class="btn btn-success btn-sm ms-2" id="generateSpinBtn" onclick="generateSpinMethodology()">
-                                            <i class="fas fa-robot"></i> Generar con IA
+                                            <i class="fas fa-robot"></i> {% translate "Generar con IA" %}
                                         </button>
                                     </label>
                                     {{ form.spin_methodology }}
@@ -209,13 +210,13 @@
                                         </div>
                                     {% endif %}
                                     <small class="form-text text-muted">
-                                        <strong>🤖 Metodología SPIN con IA:</strong> 
-                                        <span class="badge bg-info ms-1">S</span> Situación
-                                        <span class="badge bg-warning ms-1">P</span> Problema  
-                                        <span class="badge bg-danger ms-1">I</span> Implicación
-                                        <span class="badge bg-success ms-1">N</span> Necesidad-Beneficio
+                                        <strong>{% translate "🤖 Metodología SPIN con IA:" %}</strong> 
+                                        <span class="badge bg-info ms-1">S</span> {% translate "Situación" %}
+                                        <span class="badge bg-warning ms-1">P</span> {% translate "Problema" %}  
+                                        <span class="badge bg-danger ms-1">I</span> {% translate "Implicación" %}
+                                        <span class="badge bg-success ms-1">N</span> {% translate "Necesidad-Beneficio" %}
                                         <br>
-                                        <i class="fas fa-brain"></i> La inteligencia artificial analizará el contexto y generará preguntas estratégicas personalizadas.
+                                        <i class="fas fa-brain"></i> {% translate "La inteligencia artificial analizará el contexto y generará preguntas estratégicas personalizadas." %}
                                     </small>
                                 </div>
                             </div>
@@ -225,7 +226,7 @@
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label for="{{ form.company.id_for_label }}" class="form-label">
-                                        <i class="fas fa-building"></i> Empresa (Opcional)
+                                        <i class="fas fa-building"></i> {% translate "Empresa (Opcional)" %}
                                     </label>
                                     {{ form.company }}
                                     {% if form.company.errors %}
@@ -233,7 +234,7 @@
                                             {{ form.company.errors }}
                                         </div>
                                     {% endif %}
-                                    <small class="form-text text-muted">Selecciona la empresa relacionada con esta reunión (uso interno)</small>
+                                    <small class="form-text text-muted">{% translate "Selecciona la empresa relacionada con esta reunión (uso interno)" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -242,7 +243,7 @@
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label for="{{ form.product.id_for_label }}" class="form-label">
-                                        <i class="fas fa-box"></i> Producto a Discutir (Opcional)
+                                        <i class="fas fa-box"></i> {% translate "Producto a Discutir (Opcional)" %}
                                     </label>
                                     {{ form.product }}
                                     {% if form.product.errors %}
@@ -253,7 +254,7 @@
                                     <small class="form-text text-muted">
                                         {{ form.product.help_text }}
                                         <br>
-                                        <i class="fas fa-robot"></i> El producto seleccionado se incluirá en el análisis de IA para generar preguntas SPIN más precisas
+                                        <i class="fas fa-robot"></i> {% translate "El producto seleccionado se incluirá en el análisis de IA para generar preguntas SPIN más precisas" %}
                                     </small>
                                 </div>
                             </div>
@@ -263,7 +264,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="{{ form.meeting_date.id_for_label }}" class="form-label required">
-                                        <i class="fas fa-calendar"></i> Fecha
+                                        <i class="fas fa-calendar"></i> {% translate "Fecha" %}
                                     </label>
                                     {{ form.meeting_date }}
                                     {% if form.meeting_date.errors %}
@@ -276,7 +277,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="{{ form.meeting_time.id_for_label }}" class="form-label required">
-                                        <i class="fas fa-clock"></i> Hora
+                                        <i class="fas fa-clock"></i> {% translate "Hora" %}
                                     </label>
                                     {{ form.meeting_time }}
                                     {% if form.meeting_time.errors %}
@@ -292,7 +293,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="{{ form.duration.id_for_label }}" class="form-label">
-                                        <i class="fas fa-hourglass-half"></i> Duración (minutos)
+                                        <i class="fas fa-hourglass-half"></i> {% translate "Duración (minutos)" %}
                                     </label>
                                     {{ form.duration }}
                                     {% if form.duration.errors %}
@@ -300,13 +301,13 @@
                                             {{ form.duration.errors }}
                                         </div>
                                     {% endif %}
-                                    <small class="form-text text-muted">Duración estimada en minutos</small>
+                                    <small class="form-text text-muted">{% translate "Duración estimada en minutos" %}</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="{{ form.status.id_for_label }}" class="form-label">
-                                        <i class="fas fa-flag"></i> Estado
+                                        <i class="fas fa-flag"></i> {% translate "Estado" %}
                                     </label>
                                     {{ form.status }}
                                     {% if form.status.errors %}
@@ -323,14 +324,14 @@
                                 <div class="form-check">
                                     {{ form.allow_questions }}
                                     <label class="form-check-label" for="{{ form.allow_questions.id_for_label }}">
-                                        <i class="fas fa-question-circle"></i> Permitir preguntas de los asistentes
+                                        <i class="fas fa-question-circle"></i> {% translate "Permitir preguntas de los asistentes" %}
                                     </label>
                                     {% if form.allow_questions.errors %}
                                         <div class="invalid-feedback d-block">
                                             {{ form.allow_questions.errors }}
                                         </div>
                                     {% endif %}
-                                    <small class="form-text text-muted">Los asistentes podrán enviar preguntas desde el link público</small>
+                                    <small class="form-text text-muted">{% translate "Los asistentes podrán enviar preguntas desde el link público" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -339,7 +340,7 @@
                         <div class="row mt-4">
                             <div class="col-md-12">
                                 <div class="alert alert-info">
-                                    <h5><i class="fas fa-link"></i> Link Público de la Reunión</h5>
+                                    <h5><i class="fas fa-link"></i> {% translate "Link Público de la Reunión" %}</h5>
                                     <div class="input-group">
                                         <input type="text" class="form-control" 
                                                value="{% url 'meeting_public' form.instance.public_token %}" 
@@ -347,12 +348,12 @@
                                         <div class="input-group-append">
                                             <button class="btn btn-outline-secondary" type="button" 
                                                     onclick="copyToClipboard('public-link')">
-                                                <i class="fas fa-copy"></i> Copiar
+                                                <i class="fas fa-copy"></i> {% translate "Copiar" %}
                                             </button>
                                         </div>
                                     </div>
                                     <small class="text-muted mt-2 d-block">
-                                        Comparte este link con los asistentes para que puedan registrarse y hacer preguntas
+                                        {% translate "Comparte este link con los asistentes para que puedan registrarse y hacer preguntas" %}
                                     </small>
                                 </div>
                             </div>
@@ -364,12 +365,12 @@
                                 <div class="card">
                                     <div class="card-header bg-primary text-white">
                                         <h5 class="mb-0">
-                                            <i class="fas fa-external-link-alt"></i> Enlaces de la Reunión
+                                            <i class="fas fa-external-link-alt"></i> {% translate "Enlaces de la Reunión" %}
                                         </h5>
                                     </div>
                                     <div class="card-body">
                                         <p class="text-muted">
-                                            <i class="fas fa-info-circle"></i> Agrega enlaces útiles que se mostrarán en el enlace público de la reunión
+                                            <i class="fas fa-info-circle"></i> {% translate "Agrega enlaces útiles que se mostrarán en el enlace público de la reunión" %}
                                         </p>
                                         
                                         <!-- Lista de enlaces existentes -->
@@ -398,7 +399,7 @@
                                             </div>
                                             {% empty %}
                                             <div class="alert alert-secondary" id="no-links-message">
-                                                <i class="fas fa-info-circle"></i> No hay enlaces agregados aún
+                                                <i class="fas fa-info-circle"></i> {% translate "No hay enlaces agregados aún" %}
                                             </div>
                                             {% endfor %}
                                         </div>
@@ -406,20 +407,20 @@
                                         <!-- Formulario para agregar nuevo enlace -->
                                         <div class="card border-success">
                                             <div class="card-header bg-success text-white">
-                                                <i class="fas fa-plus-circle"></i> Agregar Nuevo Enlace
+                                                <i class="fas fa-plus-circle"></i> {% translate "Agregar Nuevo Enlace" %}
                                             </div>
                                             <div class="card-body">
                                                 <div class="row">
                                                     <div class="col-md-4">
                                                         <div class="form-group">
-                                                            <label>Título del Enlace *</label>
+                                                            <label>{% translate "Título del Enlace *" %}</label>
                                                             <input type="text" id="link-title" class="form-control" 
-                                                                   placeholder="Ej: Presentación PDF">
+                                                                   placeholder="{% translate 'Ej: Presentación PDF' %}">
                                                         </div>
                                                     </div>
                                                     <div class="col-md-5">
                                                         <div class="form-group">
-                                                            <label>URL *</label>
+                                                            <label>{% translate "URL *" %}</label>
                                                             <input type="url" id="link-url" class="form-control" 
                                                                    placeholder="https://ejemplo.com/documento.pdf">
                                                         </div>
@@ -428,16 +429,16 @@
                                                         <label>&nbsp;</label>
                                                         <button type="button" class="btn btn-success w-100" 
                                                                 onclick="addLink()">
-                                                            <i class="fas fa-plus"></i> Agregar
+                                                            <i class="fas fa-plus"></i> {% translate "Agregar" %}
                                                         </button>
                                                     </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="col-md-12">
                                                         <div class="form-group">
-                                                            <label>Descripción (opcional)</label>
+                                                            <label>{% translate "Descripción (opcional)" %}</label>
                                                             <input type="text" id="link-description" class="form-control" 
-                                                                   placeholder="Descripción breve del enlace">
+                                                                   placeholder="{% translate 'Descripción breve del enlace' %}">
                                                         </div>
                                                     </div>
                                                 </div>
@@ -452,14 +453,14 @@
                         <div class="form-group mt-4">
                             <div class="d-flex justify-content-between">
                                 <a href="{% url 'meeting_list' %}" class="btn btn-secondary">
-                                    <i class="fas fa-arrow-left"></i> Cancelar
+                                    <i class="fas fa-arrow-left"></i> {% translate "Cancelar" %}
                                 </a>
                                 <div class="d-flex gap-2">
                                     {% if form.instance.pk %}
                                     <div class="dropdown">
                                         <button class="btn btn-outline-danger dropdown-toggle" type="button" 
                                                 data-bs-toggle="dropdown" aria-expanded="false"
-                                                title="Opciones de PDF">
+                                                title="{% translate 'Opciones de PDF' %}">
                                             <i class="fas fa-file-pdf"></i> PDF
                                         </button>
                                         <ul class="dropdown-menu">
@@ -467,14 +468,14 @@
                                                 <a class="dropdown-item" 
                                                    href="{% url 'meeting_pdf_download' form.instance.pk %}" 
                                                    target="_blank">
-                                                    <i class="fas fa-download"></i> Descargar PDF
+                                                    <i class="fas fa-download"></i> {% translate "Descargar PDF" %}
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item" 
                                                    href="#" 
                                                    onclick="previewPDF({{ form.instance.pk }})">
-                                                    <i class="fas fa-eye"></i> Vista Previa
+                                                    <i class="fas fa-eye"></i> {% translate "Vista Previa" %}
                                                 </a>
                                             </li>
                                         </ul>
@@ -482,7 +483,7 @@
                                     {% endif %}
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-save"></i> 
-                                        {% if form.instance.pk %}Actualizar Reunión{% else %}Crear Reunión{% endif %}
+                                        {% if form.instance.pk %}{% translate "Actualizar Reunión" %}{% else %}{% translate "Crear Reunión" %}{% endif %}
                                     </button>
                                 </div>
                             </div>

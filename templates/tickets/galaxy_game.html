@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -137,17 +138,17 @@
 
 {% block content %}
 <a href="{% url 'dashboard' %}" class="back-button">
-    <i class="bi bi-arrow-left"></i> Volver al Dashboard
+    <i class="bi bi-arrow-left"></i> {% translate "Volver al Dashboard" %}
 </a>
 
 <div class="game-container">
     <div class="game-header">
-        <h1 class="game-title">🚀 GALAXY DEFENDER 🚀</h1>
+        <h1 class="game-title">{% translate "🚀 GALAXY DEFENDER 🚀" %}</h1>
         <div class="score-display">
-            <span>Puntuación: <span id="score">0</span></span> | 
-            <span>Vidas: <span id="lives">3</span></span> | 
-            <span>Nivel: <span id="level">1</span></span> |
-            <span>Arma: <span id="weapon">🔫</span></span>
+            <span>{% translate "Puntuación:" %} <span id="score">0</span></span> | 
+            <span>{% translate "Vidas:" %} <span id="lives">3</span></span> | 
+            <span>{% translate "Nivel:" %} <span id="level">1</span></span> |
+            <span>{% translate "Arma:" %} <span id="weapon">🔫</span></span>
         </div>
     </div>
 
@@ -155,18 +156,18 @@
 
     <div class="game-controls">
         <div class="control-info">
-            <strong>Controles:</strong> ← → para mover | ESPACIO para disparar | P para pausar
+            <strong>{% translate "Controles:" %}</strong> {% translate "← → para mover | ESPACIO para disparar | P para pausar" %}
         </div>
-        <button id="startGame" class="game-button">🎮 Iniciar Juego</button>
-        <button id="pauseGame" class="game-button" style="display: none;">⏸️ Pausar</button>
-        <button id="restartGame" class="game-button" style="display: none;">🔄 Reiniciar</button>
+        <button id="startGame" class="game-button">{% translate "🎮 Iniciar Juego" %}</button>
+        <button id="pauseGame" class="game-button" style="display: none;">{% translate "⏸️ Pausar" %}</button>
+        <button id="restartGame" class="game-button" style="display: none;">{% translate "🔄 Reiniciar" %}</button>
     </div>
 </div>
 
 <div id="gameOver" class="game-over">
-    <h2>¡GAME OVER!</h2>
-    <div class="final-score">Puntuación Final: <span id="finalScore">0</span></div>
-    <button id="playAgain" class="game-button">🎮 Jugar de Nuevo</button>
+    <h2>{% translate "¡GAME OVER!" %}</h2>
+    <div class="final-score">{% translate "Puntuación Final:" %} <span id="finalScore">0</span></div>
+    <button id="playAgain" class="game-button">{% translate "🎮 Jugar de Nuevo" %}</button>
 </div>
 
 <script>

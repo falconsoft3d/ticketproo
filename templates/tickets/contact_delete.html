@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Eliminar Contacto - TicketProo{% endblock %}
+{% block title %}{% translate "Eliminar Contacto - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -9,16 +10,16 @@
             <div class="card">
                 <div class="card-header bg-danger text-white">
                     <h4 class="mb-0">
-                        <i class="bi bi-trash"></i> Eliminar Contacto
+                        <i class="bi bi-trash"></i> {% translate "Eliminar Contacto" %}
                     </h4>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle"></i>
-                        <strong>¡Advertencia!</strong> Esta acción no se puede deshacer.
+                        <strong>{% translate "¡Advertencia!" %}</strong> {% translate "Esta acción no se puede deshacer." %}
                     </div>
                     
-                    <p>¿Estás seguro de que deseas eliminar el siguiente contacto?</p>
+                    <p>{% translate "¿Estás seguro de que deseas eliminar el siguiente contacto?" %}</p>
                     
                     <div class="card bg-light">
                         <div class="card-body">
@@ -42,22 +43,22 @@
                                 {% endif %}
                             </h5>
                             {% if contact.company %}
-                                <p class="card-text"><strong>Empresa:</strong> {{ contact.company }}</p>
+                                <p class="card-text"><strong>{% translate "Empresa:" %}</strong> {{ contact.company }}</p>
                             {% endif %}
                             {% if contact.position %}
-                                <p class="card-text"><strong>Cargo:</strong> {{ contact.position }}</p>
+                                <p class="card-text"><strong>{% translate "Cargo:" %}</strong> {{ contact.position }}</p>
                             {% endif %}
                             {% if contact.email %}
-                                <p class="card-text"><strong>Email:</strong> {{ contact.email }}</p>
+                                <p class="card-text"><strong>{% translate "Email:" %}</strong> {{ contact.email }}</p>
                             {% endif %}
                             {% if contact.phone %}
-                                <p class="card-text"><strong>Teléfono:</strong> {{ contact.phone }}</p>
+                                <p class="card-text"><strong>{% translate "Teléfono:" %}</strong> {{ contact.phone }}</p>
                             {% endif %}
                             <p class="card-text">
-                                <strong>Fecha de Contacto:</strong> {{ contact.contact_date|date:"d/m/Y H:i" }}
+                                <strong>{% translate "Fecha de Contacto:" %}</strong> {{ contact.contact_date|date:"d/m/Y H:i" }}
                             </p>
                             <p class="card-text">
-                                <strong>Creado por:</strong> {{ contact.created_by.get_full_name|default:contact.created_by.username }}
+                                <strong>{% translate "Creado por:" %}</strong> {{ contact.created_by.get_full_name|default:contact.created_by.username }}
                             </p>
                         </div>
                     </div>
@@ -66,10 +67,10 @@
                         {% csrf_token %}
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'contact_detail' contact.pk %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Sí, Eliminar Contacto
+                                <i class="bi bi-trash"></i> {% translate "Sí, Eliminar Contacto" %}
                             </button>
                         </div>
                     </form>

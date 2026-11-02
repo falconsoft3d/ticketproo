@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load django_bootstrap5 %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -20,9 +21,9 @@
                     </h2>
                     <p class="text-muted mb-0">
                         {% if note %}
-                            Actualizar información de la nota interna
+                            {% translate "Actualizar información de la nota interna" %}
                         {% else %}
-                            Crear nueva nota de interacción con cliente
+                            {% translate "Crear nueva nota de interacción con cliente" %}
                         {% endif %}
                     </p>
                 </div>
@@ -59,7 +60,7 @@
                             <!-- Privacidad -->
                             <div class="col-12">
                                 <div class="mb-3">
-                                    <label class="form-label">Configuración de Privacidad</label>
+                                    <label class="form-label">{% translate "Configuración de Privacidad" %}</label>
                                     <div class="form-check form-switch">
                                         {{ form.is_private }}
                                         <label class="form-check-label" for="{{ form.is_private.id_for_label }}">
@@ -87,7 +88,7 @@
                                         {{ form.tickets }}
                                         <div class="form-text">{{ form.tickets.help_text }}</div>
                                         <div id="no-tickets-message" class="text-muted small mt-2" style="display: none;">
-                                            Selecciona un usuario para ver sus tickets disponibles
+                                            {% translate "Selecciona un usuario para ver sus tickets disponibles" %}
                                         </div>
                                     </div>
                                 </div>
@@ -98,11 +99,11 @@
                         <div class="d-flex gap-2 pt-3 border-top">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-{% if note %}arrow-repeat{% else %}check-circle{% endif %}"></i>
-                                {% if note %}Actualizar Nota{% else %}Crear Nota{% endif %}
+                                {% if note %}{% translate "Actualizar Nota" %}{% else %}{% translate "Crear Nota" %}{% endif %}
                             </button>
                             <a href="{% if note %}{% url 'note_detail' note.id %}{% else %}{% url 'notes_list' %}{% endif %}" 
                                class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                     </form>
@@ -114,25 +115,25 @@
                 <div class="card-header">
                     <h6 class="card-title mb-0">
                         <i class="bi bi-info-circle text-info"></i>
-                        Información sobre las Notas Internas
+                        {% translate "Información sobre las Notas Internas" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Notas Privadas</h6>
+                            <h6>{% translate "Notas Privadas" %}</h6>
                             <ul class="list-unstyled text-muted small">
-                                <li><i class="bi bi-check text-success"></i> Solo visible para agentes</li>
-                                <li><i class="bi bi-check text-success"></i> Ideal para observaciones internas</li>
-                                <li><i class="bi bi-check text-success"></i> Registro de interacciones sensibles</li>
+                                <li><i class="bi bi-check text-success"></i> {% translate "Solo visible para agentes" %}</li>
+                                <li><i class="bi bi-check text-success"></i> {% translate "Ideal para observaciones internas" %}</li>
+                                <li><i class="bi bi-check text-success"></i> {% translate "Registro de interacciones sensibles" %}</li>
                             </ul>
                         </div>
                         <div class="col-md-6">
-                            <h6>Notas Públicas</h6>
+                            <h6>{% translate "Notas Públicas" %}</h6>
                             <ul class="list-unstyled text-muted small">
-                                <li><i class="bi bi-check text-success"></i> Visible para agentes y el usuario</li>
-                                <li><i class="bi bi-check text-success"></i> Comunicación transparente</li>
-                                <li><i class="bi bi-check text-success"></i> Resumen de resoluciones</li>
+                                <li><i class="bi bi-check text-success"></i> {% translate "Visible para agentes y el usuario" %}</li>
+                                <li><i class="bi bi-check text-success"></i> {% translate "Comunicación transparente" %}</li>
+                                <li><i class="bi bi-check text-success"></i> {% translate "Resumen de resoluciones" %}</li>
                             </ul>
                         </div>
                     </div>

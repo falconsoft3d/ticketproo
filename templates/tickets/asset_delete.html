@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -35,32 +36,32 @@
     <!-- Header -->
     <div class="text-center mb-4">
         <h2><i class="bi bi-trash text-danger"></i> {{ title }}</h2>
-        <p class="text-muted">Confirmar eliminación del activo</p>
+        <p class="text-muted">{% translate "Confirmar eliminación del activo" %}</p>
     </div>
 
     <div class="delete-container">
         <!-- Información del Activo -->
         <div class="asset-info">
             <h5 class="mb-3 text-danger">
-                <i class="bi bi-exclamation-triangle"></i> Activo a Eliminar
+                <i class="bi bi-exclamation-triangle"></i> {% translate "Activo a Eliminar" %}
             </h5>
             <div class="row">
                 <div class="col-md-6">
-                    <strong>Nombre:</strong><br>
+                    <strong>{% translate "Nombre:" %}</strong><br>
                     <span class="text-primary">{{ asset.name }}</span>
                 </div>
                 <div class="col-md-6">
-                    <strong>Fabricante:</strong><br>
+                    <strong>{% translate "Fabricante:" %}</strong><br>
                     {{ asset.manufacturer }}
                 </div>
             </div>
             <div class="row mt-2">
                 <div class="col-md-6">
-                    <strong>Número de Serie:</strong><br>
+                    <strong>{% translate "Número de Serie:" %}</strong><br>
                     <code>{{ asset.serial_number }}</code>
                 </div>
                 <div class="col-md-6">
-                    <strong>Estado:</strong><br>
+                    <strong>{% translate "Estado:" %}</strong><br>
                     <span class="badge bg-{{ asset.get_status_display_color }}">
                         {{ asset.get_status_display }}
                     </span>
@@ -69,14 +70,14 @@
             
             {% if asset.assigned_to %}
                 <div class="mt-3 p-2 bg-warning bg-opacity-10 rounded">
-                    <strong>⚠️ Asignado actualmente a:</strong>
+                    <strong>{% translate "⚠️ Asignado actualmente a:" %}</strong>
                     <i class="bi bi-person-circle"></i> {{ asset.assigned_to.name }}
                     <small class="text-muted d-block">{{ asset.assigned_to.position }}</small>
                 </div>
             {% endif %}
 
             <div class="mt-2">
-                <strong>Descripción:</strong><br>
+                <strong>{% translate "Descripción:" %}</strong><br>
                 <small class="text-muted">{{ asset.description|truncatewords:20 }}</small>
             </div>
         </div>
@@ -84,25 +85,25 @@
         <!-- Advertencias -->
         <div class="warning-box">
             <h6 class="text-warning">
-                <i class="bi bi-exclamation-triangle-fill"></i> ⚠️ ADVERTENCIA
+                <i class="bi bi-exclamation-triangle-fill"></i> {% translate "⚠️ ADVERTENCIA" %}
             </h6>
             <ul class="mb-0">
-                <li><strong>Esta acción no se puede deshacer.</strong></li>
-                <li>Se eliminará toda la información del activo.</li>
-                <li>Se perderá todo el historial de asignaciones.</li>
+                <li><strong>{% translate "Esta acción no se puede deshacer." %}</strong></li>
+                <li>{% translate "Se eliminará toda la información del activo." %}</li>
+                <li>{% translate "Se perderá todo el historial de asignaciones." %}</li>
                 {% if asset.assigned_to %}
                     <li class="text-danger">
                         <strong>El activo está actualmente asignado a {{ asset.assigned_to.name }}.</strong>
                     </li>
                 {% endif %}
-                <li>Los reportes históricos pueden verse afectados.</li>
+                <li>{% translate "Los reportes históricos pueden verse afectados." %}</li>
             </ul>
         </div>
 
         <!-- Información Adicional -->
         {% if asset.purchase_price or asset.purchase_date %}
             <div class="alert alert-info">
-                <h6><i class="bi bi-info-circle"></i> Información Financiera</h6>
+                <h6><i class="bi bi-info-circle"></i> {% translate "Información Financiera" %}</h6>
                 {% if asset.purchase_date %}
                     <small>Fecha de compra: {{ asset.purchase_date|date:"d F Y" }}</small><br>
                 {% endif %}
@@ -114,11 +115,11 @@
 
         <!-- Alternativas -->
         <div class="alert alert-primary">
-            <h6><i class="bi bi-lightbulb"></i> Alternativas a Considerar</h6>
+            <h6><i class="bi bi-lightbulb"></i> {% translate "Alternativas a Considerar" %}</h6>
             <ul class="mb-0">
-                <li><strong>Dar de baja:</strong> Cambiar estado a "Dado de Baja" en lugar de eliminar</li>
-                <li><strong>Desasignar:</strong> Remover asignación y cambiar a "Disponible"</li>
-                <li><strong>Mantenimiento:</strong> Enviar a mantenimiento si está dañado</li>
+                <li><strong>{% translate "Dar de baja:" %}</strong> {% translate 'Cambiar estado a "Dado de Baja" en lugar de eliminar' %}</li>
+                <li><strong>{% translate "Desasignar:" %}</strong> {% translate 'Remover asignación y cambiar a "Disponible"' %}</li>
+                <li><strong>{% translate "Mantenimiento:" %}</strong> {% translate "Enviar a mantenimiento si está dañado" %}</li>
             </ul>
         </div>
 
@@ -130,7 +131,7 @@
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="confirmDelete" required>
                     <label class="form-check-label" for="confirmDelete">
-                        <strong>Confirmo que entiendo las consecuencias y deseo eliminar permanentemente este activo.</strong>
+                        <strong>{% translate "Confirmo que entiendo las consecuencias y deseo eliminar permanentemente este activo." %}</strong>
                     </label>
                 </div>
             </div>
@@ -138,14 +139,14 @@
             <!-- Botones -->
             <div class="d-flex justify-content-between">
                 <a href="{% url 'asset_detail' asset.pk %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Cancelar
+                    <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                 </a>
                 <div class="gap-2 d-flex">
                     <a href="{% url 'asset_edit' asset.pk %}" class="btn btn-outline-primary">
-                        <i class="bi bi-pencil"></i> Editar en su lugar
+                        <i class="bi bi-pencil"></i> {% translate "Editar en su lugar" %}
                     </a>
                     <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
-                        <i class="bi bi-trash"></i> Eliminar Permanentemente
+                        <i class="bi bi-trash"></i> {% translate "Eliminar Permanentemente" %}
                     </button>
                 </div>
             </div>

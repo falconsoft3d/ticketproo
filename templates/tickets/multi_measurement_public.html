@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -84,7 +85,7 @@
         <div class="measurement-card">
             <div class="measurement-header">
                 <h3 class="mb-2">
-                    <i class="bi bi-graph-up"></i> Registro de Mediciones
+                    <i class="bi bi-graph-up"></i> {% translate "Registro de Mediciones" %}
                 </h3>
                 <h4>{{ measurement.title }}</h4>
             </div>
@@ -102,7 +103,7 @@
                     <div class="alert alert-info mb-3">
                         <small>
                             <i class="bi bi-info-circle"></i> 
-                            <strong>Último registro:</strong> {{ last_record.date|date:"d/m/Y H:i" }}
+                            <strong>{% translate "Último registro:" %}</strong> {{ last_record.date|date:"d/m/Y H:i" }}
                         </small>
                     </div>
                 {% endif %}
@@ -117,7 +118,7 @@
                         </label>
                         <input type="number" step="0.01" class="form-control form-control-lg" 
                                name="value_1" 
-                               placeholder="Ingrese valor">
+                               placeholder="{% translate 'Ingrese valor' %}">
                     </div>
 
                     <div class="value-input">
@@ -127,7 +128,7 @@
                         </label>
                         <input type="number" step="0.01" class="form-control form-control-lg" 
                                name="value_2" 
-                               placeholder="Ingrese valor">
+                               placeholder="{% translate 'Ingrese valor' %}">
                     </div>
 
                     <div class="value-input">
@@ -137,7 +138,7 @@
                         </label>
                         <input type="number" step="0.01" class="form-control form-control-lg" 
                                name="value_3" 
-                               placeholder="Ingrese valor">
+                               placeholder="{% translate 'Ingrese valor' %}">
                     </div>
 
                     <div class="value-input">
@@ -147,7 +148,7 @@
                         </label>
                         <input type="number" step="0.01" class="form-control form-control-lg" 
                                name="value_4" 
-                               placeholder="Ingrese valor">
+                               placeholder="{% translate 'Ingrese valor' %}">
                     </div>
 
                     <div class="value-input">
@@ -157,25 +158,25 @@
                         </label>
                         <input type="number" step="0.01" class="form-control form-control-lg" 
                                name="value_5" 
-                               placeholder="Ingrese valor">
+                               placeholder="{% translate 'Ingrese valor' %}">
                     </div>
 
                     <div class="mb-4">
                         <label class="value-label">
-                            <i class="bi bi-sticky"></i> Notas (opcional)
+                            <i class="bi bi-sticky"></i> {% translate "Notas (opcional)" %}
                         </label>
                         <textarea class="form-control" name="notes" rows="3" 
                                   placeholder="Agregue cualquier nota o comentario..."></textarea>
                     </div>
 
                     <button type="submit" class="btn btn-submit">
-                        <i class="bi bi-save"></i> Guardar Mediciones
+                        <i class="bi bi-save"></i> {% translate "Guardar Mediciones" %}
                     </button>
                 </form>
 
                 <div class="text-center mt-4 text-muted">
                     <small>
-                        <i class="bi bi-shield-check"></i> Registro seguro y confidencial
+                        <i class="bi bi-shield-check"></i> {% translate "Registro seguro y confidencial" %}
                     </small>
                 </div>
             </div>

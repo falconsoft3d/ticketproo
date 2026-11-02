@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Formularios de Contacto Recibidos - TicketProo{% endblock %}
+{% block title %}{% translate "Formularios de Contacto Recibidos - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -11,15 +12,15 @@
                 <div>
                     <h1 class="h3 mb-0">
                         <i class="bi bi-inbox text-primary"></i>
-                        Formularios de Contacto Recibidos
+                        {% translate "Formularios de Contacto Recibidos" %}
                     </h1>
-                    <p class="text-muted mb-0">Gestiona las solicitudes de contacto recibidas a través de tu formulario público</p>
+                    <p class="text-muted mb-0">{% translate "Gestiona las solicitudes de contacto recibidas a través de tu formulario público" %}</p>
                 </div>
-                <nav aria-label="breadcrumb">
+                <nav aria-label="{% translate 'breadcrumb' %}">
                     <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'user_profile' %}">Perfil</a></li>
-                        <li class="breadcrumb-item active">Formularios de Contacto</li>
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% translate "Dashboard" %}</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'user_profile' %}">{% translate "Perfil" %}</a></li>
+                        <li class="breadcrumb-item active">{% translate "Formularios de Contacto" %}</li>
                     </ol>
                 </nav>
             </div>
@@ -31,7 +32,7 @@
                         <div class="card-body text-center">
                             <i class="bi bi-clock-history text-warning display-6"></i>
                             <h4 class="fw-bold text-warning">{{ stats.pending }}</h4>
-                            <p class="mb-0 text-muted">Pendientes</p>
+                            <p class="mb-0 text-muted">{% translate "Pendientes" %}</p>
                         </div>
                     </div>
                 </div>
@@ -40,7 +41,7 @@
                         <div class="card-body text-center">
                             <i class="bi bi-check-circle text-success display-6"></i>
                             <h4 class="fw-bold text-success">{{ stats.approved }}</h4>
-                            <p class="mb-0 text-muted">Aprobados</p>
+                            <p class="mb-0 text-muted">{% translate "Aprobados" %}</p>
                         </div>
                     </div>
                 </div>
@@ -49,7 +50,7 @@
                         <div class="card-body text-center">
                             <i class="bi bi-x-circle text-danger display-6"></i>
                             <h4 class="fw-bold text-danger">{{ stats.rejected }}</h4>
-                            <p class="mb-0 text-muted">Rechazados</p>
+                            <p class="mb-0 text-muted">{% translate "Rechazados" %}</p>
                         </div>
                     </div>
                 </div>
@@ -58,7 +59,7 @@
                         <div class="card-body text-center">
                             <i class="bi bi-building text-info display-6"></i>
                             <h4 class="fw-bold text-info">{{ stats.company_created }}</h4>
-                            <p class="mb-0 text-muted">Empresas Creadas</p>
+                            <p class="mb-0 text-muted">{% translate "Empresas Creadas" %}</p>
                         </div>
                     </div>
                 </div>
@@ -69,15 +70,15 @@
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="bi bi-funnel"></i>
-                        Filtros
+                        {% translate "Filtros" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <form method="get" class="row align-items-end">
                         <div class="col-md-4">
-                            <label class="form-label">Estado</label>
+                            <label class="form-label">{% translate "Estado" %}</label>
                             <select name="status" class="form-select">
-                                <option value="">Todos los estados</option>
+                                <option value="">{% translate "Todos los estados" %}</option>
                                 {% for value, label in status_choices %}
                                 <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
                                     {{ label }}
@@ -88,11 +89,11 @@
                         <div class="col-md-4">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-search"></i>
-                                Filtrar
+                                {% translate "Filtrar" %}
                             </button>
                             <a href="{% url 'contact_submissions_list' %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle"></i>
-                                Limpiar
+                                {% translate "Limpiar" %}
                             </a>
                         </div>
                     </form>
@@ -113,12 +114,12 @@
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Empresa</th>
-                                    <th>Contacto</th>
-                                    <th>Email</th>
-                                    <th>Estado</th>
-                                    <th>Fecha</th>
-                                    <th>Acciones</th>
+                                    <th>{% translate "Empresa" %}</th>
+                                    <th>{% translate "Contacto" %}</th>
+                                    <th>{% translate "Email" %}</th>
+                                    <th>{% translate "Estado" %}</th>
+                                    <th>{% translate "Fecha" %}</th>
+                                    <th>{% translate "Acciones" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -162,19 +163,19 @@
                                         <div class="btn-group" role="group">
                                             <a href="{% url 'contact_submission_detail' submission.pk %}" 
                                                class="btn btn-outline-info btn-sm" 
-                                               title="Ver detalles">
+                                               title="{% translate 'Ver detalles' %}">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             
                                             {% if submission.status == 'pending' %}
                                             <a href="{% url 'contact_submission_approve' submission.pk %}" 
                                                class="btn btn-outline-success btn-sm" 
-                                               title="Aprobar y crear empresa">
+                                               title="{% translate 'Aprobar y crear empresa' %}">
                                                 <i class="bi bi-check-circle"></i>
                                             </a>
                                             <a href="{% url 'contact_submission_reject' submission.pk %}" 
                                                class="btn btn-outline-danger btn-sm" 
-                                               title="Rechazar">
+                                               title="{% translate 'Rechazar' %}">
                                                 <i class="bi bi-x-circle"></i>
                                             </a>
                                             {% endif %}
@@ -182,7 +183,7 @@
                                             {% if submission.created_company %}
                                             <a href="{% url 'company_detail' submission.created_company.id %}" 
                                                class="btn btn-outline-primary btn-sm" 
-                                               title="Ver empresa creada">
+                                               title="{% translate 'Ver empresa creada' %}">
                                                 <i class="bi bi-building"></i>
                                             </a>
                                             {% endif %}
@@ -198,7 +199,7 @@
 
             <!-- Paginación -->
             {% if page_obj.has_other_pages %}
-            <nav aria-label="Paginación" class="mt-4">
+            <nav aria-label="{% translate 'Paginación' %}" class="mt-4">
                 <ul class="pagination justify-content-center">
                     {% if page_obj.has_previous %}
                     <li class="page-item">
@@ -246,21 +247,21 @@
             <div class="card">
                 <div class="card-body text-center py-5">
                     <i class="bi bi-inbox display-1 text-muted"></i>
-                    <h4 class="text-muted mt-3">No hay formularios de contacto</h4>
+                    <h4 class="text-muted mt-3">{% translate "No hay formularios de contacto" %}</h4>
                     <p class="text-muted">
                         {% if status_filter %}
                         No se encontraron formularios con el estado "{{ status_filter }}".
                         <br>
                         <a href="{% url 'contact_submissions_list' %}" class="btn btn-outline-primary mt-2">
                             <i class="bi bi-arrow-left"></i>
-                            Ver todos los formularios
+                            {% translate "Ver todos los formularios" %}
                         </a>
                         {% else %}
-                        Aún no has recibido ningún formulario de contacto a través de tu formulario público.
+                        {% translate "Aún no has recibido ningún formulario de contacto a través de tu formulario público." %}
                         <br>
                         <a href="{% url 'user_profile' %}" class="btn btn-outline-primary mt-2">
                             <i class="bi bi-gear"></i>
-                            Configurar formulario de contacto
+                            {% translate "Configurar formulario de contacto" %}
                         </a>
                         {% endif %}
                     </p>
@@ -273,27 +274,27 @@
                 <div class="card-header bg-info bg-opacity-10">
                     <h6 class="mb-0">
                         <i class="bi bi-info-circle text-info"></i>
-                        Información sobre el procesamiento
+                        {% translate "Información sobre el procesamiento" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Estados de los formularios:</h6>
+                            <h6>{% translate "Estados de los formularios:" %}</h6>
                             <ul class="list-unstyled">
-                                <li><span class="badge bg-warning me-2">Pendiente</span> Formulario recibido, pendiente de revisión</li>
-                                <li><span class="badge bg-success me-2">Aprobado</span> Formulario aprobado, listo para crear empresa</li>
-                                <li><span class="badge bg-danger me-2">Rechazado</span> Formulario rechazado por algún motivo</li>
-                                <li><span class="badge bg-primary me-2">Empresa Creada</span> Se ha creado la empresa exitosamente</li>
+                                <li><span class="badge bg-warning me-2">{% translate "Pendiente" %}</span> {% translate "Formulario recibido, pendiente de revisión" %}</li>
+                                <li><span class="badge bg-success me-2">{% translate "Aprobado" %}</span> {% translate "Formulario aprobado, listo para crear empresa" %}</li>
+                                <li><span class="badge bg-danger me-2">{% translate "Rechazado" %}</span> {% translate "Formulario rechazado por algún motivo" %}</li>
+                                <li><span class="badge bg-primary me-2">{% translate "Empresa Creada" %}</span> {% translate "Se ha creado la empresa exitosamente" %}</li>
                             </ul>
                         </div>
                         <div class="col-md-6">
-                            <h6>Acciones disponibles:</h6>
+                            <h6>{% translate "Acciones disponibles:" %}</h6>
                             <ul class="list-unstyled">
-                                <li><i class="bi bi-eye text-info me-2"></i> Ver todos los detalles del formulario</li>
-                                <li><i class="bi bi-check-circle text-success me-2"></i> Aprobar y crear empresa automáticamente</li>
-                                <li><i class="bi bi-x-circle text-danger me-2"></i> Rechazar formulario con motivo</li>
-                                <li><i class="bi bi-building text-primary me-2"></i> Ver empresa creada (si aplica)</li>
+                                <li><i class="bi bi-eye text-info me-2"></i> {% translate "Ver todos los detalles del formulario" %}</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i> {% translate "Aprobar y crear empresa automáticamente" %}</li>
+                                <li><i class="bi bi-x-circle text-danger me-2"></i> {% translate "Rechazar formulario con motivo" %}</li>
+                                <li><i class="bi bi-building text-primary me-2"></i> {% translate "Ver empresa creada (si aplica)" %}</li>
                             </ul>
                         </div>
                     </div>

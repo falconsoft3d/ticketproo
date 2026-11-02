@@ -1,14 +1,15 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% block content %}
 <div class="container mt-4">
     <div class="row mb-4">
         <div class="col">
             <h2 class="fw-bold">
                 <i class="bi bi-{% if alcance %}pencil{% else %}plus-circle{% endif %}"></i> 
-                {% if alcance %}Editar Alcance{% else %}Nuevo Alcance{% endif %}
+                {% if alcance %}{% translate "Editar Alcance" %}{% else %}{% translate "Nuevo Alcance" %}{% endif %}
             </h2>
             <p class="text-muted">
-                {% if alcance %}Modifica los datos del alcance{% else %}Completa los datos para crear un nuevo alcance{% endif %}
+                {% if alcance %}{% translate "Modifica los datos del alcance" %}{% else %}{% translate "Completa los datos para crear un nuevo alcance" %}{% endif %}
             </p>
         </div>
     </div>
@@ -23,58 +24,58 @@
                         <div class="mb-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <label for="titulo" class="form-label fw-bold mb-0">
-                                    <i class="bi bi-card-heading"></i> Título <span class="text-danger">*</span>
+                                    <i class="bi bi-card-heading"></i> {% translate "Título" %} <span class="text-danger">*</span>
                                 </label>
                                 <button type="button" class="btn btn-outline-primary btn-sm" onclick="improveTitle()">
-                                    <i class="bi bi-magic"></i> Mejorar con IA
+                                    <i class="bi bi-magic"></i> {% translate "Mejorar con IA" %}
                                 </button>
                             </div>
                             <input type="text" class="form-control" id="titulo" name="titulo" 
                                    value="{% if alcance %}{{ alcance.titulo }}{% endif %}" 
-                                   required maxlength="200" placeholder="Ej: Desarrollo de Aplicaciones Web">
+                                   required maxlength="200" placeholder="{% translate 'Ej: Desarrollo de Aplicaciones Web' %}">
                         </div>
                         
                         <div class="mb-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <label for="categoria" class="form-label fw-bold mb-0">
-                                    <i class="bi bi-tag"></i> Categoría <span class="text-danger">*</span>
+                                    <i class="bi bi-tag"></i> {% translate "Categoría" %} <span class="text-danger">*</span>
                                 </label>
                                 <button type="button" class="btn btn-outline-primary btn-sm" onclick="improveCategory()">
-                                    <i class="bi bi-magic"></i> Mejorar con IA
+                                    <i class="bi bi-magic"></i> {% translate "Mejorar con IA" %}
                                 </button>
                             </div>
                             <input type="text" class="form-control" id="categoria" name="categoria" 
                                    value="{% if alcance %}{{ alcance.categoria }}{% endif %}" 
-                                   required maxlength="100" placeholder="Ej: Tecnología, Consultoría, Servicios">
+                                   required maxlength="100" placeholder="{% translate 'Ej: Tecnología, Consultoría, Servicios' %}">
                         </div>
                         
                         <div class="mb-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <label for="descripcion" class="form-label fw-bold mb-0">
-                                    <i class="bi bi-file-text"></i> Descripción <span class="text-danger">*</span>
+                                    <i class="bi bi-file-text"></i> {% translate "Descripción" %} <span class="text-danger">*</span>
                                 </label>
                                 <div>
                                     <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="improveDescription()">
-                                        <i class="bi bi-magic"></i> Mejorar con IA
+                                        <i class="bi bi-magic"></i> {% translate "Mejorar con IA" %}
                                     </button>
                                     <button type="button" class="btn btn-outline-success btn-sm" onclick="improveAll()">
-                                        <i class="bi bi-stars"></i> Mejorar Todo
+                                        <i class="bi bi-stars"></i> {% translate "Mejorar Todo" %}
                                     </button>
                                 </div>
                             </div>
                             <textarea class="form-control" id="descripcion" name="descripcion" 
                                       rows="5" required placeholder="Describe el alcance en detalle...">{% if alcance %}{{ alcance.descripcion }}{% endif %}</textarea>
-                            <small class="text-muted">Explica de forma clara y completa el alcance de este servicio</small>
+                            <small class="text-muted">{% translate "Explica de forma clara y completa el alcance de este servicio" %}</small>
                         </div>
                         
                         <div class="mb-3">
                             <label for="url" class="form-label fw-bold">
-                                <i class="bi bi-link-45deg"></i> URL del artículo relacionado
+                                <i class="bi bi-link-45deg"></i> {% translate "URL del artículo relacionado" %}
                             </label>
                             <input type="url" class="form-control" id="url" name="url" 
                                    value="{% if alcance %}{{ alcance.url }}{% endif %}" 
                                    maxlength="500" placeholder="https://ejemplo.com/articulo">
-                            <small class="text-muted">Enlace opcional a un artículo o página relacionada. Si se completa, se mostrará un botón "Ver más"</small>
+                            <small class="text-muted">{% translate 'Enlace opcional a un artículo o página relacionada. Si se completa, se mostrará un botón "Ver más"' %}</small>
                         </div>
                         
                         <div class="mb-4">
@@ -82,18 +83,18 @@
                                 <input class="form-check-input" type="checkbox" id="publico" name="publico" 
                                        {% if not alcance or alcance.publico %}checked{% endif %}>
                                 <label class="form-check-label fw-bold" for="publico">
-                                    <i class="bi bi-eye"></i> Visible públicamente
+                                    <i class="bi bi-eye"></i> {% translate "Visible públicamente" %}
                                 </label>
-                                <small class="d-block text-muted">Si está activado, este alcance se mostrará en la página pública</small>
+                                <small class="d-block text-muted">{% translate "Si está activado, este alcance se mostrará en la página pública" %}</small>
                             </div>
                         </div>
                         
                         <div class="d-flex gap-2 justify-content-end">
                             <a href="{% url 'alcance_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-success">
-                                <i class="bi bi-save"></i> Guardar Alcance
+                                <i class="bi bi-save"></i> {% translate "Guardar Alcance" %}
                             </button>
                         </div>
                     </form>
@@ -104,21 +105,21 @@
         <div class="col-lg-4">
             <div class="card shadow-sm border-0 bg-light">
                 <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-info-circle"></i> Información</h5>
+                    <h5 class="card-title"><i class="bi bi-info-circle"></i> {% translate "Información" %}</h5>
                     <p class="card-text small">
-                        Los alcances públicos ayudan a comunicar los servicios y capacidades que ofreces.
+                        {% translate "Los alcances públicos ayudan a comunicar los servicios y capacidades que ofreces." %}
                     </p>
                     <hr>
-                    <h6 class="fw-bold">Campos requeridos:</h6>
+                    <h6 class="fw-bold">{% translate "Campos requeridos:" %}</h6>
                     <ul class="small">
-                        <li><strong>Título:</strong> Nombre del alcance</li>
-                        <li><strong>Categoría:</strong> Tipo de servicio</li>
-                        <li><strong>Descripción:</strong> Detalle completo</li>
+                        <li><strong>{% translate "Título:" %}</strong> {% translate "Nombre del alcance" %}</li>
+                        <li><strong>{% translate "Categoría:" %}</strong> {% translate "Tipo de servicio" %}</li>
+                        <li><strong>{% translate "Descripción:" %}</strong> {% translate "Detalle completo" %}</li>
                     </ul>
                     <hr>
-                    <h6 class="fw-bold">Campos opcionales:</h6>
+                    <h6 class="fw-bold">{% translate "Campos opcionales:" %}</h6>
                     <ul class="small">
-                        <li><strong>URL:</strong> Enlace a artículo relacionado</li>
+                        <li><strong>{% translate "URL:" %}</strong> {% translate "Enlace a artículo relacionado" %}</li>
                     </ul>
                 </div>
             </div>
@@ -132,10 +133,10 @@
         <div class="modal-content">
             <div class="modal-body text-center">
                 <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Cargando...</span>
+                    <span class="visually-hidden">{% translate "Cargando..." %}</span>
                 </div>
-                <p class="mt-3 mb-0">Mejorando con IA...</p>
-                <small class="text-muted">Esto puede tomar unos segundos</small>
+                <p class="mt-3 mb-0">{% translate "Mejorando con IA..." %}</p>
+                <small class="text-muted">{% translate "Esto puede tomar unos segundos" %}</small>
             </div>
         </div>
     </div>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 
 {% block content %}
@@ -10,27 +11,27 @@
                     <i class="bi bi-files me-2"></i>
                     {{ template.name }}
                     {% if not template.is_active %}
-                        <span class="badge bg-secondary">Inactiva</span>
+                        <span class="badge bg-secondary">{% translate "Inactiva" %}</span>
                     {% endif %}
                 </h2>
                 <div>
                     {% if template.is_active and items %}
                     <a href="{% url 'client_request_template_execute' template.pk %}" class="btn btn-success me-2">
                         <i class="bi bi-play-circle me-2"></i>
-                        Ejecutar Plantilla
+                        {% translate "Ejecutar Plantilla" %}
                     </a>
                     {% endif %}
                     <a href="{% url 'client_request_template_edit' template.pk %}" class="btn btn-outline-primary me-2">
                         <i class="bi bi-pencil me-2"></i>
-                        Editar
+                        {% translate "Editar" %}
                     </a>
                     <a href="{% url 'client_request_template_delete' template.pk %}" class="btn btn-outline-danger me-2">
                         <i class="bi bi-trash me-2"></i>
-                        Eliminar
+                        {% translate "Eliminar" %}
                     </a>
                     <a href="{% url 'client_request_template_list' %}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-2"></i>
-                        Volver
+                        {% translate "Volver" %}
                     </a>
                 </div>
             </div>
@@ -44,28 +45,28 @@
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
                         <i class="bi bi-info-circle me-2"></i>
-                        Información
+                        {% translate "Información" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     {% if template.description %}
                     <p class="text-muted">{{ template.description }}</p>
                     {% else %}
-                    <p class="text-muted"><em>Sin descripción</em></p>
+                    <p class="text-muted"><em>{% translate "Sin descripción" %}</em></p>
                     {% endif %}
                     
                     <div class="row mt-3">
                         <div class="col-md-6">
-                            <strong>Creada:</strong>
+                            <strong>{% translate "Creada:" %}</strong>
                             <p>{{ template.created_at|date:"d/m/Y H:i" }}</p>
                         </div>
                         <div class="col-md-6">
-                            <strong>Estado:</strong>
+                            <strong>{% translate "Estado:" %}</strong>
                             <p>
                                 {% if template.is_active %}
-                                    <span class="badge bg-success">Activa</span>
+                                    <span class="badge bg-success">{% translate "Activa" %}</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Inactiva</span>
+                                    <span class="badge bg-secondary">{% translate "Inactiva" %}</span>
                                 {% endif %}
                             </p>
                         </div>
@@ -82,7 +83,7 @@
                     </h5>
                     <a href="{% url 'client_request_template_item_create' template.pk %}" class="btn btn-sm btn-primary">
                         <i class="bi bi-plus-circle me-2"></i>
-                        Agregar Item
+                        {% translate "Agregar Item" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -98,24 +99,24 @@
                                     </div>
                                     <p class="text-muted small mb-2">{{ item.description|truncatewords:30 }}</p>
                                     <p class="mb-1">
-                                        <strong>Solicitado a:</strong> {{ item.requested_to }}
+                                        <strong>{% translate "Solicitado a:" %}</strong> {{ item.requested_to }}
                                     </p>
                                     {% if item.attachment %}
                                     <p class="mb-0">
                                         <i class="bi bi-paperclip text-info me-1"></i>
-                                        <small>Con archivo adjunto</small>
+                                        <small>{% translate "Con archivo adjunto" %}</small>
                                     </p>
                                     {% endif %}
                                 </div>
                                 <div class="btn-group-vertical ms-3">
                                     <a href="{% url 'client_request_template_item_edit' item.pk %}" 
                                        class="btn btn-sm btn-outline-primary" 
-                                       title="Editar">
+                                       title="{% translate 'Editar' %}">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <a href="{% url 'client_request_template_item_delete' item.pk %}" 
                                        class="btn btn-sm btn-outline-danger" 
-                                       title="Eliminar">
+                                       title="{% translate 'Eliminar' %}">
                                         <i class="bi bi-trash"></i>
                                     </a>
                                 </div>
@@ -126,8 +127,8 @@
                     {% else %}
                     <div class="alert alert-info mb-0">
                         <i class="bi bi-info-circle me-2"></i>
-                        Esta plantilla no tiene items todavía.
-                        <a href="{% url 'client_request_template_item_create' template.pk %}" class="alert-link">Agregar el primero</a>
+                        {% translate "Esta plantilla no tiene items todavía." %}
+                        <a href="{% url 'client_request_template_item_create' template.pk %}" class="alert-link">{% translate "Agregar el primero" %}</a>
                     </div>
                     {% endif %}
                 </div>
@@ -139,24 +140,24 @@
                 <div class="card-header bg-light">
                     <h6 class="mb-0">
                         <i class="bi bi-gear me-2"></i>
-                        Acciones Rápidas
+                        {% translate "Acciones Rápidas" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         <a href="{% url 'client_request_template_item_create' template.pk %}" class="btn btn-outline-primary">
                             <i class="bi bi-plus-circle me-2"></i>
-                            Agregar Item
+                            {% translate "Agregar Item" %}
                         </a>
                         {% if template.is_active and items %}
                         <a href="{% url 'client_request_template_execute' template.pk %}" class="btn btn-success">
                             <i class="bi bi-play-circle me-2"></i>
-                            Ejecutar Plantilla
+                            {% translate "Ejecutar Plantilla" %}
                         </a>
                         {% endif %}
                         <a href="{% url 'client_request_template_edit' template.pk %}" class="btn btn-outline-secondary">
                             <i class="bi bi-pencil me-2"></i>
-                            Editar Plantilla
+                            {% translate "Editar Plantilla" %}
                         </a>
                     </div>
                 </div>
@@ -166,14 +167,14 @@
                 <div class="card-body">
                     <h6 class="card-title">
                         <i class="bi bi-lightbulb me-2"></i>
-                        Cómo Usar
+                        {% translate "Cómo Usar" %}
                     </h6>
                     <ol class="small mb-0">
-                        <li>Agrega los items que necesitas</li>
-                        <li>Define el orden de cada item</li>
-                        <li>Haz clic en "Ejecutar Plantilla"</li>
-                        <li>Selecciona la empresa</li>
-                        <li>Se crearán todas las solicitudes automáticamente</li>
+                        <li>{% translate "Agrega los items que necesitas" %}</li>
+                        <li>{% translate "Define el orden de cada item" %}</li>
+                        <li>{% translate 'Haz clic en "Ejecutar Plantilla"' %}</li>
+                        <li>{% translate "Selecciona la empresa" %}</li>
+                        <li>{% translate "Se crearán todas las solicitudes automáticamente" %}</li>
                     </ol>
                 </div>
             </div>

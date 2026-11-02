@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Eliminar Oportunidad - TicketProo{% endblock %}
+{% block title %}{% translate "Eliminar Oportunidad - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -10,13 +11,13 @@
                 <div class="card-header">
                     <h4 class="mb-0 text-danger">
                         <i class="bi bi-exclamation-triangle"></i>
-                        Eliminar Oportunidad
+                        {% translate "Eliminar Oportunidad" %}
                     </h4>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-danger">
-                        <h5>¿Estás seguro?</h5>
-                        <p class="mb-0">Esta acción no se puede deshacer. Se eliminará toda la información relacionada con esta oportunidad.</p>
+                        <h5>{% translate "¿Estás seguro?" %}</h5>
+                        <p class="mb-0">{% translate "Esta acción no se puede deshacer. Se eliminará toda la información relacionada con esta oportunidad." %}</p>
                     </div>
 
                     <div class="bg-light p-3 rounded mb-3">
@@ -26,9 +27,9 @@
                         <p class="mb-0"><i class="bi bi-calendar"></i> {{ opportunity.expected_close_date }}</p>
                     </div>
 
-                    <p><strong>Información que se eliminará:</strong></p>
+                    <p><strong>{% translate "Información que se eliminará:" %}</strong></p>
                     <ul>
-                        <li>Datos de la oportunidad</li>
+                        <li>{% translate "Datos de la oportunidad" %}</li>
                         <li>{{ opportunity.notes.count }} nota(s) asociada(s)</li>
                         <li>{{ opportunity.status_history.count }} registro(s) de historial</li>
                     </ul>
@@ -37,10 +38,10 @@
                         {% csrf_token %}
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'opportunity_detail' opportunity.pk %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Eliminar Oportunidad
+                                <i class="bi bi-trash"></i> {% translate "Eliminar Oportunidad" %}
                             </button>
                         </div>
                     </form>

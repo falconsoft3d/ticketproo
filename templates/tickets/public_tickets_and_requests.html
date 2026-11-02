@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -50,7 +51,7 @@
     <!-- Auto refresh button -->
     <div class="auto-refresh">
         <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
-            <i class="bi bi-arrow-clockwise"></i> Actualizar
+            <i class="bi bi-arrow-clockwise"></i> {% translate "Actualizar" %}
         </button>
     </div>
 
@@ -60,13 +61,13 @@
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <h1 class="display-4 mb-3">
-                        <i class="bi bi-file-earmark-text"></i> Dashboard Público - Solicitudes de Empresa
+                        <i class="bi bi-file-earmark-text"></i> {% translate "Dashboard Público - Solicitudes de Empresa" %}
                     </h1>
                     {% if latest_request %}
                         <div class="card bg-light text-dark">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">
-                                    <i class="bi bi-star-fill text-warning"></i> Última Solicitud de Empresa
+                                    <i class="bi bi-star-fill text-warning"></i> {% translate "Última Solicitud de Empresa" %}
                                 </h5>
                             </div>
                             <div class="card-body">
@@ -90,11 +91,11 @@
                                             {% elif latest_request.status == 'accepted' %}bg-success
                                             {% elif latest_request.status == 'rejected' %}bg-danger
                                             {% else %}bg-secondary{% endif %} status-badge">
-                                            {% if latest_request.status == 'new' %}Nueva
-                                            {% elif latest_request.status == 'review' %}En Revisión
-                                            {% elif latest_request.status == 'accepted' %}Aceptada
-                                            {% elif latest_request.status == 'rejected' %}Rechazada
-                                            {% elif latest_request.status == 'closed' %}Cerrada
+                                            {% if latest_request.status == 'new' %}{% translate "Nueva" %}
+                                            {% elif latest_request.status == 'review' %}{% translate "En Revisión" %}
+                                            {% elif latest_request.status == 'accepted' %}{% translate "Aceptada" %}
+                                            {% elif latest_request.status == 'rejected' %}{% translate "Rechazada" %}
+                                            {% elif latest_request.status == 'closed' %}{% translate "Cerrada" %}
                                             {% else %}{{ latest_request.status }}{% endif %}
                                         </span>
                                     </div>
@@ -102,7 +103,7 @@
                                 {% if latest_request.url %}
                                     <div class="mt-2">
                                         <a href="{{ latest_request.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-link-45deg"></i> Ver Enlace
+                                            <i class="bi bi-link-45deg"></i> {% translate "Ver Enlace" %}
                                         </a>
                                     </div>
                                 {% endif %}
@@ -110,7 +111,7 @@
                         </div>
                     {% else %}
                         <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> No hay solicitudes de empresa disponibles
+                            <i class="bi bi-info-circle"></i> {% translate "No hay solicitudes de empresa disponibles" %}
                         </div>
                     {% endif %}
                 </div>
@@ -118,7 +119,7 @@
                     <!-- Estadísticas generales -->
                     <div class="text-center">
                         <h2 class="display-6">{{ total_requests }}</h2>
-                        <p class="mb-0">Total Solicitudes</p>
+                        <p class="mb-0">{% translate "Total Solicitudes" %}</p>
                     </div>
                 </div>
             </div>
@@ -132,7 +133,7 @@
                 <div class="card stats-card text-center">
                     <div class="card-body">
                         <h4 class="text-primary">{{ status_stats.new|default:0 }}</h4>
-                        <small class="text-muted">Nuevas</small>
+                        <small class="text-muted">{% translate "Nuevas" %}</small>
                     </div>
                 </div>
             </div>
@@ -140,7 +141,7 @@
                 <div class="card stats-card text-center">
                     <div class="card-body">
                         <h4 class="text-warning">{{ status_stats.review|default:0 }}</h4>
-                        <small class="text-muted">En Revisión</small>
+                        <small class="text-muted">{% translate "En Revisión" %}</small>
                     </div>
                 </div>
             </div>
@@ -148,7 +149,7 @@
                 <div class="card stats-card text-center">
                     <div class="card-body">
                         <h4 class="text-success">{{ status_stats.accepted|default:0 }}</h4>
-                        <small class="text-muted">Aceptadas</small>
+                        <small class="text-muted">{% translate "Aceptadas" %}</small>
                     </div>
                 </div>
             </div>
@@ -156,7 +157,7 @@
                 <div class="card stats-card text-center">
                     <div class="card-body">
                         <h4 class="text-info">{{ status_stats.executed|default:0 }}</h4>
-                        <small class="text-muted">Ejecutadas</small>
+                        <small class="text-muted">{% translate "Ejecutadas" %}</small>
                     </div>
                 </div>
             </div>
@@ -164,7 +165,7 @@
                 <div class="card stats-card text-center">
                     <div class="card-body">
                         <h4 class="text-danger">{{ status_stats.rejected|default:0 }}</h4>
-                        <small class="text-muted">Rechazadas</small>
+                        <small class="text-muted">{% translate "Rechazadas" %}</small>
                     </div>
                 </div>
             </div>
@@ -172,7 +173,7 @@
                 <div class="card stats-card text-center">
                     <div class="card-body">
                         <h4 class="text-secondary">{{ status_stats.closed|default:0 }}</h4>
-                        <small class="text-muted">Cerradas</small>
+                        <small class="text-muted">{% translate "Cerradas" %}</small>
                     </div>
                 </div>
             </div>
@@ -182,7 +183,7 @@
                 <div class="card stats-card text-center">
                     <div class="card-body">
                         <h4 class="text-dark">{{ total_requests }}</h4>
-                        <small class="text-muted">Total</small>
+                        <small class="text-muted">{% translate "Total" %}</small>
                     </div>
                 </div>
             </div>
@@ -194,7 +195,7 @@
         <div class="row">
             <div class="col-12">
                 <h3 class="mb-4">
-                    <i class="bi bi-list-ul"></i> Solicitudes Recientes
+                    <i class="bi bi-list-ul"></i> {% translate "Solicitudes Recientes" %}
                 </h3>
                 
                 {% if recent_requests %}
@@ -214,12 +215,12 @@
                                             {% elif request.status == 'executed' %}bg-info
                                             {% elif request.status == 'rejected' %}bg-danger
                                             {% else %}bg-secondary{% endif %} status-badge" id="badge-{{ request.id }}">
-                                            {% if request.status == 'new' %}Nueva
-                                            {% elif request.status == 'review' %}En Revisión
-                                            {% elif request.status == 'accepted' %}Aceptada
-                                            {% elif request.status == 'executed' %}Ejecutada
-                                            {% elif request.status == 'rejected' %}Rechazada
-                                            {% elif request.status == 'closed' %}Cerrada
+                                            {% if request.status == 'new' %}{% translate "Nueva" %}
+                                            {% elif request.status == 'review' %}{% translate "En Revisión" %}
+                                            {% elif request.status == 'accepted' %}{% translate "Aceptada" %}
+                                            {% elif request.status == 'executed' %}{% translate "Ejecutada" %}
+                                            {% elif request.status == 'rejected' %}{% translate "Rechazada" %}
+                                            {% elif request.status == 'closed' %}{% translate "Cerrada" %}
                                             {% else %}{{ request.status }}{% endif %}
                                         </span>
                                     </div>
@@ -244,7 +245,7 @@
                                     {% if request.url %}
                                         <div class="mt-2">
                                             <a href="{{ request.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-link-45deg"></i> Ver Enlace
+                                                <i class="bi bi-link-45deg"></i> {% translate "Ver Enlace" %}
                                             </a>
                                         </div>
                                     {% endif %}
@@ -257,7 +258,7 @@
                                                        id="execute-{{ request.id }}" 
                                                        onchange="markAsExecuted({{ request.id }})">
                                                 <label class="form-check-label text-success" for="execute-{{ request.id }}">
-                                                    <i class="bi bi-check-circle"></i> Marcar como ejecutada
+                                                    <i class="bi bi-check-circle"></i> {% translate "Marcar como ejecutada" %}
                                                 </label>
                                             </div>
                                         </div>
@@ -267,7 +268,7 @@
                                                 <div class="d-flex align-items-center">
                                                     <i class="bi bi-check-circle-fill me-2"></i>
                                                     <div>
-                                                        <strong>¡Ejecutada!</strong>
+                                                        <strong>{% translate "¡Ejecutada!" %}</strong>
                                                         {% if request.executed_at %}
                                                             <br>
                                                             <small class="text-muted">
@@ -290,11 +291,11 @@
                     </div>
                     
                     <div class="text-center mt-4">
-                        <p class="text-muted">Mostrando las últimas 20 solicitudes</p>
+                        <p class="text-muted">{% translate "Mostrando las últimas 20 solicitudes" %}</p>
                     </div>
                 {% else %}
                     <div class="alert alert-info text-center">
-                        <i class="bi bi-info-circle"></i> No hay solicitudes disponibles
+                        <i class="bi bi-info-circle"></i> {% translate "No hay solicitudes disponibles" %}
                     </div>
                 {% endif %}
             </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -23,10 +24,10 @@
     <!-- Encabezado -->
     <div class="row mb-4">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{% url 'company_documentation_list' %}">Documentaciones</a>
+                        <a href="{% url 'company_documentation_list' %}">{% translate "Documentaciones" %}</a>
                     </li>
                     <li class="breadcrumb-item active">{{ page_title }}</li>
                 </ol>
@@ -47,7 +48,7 @@
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">
-                            <i class="bi bi-info-circle"></i> Información Básica
+                            <i class="bi bi-info-circle"></i> {% translate "Información Básica" %}
                         </h5>
                     </div>
                     <div class="card-body">
@@ -83,7 +84,7 @@
                                         {{ form.is_public.label }}
                                     </label>
                                     <small class="form-text text-muted d-block">
-                                        Si está marcado, se generará un enlace público para que los clientes puedan acceder
+                                        {% translate "Si está marcado, se generará un enlace público para que los clientes puedan acceder" %}
                                     </small>
                                 </div>
                             </div>
@@ -107,10 +108,10 @@
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
-                            <i class="bi bi-link-45deg"></i> Enlaces y URLs
+                            <i class="bi bi-link-45deg"></i> {% translate "Enlaces y URLs" %}
                         </h5>
                         <button type="button" class="btn btn-outline-success btn-sm" id="add-url">
-                            <i class="bi bi-plus"></i> Agregar URL
+                            <i class="bi bi-plus"></i> {% translate "Agregar URL" %}
                         </button>
                     </div>
                     <div class="card-body">
@@ -121,7 +122,7 @@
                             <div class="formset-row" id="form-{{ forloop.counter0 }}">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Título del enlace</label>
+                                        <label class="form-label">{% translate "Título del enlace" %}</label>
                                         {{ form.title }}
                                     </div>
                                     <div class="col-md-6 mb-3">
@@ -129,35 +130,35 @@
                                         {{ form.url }}
                                     </div>
                                     <div class="col-md-12 mb-3">
-                                        <label class="form-label">Descripción</label>
+                                        <label class="form-label">{% translate "Descripción" %}</label>
                                         {{ form.description }}
                                     </div>
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label">Usuario</label>
+                                        <label class="form-label">{% translate "Usuario" %}</label>
                                         {{ form.username }}
                                     </div>
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label">Contraseña</label>
+                                        <label class="form-label">{% translate "Contraseña" %}</label>
                                         {{ form.password }}
                                     </div>
                                     <div class="col-md-2 mb-3">
-                                        <label class="form-label">Orden</label>
+                                        <label class="form-label">{% translate "Orden" %}</label>
                                         {{ form.order }}
                                     </div>
                                     <div class="col-md-2 mb-3">
                                         <div class="form-check mt-4">
                                             {{ form.is_active }}
-                                            <label class="form-check-label">Activo</label>
+                                            <label class="form-check-label">{% translate "Activo" %}</label>
                                         </div>
                                         {% if form.DELETE %}
                                         <div class="form-check mt-2 delete-checkbox">
                                             {{ form.DELETE }}
-                                            <label class="form-check-label">Eliminar</label>
+                                            <label class="form-check-label">{% translate "Eliminar" %}</label>
                                         </div>
                                         {% endif %}
                                     </div>
                                     <div class="col-md-12">
-                                        <label class="form-label">Notas adicionales</label>
+                                        <label class="form-label">{% translate "Notas adicionales" %}</label>
                                         {{ form.notes }}
                                     </div>
                                 </div>
@@ -170,11 +171,11 @@
                         
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i>
-                            <strong>Consejos:</strong>
+                            <strong>{% translate "Consejos:" %}</strong>
                             <ul class="mb-0 mt-2">
-                                <li>Usa el campo "Orden" para controlar la secuencia de los enlaces</li>
-                                <li>Los campos de usuario y contraseña son opcionales</li>
-                                <li>Solo los enlaces marcados como "Activo" se mostrarán a los clientes</li>
+                                <li>{% translate 'Usa el campo "Orden" para controlar la secuencia de los enlaces' %}</li>
+                                <li>{% translate "Los campos de usuario y contraseña son opcionales" %}</li>
+                                <li>{% translate 'Solo los enlaces marcados como "Activo" se mostrarán a los clientes' %}</li>
                             </ul>
                         </div>
                     </div>
@@ -186,16 +187,16 @@
                 <div class="card sticky-top">
                     <div class="card-header">
                         <h6 class="mb-0">
-                            <i class="bi bi-gear"></i> Acciones
+                            <i class="bi bi-gear"></i> {% translate "Acciones" %}
                         </h6>
                     </div>
                     <div class="card-body">
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success">
-                                <i class="bi bi-check-circle"></i> Guardar Documentación
+                                <i class="bi bi-check-circle"></i> {% translate "Guardar Documentación" %}
                             </button>
                             <a href="{% url 'company_documentation_list' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                                <i class="bi bi-x-circle"></i> {% translate "Cancelar" %}
                             </a>
                         </div>
                         
@@ -204,9 +205,9 @@
                         <div class="alert alert-success p-2">
                             <small>
                                 <i class="bi bi-globe"></i>
-                                <strong>Enlace público:</strong><br>
+                                <strong>{% translate "Enlace público:" %}</strong><br>
                                 <a href="{{ documentation.get_public_url }}" target="_blank" class="small">
-                                    Ver página pública
+                                    {% translate "Ver página pública" %}
                                 </a>
                             </small>
                         </div>

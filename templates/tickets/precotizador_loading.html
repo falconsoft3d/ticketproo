@@ -1,7 +1,8 @@
 {% extends 'public_base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Generando tu Cotización...{% endblock %}
+{% block title %}{% translate "Generando tu Cotización..." %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -133,9 +134,9 @@
         <div class="ai-icon">
             🤖
         </div>
-        <h1 class="mb-3">Generando tu Cotización con IA</h1>
+        <h1 class="mb-3">{% translate "Generando tu Cotización con IA" %}</h1>
         <p class="lead mb-4">
-            Nuestro sistema de inteligencia artificial está analizando tu proyecto...
+            {% translate "Nuestro sistema de inteligencia artificial está analizando tu proyecto..." %}
         </p>
         
         <!-- Spinner de carga -->
@@ -145,28 +146,28 @@
         <div class="progress-steps">
             <div class="step active" id="step1">
                 <div class="step-icon">1</div>
-                <div>Analizando descripción del proyecto</div>
+                <div>{% translate "Analizando descripción del proyecto" %}</div>
             </div>
             <div class="step" id="step2">
                 <div class="step-icon">2</div>
-                <div>Consultando base de datos de ejemplos</div>
+                <div>{% translate "Consultando base de datos de ejemplos" %}</div>
             </div>
             <div class="step" id="step3">
                 <div class="step-icon">3</div>
-                <div>Calculando estimación de horas</div>
+                <div>{% translate "Calculando estimación de horas" %}</div>
             </div>
             <div class="step" id="step4">
                 <div class="step-icon">4</div>
-                <div>Generando propuesta detallada</div>
+                <div>{% translate "Generando propuesta detallada" %}</div>
             </div>
         </div>
         
         <!-- Información de tiempo estimado -->
         <div class="eta-info">
             <i class="bi bi-clock"></i>
-            <strong>Tiempo estimado:</strong> 10-30 segundos
+            <strong>{% translate "Tiempo estimado:" %}</strong> {% translate "10-30 segundos" %}
             <br>
-            <small>La complejidad de tu proyecto determina el tiempo de procesamiento</small>
+            <small>{% translate "La complejidad de tu proyecto determina el tiempo de procesamiento" %}</small>
         </div>
     </div>
     
@@ -176,13 +177,13 @@
             <div class="success-icon">
                 <i class="bi bi-check-circle-fill"></i>
             </div>
-            <h3 class="text-success mb-3">¡Cotización Generada!</h3>
-            <p class="mb-4">Tu cotización personalizada está lista. Serás redirigido automáticamente...</p>
+            <h3 class="text-success mb-3">{% translate "¡Cotización Generada!" %}</h3>
+            <p class="mb-4">{% translate "Tu cotización personalizada está lista. Serás redirigido automáticamente..." %}</p>
             <div class="d-flex justify-content-center align-items-center">
                 <div class="spinner-border text-success me-2" role="status">
-                    <span class="visually-hidden">Cargando...</span>
+                    <span class="visually-hidden">{% translate "Cargando..." %}</span>
                 </div>
-                <span>Redirigiendo...</span>
+                <span>{% translate "Redirigiendo..." %}</span>
             </div>
         </div>
     </div>

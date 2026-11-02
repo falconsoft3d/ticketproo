@@ -1,1036 +1,997 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Dashboard - TicketProo{% endblock %}
+{% block title %}{% translate "Dashboard - TicketProo" %}{% endblock %}
 
 {% block content %}
 <style>
-.dash-btn {
+/* ==========================================
+   DASHBOARD — estilo Apple
+   ========================================== */
+body { background: var(--ap-bg) !important; }
+
+.ap-dash {
+    color: var(--ap-ink);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
+    padding-bottom: 3rem;
+}
+
+/* Cabecera */
+.ap-dash-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin: .5rem 0 2rem;
+}
+.ap-date {
+    font-size: .8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ap-ink-3);
+    margin-bottom: .25rem;
+}
+.ap-hello {
+    font-size: clamp(1.9rem, 4vw, 2.6rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0;
+}
+.ap-hello-sub { color: var(--ap-ink-2); font-size: 1.05rem; margin: .35rem 0 0; }
+
+/* Botones */
+.ap-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.ap-btn {
     display: inline-flex;
-    flex-direction: column;
+    align-items: center;
+    gap: .45rem;
+    font-size: .92rem;
+    font-weight: 500;
+    padding: .6rem 1.15rem;
+    border-radius: 980px;
+    text-decoration: none;
+    border: none;
+    background: var(--ap-blue);
+    color: #fff;
+    transition: background .2s ease, transform .15s ease;
+    white-space: nowrap;
+}
+.ap-btn:hover { background: var(--ap-blue-hover); color: #fff; }
+.ap-btn:active { transform: scale(.97); }
+.ap-btn-gray { background: var(--ap-fill); color: var(--ap-ink); }
+.ap-btn-gray:hover { background: var(--ap-fill-3); color: var(--ap-ink); }
+.ap-btn-warm { background: var(--ap-soft-orange); color: #b25000; }
+.ap-btn-warm:hover { background: #ffe6c7; color: #9a4500; }
+.ap-btn-sm { font-size: .8rem; padding: .38rem .85rem; }
+.ap-btn-icon {
+    width: 32px; height: 32px; padding: 0;
+    justify-content: center;
+    font-size: .9rem;
+}
+.ap-link {
+    color: var(--ap-link);
+    font-size: .88rem;
+    font-weight: 400;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.ap-link:hover { text-decoration: underline; color: var(--ap-link); }
+.ap-link::after { content: " \203A"; }
+
+/* Cita */
+.ap-quote {
+    max-width: 420px;
+    font-size: .88rem;
+    color: var(--ap-ink-2);
+    margin-top: .9rem;
+}
+.ap-quote p {
+    font-style: italic;
+    margin: 0 0 .2rem;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 4.5em;
+}
+.ap-quote small { color: var(--ap-ink-3); }
+
+/* Avisos */
+.ap-notice {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--ap-surface);
+    border-radius: 18px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    font-size: .92rem;
+}
+.ap-notice .ap-chip { flex-shrink: 0; }
+
+/* Tarjetas */
+.ap-card {
+    background: var(--ap-surface);
+    border-radius: 22px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .03);
+}
+.ap-card-flush { padding: 0; overflow: hidden; }
+.ap-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.ap-card-flush .ap-card-head { padding: 1.35rem 1.5rem 0; }
+.ap-card-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+.ap-count {
+    font-size: .75rem;
+    font-weight: 600;
+    background: var(--ap-fill-2);
+    color: var(--ap-ink-2);
+    border-radius: 980px;
+    padding: .15rem .55rem;
+}
+
+/* Chips de icono (estilo SF Symbols) */
+.ap-chip {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
-    font-size: 1rem;
+    font-size: 1.05rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+.c-blue { background: #0a84ff; }
+.c-red { background: #ff453a; }
+.c-green { background: #30d158; }
+.c-purple { background: #bf5af2; }
+.c-teal { background: #40c8e0; }
+.c-orange { background: #ff9f0a; }
+.c-indigo { background: #5e5ce6; }
+.c-gray { background: #8e8e93; }
+
+/* KPIs */
+.ap-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+.ap-kpi {
+    background: var(--ap-surface);
+    border-radius: 22px;
+    padding: 1.25rem 1.3rem 1.2rem;
     text-decoration: none;
+    color: var(--ap-ink);
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+    transition: transform .3s cubic-bezier(.2, .8, .2, 1), box-shadow .3s ease;
+}
+.ap-kpi:hover {
+    color: var(--ap-ink);
+    transform: translateY(-3px);
+    box-shadow: 0 14px 34px -14px rgba(0, 0, 0, .18);
+}
+.ap-kpi-num {
+    font-size: 2.1rem;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1;
+}
+.ap-kpi-num small { font-size: .95rem; font-weight: 500; color: var(--ap-ink-3); letter-spacing: 0; }
+.ap-kpi-label { font-size: .85rem; color: var(--ap-ink-2); margin-top: .3rem; }
+.ap-progress {
+    height: 4px;
+    background: var(--ap-line-soft);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: .55rem;
+}
+.ap-progress span { display: block; height: 100%; background: #ff9f0a; border-radius: 4px; }
+
+/* Apps (URLs principales) */
+.ap-apps {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 1.25rem .75rem;
+}
+.ap-app {
+    text-align: center;
+    text-decoration: none;
+    color: var(--ap-ink);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+}
+.ap-app-icon {
+    width: 60px; height: 60px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: 600;
     color: #fff;
-    border: none;
-    border-radius: 12px;
-    padding: 8px 22px;
-    line-height: 1.25;
+    background: linear-gradient(160deg, #5ac8fa, #0071e3);
+    box-shadow: 0 6px 14px -6px rgba(0, 113, 227, .55);
+    transition: transform .2s ease;
+}
+.ap-app:nth-child(5n+2) .ap-app-icon { background: linear-gradient(160deg, #ffb340, #ff6b00); box-shadow: 0 6px 14px -6px rgba(255, 107, 0, .5); }
+.ap-app:nth-child(5n+3) .ap-app-icon { background: linear-gradient(160deg, #6be585, #1fa64a); box-shadow: 0 6px 14px -6px rgba(31, 166, 74, .5); }
+.ap-app:nth-child(5n+4) .ap-app-icon { background: linear-gradient(160deg, #d68bff, #8e3bdb); box-shadow: 0 6px 14px -6px rgba(142, 59, 219, .5); }
+.ap-app:nth-child(5n+5) .ap-app-icon { background: linear-gradient(160deg, #ff7a8a, #e0254a); box-shadow: 0 6px 14px -6px rgba(224, 37, 74, .5); }
+.ap-app:hover { color: var(--ap-ink); }
+.ap-app:hover .ap-app-icon { transform: scale(1.07); }
+.ap-app-name { font-size: .8rem; font-weight: 500; line-height: 1.2; }
+.ap-app-user { font-size: .7rem; color: var(--ap-ink-3); margin-top: -.3rem; }
+
+/* Tablas */
+.ap-table-wrap { overflow-x: auto; }
+.ap-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .88rem;
+}
+.ap-table th {
+    font-size: .72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--ap-ink-3);
+    padding: .9rem 1rem .6rem;
+    border-bottom: 1px solid var(--ap-line);
     white-space: nowrap;
-    animation: dash-btn-breathe 2.6s ease-in-out infinite;
-    transition: transform .15s ease, filter .15s ease;
+    text-align: left;
 }
-.dash-btn:hover {
-    color: #fff;
-    transform: scale(1.06);
-    animation: none;
-    filter: brightness(1.1);
+.ap-table td {
+    padding: .85rem 1rem;
+    border-bottom: 1px solid var(--ap-fill-2);
+    vertical-align: middle;
 }
-.dash-btn-blue  { background: #1565c0; }
-.dash-btn-green { background: #2e7d32; }
-.dash-btn-amber { background: #e65100; }
-.dash-btn .btn-sub {
-    font-size: .68rem;
-    font-weight: 400;
-    opacity: .85;
-    display: block;
+.ap-table th:first-child, .ap-table td:first-child { padding-left: 1.5rem; }
+.ap-table th:last-child, .ap-table td:last-child { padding-right: 1.5rem; }
+.ap-table tbody tr:last-child td { border-bottom: none; }
+.ap-table tbody tr { transition: background .15s ease; }
+.ap-table tbody tr:hover { background: var(--ap-hover); }
+.ap-table tr.is-link { cursor: pointer; }
+.ap-table a { color: var(--ap-ink); text-decoration: none; }
+.ap-table a:hover { color: var(--ap-blue); }
+.ap-table .ap-num { color: var(--ap-ink-3); font-variant-numeric: tabular-nums; }
+.ap-table .ap-muted { color: var(--ap-ink-3); }
+.ap-table .ap-desc { color: var(--ap-ink-3); font-size: .8rem; }
+
+/* Badges suavizados (las clases vienen de los modelos) */
+.ap-dash .badge {
+    border-radius: 980px;
+    font-weight: 500;
+    font-size: .72rem;
+    padding: .32em .7em;
+    letter-spacing: 0;
 }
-@keyframes dash-btn-breathe {
-    0%, 100% { transform: scale(1); }
-    50%       { transform: scale(1.03); }
+
+/* Horario y proyectos */
+.ap-split {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+.ap-split .ap-card { margin-bottom: 0; }
+.ap-status {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    font-size: .8rem;
+    font-weight: 600;
+    padding: .3rem .75rem;
+    border-radius: 980px;
+}
+.ap-status.on { background: var(--ap-soft-green); color: #1a7f37; }
+.ap-status.off { background: var(--ap-fill-2); color: var(--ap-ink-2); }
+.ap-status .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.ap-status.on .dot { animation: ap-pulse 1.8s ease-in-out infinite; }
+@keyframes ap-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.ap-time-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .75rem;
+    margin: 1.1rem 0;
+}
+.ap-time-cell {
+    background: var(--ap-fill-2);
+    border-radius: 16px;
+    padding: .9rem 1rem;
+}
+.ap-time-cell small { display: block; color: var(--ap-ink-3); font-size: .75rem; margin-bottom: .2rem; }
+.ap-time-cell b { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
+.ap-tags { display: flex; flex-wrap: wrap; gap: .4rem; }
+.ap-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    font-size: .75rem;
+    font-weight: 500;
+    padding: .25rem .65rem;
+    border-radius: 980px;
+    background: var(--ap-soft-blue);
+    color: #0060c7;
+}
+.ap-list-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .85rem 1rem;
+    border-radius: 14px;
+    background: var(--ap-fill-2);
+    color: var(--ap-ink);
+    text-decoration: none;
+    font-size: .92rem;
+    font-weight: 500;
+    margin-bottom: .5rem;
+    transition: background .15s ease;
+}
+.ap-list-btn:hover { background: var(--ap-fill); color: var(--ap-ink); }
+.ap-list-btn i.bi-chevron-right { color: var(--ap-ink-3); font-size: .8rem; }
+
+/* Vacíos */
+.ap-empty {
+    text-align: center;
+    padding: 2.75rem 1rem;
+}
+.ap-empty .ap-chip { width: 52px; height: 52px; border-radius: 14px; font-size: 1.5rem; margin-bottom: 1rem; }
+.ap-empty h5 { font-weight: 600; letter-spacing: -0.02em; margin-bottom: .3rem; }
+.ap-empty p { color: var(--ap-ink-2); font-size: .92rem; margin-bottom: 1.1rem; }
+
+/* Entrada */
+.ap-fade { animation: ap-fade-in .6s cubic-bezier(.2, .8, .2, 1) both; }
+.ap-fade:nth-child(2) { animation-delay: .05s; }
+.ap-fade:nth-child(3) { animation-delay: .1s; }
+.ap-fade:nth-child(4) { animation-delay: .15s; }
+.ap-fade:nth-child(5) { animation-delay: .2s; }
+.ap-fade:nth-child(6) { animation-delay: .25s; }
+@keyframes ap-fade-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+    .ap-fade, .ap-status.on .dot { animation: none; }
+    .ap-kpi:hover, .ap-app:hover .ap-app-icon { transform: none; }
+}
+
+@media (max-width: 991px) {
+    .ap-split { grid-template-columns: 1fr; }
+}
+@media (max-width: 575px) {
+    .ap-kpis { grid-template-columns: repeat(2, 1fr); gap: .75rem; }
+    .ap-kpi { padding: 1rem; }
+    .ap-kpi-num { font-size: 1.7rem; }
+    .ap-time-grid { grid-template-columns: 1fr 1fr; }
+    .ap-card { padding: 1.2rem; border-radius: 18px; }
+    .ap-card-flush { padding: 0; }
 }
 </style>
-<div class="row mb-4">
-    <div class="col">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="mb-2">
-                    <i class="bi bi-speedometer2"></i> Dashboard - TicketProo
-                </h1>
-                <p class="lead text-muted mb-0">
-                    Bienvenido, {{ user.first_name|default:user.username }}
-                    {% if is_agent %}
-                        - Panel de Administración
-                    {% endif %}
-                </p>
-            </div>
-            
-            <!-- Evaluar + Citas rotativas -->
-            <div class="d-flex flex-column align-items-end gap-2">
-            <div class="d-flex gap-2 align-items-stretch">
-            <a href="{% url 'ticket_create' %}" class="dash-btn dash-btn-blue">
-                <span><i class="bi bi-plus-circle-fill me-1"></i> Crear Ticket</span>
+
+<div class="ap-dash">
+
+<!-- Cabecera -->
+<div class="ap-dash-head">
+    <div>
+        {% get_current_language as CURRENT_LANG %}
+        <div class="ap-date" id="ap-date" data-lang="{{ CURRENT_LANG }}">{% now "d/m/Y" %}</div>
+        <h1 class="ap-hello"><span id="ap-greeting">{% translate "Hola" %}</span>, {{ user.first_name|default:user.username }}.</h1>
+        <p class="ap-hello-sub">
+            {% if is_agent %}{% translate "Panel de administración" %}{% else %}{% translate "Este es el resumen de tu actividad" %}{% endif %}
+            {% if user.profile.cargo %} · {{ user.profile.cargo }}{% endif %}
+        </p>
+        {% if user.profile.descripcion_cargo %}
+        <p class="ap-hello-sub" style="font-size:.88rem;color:var(--ap-ink-3);max-width:620px">{{ user.profile.descripcion_cargo }}</p>
+        {% endif %}
+    </div>
+
+    <div class="d-flex flex-column align-items-lg-end">
+        <div class="ap-actions">
+            <a href="{% url 'ticket_create' %}" class="ap-btn">
+                <i class="bi bi-plus-lg"></i> {% translate "Crear ticket" %}
             </a>
             {% if user_books_count == 1 %}
-            <a href="{% url 'project_book_detail' single_book_pk %}" class="dash-btn dash-btn-green">
-                <span><i class="bi bi-journal-bookmark me-1"></i> Ver tu Libro</span>
+            <a href="{% url 'project_book_detail' single_book_pk %}" class="ap-btn ap-btn-gray">
+                <i class="bi bi-journal-bookmark"></i> {% translate "Ver tu libro" %}
             </a>
             {% else %}
-            <a href="{% url 'project_book_list' %}" class="dash-btn dash-btn-green">
-                <span><i class="bi bi-journal-bookmark me-1"></i> Ver tus Libros</span>
+            <a href="{% url 'project_book_list' %}" class="ap-btn ap-btn-gray">
+                <i class="bi bi-journal-bookmark"></i> {% translate "Ver tus libros" %}
             </a>
             {% endif %}
-            <a href="{% url 'qa_rating_public' %}" class="dash-btn dash-btn-amber" title="¡Dinos cómo lo estamos haciendo!">
-                <span>😊 ¡Evalúanos!</span>
-                <span class="btn-sub">Tu opinión nos importa</span>
+            <a href="{% url 'qa_rating_public' %}" class="ap-btn ap-btn-warm" title="{% translate "Tu opinión nos importa" %}">
+                😊 {% translate "Evalúanos" %}
             </a>
-            </div>
-            {% if dashboard_quotes %}
-            <div class="text-end" style="max-width: 400px;">
-                <div id="rotating-quote" class="border-start border-primary border-4 ps-3">
-                    <blockquote class="blockquote mb-0">
-                        <p class="mb-3 fst-italic" id="quote-text" style="font-size: 0.9rem; height: 4.5em; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"></p>
-                        <footer class="blockquote-footer" id="quote-author" style="font-size: 0.8rem;"></footer>
-                    </blockquote>
-                </div>
-            </div>
-            {% endif %}
-            </div>
         </div>
-
-        <!-- Banner RFI pendientes para no-agentes -->
-        {% if not is_agent and rfi_open_count > 0 %}
-        <div class="alert alert-warning d-flex align-items-center gap-3 mb-3" role="alert">
-            <i class="bi bi-clipboard-exclamation-fill fs-4 flex-shrink-0"></i>
-            <div>
-                Tienes <strong>{{ rfi_open_count }} RFI(s) abierto(s)</strong>.
-                {% if rfi_oldest_days > 0 %}
-                La más antigua lleva <strong>{{ rfi_oldest_days }} día(s)</strong> sin cerrar.
-                {% endif %}
-                Es importante que cumpla con la entrega de información solicitada para no tener atrasos en el proyecto.
-                <a href="{% url 'rfi_my_list' %}" class="alert-link ms-2">Ver mis RFI →</a>
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Información del cargo del usuario -->
-        {% if user.profile.cargo or user.profile.descripcion_cargo %}
-        <div class="alert alert-light border border-light bg-white mb-4">            {% if user.profile.cargo %}
-                <h5 class="mb-1 text-dark">
-                    <i class="bi bi-person-badge"></i> Cargo: {{ user.profile.cargo }}
-                </h5>
-            {% endif %}
-            {% if user.profile.descripcion_cargo %}
-                <p class="mb-0 text-muted">{{ user.profile.descripcion_cargo }}</p>
-            {% endif %}
+        {% if dashboard_quotes %}
+        <div class="ap-quote text-lg-end" id="rotating-quote">
+            <p id="quote-text"></p>
+            <small id="quote-author"></small>
         </div>
         {% endif %}
     </div>
 </div>
 
-<!-- KPI Cards -->
-<div class="row mb-4 g-2 flex-nowrap">
-    <!-- Tickets Pendientes / Totales -->
-    <div class="col">
-        <a href="{% url 'ticket_list' %}" class="text-decoration-none">
-            <div class="card h-100 border-0" style="background:#1565c0; color:#fff;">
-                <div class="card-body text-center py-3">
-                    <i class="bi bi-ticket-perforated-fill" style="font-size:2rem;opacity:.8;"></i>
-                    <div class="mt-1" style="font-size:1.8rem;font-weight:700;line-height:1.1;">
-                        <span class="kpi-counter" data-target="{{ kpi_tickets_pending }}">0</span>
-                        <span style="font-size:.85rem;opacity:.7;">/ <span class="kpi-counter" data-target="{{ kpi_tickets_total }}">0</span></span>
-                    </div>
-                    <div class="mt-1" style="font-size:.75rem;opacity:.85;">Tickets Pendientes</div>
-                </div>
-            </div>
-        </a>
+<!-- Banner RFI pendientes para no-agentes -->
+{% if not is_agent and rfi_open_count > 0 %}
+<div class="ap-notice" role="alert">
+    <span class="ap-chip c-orange"><i class="bi bi-clipboard-exclamation"></i></span>
+    <div class="flex-grow-1">
+        {% blocktranslate with n=rfi_open_count %}Tienes <strong>{{ n }} RFI(s) abierto(s)</strong>.{% endblocktranslate %}
+        {% if rfi_oldest_days > 0 %}
+        {% blocktranslate with d=rfi_oldest_days %}La más antigua lleva <strong>{{ d }} día(s)</strong> sin cerrar.{% endblocktranslate %}
+        {% endif %}
+        {% translate "Es importante que cumpla con la entrega de información solicitada para no tener atrasos en el proyecto." %}
     </div>
-    <!-- RFI Abiertos / Totales -->
-    <div class="col">
-        <a href="{% url 'rfi_list' %}" class="text-decoration-none">
-            <div class="card h-100 border-0" style="background:#c0392b; color:#fff;">
-                <div class="card-body text-center py-3">
-                    <i class="bi bi-file-earmark-text-fill" style="font-size:2rem;opacity:.8;"></i>
-                    <div class="mt-1" style="font-size:1.8rem;font-weight:700;line-height:1.1;">
-                        <span class="kpi-counter" data-target="{{ kpi_rfi_open }}">0</span>
-                        <span style="font-size:.85rem;opacity:.7;">/ <span class="kpi-counter" data-target="{{ kpi_rfi_total }}">0</span></span>
-                    </div>
-                    <div class="mt-1" style="font-size:.75rem;opacity:.85;">RFI Pendientes</div>
-                </div>
+    <a href="{% url 'rfi_my_list' %}" class="ap-link">{% translate "Ver mis RFI" %}</a>
+</div>
+{% endif %}
+
+<!-- KPIs -->
+<div class="ap-kpis">
+    <a href="{% url 'ticket_list' %}" class="ap-kpi ap-fade">
+        <span class="ap-chip c-blue"><i class="bi bi-ticket-perforated-fill"></i></span>
+        <div>
+            <div class="ap-kpi-num">
+                <span class="kpi-counter" data-target="{{ kpi_tickets_pending }}">0</span><small> / <span class="kpi-counter" data-target="{{ kpi_tickets_total }}">0</span></small>
             </div>
-        </a>
-    </div>
-    <!-- Cursos -->
-    <div class="col">
-        <a href="{% url 'course_list' %}" class="text-decoration-none">
-            <div class="card h-100 border-0" style="background:#2e7d32; color:#fff;">
-                <div class="card-body text-center py-3">
-                    <i class="bi bi-mortarboard-fill" style="font-size:2rem;opacity:.8;"></i>
-                    <div class="mt-1" style="font-size:1.8rem;font-weight:700;line-height:1.1;">
-                        <span class="kpi-counter" data-target="{{ kpi_courses_total }}">0</span>
-                    </div>
-                    <div class="mt-1" style="font-size:.75rem;opacity:.85;">Cursos Disponibles</div>
-                </div>
+            <div class="ap-kpi-label">{% translate "Tickets pendientes" %}</div>
+        </div>
+    </a>
+    <a href="{% url 'rfi_list' %}" class="ap-kpi ap-fade">
+        <span class="ap-chip c-red"><i class="bi bi-file-earmark-text-fill"></i></span>
+        <div>
+            <div class="ap-kpi-num">
+                <span class="kpi-counter" data-target="{{ kpi_rfi_open }}">0</span><small> / <span class="kpi-counter" data-target="{{ kpi_rfi_total }}">0</span></small>
             </div>
-        </a>
-    </div>
-    <!-- Documentos -->
-    <div class="col">
-        <a href="{% url 'manual_list' %}" class="text-decoration-none">
-            <div class="card h-100 border-0" style="background:#6a0080; color:#fff;">
-                <div class="card-body text-center py-3">
-                    <i class="bi bi-book" style="font-size:2rem;opacity:.8;"></i>
-                    <div class="mt-1" style="font-size:1.8rem;font-weight:700;line-height:1.1;">
-                        <span class="kpi-counter" data-target="{{ kpi_docs_total }}">0</span>
-                    </div>
-                    <div class="mt-1" style="font-size:.75rem;opacity:.85;">Manuales</div>
-                </div>
+            <div class="ap-kpi-label">{% translate "RFI pendientes" %}</div>
+        </div>
+    </a>
+    <a href="{% url 'course_list' %}" class="ap-kpi ap-fade">
+        <span class="ap-chip c-green"><i class="bi bi-mortarboard-fill"></i></span>
+        <div>
+            <div class="ap-kpi-num"><span class="kpi-counter" data-target="{{ kpi_courses_total }}">0</span></div>
+            <div class="ap-kpi-label">{% translate "Cursos disponibles" %}</div>
+        </div>
+    </a>
+    <a href="{% url 'manual_list' %}" class="ap-kpi ap-fade">
+        <span class="ap-chip c-purple"><i class="bi bi-book-fill"></i></span>
+        <div>
+            <div class="ap-kpi-num"><span class="kpi-counter" data-target="{{ kpi_docs_total }}">0</span></div>
+            <div class="ap-kpi-label">{% translate "Manuales" %}</div>
+        </div>
+    </a>
+    <a href="{% url 'ticket_list' %}" class="ap-kpi ap-fade">
+        <span class="ap-chip c-teal"><i class="bi bi-shield-check"></i></span>
+        <div>
+            <div class="ap-kpi-num">
+                {% if kpi_days_without_tickets is not None %}<span class="kpi-counter" data-target="{{ kpi_days_without_tickets }}">0</span>{% else %}—{% endif %}
             </div>
-        </a>
-    </div>
-    <!-- Días sin nuevos tickets -->
-    <div class="col">
-        <a href="{% url 'ticket_list' %}" class="text-decoration-none">
-            <div class="card h-100 border-0" style="background:#00695c; color:#fff;">
-                <div class="card-body text-center py-3">
-                    <i class="bi bi-shield-check" style="font-size:2rem;opacity:.8;"></i>
-                    <div class="mt-1" style="font-size:1.8rem;font-weight:700;line-height:1.1;">
-                        {% if kpi_days_without_tickets is not None %}<span class="kpi-counter" data-target="{{ kpi_days_without_tickets }}">0</span>{% else %}—{% endif %}
-                    </div>
-                    <div class="mt-1" style="font-size:.75rem;opacity:.85;">Días sin nuevos Tickets</div>
-                </div>
+            <div class="ap-kpi-label">{% translate "Días sin nuevos tickets" %}</div>
+        </div>
+    </a>
+    <a href="{% url 'checklist_list' %}" class="ap-kpi ap-fade">
+        <span class="ap-chip c-orange"><i class="bi bi-check2-all"></i></span>
+        <div>
+            <div class="ap-kpi-num">
+                <span class="kpi-counter" data-target="{{ kpi_checklist_done }}">0</span><small> / <span class="kpi-counter" data-target="{{ kpi_checklist_total }}">0</span></small>
             </div>
-        </a>
-    </div>
-    <!-- Checklist Tareas -->
-    <div class="col">
-        <a href="{% url 'checklist_list' %}" class="text-decoration-none">
-            <div class="card h-100 border-0" style="background:#e65100; color:#fff;">
-                <div class="card-body text-center py-3">
-                    <i class="bi bi-check2-all" style="font-size:2rem;opacity:.8;"></i>
-                    <div class="mt-1" style="font-size:1.8rem;font-weight:700;line-height:1.1;">
-                        <span class="kpi-counter" data-target="{{ kpi_checklist_done }}">0</span>
-                        <span style="font-size:.85rem;opacity:.7;">/ <span class="kpi-counter" data-target="{{ kpi_checklist_total }}">0</span></span>
-                    </div>
-                    <div class="mt-1" style="font-size:.75rem;opacity:.85;">
-                        Checklist ({{ kpi_checklist_pct }}%)
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
+            <div class="ap-kpi-label">{% translate "Checklist" %} · {{ kpi_checklist_pct }}%</div>
+            <div class="ap-progress"><span style="width: {{ kpi_checklist_pct }}%"></span></div>
+        </div>
+    </a>
 </div>
 
 <!-- URLs Principales -->
-{% if is_agent %}
-{% if principal_urls %}
-<div class="row mb-4">
-    <div class="col">
-        <div>
-            <div class="card-body">
-                <div class="row">
-                    {% for url in principal_urls %}
-                    <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center p-3">
-                                <div class="mb-2">
-                                    <i class="bi bi-globe2 fs-2 text-primary"></i>
-                                </div>
-                                <h6 class="card-title mb-2">{{ url.title|truncatechars:20 }}</h6>
-                                {% if url.description %}
-                                    <p class="card-text small text-muted mb-3">{{ url.description|truncatechars:50 }}</p>
-                                {% endif %}
-                                <div class="d-grid gap-2">
-                                    <a href="{{ url.url }}" target="_blank" class="btn btn-primary btn-sm">
-                                        <i class="bi bi-box-arrow-up-right me-1"></i>
-                                        Acceder
-                                    </a>
-                                    {% if url.username %}
-                                        <small class="text-muted">
-                                            <i class="bi bi-person me-1"></i>{{ url.username }}
-                                        </small>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                <div class="text-end mt-3">
-                    <a href="{% url 'url_manager_list' %}" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-gear me-1"></i>
-                        Gestionar URLs
-                    </a>
-                </div>
-            </div>
-        </div>
+{% if is_agent and principal_urls %}
+<div class="ap-card">
+    <div class="ap-card-head">
+        <h2 class="ap-card-title">{% translate "Accesos rápidos" %}</h2>
+        <a href="{% url 'url_manager_list' %}" class="ap-link">{% translate "Gestionar" %}</a>
+    </div>
+    <div class="ap-apps">
+        {% for url in principal_urls %}
+        <a href="{{ url.url }}" target="_blank" rel="noopener" class="ap-app" title="{{ url.description|default:url.title }}">
+            <span class="ap-app-icon">{{ url.title|slice:":1"|upper }}</span>
+            <span class="ap-app-name">{{ url.title|truncatechars:20 }}</span>
+            {% if url.username %}<span class="ap-app-user">{{ url.username }}</span>{% endif %}
+        </a>
+        {% endfor %}
     </div>
 </div>
-{% endif %}
 {% endif %}
 
 <!-- Órdenes de trabajo pendientes de aprobación (solo para agentes) -->
 {% if is_agent and pending_work_orders %}
-<div class="row mb-4">
-    <div class="col">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-clipboard-check me-2"></i>
-                    Órdenes de Trabajo Pendientes de Aprobación
-                    <span class="badge bg-warning">{{ pending_work_orders.count }}</span>
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Orden</th>
-                                <th>Título</th>
-                                <th>Empresa</th>
-                                <th>Fecha de Entrega</th>
-                                <th>Prioridad</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for work_order in pending_work_orders %}
-                            <tr>
-                                <td>
-                                    <strong>{{ work_order.order_number }}</strong>
-                                </td>
-                                <td>
-                                    <a href="{% url 'work_order_detail' work_order.pk %}" class="text-decoration-none">
-                                        {{ work_order.title|truncatechars:50 }}
-                                    </a>
-                                </td>
-                                <td>
-                                    {% if work_order.company %}
-                                        <span class="badge rounded-pill" 
-                                              style="background-color: {{ work_order.company.color }}; color: white;">
-                                            {{ work_order.company.name }}
-                                        </span>
-                                    {% else %}
-                                        <span class="text-muted">Sin empresa</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if work_order.due_date %}
-                                        {{ work_order.due_date|date:"d/m/Y" }}
-                                        {% if work_order.is_overdue %}
-                                            <span class="badge bg-danger ms-1">Vencida</span>
-                                        {% elif work_order.days_until_due <= 3 %}
-                                            <span class="badge bg-warning ms-1">Próxima</span>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="text-muted">Sin fecha</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <span class="badge {{ work_order.get_priority_badge_class }}">
-                                        {{ work_order.get_priority_display }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{% url 'work_order_detail' work_order.pk %}" 
-                                           class="btn btn-outline-primary" title="Ver detalles">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <form method="post" action="{% url 'work_order_change_status' work_order.pk %}" 
-                                              style="display: inline;" 
-                                              onsubmit="return confirm('¿Aprobar esta orden de trabajo?');">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="status" value="accepted">
-                                            <button type="submit" class="btn btn-success btn-sm" title="Aprobar">
-                                                <i class="bi bi-check-circle"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="text-center mt-3">
-                    <a href="{% url 'work_order_list' %}?status=draft" class="btn btn-outline-primary">
-                        <i class="bi bi-list"></i> Ver todas las órdenes pendientes
-                    </a>
-                </div>
-            </div>
-        </div>
+<div class="ap-card ap-card-flush">
+    <div class="ap-card-head">
+        <h2 class="ap-card-title">
+            {% translate "Órdenes pendientes de aprobación" %}
+            <span class="ap-count">{{ pending_work_orders.count }}</span>
+        </h2>
+        <a href="{% url 'work_order_list' %}?status=draft" class="ap-link">{% translate "Ver todas" %}</a>
     </div>
-</div>
-{% endif %}
-
-<!-- Control de Horario (solo para agentes) -->
-{% if is_agent %}
-<div class="row mb-4">
-    <div class="col-12">
-        {% if active_time_entry %}
-            <!-- Barra blanca cuando está trabajando -->
-            <div class="card border-light">
-                <div class="card-header bg-white text-dark border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="bi bi-clock text-success"></i> Control de Horario
-                    </h5>
-                    <a href="{% url 'time_clock' %}" class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-gear"></i> Gestión Completa
-                    </a>
-                </div>
-        {% else %}
-            <!-- Barra blanca cuando no está trabajando -->
-            <div class="card border-light">
-                <div class="card-header bg-white text-dark border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="bi bi-clock text-secondary"></i> Control de Horario
-                    </h5>
-                    <a href="{% url 'time_clock' %}" class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-gear"></i> Gestión Completa
-                    </a>
-                </div>
-        {% endif %}
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
-                        {% if active_time_entry %}
-                            <div class="alert alert-light border border-light bg-white">
-                                <div class="d-flex align-items-center">
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-1">
-                                            <i class="bi bi-play-fill text-success"></i> Jornada Activa
-                                        </h6>
-                                        <p class="mb-0">
-                                            <strong>Inicio:</strong> {{ active_time_entry.fecha_entrada|date:"H:i" }}
-                                            <br>
-                                            <strong>Tiempo:</strong> <span id="tiempo-activo">{{ active_time_entry.duracion_formateada }}</span>
-                                            <br>
-                                            <strong>Trabajando en:</strong>
-                                            {% if active_time_entry.project or active_time_entry.ticket or active_time_entry.work_order %}
-                                                <div class="mt-1">
-                                                    {% if active_time_entry.project %}
-                                                        <small class="badge me-1" style="background-color: {{ active_time_entry.project.color }}; color: white;">
-                                                            <i class="bi bi-folder"></i> {{ active_time_entry.project.name }}
-                                                        </small>
-                                                    {% endif %}
-                                                    {% if active_time_entry.ticket %}
-                                                        <small class="badge bg-primary me-1">
-                                                            <i class="bi bi-ticket-perforated"></i> {{ active_time_entry.ticket.ticket_number }}
-                                                        </small>
-                                                    {% endif %}
-                                                    {% if active_time_entry.work_order %}
-                                                        <small class="badge bg-success me-1">
-                                                            <i class="bi bi-clipboard-check"></i> {{ active_time_entry.work_order.order_number }}
-                                                        </small>
-                                                    {% endif %}
-                                                </div>
-                                            {% else %}
-                                                <span class="text-muted">Sin asignación específica</span>
-                                            {% endif %}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+    {% translate "¿Aprobar esta orden de trabajo?" as confirm_approve %}
+    <div class="ap-table-wrap">
+        <table class="ap-table">
+            <thead>
+                <tr>
+                    <th>{% translate "Orden" %}</th>
+                    <th>{% translate "Título" %}</th>
+                    <th>{% translate "Empresa" %}</th>
+                    <th>{% translate "Entrega" %}</th>
+                    <th>{% translate "Prioridad" %}</th>
+                    <th class="text-end">{% translate "Acciones" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for work_order in pending_work_orders %}
+                <tr>
+                    <td class="ap-num">{{ work_order.order_number }}</td>
+                    <td>
+                        <a href="{% url 'work_order_detail' work_order.pk %}">{{ work_order.title|truncatechars:50 }}</a>
+                    </td>
+                    <td>
+                        {% if work_order.company %}
+                            <span class="badge" style="background-color: {{ work_order.company.color }}; color: white;">{{ work_order.company.name }}</span>
                         {% else %}
-                            <div class="alert alert-light border border-light bg-white">
-                                <h6 class="mb-1">
-                                    <i class="bi bi-pause-fill text-secondary"></i> Fuera de Horario
-                                </h6>
-                                <p class="mb-0 text-muted">No hay jornada activa</p>
-                            </div>
+                            <span class="ap-muted">{% translate "Sin empresa" %}</span>
                         {% endif %}
-                    </div>
-                    
-                    <div class="col-md-6 text-center">
-                        <div class="alert alert-light border border-light bg-white mb-3">
-                            <h6 class="mb-1">
-                                <i class="bi bi-clock-history text-secondary"></i> Horas Trabajadas Hoy
-                            </h6>
-                            <h4 class="mb-0 text-dark">
-                                {{ daily_hours|default:"0" }} horas
-                            </h4>
-                        </div>
-                        
-                        <div>
-                            {% if active_time_entry %}
-                                <a href="{% url 'time_entries_list' %}" class="btn btn-sm btn-outline-dark me-2">
-                                    <i class="bi bi-list"></i> Mis Registros
-                                </a>
-                                <a href="{% url 'attendance_overview' %}" class="btn btn-sm btn-outline-dark">
-                                    <i class="bi bi-people-fill"></i> Ver Todos
-                                </a>
-                            {% else %}
-                                <a href="{% url 'time_entries_list' %}" class="btn btn-sm btn-outline-dark me-2">
-                                    <i class="bi bi-list"></i> Mis Registros
-                                </a>
-                                <a href="{% url 'attendance_overview' %}" class="btn btn-sm btn-outline-dark">
-                                    <i class="bi bi-people-fill"></i> Ver Todos
-                                </a>
+                    </td>
+                    <td>
+                        {% if work_order.due_date %}
+                            {{ work_order.due_date|date:"d/m/Y" }}
+                            {% if work_order.is_overdue %}
+                                <span class="badge bg-danger ms-1">{% translate "Vencida" %}</span>
+                            {% elif work_order.days_until_due <= 3 %}
+                                <span class="badge bg-warning ms-1">{% translate "Próxima" %}</span>
                             {% endif %}
+                        {% else %}
+                            <span class="ap-muted">{% translate "Sin fecha" %}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge {{ work_order.get_priority_badge_class }}">{{ work_order.get_priority_display }}</span>
+                    </td>
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-1">
+                            <a href="{% url 'work_order_detail' work_order.pk %}" class="ap-btn ap-btn-gray ap-btn-icon" title="{% translate "Ver detalles" %}">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <form method="post" action="{% url 'work_order_change_status' work_order.pk %}"
+                                  class="d-inline"
+                                  onsubmit="return confirm('{{ confirm_approve|escapejs }}');">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="accepted">
+                                <button type="submit" class="ap-btn ap-btn-icon" style="background:#30d158" title="{% translate "Aprobar" %}">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                            </form>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endif %}
 
-<!-- Gestión de Proyectos (solo para agentes) -->
+<!-- Control de Horario + Proyectos (solo para agentes) -->
 {% if is_agent %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card border-light">
-            <div class="card-header bg-white text-dark border-bottom d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-folder text-secondary"></i> Gestión de Proyectos
-                </h5>
-                <a href="{% url 'project_create' %}" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-plus"></i> Nuevo Proyecto
-                </a>
+<div class="ap-split">
+    <div class="ap-card">
+        <div class="ap-card-head mb-0">
+            <h2 class="ap-card-title">
+                <span class="ap-chip {% if active_time_entry %}c-green{% else %}c-gray{% endif %}"><i class="bi bi-clock-fill"></i></span>
+                {% translate "Control de horario" %}
+            </h2>
+            {% if active_time_entry %}
+                <span class="ap-status on"><span class="dot"></span> {% translate "Jornada activa" %}</span>
+            {% else %}
+                <span class="ap-status off"><span class="dot"></span> {% translate "Fuera de horario" %}</span>
+            {% endif %}
+        </div>
+
+        <div class="ap-time-grid">
+            <div class="ap-time-cell">
+                <small>{% translate "Inicio" %}</small>
+                <b>{% if active_time_entry %}{{ active_time_entry.fecha_entrada|date:"H:i" }}{% else %}—{% endif %}</b>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="d-grid gap-2">
-                            <a href="{% url 'project_list' %}" class="btn btn-outline-dark">
-                                <i class="bi bi-list"></i> Ver Todos los Proyectos
-                            </a>
-                            <a href="{% url 'project_create' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-plus-circle"></i> Crear Nuevo Proyecto
-                            </a>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="border rounded p-3 bg-white border-light">
-                            <h6 class="text-muted mb-2">
-                                <i class="bi bi-info-circle text-secondary"></i> Información
-                            </h6>
-                            <p class="mb-0 small text-muted">
-                                Los proyectos te permiten organizar el tiempo de trabajo. 
-                                Cada vez que inicies una jornada laboral deberás seleccionar un proyecto.
-                            </p>
-                        </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="ap-time-cell">
+                <small>{% translate "Tiempo activo" %}</small>
+                <b id="tiempo-activo">{% if active_time_entry %}{{ active_time_entry.duracion_formateada }}{% else %}—{% endif %}</b>
+            </div>
+            <div class="ap-time-cell">
+                <small>{% translate "Horas hoy" %}</small>
+                <b>{{ daily_hours|default:"0" }}h</b>
             </div>
         </div>
+
+        {% if active_time_entry %}
+        <div class="mb-3">
+            <small class="d-block mb-2" style="color:var(--ap-ink-3)">{% translate "Trabajando en" %}</small>
+            {% if active_time_entry.project or active_time_entry.ticket or active_time_entry.work_order %}
+                <div class="ap-tags">
+                    {% if active_time_entry.project %}
+                        <span class="ap-tag" style="background-color: {{ active_time_entry.project.color }}; color: white;">
+                            <i class="bi bi-folder"></i> {{ active_time_entry.project.name }}
+                        </span>
+                    {% endif %}
+                    {% if active_time_entry.ticket %}
+                        <span class="ap-tag"><i class="bi bi-ticket-perforated"></i> {{ active_time_entry.ticket.ticket_number }}</span>
+                    {% endif %}
+                    {% if active_time_entry.work_order %}
+                        <span class="ap-tag" style="background:var(--ap-soft-green);color:#1f9d48"><i class="bi bi-clipboard-check"></i> {{ active_time_entry.work_order.order_number }}</span>
+                    {% endif %}
+                </div>
+            {% else %}
+                <span style="color:var(--ap-ink-3);font-size:.88rem">{% translate "Sin asignación específica" %}</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="ap-actions">
+            <a href="{% url 'time_clock' %}" class="ap-btn ap-btn-sm">{% translate "Gestión completa" %}</a>
+            <a href="{% url 'time_entries_list' %}" class="ap-btn ap-btn-gray ap-btn-sm">{% translate "Mis registros" %}</a>
+            <a href="{% url 'attendance_overview' %}" class="ap-btn ap-btn-gray ap-btn-sm">{% translate "Ver todos" %}</a>
+        </div>
+    </div>
+
+    <div class="ap-card">
+        <div class="ap-card-head">
+            <h2 class="ap-card-title">
+                <span class="ap-chip c-indigo"><i class="bi bi-folder-fill"></i></span>
+                {% translate "Proyectos" %}
+            </h2>
+        </div>
+        <a href="{% url 'project_list' %}" class="ap-list-btn">
+            <span><i class="bi bi-list-ul me-2"></i>{% translate "Ver todos los proyectos" %}</span>
+            <i class="bi bi-chevron-right"></i>
+        </a>
+        <a href="{% url 'project_create' %}" class="ap-list-btn">
+            <span><i class="bi bi-plus-circle me-2"></i>{% translate "Crear nuevo proyecto" %}</span>
+            <i class="bi bi-chevron-right"></i>
+        </a>
+        <p class="mb-0 mt-3" style="font-size:.82rem;color:var(--ap-ink-3)">
+            {% translate "Los proyectos te permiten organizar el tiempo de trabajo. Cada vez que inicies una jornada laboral deberás seleccionar un proyecto." %}
+        </p>
     </div>
 </div>
 {% endif %}
 
 <!-- Tickets recientes -->
 {% if recent_tickets %}
-<div class="row mt-5 mb-4">
-    <div class="col">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-clock-history"></i> Tickets Recientes
-                </h5>
-                <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-outline-primary">Ver todos</a>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Número</th>
-                                <th>Título</th>
-                                <th>Prioridad</th>
-                                <th>Estado</th>
-                                <th>Antigüedad</th>
-                                {% if is_agent %}<th>Horas</th>{% endif %}
-                                <th>Fecha</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for ticket in recent_tickets %}
-                            <tr style="cursor:pointer;" onclick="window.location='{% url 'ticket_detail' ticket.pk %}'" onmouseover="this.style.backgroundColor='rgba(13,110,253,0.06)'" onmouseout="this.style.backgroundColor=''">
-                                <td>
-                                    <a href="{% url 'ticket_detail' ticket.pk %}" class="text-decoration-none">
-                                        #{{ ticket.ticket_number }}
-                                    </a>
-                                </td>
-                                <td>
-                                    <a href="{% url 'ticket_detail' ticket.pk %}" class="text-decoration-none">
-                                        {{ ticket.title|truncatechars:50 }}
-                                    </a>
-                                </td>
-                                <td>
-                                    <span class="badge {{ ticket.get_priority_badge_class }}">
-                                        {{ ticket.get_priority_display }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge {{ ticket.get_status_badge_class }}">
-                                        {{ ticket.get_status_display }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge {{ ticket.get_age_badge_class }}" title="{{ ticket.get_age_in_hours|floatformat:1 }} horas">
-                                        <i class="bi bi-clock-history me-1"></i>{{ ticket.get_age_display }}
-                                    </span>
-                                </td>
-                                {% if is_agent %}
-                                <td>
-                                    {% if ticket.hours %}
-                                        <span class="badge bg-info">
-                                            <i class="bi bi-clock-history"></i> {{ ticket.hours }}h
-                                        </span>
-                                    {% else %}
-                                        <span class="text-muted">-</span>
-                                    {% endif %}
-                                </td>
-                                {% endif %}
-                                <td class="text-muted">{{ ticket.created_at|date:"d/m/Y H:i" }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+<div class="ap-card ap-card-flush">
+    <div class="ap-card-head">
+        <h2 class="ap-card-title">{% translate "Tickets recientes" %}</h2>
+        <a href="{% url 'ticket_list' %}" class="ap-link">{% translate "Ver todos" %}</a>
+    </div>
+    <div class="ap-table-wrap">
+        <table class="ap-table">
+            <thead>
+                <tr>
+                    <th>{% translate "Número" %}</th>
+                    <th>{% translate "Título" %}</th>
+                    <th>{% translate "Prioridad" %}</th>
+                    <th>{% translate "Estado" %}</th>
+                    <th>{% translate "Antigüedad" %}</th>
+                    {% if is_agent %}<th>{% translate "Horas" %}</th>{% endif %}
+                    <th>{% translate "Fecha" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in recent_tickets %}
+                <tr class="is-link" onclick="window.location='{% url 'ticket_detail' ticket.pk %}'">
+                    <td class="ap-num"><a href="{% url 'ticket_detail' ticket.pk %}">#{{ ticket.ticket_number }}</a></td>
+                    <td><a href="{% url 'ticket_detail' ticket.pk %}" class="fw-medium">{{ ticket.title|truncatechars:50 }}</a></td>
+                    <td><span class="badge {{ ticket.get_priority_badge_class }}">{{ ticket.get_priority_display }}</span></td>
+                    <td><span class="badge {{ ticket.get_status_badge_class }}">{{ ticket.get_status_display }}</span></td>
+                    <td>
+                        <span class="badge {{ ticket.get_age_badge_class }}" title="{{ ticket.get_age_in_hours|floatformat:1 }} {% translate "horas" %}">{{ ticket.get_age_display }}</span>
+                    </td>
+                    {% if is_agent %}
+                    <td class="ap-num">{% if ticket.hours %}{{ ticket.hours }}h{% else %}—{% endif %}</td>
+                    {% endif %}
+                    <td class="ap-muted">{{ ticket.created_at|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% else %}
-<div class="row mt-5 mb-4">
-    <div class="col">
-        <div class="card">
-            <div class="card-body text-center py-5">
-                <i class="bi bi-inbox display-4 text-muted mb-3"></i>
-                <h5 class="text-muted">No tienes tickets aún</h5>
-                <p class="text-muted">Crea tu primer ticket para comenzar.</p>
-                <a href="{% url 'ticket_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus"></i> Crear Primer Ticket
-                </a>
-            </div>
-        </div>
-    </div>
+<div class="ap-card ap-empty">
+    <span class="ap-chip c-blue"><i class="bi bi-inbox-fill"></i></span>
+    <h5>{% translate "No tienes tickets aún" %}</h5>
+    <p>{% translate "Crea tu primer ticket para comenzar." %}</p>
+    <a href="{% url 'ticket_create' %}" class="ap-btn"><i class="bi bi-plus-lg"></i> {% translate "Crear primer ticket" %}</a>
 </div>
 {% endif %}
 
 <!-- Notas Recientes -->
 {% if is_agent and recent_notes %}
-<div class="row mt-5 mb-4">
-    <div class="col">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-journal-text"></i> Notas Recientes
-                </h5>
-                <a href="{% url 'notes_list' %}" class="btn btn-sm btn-outline-primary">Ver todas</a>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Título</th>
-                                <th>Usuario</th>
-                                {% if is_agent %}<th>Empresa</th>{% endif %}
-                                <th>Estado</th>
-                                <th>Fecha</th>
-                                <th>PDF</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for note in recent_notes %}
-                            <tr>
-                                <td>
-                                    <a href="{% url 'note_detail' note.id %}" class="text-decoration-none">
-                                        {{ note.title|truncatechars:40 }}
-                                    </a>
-                                </td>
-                                <td>
-                                    <span class="text-muted">
-                                        {{ note.user.get_full_name|default:note.user.username }}
-                                    </span>
-                                </td>
-                                {% if is_agent %}
-                                <td>
-                                    {% if note.company %}
-                                        <span class="badge bg-info">{{ note.company.name }}</span>
-                                    {% else %}
-                                        <span class="text-muted">-</span>
-                                    {% endif %}
-                                </td>
-                                {% endif %}
-                                <td>
-                                    {% if note.is_private %}
-                                        <span class="badge bg-warning text-dark">
-                                            <i class="bi bi-lock"></i> Privada
-                                        </span>
-                                    {% else %}
-                                        <span class="badge bg-info">
-                                            <i class="bi bi-unlock"></i> Pública
-                                        </span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-muted">{{ note.created_at|date:"d/m/Y H:i" }}</td>
-                                <td>
-                                    <a href="{% url 'note_pdf' note.id %}" 
-                                       class="btn btn-sm btn-outline-success" 
-                                       target="_blank" 
-                                       title="Descargar PDF">
-                                        <i class="bi bi-file-earmark-pdf"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+<div class="ap-card ap-card-flush">
+    <div class="ap-card-head">
+        <h2 class="ap-card-title">{% translate "Notas recientes" %}</h2>
+        <a href="{% url 'notes_list' %}" class="ap-link">{% translate "Ver todas" %}</a>
+    </div>
+    <div class="ap-table-wrap">
+        <table class="ap-table">
+            <thead>
+                <tr>
+                    <th>{% translate "Título" %}</th>
+                    <th>{% translate "Usuario" %}</th>
+                    {% if is_agent %}<th>{% translate "Empresa" %}</th>{% endif %}
+                    <th>{% translate "Estado" %}</th>
+                    <th>{% translate "Fecha" %}</th>
+                    <th class="text-end">{% translate "PDF" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for note in recent_notes %}
+                <tr>
+                    <td><a href="{% url 'note_detail' note.id %}" class="fw-medium">{{ note.title|truncatechars:40 }}</a></td>
+                    <td class="ap-muted">{{ note.user.get_full_name|default:note.user.username }}</td>
+                    {% if is_agent %}
+                    <td>
+                        {% if note.company %}
+                            <span class="badge bg-info">{{ note.company.name }}</span>
+                        {% else %}
+                            <span class="ap-muted">—</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                    <td>
+                        {% if note.is_private %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-lock"></i> {% translate "Privada" %}</span>
+                        {% else %}
+                            <span class="badge bg-info"><i class="bi bi-unlock"></i> {% translate "Pública" %}</span>
+                        {% endif %}
+                    </td>
+                    <td class="ap-muted">{{ note.created_at|date:"d/m/Y H:i" }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'note_pdf' note.id %}" class="ap-btn ap-btn-gray ap-btn-icon" target="_blank" title="{% translate "Descargar PDF" %}">
+                            <i class="bi bi-file-earmark-pdf"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endif %}
 
 <!-- Documentos Recientes -->
-{% if is_agent and recent_documents %}<div class="row mt-5 mb-4">
-    <div class="col">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-file-earmark-text"></i> Documentos Recientes
-                </h5>
-                <a href="{% url 'document_list' %}" class="btn btn-sm btn-outline-primary">Ver todos</a>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Título</th>
-                                <th>Tipo</th>
-                                <th>Tamaño</th>
-                                <th>Creado por</th>
-                                {% if is_agent %}<th>Empresa</th>{% endif %}
-                                <th>Descargas</th>
-                                <th>Fecha</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for doc in recent_documents %}
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-file-earmark-text text-primary me-2"></i>
-                                        <div>
-                                            <strong>{{ doc.title|truncatechars:40 }}</strong>
-                                            {% if doc.description %}
-                                                <br><small class="text-muted">{{ doc.description|truncatechars:50 }}</small>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-secondary">{{ doc.file_type }}</span>
-                                </td>
-                                <td class="text-muted">{{ doc.file_size_formatted }}</td>
-                                <td>
-                                    <span class="text-muted">
-                                        {{ doc.created_by.get_full_name|default:doc.created_by.username }}
-                                    </span>
-                                </td>
-                                {% if is_agent %}
-                                <td>
-                                    {% if doc.company %}
-                                        <span class="badge" style="background-color: {{ doc.company.color }}; color: white;">
-                                            {{ doc.company.name }}
-                                        </span>
-                                    {% else %}
-                                        <span class="badge bg-light text-dark">Público</span>
-                                    {% endif %}
-                                </td>
-                                {% endif %}
-                                <td>
-                                    <span class="badge bg-info">
-                                        <i class="bi bi-download"></i> {{ doc.download_count }}
-                                    </span>
-                                </td>
-                                <td class="text-muted">{{ doc.created_at|date:"d/m/Y H:i" }}</td>
-                                <td>
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{{ doc.file.url }}" 
-                                           class="btn btn-outline-primary" 
-                                           download
-                                           title="Descargar">
-                                            <i class="bi bi-download"></i>
-                                        </a>
-                                        {% if doc.is_public %}
-                                        <a href="{% url 'document_public' doc.public_share_token %}" 
-                                           class="btn btn-outline-success" 
-                                           target="_blank"
-                                           title="Ver público">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+{% if is_agent and recent_documents %}
+<div class="ap-card ap-card-flush">
+    <div class="ap-card-head">
+        <h2 class="ap-card-title">{% translate "Documentos recientes" %}</h2>
+        <a href="{% url 'document_list' %}" class="ap-link">{% translate "Ver todos" %}</a>
+    </div>
+    <div class="ap-table-wrap">
+        <table class="ap-table">
+            <thead>
+                <tr>
+                    <th>{% translate "Título" %}</th>
+                    <th>{% translate "Tipo" %}</th>
+                    <th>{% translate "Tamaño" %}</th>
+                    <th>{% translate "Creado por" %}</th>
+                    {% if is_agent %}<th>{% translate "Empresa" %}</th>{% endif %}
+                    <th>{% translate "Descargas" %}</th>
+                    <th>{% translate "Fecha" %}</th>
+                    <th class="text-end">{% translate "Acciones" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in recent_documents %}
+                <tr>
+                    <td>
+                        <div class="fw-medium">{{ doc.title|truncatechars:40 }}</div>
+                        {% if doc.description %}<div class="ap-desc">{{ doc.description|truncatechars:50 }}</div>{% endif %}
+                    </td>
+                    <td><span class="badge bg-secondary">{{ doc.file_type }}</span></td>
+                    <td class="ap-muted">{{ doc.file_size_formatted }}</td>
+                    <td class="ap-muted">{{ doc.created_by.get_full_name|default:doc.created_by.username }}</td>
+                    {% if is_agent %}
+                    <td>
+                        {% if doc.company %}
+                            <span class="badge" style="background-color: {{ doc.company.color }}; color: white;">{{ doc.company.name }}</span>
+                        {% else %}
+                            <span class="badge bg-light text-dark">{% translate "Público" %}</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                    <td class="ap-num"><i class="bi bi-download me-1"></i>{{ doc.download_count }}</td>
+                    <td class="ap-muted">{{ doc.created_at|date:"d/m/Y H:i" }}</td>
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-1">
+                            <a href="{{ doc.file.url }}" class="ap-btn ap-btn-gray ap-btn-icon" download title="{% translate "Descargar" %}">
+                                <i class="bi bi-download"></i>
+                            </a>
+                            {% if doc.is_public %}
+                            <a href="{% url 'document_public' doc.public_share_token %}" class="ap-btn ap-btn-gray ap-btn-icon" target="_blank" title="{% translate "Ver público" %}">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% elif is_agent %}
-<div class="row mt-5 mb-4">
-    <div class="col">
-        <div class="card">
-            <div class="card-body text-center py-5">
-                <i class="bi bi-file-earmark-text display-4 text-muted mb-3"></i>
-                <h5 class="text-muted">No hay documentos disponibles</h5>
-                <p class="text-muted">Los documentos aparecerán aquí cuando estén disponibles.</p>
-                <a href="{% url 'document_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus"></i> Crear Primer Documento
-                </a>
-            </div>
-        </div>
-    </div>
+<div class="ap-card ap-empty">
+    <span class="ap-chip c-purple"><i class="bi bi-file-earmark-text-fill"></i></span>
+    <h5>{% translate "No hay documentos disponibles" %}</h5>
+    <p>{% translate "Los documentos aparecerán aquí cuando estén disponibles." %}</p>
+    <a href="{% url 'document_create' %}" class="ap-btn"><i class="bi bi-plus-lg"></i> {% translate "Crear primer documento" %}</a>
 </div>
 {% endif %}
 
 <!-- Reuniones de Video Recientes -->
 {% if is_agent %}
 {% if recent_video_meetings %}
-<div class="row mt-5 mb-4">
-    <div class="col">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-camera-video"></i> Reuniones de Video Recientes
-                </h5>
-                <a href="{% url 'video_meeting_list' %}" 
-                class="btn btn-sm btn-outline-primary">Ver todas</a>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Título</th>
-                                <th>Descripción</th>
-                                <th>Archivo de Video</th>
-                                <th>Enlace de Reunión</th>
-                                <th>Transcripción</th>
-                                <th>Organizador</th>
-                                <th>Fecha</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for meeting in recent_video_meetings %}
-                            <tr>
-                                <td>
-                                    <strong>{{ meeting.title|truncatechars:30 }}</strong>
-                                </td>
-                                <td>{{ meeting.description|truncatechars:50|default:"-" }}</td>
-                                <td>
-                                    {% if meeting.recording_file %}
-                                        <a href="{{ meeting.recording_file.url }}" 
-                                            download class="btn btn-sm btn-outline-success">
-                                            <i class="bi bi-download"></i> 
-                                            Descargar Video
-                                        </a>
-                                        <div class="small text-muted mt-1">
-                                            {% with file_extension=meeting.recording_file.name|slice:"-4:" %}
-                                                <i class="bi bi-file-earmark-play"></i> 
-                                                {{ file_extension|upper }}
-                                            {% endwith %}
-                                        </div>
-                                    {% else %}
-                                        <span class="text-muted">Sin archivo</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if meeting.meeting_url %}
-                                        <a href="{{ meeting.meeting_url }}" target="_blank" class="btn btn-sm btn-outline-success">
-                                            <i class="bi bi-link-45deg"></i> Compartir Link
-                                        </a>
-                                    {% else %}
-                                        <span class="text-muted">Sin enlace</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if meeting.transcription_status == 'completed' and meeting.transcription_text %}
-                                        <a href="{% url 'video_meeting_download_transcription' meeting.pk %}" class="btn btn-sm btn-outline-success">
-                                            <i class="bi bi-download"></i> Descargar
-                                        </a>
-                                    {% elif meeting.transcription_status == 'processing' %}
-                                        <span class="badge bg-warning">
-                                            <i class="bi bi-hourglass-split"></i> Procesando
-                                        </span>
-                                    {% elif meeting.transcription_status == 'failed' %}
-                                        <span class="badge bg-danger">
-                                            <i class="bi bi-exclamation-triangle"></i> Error
-                                        </span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">
-                                            <i class="bi bi-dash-circle"></i> No disponible
-                                        </span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ meeting.organizer.get_full_name|default:meeting.organizer.username }}</td>
-                                <td class="text-muted">{{ meeting.created_at|date:"d/m/Y H:i" }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+<div class="ap-card ap-card-flush">
+    <div class="ap-card-head">
+        <h2 class="ap-card-title">{% translate "Reuniones de video" %}</h2>
+        <a href="{% url 'video_meeting_list' %}" class="ap-link">{% translate "Ver todas" %}</a>
+    </div>
+    <div class="ap-table-wrap">
+        <table class="ap-table">
+            <thead>
+                <tr>
+                    <th>{% translate "Título" %}</th>
+                    <th>{% translate "Descripción" %}</th>
+                    <th>{% translate "Video" %}</th>
+                    <th>{% translate "Enlace" %}</th>
+                    <th>{% translate "Transcripción" %}</th>
+                    <th>{% translate "Organizador" %}</th>
+                    <th>{% translate "Fecha" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for meeting in recent_video_meetings %}
+                <tr>
+                    <td class="fw-medium">{{ meeting.title|truncatechars:30 }}</td>
+                    <td class="ap-desc">{{ meeting.description|truncatechars:50|default:"—" }}</td>
+                    <td>
+                        {% if meeting.recording_file %}
+                            <a href="{{ meeting.recording_file.url }}" download class="ap-btn ap-btn-gray ap-btn-sm">
+                                <i class="bi bi-download"></i>
+                                {% with file_extension=meeting.recording_file.name|slice:"-4:" %}{{ file_extension|upper }}{% endwith %}
+                            </a>
+                        {% else %}
+                            <span class="ap-muted">{% translate "Sin archivo" %}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if meeting.meeting_url %}
+                            <a href="{{ meeting.meeting_url }}" target="_blank" rel="noopener" class="ap-link">{% translate "Abrir" %}</a>
+                        {% else %}
+                            <span class="ap-muted">{% translate "Sin enlace" %}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if meeting.transcription_status == 'completed' and meeting.transcription_text %}
+                            <a href="{% url 'video_meeting_download_transcription' meeting.pk %}" class="ap-btn ap-btn-gray ap-btn-sm">
+                                <i class="bi bi-download"></i> {% translate "Descargar" %}
+                            </a>
+                        {% elif meeting.transcription_status == 'processing' %}
+                            <span class="badge bg-warning"><i class="bi bi-hourglass-split"></i> {% translate "Procesando" %}</span>
+                        {% elif meeting.transcription_status == 'failed' %}
+                            <span class="badge bg-danger"><i class="bi bi-exclamation-triangle"></i> {% translate "Error" %}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{% translate "No disponible" %}</span>
+                        {% endif %}
+                    </td>
+                    <td class="ap-muted">{{ meeting.organizer.get_full_name|default:meeting.organizer.username }}</td>
+                    <td class="ap-muted">{{ meeting.created_at|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% else %}
-<div class="row mt-5 mb-4">
-    <div class="col">
-        <div class="card">
-            <div class="card-body text-center py-5">
-                <i class="bi bi-camera-video display-4 text-muted mb-3"></i>
-                <h5 class="text-muted">No hay reuniones de video aún</h5>
-                <p class="text-muted">Crea tu primera reunión para comenzar.</p>
-                <a href="{% url 'video_meeting_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus"></i> Crear Primera Reunión
-                </a>
-            </div>
-        </div>
-    </div>
+<div class="ap-card ap-empty">
+    <span class="ap-chip c-red"><i class="bi bi-camera-video-fill"></i></span>
+    <h5>{% translate "No hay reuniones de video aún" %}</h5>
+    <p>{% translate "Crea tu primera reunión para comenzar." %}</p>
+    <a href="{% url 'video_meeting_create' %}" class="ap-btn"><i class="bi bi-plus-lg"></i> {% translate "Crear primera reunión" %}</a>
 </div>
 {% endif %}
 {% endif %}{# end is_agent - reuniones de video #}
 
 <!-- Procedimientos Disponibles -->
 {% if is_agent and user_procedures %}
-<div class="row mt-5 mb-4">
-    <div class="col">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-list-columns-reverse"></i> Procedimientos Disponibles
-                </h5>
-                <a href="{% url 'procedure_list' %}" 
-                class="btn btn-sm btn-outline-primary">Ver todos</a>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Título</th>
-                                <th>Descripción</th>
-                                <th>Empresa</th>
-                                <th>Archivo</th>
-                                <th>URL</th>
-                                <th>Fecha</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for procedure in user_procedures %}
-                            <tr>
-                                <td>
-                                    <strong>{{ procedure.title|truncatechars:30 }}</strong>
-                                </td>
-                                <td>{{ procedure.description|truncatechars:50|default:"-" }}</td>
-                                <td>
-                                    {% if procedure.company %}
-                                        <span class="badge bg-info">
-                                            <i class="bi bi-building"></i> {{ procedure.company.name }}
-                                        </span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">General</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if procedure.attachment %}
-                                        <a href="{{ procedure.attachment.url }}" 
-                                            download class="btn btn-sm btn-outline-success">
-                                            <i class="{{ procedure.get_file_icon }}"></i> 
-                                            Descargar
-                                        </a>
-                                        <div class="small text-muted mt-1">
-                                            {{ procedure.get_file_size }}
-                                        </div>
-                                    {% else %}
-                                        <span class="text-muted">Sin archivo</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if procedure.url %}
-                                        <a href="{{ procedure.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-link-45deg"></i> Visitar
-                                        </a>
-                                    {% else %}
-                                        <span class="text-muted">Sin enlace</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-muted">{{ procedure.created_at|date:"d/m/Y" }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+<div class="ap-card ap-card-flush">
+    <div class="ap-card-head">
+        <h2 class="ap-card-title">{% translate "Procedimientos" %}</h2>
+        <a href="{% url 'procedure_list' %}" class="ap-link">{% translate "Ver todos" %}</a>
+    </div>
+    <div class="ap-table-wrap">
+        <table class="ap-table">
+            <thead>
+                <tr>
+                    <th>{% translate "Título" %}</th>
+                    <th>{% translate "Descripción" %}</th>
+                    <th>{% translate "Empresa" %}</th>
+                    <th>{% translate "Archivo" %}</th>
+                    <th>{% translate "URL" %}</th>
+                    <th>{% translate "Fecha" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for procedure in user_procedures %}
+                <tr>
+                    <td class="fw-medium">{{ procedure.title|truncatechars:30 }}</td>
+                    <td class="ap-desc">{{ procedure.description|truncatechars:50|default:"—" }}</td>
+                    <td>
+                        {% if procedure.company %}
+                            <span class="badge bg-info"><i class="bi bi-building"></i> {{ procedure.company.name }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{% translate "General" %}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if procedure.attachment %}
+                            <a href="{{ procedure.attachment.url }}" download class="ap-btn ap-btn-gray ap-btn-sm">
+                                <i class="{{ procedure.get_file_icon }}"></i> {{ procedure.get_file_size }}
+                            </a>
+                        {% else %}
+                            <span class="ap-muted">{% translate "Sin archivo" %}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if procedure.url %}
+                            <a href="{{ procedure.url }}" target="_blank" rel="noopener" class="ap-link">{% translate "Visitar" %}</a>
+                        {% else %}
+                            <span class="ap-muted">{% translate "Sin enlace" %}</span>
+                        {% endif %}
+                    </td>
+                    <td class="ap-muted">{{ procedure.created_at|date:"d/m/Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% elif is_agent %}
-<div class="row mt-5 mb-4">
-    <div class="col">
-        <div class="card">
-            <div class="card-body text-center py-5">
-                <i class="bi bi-list-columns-reverse display-4 text-muted mb-3"></i>
-                <h5 class="text-muted">No hay procedimientos disponibles</h5>
-                <p class="text-muted">Los procedimientos aparecerán aquí cuando estén disponibles.</p>
-                <a href="{% url 'procedure_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus"></i> Crear Primer Procedimiento
-                </a>
-            </div>
-        </div>
-    </div>
+<div class="ap-card ap-empty">
+    <span class="ap-chip c-indigo"><i class="bi bi-list-columns-reverse"></i></span>
+    <h5>{% translate "No hay procedimientos disponibles" %}</h5>
+    <p>{% translate "Los procedimientos aparecerán aquí cuando estén disponibles." %}</p>
+    <a href="{% url 'procedure_create' %}" class="ap-btn"><i class="bi bi-plus-lg"></i> {% translate "Crear primer procedimiento" %}</a>
 </div>
 {% endif %}
 
-<!-- Información adicional para usuarios con empresa -->
-{% if False and not is_agent and user_company %}
-<div class="row mb-5 mt-5">
-    <div class="col-12">
-        <div class="card border-info">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-building"></i> Mi Empresa: {{ user_company.name }}
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
-                            <div>
-                                <h6 class="mb-0">Mis Tickets Personales</h6>
-                                <small class="text-muted">Tickets que has creado</small>
-                            </div>
-                            <span class="badge bg-primary fs-6">{{ own_tickets }}</span>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
-                            <div>
-                                <h6 class="mb-0">Tickets de la Empresa</h6>
-                                <small class="text-muted">Otros tickets de {{ user_company.name }}</small>
-                            </div>
-                            <span class="badge bg-info fs-6">{{ company_tickets }}</span>
-                        </div>
-                    </div>
-                </div>
-                {% if user_company.description %}
-                <hr>
-                <p class="mb-0 text-muted">
-                    <i class="bi bi-info-circle"></i> {{ user_company.description }}
-                </p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
+</div>{# /ap-dash #}
 
 <!-- Script para citas rotativas -->
 {% if dashboard_quotes %}
@@ -1040,11 +1001,11 @@ let currentQuoteIndex = 0;
 
 function showNextQuote() {
     if (quotes.length === 0) return;
-    
+
     const quote = quotes[currentQuoteIndex];
-    document.getElementById('quote-text').textContent = `"${quote.quote}"`;
+    document.getElementById('quote-text').textContent = `“${quote.quote}”`;
     document.getElementById('quote-author').textContent = `— ${quote.author}`;
-    
+
     currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
 }
 
@@ -1057,6 +1018,20 @@ setInterval(showNextQuote, 10000);
 {% endif %}
 
 <script>
+{% translate "Buenos días" as greet_morning %}{% translate "Buenas tardes" as greet_afternoon %}{% translate "Buenas noches" as greet_evening %}
+// Saludo según la hora del día y fecha en el idioma activo
+(function () {
+    const h = new Date().getHours();
+    const el = document.getElementById('ap-greeting');
+    if (el) el.textContent = h < 12 ? '{{ greet_morning|escapejs }}' : (h < 20 ? '{{ greet_afternoon|escapejs }}' : '{{ greet_evening|escapejs }}');
+    const dateEl = document.getElementById('ap-date');
+    if (dateEl) {
+        try {
+            dateEl.textContent = new Date().toLocaleDateString(dateEl.dataset.lang, { weekday: 'long', day: 'numeric', month: 'long' });
+        } catch (e) {}
+    }
+})();
+
 // Actualizar tiempo activo en tiempo real si hay jornada activa
 {% if is_agent and active_time_entry %}
 function updateActiveTime() {

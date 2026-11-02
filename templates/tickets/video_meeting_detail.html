@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block title %}{{ meeting.title }} - Reunión - TicketProo{% endblock %}
 
@@ -7,16 +8,16 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <nav aria-label="breadcrumb">
+            <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
                         <a href="{% url 'employee_dashboard' %}">
-                            <i class="bi bi-speedometer2"></i> Dashboard
+                            <i class="bi bi-speedometer2"></i> {% translate "Dashboard" %}
                         </a>
                     </li>
                     <li class="breadcrumb-item">
                         <a href="{% url 'video_meeting_list' %}">
-                            <i class="bi bi-camera-video"></i> Reuniones
+                            <i class="bi bi-camera-video"></i> {% translate "Reuniones" %}
                         </a>
                     </li>
                     <li class="breadcrumb-item active">{{ meeting.title }}</li>
@@ -27,14 +28,14 @@
         
         <div class="btn-group">
             <a href="{% url 'video_meeting_list' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+                <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
             </a>
             {% if meeting.organizer == request.user or request.user.is_staff %}
                 <a href="{% url 'video_meeting_edit' meeting.id %}" class="btn btn-primary">
-                    <i class="bi bi-pencil"></i> Editar
+                    <i class="bi bi-pencil"></i> {% translate "Editar" %}
                 </a>
                 <a href="{% url 'video_meeting_delete' meeting.id %}" class="btn btn-danger">
-                    <i class="bi bi-trash"></i> Eliminar
+                    <i class="bi bi-trash"></i> {% translate "Eliminar" %}
                 </a>
             {% endif %}
         </div>
@@ -46,7 +47,7 @@
             <div class="card shadow mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-info-circle"></i> Información de la Reunión
+                        <i class="bi bi-info-circle"></i> {% translate "Información de la Reunión" %}
                     </h5>
                     <span class="badge bg-{{ meeting.get_status_color }} badge-lg">
                         {{ meeting.get_status_display }}
@@ -56,47 +57,47 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <strong><i class="bi bi-calendar-event"></i> Fecha programada:</strong><br>
+                            <strong><i class="bi bi-calendar-event"></i> {% translate "Fecha programada:" %}</strong><br>
                             {% if meeting.scheduled_date %}
                                 <span class="text-muted">{{ meeting.scheduled_date|date:"d/m/Y H:i" }}</span>
                             {% else %}
-                                <span class="text-muted">No programada</span>
+                                <span class="text-muted">{% translate "No programada" %}</span>
                             {% endif %}
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            <strong><i class="bi bi-clock"></i> Duración:</strong><br>
+                            <strong><i class="bi bi-clock"></i> {% translate "Duración:" %}</strong><br>
                             <span class="text-muted">
                                 {% if meeting.duration_minutes %}
                                     {{ meeting.duration_minutes }} minutos
                                 {% else %}
-                                    No especificada
+                                    {% translate "No especificada" %}
                                 {% endif %}
                             </span>
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            <strong><i class="bi bi-building"></i> Empresa:</strong><br>
+                            <strong><i class="bi bi-building"></i> {% translate "Empresa:" %}</strong><br>
                             <span class="text-muted">{{ meeting.company.name }}</span>
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            <strong><i class="bi bi-person"></i> Creado por:</strong><br>
+                            <strong><i class="bi bi-person"></i> {% translate "Creado por:" %}</strong><br>
                             <span class="text-muted">{{ meeting.organizer.get_full_name|default:meeting.organizer.username }}</span>
                         </div>
                         
                         {% if meeting.meeting_url %}
                         <div class="col-md-12 mb-3">
-                            <strong><i class="bi bi-link-45deg"></i> Enlace de reunión:</strong><br>
+                            <strong><i class="bi bi-link-45deg"></i> {% translate "Enlace de reunión:" %}</strong><br>
                             <a href="{{ meeting.meeting_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-box-arrow-up-right"></i> Abrir reunión
+                                <i class="bi bi-box-arrow-up-right"></i> {% translate "Abrir reunión" %}
                             </a>
                         </div>
                         {% endif %}
                         
                         {% if meeting.description %}
                         <div class="col-md-12 mb-3">
-                            <strong><i class="bi bi-file-text"></i> Descripción:</strong><br>
+                            <strong><i class="bi bi-file-text"></i> {% translate "Descripción:" %}</strong><br>
                             <div class="bg-light p-3 rounded">
                                 {{ meeting.description|linebreaks }}
                             </div>
@@ -142,16 +143,16 @@
             <div class="card shadow mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-file-play"></i> Grabación y Transcripción
+                        <i class="bi bi-file-play"></i> {% translate "Grabación y Transcripción" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     {% if meeting.recording_file %}
                     <div class="mb-3">
-                        <strong><i class="bi bi-download"></i> Archivo de grabación principal:</strong><br>
+                        <strong><i class="bi bi-download"></i> {% translate "Archivo de grabación principal:" %}</strong><br>
                         <div class="d-flex align-items-center mt-2">
                             <a href="{{ meeting.recording_file.url }}" target="_blank" class="btn btn-outline-primary btn-sm me-2">
-                                <i class="bi bi-play-circle"></i> Reproducir/Descargar
+                                <i class="bi bi-play-circle"></i> {% translate "Reproducir/Descargar" %}
                             </a>
                             <small class="text-muted">
                                 {{ meeting.recording_file.name|default:"grabacion.mp4" }} 
@@ -179,10 +180,10 @@
                                     </div>
                                 </div>
                                 <div class="btn-group" role="group">
-                                    <a href="{{ attachment.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Ver/Reproducir">
+                                    <a href="{{ attachment.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary" title="{% translate 'Ver/Reproducir' %}">
                                         <i class="bi bi-play-circle"></i>
                                     </a>
-                                    <a href="{{ attachment.file.url }}" download="{{ attachment.filename }}" class="btn btn-sm btn-outline-success" title="Descargar">
+                                    <a href="{{ attachment.file.url }}" download="{{ attachment.filename }}" class="btn btn-sm btn-outline-success" title="{% translate 'Descargar' %}">
                                         <i class="bi bi-download"></i>
                                     </a>
                                 </div>
@@ -196,12 +197,12 @@
                     {% if meeting.attachments.exists or meeting.recording_file %}
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong><i class="bi bi-cpu"></i> Estado de procesamiento IA:</strong>
+                            <strong><i class="bi bi-cpu"></i> {% translate "Estado de procesamiento IA:" %}</strong>
                             {% if meeting.transcription_status != 'processing' and meeting.transcription_status != 'completed' %}
                                 <form method="post" class="d-inline">
                                     {% csrf_token %}
                                     <button type="submit" name="force_transcription" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-play-fill"></i> Forzar transcripción
+                                        <i class="bi bi-play-fill"></i> {% translate "Forzar transcripción" %}
                                     </button>
                                 </form>
                             {% endif %}
@@ -212,10 +213,10 @@
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
                                             <i class="bi bi-clock-history"></i> 
-                                            <strong>Pendiente:</strong> Los archivos están en cola para ser procesados.
+                                            <strong>{% translate "Pendiente:" %}</strong> {% translate "Los archivos están en cola para ser procesados." %}
                                         </div>
                                         <button class="btn btn-sm btn-outline-primary" onclick="location.reload()">
-                                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                                            <i class="bi bi-arrow-clockwise"></i> {% translate "Actualizar" %}
                                         </button>
                                     </div>
                                 </div>
@@ -224,26 +225,26 @@
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
                                             <i class="bi bi-hourglass-split"></i> 
-                                            <strong>Procesando:</strong> Se está transcribiendo y analizando los archivos con IA.
+                                            <strong>{% translate "Procesando:" %}</strong> {% translate "Se está transcribiendo y analizando los archivos con IA." %}
                                             <div class="spinner-border spinner-border-sm ms-2" role="status">
-                                                <span class="visually-hidden">Procesando...</span>
+                                                <span class="visually-hidden">{% translate "Procesando..." %}</span>
                                             </div>
                                         </div>
                                         <button class="btn btn-sm btn-outline-warning" onclick="location.reload()">
-                                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                                            <i class="bi bi-arrow-clockwise"></i> {% translate "Actualizar" %}
                                         </button>
                                     </div>
                                     <div class="mt-2">
                                         <small class="text-muted">
                                             <i class="bi bi-info-circle"></i> 
-                                            El proceso puede tomar varios minutos dependiendo del tamaño de los archivos.
+                                            {% translate "El proceso puede tomar varios minutos dependiendo del tamaño de los archivos." %}
                                         </small>
                                     </div>
                                 </div>
                             {% elif meeting.transcription_status == 'completed' %}
                                 <div class="alert alert-success mb-0">
                                     <i class="bi bi-check-circle"></i> 
-                                    <strong>Completado:</strong> Transcripción y análisis finalizados.
+                                    <strong>{% translate "Completado:" %}</strong> {% translate "Transcripción y análisis finalizados." %}
                                     {% if meeting.transcription_date %}
                                         <br><small>Procesado el {{ meeting.transcription_date|date:"d/m/Y H:i" }}</small>
                                     {% endif %}
@@ -251,8 +252,7 @@
                             {% elif meeting.transcription_status == 'failed' %}
                                 <div class="alert alert-danger mb-0">
                                     <i class="bi bi-exclamation-triangle"></i> 
-                                    <strong>Error:</strong> No se pudo procesar los archivos. 
-                                    Verifica la configuración de OpenAI o intenta nuevamente.
+                                    <strong>{% translate "Error:" %}</strong> {% translate "No se pudo procesar los archivos. Verifica la configuración de OpenAI o intenta nuevamente." %}
                                 </div>
                             {% endif %}
                         </div>
@@ -262,10 +262,10 @@
                     {% if meeting.transcription_text %}
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong><i class="bi bi-file-text"></i> Transcripción automática:</strong>
+                            <strong><i class="bi bi-file-text"></i> {% translate "Transcripción automática:" %}</strong>
                             {% if meeting.organizer == request.user or request.user.is_staff %}
                                 <a href="{% url 'video_meeting_transcription_edit' meeting.id %}" class="btn btn-outline-primary btn-sm">
-                                    <i class="bi bi-pencil"></i> Editar transcripción
+                                    <i class="bi bi-pencil"></i> {% translate "Editar transcripción" %}
                                 </a>
                             {% endif %}
                         </div>
@@ -278,7 +278,7 @@
                         
                         {% if meeting.transcription_summary %}
                         <div class="mb-3">
-                            <strong><i class="bi bi-card-text"></i> Resumen:</strong>
+                            <strong><i class="bi bi-card-text"></i> {% translate "Resumen:" %}</strong>
                             <div class="bg-info bg-opacity-10 p-3 rounded mt-2">
                                 {{ meeting.transcription_summary|linebreaks }}
                             </div>
@@ -287,7 +287,7 @@
                         
                         {% if meeting.action_items %}
                         <div class="mb-3">
-                            <strong><i class="bi bi-list-check"></i> Elementos de acción:</strong>
+                            <strong><i class="bi bi-list-check"></i> {% translate "Elementos de acción:" %}</strong>
                             <div class="bg-warning bg-opacity-10 p-3 rounded mt-2">
                                 {{ meeting.action_items|linebreaks }}
                             </div>
@@ -295,7 +295,7 @@
                         {% endif %}
                         
                         <div class="text-muted small">
-                            <i class="bi bi-robot"></i> Transcripción procesada automáticamente con IA
+                            <i class="bi bi-robot"></i> {% translate "Transcripción procesada automáticamente con IA" %}
                             {% if meeting.transcription_date %}
                                 el {{ meeting.transcription_date|date:"d/m/Y H:i" }}
                             {% endif %}
@@ -304,22 +304,22 @@
                     {% elif meeting.recording_file and meeting.transcription_status == 'pending' %}
                     <div class="alert alert-info">
                         <i class="bi bi-hourglass-split"></i>
-                        <strong>Procesando transcripción...</strong><br>
-                        La transcripción automática está en proceso. Esto puede tomar algunos minutos.
+                        <strong>{% translate "Procesando transcripción..." %}</strong><br>
+                        {% translate "La transcripción automática está en proceso. Esto puede tomar algunos minutos." %}
                         <div class="mt-2">
                             <button class="btn btn-sm btn-outline-primary" onclick="location.reload()">
-                                <i class="bi bi-arrow-clockwise"></i> Actualizar estado
+                                <i class="bi bi-arrow-clockwise"></i> {% translate "Actualizar estado" %}
                             </button>
                         </div>
                     </div>
                     {% elif meeting.recording_file and meeting.transcription_status == 'failed' %}
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle"></i>
-                        <strong>Error en la transcripción</strong><br>
-                        No se pudo procesar la transcripción automática. Puedes intentar nuevamente o agregar la transcripción manualmente.
+                        <strong>{% translate "Error en la transcripción" %}</strong><br>
+                        {% translate "No se pudo procesar la transcripción automática. Puedes intentar nuevamente o agregar la transcripción manualmente." %}
                         <div class="mt-2">
                             <a href="{% url 'video_meeting_transcription_edit' meeting.id %}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-pencil"></i> Agregar transcripción manual
+                                <i class="bi bi-pencil"></i> {% translate "Agregar transcripción manual" %}
                             </a>
                         </div>
                     </div>
@@ -335,32 +335,32 @@
             <div class="card shadow mb-4">
                 <div class="card-header">
                     <h6 class="mb-0">
-                        <i class="bi bi-info-circle"></i> Estado y Fechas
+                        <i class="bi bi-info-circle"></i> {% translate "Estado y Fechas" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <strong>Estado:</strong><br>
+                        <strong>{% translate "Estado:" %}</strong><br>
                         <span class="badge bg-{{ meeting.get_status_color }} mt-1">
                             {{ meeting.get_status_display }}
                         </span>
                     </div>
                     
                     <div class="mb-3">
-                        <strong>Creado:</strong><br>
+                        <strong>{% translate "Creado:" %}</strong><br>
                         <small class="text-muted">{{ meeting.created_at|date:"d/m/Y H:i" }}</small>
                     </div>
                     
                     {% if meeting.updated_at != meeting.created_at %}
                     <div class="mb-3">
-                        <strong>Última actualización:</strong><br>
+                        <strong>{% translate "Última actualización:" %}</strong><br>
                         <small class="text-muted">{{ meeting.updated_at|date:"d/m/Y H:i" }}</small>
                     </div>
                     {% endif %}
                     
                     {% if meeting.transcription_date %}
                     <div class="mb-3">
-                        <strong>Transcripción procesada:</strong><br>
+                        <strong>{% translate "Transcripción procesada:" %}</strong><br>
                         <small class="text-muted">{{ meeting.transcription_date|date:"d/m/Y H:i" }}</small>
                     </div>
                     {% endif %}
@@ -371,30 +371,30 @@
             <div class="card shadow">
                 <div class="card-header">
                     <h6 class="mb-0">
-                        <i class="bi bi-lightning"></i> Acciones Rápidas
+                        <i class="bi bi-lightning"></i> {% translate "Acciones Rápidas" %}
                     </h6>
                 </div>
                 <div class="card-body">
                     {% if meeting.meeting_url %}
                     <a href="{{ meeting.meeting_url }}" target="_blank" class="btn btn-primary btn-sm w-100 mb-2">
-                        <i class="bi bi-camera-video"></i> Unirse a reunión
+                        <i class="bi bi-camera-video"></i> {% translate "Unirse a reunión" %}
                     </a>
                     {% endif %}
                     
                     {% if meeting.recording_file %}
                     <a href="{{ meeting.recording_file.url }}" target="_blank" class="btn btn-outline-primary btn-sm w-100 mb-2">
-                        <i class="bi bi-download"></i> Descargar grabación
+                        <i class="bi bi-download"></i> {% translate "Descargar grabación" %}
                     </a>
                     {% endif %}
                     
                     {% if meeting.organizer == request.user or request.user.is_staff %}
                     <a href="{% url 'video_meeting_transcription_edit' meeting.id %}" class="btn btn-outline-secondary btn-sm w-100 mb-2">
-                        <i class="bi bi-file-text"></i> {% if meeting.transcription_text %}Editar{% else %}Agregar{% endif %} transcripción
+                        <i class="bi bi-file-text"></i> {% if meeting.transcription_text %}{% translate "Editar" %}{% else %}{% translate "Agregar" %}{% endif %} {% translate "transcripción" %}
                     </a>
                     {% endif %}
                     
                     <button class="btn btn-outline-secondary btn-sm w-100" onclick="window.print()">
-                        <i class="bi bi-printer"></i> Imprimir
+                        <i class="bi bi-printer"></i> {% translate "Imprimir" %}
                     </button>
                 </div>
             </div>

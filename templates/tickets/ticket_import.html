@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load project_extras %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -11,13 +12,13 @@
                 <div>
                     <h2>
                         <i class="bi bi-file-earmark-excel text-success"></i>
-                        Importar Tickets desde Excel
+                        {% translate "Importar Tickets desde Excel" %}
                     </h2>
-                    <p class="text-muted mb-0">Sube un archivo Excel para crear múltiples tickets automáticamente</p>
+                    <p class="text-muted mb-0">{% translate "Sube un archivo Excel para crear múltiples tickets automáticamente" %}</p>
                 </div>
                 <div>
                     <a href="{% url 'ticket_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver a Tickets
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver a Tickets" %}
                     </a>
                 </div>
             </div>
@@ -30,37 +31,37 @@
             <div class="card mb-4">
                 <div class="card-header bg-info text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-info-circle"></i> Instrucciones
+                        <i class="bi bi-info-circle"></i> {% translate "Instrucciones" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6><i class="bi bi-1-circle text-primary"></i> Formato del archivo Excel</h6>
-                            <p class="mb-3">Tu archivo Excel debe tener las siguientes columnas:</p>
+                            <h6><i class="bi bi-1-circle text-primary"></i> {% translate "Formato del archivo Excel" %}</h6>
+                            <p class="mb-3">{% translate "Tu archivo Excel debe tener las siguientes columnas:" %}</p>
                             <ul class="list-unstyled">
-                                <li><i class="bi bi-check text-success"></i> <strong>Título</strong> - Título del ticket</li>
-                                <li><i class="bi bi-check text-success"></i> <strong>Descripción</strong> - Descripción detallada del ticket</li>
+                                <li><i class="bi bi-check text-success"></i> <strong>{% translate "Título" %}</strong> {% translate "- Título del ticket" %}</li>
+                                <li><i class="bi bi-check text-success"></i> <strong>{% translate "Descripción" %}</strong> {% translate "- Descripción detallada del ticket" %}</li>
                             </ul>
                         </div>
                         <div class="col-md-6">
-                            <h6><i class="bi bi-2-circle text-primary"></i> Ejemplo de estructura</h6>
+                            <h6><i class="bi bi-2-circle text-primary"></i> {% translate "Ejemplo de estructura" %}</h6>
                             <div class="table-responsive">
                                 <table class="table table-sm table-bordered">
                                     <thead class="table-dark">
                                         <tr>
-                                            <th>Título</th>
-                                            <th>Descripción</th>
+                                            <th>{% translate "Título" %}</th>
+                                            <th>{% translate "Descripción" %}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td>Error en login</td>
-                                            <td>El sistema no permite hacer login con credenciales válidas</td>
+                                            <td>{% translate "Error en login" %}</td>
+                                            <td>{% translate "El sistema no permite hacer login con credenciales válidas" %}</td>
                                         </tr>
                                         <tr>
-                                            <td>Actualizar base de datos</td>
-                                            <td>Necesitamos actualizar la estructura de la base de datos</td>
+                                            <td>{% translate "Actualizar base de datos" %}</td>
+                                            <td>{% translate "Necesitamos actualizar la estructura de la base de datos" %}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -70,7 +71,7 @@
                     
                     <div class="alert alert-warning mt-3">
                         <i class="bi bi-exclamation-triangle"></i>
-                        <strong>Importante:</strong> Todos los tickets se crearán con la empresa, categoría y prioridad que selecciones a continuación.
+                        <strong>{% translate "Importante:" %}</strong> {% translate "Todos los tickets se crearán con la empresa, categoría y prioridad que selecciones a continuación." %}
                     </div>
                 </div>
             </div>
@@ -79,7 +80,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-upload"></i> Subir archivo y configuración
+                        <i class="bi bi-upload"></i> {% translate "Subir archivo y configuración" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -146,10 +147,10 @@
 
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'ticket_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-success">
-                                <i class="bi bi-upload"></i> Importar Tickets
+                                <i class="bi bi-upload"></i> {% translate "Importar Tickets" %}
                             </button>
                         </div>
                     </form>
@@ -159,10 +160,10 @@
             <!-- Ejemplo descargable -->
             <div class="card mt-4">
                 <div class="card-body text-center">
-                    <h6><i class="bi bi-download"></i> ¿Necesitas un ejemplo?</h6>
-                    <p class="text-muted">Descarga un archivo Excel de ejemplo con el formato correcto</p>
+                    <h6><i class="bi bi-download"></i> {% translate "¿Necesitas un ejemplo?" %}</h6>
+                    <p class="text-muted">{% translate "Descarga un archivo Excel de ejemplo con el formato correcto" %}</p>
                     <a href="{% url 'ticket_import_example' %}" class="btn btn-outline-primary">
-                        <i class="bi bi-download"></i> Descargar ejemplo
+                        <i class="bi bi-download"></i> {% translate "Descargar ejemplo" %}
                     </a>
                 </div>
             </div>

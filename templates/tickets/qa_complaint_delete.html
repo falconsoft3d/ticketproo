@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Eliminar Reporte QA{% endblock %}
+{% block title %}{% translate "Eliminar Reporte QA" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -54,29 +55,29 @@
             <!-- Encabezado de Advertencia -->
             <div class="delete-warning text-center">
                 <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                <h2 class="mb-3">¿Eliminar Reporte QA?</h2>
+                <h2 class="mb-3">{% translate "¿Eliminar Reporte QA?" %}</h2>
                 <p class="mb-0 opacity-75">
-                    Esta acción no se puede deshacer. Se eliminará permanentemente el reporte y todos sus comentarios asociados.
+                    {% translate "Esta acción no se puede deshacer. Se eliminará permanentemente el reporte y todos sus comentarios asociados." %}
                 </p>
             </div>
 
             <!-- Información del Reporte -->
             <div class="complaint-info">
                 <h5 class="text-danger mb-3">
-                    <i class="fas fa-file-alt"></i> Información del Reporte
+                    <i class="fas fa-file-alt"></i> {% translate "Información del Reporte" %}
                 </h5>
                 
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <strong>ID:</strong> #{{ complaint.id }}
+                            <strong>{% translate "ID:" %}</strong> #{{ complaint.id }}
                         </div>
                         <div class="mb-3">
-                            <strong>Título:</strong><br>
+                            <strong>{% translate "Título:" %}</strong><br>
                             {{ complaint.title }}
                         </div>
                         <div class="mb-3">
-                            <strong>Tipo:</strong>
+                            <strong>{% translate "Tipo:" %}</strong>
                             <span class="badge 
                                        {% if complaint.type == 'complaint' %}bg-danger
                                        {% elif complaint.type == 'suggestion' %}bg-info
@@ -87,14 +88,14 @@
                             </span>
                         </div>
                         <div class="mb-3">
-                            <strong>Empresa:</strong><br>
+                            <strong>{% translate "Empresa:" %}</strong><br>
                             {{ complaint.company.name }}
                         </div>
                     </div>
                     
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <strong>Estado:</strong>
+                            <strong>{% translate "Estado:" %}</strong>
                             <span class="badge 
                                        {% if complaint.status == 'open' %}bg-danger
                                        {% elif complaint.status == 'in_progress' %}bg-warning
@@ -104,7 +105,7 @@
                             </span>
                         </div>
                         <div class="mb-3">
-                            <strong>Prioridad:</strong>
+                            <strong>{% translate "Prioridad:" %}</strong>
                             <span class="badge 
                                        {% if complaint.priority == 'critical' %}bg-danger
                                        {% elif complaint.priority == 'high' %}bg-warning
@@ -114,11 +115,11 @@
                             </span>
                         </div>
                         <div class="mb-3">
-                            <strong>Reportado por:</strong><br>
+                            <strong>{% translate "Reportado por:" %}</strong><br>
                             {{ complaint.reported_by.get_full_name|default:complaint.reported_by.username }}
                         </div>
                         <div class="mb-3">
-                            <strong>Fecha de creación:</strong><br>
+                            <strong>{% translate "Fecha de creación:" %}</strong><br>
                             {{ complaint.created_at|date:"d/m/Y H:i" }}
                         </div>
                     </div>
@@ -126,7 +127,7 @@
                 
                 {% if complaint.description %}
                     <div class="mt-3">
-                        <strong>Descripción:</strong><br>
+                        <strong>{% translate "Descripción:" %}</strong><br>
                         <div class="bg-white p-3 rounded border mt-2">
                             {{ complaint.description|truncatechars:200|linebreaks }}
                         </div>
@@ -136,10 +137,10 @@
                 <!-- Información adicional sobre datos relacionados -->
                 <div class="mt-4">
                     <h6 class="text-danger">
-                        <i class="fas fa-database"></i> Datos que se eliminarán:
+                        <i class="fas fa-database"></i> {% translate "Datos que se eliminarán:" %}
                     </h6>
                     <ul class="mb-0">
-                        <li>El reporte QA completo</li>
+                        <li>{% translate "El reporte QA completo" %}</li>
                         {% if complaint.comments.count > 0 %}
                             <li>{{ complaint.comments.count }} comentario{{ complaint.comments.count|pluralize }} asociado{{ complaint.comments.count|pluralize }}</li>
                         {% endif %}
@@ -147,7 +148,7 @@
                             <li>Archivo adjunto: {{ complaint.attachment.name }}</li>
                         {% endif %}
                         {% if complaint.resolution %}
-                            <li>Resolución documentada</li>
+                            <li>{% translate "Resolución documentada" %}</li>
                         {% endif %}
                     </ul>
                 </div>
@@ -160,16 +161,15 @@
                         <i class="danger-icon fas fa-trash-alt"></i>
                     </div>
                     <div class="col-md-10">
-                        <h5 class="text-danger mb-2">Confirmación Requerida</h5>
+                        <h5 class="text-danger mb-2">{% translate "Confirmación Requerida" %}</h5>
                         <p class="mb-3">
-                            Para confirmar la eliminación de este reporte QA, haz clic en el botón "Eliminar Definitivamente".
-                            Recuerda que esta acción es <strong>irreversible</strong>.
+                            {% translate 'Para confirmar la eliminación de este reporte QA, haz clic en el botón "Eliminar Definitivamente". Recuerda que esta acción es' %} <strong>{% translate "irreversible" %}</strong>.
                         </p>
                         
                         <div class="form-check mb-3">
                             <input class="form-check-input" type="checkbox" id="confirmDelete">
                             <label class="form-check-label" for="confirmDelete">
-                                <strong>Confirmo que deseo eliminar este reporte QA permanentemente</strong>
+                                <strong>{% translate "Confirmo que deseo eliminar este reporte QA permanentemente" %}</strong>
                             </label>
                         </div>
                     </div>
@@ -179,18 +179,18 @@
             <!-- Botones de Acción -->
             <div class="d-flex justify-content-between">
                 <a href="{% url 'qa_complaint_detail' complaint.pk %}" class="btn btn-secondary btn-lg">
-                    <i class="fas fa-arrow-left"></i> Cancelar y Volver
+                    <i class="fas fa-arrow-left"></i> {% translate "Cancelar y Volver" %}
                 </a>
                 
                 <form method="POST" id="deleteForm" style="display: none;">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger btn-lg" id="deleteButton" disabled>
-                        <i class="fas fa-trash-alt"></i> Eliminar Definitivamente
+                        <i class="fas fa-trash-alt"></i> {% translate "Eliminar Definitivamente" %}
                     </button>
                 </form>
                 
                 <button type="button" class="btn btn-danger btn-lg" id="showDeleteButton" disabled>
-                    <i class="fas fa-trash-alt"></i> Eliminar Definitivamente
+                    <i class="fas fa-trash-alt"></i> {% translate "Eliminar Definitivamente" %}
                 </button>
             </div>
 
@@ -198,8 +198,7 @@
             <div class="text-center mt-4">
                 <small class="text-muted">
                     <i class="fas fa-shield-alt"></i>
-                    Solo los administradores y usuarios autorizados pueden eliminar reportes QA.
-                    Esta acción queda registrada en los logs del sistema.
+                    {% translate "Solo los administradores y usuarios autorizados pueden eliminar reportes QA. Esta acción queda registrada en los logs del sistema." %}
                 </small>
             </div>
         </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
@@ -11,7 +12,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">
                         <i class="bi bi-{% if cumplimiento %}pencil{% else %}plus-circle{% endif %} text-primary"></i>
-                        {% if cumplimiento %}Editar Meta{% else %}Nueva Meta{% endif %} de Cumplimiento
+                        {% if cumplimiento %}{% translate "Editar Meta" %}{% else %}{% translate "Nueva Meta" %}{% endif %} {% translate "de Cumplimiento" %}
                     </h4>
                 </div>
                 <div class="card-body">
@@ -95,7 +96,7 @@
                         {% if cumplimiento %}
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i>
-                            <strong>URL Pública:</strong> 
+                            <strong>{% translate "URL Pública:" %}</strong> 
                             <a href="{{ cumplimiento.get_public_url }}" target="_blank" class="text-decoration-none">
                                 {{ request.build_absolute_uri }}{{ cumplimiento.get_public_url }}
                             </a>
@@ -107,11 +108,11 @@
                         <div class="d-flex justify-content-between">
                             <a href="{% if cumplimiento %}{% url 'monthly_cumplimiento_detail' cumplimiento.pk %}{% else %}{% url 'monthly_cumplimiento_list' %}{% endif %}" 
                                class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                                <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i>
-                                {% if cumplimiento %}Actualizar{% else %}Crear{% endif %} Meta
+                                {% if cumplimiento %}{% translate "Actualizar" %}{% else %}{% translate "Crear" %}{% endif %} {% translate "Meta" %}
                             </button>
                         </div>
                     </form>

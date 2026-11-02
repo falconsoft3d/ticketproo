@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
-{% block title %}{% if action == 'create' %}Nueva Tabla{% else %}Editar Tabla{% endif %} - Ticket System{% endblock %}
+{% load i18n %}
+{% block title %}{% if action == 'create' %}{% translate "Nueva Tabla" %}{% else %}{% translate "Editar Tabla" %}{% endif %} {% translate "- Ticket System" %}{% endblock %}
 {% block content %}
 <div class="container mt-4">
     <div class="row"><div class="col-lg-8 offset-lg-2">
@@ -7,38 +8,38 @@
                 <div class="card-header">
                     <h4 class="mb-0">
                         <i class="bi bi-table"></i>
-                        {% if action == 'create' %}Nueva Tabla RPC{% else %}Editar: {{ table.name }}{% endif %}
+                        {% if action == 'create' %}{% translate "Nueva Tabla RPC" %}{% else %}Editar: {{ table.name }}{% endif %}
                     </h4>
                 </div>
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <label for="name" class="form-label">Nombre Descriptivo *</label>
+                            <label for="name" class="form-label">{% translate "Nombre Descriptivo *" %}</label>
                             <input type="text" class="form-control" id="name" name="name" 
                                    value="{{ table.name|default:'' }}" required>
                         </div>
                         <div class="mb-3">
-                            <label for="odoo_model" class="form-label">Modelo Odoo *</label>
+                            <label for="odoo_model" class="form-label">{% translate "Modelo Odoo *" %}</label>
                             <div class="input-group">
                                 <input type="text" class="form-control" id="odoo_model" name="odoo_model" 
                                        value="{{ table.odoo_model|default:'' }}" required
-                                       placeholder="product.product">
+                                       placeholder="{% translate 'product.product' %}">
                                 <button type="button" class="btn btn-info" onclick="showAvailableModels()">
-                                    <i class="bi bi-search"></i> Consultar Tablas
+                                    <i class="bi bi-search"></i> {% translate "Consultar Tablas" %}
                                 </button>
                             </div>
-                            <small class="form-text text-muted">Nombre técnico del modelo en Odoo</small>
+                            <small class="form-text text-muted">{% translate "Nombre técnico del modelo en Odoo" %}</small>
                         </div>
                         <div class="mb-3">
-                            <label for="description" class="form-label">Descripción</label>
+                            <label for="description" class="form-label">{% translate "Descripción" %}</label>
                             <textarea class="form-control" id="description" name="description" rows="3">{{ table.description|default:'' }}</textarea>
                         </div>
                         <div class="d-flex justify-content-between">
                             <a href="{% if action == 'edit' %}{% url 'odoo_rpc_table_detail' table.id %}{% else %}{% url 'odoo_rpc_table_list' connection.id %}{% endif %}" 
-                               class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Cancelar</a>
+                               class="btn btn-secondary"><i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}</a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle"></i> {% if action == 'create' %}Crear{% else %}Guardar{% endif %}
+                                <i class="bi bi-check-circle"></i> {% if action == 'create' %}{% translate "Crear" %}{% else %}{% translate "Guardar" %}{% endif %}
                             </button>
                         </div>
                     </form>
@@ -53,28 +54,28 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Modelos Disponibles en Odoo</h5>
+                <h5 class="modal-title">{% translate "Modelos Disponibles en Odoo" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <input type="text" id="modelSearch" class="form-control" placeholder="Buscar modelo..." onkeyup="searchModels()">
+                    <input type="text" id="modelSearch" class="form-control" placeholder="{% translate 'Buscar modelo...' %}" onkeyup="searchModels()">
                 </div>
                 <div id="modelsLoading" class="text-center" style="display: none;">
                     <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Cargando...</span>
+                        <span class="visually-hidden">{% translate "Cargando..." %}</span>
                     </div>
-                    <p class="mt-2">Consultando modelos en Odoo...</p>
+                    <p class="mt-2">{% translate "Consultando modelos en Odoo..." %}</p>
                 </div>
                 <div id="modelsError" class="alert alert-danger d-none"></div>
                 <div id="modelsList" style="max-height: 500px; overflow-y: auto;">
                     <table class="table table-hover table-sm">
                         <thead class="table-light sticky-top">
                             <tr>
-                                <th>Modelo Técnico</th>
-                                <th>Nombre</th>
-                                <th>Descripción</th>
-                                <th>Acción</th>
+                                <th>{% translate "Modelo Técnico" %}</th>
+                                <th>{% translate "Nombre" %}</th>
+                                <th>{% translate "Descripción" %}</th>
+                                <th>{% translate "Acción" %}</th>
                             </tr>
                         </thead>
                         <tbody id="modelsTableBody">

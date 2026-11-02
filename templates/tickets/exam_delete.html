@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Eliminar Examen{% endblock %}
+{% block title %}{% translate "Eliminar Examen" %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -10,25 +11,25 @@
             <div class="card border-danger">
                 <div class="card-header bg-danger text-white">
                     <h4 class="mb-0">
-                        <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación de Examen
+                        <i class="bi bi-exclamation-triangle"></i> {% translate "Confirmar Eliminación de Examen" %}
                     </h4>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle"></i>
-                        <strong>¡ATENCIÓN!</strong> ¿Estás seguro de que deseas eliminar este examen?
-                        <br>Esta acción eliminará:
+                        <strong>{% translate "¡ATENCIÓN!" %}</strong> {% translate "¿Estás seguro de que deseas eliminar este examen?" %}
+                        <br>{% translate "Esta acción eliminará:" %}
                         <ul class="mt-2 mb-0">
-                            <li>El examen y toda su configuración</li>
-                            <li>Todas las preguntas asociadas</li>
-                            <li>Todos los intentos e historial de resultados</li>
+                            <li>{% translate "El examen y toda su configuración" %}</li>
+                            <li>{% translate "Todas las preguntas asociadas" %}</li>
+                            <li>{% translate "Todos los intentos e historial de resultados" %}</li>
                         </ul>
-                        <strong>Esta acción no se puede deshacer.</strong>
+                        <strong>{% translate "Esta acción no se puede deshacer." %}</strong>
                     </div>
 
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="mb-0">Examen a eliminar:</h5>
+                            <h5 class="mb-0">{% translate "Examen a eliminar:" %}</h5>
                         </div>
                         <div class="card-body">
                             <h4 class="mb-3">{{ exam.title }}</h4>
@@ -41,29 +42,29 @@
                                 <div class="col-md-3">
                                     <div class="text-center">
                                         <div class="fs-4 fw-bold text-primary">{{ exam.get_questions_count }}</div>
-                                        <small class="text-muted">Preguntas</small>
+                                        <small class="text-muted">{% translate "Preguntas" %}</small>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="text-center">
                                         <div class="fs-4 fw-bold text-warning">{{ exam.get_total_attempts }}</div>
-                                        <small class="text-muted">Intentos</small>
+                                        <small class="text-muted">{% translate "Intentos" %}</small>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="text-center">
                                         <div class="fs-4 fw-bold text-success">{{ exam.passing_score }}%</div>
-                                        <small class="text-muted">Mínimo</small>
+                                        <small class="text-muted">{% translate "Mínimo" %}</small>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="text-center">
                                         {% if exam.is_public %}
-                                            <div class="badge bg-success fs-6">Público</div>
+                                            <div class="badge bg-success fs-6">{% translate "Público" %}</div>
                                         {% else %}
-                                            <div class="badge bg-secondary fs-6">Privado</div>
+                                            <div class="badge bg-secondary fs-6">{% translate "Privado" %}</div>
                                         {% endif %}
-                                        <div><small class="text-muted">Estado</small></div>
+                                        <div><small class="text-muted">{% translate "Estado" %}</small></div>
                                     </div>
                                 </div>
                             </div>
@@ -72,10 +73,10 @@
                             
                             <div class="row">
                                 <div class="col-md-6">
-                                    <strong>Creado por:</strong> {{ exam.created_by.get_full_name|default:exam.created_by.username }}
+                                    <strong>{% translate "Creado por:" %}</strong> {{ exam.created_by.get_full_name|default:exam.created_by.username }}
                                 </div>
                                 <div class="col-md-6">
-                                    <strong>Fecha:</strong> {{ exam.created_at|date:"d/m/Y H:i" }}
+                                    <strong>{% translate "Fecha:" %}</strong> {{ exam.created_at|date:"d/m/Y H:i" }}
                                 </div>
                             </div>
 
@@ -83,7 +84,7 @@
                             <div class="mt-3">
                                 <div class="alert alert-info">
                                     <i class="bi bi-globe"></i> 
-                                    <strong>Examen público:</strong> Este examen tiene una URL pública que será invalidada.
+                                    <strong>{% translate "Examen público:" %}</strong> {% translate "Este examen tiene una URL pública que será invalidada." %}
                                     <br>
                                     <code>{{ request.build_absolute_uri }}/exam/{{ exam.public_token }}/</code>
                                 </div>
@@ -95,7 +96,7 @@
                     {% if exam.get_total_attempts > 0 %}
                     <div class="alert alert-danger mt-3">
                         <i class="bi bi-exclamation-triangle"></i>
-                        <strong>¡Cuidado!</strong> Este examen tiene {{ exam.get_total_attempts }} intento{{ exam.get_total_attempts|pluralize }} registrado{{ exam.get_total_attempts|pluralize }}.
+                        <strong>{% translate "¡Cuidado!" %}</strong> Este examen tiene {{ exam.get_total_attempts }} intento{{ exam.get_total_attempts|pluralize }} registrado{{ exam.get_total_attempts|pluralize }}.
                         Al eliminarlo, también se perderán todos los resultados y estadísticas de los participantes.
                     </div>
                     {% endif %}
@@ -103,13 +104,13 @@
                 <div class="card-footer">
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'exam_detail' exam.pk %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Cancelar
+                            <i class="bi bi-arrow-left"></i> {% translate "Cancelar" %}
                         </a>
                         <form method="post" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger" 
                                     onclick="return confirm('¿Estás completamente seguro? Esta acción no se puede deshacer y eliminará TODA la información del examen.')">
-                                <i class="bi bi-trash"></i> Sí, Eliminar Examen Completamente
+                                <i class="bi bi-trash"></i> {% translate "Sí, Eliminar Examen Completamente" %}
                             </button>
                         </form>
                     </div>

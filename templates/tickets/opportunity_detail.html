@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load crm_tags %}
 
 {% block title %}{{ opportunity.name }} - TicketProo{% endblock %}
@@ -13,7 +14,7 @@
                         <i class="bi bi-bar-chart text-primary"></i>
                         {{ opportunity.name }}
                         {% if opportunity.is_overdue %}
-                            <i class="bi bi-exclamation-triangle text-warning" title="Oportunidad vencida"></i>
+                            <i class="bi bi-exclamation-triangle text-warning" title="{% translate 'Oportunidad vencida' %}"></i>
                         {% endif %}
                     </h2>
                     <p class="text-muted mb-0">{{ opportunity.company.name }}</p>
@@ -21,11 +22,11 @@
                 <div class="d-flex gap-2">
                     {% if can_be_edited %}
                     <a href="{% url 'opportunity_edit' opportunity.pk %}" class="btn btn-primary">
-                        <i class="bi bi-pencil"></i> Editar
+                        <i class="bi bi-pencil"></i> {% translate "Editar" %}
                     </a>
                     {% endif %}
                     <a href="{% url 'opportunity_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver
+                        <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
                     </a>
                 </div>
             </div>
@@ -39,19 +40,19 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-info-circle"></i> Estado y Progreso
+                        <i class="bi bi-info-circle"></i> {% translate "Estado y Progreso" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Estado Actual</h6>
+                            <h6>{% translate "Estado Actual" %}</h6>
                             <span class="badge fs-6 p-2" style="background-color: {{ opportunity.status.color }}">
                                 {{ opportunity.status.name }}
                             </span>
                         </div>
                         <div class="col-md-6">
-                            <h6>Probabilidad de Cierre</h6>
+                            <h6>{% translate "Probabilidad de Cierre" %}</h6>
                             <div class="progress" style="height: 25px;">
                                 <div class="progress-bar" role="progressbar" 
                                      style="width: {{ opportunity.probability }}%" 
@@ -69,52 +70,52 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-card-text"></i> Detalles
+                        <i class="bi bi-card-text"></i> {% translate "Detalles" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     {% if opportunity.description %}
                         <p>{{ opportunity.description|linebreaks }}</p>
                     {% else %}
-                        <p class="text-muted">Sin descripción disponible.</p>
+                        <p class="text-muted">{% translate "Sin descripción disponible." %}</p>
                     {% endif %}
 
                     <div class="row mt-3">
                         <div class="col-md-6">
-                            <h6><i class="bi bi-person"></i> Contacto Principal</h6>
+                            <h6><i class="bi bi-person"></i> {% translate "Contacto Principal" %}</h6>
                             <p>{{ opportunity.contact_name }}</p>
                             
                             {% if opportunity.contact_position %}
-                            <h6><i class="bi bi-briefcase"></i> Cargo</h6>
+                            <h6><i class="bi bi-briefcase"></i> {% translate "Cargo" %}</h6>
                             <p>{{ opportunity.contact_position }}</p>
                             {% endif %}
                             
                             {% if opportunity.contact_email %}
-                            <h6><i class="bi bi-envelope"></i> Email</h6>
+                            <h6><i class="bi bi-envelope"></i> {% translate "Email" %}</h6>
                             <p><a href="mailto:{{ opportunity.contact_email }}">{{ opportunity.contact_email }}</a></p>
                             {% endif %}
                             
                             {% if opportunity.contact_phone %}
-                            <h6><i class="bi bi-telephone"></i> Teléfono</h6>
+                            <h6><i class="bi bi-telephone"></i> {% translate "Teléfono" %}</h6>
                             <p><a href="tel:{{ opportunity.contact_phone }}">{{ opportunity.contact_phone }}</a></p>
                             {% endif %}
                         </div>
                         <div class="col-md-6">
                             {% if opportunity.source %}
-                            <h6><i class="bi bi-arrow-down-circle"></i> Fuente</h6>
+                            <h6><i class="bi bi-arrow-down-circle"></i> {% translate "Fuente" %}</h6>
                             <p>{{ opportunity.source }}</p>
                             {% endif %}
                             
-                            <h6><i class="bi bi-person-check"></i> Asignado a</h6>
+                            <h6><i class="bi bi-person-check"></i> {% translate "Asignado a" %}</h6>
                             <p>
                                 {% if opportunity.assigned_to %}
                                     {{ opportunity.assigned_to.get_full_name|default:opportunity.assigned_to.username }}
                                 {% else %}
-                                    <span class="text-muted">Sin asignar</span>
+                                    <span class="text-muted">{% translate "Sin asignar" %}</span>
                                 {% endif %}
                             </p>
                             
-                            <h6><i class="bi bi-person-plus"></i> Creado por</h6>
+                            <h6><i class="bi bi-person-plus"></i> {% translate "Creado por" %}</h6>
                             <p>{{ opportunity.created_by.get_full_name|default:opportunity.created_by.username }}</p>
                         </div>
                     </div>
@@ -125,11 +126,11 @@
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="fas fa-tasks"></i> Actividades de Seguimiento
+                        <i class="fas fa-tasks"></i> {% translate "Actividades de Seguimiento" %}
                     </h5>
                     {% if can_be_edited %}
                     <a href="{% url 'opportunity_activity_create' opportunity.pk %}" class="btn btn-sm btn-primary">
-                        <i class="fas fa-plus-circle"></i> Nueva Actividad
+                        <i class="fas fa-plus-circle"></i> {% translate "Nueva Actividad" %}
                     </a>
                     {% endif %}
                 </div>
@@ -139,13 +140,13 @@
                             <table class="table table-hover">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Actividad</th>
-                                        <th>Tipo</th>
-                                        <th>Prioridad</th>
-                                        <th>Asignado a</th>
-                                        <th>Fecha</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
+                                        <th>{% translate "Actividad" %}</th>
+                                        <th>{% translate "Tipo" %}</th>
+                                        <th>{% translate "Prioridad" %}</th>
+                                        <th>{% translate "Asignado a" %}</th>
+                                        <th>{% translate "Fecha" %}</th>
+                                        <th>{% translate "Estado" %}</th>
+                                        <th>{% translate "Acciones" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -174,11 +175,11 @@
                                                 {{ activity.scheduled_date|time:"H:i" }}
                                                 {% if activity.is_overdue %}
                                                     <br><span class="text-danger">
-                                                        <i class="fas fa-exclamation-triangle"></i> Vencida
+                                                        <i class="fas fa-exclamation-triangle"></i> {% translate "Vencida" %}
                                                     </span>
                                                 {% elif activity.is_due_today %}
                                                     <br><span class="text-warning">
-                                                        <i class="fas fa-clock"></i> Hoy
+                                                        <i class="fas fa-clock"></i> {% translate "Hoy" %}
                                                     </span>
                                                 {% endif %}
                                             </small>
@@ -188,16 +189,16 @@
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
-                                                <a href="{% url 'opportunity_activity_detail' activity.pk %}" class="btn btn-outline-primary btn-sm" title="Ver detalles">
+                                                <a href="{% url 'opportunity_activity_detail' activity.pk %}" class="btn btn-outline-primary btn-sm" title="{% translate 'Ver detalles' %}">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                                 {% if activity.assigned_to == request.user and activity.status in 'pending,in_progress' %}
-                                                <a href="{% url 'opportunity_activity_complete' activity.pk %}" class="btn btn-outline-success btn-sm" title="Completar">
+                                                <a href="{% url 'opportunity_activity_complete' activity.pk %}" class="btn btn-outline-success btn-sm" title="{% translate 'Completar' %}">
                                                     <i class="fas fa-check"></i>
                                                 </a>
                                                 {% endif %}
                                                 {% if can_be_edited %}
-                                                <a href="{% url 'opportunity_activity_edit' activity.pk %}" class="btn btn-outline-warning btn-sm" title="Editar">
+                                                <a href="{% url 'opportunity_activity_edit' activity.pk %}" class="btn btn-outline-warning btn-sm" title="{% translate 'Editar' %}">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 {% endif %}
@@ -211,10 +212,10 @@
                     {% else %}
                         <div class="text-center py-4">
                             <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">No hay actividades registradas para esta oportunidad.</p>
+                            <p class="text-muted">{% translate "No hay actividades registradas para esta oportunidad." %}</p>
                             {% if can_be_edited %}
                             <a href="{% url 'opportunity_activity_create' opportunity.pk %}" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Crear Primera Actividad
+                                <i class="fas fa-plus"></i> {% translate "Crear Primera Actividad" %}
                             </a>
                             {% endif %}
                         </div>
@@ -226,10 +227,10 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-chat-square-text"></i> Notas y Seguimiento
+                        <i class="bi bi-chat-square-text"></i> {% translate "Notas y Seguimiento" %}
                     </h5>
                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addNoteModal">
-                        <i class="bi bi-plus-circle"></i> Agregar Nota
+                        <i class="bi bi-plus-circle"></i> {% translate "Agregar Nota" %}
                     </button>
                 </div>
                 <div class="card-body">
@@ -241,7 +242,7 @@
                                     <strong>{{ note.created_by.get_full_name|default:note.created_by.username }}</strong>
                                     {% if note.is_important %}
                                         <span class="badge bg-warning text-dark ms-2">
-                                            <i class="bi bi-star-fill"></i> Importante
+                                            <i class="bi bi-star-fill"></i> {% translate "Importante" %}
                                         </span>
                                     {% endif %}
                                 </div>
@@ -252,7 +253,7 @@
                         {% if not forloop.last %}<hr>{% endif %}
                         {% endfor %}
                     {% else %}
-                        <p class="text-muted text-center py-3">No hay notas disponibles.</p>
+                        <p class="text-muted text-center py-3">{% translate "No hay notas disponibles." %}</p>
                     {% endif %}
                 </div>
             </div>
@@ -264,16 +265,16 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        {% get_currency_icon %} Información Financiera
+                        {% get_currency_icon %} {% translate "Información Financiera" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="text-center">
                         <h3 class="text-primary">{{ opportunity.value|format_currency }}</h3>
-                        <p class="text-muted">Valor Total</p>
+                        <p class="text-muted">{% translate "Valor Total" %}</p>
                         
                         <h4 class="text-success">{{ opportunity.expected_value|format_currency }}</h4>
-                        <p class="text-muted">Valor Esperado</p>
+                        <p class="text-muted">{% translate "Valor Esperado" %}</p>
                     </div>
                 </div>
             </div>
@@ -282,12 +283,12 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-calendar"></i> Fechas Importantes
+                        <i class="bi bi-calendar"></i> {% translate "Fechas Importantes" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <h6>Fecha Estimada de Cierre</h6>
+                        <h6>{% translate "Fecha Estimada de Cierre" %}</h6>
                         <p class="{% if opportunity.is_overdue %}text-danger{% elif opportunity.days_to_close <= 7 %}text-warning{% endif %}">
                             {{ opportunity.expected_close_date }}
                             {% if opportunity.days_to_close is not None %}
@@ -297,9 +298,9 @@
                                         <i class="bi bi-exclamation-triangle"></i>
                                         {{ opportunity.days_overdue }} días vencida
                                     {% elif opportunity.days_to_close == 0 %}
-                                        <i class="bi bi-clock"></i> Hoy
+                                        <i class="bi bi-clock"></i> {% translate "Hoy" %}
                                     {% elif opportunity.days_to_close == 1 %}
-                                        <i class="bi bi-clock"></i> Mañana
+                                        <i class="bi bi-clock"></i> {% translate "Mañana" %}
                                     {% else %}
                                         <i class="bi bi-clock"></i> {{ opportunity.days_to_close }} días
                                     {% endif %}
@@ -309,25 +310,25 @@
                     </div>
                     
                     <div class="mb-3">
-                        <h6>Creada</h6>
+                        <h6>{% translate "Creada" %}</h6>
                         <p>{{ opportunity.created_at }}</p>
                     </div>
                     
                     <div class="mb-3">
-                        <h6>Última Actualización</h6>
+                        <h6>{% translate "Última Actualización" %}</h6>
                         <p>{{ opportunity.updated_at }}</p>
                     </div>
                     
                     {% if opportunity.last_contact_date %}
                     <div class="mb-3">
-                        <h6>Último Contacto</h6>
+                        <h6>{% translate "Último Contacto" %}</h6>
                         <p>{{ opportunity.last_contact_date }}</p>
                     </div>
                     {% endif %}
                     
                     {% if opportunity.next_follow_up %}
                     <div class="mb-3">
-                        <h6>Próximo Seguimiento</h6>
+                        <h6>{% translate "Próximo Seguimiento" %}</h6>
                         <p>{{ opportunity.next_follow_up }}</p>
                     </div>
                     {% endif %}
@@ -338,7 +339,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-clock-history"></i> Historial de Estados
+                        <i class="bi bi-clock-history"></i> {% translate "Historial de Estados" %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -362,7 +363,7 @@
                         {% if not forloop.last %}<hr>{% endif %}
                         {% endfor %}
                     {% else %}
-                        <p class="text-muted text-center">Sin historial disponible.</p>
+                        <p class="text-muted text-center">{% translate "Sin historial disponible." %}</p>
                     {% endif %}
                 </div>
             </div>
@@ -377,24 +378,24 @@
             <form method="POST" action="{% url 'opportunity_add_note' opportunity.pk %}">
                 {% csrf_token %}
                 <div class="modal-header">
-                    <h5 class="modal-title">Agregar Nota</h5>
+                    <h5 class="modal-title">{% translate "Agregar Nota" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="content" class="form-label">Contenido de la Nota</label>
+                        <label for="content" class="form-label">{% translate "Contenido de la Nota" %}</label>
                         <textarea class="form-control" id="content" name="content" rows="4" required></textarea>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="is_important" name="is_important">
                         <label class="form-check-label" for="is_important">
-                            <i class="bi bi-star"></i> Marcar como importante
+                            <i class="bi bi-star"></i> {% translate "Marcar como importante" %}
                         </label>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Agregar Nota</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% translate "Agregar Nota" %}</button>
                 </div>
             </form>
         </div>

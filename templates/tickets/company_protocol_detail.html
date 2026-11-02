@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
@@ -6,11 +7,11 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <nav aria-label="breadcrumb">
+        <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
                     <a href="{% url 'company_protocol_list' %}">
-                        <i class="bi bi-file-text"></i> Protocolos
+                        <i class="bi bi-file-text"></i> {% translate "Protocolos" %}
                     </a>
                 </li>
                 <li class="breadcrumb-item active">{{ protocol.title|truncatechars:50 }}</li>
@@ -24,27 +25,27 @@
     
     <div class="btn-group" role="group">
         <a href="{% url 'company_protocol_edit' protocol.pk %}" class="btn btn-outline-secondary">
-            <i class="bi bi-pencil"></i> Editar
+            <i class="bi bi-pencil"></i> {% translate "Editar" %}
         </a>
         <a href="{% url 'company_protocol_print_pdf' protocol.pk %}" class="btn btn-success">
-            <i class="bi bi-printer"></i> Imprimir PDF
+            <i class="bi bi-printer"></i> {% translate "Imprimir PDF" %}
         </a>
         
         <!-- Botón de compartir público -->
         {% if protocol.is_public %}
             <div class="btn-group">
                 <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
-                    <i class="bi bi-share"></i> Público
+                    <i class="bi bi-share"></i> {% translate "Público" %}
                 </button>
                 <ul class="dropdown-menu">
                     <li>
                         <a class="dropdown-item" href="{{ protocol.get_public_url }}" target="_blank">
-                            <i class="bi bi-eye"></i> Ver versión pública
+                            <i class="bi bi-eye"></i> {% translate "Ver versión pública" %}
                         </a>
                     </li>
                     <li>
                         <a class="dropdown-item" href="#" onclick="copyPublicUrl('{{ request.scheme }}://{{ request.get_host }}{{ protocol.get_public_url }}')">
-                            <i class="bi bi-link-45deg"></i> Copiar enlace público
+                            <i class="bi bi-link-45deg"></i> {% translate "Copiar enlace público" %}
                         </a>
                     </li>
                     <li><hr class="dropdown-divider"></li>
@@ -53,7 +54,7 @@
                             {% csrf_token %}
                             <input type="hidden" name="action" value="make_private">
                             <button type="submit" class="dropdown-item text-danger" onclick="return confirm('¿Estás seguro de que quieres hacer privado este protocolo?')">
-                                <i class="bi bi-lock"></i> Hacer privado
+                                <i class="bi bi-lock"></i> {% translate "Hacer privado" %}
                             </button>
                         </form>
                     </li>
@@ -64,13 +65,13 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="make_public">
                 <button type="submit" class="btn btn-outline-primary" onclick="return confirm('¿Estás seguro de que quieres compartir públicamente este protocolo?')">
-                    <i class="bi bi-share"></i> Compartir público
+                    <i class="bi bi-share"></i> {% translate "Compartir público" %}
                 </button>
             </form>
         {% endif %}
         
         <a href="{% url 'company_protocol_list' %}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Volver
+            <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
         </a>
     </div>
 </div>
@@ -82,11 +83,11 @@
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-file-earmark-text"></i> Contenido del Protocolo
+                        <i class="bi bi-file-earmark-text"></i> {% translate "Contenido del Protocolo" %}
                     </h5>
                     <div class="d-flex gap-2">
                         <span class="badge {% if protocol.is_active %}bg-success{% else %}bg-secondary{% endif %} fs-6">
-                            {% if protocol.is_active %}Activo{% else %}Inactivo{% endif %}
+                            {% if protocol.is_active %}{% translate "Activo" %}{% else %}{% translate "Inactivo" %}{% endif %}
                         </span>
                         <span class="badge bg-primary fs-6">v{{ protocol.version }}</span>
                     </div>
@@ -102,13 +103,13 @@
                 <div class="mt-4 pt-3 border-top">
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-outline-primary btn-sm" onclick="printContent()">
-                            <i class="bi bi-printer"></i> Imprimir Solo Contenido
+                            <i class="bi bi-printer"></i> {% translate "Imprimir Solo Contenido" %}
                         </button>
                         <button type="button" class="btn btn-outline-secondary btn-sm" onclick="copyToClipboard()">
-                            <i class="bi bi-clipboard"></i> Copiar Texto
+                            <i class="bi bi-clipboard"></i> {% translate "Copiar Texto" %}
                         </button>
                         <button type="button" class="btn btn-outline-info btn-sm" onclick="toggleTextSize()">
-                            <i class="bi bi-zoom-in"></i> Cambiar Tamaño
+                            <i class="bi bi-zoom-in"></i> {% translate "Cambiar Tamaño" %}
                         </button>
                     </div>
                 </div>
@@ -122,13 +123,13 @@
         <div class="card">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-info-circle"></i> Información del Protocolo
+                    <i class="bi bi-info-circle"></i> {% translate "Información del Protocolo" %}
                 </h6>
             </div>
             <div class="card-body">
                 {% if protocol.company %}
                 <div class="mb-3">
-                    <strong class="text-primary">Empresa:</strong>
+                    <strong class="text-primary">{% translate "Empresa:" %}</strong>
                     <div>
                         <i class="bi bi-building text-muted"></i> {{ protocol.company.name }}
                     </div>
@@ -136,37 +137,37 @@
                 {% endif %}
                 
                 <div class="mb-3">
-                    <strong class="text-primary">Título:</strong>
+                    <strong class="text-primary">{% translate "Título:" %}</strong>
                     <div>{{ protocol.title }}</div>
                 </div>
                 
                 <div class="mb-3">
-                    <strong class="text-primary">Versión:</strong>
+                    <strong class="text-primary">{% translate "Versión:" %}</strong>
                     <div>{{ protocol.version }}</div>
                 </div>
                 
                 <div class="mb-3">
-                    <strong class="text-primary">Estado:</strong>
+                    <strong class="text-primary">{% translate "Estado:" %}</strong>
                     <div>
                         <span class="badge {% if protocol.is_active %}bg-success{% else %}bg-secondary{% endif %}">
-                            {% if protocol.is_active %}Activo{% else %}Inactivo{% endif %}
+                            {% if protocol.is_active %}{% translate "Activo" %}{% else %}{% translate "Inactivo" %}{% endif %}
                         </span>
                     </div>
                 </div>
                 
                 <div class="mb-3">
-                    <strong class="text-primary">Creado por:</strong>
+                    <strong class="text-primary">{% translate "Creado por:" %}</strong>
                     <div>{{ protocol.created_by.get_full_name|default:protocol.created_by.username }}</div>
                     <small class="text-muted">{{ protocol.created_at|date:"d/m/Y H:i" }}</small>
                 </div>
                 
                 <div class="mb-3">
-                    <strong class="text-primary">Última actualización:</strong>
+                    <strong class="text-primary">{% translate "Última actualización:" %}</strong>
                     <div>{{ protocol.updated_at|date:"d/m/Y H:i" }}</div>
                 </div>
                 
                 <div class="mb-3">
-                    <strong class="text-primary">Estadísticas:</strong>
+                    <strong class="text-primary">{% translate "Estadísticas:" %}</strong>
                     <div>
                         <small>
                             <i class="bi bi-file-word"></i> {{ protocol.get_word_count }} palabras<br>
@@ -178,11 +179,11 @@
                 <!-- KPI de Vistas Públicas -->
                 {% if protocol.is_public %}
                 <div class="mb-3">
-                    <strong class="text-primary">Compartir Público:</strong>
+                    <strong class="text-primary">{% translate "Compartir Público:" %}</strong>
                     <div>
                         <div class="d-flex align-items-center mb-2">
                             <span class="badge bg-success me-2">
-                                <i class="bi bi-globe"></i> Público
+                                <i class="bi bi-globe"></i> {% translate "Público" %}
                             </span>
                             <span class="badge bg-info">
                                 <i class="bi bi-eye"></i> {{ protocol.public_views_count }} vista{{ protocol.public_views_count|pluralize }}
@@ -196,10 +197,10 @@
                 </div>
                 {% elif protocol.public_shared_at %}
                 <div class="mb-3">
-                    <strong class="text-primary">Compartir Público:</strong>
+                    <strong class="text-primary">{% translate "Compartir Público:" %}</strong>
                     <div>
                         <span class="badge bg-secondary me-2">
-                            <i class="bi bi-lock"></i> Privado
+                            <i class="bi bi-lock"></i> {% translate "Privado" %}
                         </span>
                         <span class="badge bg-secondary">
                             <i class="bi bi-eye"></i> {{ protocol.public_views_count }} vista{{ protocol.public_views_count|pluralize }} (total)
@@ -219,22 +220,22 @@
         <div class="card mt-3">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-gear"></i> Acciones Disponibles
+                    <i class="bi bi-gear"></i> {% translate "Acciones Disponibles" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <a href="{% url 'company_protocol_edit' protocol.pk %}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-pencil"></i> Editar Protocolo
+                        <i class="bi bi-pencil"></i> {% translate "Editar Protocolo" %}
                     </a>
                     <a href="{% url 'company_protocol_print_pdf' protocol.pk %}" class="btn btn-outline-success btn-sm">
-                        <i class="bi bi-printer"></i> Descargar PDF
+                        <i class="bi bi-printer"></i> {% translate "Descargar PDF" %}
                     </a>
                     <button type="button" class="btn btn-outline-warning btn-sm" onclick="duplicateProtocol()">
-                        <i class="bi bi-files"></i> Duplicar Protocolo
+                        <i class="bi bi-files"></i> {% translate "Duplicar Protocolo" %}
                     </button>
                     <a href="{% url 'company_protocol_delete' protocol.pk %}" class="btn btn-outline-danger btn-sm">
-                        <i class="bi bi-trash"></i> Eliminar Protocolo
+                        <i class="bi bi-trash"></i> {% translate "Eliminar Protocolo" %}
                     </a>
                 </div>
             </div>
@@ -244,19 +245,19 @@
         <div class="card mt-3">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-robot"></i> Asistente IA
+                    <i class="bi bi-robot"></i> {% translate "Asistente IA" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <button type="button" class="btn btn-outline-primary btn-sm" onclick="analyzeReadability()">
-                        <i class="bi bi-bar-chart"></i> Analizar Legibilidad
+                        <i class="bi bi-bar-chart"></i> {% translate "Analizar Legibilidad" %}
                     </button>
                     <button type="button" class="btn btn-outline-info btn-sm" onclick="getAISuggestions()">
-                        <i class="bi bi-lightbulb"></i> Sugerencias de Mejora
+                        <i class="bi bi-lightbulb"></i> {% translate "Sugerencias de Mejora" %}
                     </button>
                     <button type="button" class="btn btn-outline-success btn-sm" onclick="generateSummary()">
-                        <i class="bi bi-file-text"></i> Generar Resumen
+                        <i class="bi bi-file-text"></i> {% translate "Generar Resumen" %}
                     </button>
                 </div>
             </div>
@@ -266,16 +267,16 @@
         <div class="card mt-3">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-lightbulb"></i> Información
+                    <i class="bi bi-lightbulb"></i> {% translate "Información" %}
                 </h6>
             </div>
             <div class="card-body">
                 <div class="small">
-                    <p><strong>Impresión:</strong> Usa el botón "Imprimir PDF" para generar una versión profesional del protocolo con formato empresarial.</p>
+                    <p><strong>{% translate "Impresión:" %}</strong> {% translate 'Usa el botón "Imprimir PDF" para generar una versión profesional del protocolo con formato empresarial.' %}</p>
                     
-                    <p><strong>Edición:</strong> Puedes editar el contenido en cualquier momento. Se actualizará automáticamente la fecha de modificación.</p>
+                    <p><strong>{% translate "Edición:" %}</strong> {% translate "Puedes editar el contenido en cualquier momento. Se actualizará automáticamente la fecha de modificación." %}</p>
                     
-                    <p><strong>Versiones:</strong> Considera incrementar la versión cuando hagas cambios significativos al protocolo.</p>
+                    <p><strong>{% translate "Versiones:" %}</strong> {% translate "Considera incrementar la versión cuando hagas cambios significativos al protocolo." %}</p>
                 </div>
             </div>
         </div>

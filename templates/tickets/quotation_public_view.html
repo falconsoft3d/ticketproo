@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -55,7 +56,7 @@
     <!-- Botón de impresión -->
     <button class="btn btn-outline-primary print-button no-print" onclick="window.print()">
         <i class="bi bi-printer"></i>
-        Imprimir
+        {% translate "Imprimir" %}
     </button>
 
     <div class="quotation-container">
@@ -84,14 +85,14 @@
         <div class="container py-4">
             <!-- Estado de la cotización -->
             <div class="text-center mb-4">
-                <h5 class="mb-2">Estado de su Respuesta:</h5>
+                <h5 class="mb-2">{% translate "Estado de su Respuesta:" %}</h5>
                 <div>
                     {% if quotation.client_status == 'pending' %}
-                        <span class="badge bg-warning status-badge">Pendiente de Respuesta</span>
+                        <span class="badge bg-warning status-badge">{% translate "Pendiente de Respuesta" %}</span>
                     {% elif quotation.client_status == 'accepted' %}
-                        <span class="badge bg-success status-badge">Aceptada</span>
+                        <span class="badge bg-success status-badge">{% translate "Aceptada" %}</span>
                     {% elif quotation.client_status == 'rejected' %}
-                        <span class="badge bg-danger status-badge">Rechazada</span>
+                        <span class="badge bg-danger status-badge">{% translate "Rechazada" %}</span>
                     {% endif %}
                 </div>
                 {% if quotation.client_response_name %}
@@ -111,13 +112,13 @@
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="bi bi-info-circle"></i>
-                        Información de la Cotización
+                        {% translate "Información de la Cotización" %}
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6 class="text-primary mb-3"><i class="bi bi-building"></i> Empresa</h6>
+                            <h6 class="text-primary mb-3"><i class="bi bi-building"></i> {% translate "Empresa" %}</h6>
                             {% if seller_company %}
                                 <p class="mb-1"><strong>{{ seller_company.name }}</strong></p>
                                 {% if seller_company.tax_id %}
@@ -134,11 +135,11 @@
                                     <p class="mb-1"><small>{{ seller_company.state }}{% if seller_company.country %}, {{ seller_company.country }}{% endif %}</small></p>
                                 {% endif %}
                             {% else %}
-                                <p class="mb-1"><strong>Vendedor:</strong> {{ quotation.salesperson.get_full_name|default:quotation.salesperson.username }}</p>
+                                <p class="mb-1"><strong>{% translate "Vendedor:" %}</strong> {{ quotation.salesperson.get_full_name|default:quotation.salesperson.username }}</p>
                             {% endif %}
                         </div>
                         <div class="col-md-6">
-                            <h6 class="text-primary mb-3"><i class="bi bi-person"></i> Cliente</h6>
+                            <h6 class="text-primary mb-3"><i class="bi bi-person"></i> {% translate "Cliente" %}</h6>
                             <p class="mb-1"><strong>{{ quotation.company.name }}</strong></p>
                             {% if quotation.company.address %}
                                 <p class="mb-1"><small>{{ quotation.company.address }}</small></p>
@@ -148,8 +149,8 @@
                     
                     <div class="row mt-3">
                         <div class="col-12">
-                            <p class="mb-1"><strong>Fecha:</strong> {{ quotation.date|date:"d/m/Y" }}</p>
-                            <p class="mb-1"><strong>Secuencia:</strong> {{ quotation.sequence }}</p>
+                            <p class="mb-1"><strong>{% translate "Fecha:" %}</strong> {{ quotation.date|date:"d/m/Y" }}</p>
+                            <p class="mb-1"><strong>{% translate "Secuencia:" %}</strong> {{ quotation.sequence }}</p>
                         </div>
                     </div>
                     
@@ -158,16 +159,16 @@
                         <div class="col-12">
                             <div class="alert {% if quotation.is_expired %}alert-danger{% elif quotation.get_days_until_expiry <= 3 %}alert-warning{% else %}alert-info{% endif %} mb-3">
                                 <i class="bi bi-hourglass-split"></i>
-                                <strong>Fecha de Vencimiento:</strong> {{ quotation.expiry_date|date:"d/m/Y" }}
+                                <strong>{% translate "Fecha de Vencimiento:" %}</strong> {{ quotation.expiry_date|date:"d/m/Y" }}
                                 <br>
                                 {% if not quotation.is_expired %}
                                 <div class="mt-2">
-                                    <strong>Tiempo restante:</strong>
+                                    <strong>{% translate "Tiempo restante:" %}</strong>
                                     <div id="countdown" class="fs-5 mt-2" style="font-family: 'Courier New', monospace;">
-                                        <span id="days">0</span> días
-                                        <span id="hours">00</span> horas
-                                        <span id="minutes">00</span> minutos
-                                        <span id="seconds">00</span> segundos
+                                        <span id="days">0</span> {% translate "días" %}
+                                        <span id="hours">00</span> {% translate "horas" %}
+                                        <span id="minutes">00</span> {% translate "minutos" %}
+                                        <span id="seconds">00</span> {% translate "segundos" %}
                                     </div>
                                 </div>
                                 {% else %}
@@ -184,19 +185,19 @@
                             <div class="alert alert-light border mb-3">
                                 <h6 class="mb-2">
                                     <i class="bi bi-calendar-range text-primary"></i>
-                                    <strong>Duración del Servicio</strong>
+                                    <strong>{% translate "Duración del Servicio" %}</strong>
                                 </h6>
                                 <div class="row">
                                     {% if quotation.service_start_date %}
                                     <div class="col-md-6">
                                         <i class="bi bi-calendar-check text-success"></i>
-                                        <strong>Inicio:</strong> {{ quotation.service_start_date|date:"d/m/Y" }}
+                                        <strong>{% translate "Inicio:" %}</strong> {{ quotation.service_start_date|date:"d/m/Y" }}
                                     </div>
                                     {% endif %}
                                     {% if quotation.service_end_date %}
                                     <div class="col-md-6">
                                         <i class="bi bi-calendar-x text-danger"></i>
-                                        <strong>Finalización:</strong> {{ quotation.service_end_date|date:"d/m/Y" }}
+                                        <strong>{% translate "Finalización:" %}</strong> {{ quotation.service_end_date|date:"d/m/Y" }}
                                     </div>
                                     {% endif %}
                                 </div>
@@ -223,7 +224,7 @@
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="bi bi-list-ul"></i>
-                        Productos y Servicios
+                        {% translate "Productos y Servicios" %}
                     </h5>
                 </div>
                 <div class="card-body p-0">
@@ -231,11 +232,11 @@
                         <table class="table table-striped mb-0">
                             <thead class="table-responsive table-light">
                                 <tr>
-                                    <th>Descripción</th>
-                                    <th width="100">Cantidad</th>
-                                    <th width="120">Precio Unit.</th>
-                                    <th width="100">Descuento</th>
-                                    <th width="120">Total</th>
+                                    <th>{% translate "Descripción" %}</th>
+                                    <th width="100">{% translate "Cantidad" %}</th>
+                                    <th width="120">{% translate "Precio Unit." %}</th>
+                                    <th width="100">{% translate "Descuento" %}</th>
+                                    <th width="120">{% translate "Total" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -262,7 +263,7 @@
                             </tbody>
                             <tfoot class="table-light">
                                 <tr>
-                                    <td colspan="4" class="text-end"><strong>Total General:</strong></td>
+                                    <td colspan="4" class="text-end"><strong>{% translate "Total General:" %}</strong></td>
                                     <td class="text-end">
                                         <h5 class="mb-0">{{ currency_symbol }}{{ quotation.get_total_amount|floatformat:2 }}</h5>
                                     </td>
@@ -278,7 +279,7 @@
                 <div class="card-body" id="responseCardBody">
                     {% if quotation.description %}
                                 <div class="mt-3">
-                                    <strong>Descripción:</strong>
+                                    <strong>{% translate "Descripción:" %}</strong>
                                     <p class="text-muted">{{ quotation.description|linebreaks }}</p>
                                 </div>
                     {% endif %}
@@ -291,27 +292,27 @@
                 <div class="card-header text-dark">
                     <h5 class="mb-0">
                         <i class="bi bi-reply"></i>
-                        Respuesta Requerida
+                        {% translate "Respuesta Requerida" %}
                     </h5>
                 </div>
                 <div class="card-body" id="responseCardBody">
-                    <p class="text-muted">Por favor, revise la cotización y seleccione una de las opciones siguientes:</p>
+                    <p class="text-muted">{% translate "Por favor, revise la cotización y seleccione una de las opciones siguientes:" %}</p>
                     
                     <form id="responseForm">
                         {% csrf_token %}
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="client_name" class="form-label">Nombre Completo *</label>
+                                <label for="client_name" class="form-label">{% translate "Nombre Completo *" %}</label>
                                 <input type="text" class="form-control" id="client_name" name="client_name" required>
                             </div>
                             <div class="col-md-6">
-                                <label for="client_email" class="form-label">Email</label>
+                                <label for="client_email" class="form-label">{% translate "Email" %}</label>
                                 <input type="email" class="form-control" id="client_email" name="client_email">
                             </div>
                         </div>
                         
                         <div class="mb-3">
-                            <label for="comments" class="form-label">Comentarios (opcional)</label>
+                            <label for="comments" class="form-label">{% translate "Comentarios (opcional)" %}</label>
                             <textarea class="form-control" id="comments" name="comments" rows="3" 
                                       placeholder="Ingrese cualquier comentario adicional..."></textarea>
                         </div>
@@ -319,11 +320,11 @@
                         <div class="d-grid gap-2 d-md-flex justify-content-md-center">
                             <button type="button" class="btn btn-success btn-lg me-md-2" onclick="submitResponse('accept')">
                                 <i class="bi bi-check-circle"></i>
-                                Aceptar Cotización
+                                {% translate "Aceptar Cotización" %}
                             </button>
                             <button type="button" class="btn btn-danger btn-lg" onclick="submitResponse('reject')">
                                 <i class="bi bi-x-circle"></i>
-                                Rechazar Cotización
+                                {% translate "Rechazar Cotización" %}
                             </button>
                         </div>
                     </form>
@@ -331,8 +332,8 @@
             </div>
             {% else %}
             <div class="alert alert-info text-center no-print">
-                <h5><i class="bi bi-info-circle"></i> Información</h5>
-                <p class="mb-0">Esta cotización ya ha sido procesada y no acepta más cambios.</p>
+                <h5><i class="bi bi-info-circle"></i> {% translate "Información" %}</h5>
+                <p class="mb-0">{% translate "Esta cotización ya ha sido procesada y no acepta más cambios." %}</p>
             </div>
             {% endif %}
 
@@ -340,10 +341,10 @@
             <div class="text-center mt-5 pt-4 border-top no-print">
                 <p class="text-muted">
                     <small>
-                        ¿Tiene preguntas sobre esta cotización?<br>
+                        {% translate "¿Tiene preguntas sobre esta cotización?" %}<br>
                         Contacte a {{ quotation.salesperson.get_full_name|default:quotation.salesperson.username }}
                         {% if quotation.salesperson.email %}
-                            en <a href="mailto:{{ quotation.salesperson.email }}">{{ quotation.salesperson.email }}</a>
+                            {% translate "en" %} <a href="mailto:{{ quotation.salesperson.email }}">{{ quotation.salesperson.email }}</a>
                         {% endif %}
                     </small>
                 </p>
@@ -356,15 +357,15 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Confirmar Respuesta</h5>
+                    <h5 class="modal-title">{% translate "Confirmar Respuesta" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <p id="confirmMessage"></p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="confirmButton">Confirmar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancelar" %}</button>
+                    <button type="button" class="btn btn-primary" id="confirmButton">{% translate "Confirmar" %}</button>
                 </div>
             </div>
         </div>
