@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Tomar Examen: {{ exam.title }}{% endblock %}
+{% block title %}{% translate "Tomar Examen:" %} {{ exam.title }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -68,7 +68,7 @@
                                 <i class="bi bi-question-circle"></i> {{ exam.title }}
                             </h4>
                             {% if participant_data %}
-                            <small>Participante: {{ participant_data.name }}</small>
+                            <small>{% translate "Participante:" %} {{ participant_data.name }}</small>
                             {% endif %}
                         </div>
                         <div class="col-md-4 text-end">
@@ -97,7 +97,7 @@
                     <div class="card-header">
                         <h5 class="mb-0">
                             <span class="badge bg-primary me-2">{{ question.order }}</span>
-                            Pregunta {{ question.order }} de {{ questions.count }}
+                            {% translate "Pregunta" %} {{ question.order }} {% translate "de" %} {{ questions.count }}
                         </h5>
                     </div>
                     <div class="card-body">
@@ -173,7 +173,7 @@
                                      style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
                             <div class="text-center">
-                                <span id="answeredCount">0</span> de {{ questions.count }} respondidas
+                                <span id="answeredCount">0</span> {% translate "de" %} {{ questions.count }} {% translate "respondidas" %}
                             </div>
                         </div>
                     </div>
@@ -193,7 +193,7 @@
                                 </div>
                                 {% if exam.time_limit %}
                                 <div class="mb-2">
-                                    <strong>{% translate "Tiempo límite:" %}</strong> {{ exam.time_limit }} minutos
+                                    <strong>{% translate "Tiempo límite:" %}</strong> {{ exam.time_limit }} {% translate "minutos" %}
                                 </div>
                                 {% endif %}
                             </div>

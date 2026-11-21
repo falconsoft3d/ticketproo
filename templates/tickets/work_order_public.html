@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - Vista Pública{% endblock %}
+{% block title %}{{ page_title }} {% translate "- Vista Pública" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -85,11 +85,11 @@
                             {% if work_order.days_until_due and work_order.status != 'finished' %}
                                 <small class="text-muted">
                                     {% if work_order.days_until_due > 0 %}
-                                        Faltan {{ work_order.days_until_due }} día{{ work_order.days_until_due|pluralize }}
+                                        {% translate "Faltan" %} {{ work_order.days_until_due }} {% translate "día" %}{{ work_order.days_until_due|pluralize }}
                                     {% elif work_order.days_until_due == 0 %}
                                         {% translate "Vence hoy" %}
                                     {% else %}
-                                        Vencida hace {{ work_order.days_until_due|add:"-1" }} día{{ work_order.days_until_due|add:"-1"|pluralize }}
+                                        {% translate "Vencida hace" %} {{ work_order.days_until_due|add:"-1" }} {% translate "día" %}{{ work_order.days_until_due|add:"-1"|pluralize }}
                                     {% endif %}
                                 </small>
                             {% endif %}
@@ -99,7 +99,7 @@
                                 <h6>{% translate "Horas estimadas" %}</h6>
                                 <p class="mb-1">
                                     <i class="bi bi-clock me-1"></i>
-                                    {{ work_order.estimated_hours }} hora{{ work_order.estimated_hours|pluralize }}
+                                    {{ work_order.estimated_hours }} {% translate "hora" %}{{ work_order.estimated_hours|pluralize }}
                                 </p>
                             {% endif %}
                         </div>
@@ -212,7 +212,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="bi bi-paperclip me-1"></i>Adjuntos ({{ attachments.count }})
+                        <i class="bi bi-paperclip me-1"></i>{% translate "Adjuntos (" %}{{ attachments.count }})
                     </h6>
                 </div>
                 <div class="card-body">
@@ -229,7 +229,7 @@
                                             </a>
                                         </h6>
                                         <p class="mb-1 text-muted small">
-                                            Tamaño: {{ attachment.get_file_size_display }}
+                                            {% translate "Tamaño:" %} {{ attachment.get_file_size_display }}
                                         </p>
                                         <small class="text-muted">
                                             {{ attachment.uploaded_at|date:"d/m/Y" }}
@@ -257,7 +257,7 @@
                             <span class="badge bg-warning text-dark ms-2">
                                 {{ avg_rating }} <i class="bi bi-star-fill"></i>
                             </span>
-                            <small class="text-muted">({{ rating_count }} calificación{{ rating_count|pluralize:"es" }})</small>
+                            <small class="text-muted">({{ rating_count }} {% translate "calificación" %}{{ rating_count|pluralize:"es" }})</small>
                         {% endif %}
                     </h6>
                 </div>
@@ -357,7 +357,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="bi bi-list-ul me-1"></i>Otras órdenes de {{ work_order.company.name }}
+                        <i class="bi bi-list-ul me-1"></i>{% translate "Otras órdenes de" %} {{ work_order.company.name }}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -426,7 +426,7 @@
                     <hr>
                     <p class="text-muted mb-0">
                         <i class="bi bi-calendar me-1"></i>
-                        Última actualización: {{ work_order.updated_at|date:"d/m/Y H:i" }}
+                        {% translate "Última actualización:" %} {{ work_order.updated_at|date:"d/m/Y H:i" }}
                     </p>
                 </div>
             </div>

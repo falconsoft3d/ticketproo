@@ -1,5 +1,6 @@
 from django.urls import path, include
 from . import views
+from . import signature_views
 
 urlpatterns = [
     path('', views.home_view, name='home'),
@@ -1903,6 +1904,21 @@ urlpatterns += [
     path('invoices/<int:pk>/duplicate/', views.invoice_duplicate, name='invoice_duplicate'),
     path('invoices/<int:pk>/add-message/', views.invoice_add_message, name='invoice_add_message'),
     path('invoices/config/sequence/', views.invoice_sequence_config, name='invoice_sequence_config'),
+
+    # ERP3 - Firmas digitales
+    path('signatures/', signature_views.signature_document_list, name='signature_document_list'),
+    path('signatures/create/', signature_views.signature_document_create, name='signature_document_create'),
+    path('signatures/<int:pk>/', signature_views.signature_document_detail, name='signature_document_detail'),
+    path('signatures/<int:pk>/editor/', signature_views.signature_document_editor, name='signature_document_editor'),
+    path('signatures/<int:pk>/fields/', signature_views.signature_document_fields_save, name='signature_document_fields_save'),
+    path('signatures/<int:pk>/pdf/', signature_views.signature_document_pdf, name='signature_document_pdf'),
+    path('signatures/<int:pk>/delete/', signature_views.signature_document_delete, name='signature_document_delete'),
+    path('signatures/<int:pk>/signers/add/', signature_views.signature_signer_add, name='signature_signer_add'),
+    path('signatures/<int:pk>/signers/<int:signer_id>/delete/', signature_views.signature_signer_delete, name='signature_signer_delete'),
+    path('signatures/<int:pk>/signers/<int:signer_id>/reset-link/', signature_views.signature_signer_reset_link, name='signature_signer_reset_link'),
+    path('firmar/<uuid:token>/', signature_views.signature_sign_public, name='signature_sign_public'),
+    path('firmar/<uuid:token>/pdf/', signature_views.signature_sign_public_pdf, name='signature_sign_public_pdf'),
+    path('firmar/<uuid:token>/submit/', signature_views.signature_sign_public_submit, name='signature_sign_public_submit'),
 
     # ==================== RFI ====================
     path('rfi/', views.rfi_list, name='rfi_list'),

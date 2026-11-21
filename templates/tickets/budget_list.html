@@ -28,7 +28,7 @@
                             <h5 class="mb-0">
                                 <i class="bi bi-calendar-year me-2"></i>{{ budget.name }}
                             </h5>
-                            <small>Año {{ budget.year }}</small>
+                            <small>{% translate "Año" %} {{ budget.year }}</small>
                         </div>
                         <div>
                             {% if budget.is_private %}
@@ -62,7 +62,7 @@
                                  aria-valuemax="{{ budget.get_total_income_budget }}">
                             </div>
                         </div>
-                        <small class="text-muted">Actual: €{{ budget.get_total_income_actual|floatformat:2 }}</small>
+                        <small class="text-muted">{% translate "Actual: €" %}{{ budget.get_total_income_actual|floatformat:2 }}</small>
                     </div>
                     
                     <div class="mb-3">
@@ -78,7 +78,7 @@
                                  aria-valuemax="{{ budget.get_total_expense_budget }}">
                             </div>
                         </div>
-                        <small class="text-muted">Actual: €{{ budget.get_total_expense_actual|floatformat:2 }}</small>
+                        <small class="text-muted">{% translate "Actual: €" %}{{ budget.get_total_expense_actual|floatformat:2 }}</small>
                     </div>
                     
                     {% with net_budget=budget.get_total_income_budget|add:"-"|add:budget.get_total_expense_budget %}

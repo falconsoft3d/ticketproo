@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Eliminar Artículo - {{ block.super }}{% endblock %}
+{% block title %}{% translate "Eliminar Artículo -" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -17,9 +17,9 @@
                     
                     <div class="alert alert-warning">
                         <h5>{{ article.title }}</h5>
-                        <p class="mb-0">Proyecto: {{ project.title }}</p>
+                        <p class="mb-0">{% translate "Proyecto:" %} {{ project.title }}</p>
                         {% if article.content %}
-                            <p class="mb-0 text-muted small">Este artículo tiene contenido generado ({{ article.word_count }} palabras)</p>
+                            <p class="mb-0 text-muted small">{% translate "Este artículo tiene contenido generado (" %}{{ article.word_count }} {% translate "palabras)" %}</p>
                         {% endif %}
                     </div>
 

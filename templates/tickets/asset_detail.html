@@ -227,11 +227,11 @@
                                 {% if item.previous_employee or item.new_employee %}
                                     <div class="mt-2 small">
                                         {% if item.previous_employee and item.new_employee %}
-                                            De: {{ item.previous_employee.name }} → {{ item.new_employee.name }}
+                                            {% translate "De:" %} {{ item.previous_employee.name }} → {{ item.new_employee.name }}
                                         {% elif item.new_employee %}
-                                            Asignado a: {{ item.new_employee.name }}
+                                            {% translate "Asignado a:" %} {{ item.new_employee.name }}
                                         {% elif item.previous_employee %}
-                                            Desasignado de: {{ item.previous_employee.name }}
+                                            {% translate "Desasignado de:" %} {{ item.previous_employee.name }}
                                         {% endif %}
                                     </div>
                                 {% endif %}

@@ -25221,3 +25221,138 @@ class ProjectInfoLineAttachment(models.Model):
 
     def __str__(self):
         return f'{self.line} – {self.original_name}'
+
+
+# ==================== ERP3 - FIRMAS DIGITALES ====================
+
+def _signature_upload_path(folder, ext):
+    """Rutas con nombre aleatorio para que los archivos de firma no sean adivinables."""
+    def _path(instance, filename):
+        return f'signature_documents/{folder}/{timezone.now():%Y/%m}/{uuid.uuid4().hex}.{ext}'
+    return _path
+
+
+def signature_original_upload_to(instance, filename):
+    return _signature_upload_path('original', 'pdf')(instance, filename)
+
+
+def signature_signed_upload_to(instance, filename):
+    return _signature_upload_path('signed', 'pdf')(instance, filename)
+
+
+def signature_image_upload_to(instance, filename):
+    return _signature_upload_path('signatures', 'png')(instance, filename)
+
+
+class SignatureDocument(models.Model):
+    """Documento PDF que se envía a una o varias personas para firmar."""
+
+    STATUS_CHOICES = [
+        ('draft', gettext_lazy('Borrador')),
+        ('pending', gettext_lazy('Pendiente de firma')),
+        ('completed', gettext_lazy('Completado')),
+    ]
+
+    title = models.CharField(max_length=200, verbose_name=gettext_lazy('Título'))
+    description = models.TextField(blank=True, verbose_name=gettext_lazy('Descripción / mensaje para el firmante'))
+    original_pdf = models.FileField(upload_to=signature_original_upload_to, verbose_name=gettext_lazy('PDF original'))
+    signed_pdf = models.FileField(upload_to=signature_signed_upload_to, blank=True, null=True, verbose_name=gettext_lazy('PDF firmado'))
+    page_count = models.PositiveIntegerField(default=0, verbose_name=gettext_lazy('Páginas'))
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft', verbose_name=gettext_lazy('Estado'))
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='signature_documents', verbose_name=gettext_lazy('Creado por'))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = gettext_lazy('Documento para firma')
+        verbose_name_plural = gettext_lazy('Documentos para firma')
+
+    def __str__(self):
+        return self.title
+
+    def refresh_status(self):
+        """Recalcula el estado según los firmantes y campos colocados."""
+        signers = list(self.signers.all())
+        if signers and all(s.status == 'signed' for s in signers):
+            new_status = 'completed'
+        elif self.fields.exists():
+            new_status = 'pending'
+        else:
+            new_status = 'draft'
+        if new_status != self.status:
+            self.status = new_status
+            self.completed_at = timezone.now() if new_status == 'completed' else None
+            self.save(update_fields=['status', 'completed_at', 'updated_at'])
+        return self.status
+
+    @property
+    def signed_count(self):
+        return self.signers.filter(status='signed').count()
+
+
+class SignatureSigner(models.Model):
+    """Persona que debe firmar un documento. Cada firmante tiene su propia URL de firma."""
+
+    STATUS_CHOICES = [
+        ('pending', gettext_lazy('Pendiente')),
+        ('viewed', gettext_lazy('Visto')),
+        ('signed', gettext_lazy('Firmado')),
+    ]
+
+    COLORS = ['#0d6efd', '#d63384', '#198754', '#fd7e14', '#6f42c1', '#20c997', '#dc3545', '#0dcaf0']
+
+    document = models.ForeignKey(SignatureDocument, on_delete=models.CASCADE, related_name='signers')
+    name = models.CharField(max_length=150, verbose_name=gettext_lazy('Nombre'))
+    email = models.EmailField(blank=True, verbose_name=gettext_lazy('Email'))
+    order = models.PositiveIntegerField(default=0)
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    signature_image = models.FileField(upload_to=signature_image_upload_to, blank=True, null=True)
+    viewed_at = models.DateTimeField(null=True, blank=True)
+    signed_at = models.DateTimeField(null=True, blank=True)
+    signed_ip = models.GenericIPAddressField(null=True, blank=True)
+    signed_user_agent = models.CharField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = gettext_lazy('Firmante')
+        verbose_name_plural = gettext_lazy('Firmantes')
+
+    def __str__(self):
+        return f'{self.name} – {self.document}'
+
+    @property
+    def color(self):
+        return self.COLORS[(self.order or 0) % len(self.COLORS)]
+
+    def get_sign_url(self):
+        from django.urls import reverse
+        return reverse('signature_sign_public', kwargs={'token': self.token})
+
+
+class SignatureField(models.Model):
+    """
+    Recuadro de firma colocado en una página del PDF.
+    Las coordenadas son fracciones (0-1) de la página tal y como se muestra
+    (origen arriba a la izquierda, rotación de la página aplicada).
+    """
+
+    document = models.ForeignKey(SignatureDocument, on_delete=models.CASCADE, related_name='fields')
+    signer = models.ForeignKey(SignatureSigner, on_delete=models.CASCADE, related_name='fields')
+    page = models.PositiveIntegerField(verbose_name=gettext_lazy('Página'))  # 1-based
+    x = models.FloatField()
+    y = models.FloatField()
+    width = models.FloatField()
+    height = models.FloatField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['page', 'y', 'x']
+        verbose_name = gettext_lazy('Campo de firma')
+        verbose_name_plural = gettext_lazy('Campos de firma')
+
+    def __str__(self):
+        return f'{self.signer.name} – p.{self.page}'

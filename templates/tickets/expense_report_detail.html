@@ -38,8 +38,8 @@
                     <div>
                         <h4 class="mb-0">{{ expense_report.title }}</h4>
                         <small class="text-muted">
-                            Creado por {{ expense_report.employee.get_full_name|default:expense_report.employee.username }}
-                            el {{ expense_report.created_at|date:"d/m/Y H:i" }}
+                            {% translate "Creado por" %} {{ expense_report.employee.get_full_name|default:expense_report.employee.username }}
+                            {% translate "el" %} {{ expense_report.created_at|date:"d/m/Y H:i" }}
                         </small>
                     </div>
                     <div class="d-flex gap-2">
@@ -96,7 +96,7 @@
                                     <h2 class="text-primary mb-0">${{ expense_report.total_amount|floatformat:2 }}</h2>
                                     <small class="text-muted">{% translate "Total de gastos" %}</small>
                                     <div class="mt-2">
-                                        <small class="text-muted">{{ expense_items.paginator.count }} gasto{{ expense_items.paginator.count|pluralize }}</small>
+                                        <small class="text-muted">{{ expense_items.paginator.count }} {% translate "gasto" %}{{ expense_items.paginator.count|pluralize }}</small>
                                     </div>
                                     {% if funds %}
                                     <hr class="my-2">
@@ -165,7 +165,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
                         {% translate "Gastos Detallados" %}
-                        <small class="text-muted fw-normal ms-2">({{ expense_items.paginator.count }} en total)</small>
+                        <small class="text-muted fw-normal ms-2">({{ expense_items.paginator.count }} {% translate "en total)" %}</small>
                     </h5>
                     {% if can_edit %}
                     <a href="{% url 'expense_item_create' expense_report.pk %}" class="btn btn-sm btn-primary">
@@ -236,7 +236,7 @@
                     {% if expense_items.has_other_pages %}
                     <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top bg-light">
                         <small class="text-muted">
-                            Mostrando {{ expense_items.start_index }}–{{ expense_items.end_index }} de {{ expense_items.paginator.count }} gastos
+                            {% translate "Mostrando" %} {{ expense_items.start_index }}–{{ expense_items.end_index }} {% translate "de" %} {{ expense_items.paginator.count }} {% translate "gastos" %}
                         </small>
                         <nav>
                             <ul class="pagination pagination-sm mb-0">

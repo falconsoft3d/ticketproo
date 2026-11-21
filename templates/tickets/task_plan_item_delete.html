@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}Eliminar Tarea - {{ block.super }}{% endblock %}
+{% block title %}{% translate "Eliminar Tarea -" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -25,7 +25,7 @@
                     <div class="card mt-3 bg-light">
                         <div class="card-body">
                             <div class="mb-2">
-                                <small class="text-muted">Día: {{ task.day.title }}</small>
+                                <small class="text-muted">{% translate "Día:" %} {{ task.day.title }}</small>
                             </div>
                             <h6 class="card-title"><strong>{{ task.title }}</strong></h6>
                             {% if task.description %}
@@ -44,7 +44,7 @@
 
                                 {% if task.estimated_hours %}
                                 <span class="badge bg-light text-dark">
-                                    <i class="bi bi-clock"></i> {{ task.estimated_hours }}h
+                                    <i class="bi bi-clock"></i> {{ task.estimated_hours }}{% translate "h" %}
                                 </span>
                                 {% endif %}
 

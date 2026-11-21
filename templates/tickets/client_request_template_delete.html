@@ -32,7 +32,7 @@
                         {% endif %}
                         <p class="mb-0">
                             <i class="bi bi-list-ul me-1"></i>
-                            Contiene {{ template.items.count }} item{{ template.items.count|pluralize }}
+                            {% translate "Contiene" %} {{ template.items.count }} {% translate "item" %}{{ template.items.count|pluralize }}
                         </p>
                     </div>
 

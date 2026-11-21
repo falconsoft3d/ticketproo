@@ -246,12 +246,12 @@
                             <div class="row text-center mb-3">
                                 <div class="col-6">
                                     <div class="badge bg-info">
-                                        {{ meeting.points_count }} puntos
+                                        {{ meeting.points_count }} {% translate "puntos" %}
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <div class="badge bg-success">
-                                        {{ meeting.selected_points_count }} seleccionados
+                                        {{ meeting.selected_points_count }} {% translate "seleccionados" %}
                                     </div>
                                 </div>
                             </div>
@@ -319,7 +319,7 @@
                         
                         <li class="page-item active">
                             <span class="page-link">
-                                Página {{ meetings.number }} de {{ meetings.paginator.num_pages }}
+                                {% translate "Página" %} {{ meetings.number }} {% translate "de" %} {{ meetings.paginator.num_pages }}
                             </span>
                         </li>
                         

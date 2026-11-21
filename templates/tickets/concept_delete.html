@@ -40,7 +40,7 @@
             <div class="card mt-4">
                 <div class="card-body">
                     <p><strong>{% translate "¿Estás seguro de que deseas eliminar este concepto?" %}</strong></p>
-                    <p class="text-muted">Esta acción eliminará permanentemente el concepto "{{ concept.term }}" del sistema.</p>
+                    <p class="text-muted">{% translate 'Esta acción eliminará permanentemente el concepto "' %}{{ concept.term }}{% translate '" del sistema.' %}</p>
                     
                     <form method="post" class="d-flex justify-content-between">
                         {% csrf_token %}

@@ -1,7 +1,7 @@
 {% extends 'public_base.html' %}
 {% load i18n %}
 
-{% block title %}Horas Registradas - {{ project.name }}{% endblock %}
+{% block title %}{% translate "Horas Registradas -" %} {{ project.name }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -67,7 +67,7 @@
                 <div class="card-footer text-muted">
                     <small>
                         <i class="fas fa-calendar me-1"></i>
-                        Registrado el {{ entry.created_at|date:"d/m/Y" }} a las {{ entry.created_at|time:"H:i" }}
+                        {% translate "Registrado el" %} {{ entry.created_at|date:"d/m/Y" }} {% translate "a las" %} {{ entry.created_at|time:"H:i" }}
                     </small>
                 </div>
             </div>

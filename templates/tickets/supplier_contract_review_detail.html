@@ -98,7 +98,7 @@
                                 {{ review.contract_text|linebreaks }}
                             {% elif review.contract_file %}
                                 <div class="alert alert-info">
-                                    <i class="bi bi-file-earmark"></i> Archivo: {{ review.contract_file.name }}
+                                    <i class="bi bi-file-earmark"></i> {% translate "Archivo:" %} {{ review.contract_file.name }}
                                     <a href="{{ review.contract_file.url }}" class="btn btn-sm btn-primary ms-2" target="_blank">
                                         <i class="bi bi-download"></i> {% translate "Descargar" %}
                                     </a>
@@ -123,7 +123,7 @@
                     {% if review.reviewed_at %}
                     <hr>
                     <small class="text-muted">
-                        <i class="bi bi-clock"></i> Revisado el {{ review.reviewed_at|date:"d/m/Y H:i" }}
+                        <i class="bi bi-clock"></i> {% translate "Revisado el" %} {{ review.reviewed_at|date:"d/m/Y H:i" }}
                     </small>
                     {% endif %}
                 </div>

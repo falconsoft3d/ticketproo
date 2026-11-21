@@ -73,8 +73,8 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-success text-white">
                     <i class="bi bi-check-circle"></i> {% translate "Resultado" %}
-                    <span class="badge bg-light text-dark ms-2">{{ result.row_count }} filas</span>
-                    <span class="badge bg-light text-dark">{{ result.execution_time }}s</span>
+                    <span class="badge bg-light text-dark ms-2">{{ result.row_count }} {% translate "filas" %}</span>
+                    <span class="badge bg-light text-dark">{{ result.execution_time }}{% translate "s" %}</span>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -149,8 +149,8 @@
                             </div>
                             <p class="mb-1 font-monospace small text-muted">{{ q.query|truncatechars:100 }}</p>
                             <small class="text-muted">
-                                <i class="bi bi-list-ol"></i> {{ q.row_count }} filas
-                                <i class="bi bi-clock ms-2"></i> {{ q.execution_time }}s
+                                <i class="bi bi-list-ol"></i> {{ q.row_count }} {% translate "filas" %}
+                                <i class="bi bi-clock ms-2"></i> {{ q.execution_time }}{% translate "s" %}
                             </small>
                         </a>
                         {% endfor %}

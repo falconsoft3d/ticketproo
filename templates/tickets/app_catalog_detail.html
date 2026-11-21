@@ -184,7 +184,7 @@
                         <td class="fw-bold text-primary fs-5">
                             {% if lines %}{{ lines.first.product.get_currency_symbol }}{% endif %}{{ total|floatformat:2 }}
                         </td>
-                        <td class="text-center text-muted small">{{ total_product_views }} vistas</td>
+                        <td class="text-center text-muted small">{{ total_product_views }} {% translate "vistas" %}</td>
                         <td colspan="2"></td>
                     </tr>
                 </tfoot>

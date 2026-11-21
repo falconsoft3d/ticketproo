@@ -65,7 +65,7 @@
     {% if survey.folio %}<span class="folio">{{ survey.folio }}</span>{% endif %}
     <h2>
       {% if survey.contract_title %}{{ survey.contract_title }}
-      {% else %}Contrato — {{ survey.name }}{% endif %}
+      {% else %}{% translate "Contrato —" %} {{ survey.name }}{% endif %}
     </h2>
     <p>
       <i class="bi bi-lock me-1"></i>{% translate "Documento de acceso restringido" %}

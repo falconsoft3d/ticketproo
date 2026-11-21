@@ -30,8 +30,8 @@
                     <p><strong>{% translate "Información que se eliminará:" %}</strong></p>
                     <ul>
                         <li>{% translate "Datos de la oportunidad" %}</li>
-                        <li>{{ opportunity.notes.count }} nota(s) asociada(s)</li>
-                        <li>{{ opportunity.status_history.count }} registro(s) de historial</li>
+                        <li>{{ opportunity.notes.count }} {% translate "nota(s) asociada(s)" %}</li>
+                        <li>{{ opportunity.status_history.count }} {% translate "registro(s) de historial" %}</li>
                     </ul>
 
                     <form method="POST" class="d-inline">

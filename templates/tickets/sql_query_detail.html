@@ -17,9 +17,9 @@
                         {{ query.name }}
                     </h2>
                     <p class="text-muted">
-                        Creada el {{ query.created_at|date:"d/m/Y H:i" }}
+                        {% translate "Creada el" %} {{ query.created_at|date:"d/m/Y H:i" }}
                         {% if query.last_executed_at %}
-                        | Última ejecución: {{ query.last_executed_at|date:"d/m/Y H:i" }}
+                        {% translate "| Última ejecución:" %} {{ query.last_executed_at|date:"d/m/Y H:i" }}
                         {% endif %}
                     </p>
                 </div>
@@ -62,8 +62,8 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-success text-white">
                     <i class="bi bi-check-circle"></i> {% translate "Resultado" %}
-                    <span class="badge bg-light text-dark ms-2">{{ result.row_count }} filas</span>
-                    <span class="badge bg-light text-dark">{{ result.execution_time }}s</span>
+                    <span class="badge bg-light text-dark ms-2">{{ result.row_count }} {% translate "filas" %}</span>
+                    <span class="badge bg-light text-dark">{{ result.execution_time }}{% translate "s" %}</span>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">

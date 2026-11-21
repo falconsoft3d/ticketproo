@@ -203,14 +203,14 @@
                             <div class="col-md-10">
                                 <h5><i class="fas fa-robot"></i> {% translate "Evaluación de IA" %}</h5>
                                 <p class="mb-2">
-                                    <small>Evaluado el {{ submission.ai_evaluation_date|date:"d/m/Y H:i" }}</small>
+                                    <small>{% translate "Evaluado el" %} {{ submission.ai_evaluation_date|date:"d/m/Y H:i" }}</small>
                                 </p>
                                 
                                 <!-- Prioridad -->
                                 {% if submission.ai_priority_level %}
                                 <div class="priority-banner priority-{{ submission.ai_priority_level }}">
                                     <i class="fas fa-flag"></i>
-                                    Prioridad: {{ submission.get_ai_priority_level_display }}
+                                    {% translate "Prioridad:" %} {{ submission.get_ai_priority_level_display }}
                                 </div>
                                 {% endif %}
                                 

@@ -95,9 +95,9 @@
                     <div class="alert alert-danger">
                         <h6><i class="fas fa-info-circle me-2"></i>{% translate "Lo que se eliminará:" %}</h6>
                         <ul class="mb-0">
-                            <li>La reunión de soporte #{{ meeting.sequence }}</li>
+                            <li>{% translate "La reunión de soporte #" %}{{ meeting.sequence }}</li>
                             {% if meeting.points_count > 0 %}
-                                <li>Todos los {{ meeting.points_count }} puntos asociados</li>
+                                <li>{% translate "Todos los" %} {{ meeting.points_count }} {% translate "puntos asociados" %}</li>
                             {% endif %}
                             <li>{% translate "Todo el historial relacionado" %}</li>
                         </ul>
@@ -107,8 +107,7 @@
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             <strong>{% translate "Nota importante:" %}</strong> 
-                            Tienes {{ meeting.selected_points_count }} punto(s) seleccionado(s) que podrían convertirse en tickets. 
-                            Considera crear los tickets antes de eliminar la reunión.
+                            {% translate "Tienes" %} {{ meeting.selected_points_count }} {% translate "punto(s) seleccionado(s) que podrían convertirse en tickets. Considera crear los tickets antes de eliminar la reunión." %}
                         </div>
                     {% endif %}
                     
@@ -138,7 +137,7 @@
                 <div class="card-footer bg-light">
                     <small class="text-muted">
                         <i class="fas fa-clock me-1"></i>
-                        Reunión creada el {{ meeting.created_at|date:"d/m/Y \a \l\a\s H:i" }}
+                        {% translate "Reunión creada el" %} {{ meeting.created_at|date:"d/m/Y \a \l\a\s H:i" }}
                     </small>
                 </div>
             </div>

@@ -105,8 +105,7 @@
                             <div class="alert alert-info mb-0">
                                 <i class="bi bi-info-circle me-2"></i>
                                 <strong>{% translate "Tasa de conversión:" %}</strong> 
-                                {{ chatbot.total_conversations|floatformat:0 }} conversaciones de {{ chatbot.total_clicks }} clicks 
-                                ({{ chatbot.total_conversations|multiply:100|divide:chatbot.total_clicks|floatformat:1 }}%)
+                                {{ chatbot.total_conversations|floatformat:0 }} {% translate "conversaciones de" %} {{ chatbot.total_clicks }} {% translate "clicks (" %}{{ chatbot.total_conversations|multiply:100|divide:chatbot.total_clicks|floatformat:1 }}%)
                             </div>
                         </div>
                     </div>
@@ -146,7 +145,7 @@
                                             <strong>{% translate "Keywords:" %}</strong> {{ question.keywords }}
                                             <span class="ms-3">
                                                 <i class="bi bi-bar-chart me-1"></i>
-                                                Usada {{ question.times_used }} veces
+                                                {% translate "Usada" %} {{ question.times_used }} {% translate "veces" %}
                                             </span>
                                         </small>
                                     </div>

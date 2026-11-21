@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Grupos de Accesos - {{ block.super }}{% endblock %}
+{% block title %}{% translate "Grupos de Accesos -" %} {{ block.super }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -66,7 +66,7 @@
 
                     <div class="link-count mb-3">
                         <i class="bi bi-link-45deg"></i>
-                        {{ group.links.count }} enlace{{ group.links.count|pluralize:",s" }}
+                        {{ group.links.count }} {% translate "enlace" %}{{ group.links.count|pluralize:",s" }}
                     </div>
 
                     {% if group.is_public %}
@@ -101,7 +101,7 @@
                 </div>
 
                 <div class="card-footer text-muted small">
-                    Creado: {{ group.created_at|date:"d/m/Y H:i" }}
+                    {% translate "Creado:" %} {{ group.created_at|date:"d/m/Y H:i" }}
                 </div>
             </div>
         </div>

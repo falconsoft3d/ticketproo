@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Eliminar Transacción - {{ block.super }}{% endblock %}
+{% block title %}{% translate "Eliminar Transacción -" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -40,7 +40,7 @@
                                 <strong>{{ transaction.name }}</strong>
                             </p>
                             <p class="card-text">
-                                <small class="text-muted">URL: {{ transaction.url }}</small>
+                                <small class="text-muted">{% translate "URL:" %} {{ transaction.url }}</small>
                             </p>
                             {% if transaction.description %}
                             <p class="card-text">

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load i18n %}
-{% block title %}Archivos Importados - {{ table.name }} - Ticket System{% endblock %}
+{% block title %}{% translate "Archivos Importados -" %} {{ table.name }} {% translate "- Ticket System" %}{% endblock %}
 {% block content %}
 <div class="container mt-4">
     <div class="col-lg-10 offset-lg-1">
@@ -16,7 +16,7 @@
         <div class="card">
             <div class="card-header bg-primary text-white">
                 <h4 class="mb-0">
-                    <i class="bi bi-file-earmark-excel"></i> Archivos Importados - {{ table.name }}
+                    <i class="bi bi-file-earmark-excel"></i> {% translate "Archivos Importados -" %} {{ table.name }}
                 </h4>
             </div>
             <div class="card-body">

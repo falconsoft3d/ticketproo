@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}{{ shared_file.title }} - TicketProo{% endblock %}
+{% block title %}{{ shared_file.title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -108,7 +108,7 @@
                         </div>
                         {% if shared_file.file_size %}
                         <div class="mb-2">
-                            <strong>{% translate "Tamaño exacto:" %}</strong> {{ shared_file.file_size|floatformat:0 }} bytes
+                            <strong>{% translate "Tamaño exacto:" %}</strong> {{ shared_file.file_size|floatformat:0 }} {% translate "bytes" %}
                         </div>
                         {% endif %}
                     </div>
@@ -145,7 +145,7 @@
                         {% endfor %}
                         {% if shared_file.downloads.count > 5 %}
                         <div class="text-center mt-2">
-                            <small class="text-muted">Y {{ shared_file.downloads.count|add:"-5" }} descarga{{ shared_file.downloads.count|add:"-5"|pluralize }} más...</small>
+                            <small class="text-muted">Y {{ shared_file.downloads.count|add:"-5" }} {% translate "descarga" %}{{ shared_file.downloads.count|add:"-5"|pluralize }} {% translate "más..." %}</small>
                         </div>
                         {% endif %}
                     </div>

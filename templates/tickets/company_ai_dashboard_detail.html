@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Dashboard IA - {{ company.name }}{% endblock %}
+{% block title %}{% translate "Dashboard IA -" %} {{ company.name }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -287,7 +287,7 @@
                         <small class="text-muted">
                             <i class="bi bi-{{ meeting.input_type }}"></i> {{ meeting.get_input_type_display }}
                             {% if meeting.tokens_used %}
-                                | {{ meeting.tokens_used }} tokens
+                                | {{ meeting.tokens_used }} {% translate "tokens" %}
                             {% endif %}
                         </small>
                     </a>
@@ -317,13 +317,13 @@
                                     {{ summary.period_start|date:"d/m/Y" }} - {{ summary.period_end|date:"d/m/Y" }}
                                 </p>
                                 <small class="text-muted">
-                                    Generado por {{ summary.generated_by.get_full_name|default:summary.generated_by.username }} 
-                                    el {{ summary.created_at|date:"d/m/Y H:i" }}
+                                    {% translate "Generado por" %} {{ summary.generated_by.get_full_name|default:summary.generated_by.username }} 
+                                    {% translate "el" %} {{ summary.created_at|date:"d/m/Y H:i" }}
                                 </small>
                             </div>
                             <div class="text-end">
-                                <span class="badge bg-primary">{{ summary.total_managers }} Gerentes</span><br>
-                                <span class="badge bg-info mt-1">{{ summary.total_meetings }} Reuniones</span>
+                                <span class="badge bg-primary">{{ summary.total_managers }} {% translate "Gerentes" %}</span><br>
+                                <span class="badge bg-info mt-1">{{ summary.total_meetings }} {% translate "Reuniones" %}</span>
                             </div>
                         </div>
                     </a>

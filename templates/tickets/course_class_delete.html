@@ -61,7 +61,7 @@
                                 <small class="text-muted">
                                     <strong>{% translate "Duración:" %}</strong> 
                                     {% if course_class.duration_minutes %}
-                                        {{ course_class.duration_minutes }} minutos
+                                        {{ course_class.duration_minutes }} {% translate "minutos" %}
                                     {% else %}
                                         {% translate "No especificada" %}
                                     {% endif %}

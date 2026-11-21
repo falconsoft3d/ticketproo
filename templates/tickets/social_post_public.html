@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ post.user.get_full_name|default:post.user.username }} - Publicación | TicketProo</title>
+    <title>{{ post.user.get_full_name|default:post.user.username }} {% translate "- Publicación | TicketProo" %}</title>
     
     <!-- SEO Meta Tags -->
     <meta name="description" content="{{ post.content|truncatewords:30|striptags }}">
@@ -158,10 +158,10 @@
                     </div>
                     <div>
                         <span class="badge bg-secondary">
-                            <i class="bi bi-chat"></i> {{ post.get_comments_count }} comentarios
+                            <i class="bi bi-chat"></i> {{ post.get_comments_count }} {% translate "comentarios" %}
                         </span>
                         <span class="badge bg-info">
-                            <i class="bi bi-eye-fill"></i> {{ post.public_views_count }} vistas
+                            <i class="bi bi-eye-fill"></i> {{ post.public_views_count }} {% translate "vistas" %}
                         </span>
                     </div>
                 </div>

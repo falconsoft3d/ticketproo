@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}Editar Transcripción - {{ meeting.title }} - TicketProo{% endblock %}
+{% block title %}{% translate "Editar Transcripción -" %} {{ meeting.title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -164,14 +164,14 @@
                     {% if meeting.duration_minutes %}
                     <div class="mb-2">
                         <strong>{% translate "Duración:" %}</strong><br>
-                        <span class="text-muted">{{ meeting.duration_minutes }} minutos</span>
+                        <span class="text-muted">{{ meeting.duration_minutes }} {% translate "minutos" %}</span>
                     </div>
                     {% endif %}
                     
                     {% if meeting.participants.exists %}
                     <div class="mb-2">
                         <strong>{% translate "Participantes:" %}</strong><br>
-                        <span class="text-muted">{{ meeting.participants.count }} personas</span>
+                        <span class="text-muted">{{ meeting.participants.count }} {% translate "personas" %}</span>
                     </div>
                     {% endif %}
                     
@@ -258,7 +258,7 @@
                     
                     {% if meeting.transcription_date %}
                     <small class="text-muted">
-                        Última actualización: {{ meeting.transcription_date|date:"d/m/Y H:i" }}
+                        {% translate "Última actualización:" %} {{ meeting.transcription_date|date:"d/m/Y H:i" }}
                     </small>
                     {% endif %}
                 </div>

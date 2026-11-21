@@ -69,7 +69,7 @@
                             <h6>{% translate "Consecuencias de la eliminación:" %}</h6>
                             <ul class="text-danger">
                                 <li>{% translate "Se eliminará la documentación permanentemente" %}</li>
-                                <li>Se eliminarán todos los enlaces asociados ({{ documentation.urls.count }})</li>
+                                <li>{% translate "Se eliminarán todos los enlaces asociados (" %}{{ documentation.urls.count }})</li>
                                 {% if documentation.is_public %}
                                 <li>{% translate "El enlace público dejará de funcionar" %}</li>
                                 {% endif %}

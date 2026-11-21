@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{{ session.title }} - Chat con IA{% endblock %}
+{% block title %}{{ session.title }} {% translate "- Chat con IA" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -48,7 +48,7 @@
                                     <small class="{% if message.is_from_user %}text-white-50{% else %}text-muted{% endif %} d-block mt-2">
                                         {{ message.created_at|date:"H:i" }}
                                         {% if message.tokens_used > 0 %}
-                                            • {{ message.tokens_used }} tokens
+                                            • {{ message.tokens_used }} {% translate "tokens" %}
                                         {% endif %}
                                     </small>
                                 </div>

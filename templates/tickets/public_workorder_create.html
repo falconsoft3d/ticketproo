@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Crear Orden de Trabajo - {{ user.get_full_name }}{% endblock %}
+{% block title %}{% translate "Crear Orden de Trabajo -" %} {{ user.get_full_name }}{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -27,7 +27,7 @@
                 <div class="card border-success mb-3">
                     <div class="card-body">
                         <h5 class="card-title">
-                            <i class="fas fa-hashtag"></i> Orden #{{ work_order.id }}
+                            <i class="fas fa-hashtag"></i> {% translate "Orden #" %}{{ work_order.id }}
                         </h5>
                         <p class="card-text"><strong>{{ work_order.title }}</strong></p>
                         <div class="mb-3">
@@ -43,7 +43,7 @@
                 </div>
                 
                 <hr>
-                <p class="mb-0">{{ user.get_full_name }} recibirá una notificación y se pondrá en contacto contigo pronto.</p>
+                <p class="mb-0">{{ user.get_full_name }} {% translate "recibirá una notificación y se pondrá en contacto contigo pronto." %}</p>
                 <div class="mt-4">
                     <button class="btn btn-primary" onclick="window.location.reload()">
                         <i class="fas fa-plus"></i> {% translate "Crear Otra Orden" %}
@@ -143,7 +143,7 @@
 
                         <div class="alert alert-info" role="alert">
                             <i class="fas fa-info-circle"></i>
-                            <strong>{% translate "Nota:" %}</strong> Al enviar este formulario, tu orden será revisada por {{ user.get_full_name }} quien se pondrá en contacto contigo.
+                            <strong>{% translate "Nota:" %}</strong> {% translate "Al enviar este formulario, tu orden será revisada por" %} {{ user.get_full_name }} {% translate "quien se pondrá en contacto contigo." %}
                         </div>
 
                         <div class="d-grid gap-2">

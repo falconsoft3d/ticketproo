@@ -10,7 +10,7 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h3 class="mb-0">
-                    <i class="bi bi-pencil"></i> Editar Usuario: {{ user_to_edit.username }}
+                    <i class="bi bi-pencil"></i> {% translate "Editar Usuario:" %} {{ user_to_edit.username }}
                 </h3>
                 <div class="btn-group" role="group">
                     <a href="{% url 'user_tasks' user_to_edit.id %}" class="btn btn-outline-primary btn-sm">
@@ -180,7 +180,7 @@
                             <hr>
                             <h6 class="text-danger mb-2">
                                 <i class="bi bi-clock-history me-1"></i>
-                                Intentos de acceso bloqueados ({{ blocked_attempts.count }})
+                                {% translate "Intentos de acceso bloqueados (" %}{{ blocked_attempts.count }})
                             </h6>
                             <div class="table-responsive" style="max-height:220px;overflow-y:auto;">
                                 <table class="table table-sm table-bordered mb-0">
@@ -519,7 +519,7 @@
         <div class="modal-content">
             <div class="modal-header bg-warning">
                 <h5 class="modal-title" id="changePasswordModalLabel">
-                    <i class="bi bi-key"></i> Cambiar Contraseña de {{ user_to_edit.username }}
+                    <i class="bi bi-key"></i> {% translate "Cambiar Contraseña de" %} {{ user_to_edit.username }}
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
             </div>
@@ -645,7 +645,7 @@ function copyPublicTasksUrl() {
                 <div class="mb-3">
                     <label class="form-label fw-bold">{% translate "URL Pública:" %}</label>
                     <div class="input-group">
-                        <span class="form-control" id="publicTasksUrl">{{ request.scheme }}://{{ request.get_host }}/public/users/{{ user_to_edit.profile.public_token }}/tasks/</span>
+                        <span class="form-control" id="publicTasksUrl">{{ request.scheme }}://{{ request.get_host }}{% translate "/public/users/" %}{{ user_to_edit.profile.public_token }}{% translate "/tasks/" %}</span>
                         <button class="btn btn-outline-success" type="button" id="copyPublicTasksBtn" onclick="copyPublicTasksUrl()">
                             <i class="bi bi-clipboard"></i> {% translate "Copiar" %}
                         </button>

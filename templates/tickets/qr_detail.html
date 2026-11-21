@@ -23,7 +23,7 @@
                 <i class="bi bi-qr-code text-primary"></i>
                 {{ qr_code.title }}
             </h2>
-            <p class="text-muted mb-0">Código QR tipo {{ qr_code.get_qr_type_display }}</p>
+            <p class="text-muted mb-0">{% translate "Código QR tipo" %} {{ qr_code.get_qr_type_display }}</p>
         </div>
         <div class="dropdown">
             <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -147,13 +147,13 @@
                     
                     <div class="mb-3">
                         <strong><i class="bi bi-aspect-ratio text-warning"></i> {% translate "Tamaño:" %}</strong>
-                        <p class="mb-0">{{ qr_code.size }}px × {{ qr_code.size }}px</p>
+                        <p class="mb-0">{{ qr_code.size }}{% translate "px ×" %} {{ qr_code.size }}{% translate "px" %}</p>
                     </div>
                     
                     <div class="mb-3">
                         <strong><i class="bi bi-calendar text-secondary"></i> {% translate "Creado:" %}</strong>
                         <p class="mb-0">{{ qr_code.created_at|date:"d/m/Y H:i" }}</p>
-                        <small class="text-muted">por {{ qr_code.created_by.get_full_name|default:qr_code.created_by.username }}</small>
+                        <small class="text-muted">{% translate "por" %} {{ qr_code.created_by.get_full_name|default:qr_code.created_by.username }}</small>
                     </div>
                     
                     {% if qr_code.is_public %}
@@ -162,7 +162,7 @@
                         <div class="d-flex align-items-center">
                             <span class="badge bg-success me-2">{% translate "Público" %}</span>
                             <small class="text-muted">
-                                {{ qr_code.public_views }} vista{{ qr_code.public_views|pluralize:"s" }} pública{{ qr_code.public_views|pluralize:"s" }}
+                                {{ qr_code.public_views }} {% translate "vista" %}{{ qr_code.public_views|pluralize:"s" }} {% translate "pública" %}{{ qr_code.public_views|pluralize:"s" }}
                             </small>
                         </div>
                     </div>

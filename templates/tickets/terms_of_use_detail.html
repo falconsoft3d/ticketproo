@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -32,7 +32,7 @@
                                 {% endif %}
                                 <span class="badge bg-light text-dark">
                                     <i class="bi bi-calendar3"></i>
-                                    Vigencia: {{ term.effective_date|date:"d/m/Y" }}
+                                    {% translate "Vigencia:" %} {{ term.effective_date|date:"d/m/Y" }}
                                 </span>
                             </div>
                         </div>

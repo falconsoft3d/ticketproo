@@ -18,7 +18,7 @@
     <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
         <div>
             <h4 class="mb-0"><i class="bi bi-door-open me-2 text-primary"></i>{% translate "Registro de Entrada" %}</h4>
-            <small class="text-muted">{{ total }} registro{{ total|pluralize }} total · <strong>{{ hoy }}</strong> {% translate "hoy" %}</small>
+            <small class="text-muted">{{ total }} {% translate "registro" %}{{ total|pluralize }} {% translate "total ·" %} <strong>{{ hoy }}</strong> {% translate "hoy" %}</small>
         </div>
         <a href="{% url 'registro_entrada_create' %}" class="btn btn-primary btn-sm">
             <i class="bi bi-plus-lg"></i> {% translate "Nuevo registro" %}

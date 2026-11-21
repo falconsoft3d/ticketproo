@@ -68,7 +68,7 @@
                                             <td><strong>{% translate "Expira:" %}</strong></td>
                                             <td>
                                                 {% if short_url.is_expired %}
-                                                    <span class="badge bg-danger">Expirada - {{ short_url.expires_at|date:"d/m/Y H:i" }}</span>
+                                                    <span class="badge bg-danger">{% translate "Expirada -" %} {{ short_url.expires_at|date:"d/m/Y H:i" }}</span>
                                                 {% else %}
                                                     <span class="badge bg-warning">{{ short_url.expires_at|date:"d/m/Y H:i" }}</span>
                                                 {% endif %}

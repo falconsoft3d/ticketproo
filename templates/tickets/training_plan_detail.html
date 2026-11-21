@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -14,7 +14,7 @@
                         <i class="bi bi-mortarboard"></i> {% translate "Planes de Capacitación" %}
                     </a>
                 </li>
-                <li class="breadcrumb-item active">Plan #{{ plan.sequence }}</li>
+                <li class="breadcrumb-item active">{% translate "Plan #" %}{{ plan.sequence }}</li>
             </ol>
         </nav>
         <h2>{{ plan.title }}</h2>
@@ -82,7 +82,7 @@
                     
                     <!-- DEBUG INFO -->
                     <small class="text-muted d-block">
-                        Progreso: {{ user_progress_percent|floatformat:1 }}% ({{ debug_completed_count }}/{{ total_links }})
+                        {% translate "Progreso:" %} {{ user_progress_percent|floatformat:1 }}% ({{ debug_completed_count }}/{{ total_links }})
                     </small>
                     
                     {% if is_completed %}
@@ -127,7 +127,7 @@
         <h5 class="mb-0">
             <i class="bi bi-list-ul"></i> {% translate "Recursos de Capacitación" %}
         </h5>
-        <span class="badge bg-primary">{{ total_links }} recurso{{ total_links|pluralize }}</span>
+        <span class="badge bg-primary">{{ total_links }} {% translate "recurso" %}{{ total_links|pluralize }}</span>
     </div>
     
     <div class="card-body p-0">

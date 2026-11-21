@@ -140,7 +140,7 @@
                             <td>{{ task.start_date|date:"d/m/Y" }}</td>
                             <td>{{ task.end_date|date:"d/m/Y" }}</td>
                             <td class="text-center">
-                                <span class="badge bg-secondary">{{ task.get_duration_days }} días</span>
+                                <span class="badge bg-secondary">{{ task.get_duration_days }} {% translate "días" %}</span>
                             </td>
                             <td>
                                 {% if task.is_completed %}
@@ -172,7 +172,7 @@
                         <tr class="table-info">
                             <th colspan="5" class="text-end">{% translate "Total:" %}</th>
                             <th class="text-center">
-                                <span class="badge bg-primary">{{ total_days }} días</span>
+                                <span class="badge bg-primary">{{ total_days }} {% translate "días" %}</span>
                             </th>
                             <th colspan="2"></th>
                         </tr>

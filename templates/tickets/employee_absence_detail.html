@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -60,9 +60,9 @@
                         <h6 class="text-primary">{% translate "Empleado" %}</h6>
                         <div class="mb-3">
                             <strong>{{ absence.employee.get_full_name|default:absence.employee.username }}</strong>
-                            <br><small class="text-muted">Usuario: {{ absence.employee.username }}</small>
+                            <br><small class="text-muted">{% translate "Usuario:" %} {{ absence.employee.username }}</small>
                             {% if absence.employee.email %}
-                            <br><small class="text-muted">Email: {{ absence.employee.email }}</small>
+                            <br><small class="text-muted">{% translate "Email:" %} {{ absence.employee.email }}</small>
                             {% endif %}
                         </div>
                         
@@ -83,7 +83,7 @@
                                 {% endif %}
                                 
                                 {% if absence.absence_type.max_days_per_year %}
-                                <br><small class="text-muted">Límite anual: {{ absence.absence_type.max_days_per_year }} días</small>
+                                <br><small class="text-muted">{% translate "Límite anual:" %} {{ absence.absence_type.max_days_per_year }} {% translate "días" %}</small>
                                 {% endif %}
                             </div>
                         </div>
@@ -98,7 +98,7 @@
                                     <strong>{% translate "Fin:" %}</strong> {{ absence.end_date|date:"d/m/Y" }}
                                 </div>
                                 <span class="badge bg-secondary fs-6">
-                                    {{ absence.get_duration_days }} día{{ absence.get_duration_days|pluralize }}
+                                    {{ absence.get_duration_days }} {% translate "día" %}{{ absence.get_duration_days|pluralize }}
                                 </span>
                             </div>
                             
@@ -113,11 +113,11 @@
                         <div class="mb-3">
                             <div class="d-flex align-items-center">
                                 <i class="bi bi-clock-history me-2 text-danger"></i>
-                                <strong class="text-danger fs-5">{{ absence.lost_hours|floatformat:1 }} horas</strong>
+                                <strong class="text-danger fs-5">{{ absence.lost_hours|floatformat:1 }} {% translate "horas" %}</strong>
                             </div>
                             {% if absence.lost_hours > 0 %}
                             <small class="text-muted">
-                                Promedio: {{ absence.get_average_hours_per_day }} horas por día
+                                {% translate "Promedio:" %} {{ absence.get_average_hours_per_day }} {% translate "horas por día" %}
                             </small>
                             {% endif %}
                         </div>
@@ -130,8 +130,8 @@
                             {% if absence.approved_by %}
                             <div class="mt-1">
                                 <small class="text-muted">
-                                    Gestionado por: {{ absence.approved_by.get_full_name|default:absence.approved_by.username }}
-                                    <br>Fecha: {{ absence.approved_at|date:"d/m/Y H:i" }}
+                                    {% translate "Gestionado por:" %} {{ absence.approved_by.get_full_name|default:absence.approved_by.username }}
+                                    <br>{% translate "Fecha:" %} {{ absence.approved_at|date:"d/m/Y H:i" }}
                                 </small>
                             </div>
                             {% endif %}
@@ -196,7 +196,7 @@
                             <h6 class="mb-1">{{ absence.get_status_display }}</h6>
                             <small class="text-muted">
                                 {{ absence.approved_at|date:"d/m/Y H:i" }}<br>
-                                Por: {{ absence.approved_by.get_full_name|default:absence.approved_by.username }}
+                                {% translate "Por:" %} {{ absence.approved_by.get_full_name|default:absence.approved_by.username }}
                             </small>
                         </div>
                     </div>

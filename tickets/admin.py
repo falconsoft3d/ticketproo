@@ -7187,3 +7187,30 @@ class CapacitacionClaseComentarioAdmin(admin.ModelAdmin):
 class CapacitacionRespuestaAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'linea', 'enlace', 'submitted_by', 'created_at')
     search_fields = ('nombre', 'enlace')
+
+
+# ==================== ERP3 - FIRMAS DIGITALES ====================
+from .models import SignatureDocument, SignatureSigner, SignatureField
+
+
+class SignatureSignerInline(admin.TabularInline):
+    model = SignatureSigner
+    extra = 0
+    fields = ('name', 'email', 'order', 'status', 'signed_at', 'signed_ip')
+    readonly_fields = ('status', 'signed_at', 'signed_ip')
+
+
+@admin.register(SignatureDocument)
+class SignatureDocumentAdmin(admin.ModelAdmin):
+    list_display = ('title', 'status', 'page_count', 'created_by', 'created_at', 'completed_at')
+    list_filter = ('status',)
+    search_fields = ('title', 'signers__name', 'signers__email')
+    inlines = [SignatureSignerInline]
+
+
+@admin.register(SignatureSigner)
+class SignatureSignerAdmin(admin.ModelAdmin):
+    list_display = ('name', 'email', 'document', 'status', 'signed_at', 'signed_ip')
+    list_filter = ('status',)
+    search_fields = ('name', 'email', 'document__title')
+    readonly_fields = ('token',)

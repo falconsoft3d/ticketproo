@@ -109,9 +109,9 @@
                                     </div>
                                     {% if quotation.client_response_name %}
                                         <small class="text-muted">
-                                            Respuesta de: {{ quotation.client_response_name }}
+                                            {% translate "Respuesta de:" %} {{ quotation.client_response_name }}
                                             {% if quotation.client_response_date %}
-                                                el {{ quotation.client_response_date|date:"d/m/Y H:i" }}
+                                                {% translate "el" %} {{ quotation.client_response_date|date:"d/m/Y H:i" }}
                                             {% endif %}
                                         </small>
                                     {% endif %}

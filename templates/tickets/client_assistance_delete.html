@@ -32,13 +32,13 @@
                                         <span class="badge bg-danger">{% translate "Inactivo" %}</span>
                                     {% endif %}
                                 </li>
-                                <li><strong>{% translate "Límite diario:" %}</strong> {{ access.max_entries_per_day }} entradas</li>
+                                <li><strong>{% translate "Límite diario:" %}</strong> {{ access.max_entries_per_day }} {% translate "entradas" %}</li>
                                 <li><strong>{% translate "Categorías permitidas:" %}</strong> 
                                     {% for category in access.allowed_categories %}
                                         <span class="badge bg-secondary me-1">{{ category|capfirst }}</span>
                                     {% endfor %}
                                 </li>
-                                <li><strong>{% translate "Entradas registradas:" %}</strong> {{ access.project.client_time_entries.count }} entradas</li>
+                                <li><strong>{% translate "Entradas registradas:" %}</strong> {{ access.project.client_time_entries.count }} {% translate "entradas" %}</li>
                                 <li><strong>{% translate "Creado:" %}</strong> {{ access.created_at|date:"d/m/Y H:i" }}</li>
                             </ul>
                         </div>
@@ -58,7 +58,7 @@
                         <div class="alert alert-info">
                             <h6><i class="fas fa-database me-2"></i>{% translate "Datos existentes:" %}</h6>
                             <p class="mb-0">
-                                {% translate "Hay" %} <strong>{{ access.project.client_time_entries.count }} entradas de tiempo</strong> 
+                                {% translate "Hay" %} <strong>{{ access.project.client_time_entries.count }} {% translate "entradas de tiempo" %}</strong> 
                                 {% translate "registradas para este proyecto. Estas entradas se conservarán y podrá acceder a ellas desde la sección de reportes." %}
                             </p>
                         </div>

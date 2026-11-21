@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Eliminar Precotizador - {{ precotizador.title }}{% endblock %}
+{% block title %}{% translate "Eliminar Precotizador -" %} {{ precotizador.title }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -70,13 +70,13 @@
                                 {% if examples.exists %}
                                 <li class="mb-2">
                                     <i class="bi bi-list-ol text-info"></i>
-                                    <strong>{{ examples.count }}</strong> caso{{ examples.count|pluralize }} de ejemplo
+                                    <strong>{{ examples.count }}</strong> {% translate "caso" %}{{ examples.count|pluralize }} {% translate "de ejemplo" %}
                                 </li>
                                 {% endif %}
                                 {% if quotes.exists %}
                                 <li class="mb-2">
                                     <i class="bi bi-file-earmark-text text-warning"></i>
-                                    <strong>{{ quotes.count }}</strong> cotización{{ quotes.count|pluralize:"es" }} generada{{ quotes.count|pluralize }}
+                                    <strong>{{ quotes.count }}</strong> {% translate "cotización" %}{{ quotes.count|pluralize:"es" }} {% translate "generada" %}{{ quotes.count|pluralize }}
                                 </li>
                                 {% endif %}
                             </ul>
@@ -89,8 +89,7 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="confirmDelete" required>
                             <label class="form-check-label fw-bold" for="confirmDelete">
-                                Entiendo que esta acción eliminará permanentemente el precotizador 
-                                "{{ precotizador.title }}" y todos sus datos relacionados.
+                                {% translate 'Entiendo que esta acción eliminará permanentemente el precotizador "' %}{{ precotizador.title }}{% translate '" y todos sus datos relacionados.' %}
                             </label>
                         </div>
                     </div>

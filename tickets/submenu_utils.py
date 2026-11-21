@@ -210,6 +210,20 @@ def get_erp3_submenu(request, active_item=None):
             'count': None,
             'active': active_item == 'config'
         },
+        {
+            'name': 'Firmas Digitales',
+            'url': reverse('signature_document_list'),
+            'icon': 'bi bi-pen',
+            'count': None,
+            'active': active_item == 'signatures'
+        },
+        {
+            'name': 'Nuevo Documento a Firmar',
+            'url': reverse('signature_document_create'),
+            'icon': 'bi bi-file-earmark-plus',
+            'count': None,
+            'active': active_item == 'signatures_new'
+        },
     ]
     
     return submenu

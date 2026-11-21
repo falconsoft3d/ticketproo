@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -52,7 +52,7 @@
                     <div class="mb-3">
                         {% with quotes_count=generator.get_quotes_list|length %}
                         <span class="badge bg-info">
-                            <i class="bi bi-chat-square-quote"></i> {{ quotes_count }} citas
+                            <i class="bi bi-chat-square-quote"></i> {{ quotes_count }} {% translate "citas" %}
                         </span>
                         {% endwith %}
                     </div>

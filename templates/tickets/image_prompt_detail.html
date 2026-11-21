@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ image_prompt.title }} - Detalle{% endblock %}
+{% block title %}{{ image_prompt.title }} {% translate "- Detalle" %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -22,9 +22,9 @@
         <div class="col-md-6">
             <h2><i class="bi bi-image text-primary"></i> {{ image_prompt.title }}</h2>
             <p class="text-muted">
-                Creado el {{ image_prompt.created_at|date:"d M Y H:i" }}
+                {% translate "Creado el" %} {{ image_prompt.created_at|date:"d M Y H:i" }}
                 {% if image_prompt.updated_at != image_prompt.created_at %}
-                · Actualizado el {{ image_prompt.updated_at|date:"d M Y H:i" }}
+                {% translate "· Actualizado el" %} {{ image_prompt.updated_at|date:"d M Y H:i" }}
                 {% endif %}
             </p>
         </div>
@@ -61,7 +61,7 @@
                         
                         {% if image_prompt.tokens_used > 0 %}
                             <small class="text-muted">
-                                <i class="bi bi-cpu"></i> {{ image_prompt.tokens_used }} tokens usados
+                                <i class="bi bi-cpu"></i> {{ image_prompt.tokens_used }} {% translate "tokens usados" %}
                             </small>
                         {% endif %}
                     </div>

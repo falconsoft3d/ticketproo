@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -20,7 +20,7 @@
         <h2>
             <i class="bi bi-file-text"></i> {{ protocol.title }}
         </h2>
-        <p class="text-muted">Versión {{ protocol.version }}</p>
+        <p class="text-muted">{% translate "Versión" %} {{ protocol.version }}</p>
     </div>
     
     <div class="btn-group" role="group">
@@ -89,7 +89,7 @@
                         <span class="badge {% if protocol.is_active %}bg-success{% else %}bg-secondary{% endif %} fs-6">
                             {% if protocol.is_active %}{% translate "Activo" %}{% else %}{% translate "Inactivo" %}{% endif %}
                         </span>
-                        <span class="badge bg-primary fs-6">v{{ protocol.version }}</span>
+                        <span class="badge bg-primary fs-6">{% translate "v" %}{{ protocol.version }}</span>
                     </div>
                 </div>
             </div>
@@ -170,8 +170,8 @@
                     <strong class="text-primary">{% translate "Estadísticas:" %}</strong>
                     <div>
                         <small>
-                            <i class="bi bi-file-word"></i> {{ protocol.get_word_count }} palabras<br>
-                            <i class="bi bi-type"></i> ~{{ protocol.content|length }} caracteres
+                            <i class="bi bi-file-word"></i> {{ protocol.get_word_count }} {% translate "palabras" %}<br>
+                            <i class="bi bi-type"></i> ~{{ protocol.content|length }} {% translate "caracteres" %}
                         </small>
                     </div>
                 </div>
@@ -186,12 +186,12 @@
                                 <i class="bi bi-globe"></i> {% translate "Público" %}
                             </span>
                             <span class="badge bg-info">
-                                <i class="bi bi-eye"></i> {{ protocol.public_views_count }} vista{{ protocol.public_views_count|pluralize }}
+                                <i class="bi bi-eye"></i> {{ protocol.public_views_count }} {% translate "vista" %}{{ protocol.public_views_count|pluralize }}
                             </span>
                         </div>
                         <small class="text-muted">
                             <i class="bi bi-calendar-check"></i> 
-                            Compartido: {{ protocol.public_shared_at|date:"d/m/Y H:i" }}
+                            {% translate "Compartido:" %} {{ protocol.public_shared_at|date:"d/m/Y H:i" }}
                         </small>
                     </div>
                 </div>
@@ -203,12 +203,12 @@
                             <i class="bi bi-lock"></i> {% translate "Privado" %}
                         </span>
                         <span class="badge bg-secondary">
-                            <i class="bi bi-eye"></i> {{ protocol.public_views_count }} vista{{ protocol.public_views_count|pluralize }} (total)
+                            <i class="bi bi-eye"></i> {{ protocol.public_views_count }} {% translate "vista" %}{{ protocol.public_views_count|pluralize }} {% translate "(total)" %}
                         </span>
                         <br>
                         <small class="text-muted">
                             <i class="bi bi-calendar-check"></i> 
-                            Compartido anteriormente: {{ protocol.public_shared_at|date:"d/m/Y H:i" }}
+                            {% translate "Compartido anteriormente:" %} {{ protocol.public_shared_at|date:"d/m/Y H:i" }}
                         </small>
                     </div>
                 </div>

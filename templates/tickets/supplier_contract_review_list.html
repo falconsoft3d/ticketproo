@@ -114,9 +114,9 @@
                             <i class="bi bi-calendar"></i> {% translate "Fechas" %}
                         </h6>
                         <small class="text-muted">
-                            Creado: {{ review.created_at|date:"d/m/Y" }}<br>
+                            {% translate "Creado:" %} {{ review.created_at|date:"d/m/Y" }}<br>
                             {% if review.reviewed_at %}
-                            Revisado: {{ review.reviewed_at|date:"d/m/Y" }}
+                            {% translate "Revisado:" %} {{ review.reviewed_at|date:"d/m/Y" }}
                             {% else %}
                             <span class="badge bg-warning">{% translate "Sin revisar" %}</span>
                             {% endif %}

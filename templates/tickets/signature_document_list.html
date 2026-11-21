@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% translate "Firmas Digitales" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h2 class="mb-0"><i class="bi bi-pen"></i> {% translate "Firmas Digitales" %}</h2>
+        <a href="{% url 'signature_document_create' %}" class="btn btn-primary">
+            <i class="bi bi-file-earmark-plus"></i> {% translate "Nuevo Documento a Firmar" %}
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-2">
+                <div class="col-md-6">
+                    <input type="text" name="search" value="{{ search }}" class="form-control" placeholder="{% translate 'Buscar por título o firmante...' %}">
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">{% translate "Todos los estados" %}</option>
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button class="btn btn-outline-primary flex-fill"><i class="bi bi-search"></i> {% translate "Filtrar" %}</button>
+                    <a href="{% url 'signature_document_list' %}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>{% translate "Documento" %}</th>
+                        <th>{% translate "Estado" %}</th>
+                        <th>{% translate "Firmas" %}</th>
+                        <th>{% translate "Páginas" %}</th>
+                        <th>{% translate "Creado" %}</th>
+                        <th class="text-end">{% translate "Acciones" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in page_obj %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'signature_document_detail' doc.pk %}" class="fw-semibold text-decoration-none">
+                                <i class="bi bi-file-earmark-pdf text-danger"></i> {{ doc.title }}
+                            </a>
+                            {% if user.is_staff or user.is_superuser %}<div class="small text-muted">{{ doc.created_by.get_full_name|default:doc.created_by.username }}</div>{% endif %}
+                        </td>
+                        <td>
+                            {% if doc.status == 'completed' %}
+                                <span class="badge bg-success">{{ doc.get_status_display }}</span>
+                            {% elif doc.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">{{ doc.get_status_display }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ doc.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="min-width:140px">
+                            <div class="small mb-1">{{ doc.done_signers }} / {{ doc.total_signers }}</div>
+                            <div class="progress" style="height:6px">
+                                <div class="progress-bar bg-success" style="width:{% if doc.total_signers %}{% widthratio doc.done_signers doc.total_signers 100 %}{% else %}0{% endif %}%"></div>
+                            </div>
+                        </td>
+                        <td>{{ doc.page_count }}</td>
+                        <td class="small">{{ doc.created_at|date:"d/m/Y H:i" }}</td>
+                        <td class="text-end text-nowrap">
+                            <a href="{% url 'signature_document_detail' doc.pk %}" class="btn btn-sm btn-outline-primary" title="{% translate 'Ver' %}"><i class="bi bi-eye"></i></a>
+                            <a href="{% url 'signature_document_editor' doc.pk %}" class="btn btn-sm btn-outline-secondary" title="{% translate 'Colocar firmas' %}"><i class="bi bi-bounding-box"></i></a>
+                            {% if doc.signed_pdf %}
+                            <a href="{% url 'signature_document_pdf' doc.pk %}?signed=1&download=1" class="btn btn-sm btn-outline-success" title="{% translate 'Descargar firmado' %}"><i class="bi bi-download"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-5">
+                            <i class="bi bi-pen fs-1 d-block mb-2"></i>
+                            {% translate "Aún no hay documentos para firmar." %}
+                            <div class="mt-2"><a href="{% url 'signature_document_create' %}" class="btn btn-sm btn-primary">{% translate "Subir el primero" %}</a></div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-3">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&search={{ search|urlencode }}&status={{ status }}">&laquo;</a></li>
+            {% endif %}
+            <li class="page-item disabled"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&search={{ search|urlencode }}&status={{ status }}">&raquo;</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

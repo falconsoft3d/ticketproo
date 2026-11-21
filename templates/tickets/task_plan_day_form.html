@@ -12,7 +12,7 @@
                     <h4 class="mb-0">
                         <i class="bi bi-calendar-day"></i>
                         {% if form.instance.pk %}
-                            Editar Día: {{ form.instance.title }}
+                            {% translate "Editar Día:" %} {{ form.instance.title }}
                         {% else %}
                             {% translate "Agregar Nuevo Día" %}
                         {% endif %}

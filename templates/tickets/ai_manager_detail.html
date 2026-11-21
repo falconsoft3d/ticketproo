@@ -189,7 +189,7 @@
                                     <div class="card-body">
                                         <h6 class="card-title">
                                             <i class="bi bi-calendar-range text-info"></i>
-                                            Período: {{ summary.period_start|date:"d/m/Y" }} - {{ summary.period_end|date:"d/m/Y" }}
+                                            {% translate "Período:" %} {{ summary.period_start|date:"d/m/Y" }} - {{ summary.period_end|date:"d/m/Y" }}
                                         </h6>
                                         <p class="card-text small text-muted">{{ summary.summary_text|truncatewords:30 }}</p>
                                         <hr>

@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -192,7 +192,7 @@
 
                             <li class="page-item active">
                                 <span class="page-link">
-                                    Página {{ tickets.number }} de {{ tickets.paginator.num_pages }}
+                                    {% translate "Página" %} {{ tickets.number }} {% translate "de" %} {{ tickets.paginator.num_pages }}
                                 </span>
                             </li>
 

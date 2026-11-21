@@ -20,7 +20,7 @@
     <div class="row mb-4">
         <div class="col-md-6">
             <h2><i class="bi bi-list-task text-primary"></i> {% translate "Mis Prompts de Imágenes" %}</h2>
-            <p class="text-muted">Total: {{ total_prompts }} prompt{{ total_prompts|pluralize }}</p>
+            <p class="text-muted">{% translate "Total:" %} {{ total_prompts }} {% translate "prompt" %}{{ total_prompts|pluralize }}</p>
         </div>
         <div class="col-md-6 text-end">
             <a href="{% url 'image_prompt_create' %}" class="btn btn-primary">
@@ -82,7 +82,7 @@
                             </small>
                             {% if prompt.tokens_used > 0 %}
                             <small class="text-muted">
-                                <i class="bi bi-cpu"></i> {{ prompt.tokens_used }} tokens
+                                <i class="bi bi-cpu"></i> {{ prompt.tokens_used }} {% translate "tokens" %}
                             </small>
                             {% endif %}
                         </div>
@@ -120,7 +120,7 @@
             {% endif %}
 
             <li class="page-item active">
-                <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                <span class="page-link">{% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}</span>
             </li>
 
             {% if page_obj.has_next %}

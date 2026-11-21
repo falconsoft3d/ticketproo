@@ -125,7 +125,7 @@
                         <div class="card-header">
                             <h5 class="mb-0">
                                 <i class="bi bi-chat-dots"></i>
-                                Comentarios ({{ comments.count }})
+                                {% translate "Comentarios (" %}{{ comments.count }})
                             </h5>
                         </div>
                         <div class="card-body p-0">
@@ -163,7 +163,7 @@
                                 <i class="bi bi-clock-history"></i>
                                 {% translate "Registro de Horas" %}
                             </h5>
-                            <span class="badge bg-primary">Total: {{ hour_lines_total }} h</span>
+                            <span class="badge bg-primary">{% translate "Total:" %} {{ hour_lines_total }} {% translate "h" %}</span>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
@@ -182,7 +182,7 @@
                                             <td>{{ line.description }}</td>
                                             <td>{{ line.user.get_full_name|default:line.user.username }}</td>
                                             <td class="text-center">
-                                                <span class="badge bg-info text-dark">{{ line.hours }} h</span>
+                                                <span class="badge bg-info text-dark">{{ line.hours }} {% translate "h" %}</span>
                                             </td>
                                             <td class="text-center">
                                                 <small>{{ line.date|date:"d/m/Y" }}</small>
@@ -194,7 +194,7 @@
                                         <tr>
                                             <td colspan="2">{% translate "Total" %}</td>
                                             <td class="text-center">
-                                                <span class="badge bg-primary">{{ hour_lines_total }} h</span>
+                                                <span class="badge bg-primary">{{ hour_lines_total }} {% translate "h" %}</span>
                                             </td>
                                             <td></td>
                                         </tr>
@@ -211,7 +211,7 @@
                         <div class="card-header">
                             <h5 class="mb-0">
                                 <i class="bi bi-paperclip"></i>
-                                Archivos Adjuntos ({{ attachments.count }})
+                                {% translate "Archivos Adjuntos (" %}{{ attachments.count }})
                             </h5>
                         </div>
                         <div class="card-body">
@@ -223,8 +223,8 @@
                                         <strong>{{ attachment.original_filename }}</strong>
                                         <br>
                                         <small class="text-muted">
-                                            Subido por {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}
-                                            el {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
+                                            {% translate "Subido por" %} {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}
+                                            {% translate "el" %} {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
                                         </small>
                                     </div>
                                     <div class="text-end">
@@ -314,7 +314,7 @@
                             {% if ticket.hours %}
                             <div class="row mb-2">
                                 <div class="col-5"><strong>{% translate "Horas:" %}</strong></div>
-                                <div class="col-7">{{ ticket.hours }} h</div>
+                                <div class="col-7">{{ ticket.hours }} {% translate "h" %}</div>
                             </div>
                             {% endif %}
                         </div>

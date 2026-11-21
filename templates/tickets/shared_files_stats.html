@@ -219,7 +219,7 @@
                                                 <a href="{% url 'shared_file_detail' download.shared_file.id %}" class="text-decoration-none">
                                                     {{ download.shared_file.title|truncatechars:20 }}
                                                 </a>
-                                                <span class="text-muted">por {{ download.downloaded_by.username|default:"Anónimo" }}</span>
+                                                <span class="text-muted">{% translate "por" %} {{ download.downloaded_by.username|default:"Anónimo" }}</span>
                                             </div>
                                             <div class="text-muted">{{ download.downloaded_at|date:"d/m H:i" }}</div>
                                         </div>

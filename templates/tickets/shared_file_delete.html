@@ -28,11 +28,11 @@
                             <strong>{{ shared_file.title }}</strong>
                         </div>
                         <div class="small text-muted">
-                            <div><i class="bi bi-building"></i> Empresa: {{ shared_file.company.name }}</div>
-                            <div><i class="bi bi-person"></i> Subido por: {{ shared_file.uploaded_by.username|default:"Anónimo" }}</div>
-                            <div><i class="bi bi-calendar"></i> Fecha: {{ shared_file.created_at|date:"d/m/Y H:i" }}</div>
-                            <div><i class="bi bi-hdd"></i> Tamaño: {{ shared_file.get_file_size_display }}</div>
-                            <div><i class="bi bi-download"></i> Descargas: {{ shared_file.download_count }}</div>
+                            <div><i class="bi bi-building"></i> {% translate "Empresa:" %} {{ shared_file.company.name }}</div>
+                            <div><i class="bi bi-person"></i> {% translate "Subido por:" %} {{ shared_file.uploaded_by.username|default:"Anónimo" }}</div>
+                            <div><i class="bi bi-calendar"></i> {% translate "Fecha:" %} {{ shared_file.created_at|date:"d/m/Y H:i" }}</div>
+                            <div><i class="bi bi-hdd"></i> {% translate "Tamaño:" %} {{ shared_file.get_file_size_display }}</div>
+                            <div><i class="bi bi-download"></i> {% translate "Descargas:" %} {{ shared_file.download_count }}</div>
                         </div>
                     </div>
                     

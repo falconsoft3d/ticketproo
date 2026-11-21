@@ -282,7 +282,7 @@
                     </div>
                     {% if user.profile.company.tax_id %}
                     <div style="font-size: 0.65rem; color: #6b7280;">
-                        NIF: {{ user.profile.company.tax_id }}
+                        {% translate "NIF:" %} {{ user.profile.company.tax_id }}
                     </div>
                     {% endif %}
                 </div>

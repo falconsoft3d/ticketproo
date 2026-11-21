@@ -13,7 +13,7 @@
             {{ policy.title }}
         </h1>
         <p class="text-muted">
-            <i class="bi bi-calendar"></i> Última actualización: {{ policy.updated_at|date:"d/m/Y" }}
+            <i class="bi bi-calendar"></i> {% translate "Última actualización:" %} {{ policy.updated_at|date:"d/m/Y" }}
         </p>
     </div>
 

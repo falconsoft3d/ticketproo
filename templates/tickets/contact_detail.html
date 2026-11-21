@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load project_extras %}
 
-{% block title %}{{ contact.name }} - TicketProo{% endblock %}
+{% block title %}{{ contact.name }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -370,7 +370,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-chat-text"></i> Comentarios ({{ comments.count }})
+                        <i class="bi bi-chat-text"></i> {% translate "Comentarios (" %}{{ comments.count }})
                     </h5>
                 </div>
                 <div class="card-body">
@@ -476,7 +476,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-paperclip"></i> Archivos Adjuntos ({{ attachments.count }})
+                        <i class="bi bi-paperclip"></i> {% translate "Archivos Adjuntos (" %}{{ attachments.count }})
                     </h5>
                 </div>
                 <div class="card-body">
@@ -520,8 +520,7 @@
                                                 <strong>{{ attachment.original_filename }}</strong>
                                                 <br>
                                                 <small class="text-muted">
-                                                    {{ attachment.get_file_size_display }} • 
-                                                    Subido por {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }} • 
+                                                    {{ attachment.get_file_size_display }} {% translate "• Subido por" %} {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }} • 
                                                     {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
                                                 </small>
                                                 {% if attachment.description %}
@@ -565,7 +564,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-list-task"></i> Actividades ({{ total_activities }})
+                        <i class="bi bi-list-task"></i> {% translate "Actividades (" %}{{ total_activities }})
                     </h5>
                 </div>
                 <div class="card-body">

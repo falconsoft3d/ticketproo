@@ -50,8 +50,8 @@
                 </div>
                 <div class="card-footer text-muted">
                     <small>
-                        <i class="bi bi-person"></i> Creado por {{ template.created_by.get_full_name|default:template.created_by.username }} 
-                        el {{ template.created_at|date:"d/m/Y H:i" }}
+                        <i class="bi bi-person"></i> {% translate "Creado por" %} {{ template.created_by.get_full_name|default:template.created_by.username }} 
+                        {% translate "el" %} {{ template.created_at|date:"d/m/Y H:i" }}
                     </small>
                 </div>
             </div>

@@ -87,7 +87,7 @@
                     {% endif %}
                 </div>
                 <div class="card-footer d-flex justify-content-between align-items-center bg-transparent">
-                    <small class="text-muted"><i class="bi bi-chat-left-text"></i> {{ book.entries.count }} entrada(s)</small>
+                    <small class="text-muted"><i class="bi bi-chat-left-text"></i> {{ book.entries.count }} {% translate "entrada(s)" %}</small>
                     <small class="text-muted">{{ book.updated_at|date:"d/m/Y" }}</small>
                 </div>
             </div>

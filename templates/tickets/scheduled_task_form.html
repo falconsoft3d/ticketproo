@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}{{ title }} - TicketProo{% endblock %}
+{% block title %}{{ title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -160,8 +160,8 @@ print(f"Total usuarios: {total_users}")</code></pre>
                     
                     <p><strong>{% translate "Estadísticas:" %}</strong></p>
                     <ul class="list-unstyled">
-                        <li>✓ Exitosas: {{ task.success_count }}</li>
-                        <li>✗ Errores: {{ task.error_count }}</li>
+                        <li>{% translate "✓ Exitosas:" %} {{ task.success_count }}</li>
+                        <li>{% translate "✗ Errores:" %} {{ task.error_count }}</li>
                     </ul>
                 </div>
             </div>

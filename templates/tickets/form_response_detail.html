@@ -34,7 +34,7 @@
                     <p><strong>{% translate "Email:" %}</strong> {{ response.respondent_email|default:"No proporcionado" }}</p>
                     <p><strong>{% translate "Fecha de respuesta:" %}</strong> {{ response.response_date|date:"d/m/Y H:i" }}</p>
                     <p><strong>{% translate "Puntuación total:" %}</strong> 
-                        <span class="badge bg-success fs-6">{{ response.total_score }} puntos</span>
+                        <span class="badge bg-success fs-6">{{ response.total_score }} {% translate "puntos" %}</span>
                     </p>
                 </div>
             </div>
@@ -111,7 +111,7 @@
                                         {% if qa.question.question_type == 'multiple_choice' %}
                                             {{ qa.display_answer }}
                                             {% if qa.score > 0 %}
-                                                <span class="badge bg-success ms-2">+{{ qa.score }} puntos</span>
+                                                <span class="badge bg-success ms-2">+{{ qa.score }} {% translate "puntos" %}</span>
                                             {% endif %}
                                         {% else %}
                                             {{ qa.display_answer }}
@@ -132,7 +132,7 @@
                                                     <i class="bi bi-circle text-muted"></i>
                                                 {% endif %}
                                                 {{ option.option_text }}
-                                                <span class="badge bg-secondary ms-1">{{ option.score }} pts</span>
+                                                <span class="badge bg-secondary ms-1">{{ option.score }} {% translate "pts" %}</span>
                                             </li>
                                             {% endfor %}
                                         </ul>

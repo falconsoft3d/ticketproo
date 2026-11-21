@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Detalles del Rastreo - {{ tracker.target }}{% endblock %}
+{% block title %}{% translate "Detalles del Rastreo -" %} {{ tracker.target }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -63,7 +63,7 @@
                             <p><strong>{% translate "Dirección IP:" %}</strong> <code>{{ tracker.ip_address }}</code></p>
                             {% endif %}
                             {% if tracker.ping_response_time %}
-                            <p><strong>{% translate "Tiempo de respuesta:" %}</strong> <span class="badge bg-info">{{ tracker.ping_response_time|floatformat:2 }} ms</span></p>
+                            <p><strong>{% translate "Tiempo de respuesta:" %}</strong> <span class="badge bg-info">{{ tracker.ping_response_time|floatformat:2 }} {% translate "ms" %}</span></p>
                             {% endif %}
                         </div>
                         <div class="col-md-6">
@@ -191,7 +191,7 @@
                 <div class="card-body">
                     <p class="mb-0">
                         <strong>{% translate "Tiempo de respuesta:" %}</strong> 
-                        <span class="badge bg-success">{{ tracker.ping_response_time|floatformat:2 }} ms</span>
+                        <span class="badge bg-success">{{ tracker.ping_response_time|floatformat:2 }} {% translate "ms" %}</span>
                     </p>
                     <p class="mt-2 mb-0">
                         <strong>{% translate "Estado:" %}</strong> 

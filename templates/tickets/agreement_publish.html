@@ -63,7 +63,7 @@
 </style>
 {% endblock %}
 
-{% block title %}Publicar Acuerdo - {{ agreement.title }}{% endblock %}
+{% block title %}{% translate "Publicar Acuerdo -" %} {{ agreement.title }}{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -119,7 +119,7 @@
                                     <div class="checklist-item checklist-ok">
                                         <i class="bi bi-check-circle-fill me-2"></i>
                                         <div>
-                                            <strong>{% translate "Contenido definido:" %}</strong> {{ agreement.body|length }} caracteres
+                                            <strong>{% translate "Contenido definido:" %}</strong> {{ agreement.body|length }} {% translate "caracteres" %}
                                         </div>
                                     </div>
                                 {% else %}
@@ -134,7 +134,7 @@
                                     <div class="checklist-item checklist-ok">
                                         <i class="bi bi-check-circle-fill me-2"></i>
                                         <div>
-                                            <strong>{% translate "Límite de firmas:" %}</strong> Máximo {{ agreement.max_signers }} firma{{ agreement.max_signers|pluralize }}
+                                            <strong>{% translate "Límite de firmas:" %}</strong> {% translate "Máximo" %} {{ agreement.max_signers }} {% translate "firma" %}{{ agreement.max_signers|pluralize }}
                                         </div>
                                     </div>
                                 {% else %}

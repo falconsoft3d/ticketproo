@@ -227,7 +227,7 @@
                             <i class="fas fa-times"></i> {% translate "Cancelar" %}
                         </a>
                         <button type="submit" class="btn btn-success">
-                            <i class="fas fa-save"></i> Crear Actividad para {{ contact.name }}
+                            <i class="fas fa-save"></i> {% translate "Crear Actividad para" %} {{ contact.name }}
                         </button>
                     </div>
                 </form>
@@ -247,7 +247,7 @@
             </div>
             <div class="card-body">
                 <ul class="mb-0 small">
-                    <li><strong>{% translate "Contacto:" %}</strong> La actividad se asociará automáticamente a {{ contact.name }}</li>
+                    <li><strong>{% translate "Contacto:" %}</strong> {% translate "La actividad se asociará automáticamente a" %} {{ contact.name }}</li>
                     <li><strong>{% translate "Oportunidad:" %}</strong> {% translate "Opcionalmente puedes vincular esta actividad a una oportunidad específica" %}</li>
                     <li><strong>{% translate "Fecha y Hora:" %}</strong> {% translate "Programa cuándo debe realizarse la actividad" %}</li>
                     <li><strong>{% translate "Tipo:" %}</strong> {% translate "Define el tipo de actividad (llamada, reunión, correo, etc.)" %}</li>

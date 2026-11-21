@@ -24,13 +24,13 @@
                         <div class="card-body">
                             <h6 class="card-title">{{ game.name }}</h6>
                             <p class="mb-1">
-                                <i class="bi bi-person-fill text-primary"></i> {{ game.player1_name }} ({{ game.player1_score }} puntos)
+                                <i class="bi bi-person-fill text-primary"></i> {{ game.player1_name }} ({{ game.player1_score }} {% translate "puntos)" %}
                             </p>
                             <p class="mb-1">
-                                <i class="bi bi-person-fill text-danger"></i> {{ game.player2_name }} ({{ game.player2_score }} puntos)
+                                <i class="bi bi-person-fill text-danger"></i> {{ game.player2_name }} ({{ game.player2_score }} {% translate "puntos)" %}
                             </p>
                             <p class="mb-0 text-muted">
-                                <small>Creado: {{ game.created_at|date:"d/m/Y H:i" }}</small>
+                                <small>{% translate "Creado:" %} {{ game.created_at|date:"d/m/Y H:i" }}</small>
                             </p>
                         </div>
                     </div>

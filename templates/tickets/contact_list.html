@@ -586,7 +586,7 @@
                 <i class="bi bi-person-lines-fill text-primary"></i>
                 {% translate "Contactos" %}
                 <span class="badge" style="background-color: #90ee90; color: #2d8659; font-size: 0.9rem;">
-                    <i class="bi bi-trophy-fill"></i> Ganados: {{ won_contacts }}
+                    <i class="bi bi-trophy-fill"></i> {% translate "Ganados:" %} {{ won_contacts }}
                 </span>
                 {% if request.GET.status or request.GET.search or request.GET.date_from or request.GET.date_to %}
                     <span class="badge bg-warning text-dark ms-2">{% translate "Filtros activos" %}</span>
@@ -617,16 +617,16 @@
                     <br><small class="text-primary">
                         <i class="bi bi-funnel-fill"></i>
                         {% if request.GET.status %}
-                            Estado: {{ request.GET.status|title }}
+                            {% translate "Estado:" %} {{ request.GET.status|title }}
                         {% endif %}
                         {% if request.GET.search %}
-                            • Búsqueda: "{{ request.GET.search }}"
+                            {% translate '• Búsqueda: "' %}{{ request.GET.search }}"
                         {% endif %}
                         {% if request.GET.date_from %}
-                            • Desde: {{ request.GET.date_from }}
+                            {% translate "• Desde:" %} {{ request.GET.date_from }}
                         {% endif %}
                         {% if request.GET.date_to %}
-                            • Hasta: {{ request.GET.date_to }}
+                            {% translate "• Hasta:" %} {{ request.GET.date_to }}
                         {% endif %}
                         <a href="{% url 'contact_list' %}" class="text-decoration-none ms-2">
                             <small>{% translate "(Limpiar filtros)" %}</small>
@@ -781,7 +781,7 @@
                 <h4 class="mb-0">
                     <span class="badge bg-{% if plan_progress.overall_percentage >= 75 %}success{% elif plan_progress.overall_percentage >= 50 %}warning{% else %}danger{% endif %}" 
                           style="font-size: 1.1rem;">
-                        {{ plan_progress.overall_percentage }}% Cumplimiento General
+                        {{ plan_progress.overall_percentage }}{% translate "% Cumplimiento General" %}
                     </span>
                 </h4>
             </div>
@@ -1311,12 +1311,12 @@
                     {% endif %}
                     <i class="bi bi-person-check text-primary"></i>
                     <strong>{% translate "Contactos:" %}</strong>
-                    <span class="badge bg-secondary ms-1">Total: {{ contacts_stats_total }}</span>
-                    <span class="badge bg-info ms-1">Año: {{ contacts_stats_year }}</span>
-                    <span class="badge bg-primary ms-1">Mes: {{ contacts_stats_month }}</span>
-                    <span class="badge bg-info ms-1">Semana: {{ contacts_stats_week }}</span>
-                    <span class="badge bg-success ms-1">Hoy: {{ contacts_stats_today }}</span>
-                    <span class="badge bg-warning text-dark ms-1">Última Hora: {{ contacts_stats_hour }}</span>
+                    <span class="badge bg-secondary ms-1">{% translate "Total:" %} {{ contacts_stats_total }}</span>
+                    <span class="badge bg-info ms-1">{% translate "Año:" %} {{ contacts_stats_year }}</span>
+                    <span class="badge bg-primary ms-1">{% translate "Mes:" %} {{ contacts_stats_month }}</span>
+                    <span class="badge bg-info ms-1">{% translate "Semana:" %} {{ contacts_stats_week }}</span>
+                    <span class="badge bg-success ms-1">{% translate "Hoy:" %} {{ contacts_stats_today }}</span>
+                    <span class="badge bg-warning text-dark ms-1">{% translate "Última Hora:" %} {{ contacts_stats_hour }}</span>
                     {% if contacts_today_by_user %}
                         <span class="text-dark ms-2">|</span>
                         <strong class="ms-2">{% translate "Hoy por usuario:" %}</strong>
@@ -1525,7 +1525,7 @@
 
                         <li class="page-item active">
                             <span class="page-link">
-                                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                {% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}
                             </span>
                         </li>
 

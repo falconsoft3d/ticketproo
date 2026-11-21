@@ -248,8 +248,8 @@
                                 {% if question.answered_by %}
                                     <small class="text-muted">
                                         <i class="fas fa-user-tie me-1"></i>
-                                        Respondida por {{ question.answered_by.get_full_name|default:question.answered_by.username }}
-                                        el {{ question.answered_at|date:"d/m/Y H:i" }}
+                                        {% translate "Respondida por" %} {{ question.answered_by.get_full_name|default:question.answered_by.username }}
+                                        {% translate "el" %} {{ question.answered_at|date:"d/m/Y H:i" }}
                                     </small>
                                 {% endif %}
                             </div>

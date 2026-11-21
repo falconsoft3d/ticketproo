@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ project.title }} - Artículos - {{ block.super }}{% endblock %}
+{% block title %}{{ project.title }} {% translate "- Artículos -" %} {{ block.super }}{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -121,7 +121,7 @@
 
                         {% if article.content %}
                             <div class="alert alert-success small mb-2">
-                                <i class="fas fa-check-circle"></i> Contenido generado ({{ article.word_count }} palabras)
+                                <i class="fas fa-check-circle"></i> {% translate "Contenido generado (" %}{{ article.word_count }} {% translate "palabras)" %}
                             </div>
                         {% endif %}
 

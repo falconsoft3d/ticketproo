@@ -204,7 +204,7 @@
                                             </span>
                                             {% if question.answered_by %}
                                             <small class="d-block text-muted mt-1">
-                                                Por: {{ question.answered_by.get_full_name|default:question.answered_by.username }}
+                                                {% translate "Por:" %} {{ question.answered_by.get_full_name|default:question.answered_by.username }}
                                             </small>
                                             {% endif %}
                                         {% else %}

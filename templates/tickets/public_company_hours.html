@@ -64,8 +64,8 @@
                             <h6 class="text-muted mb-1">
                                 {% translate "Horas consumidas" %}{% if status_label %} ({{ status_label }}){% endif %}
                             </h6>
-                            <h2 class="text-info mb-0">{{ total_hours }} h</h2>
-                            <small class="text-muted">{{ tickets|length }} ticket{{ tickets|length|pluralize }} con horas</small>
+                            <h2 class="text-info mb-0">{{ total_hours }} {% translate "h" %}</h2>
+                            <small class="text-muted">{{ tickets|length }} {% translate "ticket" %}{{ tickets|length|pluralize }} {% translate "con horas" %}</small>
                         </div>
                     </div>
                 </div>
@@ -73,7 +73,7 @@
                     <div class="card h-100 border-0 shadow">
                         <div class="card-body">
                             <h6 class="text-muted mb-1">{% translate "Horas estimadas" %}</h6>
-                            <h2 class="text-secondary mb-0">{{ total_estimated }} h</h2>
+                            <h2 class="text-secondary mb-0">{{ total_estimated }} {% translate "h" %}</h2>
                             <small class="text-muted">{% translate "Presupuesto de esos tickets" %}</small>
                         </div>
                     </div>
@@ -90,7 +90,7 @@
                                     <a href="?status={{ row.status }}"
                                        class="status-chip btn btn-sm btn-light border {% if status_filter == row.status %}active{% endif %}">
                                         {{ row.label }}
-                                        <span class="badge bg-info text-dark ms-1">{{ row.hours }} h</span>
+                                        <span class="badge bg-info text-dark ms-1">{{ row.hours }} {% translate "h" %}</span>
                                         <small class="text-muted ms-1">({{ row.count }})</small>
                                     </a>
                                 {% empty %}
@@ -139,11 +139,11 @@
                                         {% endif %}
                                     </td>
                                     <td class="text-end text-muted text-nowrap">
-                                        {% if ticket.hours %}{{ ticket.hours }} h{% else %}-{% endif %}
+                                        {% if ticket.hours %}{{ ticket.hours }} {% translate "h" %}{% else %}-{% endif %}
                                     </td>
                                     <td class="text-end fw-bold text-nowrap {% if ticket.hours and ticket.consumed > ticket.hours %}text-danger{% endif %}"
                                         {% if ticket.hours and ticket.consumed > ticket.hours %}title="{% translate 'Supera las horas estimadas' %}"{% endif %}>
-                                        {{ ticket.consumed }} h
+                                        {{ ticket.consumed }} {% translate "h" %}
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -151,8 +151,8 @@
                             <tfoot class="table-light">
                                 <tr>
                                     <th colspan="4" class="text-end">{% translate "Total" %}</th>
-                                    <th class="text-end text-nowrap text-muted">{{ total_estimated }} h</th>
-                                    <th class="text-end text-nowrap">{{ total_hours }} h</th>
+                                    <th class="text-end text-nowrap text-muted">{{ total_estimated }} {% translate "h" %}</th>
+                                    <th class="text-end text-nowrap">{{ total_hours }} {% translate "h" %}</th>
                                 </tr>
                             </tfoot>
                         </table>
@@ -191,7 +191,7 @@
                                         <span class="badge bg-primary">#{{ line.ticket.ticket_number|default:line.ticket.pk }}</span>
                                     </td>
                                     <td>{{ line.description }}</td>
-                                    <td class="text-end pe-3 text-nowrap">{{ line.hours }} h</td>
+                                    <td class="text-end pe-3 text-nowrap">{{ line.hours }} {% translate "h" %}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

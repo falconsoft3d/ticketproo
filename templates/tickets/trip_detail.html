@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -127,7 +127,7 @@
                                     {% if stop.duration_minutes %}
                                     <div class="col-md-3 mb-2">
                                         <small class="text-muted">
-                                            <i class="bi bi-clock"></i> {{ stop.duration_minutes }} min
+                                            <i class="bi bi-clock"></i> {{ stop.duration_minutes }} {% translate "min" %}
                                         </small>
                                     </div>
                                     {% endif %}

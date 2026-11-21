@@ -92,13 +92,13 @@
                             {% if employee.salary_euros %}
                             <div class="mb-2">
                                 <i class="bi bi-currency-euro text-muted me-2"></i>
-                                <small>€{{ employee.salary_euros|floatformat:0 }} anuales</small>
+                                <small>€{{ employee.salary_euros|floatformat:0 }} {% translate "anuales" %}</small>
                             </div>
                             {% endif %}
                             
                             <div class="mb-2">
                                 <i class="bi bi-calendar text-muted me-2"></i>
-                                <small>Aplicó: {{ employee.created_at|date:"d/m/Y" }}</small>
+                                <small>{% translate "Aplicó:" %} {{ employee.created_at|date:"d/m/Y" }}</small>
                             </div>
 
                             {% if employee.ai_score %}
@@ -171,7 +171,7 @@
                     <i class="bi bi-people display-1 text-muted mb-3"></i>
                     <h4>{% translate "No hay candidatos" %}</h4>
                     {% if search %}
-                    <p class="text-muted">No se encontraron candidatos que coincidan con "{{ search }}"</p>
+                    <p class="text-muted">{% translate 'No se encontraron candidatos que coincidan con "' %}{{ search }}"</p>
                     <a href="{% url 'candidate_list' %}" class="btn btn-primary">{% translate "Ver todos los candidatos" %}</a>
                     {% else %}
                     <p class="text-muted">{% translate "Aún no hay candidatos registrados en el sistema." %}</p>

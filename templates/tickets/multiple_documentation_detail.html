@@ -62,7 +62,7 @@
                         {% endif %}
                         <div class="d-flex align-items-center">
                             <span class="badge bg-light text-dark me-3">
-                                <i class="fas fa-file"></i> {{ items.count }} documento{{ items.count|pluralize }}
+                                <i class="fas fa-file"></i> {{ items.count }} {% translate "documento" %}{{ items.count|pluralize }}
                             </span>
                             <span class="badge bg-light text-dark me-3">
                                 <i class="fas fa-user"></i> {{ documentation.created_by.get_full_name|default:documentation.created_by.username }}
@@ -143,21 +143,21 @@
                                                     </div>
                                                     <div class="mt-2">
                                                         <span class="badge bg-success">
-                                                            <i class="bi bi-download"></i> {{ item.download_count }} descarga{{ item.download_count|pluralize }}
+                                                            <i class="bi bi-download"></i> {{ item.download_count }} {% translate "descarga" %}{{ item.download_count|pluralize }}
                                                         </span>
                                                         {% if item.expiration_date %}
                                                         <span class="badge {% if item.is_expired %}bg-danger{% elif item.days_until_expiration <= 7 %}bg-warning text-dark{% else %}bg-info{% endif %} ms-1">
                                                             <i class="fas fa-calendar-times"></i>
                                                             {% if item.is_expired %}
-                                                                Vencido el {{ item.expiration_date|date:"d/m/Y" }}
+                                                                {% translate "Vencido el" %} {{ item.expiration_date|date:"d/m/Y" }}
                                                             {% elif item.days_until_expiration == 0 %}
                                                                 {% translate "Vence hoy" %}
                                                             {% elif item.days_until_expiration == 1 %}
                                                                 {% translate "Vence mañana" %}
                                                             {% elif item.days_until_expiration <= 7 %}
-                                                                Vence en {{ item.days_until_expiration }} días
+                                                                {% translate "Vence en" %} {{ item.days_until_expiration }} {% translate "días" %}
                                                             {% else %}
-                                                                Vence: {{ item.expiration_date|date:"d/m/Y" }}
+                                                                {% translate "Vence:" %} {{ item.expiration_date|date:"d/m/Y" }}
                                                             {% endif %}
                                                         </span>
                                                         {% endif %}

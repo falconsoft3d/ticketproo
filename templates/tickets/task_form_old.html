@@ -213,7 +213,7 @@
                     {% if task.actual_hours %}
                     <div class="row">
                         <div class="col-md-12">
-                            <p><strong>{% translate "Horas trabajadas:" %}</strong> {{ task.actual_hours }} horas</p>
+                            <p><strong>{% translate "Horas trabajadas:" %}</strong> {{ task.actual_hours }} {% translate "horas" %}</p>
                             {% if task.estimated_hours %}
                                 <p><strong>{% translate "Progreso:" %}</strong> {{ task.get_progress_percentage|floatformat:1 }}%</p>
                             {% endif %}

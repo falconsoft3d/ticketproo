@@ -46,7 +46,7 @@
                                     {{ session.get_completion_percentage }}%
                                 </span>
                                 <small class="text-muted">
-                                    {{ session.get_completed_tasks }}/{{ session.get_total_tasks }} tareas
+                                    {{ session.get_completed_tasks }}/{{ session.get_total_tasks }} {% translate "tareas" %}
                                 </small>
                                 <div class="btn-group" role="group">
                                     <a href="{% url 'view_task_session' session.id %}" class="btn btn-outline-primary btn-sm">
@@ -105,7 +105,7 @@
                                 <div class="col-12">
                                     <small class="text-muted">
                                         <i class="bi bi-three-dots"></i> 
-                                        Y {{ session.daily_task_items.count|add:"-6" }} tarea(s) más...
+                                        Y {{ session.daily_task_items.count|add:"-6" }} {% translate "tarea(s) más..." %}
                                     </small>
                                 </div>
                                 {% endif %}
@@ -114,12 +114,12 @@
                         <div class="col-md-4 text-end">
                             <p class="text-muted mb-1">
                                 <i class="bi bi-clock"></i> 
-                                Creada: {{ session.created_at|date:"d/m/Y H:i" }}
+                                {% translate "Creada:" %} {{ session.created_at|date:"d/m/Y H:i" }}
                             </p>
                             {% if session.updated_at != session.created_at %}
                             <p class="text-muted mb-0">
                                 <i class="bi bi-pencil"></i> 
-                                Actualizada: {{ session.updated_at|date:"d/m/Y H:i" }}
+                                {% translate "Actualizada:" %} {{ session.updated_at|date:"d/m/Y H:i" }}
                             </p>
                             {% endif %}
                         </div>
@@ -149,7 +149,7 @@
                     
                     <li class="page-item active">
                         <span class="page-link">
-                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            {% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}
                         </span>
                     </li>
                     

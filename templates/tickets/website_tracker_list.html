@@ -89,7 +89,7 @@
                     {% if tracker.response_time %}
                     <div class="mb-2">
                         <small class="text-muted">{% translate "Tiempo de respuesta:" %}</small>
-                        <span class="badge bg-info ms-2">{{ tracker.response_time }} ms</span>
+                        <span class="badge bg-info ms-2">{{ tracker.response_time }} {% translate "ms" %}</span>
                     </div>
                     {% endif %}
 
@@ -157,7 +157,7 @@
             {% endif %}
 
             <li class="page-item active">
-                <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                <span class="page-link">{% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}</span>
             </li>
 
             {% if page_obj.has_next %}

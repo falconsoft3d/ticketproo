@@ -1,7 +1,7 @@
 {% extends 'public_base.html' %}
 {% load i18n %}
 
-{% block title %}{{ upload_url.title }} - TicketProo{% endblock %}
+{% block title %}{{ upload_url.title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block hero_icon %}<i class="bi bi-cloud-upload"></i>{% endblock %}
 {% block hero_title %}{{ upload_url.title }}{% endblock %}

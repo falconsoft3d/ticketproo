@@ -102,7 +102,7 @@
                                             <h6><i class="bi bi-file-earmark-text"></i> {% translate "Acuerdo Firmado:" %}</h6>
                                             <p class="mb-2"><strong>{{ agreement.title }}</strong></p>
                                             <small class="text-muted">
-                                                Creado el {{ agreement.created_at|date:"d/m/Y" }} por 
+                                                {% translate "Creado el" %} {{ agreement.created_at|date:"d/m/Y" }} {% translate "por" %} 
                                                 {{ agreement.created_by.get_full_name|default:agreement.created_by.username }}
                                             </small>
                                         </div>
@@ -182,7 +182,7 @@
                                             {% if agreement.status == 'completed' %}
                                                 {% translate "🎉 ¡El acuerdo ha sido completado con todas las firmas necesarias!" %}
                                             {% else %}
-                                                Faltan {{ agreement.max_signers|add:"-1"|add:agreement.signature_count|mul:"-1" }} firma(s) para completar el acuerdo
+                                                {% translate "Faltan" %} {{ agreement.max_signers|add:"-1"|add:agreement.signature_count|mul:"-1" }} {% translate "firma(s) para completar el acuerdo" %}
                                             {% endif %}
                                         </small>
                                     </div>

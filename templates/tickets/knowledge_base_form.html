@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ action }} Base de Conocimiento{% endblock %}
+{% block title %}{{ action }} {% translate "Base de Conocimiento" %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -17,7 +17,7 @@
 
     <!-- Header -->
     <h2 class="mb-4">
-        <i class="bi bi-book"></i> {{ action }} Base de Conocimiento
+        <i class="bi bi-book"></i> {{ action }} {% translate "Base de Conocimiento" %}
     </h2>
 
     <!-- Formulario -->

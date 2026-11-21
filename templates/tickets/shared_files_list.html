@@ -231,7 +231,7 @@
                                 <div><i class="bi bi-person"></i> {{ file.uploaded_by.username|default:"Anónimo" }}</div>
                                 <div><i class="bi bi-calendar"></i> {{ file.created_at|date:"d/m/Y H:i" }}</div>
                                 <div><i class="bi bi-hdd"></i> {{ file.get_file_size_display }}</div>
-                                <div><i class="bi bi-download"></i> {{ file.download_count }} descarga{{ file.download_count|pluralize }}</div>
+                                <div><i class="bi bi-download"></i> {{ file.download_count }} {% translate "descarga" %}{{ file.download_count|pluralize }}</div>
                             </div>
                             
                             {% if file.is_public %}
@@ -284,7 +284,7 @@
                     
                     <li class="page-item active">
                         <span class="page-link">
-                            Página {{ files.number }} de {{ files.paginator.num_pages }}
+                            {% translate "Página" %} {{ files.number }} {% translate "de" %} {{ files.paginator.num_pages }}
                         </span>
                     </li>
                     

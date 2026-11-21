@@ -42,7 +42,7 @@
                                         <i class="fas fa-file fa-2x"></i>
                                         <div class="mt-2">
                                             <strong>{{ documentation.items.count }}</strong><br>
-                                            <small>Archivo{{ documentation.items.count|pluralize }}</small>
+                                            <small>{% translate "Archivo" %}{{ documentation.items.count|pluralize }}</small>
                                         </div>
                                     </div>
                                 </div>
@@ -76,7 +76,7 @@
                             <li>{{ item.number }}. {{ item.name }}</li>
                             {% endfor %}
                             {% if documentation.items.count > 5 %}
-                            <li class="text-muted">... y {{ documentation.items.count|add:"-5" }} archivo{{ documentation.items.count|add:"-5"|pluralize }} más</li>
+                            <li class="text-muted">{% translate "... y" %} {{ documentation.items.count|add:"-5" }} {% translate "archivo" %}{{ documentation.items.count|add:"-5"|pluralize }} {% translate "más" %}</li>
                             {% endif %}
                         </ul>
                     </div>

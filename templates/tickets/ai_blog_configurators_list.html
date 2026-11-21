@@ -96,7 +96,7 @@
                                         </div>
                                     </div>
                                     <div class="col-6">
-                                        <h6 class="text-info mb-1">{{ config.frequency_days }} día{{ config.frequency_days|pluralize }}</h6>
+                                        <h6 class="text-info mb-1">{{ config.frequency_days }} {% translate "día" %}{{ config.frequency_days|pluralize }}</h6>
                                         <small class="text-muted">{% translate "Frecuencia" %}</small>
                                     </div>
                                 </div>
@@ -121,15 +121,15 @@
                                 <div class="row text-sm">
                                     <div class="col-12 mb-2">
                                         <i class="fas fa-clock text-muted me-1"></i>
-                                        <small class="text-muted">Horario: {{ config.schedule_time|default:"No programado" }}</small>
+                                        <small class="text-muted">{% translate "Horario:" %} {{ config.schedule_time|default:"No programado" }}</small>
                                     </div>
                                     <div class="col-12 mb-2">
                                         <i class="fas fa-calendar text-muted me-1"></i>
-                                        <small class="text-muted">Próxima: {{ config.next_run_formatted }}</small>
+                                        <small class="text-muted">{% translate "Próxima:" %} {{ config.next_run_formatted }}</small>
                                     </div>
                                     <div class="col-12">
                                         <i class="fas fa-history text-muted me-1"></i>
-                                        <small class="text-muted">Última: {{ config.last_run_formatted }}</small>
+                                        <small class="text-muted">{% translate "Última:" %} {{ config.last_run_formatted }}</small>
                                     </div>
                                 </div>
                             </div>

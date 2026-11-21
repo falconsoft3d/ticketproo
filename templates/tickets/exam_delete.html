@@ -96,8 +96,7 @@
                     {% if exam.get_total_attempts > 0 %}
                     <div class="alert alert-danger mt-3">
                         <i class="bi bi-exclamation-triangle"></i>
-                        <strong>{% translate "¡Cuidado!" %}</strong> Este examen tiene {{ exam.get_total_attempts }} intento{{ exam.get_total_attempts|pluralize }} registrado{{ exam.get_total_attempts|pluralize }}.
-                        Al eliminarlo, también se perderán todos los resultados y estadísticas de los participantes.
+                        <strong>{% translate "¡Cuidado!" %}</strong> {% translate "Este examen tiene" %} {{ exam.get_total_attempts }} {% translate "intento" %}{{ exam.get_total_attempts|pluralize }} {% translate "registrado" %}{{ exam.get_total_attempts|pluralize }}{% translate ". Al eliminarlo, también se perderán todos los resultados y estadísticas de los participantes." %}
                     </div>
                     {% endif %}
                 </div>

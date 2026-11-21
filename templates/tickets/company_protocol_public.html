@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container my-5">
@@ -12,7 +12,7 @@
             <i class="bi bi-file-text fs-1"></i>
         </div>
         <h1 class="display-5 fw-bold text-primary">{{ protocol.title }}</h1>
-        <p class="lead text-muted">Versión {{ protocol.version }}</p>
+        <p class="lead text-muted">{% translate "Versión" %} {{ protocol.version }}</p>
         {% if protocol.company %}
         <p class="text-muted">
             <i class="bi bi-building"></i> {{ protocol.company.name }}
@@ -31,7 +31,7 @@
                         </h5>
                         <div class="d-flex gap-2">
                             <span class="badge bg-success fs-6">{% translate "Público" %}</span>
-                            <span class="badge bg-primary fs-6">v{{ protocol.version }}</span>
+                            <span class="badge bg-primary fs-6">{% translate "v" %}{{ protocol.version }}</span>
                         </div>
                     </div>
                 </div>
@@ -66,7 +66,7 @@
                         </div>
                         <div class="col-md-6">
                             <small class="text-muted d-block">{% translate "Palabras" %}</small>
-                            <span class="fw-bold">{{ protocol.get_word_count }} palabras</span>
+                            <span class="fw-bold">{{ protocol.get_word_count }} {% translate "palabras" %}</span>
                         </div>
                         <div class="col-md-6 mt-3">
                             <small class="text-muted d-block">{% translate "Creado" %}</small>
@@ -84,7 +84,7 @@
                         <div class="col-md-6 mt-3">
                             <small class="text-muted d-block">{% translate "Vistas públicas" %}</small>
                             <span class="fw-bold">
-                                <i class="bi bi-eye text-success"></i> {{ protocol.public_views_count }} vista{{ protocol.public_views_count|pluralize }}
+                                <i class="bi bi-eye text-success"></i> {{ protocol.public_views_count }} {% translate "vista" %}{{ protocol.public_views_count|pluralize }}
                             </span>
                         </div>
                         {% endif %}

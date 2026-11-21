@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{{ task.title }} - TicketProo{% endblock %}
+{% block title %}{{ task.title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -131,7 +131,7 @@
             </div>
             <div class="card-body">
                 <p class="text-danger mb-0">
-                    Esta tarea venció el {{ task.due_date|date:"d/m/Y H:i" }}
+                    {% translate "Esta tarea venció el" %} {{ task.due_date|date:"d/m/Y H:i" }}
                 </p>
             </div>
         </div>

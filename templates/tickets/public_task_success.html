@@ -13,7 +13,7 @@
         <div class="container">
             <span class="navbar-brand mb-0 h1">
                 <i class="bi bi-check-circle"></i> 
-                Gestión Creada - {{ user.get_full_name|default:user.username }}
+                {% translate "Gestión Creada -" %} {{ user.get_full_name|default:user.username }}
             </span>
         </div>
     </nav>
@@ -32,9 +32,9 @@
                         <div class="alert alert-success">
                             <h5><i class="bi bi-calendar-check"></i> {% translate "Gestión para Hoy" %}</h5>
                             <p class="mb-0">
-                                {% translate "Se ha creado tu gestión diaria con" %} <strong>{{ task_count }}</strong> tarea{{ task_count|pluralize }} 
-                                para <strong>{{ session.date|date:"l, d \d\e F \d\e Y" }}</strong>.<br>
-                                <strong>{{ completed_count }}</strong> tarea{{ completed_count|pluralize }} marcada{{ completed_count|pluralize }} como completada{{ completed_count|pluralize }}.
+                                {% translate "Se ha creado tu gestión diaria con" %} <strong>{{ task_count }}</strong> {% translate "tarea" %}{{ task_count|pluralize }} 
+                                {% translate "para" %} <strong>{{ session.date|date:"l, d \d\e F \d\e Y" }}</strong>.<br>
+                                <strong>{{ completed_count }}</strong> {% translate "tarea" %}{{ completed_count|pluralize }} {% translate "marcada" %}{{ completed_count|pluralize }} {% translate "como completada" %}{{ completed_count|pluralize }}.
                             </p>
                         </div>
                         

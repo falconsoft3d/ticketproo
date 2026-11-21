@@ -116,7 +116,7 @@
                 <div class="col-lg-6">
                     {% if is_authenticated %}
                         <h1 class="display-4 fw-bold mb-4">
-                            ¡Hola, {{ user.username }}! 👋
+                            {% translate "¡Hola," %} {{ user.username }}! 👋
                         </h1>
                         <p class="lead mb-4">
                             {% translate "Bienvenido de vuelta a TicketProo. Aquí tienes un resumen de tu actividad" %} 
@@ -416,7 +416,7 @@
             <hr class="my-4">
             <div class="row">
                 <div class="col-12 text-center">
-                    <p class="text-muted mb-0">&copy; 2025 TicketProo. {% translate "Todos los derechos reservados." %} | {% translate "Desarrollado por" %} Marlon Falcón Hdez</p>
+                    <p class="text-muted mb-0">&copy; 2025 TicketProo. {% translate "Todos los derechos reservados." %} | {% translate "Desarrollado por" %} {% translate "Marlon Falcón Hdez" %}</p>
                 </div>
             </div>
         </div>

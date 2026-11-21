@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -96,7 +96,7 @@
                 <div class="card-header bg-light">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-list-ul me-2"></i>
-                        Empresas ({{ page_obj.paginator.count }} resultados)
+                        {% translate "Empresas (" %}{{ page_obj.paginator.count }} {% translate "resultados)" %}
                     </h5>
                 </div>
                 <div class="card-body p-0">

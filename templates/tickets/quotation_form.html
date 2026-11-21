@@ -243,7 +243,7 @@
                         {% translate "Líneas de Cotización" %}
                     </h6>
                     <span class="badge bg-primary" id="totalAmount">
-                        Total: {{ currency_symbol }}<span id="totalValue">{{ quotation.get_total_amount|floatformat:2 }}</span>
+                        {% translate "Total:" %} {{ currency_symbol }}<span id="totalValue">{{ quotation.get_total_amount|floatformat:2 }}</span>
                     </span>
                 </div>
                 <div class="card-body p-0">

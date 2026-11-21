@@ -29,13 +29,13 @@
                             <h6 class="text-muted mb-3">{% translate "Este presupuesto contiene:" %}</h6>
                             <ul class="mb-0">
                                 <li><i class="bi bi-arrow-up-circle text-success me-1"></i>
-                                    {{ budget.income_items.count }} partida(s) de ingreso
+                                    {{ budget.income_items.count }} {% translate "partida(s) de ingreso" %}
                                 </li>
                                 <li><i class="bi bi-arrow-down-circle text-danger me-1"></i>
-                                    {{ budget.expense_items.count }} partida(s) de egreso
+                                    {{ budget.expense_items.count }} {% translate "partida(s) de egreso" %}
                                 </li>
                                 <li><i class="bi bi-clock-history text-secondary me-1"></i>
-                                    {{ budget.transactions.count }} transacción(es)
+                                    {{ budget.transactions.count }} {% translate "transacción(es)" %}
                                 </li>
                             </ul>
                         </div>

@@ -82,7 +82,7 @@
                 {% if course.get_classes_count > 0 %}
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle-fill"></i>
-                    <strong>{% translate "Nota:" %}</strong> Al eliminar este curso, también se eliminarán todas sus {{ course.get_classes_count }} clases asociadas.
+                    <strong>{% translate "Nota:" %}</strong> {% translate "Al eliminar este curso, también se eliminarán todas sus" %} {{ course.get_classes_count }} {% translate "clases asociadas." %}
                 </div>
                 {% endif %}
                 

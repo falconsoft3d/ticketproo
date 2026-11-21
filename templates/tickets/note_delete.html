@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -83,7 +83,7 @@
                             
                             <div class="mb-3">
                                 <label class="small text-muted">{% translate "Tickets relacionados" %}</label>
-                                <div class="fw-bold">{{ note.get_related_tickets_count }} ticket{{ note.get_related_tickets_count|pluralize:"s" }}</div>
+                                <div class="fw-bold">{{ note.get_related_tickets_count }} {% translate "ticket" %}{{ note.get_related_tickets_count|pluralize:"s" }}</div>
                             </div>
                         </div>
                     </div>

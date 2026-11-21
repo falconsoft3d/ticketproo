@@ -227,7 +227,7 @@
                         {% if cumplimiento.frequency_type == 'daily' %}
                             {% translate "🎯 Meta: Todos los días" %}
                         {% else %}
-                            🎯 Meta: {{ cumplimiento.target_days }} días al mes
+                            {% translate "🎯 Meta:" %} {{ cumplimiento.target_days }} {% translate "días al mes" %}
                         {% endif %}
                     </p>
                 </div>
@@ -258,11 +258,11 @@
                          style="width: {{ progress.percentage|floatformat:0 }}%; background: linear-gradient(90deg, #28a745 0%, #20c997 100%);"></div>
                 </div>
                 <div class="d-flex justify-content-between small">
-                    <span>{{ progress.percentage|floatformat:1 }}% completado</span>
+                    <span>{{ progress.percentage|floatformat:1 }}{% translate "% completado" %}</span>
                     {% if cumplimiento.frequency_type == 'daily' %}
-                        <span>Día {{ progress.days_elapsed }}/{{ progress.total_days_in_month }}</span>
+                        <span>{% translate "Día" %} {{ progress.days_elapsed }}/{{ progress.total_days_in_month }}</span>
                     {% else %}
-                        <span>{{ progress.remaining_days }} días restantes</span>
+                        <span>{{ progress.remaining_days }} {% translate "días restantes" %}</span>
                     {% endif %}
                 </div>
             </div>

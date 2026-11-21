@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load project_extras %}
 
-{% block title %}{{ task.name }} - Tareas Programadas{% endblock %}
+{% block title %}{{ task.name }} {% translate "- Tareas Programadas" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -174,7 +174,7 @@
                             {% widthratio task.success_count total_executions 100 as success_rate %}
                                 <div class="progress mb-2">
                                     <div class="progress-bar bg-success" style="width: {{ success_rate }}%">
-                                        {{ success_rate }}% exitosas
+                                        {{ success_rate }}{% translate "% exitosas" %}
                                     </div>
                                 </div>
                         {% endif %}
@@ -235,7 +235,7 @@
                             </td>
                             <td>
                                 {% if execution.execution_time %}
-                                    {{ execution.execution_time|floatformat:2 }}s
+                                    {{ execution.execution_time|floatformat:2 }}{% translate "s" %}
                                 {% else %}
                                     -
                                 {% endif %}

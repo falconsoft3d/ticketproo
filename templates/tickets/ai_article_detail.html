@@ -49,7 +49,7 @@
                 <div class="card-footer text-muted">
                     <i class="far fa-calendar"></i> {{ article.created_at|date:"d/m/Y H:i" }}
                     {% if article.word_count > 0 %}
-                        <span class="ms-3"><i class="fas fa-file-word"></i> {{ article.word_count }} palabras</span>
+                        <span class="ms-3"><i class="fas fa-file-word"></i> {{ article.word_count }} {% translate "palabras" %}</span>
                     {% endif %}
                 </div>
             </div>

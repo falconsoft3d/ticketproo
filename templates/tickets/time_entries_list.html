@@ -28,7 +28,7 @@
         <div class="col-md-6">
             <div class="card border-primary">
                 <div class="card-body text-center">
-                    <h4 class="text-primary">{{ total_horas }}h</h4>
+                    <h4 class="text-primary">{{ total_horas }}{% translate "h" %}</h4>
                     <small class="text-muted">{% translate "Total de Horas" %}</small>
                 </div>
             </div>
@@ -160,9 +160,9 @@
                                         </td>
                                         <td>
                                             {% if entry.fecha_salida %}
-                                                {{ entry.horas_trabajadas }}h
+                                                {{ entry.horas_trabajadas }}{% translate "h" %}
                                             {% else %}
-                                                <span class="text-primary">{{ entry.horas_trabajadas }}h</span>
+                                                <span class="text-primary">{{ entry.horas_trabajadas }}{% translate "h" %}</span>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -240,7 +240,7 @@
 
                                 <li class="page-item active">
                                     <span class="page-link">
-                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                        {% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}
                                     </span>
                                 </li>
 

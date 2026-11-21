@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -51,7 +51,7 @@
                                     </td>
                                     <td>
                                         <a href="{% url 'category_detail' category.pk %}" class="text-decoration-none">
-                                            <span class="badge bg-info">{{ category.ticket_count }} tickets</span>
+                                            <span class="badge bg-info">{{ category.ticket_count }} {% translate "tickets" %}</span>
                                         </a>
                                     </td>
                                     <td>

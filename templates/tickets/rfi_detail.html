@@ -100,7 +100,7 @@
                     <i class="bi bi-clock-history"></i>
                     <strong>{% translate "Días desde la solicitud:" %}</strong>
                     <span class="badge {% if rfi.days_since_request >= 7 %}bg-danger{% elif rfi.days_since_request >= 3 %}bg-warning text-dark{% else %}bg-success{% endif %}">
-                        {{ rfi.days_since_request }} día{{ rfi.days_since_request|pluralize }}
+                        {{ rfi.days_since_request }} {% translate "día" %}{{ rfi.days_since_request|pluralize }}
                     </span>
                 </div>
             </div>

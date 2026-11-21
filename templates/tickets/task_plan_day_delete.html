@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}Eliminar Día - {{ block.super }}{% endblock %}
+{% block title %}{% translate "Eliminar Día -" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -30,7 +30,7 @@
                             {% endif %}
                             <div class="mt-2">
                                 <span class="badge bg-info">
-                                    {{ day.tasks.count }} tarea{{ day.tasks.count|pluralize:",s" }}
+                                    {{ day.tasks.count }} {% translate "tarea" %}{{ day.tasks.count|pluralize:",s" }}
                                 </span>
                             </div>
                         </div>
@@ -41,7 +41,7 @@
                         <strong>{% translate "Se eliminarán también:" %}</strong>
                     </p>
                     <ul class="text-danger">
-                        <li>Todas las {{ day.tasks.count }} tarea{{ day.tasks.count|pluralize:",s" }} de este día</li>
+                        <li>{% translate "Todas las" %} {{ day.tasks.count }} {% translate "tarea" %}{{ day.tasks.count|pluralize:",s" }} {% translate "de este día" %}</li>
                     </ul>
                     {% endif %}
 

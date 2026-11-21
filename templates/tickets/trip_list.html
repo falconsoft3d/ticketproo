@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -50,7 +50,7 @@
                         
                         <div class="mb-2">
                             <span class="badge bg-info">
-                                <i class="bi bi-pin-map"></i> {{ trip.stops.count }} parada{{ trip.stops.count|pluralize }}
+                                <i class="bi bi-pin-map"></i> {{ trip.stops.count }} {% translate "parada" %}{{ trip.stops.count|pluralize }}
                             </span>
                             {% if trip.is_public %}
                             <span class="badge bg-success">

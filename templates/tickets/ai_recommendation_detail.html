@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -129,9 +129,9 @@
                     <div class="mt-2" style="white-space: pre-wrap; line-height: 1.6;">{{ recommendation.context_text }}</div>
                 </div>
                 <div class="mt-2 small text-muted">
-                    <i class="bi bi-person"></i> Creado por: {{ recommendation.created_by.get_full_name|default:recommendation.created_by.username }} |
+                    <i class="bi bi-person"></i> {% translate "Creado por:" %} {{ recommendation.created_by.get_full_name|default:recommendation.created_by.username }} |
                     <i class="bi bi-calendar3"></i> {{ recommendation.created_at|date:"d/m/Y H:i" }} |
-                    <i class="bi bi-graph-up"></i> {{ recommendation.get_usage_count }} uso{{ recommendation.get_usage_count|pluralize }}
+                    <i class="bi bi-graph-up"></i> {{ recommendation.get_usage_count }} {% translate "uso" %}{{ recommendation.get_usage_count|pluralize }}
                 </div>
             </div>
         </div>

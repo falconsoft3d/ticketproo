@@ -51,7 +51,7 @@
 
                     {% if exam.time_limit %}
                     <p class="text-muted small">
-                        <i class="bi bi-clock"></i> Tiempo límite: {{ exam.time_limit }} minutos
+                        <i class="bi bi-clock"></i> {% translate "Tiempo límite:" %} {{ exam.time_limit }} {% translate "minutos" %}
                     </p>
                     {% endif %}
                     

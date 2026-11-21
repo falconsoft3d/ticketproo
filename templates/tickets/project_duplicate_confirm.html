@@ -79,7 +79,7 @@
                     <div class="alert alert-success">
                         <h6 class="alert-heading">
                             <i class="bi bi-check-circle"></i> 
-                            "Copia de {{ project.name }}"
+                            {% translate '"Copia de' %} {{ project.name }}"
                         </h6>
                         <p class="mb-0">
                             {% translate "Se creará un nuevo proyecto con todas las características del original, incluyendo todos los cronogramas y tareas." %}
@@ -91,8 +91,8 @@
                             <h6>{% translate "Lo que se duplicará:" %}</h6>
                             <ul class="list-unstyled">
                                 <li><i class="bi bi-check text-success"></i> {% translate "Información básica del proyecto" %}</li>
-                                <li><i class="bi bi-check text-success"></i> {{ schedules_count }} cronograma(s)</li>
-                                <li><i class="bi bi-check text-success"></i> {{ total_tasks_count }} tarea(s)</li>
+                                <li><i class="bi bi-check text-success"></i> {{ schedules_count }} {% translate "cronograma(s)" %}</li>
+                                <li><i class="bi bi-check text-success"></i> {{ total_tasks_count }} {% translate "tarea(s)" %}</li>
                                 <li><i class="bi bi-check text-success"></i> {% translate "Dependencias entre tareas" %}</li>
                                 <li><i class="bi bi-check text-success"></i> {% translate "Asignaciones de usuarios" %}</li>
                                 <li><i class="bi bi-check text-success"></i> {% translate "Prioridades y fechas" %}</li>

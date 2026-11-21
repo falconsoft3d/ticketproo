@@ -27,7 +27,7 @@
                     {% if activity.opportunity %}
                         <i class="fas fa-bullseye"></i> {{ activity.opportunity.company.name }} - {{ activity.opportunity.name }}
                     {% elif activity.contact %}
-                        <i class="fas fa-user"></i> Contacto: {{ activity.contact.name }}
+                        <i class="fas fa-user"></i> {% translate "Contacto:" %} {{ activity.contact.name }}
                     {% else %}
                         <i class="fas fa-tasks"></i> {% translate "Actividad independiente" %}
                     {% endif %}
@@ -79,7 +79,7 @@
                         {% if activity.is_overdue and activity.status in 'pending,in_progress' %}
                             <div class="alert alert-danger">
                                 <i class="fas fa-exclamation-triangle"></i> 
-                                Esta actividad está vencida desde hace {{ activity.days_until_due|add:"-1" }} días.
+                                {% translate "Esta actividad está vencida desde hace" %} {{ activity.days_until_due|add:"-1" }} {% translate "días." %}
                             </div>
                         {% elif activity.is_due_today %}
                             <div class="alert alert-warning">
@@ -89,7 +89,7 @@
                         {% elif activity.is_due_soon %}
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle"></i> 
-                                Esta actividad vence en {{ activity.days_until_due }} días.
+                                {% translate "Esta actividad vence en" %} {{ activity.days_until_due }} {% translate "días." %}
                             </div>
                         {% endif %}
                     </div>
@@ -104,7 +104,7 @@
                         {% if activity.duration_minutes %}
                         <h6>{% translate "Duración Estimada" %}</h6>
                         <p class="mb-2">
-                            <i class="fas fa-stopwatch"></i> {{ activity.duration_minutes }} minutos
+                            <i class="fas fa-stopwatch"></i> {{ activity.duration_minutes }} {% translate "minutos" %}
                         </p>
                         {% endif %}
                         
@@ -131,7 +131,7 @@
                 <p>{{ activity.result|linebreaks }}</p>
                 <div class="text-muted">
                     <small>
-                        <i class="fas fa-calendar"></i> Completada el {{ activity.completed_date|date:"d/m/Y H:i" }}
+                        <i class="fas fa-calendar"></i> {% translate "Completada el" %} {{ activity.completed_date|date:"d/m/Y H:i" }}
                     </small>
                 </div>
             </div>

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load i18n %}
-{% block title %}Buscar en Odoo - {{ table.name }} - Ticket System{% endblock %}
+{% block title %}{% translate "Buscar en Odoo -" %} {{ table.name }} {% translate "- Ticket System" %}{% endblock %}
 {% block content %}
 <div class="container mt-4">
     <div class="col-lg-8 offset-lg-2">
@@ -37,7 +37,7 @@
                 </div>
 
                 <div class="card mb-3">
-                    <div class="card-header"><h6 class="mb-0">Campos que se leerán ({{ fields.count }})</h6></div>
+                    <div class="card-header"><h6 class="mb-0">{% translate "Campos que se leerán (" %}{{ fields.count }})</h6></div>
                     <div class="card-body">
                         <div class="row">
                             {% for field in fields %}

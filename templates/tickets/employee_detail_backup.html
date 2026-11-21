@@ -267,7 +267,7 @@
                                 {% elif employee.status == 'rejected' %}bg-danger
                                 {% endif %}"></div>
                             <div class="timeline-content">
-                                <h6>Estado Actual: {{ employee.get_status_display }}</h6>
+                                <h6>{% translate "Estado Actual:" %} {{ employee.get_status_display }}</h6>
                                 <p class="text-muted mb-0">{{ employee.updated_at|date:"d/m/Y H:i" }}</p>
                             </div>
                         </div>

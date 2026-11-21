@@ -3,7 +3,7 @@
 {% load static %}
 {% load project_extras %}
 
-{% block title %}{{ manual.title }} - Manual{% endblock %}
+{% block title %}{{ manual.title }} {% translate "- Manual" %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -16,11 +16,11 @@
             <p class="text-muted">{{ manual.description }}</p>
             {% endif %}
             <small class="text-muted">
-                <i class="bi bi-calendar3"></i> Creado el {{ manual.created_at|date:"d/m/Y" }}
+                <i class="bi bi-calendar3"></i> {% translate "Creado el" %} {{ manual.created_at|date:"d/m/Y" }}
                 {% if manual.created_by %}
                  {% translate "por" %} <strong>{{ manual.created_by.get_full_name|default:manual.created_by.username }}</strong>
                 {% endif %}
-                &mdash; <i class="bi bi-eye"></i> {{ manual.get_access_count }} acceso(s)
+                &mdash; <i class="bi bi-eye"></i> {{ manual.get_access_count }} {% translate "acceso(s)" %}
             </small>
         </div>
         <div class="d-flex gap-2 flex-shrink-0">
@@ -54,7 +54,7 @@
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="bi bi-clock-history"></i> {% translate "Historial de Accesos" %}</h5>
-            <span class="badge bg-secondary">{{ manual.get_access_count }} total</span>
+            <span class="badge bg-secondary">{{ manual.get_access_count }} {% translate "total" %}</span>
         </div>
         <div class="card-body p-0">
             {% if accesses %}

@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -39,7 +39,7 @@
                         <div class="text-end">
                             <small class="opacity-75">
                                 <i class="fas fa-eye me-1"></i>
-                                Visto {{ note.view_count }} vez{{ note.view_count|pluralize:"es" }}
+                                {% translate "Visto" %} {{ note.view_count }} {% translate "vez" %}{{ note.view_count|pluralize:"es" }}
                             </small>
                         </div>
                     </div>
@@ -104,7 +104,7 @@
                             {% translate "Esta nota ha sido compartida públicamente por su creador." %}
                         </p>
                         <small class="text-muted">
-                            Última actualización: {{ note.updated_at|date:"d/m/Y H:i" }}
+                            {% translate "Última actualización:" %} {{ note.updated_at|date:"d/m/Y H:i" }}
                         </small>
                     </div>
                 </div>

@@ -626,7 +626,7 @@ body { background: var(--ap-bg) !important; }
             </div>
             <div class="ap-time-cell">
                 <small>{% translate "Horas hoy" %}</small>
-                <b>{{ daily_hours|default:"0" }}h</b>
+                <b>{{ daily_hours|default:"0" }}{% translate "h" %}</b>
             </div>
         </div>
 
@@ -713,7 +713,7 @@ body { background: var(--ap-bg) !important; }
                         <span class="badge {{ ticket.get_age_badge_class }}" title="{{ ticket.get_age_in_hours|floatformat:1 }} {% translate "horas" %}">{{ ticket.get_age_display }}</span>
                     </td>
                     {% if is_agent %}
-                    <td class="ap-num">{% if ticket.hours %}{{ ticket.hours }}h{% else %}—{% endif %}</td>
+                    <td class="ap-num">{% if ticket.hours %}{{ ticket.hours }}{% translate "h" %}{% else %}—{% endif %}</td>
                     {% endif %}
                     <td class="ap-muted">{{ ticket.created_at|date:"d/m/Y H:i" }}</td>
                 </tr>

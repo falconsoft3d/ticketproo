@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{% translate "Colocar firmas" %} - {{ document.title }}{% endblock %}
+
+{% block content %}
+<style>
+    .sig-editor { display: flex; gap: 1rem; align-items: flex-start; }
+    .sig-sidebar { width: 300px; flex-shrink: 0; position: sticky; top: 80px; max-height: calc(100vh - 100px); overflow-y: auto; }
+    .sig-pages { flex: 1; min-width: 0; background: #e9ecef; border-radius: .5rem; padding: 1rem; }
+    .sig-page { position: relative; max-width: 900px; width: 100%; margin: 0 auto 1.25rem; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
+    .sig-page canvas { display: block; width: 100%; height: 100%; }
+    .sig-layer { position: absolute; inset: 0; cursor: crosshair; }
+    .sig-page-label { position: absolute; right: 8px; bottom: -1.1rem; font-size: .75rem; color: #6c757d; }
+    .sig-field { position: absolute; border: 2px dashed; border-radius: 4px; cursor: move; display: flex; align-items: center; justify-content: center; font-size: .72rem; font-weight: 600; user-select: none; touch-action: none; overflow: hidden; }
+    .sig-field.locked { cursor: not-allowed; border-style: solid; opacity: .6; }
+    .sig-field .sig-name { pointer-events: none; padding: 0 4px; text-align: center; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sig-field .sig-actions { position: absolute; top: 1px; right: 1px; display: none; gap: 2px; }
+    .sig-field:hover .sig-actions, .sig-field.active .sig-actions { display: flex; }
+    .sig-field .sig-btn { border: 0; width: 18px; height: 18px; border-radius: 3px; font-size: 11px; line-height: 18px; padding: 0; color: #fff; }
+    .sig-field .sig-resize { position: absolute; right: 0; bottom: 0; width: 12px; height: 12px; cursor: nwse-resize; }
+    .signer-option { cursor: pointer; border-left: 4px solid transparent; }
+    .signer-option.active .text-muted { color: rgba(255,255,255,.85) !important; }
+    @media (max-width: 991px) {
+        .sig-editor { flex-direction: column; }
+        .sig-sidebar { width: 100%; position: static; max-height: none; }
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'signature_document_detail' document.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+            <h4 class="mb-0"><i class="bi bi-bounding-box"></i> {{ document.title }}</h4>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span id="save-status" class="small text-muted"></span>
+            <button id="save-btn" class="btn btn-primary"><i class="bi bi-save"></i> {% translate "Guardar" %}</button>
+            <button id="save-continue-btn" class="btn btn-success"><i class="bi bi-share"></i> {% translate "Guardar y compartir" %}</button>
+        </div>
+    </div>
+
+    <div class="sig-editor">
+        <div class="sig-sidebar">
+            <div class="card mb-3">
+                <div class="card-header fw-semibold"><i class="bi bi-people"></i> {% translate "¿Quién firma?" %}</div>
+                <div class="list-group list-group-flush" id="signer-list"></div>
+                <div class="card-footer">
+                    <form method="post" action="{% url 'signature_signer_add' document.pk %}" id="add-signer-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="from" value="editor">
+                        <input type="text" name="name" maxlength="150" class="form-control form-control-sm mb-1" placeholder="{% translate 'Nuevo firmante' %}" required>
+                        <input type="email" name="email" class="form-control form-control-sm mb-1" placeholder="{% translate 'Email (opcional)' %}">
+                        <button class="btn btn-sm btn-outline-primary w-100"><i class="bi bi-person-plus"></i> {% translate "Añadir firmante" %}</button>
+                    </form>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body small">
+                    <p class="fw-semibold mb-2"><i class="bi bi-info-circle"></i> {% translate "Cómo funciona" %}</p>
+                    <ol class="ps-3 mb-2">
+                        <li>{% translate "Elige el firmante en la lista." %}</li>
+                        <li>{% translate "Haz clic en la página donde debe firmar." %}</li>
+                        <li>{% translate "Arrastra el recuadro para moverlo y usa la esquina para cambiar su tamaño." %}</li>
+                        <li>{% translate "Usa" %} <i class="bi bi-files"></i> {% translate "para copiar el recuadro en todas las páginas." %}</li>
+                    </ol>
+                    <div class="text-muted">{% translate "Total de recuadros" %}: <strong id="field-count">0</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sig-pages" id="pages">
+            <div class="text-center text-muted py-5" id="loading"><div class="spinner-border"></div><div class="mt-2">{% translate "Cargando PDF..." %}</div></div>
+        </div>
+    </div>
+</div>
+
+{{ signers_json|json_script:"signers-data" }}
+{{ fields_json|json_script:"fields-data" }}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="{% static 'js/signature_pdf.js' %}"></script>
+<script>
+(function () {
+    const PDF_URL = "{% url 'signature_document_pdf' document.pk %}";
+    const SAVE_URL = "{% url 'signature_document_fields_save' document.pk %}";
+    const DETAIL_URL = "{% url 'signature_document_detail' document.pk %}";
+    const T = {
+        signed: "{% translate 'ya firmó' %}",
+        saved: "{% translate 'Guardado' %}",
+        saving: "{% translate 'Guardando...' %}",
+        unsaved: "{% translate 'Cambios sin guardar' %}",
+        error: "{% translate 'Error al guardar' %}",
+        noSigner: "{% translate 'Primero añade un firmante.' %}",
+        lockedSigner: "{% translate 'Este firmante ya firmó; no se pueden añadir recuadros.' %}",
+        copyAll: "{% translate 'Copiar en todas las páginas' %}",
+        remove: "{% translate 'Eliminar' %}",
+        fields: "{% translate 'recuadro(s)' %}",
+        pdfError: "{% translate 'No se pudo cargar el PDF.' %}",
+    };
+
+    const signers = JSON.parse(document.getElementById('signers-data').textContent);
+    const signerById = Object.fromEntries(signers.map(s => [s.id, s]));
+    let fields = JSON.parse(document.getElementById('fields-data').textContent).map((f, i) => ({ ...f, key: 'f' + i }));
+    let keySeq = fields.length;
+    let activeSigner = (signers.find(s => !s.signed) || signers[0] || {}).id;
+    let pages = [];
+    let dirty = false;
+
+    const $status = document.getElementById('save-status');
+    function setDirty(v) {
+        dirty = v;
+        $status.textContent = v ? T.unsaved : '';
+        $status.className = 'small ' + (v ? 'text-warning' : 'text-muted');
+        document.getElementById('field-count').textContent = fields.length;
+        renderSignerList();
+    }
+
+    function hexToRgba(hex, a) {
+        const n = parseInt(hex.slice(1), 16);
+        return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+    }
+
+    // ---------- Lista de firmantes ----------
+    function renderSignerList() {
+        const list = document.getElementById('signer-list');
+        list.innerHTML = '';
+        signers.forEach(s => {
+            const count = fields.filter(f => f.signer === s.id).length;
+            const el = document.createElement('div');
+            el.className = 'list-group-item signer-option d-flex align-items-center gap-2' + (s.id === activeSigner ? ' active' : '');
+            el.style.borderLeftColor = s.color;
+            el.innerHTML = `<span class="rounded-circle flex-shrink-0" style="width:12px;height:12px;background:${s.color}"></span>
+                <div class="flex-fill text-truncate"><div class="fw-semibold text-truncate"></div>
+                <div class="small text-muted">${count} ${T.fields}${s.signed ? ' · <i class="bi bi-check2-circle text-success"></i> ' + T.signed : ''}</div></div>`;
+            el.querySelector('.fw-semibold').textContent = s.name;
+            el.addEventListener('click', () => { activeSigner = s.id; renderSignerList(); });
+            list.appendChild(el);
+        });
+    }
+
+    // ---------- Recuadros ----------
+    function drawFields() {
+        pages.forEach(p => { p.layer.innerHTML = ''; });
+        fields.forEach(drawField);
+    }
+
+    function drawField(f) {
+        const p = pages[f.page - 1];
+        if (!p) return;
+        const s = signerById[f.signer] || { name: '?', color: '#6c757d', signed: false };
+        const el = document.createElement('div');
+        el.className = 'sig-field' + (s.signed ? ' locked' : '');
+        el.dataset.key = f.key;
+        el.style.left = (f.x * 100) + '%';
+        el.style.top = (f.y * 100) + '%';
+        el.style.width = (f.w * 100) + '%';
+        el.style.height = (f.h * 100) + '%';
+        el.style.borderColor = s.color;
+        el.style.background = hexToRgba(s.color, 0.12);
+        el.style.color = s.color;
+        el.innerHTML = `<span class="sig-name"><i class="bi bi-pen"></i> </span>`;
+        el.querySelector('.sig-name').append(document.createTextNode(s.name));
+        if (!s.signed) {
+            el.insertAdjacentHTML('beforeend', `
+                <div class="sig-actions">
+                    <button type="button" class="sig-btn copy" title="${T.copyAll}" style="background:${s.color}"><i class="bi bi-files"></i></button>
+                    <button type="button" class="sig-btn del" title="${T.remove}" style="background:#dc3545"><i class="bi bi-x"></i></button>
+                </div>
+                <div class="sig-resize" style="background:${s.color}"></div>`);
+            el.querySelector('.del').addEventListener('click', e => {
+                e.stopPropagation();
+                fields = fields.filter(x => x.key !== f.key);
+                el.remove();
+                setDirty(true);
+            });
+            el.querySelector('.copy').addEventListener('click', e => {
+                e.stopPropagation();
+                pages.forEach(pg => {
+                    if (pg.num === f.page) return;
+                    const exists = fields.some(x => x.signer === f.signer && x.page === pg.num &&
+                        Math.abs(x.x - f.x) < 0.01 && Math.abs(x.y - f.y) < 0.01);
+                    if (!exists) {
+                        const nf = { signer: f.signer, page: pg.num, x: f.x, y: f.y, w: f.w, h: f.h, key: 'f' + (keySeq++) };
+                        fields.push(nf);
+                        drawField(nf);
+                    }
+                });
+                setDirty(true);
+            });
+            enableDrag(el, f, p);
+        }
+        p.layer.appendChild(el);
+    }
+
+    function enableDrag(el, f, p) {
+        el.addEventListener('pointerdown', e => {
+            if (e.target.closest('.sig-btn')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const resizing = !!e.target.closest('.sig-resize');
+            const rect = p.layer.getBoundingClientRect();
+            const start = { px: e.clientX, py: e.clientY, x: f.x, y: f.y, w: f.w, h: f.h };
+            el.setPointerCapture(e.pointerId);
+            el.classList.add('active');
+            let moved = false;
+
+            function move(ev) {
+                const dx = (ev.clientX - start.px) / rect.width;
+                const dy = (ev.clientY - start.py) / rect.height;
+                if (Math.abs(dx) + Math.abs(dy) > 0.002) moved = true;
+                if (resizing) {
+                    f.w = Math.min(Math.max(start.w + dx, 0.04), 1 - f.x);
+                    f.h = Math.min(Math.max(start.h + dy, 0.02), 1 - f.y);
+                    el.style.width = (f.w * 100) + '%';
+                    el.style.height = (f.h * 100) + '%';
+                } else {
+                    f.x = Math.min(Math.max(start.x + dx, 0), 1 - f.w);
+                    f.y = Math.min(Math.max(start.y + dy, 0), 1 - f.h);
+                    el.style.left = (f.x * 100) + '%';
+                    el.style.top = (f.y * 100) + '%';
+                }
+            }
+            function up() {
+                el.removeEventListener('pointermove', move);
+                el.removeEventListener('pointerup', up);
+                el.removeEventListener('pointercancel', up);
+                el.classList.remove('active');
+                if (moved) setDirty(true);
+            }
+            el.addEventListener('pointermove', move);
+            el.addEventListener('pointerup', up);
+            el.addEventListener('pointercancel', up);
+        });
+    }
+
+    function onLayerClick(p, e) {
+        if (e.target !== p.layer) return;
+        const s = signerById[activeSigner];
+        if (!s) { alert(T.noSigner); return; }
+        if (s.signed) { alert(T.lockedSigner); return; }
+        const rect = p.layer.getBoundingClientRect();
+        // Tamaño por defecto: ~170 x 55 puntos PDF
+        const w = Math.min(170 / p.width, 0.9);
+        const h = Math.min(55 / p.height, 0.5);
+        let x = (e.clientX - rect.left) / rect.width - w / 2;
+        let y = (e.clientY - rect.top) / rect.height - h / 2;
+        x = Math.min(Math.max(x, 0), 1 - w);
+        y = Math.min(Math.max(y, 0), 1 - h);
+        const f = { signer: s.id, page: p.num, x, y, w, h, key: 'f' + (keySeq++) };
+        fields.push(f);
+        drawField(f);
+        setDirty(true);
+    }
+
+    // ---------- Guardar ----------
+    async function save() {
+        $status.textContent = T.saving;
+        $status.className = 'small text-muted';
+        const payload = { fields: fields.map(f => ({ signer: f.signer, page: f.page, x: f.x, y: f.y, w: f.w, h: f.h })) };
+        const res = await fetch(SAVE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': SignaturePdf.getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]').value },
+            body: JSON.stringify(payload),
+            credentials: 'same-origin',
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+            $status.textContent = data.error || T.error;
+            $status.className = 'small text-danger';
+            throw new Error('save failed');
+        }
+        dirty = false;
+        $status.textContent = T.saved;
+        $status.className = 'small text-success';
+        return data;
+    }
+
+    document.getElementById('save-btn').addEventListener('click', () => save().catch(() => {}));
+    document.getElementById('save-continue-btn').addEventListener('click', () => save().then(() => { window.location = DETAIL_URL; }).catch(() => {}));
+    document.getElementById('add-signer-form').addEventListener('submit', function (e) {
+        if (!dirty) return;
+        e.preventDefault();
+        save().then(() => this.submit()).catch(() => {});
+    });
+    window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+    // ---------- Init ----------
+    renderSignerList();
+    document.getElementById('field-count').textContent = fields.length;
+    const container = document.getElementById('pages');
+    SignaturePdf.renderPdf(container, PDF_URL, {
+        onPage: p => p.layer.addEventListener('click', e => onLayerClick(p, e)),
+    }).then(r => {
+        document.getElementById('loading').remove();
+        pages = r.pages;
+        drawFields();
+    }).catch(err => {
+        console.error(err);
+        document.getElementById('loading').innerHTML = '<div class="text-danger">' + T.pdfError + '</div>';
+    });
+})();
+</script>
+{% endblock %}

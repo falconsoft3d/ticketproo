@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ qr_code.title }} - QR Público{% endblock %}
+{% block title %}{{ qr_code.title }} {% translate "- QR Público" %}{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
@@ -15,7 +15,7 @@
                         {{ qr_code.title }}
                     </h3>
                     <small class="opacity-75">
-                        Código QR tipo {{ qr_code.get_qr_type_display }}
+                        {% translate "Código QR tipo" %} {{ qr_code.get_qr_type_display }}
                     </small>
                 </div>
                 
@@ -101,10 +101,10 @@
                     <!-- Footer Info -->
                     <div class="text-muted small">
                         <i class="bi bi-clock"></i>
-                        Creado el {{ qr_code.created_at|date:"d/m/Y" }}
+                        {% translate "Creado el" %} {{ qr_code.created_at|date:"d/m/Y" }}
                         <br>
                         <i class="bi bi-eye"></i>
-                        {{ qr_code.public_views }} vista{{ qr_code.public_views|pluralize:"s" }}
+                        {{ qr_code.public_views }} {% translate "vista" %}{{ qr_code.public_views|pluralize:"s" }}
                     </div>
                 </div>
             </div>

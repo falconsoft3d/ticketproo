@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{{ meeting.title }} - Reunión - TicketProo{% endblock %}
+{% block title %}{{ meeting.title }} {% translate "- Reunión - TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -69,7 +69,7 @@
                             <strong><i class="bi bi-clock"></i> {% translate "Duración:" %}</strong><br>
                             <span class="text-muted">
                                 {% if meeting.duration_minutes %}
-                                    {{ meeting.duration_minutes }} minutos
+                                    {{ meeting.duration_minutes }} {% translate "minutos" %}
                                 {% else %}
                                     {% translate "No especificada" %}
                                 {% endif %}
@@ -112,7 +112,7 @@
             <div class="card shadow mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-people"></i> Participantes ({{ meeting.participants.count }})
+                        <i class="bi bi-people"></i> {% translate "Participantes (" %}{{ meeting.participants.count }})
                     </h5>
                 </div>
                 <div class="card-body">
@@ -164,7 +164,7 @@
                     
                     {% if meeting.attachments.exists %}
                     <div class="mb-3">
-                        <strong><i class="bi bi-paperclip"></i> Archivos adjuntos ({{ meeting.attachments.count }}):</strong>
+                        <strong><i class="bi bi-paperclip"></i> {% translate "Archivos adjuntos (" %}{{ meeting.attachments.count }}):</strong>
                         <div class="list-group mt-2">
                             {% for attachment in meeting.attachments.all %}
                             <div class="list-group-item d-flex justify-content-between align-items-center">
@@ -173,9 +173,8 @@
                                     <div>
                                         <strong>{{ attachment.filename }}</strong><br>
                                         <small class="text-muted">
-                                            {{ attachment.get_file_size_display }} - 
-                                            Subido por {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }} 
-                                            el {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
+                                            {{ attachment.get_file_size_display }} {% translate "- Subido por" %} {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }} 
+                                            {% translate "el" %} {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
                                         </small>
                                     </div>
                                 </div>
@@ -246,7 +245,7 @@
                                     <i class="bi bi-check-circle"></i> 
                                     <strong>{% translate "Completado:" %}</strong> {% translate "Transcripción y análisis finalizados." %}
                                     {% if meeting.transcription_date %}
-                                        <br><small>Procesado el {{ meeting.transcription_date|date:"d/m/Y H:i" }}</small>
+                                        <br><small>{% translate "Procesado el" %} {{ meeting.transcription_date|date:"d/m/Y H:i" }}</small>
                                     {% endif %}
                                 </div>
                             {% elif meeting.transcription_status == 'failed' %}
@@ -297,7 +296,7 @@
                         <div class="text-muted small">
                             <i class="bi bi-robot"></i> {% translate "Transcripción procesada automáticamente con IA" %}
                             {% if meeting.transcription_date %}
-                                el {{ meeting.transcription_date|date:"d/m/Y H:i" }}
+                                {% translate "el" %} {{ meeting.transcription_date|date:"d/m/Y H:i" }}
                             {% endif %}
                         </div>
                     </div>

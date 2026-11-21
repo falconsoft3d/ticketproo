@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}Eliminar Reunión - {{ meeting.title }} - TicketProo{% endblock %}
+{% block title %}{% translate "Eliminar Reunión -" %} {{ meeting.title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -93,7 +93,7 @@
                         {% if meeting.participants.exists %}
                         <div class="col-md-6 mb-3">
                             <strong><i class="bi bi-people"></i> {% translate "Participantes:" %}</strong><br>
-                            <span class="text-muted">{{ meeting.participants.count }} personas</span>
+                            <span class="text-muted">{{ meeting.participants.count }} {% translate "personas" %}</span>
                         </div>
                         {% endif %}
                         
@@ -157,7 +157,7 @@
                                 <li class="mb-2">
                                     <i class="bi bi-check text-danger"></i> 
                                     <strong>{% translate "Transcripción completa" %}</strong>
-                                    <br><small class="text-muted">{{ meeting.transcription_text|length }} caracteres</small>
+                                    <br><small class="text-muted">{{ meeting.transcription_text|length }} {% translate "caracteres" %}</small>
                                 </li>
                                 {% endif %}
                                 

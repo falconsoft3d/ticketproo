@@ -276,7 +276,7 @@
                                 <h5 class="card-title">
                                     <i class="bi bi-clock-history text-info"></i> {% translate "Horas Consumidas" %}
                                 </h5>
-                                <h3 class="text-info">{{ total_hours }} h</h3>
+                                <h3 class="text-info">{{ total_hours }} {% translate "h" %}</h3>
                                 <p class="text-muted mb-0">
                                     {% translate "Total de horas trabajadas en tickets" %}
                                     <span class="text-info ms-1">{% translate "Ver detalle" %} <i class="bi bi-arrow-right"></i></span>
@@ -472,18 +472,18 @@
                                         <div class="d-flex gap-2">
                                             {% if status_filter != 'all' %}
                                                 <span class="badge bg-light text-dark small">
-                                                    Estado: {{ status_filter|title }}
+                                                    {% translate "Estado:" %} {{ status_filter|title }}
                                                 </span>
                                             {% endif %}
                                             {% if priority_filter != 'all' %}
                                                 <span class="badge bg-light text-dark small">
-                                                    Prioridad: {{ priority_filter|title }}
+                                                    {% translate "Prioridad:" %} {{ priority_filter|title }}
                                                 </span>
                                             {% endif %}
                                         </div>
                                     {% endif %}
                                     <span class="badge bg-light text-dark">
-                                        Total: {{ all_tickets.paginator.count }}
+                                        {% translate "Total:" %} {{ all_tickets.paginator.count }}
                                     </span>
                                 </div>
                             </div>
@@ -580,7 +580,7 @@
                                                         <div class="mt-1">
                                                             <small class="text-info">
                                                                 <i class="bi bi-arrow-right"></i> 
-                                                                Asignado: {{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}
+                                                                {% translate "Asignado:" %} {{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}
                                                             </small>
                                                         </div>
                                                         {% endif %}
@@ -622,7 +622,7 @@
                                     
                                     <li class="page-item active">
                                         <span class="page-link">
-                                            Página {{ all_tickets.number }} de {{ all_tickets.paginator.num_pages }}
+                                            {% translate "Página" %} {{ all_tickets.number }} {% translate "de" %} {{ all_tickets.paginator.num_pages }}
                                         </span>
                                     </li>
                                     
@@ -644,8 +644,8 @@
                             <div class="text-center mt-2">
                                 <small class="text-muted">
                                     <i class="bi bi-info-circle"></i>
-                                    Mostrando tickets {{ all_tickets.start_index }} - {{ all_tickets.end_index }} 
-                                    de {{ all_tickets.paginator.count }} total
+                                    {% translate "Mostrando tickets" %} {{ all_tickets.start_index }} - {{ all_tickets.end_index }} 
+                                    {% translate "de" %} {{ all_tickets.paginator.count }} {% translate "total" %}
                                 </small>
                             </div>
                         </div>
@@ -669,13 +669,13 @@
             <div class="container">
                 <div class="row">
                     <div class="col-md-6">
-                        <h6>Portal de Estadísticas - {{ company.name }}</h6>
+                        <h6>{% translate "Portal de Estadísticas -" %} {{ company.name }}</h6>
                         <p class="mb-0 text-muted">{% translate "Información actualizada en tiempo real" %}</p>
                     </div>
                     <div class="col-md-6 text-md-end">
                         <small class="text-muted">
                             <i class="bi bi-clock"></i> 
-                            Última actualización: {{ "now"|date:"d/m/Y H:i" }}
+                            {% translate "Última actualización:" %} {{ "now"|date:"d/m/Y H:i" }}
                         </small>
                     </div>
                 </div>

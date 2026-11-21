@@ -14,7 +14,7 @@
                         <i class="bi bi-{% if link %}pencil{% else %}plus-circle{% endif %}"></i>
                         {% if link %}{% translate "Editar Enlace" %}{% else %}{% translate "Agregar Nuevo Enlace" %}{% endif %}
                     </h4>
-                    <small>Grupo: {{ group.title }}</small>
+                    <small>{% translate "Grupo:" %} {{ group.title }}</small>
                 </div>
 
                 <div class="card-body">

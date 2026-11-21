@@ -43,7 +43,7 @@
         </div>
         <div class="col-md-6 text-end">
             <small class="text-muted">
-                Total: {{ procedures.paginator.count }} procedimiento{{ procedures.paginator.count|pluralize }}
+                {% translate "Total:" %} {{ procedures.paginator.count }} {% translate "procedimiento" %}{{ procedures.paginator.count|pluralize }}
             </small>
         </div>
     </div>
@@ -167,7 +167,7 @@
 
             <li class="page-item active">
                 <span class="page-link">
-                    Página {{ procedures.number }} de {{ procedures.paginator.num_pages }}
+                    {% translate "Página" %} {{ procedures.number }} {% translate "de" %} {{ procedures.paginator.num_pages }}
                 </span>
             </li>
 

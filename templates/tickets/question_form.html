@@ -14,7 +14,7 @@
                         <i class="bi bi-question-circle"></i> 
                         {% if question %}{% translate "Editar Pregunta" %}{% else %}{% translate "Agregar Nueva Pregunta" %}{% endif %}
                     </h3>
-                    <small class="text-muted">Examen: {{ exam.title }}</small>
+                    <small class="text-muted">{% translate "Examen:" %} {{ exam.title }}</small>
                 </div>
                 <div class="card-body">
                     <form method="post">

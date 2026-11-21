@@ -77,7 +77,7 @@
                     <i class="bi bi-circle-fill"></i> {{ employee.get_status_display }}
                 </span>
                 <div class="mt-2">
-                    <small>Aplicó: {{ employee.created_at|date:"d/m/Y" }}</small>
+                    <small>{% translate "Aplicó:" %} {{ employee.created_at|date:"d/m/Y" }}</small>
                 </div>
             </div>
         </div>
@@ -126,7 +126,7 @@
                         {% if employee.hiring_meeting_opinion %}
                         <div class="mt-2">
                             <small class="text-success">
-                                <i class="bi bi-check-circle"></i> Última actualización: {{ employee.updated_at|date:"d/m/Y H:i" }}
+                                <i class="bi bi-check-circle"></i> {% translate "Última actualización:" %} {{ employee.updated_at|date:"d/m/Y H:i" }}
                             </small>
                         </div>
                         {% endif %}

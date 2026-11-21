@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -52,10 +52,10 @@
                     <hr>
                     <div class="row text-muted small">
                         <div class="col-md-6">
-                            <p><i class="bi bi-person"></i> Creado por: {{ event.created_by.get_full_name|default:event.created_by.username }}</p>
+                            <p><i class="bi bi-person"></i> {% translate "Creado por:" %} {{ event.created_by.get_full_name|default:event.created_by.username }}</p>
                         </div>
                         <div class="col-md-6">
-                            <p><i class="bi bi-clock-history"></i> Fecha de creación: {{ event.created_at|date:"d/m/Y H:i" }}</p>
+                            <p><i class="bi bi-clock-history"></i> {% translate "Fecha de creación:" %} {{ event.created_at|date:"d/m/Y H:i" }}</p>
                         </div>
                     </div>
                 </div>

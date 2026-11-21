@@ -167,7 +167,7 @@
                             <h4 class="mb-0">
                                 <span class="badge bg-{% if progress.overall_percentage >= 75 %}success{% elif progress.overall_percentage >= 50 %}warning{% else %}danger{% endif %}" 
                                       style="font-size: 1.2rem;">
-                                    {{ progress.overall_percentage }}% Cumplimiento
+                                    {{ progress.overall_percentage }}{% translate "% Cumplimiento" %}
                                 </span>
                             </h4>
                         </div>
@@ -177,7 +177,7 @@
                 <div class="card-footer">
                     <div class="d-flex justify-content-between align-items-center">
                         <small class="text-muted">
-                            <i class="bi bi-clock"></i> Creado: {{ plan.created_at|date:"d/m/Y" }}
+                            <i class="bi bi-clock"></i> {% translate "Creado:" %} {{ plan.created_at|date:"d/m/Y" }}
                         </small>
                         <div>
                             <a href="{% url 'sales_plan_edit' plan.pk %}" class="btn btn-sm btn-outline-primary">

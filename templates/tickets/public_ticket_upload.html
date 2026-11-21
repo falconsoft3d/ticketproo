@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subir Archivos - Ticket #{{ ticket.ticket_number }}</title>
+    <title>{% translate "Subir Archivos - Ticket #" %}{{ ticket.ticket_number }}</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
@@ -199,7 +199,7 @@
                 <div class="file-restrictions">
                     <h6><i class="bi bi-info-circle"></i> {% translate "Restricciones de Archivos" %}</h6>
                     <ul class="mb-0">
-                        <li><strong>{% translate "Tamaño máximo:" %}</strong> {{ max_file_size_mb }}MB por archivo</li>
+                        <li><strong>{% translate "Tamaño máximo:" %}</strong> {{ max_file_size_mb }}{% translate "MB por archivo" %}</li>
                         <li><strong>{% translate "Tipos permitidos:" %}</strong> 
                             {% for ext in allowed_extensions %}
                                 <code>{{ ext }}</code>{% if not forloop.last %}, {% endif %}

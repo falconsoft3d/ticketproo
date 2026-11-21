@@ -147,7 +147,7 @@
         </form>
         {% if query %}
         <p class="ap-cat-result">
-            {% translate "Resultados para" %} <strong>{{ query }}</strong> · {{ catalogs|length }} catálogo(s) encontrado(s)
+            {% translate "Resultados para" %} <strong>{{ query }}</strong> · {{ catalogs|length }} {% translate "catálogo(s) encontrado(s)" %}
         </p>
         {% endif %}
     </div>
@@ -164,7 +164,7 @@
                 <h2>{{ catalog.name }}</h2>
                 {% if catalog.description %}<p>{{ catalog.description }}</p>{% endif %}
             </div>
-            <span class="ap-cat-count">{{ lines|length }} producto{{ lines|length|pluralize }}</span>
+            <span class="ap-cat-count">{{ lines|length }} {% translate "producto" %}{{ lines|length|pluralize }}</span>
         </div>
 
         {% if lines %}
@@ -184,7 +184,7 @@
 
                     <div class="ap-prod-price">
                         <strong>{{ line.product.price_with_currency }}</strong>
-                        {% if line.quantity > 1 %}<span class="ap-prod-qty">Cantidad: {{ line.quantity }}</span>{% endif %}
+                        {% if line.quantity > 1 %}<span class="ap-prod-qty">{% translate "Cantidad:" %} {{ line.quantity }}</span>{% endif %}
                     </div>
 
                     {% if line.notes %}
@@ -208,7 +208,7 @@
                     <div class="ap-prod-links">
                         <a href="{% url 'public_product_detail' line.product.pk %}">{% translate "Ver detalle ›" %}</a>
                         {% if videos %}
-                        <a href="{% url 'public_product_detail' line.product.pk %}">Videos ({{ videos|length }}) ›</a>
+                        <a href="{% url 'public_product_detail' line.product.pk %}">{% translate "Videos (" %}{{ videos|length }}) ›</a>
                         {% endif %}
                     </div>
                     {% endwith %}

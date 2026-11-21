@@ -81,7 +81,7 @@
                         <div class="alert alert-info">
                             <small>
                                 <i class="bi bi-info-circle me-1"></i>
-                                Creado el {{ counter.created_at|date:"d/m/Y H:i" }} por {{ counter.user.get_full_name|default:counter.user.username }}
+                                {% translate "Creado el" %} {{ counter.created_at|date:"d/m/Y H:i" }} {% translate "por" %} {{ counter.user.get_full_name|default:counter.user.username }}
                             </small>
                         </div>
                         {% endif %}

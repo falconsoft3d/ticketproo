@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load i18n %}
-{% block title %}Backup Base de Datos - {{ connection.name }} - Ticket System{% endblock %}
+{% block title %}{% translate "Backup Base de Datos -" %} {{ connection.name }} {% translate "- Ticket System" %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -8,7 +8,7 @@
         <nav aria-label="{% translate 'breadcrumb' %}">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{% url 'odoo_connection_list' %}">{% translate "Conexiones" %}</a></li>
-                <li class="breadcrumb-item active">Backup de {{ connection.name }}</li>
+                <li class="breadcrumb-item active">{% translate "Backup de" %} {{ connection.name }}</li>
             </ol>
         </nav>
 

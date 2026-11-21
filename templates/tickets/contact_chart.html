@@ -20,7 +20,7 @@
                     <h5 class="mb-0">
                         <i class="bi bi-graph-up text-primary"></i> {% translate "Actividad de Creación de Contactos" %}
                     </h5>
-                    <small class="text-muted">{{ activity_total }} contacto{{ activity_total|pluralize }} creado{{ activity_total|pluralize }} en el último año</small>
+                    <small class="text-muted">{{ activity_total }} {% translate "contacto" %}{{ activity_total|pluralize }} {% translate "creado" %}{{ activity_total|pluralize }} {% translate "en el último año" %}</small>
                 </div>
                 <div class="card-body">
                     <div class="contribution-graph-wrapper">
@@ -101,8 +101,8 @@
                         <i class="bi bi-calendar-check text-purple"></i> {% translate "Reuniones por mes - Comparativa anual" %}
                     </h5>
                     <small class="text-muted">
-                        <span class="badge bg-primary">{{ current_year }}: {{ total_meetings_current }} reunión{{ total_meetings_current|pluralize:"es" }}</span>
-                        <span class="badge bg-secondary ms-2">{{ previous_year }}: {{ total_meetings_previous }} reunión{{ total_meetings_previous|pluralize:"es" }}</span>
+                        <span class="badge bg-primary">{{ current_year }}: {{ total_meetings_current }} {% translate "reunión" %}{{ total_meetings_current|pluralize:"es" }}</span>
+                        <span class="badge bg-secondary ms-2">{{ previous_year }}: {{ total_meetings_previous }} {% translate "reunión" %}{{ total_meetings_previous|pluralize:"es" }}</span>
                     </small>
                 </div>
                 <div class="card-body">

@@ -251,9 +251,9 @@
                   data-bs-toggle="collapse"
                   data-bs-target="#line-ia-{{ line.pk }}"
                   aria-expanded="false">
-            <i class="bi bi-chat me-1"></i>{{ line.comments.count }} comentario{% if line.comments.count != 1 %}{% translate "s" %}{% endif %}
+            <i class="bi bi-chat me-1"></i>{{ line.comments.count }} {% translate "comentario" %}{% if line.comments.count != 1 %}{% translate "s" %}{% endif %}
             &nbsp;·&nbsp;
-            <i class="bi bi-paperclip me-1"></i>{{ line.attachments.count }} adjunto{% if line.attachments.count != 1 %}{% translate "s" %}{% endif %}
+            <i class="bi bi-paperclip me-1"></i>{{ line.attachments.count }} {% translate "adjunto" %}{% if line.attachments.count != 1 %}{% translate "s" %}{% endif %}
           </button>
         </div>
 
@@ -337,7 +337,7 @@
     <button class="btn btn-outline-warning btn-sm w-100 d-flex align-items-center justify-content-between"
             type="button" data-bs-toggle="collapse" data-bs-target="#visitsCollapse">
       <span><i class="bi bi-activity me-2"></i>{% translate "Últimas aperturas del enlace público" %}
-        <span class="badge bg-warning text-dark ms-2">{{ visits_total }} total · {{ visits_unique }} IPs</span>
+        <span class="badge bg-warning text-dark ms-2">{{ visits_total }} {% translate "total ·" %} {{ visits_unique }} {% translate "IPs" %}</span>
       </span>
       <i class="bi bi-chevron-down"></i>
     </button>
@@ -410,7 +410,7 @@
                   <a href="{{ l.url }}" target="_blank" rel="noopener noreferrer" class="fw-semibold text-truncate d-block">{{ l.name }}</a>
                   <div class="small text-truncate"><a href="{{ l.url }}" target="_blank" rel="noopener noreferrer" class="text-muted">{{ l.url }}</a></div>
                   {% if l.description %}<div class="text-muted small mt-1">{{ l.description }}</div>{% endif %}
-                  <div class="small text-muted mt-1"><i class="bi bi-eye me-1"></i>{{ l.visits_count }} apertura{% if l.visits_count != 1 %}{% translate "s" %}{% endif %}</div>
+                  <div class="small text-muted mt-1"><i class="bi bi-eye me-1"></i>{{ l.visits_count }} {% translate "apertura" %}{% if l.visits_count != 1 %}{% translate "s" %}{% endif %}</div>
                 </div>
                 <button class="btn btn-sm btn-outline-success border-0 share-link-btn"
                         data-url="{{ request.scheme }}://{{ request.get_host }}{% url 'project_info_link_public' l.public_share_token %}"

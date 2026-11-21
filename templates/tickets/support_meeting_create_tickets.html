@@ -47,7 +47,7 @@
                             <div class="col-md-8">
                                 <h5 class="mb-1">
                                     <i class="fas fa-handshake me-2"></i>
-                                    Reunión #{{ meeting.sequence }}
+                                    {% translate "Reunión #" %}{{ meeting.sequence }}
                                 </h5>
                                 <p class="mb-0 opacity-75">
                                     <i class="fas fa-building me-1"></i>
@@ -66,7 +66,7 @@
                             <i class="fas fa-info-circle me-2"></i>
                             <strong>{% translate "¿Qué sucederá?" %}</strong>
                             <ul class="mb-0 mt-2">
-                                <li>Se crearán {{ selected_points.count }} tickets nuevos</li>
+                                <li>{% translate "Se crearán" %} {{ selected_points.count }} {% translate "tickets nuevos" %}</li>
                                 <li>{% translate "Cada ticket tendrá la descripción del punto correspondiente" %}</li>
                                 <li>{% translate "Todos los tickets serán asignados a la empresa" %} <strong>{{ meeting.company.name }}</strong></li>
                                 <li>{% translate "Los tickets tendrán prioridad" %} <strong>{% translate "Media" %}</strong> {% translate "y estado" %} <strong>{% translate "Abierto" %}</strong></li>
@@ -87,7 +87,7 @@
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <h6 class="text-success mb-0">
                                                 <i class="fas fa-ticket-alt me-1"></i>
-                                                Ticket #{{ forloop.counter }} - Punto de reunión #{{ meeting.sequence }}
+                                                {% translate "Ticket #" %}{{ forloop.counter }} {% translate "- Punto de reunión #" %}{{ meeting.sequence }}
                                             </h6>
                                             <small class="text-muted">
                                                 <i class="fas fa-clock"></i> {{ point.created_at|date:"d/m/Y H:i" }}
@@ -135,7 +135,7 @@
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-success btn-lg">
                                     <i class="fas fa-ticket-alt me-2"></i>
-                                    Crear {{ selected_points.count }} Tickets
+                                    {% translate "Crear" %} {{ selected_points.count }} {% translate "Tickets" %}
                                 </button>
                             </form>
                         </div>

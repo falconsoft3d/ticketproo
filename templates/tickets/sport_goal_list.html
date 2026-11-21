@@ -78,7 +78,7 @@
                                     <td>
                                         {% if goal.target_distance %}
                                             <span class="badge bg-success">
-                                                <i class="bi bi-signpost"></i> {{ goal.target_distance }} km
+                                                <i class="bi bi-signpost"></i> {{ goal.target_distance }} {% translate "km" %}
                                             </span>
                                         {% else %}
                                             <span class="text-muted">N/A</span>
@@ -96,7 +96,7 @@
                                     <td>
                                         {% if goal.get_best_distance %}
                                             <span class="badge bg-dark">
-                                                {{ goal.get_best_distance }} km
+                                                {{ goal.get_best_distance }} {% translate "km" %}
                                             </span>
                                         {% else %}
                                             <span class="text-muted">{% translate "Sin datos" %}</span>
@@ -150,7 +150,7 @@
 
                             <li class="page-item active">
                                 <span class="page-link">
-                                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                    {% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}
                                 </span>
                             </li>
 

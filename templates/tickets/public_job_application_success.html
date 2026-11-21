@@ -58,7 +58,7 @@
 </style>
 {% endblock %}
 
-{% block title %}Aplicación Enviada - {{ employee.position }}{% endblock %}
+{% block title %}{% translate "Aplicación Enviada -" %} {{ employee.position }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -117,7 +117,7 @@
                     {% if employee.salary_euros %}
                     <div class="alert alert-info">
                         <i class="bi bi-currency-euro"></i>
-                        <strong>{% translate "Salario propuesto:" %}</strong> €{{ employee.salary_euros|floatformat:0 }} anuales
+                        <strong>{% translate "Salario propuesto:" %}</strong> €{{ employee.salary_euros|floatformat:0 }} {% translate "anuales" %}
                     </div>
                     {% endif %}
                 </div>
@@ -160,7 +160,7 @@
                                         {% elif employee.ai_score >= 6 %}bg-warning
                                         {% else %}bg-danger
                                         {% endif %}">
-                                        Puntuación: {{ employee.ai_score }}/10
+                                        {% translate "Puntuación:" %} {{ employee.ai_score }}/10
                                     </span>
                                 </div>
                                 {% endif %}

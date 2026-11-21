@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ trip.title }} - TicketProo{% endblock %}
+{% block title %}{{ trip.title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -110,7 +110,7 @@
                 {% endif %}
                 <div>
                     <i class="bi bi-pin-map"></i>
-                    <strong>{{ stops.count }}</strong> parada{{ stops.count|pluralize }}
+                    <strong>{{ stops.count }}</strong> {% translate "parada" %}{{ stops.count|pluralize }}
                 </div>
             </div>
         </div>
@@ -156,7 +156,7 @@
                                     {% if stop.duration_minutes %}
                                     <div class="col-md-3 mb-2">
                                         <i class="bi bi-clock text-primary"></i>
-                                        <strong>{% translate "Duración:" %}</strong> {{ stop.duration_minutes }} min
+                                        <strong>{% translate "Duración:" %}</strong> {{ stop.duration_minutes }} {% translate "min" %}
                                     </div>
                                     {% endif %}
                                 </div>
@@ -164,7 +164,7 @@
                                 {% if stop.latitude and stop.longitude %}
                                 <div class="mb-3">
                                     <small class="text-muted">
-                                        <i class="bi bi-pin"></i> Coordenadas: {{ stop.latitude }}, {{ stop.longitude }}
+                                        <i class="bi bi-pin"></i> {% translate "Coordenadas:" %} {{ stop.latitude }}, {{ stop.longitude }}
                                     </small>
                                 </div>
                                 {% endif %}

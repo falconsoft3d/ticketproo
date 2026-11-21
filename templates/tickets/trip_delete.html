@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -26,7 +26,7 @@
                     {% if trip.stops.count > 0 %}
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle"></i>
-                        <strong>{% translate "Advertencia:" %}</strong> Este viaje tiene {{ trip.stops.count }} parada{{ trip.stops.count|pluralize }} que también serán eliminadas.
+                        <strong>{% translate "Advertencia:" %}</strong> {% translate "Este viaje tiene" %} {{ trip.stops.count }} {% translate "parada" %}{{ trip.stops.count|pluralize }} {% translate "que también serán eliminadas." %}
                     </div>
                     {% endif %}
                     

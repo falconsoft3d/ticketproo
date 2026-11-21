@@ -64,7 +64,7 @@
                         <h6><i class="fas fa-exclamation-circle"></i> {% translate "Consecuencias de la eliminación:" %}</h6>
                         <ul class="mb-0">
                             <li>{% translate "La landing page será eliminada permanentemente" %}</li>
-                            <li>Todos los envíos asociados ({{ landing_page.total_submissions }}) serán eliminados</li>
+                            <li>{% translate "Todos los envíos asociados (" %}{{ landing_page.total_submissions }}{% translate ") serán eliminados" %}</li>
                             <li>{% translate "La URL pública dejará de funcionar" %}</li>
                             <li>{% translate "Las estadísticas se perderán" %}</li>
                             <li><strong>{% translate "Esta acción NO se puede deshacer" %}</strong></li>

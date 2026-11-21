@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Generar Cotización - {{ precotizador.title }}{% endblock %}
+{% block title %}{% translate "Generar Cotización -" %} {{ precotizador.title }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -46,7 +46,7 @@
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-cpu"></i> Generar Cotización - {{ precotizador.title }}
+                        <i class="bi bi-cpu"></i> {% translate "Generar Cotización -" %} {{ precotizador.title }}
                     </h5>
                     <a href="{% url 'precotizador_detail' precotizador.pk %}" class="btn btn-outline-secondary btn-sm">
                         <i class="bi bi-arrow-left"></i> {% translate "Volver" %}
@@ -63,7 +63,7 @@
                         <div class="col-md-4 text-end">
                             <div class="d-flex justify-content-end align-items-center">
                                 <span class="me-2">{% translate "Tarifa:" %}</span>
-                                <span class="fw-bold text-success fs-5">{{ precotizador.get_formatted_hourly_rate }}/hr</span>
+                                <span class="fw-bold text-success fs-5">{{ precotizador.get_formatted_hourly_rate }}{% translate "/hr" %}</span>
                             </div>
                         </div>
                     </div>
@@ -142,7 +142,7 @@
                                             <div class="d-flex justify-content-between align-items-start mb-1">
                                                 <span class="badge bg-primary">{{ example.order|add:1 }}</span>
                                                 <div class="text-end">
-                                                    <small class="fw-bold text-success">{{ example.estimated_hours }}h</small>
+                                                    <small class="fw-bold text-success">{{ example.estimated_hours }}{% translate "h" %}</small>
                                                 </div>
                                             </div>
                                             <p class="small mb-0">{{ example.description|truncatechars:80 }}</p>

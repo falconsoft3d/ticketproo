@@ -54,7 +54,7 @@
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="bi bi-list-ul"></i> {% translate "Solicitudes" %}
-                        <span class="badge bg-secondary ms-2">{{ requests.paginator.count }} total</span>
+                        <span class="badge bg-secondary ms-2">{{ requests.paginator.count }} {% translate "total" %}</span>
                     </h5>
                 </div>
                 <div class="card-body p-0">
@@ -138,7 +138,7 @@
 
                                     <li class="page-item active">
                                         <span class="page-link">
-                                            Página {{ requests.number }} de {{ requests.paginator.num_pages }}
+                                            {% translate "Página" %} {{ requests.number }} {% translate "de" %} {{ requests.paginator.num_pages }}
                                         </span>
                                     </li>
 

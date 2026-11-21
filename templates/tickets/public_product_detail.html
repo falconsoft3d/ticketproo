@@ -160,7 +160,7 @@
                         {% endwith %}
                         {% if videos|length > 1 %}
                         <a href="{% url 'public_product_detail' line.product.pk %}" class="btn btn-outline-danger btn-sm w-100 mb-2">
-                            <i class="bi bi-play-circle"></i> Ver todos los videos ({{ videos|length }})
+                            <i class="bi bi-play-circle"></i> {% translate "Ver todos los videos (" %}{{ videos|length }})
                         </a>
                         {% endif %}
                     </div>

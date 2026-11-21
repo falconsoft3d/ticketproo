@@ -110,7 +110,7 @@
 
                         <li class="page-item active">
                             <span class="page-link">
-                                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                {% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}
                             </span>
                         </li>
 
@@ -133,7 +133,7 @@
                 <!-- Resumen -->
                 <div class="text-center mt-3">
                     <small class="text-muted">
-                        Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ page_obj.paginator.count }} mensajes
+                        {% translate "Mostrando" %} {{ page_obj.start_index }} - {{ page_obj.end_index }} {% translate "de" %} {{ page_obj.paginator.count }} {% translate "mensajes" %}
                     </small>
                 </div>
             {% else %}

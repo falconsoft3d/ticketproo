@@ -96,7 +96,7 @@
                 </div>
                 <div class="card-body text-center">
                     <h1 class="display-1 text-primary">{{ exercise.current_sets }}</h1>
-                    <p class="text-muted">de {{ exercise.sets_target }} tandas</p>
+                    <p class="text-muted">{% translate "de" %} {{ exercise.sets_target }} {% translate "tandas" %}</p>
                 </div>
             </div>
 
@@ -106,7 +106,7 @@
                 </div>
                 <div class="card-body text-center">
                     <h1 class="display-1 text-info">{{ exercise.current_reps }}</h1>
-                    <p class="text-muted">de {{ exercise.reps_target }} repeticiones</p>
+                    <p class="text-muted">{% translate "de" %} {{ exercise.reps_target }} {% translate "repeticiones" %}</p>
                 </div>
             </div>
         </div>

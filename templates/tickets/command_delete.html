@@ -171,8 +171,8 @@
                                     <strong>{% translate "Comando importante detectado" %}</strong><br>
                                     <small>
                                         {% if command.is_favorite %}{% translate "• Este comando está marcado como favorito" %}<br>{% endif %}
-                                        {% if command.usage_count > 10 %}• Este comando ha sido copiado {{ command.usage_count }} veces<br>{% endif %}
-                                        {% if command.view_count > 50 %}• Este comando ha sido visto {{ command.view_count }} veces<br>{% endif %}
+                                        {% if command.usage_count > 10 %}{% translate "• Este comando ha sido copiado" %} {{ command.usage_count }} {% translate "veces" %}<br>{% endif %}
+                                        {% if command.view_count > 50 %}{% translate "• Este comando ha sido visto" %} {{ command.view_count }} {% translate "veces" %}<br>{% endif %}
                                     </small>
                                 </div>
                             </div>

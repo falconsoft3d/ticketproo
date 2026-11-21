@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ document.title }} - {% translate "Firmas Digitales" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1200px;">
+    <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'signature_document_list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+            <div>
+                <h2 class="mb-0"><i class="bi bi-file-earmark-pdf text-danger"></i> {{ document.title }}</h2>
+                <div class="small text-muted">
+                    SIG-{{ document.pk|stringformat:"06d" }} · {{ document.page_count }} {% translate "páginas" %} · {% translate "creado" %} {{ document.created_at|date:"d/m/Y H:i" }}
+                </div>
+            </div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'signature_document_editor' document.pk %}" class="btn btn-primary"><i class="bi bi-bounding-box"></i> {% translate "Colocar firmas en el PDF" %}</a>
+            <a href="{% url 'signature_document_pdf' document.pk %}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-pdf"></i> {% translate "Original" %}</a>
+            {% if document.signed_pdf %}
+            <a href="{% url 'signature_document_pdf' document.pk %}?signed=1&download=1" class="btn btn-success"><i class="bi bi-download"></i> {% translate "PDF firmado" %}</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-muted small">{% translate "Estado" %}</div>
+                <div class="fs-5 fw-semibold">
+                    {% if document.status == 'completed' %}<span class="text-success"><i class="bi bi-check-circle-fill"></i> {{ document.get_status_display }}</span>
+                    {% elif document.status == 'pending' %}<span class="text-warning"><i class="bi bi-hourglass-split"></i> {{ document.get_status_display }}</span>
+                    {% else %}<span class="text-secondary"><i class="bi bi-pencil"></i> {{ document.get_status_display }}</span>{% endif %}
+                </div>
+                {% if document.completed_at %}<div class="small text-muted">{{ document.completed_at|date:"d/m/Y H:i" }}</div>{% endif %}
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-muted small">{% translate "Firmas" %}</div>
+                <div class="fs-5 fw-semibold">{{ document.signed_count }} / {{ signers|length }}</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-muted small">{% translate "Recuadros de firma colocados" %}</div>
+                <div class="fs-5 fw-semibold">{{ fields_total }}</div>
+            </div></div>
+        </div>
+    </div>
+
+    {% if fields_total == 0 %}
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i>
+        {% translate "Todavía no has colocado ningún recuadro de firma. Los enlaces no permitirán firmar hasta que lo hagas." %}
+        <a href="{% url 'signature_document_editor' document.pk %}" class="alert-link">{% translate "Ir al editor" %}</a>
+    </div>
+    {% endif %}
+
+    {% if document.description %}
+    <div class="card mb-3"><div class="card-body"><div class="text-muted small mb-1">{% translate "Mensaje para el firmante" %}</div>{{ document.description|linebreaksbr }}</div></div>
+    {% endif %}
+
+    <div class="card mb-3">
+        <div class="card-header fw-semibold"><i class="bi bi-people"></i> {% translate "Firmantes y enlaces de firma" %}</div>
+        <div class="list-group list-group-flush">
+            {% for s in signers %}
+            {% with sign_url=s.absolute_sign_url %}
+            <div class="list-group-item py-3">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                    <div>
+                        <span class="d-inline-block rounded-circle me-1" style="width:12px;height:12px;background:{{ s.color }}"></span>
+                        <span class="fw-semibold">{{ s.name }}</span>
+                        {% if s.email %}<span class="text-muted small">&lt;{{ s.email }}&gt;</span>{% endif %}
+                        <div class="small text-muted mt-1">
+                            {{ s.field_count }} {% translate "recuadro(s)" %}
+                            {% if s.viewed_at %} · {% translate "visto" %} {{ s.viewed_at|date:"d/m/Y H:i" }}{% endif %}
+                            {% if s.signed_at %} · {% translate "firmado" %} {{ s.signed_at|date:"d/m/Y H:i" }} · IP {{ s.signed_ip|default:"-" }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        {% if s.status == 'signed' %}<span class="badge bg-success"><i class="bi bi-check2"></i> {{ s.get_status_display }}</span>
+                        {% elif s.status == 'viewed' %}<span class="badge bg-info text-dark"><i class="bi bi-eye"></i> {{ s.get_status_display }}</span>
+                        {% else %}<span class="badge bg-secondary">{{ s.get_status_display }}</span>{% endif %}
+                        {% if s.status != 'signed' %}
+                        <form method="post" action="{% url 'signature_signer_reset_link' document.pk s.pk %}" onsubmit="return confirm('{% translate "¿Generar un enlace nuevo? El anterior dejará de funcionar." %}')">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-outline-secondary" title="{% translate 'Regenerar enlace' %}"><i class="bi bi-arrow-repeat"></i></button>
+                        </form>
+                        <form method="post" action="{% url 'signature_signer_delete' document.pk s.pk %}" onsubmit="return confirm('{% translate "¿Eliminar este firmante y sus recuadros?" %}')">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-outline-danger" title="{% translate 'Eliminar' %}"><i class="bi bi-trash"></i></button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                    <input type="text" class="form-control font-monospace" value="{{ sign_url }}" readonly onclick="this.select()">
+                    <button class="btn btn-outline-primary copy-link" type="button" data-url="{{ sign_url }}"><i class="bi bi-clipboard"></i> {% translate "Copiar" %}</button>
+                    <a class="btn btn-outline-success" target="_blank" rel="noopener"
+                       href="https://wa.me/?text={{ s.name|urlencode }}%2C%20{% filter urlencode %}{% translate 'por favor firma este documento' %}: {{ document.title }} {{ sign_url }}{% endfilter %}"><i class="bi bi-whatsapp"></i></a>
+                    {% if s.email %}
+                    <a class="btn btn-outline-secondary"
+                       href="mailto:{{ s.email }}?subject={% filter urlencode %}{% translate 'Documento para firmar' %}: {{ document.title }}{% endfilter %}&body={% filter urlencode %}{% translate 'Hola' %} {{ s.name }},
+
+{% translate 'Por favor firma el documento en el siguiente enlace' %}:
+{{ sign_url }}{% endfilter %}"><i class="bi bi-envelope"></i></a>
+                    {% endif %}
+                    <a class="btn btn-outline-secondary" target="_blank" href="{{ s.get_sign_url }}" title="{% translate 'Abrir' %}"><i class="bi bi-box-arrow-up-right"></i></a>
+                </div>
+            </div>
+            {% endwith %}
+            {% empty %}
+            <div class="list-group-item text-muted">{% translate "No hay firmantes." %}</div>
+            {% endfor %}
+        </div>
+        <div class="card-footer">
+            <form method="post" action="{% url 'signature_signer_add' document.pk %}" class="row g-2">
+                {% csrf_token %}
+                <div class="col-md-5"><input type="text" name="name" maxlength="150" class="form-control form-control-sm" placeholder="{% translate 'Nombre del nuevo firmante' %}" required></div>
+                <div class="col-md-5"><input type="email" name="email" class="form-control form-control-sm" placeholder="{% translate 'Email (opcional)' %}"></div>
+                <div class="col-md-2"><button class="btn btn-sm btn-outline-primary w-100"><i class="bi bi-person-plus"></i> {% translate "Añadir" %}</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="text-end">
+        <form method="post" action="{% url 'signature_document_delete' document.pk %}" class="d-inline" onsubmit="return confirm('{% translate "¿Eliminar este documento y todas sus firmas? Esta acción no se puede deshacer." %}')">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i> {% translate "Eliminar documento" %}</button>
+        </form>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.copy-link').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        const url = btn.dataset.url;
+        const done = () => {
+            const html = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2"></i> {% translate "Copiado" %}';
+            setTimeout(() => { btn.innerHTML = html; }, 1500);
+        };
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(done);
+        } else {
+            const input = btn.parentElement.querySelector('input');
+            input.select(); document.execCommand('copy'); done();
+        }
+    });
+});
+</script>
+{% endblock %}

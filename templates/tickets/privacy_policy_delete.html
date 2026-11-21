@@ -61,7 +61,7 @@
                     <div class="mb-3">
                         <strong>{% translate "Creada:" %}</strong> {{ policy.created_at|date:"d/m/Y H:i" }}
                         {% if policy.created_by %}
-                            por {{ policy.created_by.get_full_name }}
+                            {% translate "por" %} {{ policy.created_by.get_full_name }}
                         {% endif %}
                     </div>
 

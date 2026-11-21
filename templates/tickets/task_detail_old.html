@@ -79,11 +79,11 @@
                             {% if task.due_date and task.days_until_due and task.status != 'completed' %}
                                 <small class="text-muted">
                                     {% if task.days_until_due > 0 %}
-                                        Faltan {{ task.days_until_due }} día{{ task.days_until_due|pluralize }}
+                                        {% translate "Faltan" %} {{ task.days_until_due }} {% translate "día" %}{{ task.days_until_due|pluralize }}
                                     {% elif task.days_until_due == 0 %}
                                         {% translate "Vence hoy" %}
                                     {% else %}
-                                        Vencida hace {{ task.days_until_due|add:"-1" }} día{{ task.days_until_due|add:"-1"|pluralize }}
+                                        {% translate "Vencida hace" %} {{ task.days_until_due|add:"-1" }} {% translate "día" %}{{ task.days_until_due|add:"-1"|pluralize }}
                                     {% endif %}
                                 </small>
                             {% endif %}
@@ -118,7 +118,7 @@
                                 <h6>{% translate "Horas estimadas" %}</h6>
                                 <p class="mb-1">
                                     <i class="bi bi-clock me-1"></i>
-                                    {{ task.estimated_hours }} hora{{ task.estimated_hours|pluralize }}
+                                    {{ task.estimated_hours }} {% translate "hora" %}{{ task.estimated_hours|pluralize }}
                                 </p>
                             {% endif %}
                         </div>
@@ -127,7 +127,7 @@
                                 <h6>{% translate "Horas trabajadas" %}</h6>
                                 <p class="mb-1">
                                     <i class="bi bi-hourglass-split me-1"></i>
-                                    {{ task.actual_hours }} hora{{ task.actual_hours|pluralize }}
+                                    {{ task.actual_hours }} {% translate "hora" %}{{ task.actual_hours|pluralize }}
                                 </p>
                             {% endif %}
                         </div>
@@ -227,7 +227,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="bi bi-people me-1"></i>Asignado a ({{ task.assigned_to.count }})
+                        <i class="bi bi-people me-1"></i>{% translate "Asignado a (" %}{{ task.assigned_to.count }})
                     </h6>
                 </div>
                 <div class="card-body">

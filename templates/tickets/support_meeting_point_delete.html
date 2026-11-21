@@ -41,7 +41,7 @@
                             <h6 class="text-muted">{% translate "Punto a eliminar:" %}</h6>
                             <p class="lead">{{ point.description|linebreaks }}</p>
                             <small class="text-muted">
-                                <i class="fas fa-clock"></i> Creado el {{ point.created_at|date:"d/m/Y H:i" }}
+                                <i class="fas fa-clock"></i> {% translate "Creado el" %} {{ point.created_at|date:"d/m/Y H:i" }}
                             </small>
                             {% if point.is_selected %}
                                 <br><span class="badge bg-success mt-1">{% translate "Seleccionado para tickets" %}</span>

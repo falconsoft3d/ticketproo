@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
@@ -254,7 +254,7 @@
                 </div>
                 <hr>
                 <small class="text-muted">
-                    Creado el {{ absence_type.created_at|date:"d/m/Y H:i" }}
+                    {% translate "Creado el" %} {{ absence_type.created_at|date:"d/m/Y H:i" }}
                 </small>
             </div>
         </div>

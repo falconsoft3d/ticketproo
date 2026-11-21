@@ -193,9 +193,9 @@
 
                     <hr>
                     <small class="text-muted">
-                        <i class="bi bi-calendar-check"></i> Período: 
+                        <i class="bi bi-calendar-check"></i> {% translate "Período:" %} 
                         {{ evaluation.period_start|date:"d/m/Y" }} - {{ evaluation.period_end|date:"d/m/Y" }}<br>
-                        <i class="bi bi-list-check"></i> Reuniones analizadas: {{ evaluation.meetings_analyzed }}
+                        <i class="bi bi-list-check"></i> {% translate "Reuniones analizadas:" %} {{ evaluation.meetings_analyzed }}
                     </small>
                 </div>
             </div>

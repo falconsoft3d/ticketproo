@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Eliminar: {{ image_prompt.title }}{% endblock %}
+{% block title %}{% translate "Eliminar:" %} {{ image_prompt.title }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -45,7 +45,7 @@
                                         {% endif %}
                                     </div>
                                     <div class="text-muted small">
-                                        <p class="mb-1"><i class="bi bi-calendar"></i> Creado: {{ image_prompt.created_at|date:"d/m/Y H:i" }}</p>
+                                        <p class="mb-1"><i class="bi bi-calendar"></i> {% translate "Creado:" %} {{ image_prompt.created_at|date:"d/m/Y H:i" }}</p>
                                         <p class="mb-1"><i class="bi bi-eye"></i> {{ image_prompt.is_public|yesno:"Público,Privado" }}</p>
                                         <p class="mb-0">
                                             <strong>{% translate "Prompt:" %}</strong> {{ image_prompt.get_final_prompt|truncatewords:30 }}

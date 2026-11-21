@@ -84,7 +84,7 @@
                                 {% else %}
                                     <span class="badge bg-dark">{% translate "Finalizado" %}</span>
                                     {% if game.get_winner %}
-                                        <br><small class="text-success">Ganador: {{ game.get_winner }}</small>
+                                        <br><small class="text-success">{% translate "Ganador:" %} {{ game.get_winner }}</small>
                                     {% endif %}
                                 {% endif %}
                             </td>
@@ -116,7 +116,7 @@
                     {% endif %}
                     
                     <li class="page-item active">
-                        <span class="page-link">Página {{ games.number }} de {{ games.paginator.num_pages }}</span>
+                        <span class="page-link">{% translate "Página" %} {{ games.number }} {% translate "de" %} {{ games.paginator.num_pages }}</span>
                     </li>
                     
                     {% if games.has_next %}

@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Eliminar Cotización #{{ quote.pk }}{% endblock %}
+{% block title %}{% translate "Eliminar Cotización #" %}{{ quote.pk }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -41,7 +41,7 @@
                             </div>
                             <div class="row mb-3">
                                 <div class="col-sm-4"><strong>{% translate "Horas Estimadas:" %}</strong></div>
-                                <div class="col-sm-8">{{ quote.ai_estimated_hours }} hrs</div>
+                                <div class="col-sm-8">{{ quote.ai_estimated_hours }} {% translate "hrs" %}</div>
                             </div>
                             <div class="row mb-3">
                                 <div class="col-sm-4"><strong>{% translate "Costo Estimado:" %}</strong></div>
@@ -80,9 +80,9 @@
                     {% if quote.status != 'pending' %}
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i>
-                        <strong>{% translate "Nota:" %}</strong> Esta cotización ya fue {{ quote.get_status_display|lower }} por el cliente.
+                        <strong>{% translate "Nota:" %}</strong> {% translate "Esta cotización ya fue" %} {{ quote.get_status_display|lower }} {% translate "por el cliente." %}
                         {% if quote.client_response_date %}
-                            Respuesta recibida el {{ quote.client_response_date|date:"d/m/Y H:i" }}.
+                            {% translate "Respuesta recibida el" %} {{ quote.client_response_date|date:"d/m/Y H:i" }}.
                         {% endif %}
                     </div>
                     {% endif %}
@@ -92,8 +92,8 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="confirmDelete" required>
                             <label class="form-check-label fw-bold" for="confirmDelete">
-                                Entiendo que esta acción eliminará permanentemente la cotización #{{ quote.pk }}
-                                y todos sus datos relacionados.
+                                {% translate "Entiendo que esta acción eliminará permanentemente la cotización #" %}{{ quote.pk }}
+                                {% translate "y todos sus datos relacionados." %}
                             </label>
                         </div>
                     </div>

@@ -3,7 +3,7 @@
 {% load static %}
 
 {% block title %}
-    {% if question %}Editar Pregunta #{{ question.sequence }}{% else %}{% translate "Nueva Pregunta CRM" %}{% endif %}
+    {% if question %}{% translate "Editar Pregunta #" %}{{ question.sequence }}{% else %}{% translate "Nueva Pregunta CRM" %}{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -16,7 +16,7 @@
                         <h5 class="mb-0">
                             <i class="fas fa-question-circle me-2"></i>
                             {% if question %}
-                                Editar Pregunta #{{ question.sequence }}
+                                {% translate "Editar Pregunta #" %}{{ question.sequence }}
                             {% else %}
                                 {% translate "Nueva Pregunta" %}
                             {% endif %}
@@ -126,8 +126,8 @@
                             <i class="fas fa-info-circle me-2"></i>
                             <strong>{% translate "Estado:" %}</strong> {% translate "Pregunta respondida" %}
                             {% if question.answered_by %}
-                                por {{ question.answered_by.get_full_name|default:question.answered_by.username }}
-                                el {{ question.answered_at|date:"d/m/Y H:i" }}
+                                {% translate "por" %} {{ question.answered_by.get_full_name|default:question.answered_by.username }}
+                                {% translate "el" %} {{ question.answered_at|date:"d/m/Y H:i" }}
                             {% endif %}
                         </div>
                         {% endif %}

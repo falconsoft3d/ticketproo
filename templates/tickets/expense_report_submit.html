@@ -26,7 +26,7 @@
                         <ul class="list-unstyled">
                             <li><strong>{% translate "Título:" %}</strong> {{ expense_report.title }}</li>
                             <li><strong>{% translate "Total:" %}</strong> ${{ expense_report.total_amount|floatformat:2 }}</li>
-                            <li><strong>{% translate "Gastos:" %}</strong> {{ expense_report.expense_items.count }} item{{ expense_report.expense_items.count|pluralize }}</li>
+                            <li><strong>{% translate "Gastos:" %}</strong> {{ expense_report.expense_items.count }} {% translate "item" %}{{ expense_report.expense_items.count|pluralize }}</li>
                             <li><strong>{% translate "Período:" %}</strong> 
                                 {% if expense_report.start_date %}
                                     {{ expense_report.start_date|date:"d/m/Y" }}

@@ -55,7 +55,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">{% translate "Tareas" %}</h5>
-            <span class="badge bg-secondary">{{ page_obj.paginator.count }} total</span>
+            <span class="badge bg-secondary">{{ page_obj.paginator.count }} {% translate "total" %}</span>
         </div>
         <div class="card-body">
             {% if page_obj %}
@@ -84,7 +84,7 @@
                                             </a>
                                         </strong>
                                         <br><small class="text-muted">
-                                            Creado por {{ task.created_by.get_full_name|default:task.created_by.username }}
+                                            {% translate "Creado por" %} {{ task.created_by.get_full_name|default:task.created_by.username }}
                                         </small>
                                     </div>
                                 </td>
@@ -185,7 +185,7 @@
                         {% endif %}
                         
                         <li class="page-item active">
-                            <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                            <span class="page-link">{% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}</span>
                         </li>
                         
                         {% if page_obj.has_next %}

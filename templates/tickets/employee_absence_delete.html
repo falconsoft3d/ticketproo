@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -59,7 +59,7 @@
                             <div class="mb-3">
                                 <strong>{% translate "Fechas:" %}</strong><br>
                                 {{ absence.start_date|date:"d/m/Y" }} - {{ absence.end_date|date:"d/m/Y" }}
-                                <small class="text-muted d-block">{{ absence.get_duration_days }} día{{ absence.get_duration_days|pluralize }}</small>
+                                <small class="text-muted d-block">{{ absence.get_duration_days }} {% translate "día" %}{{ absence.get_duration_days|pluralize }}</small>
                             </div>
                             
                             <div class="mb-3">
@@ -82,7 +82,7 @@
                         <strong>{% translate "Creada:" %}</strong> {{ absence.created_at|date:"d/m/Y H:i" }}
                         {% if absence.approved_by %}
                         <br><strong>{% translate "Gestionada por:" %}</strong> {{ absence.approved_by.get_full_name|default:absence.approved_by.username }} 
-                        el {{ absence.approved_at|date:"d/m/Y H:i" }}
+                        {% translate "el" %} {{ absence.approved_at|date:"d/m/Y H:i" }}
                         {% endif %}
                     </div>
                     

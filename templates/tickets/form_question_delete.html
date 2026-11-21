@@ -52,7 +52,7 @@
                                         {% for option in question.options.all %}
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
                                             {{ option.option_text }}
-                                            <span class="badge bg-primary rounded-pill">{{ option.score }} pts</span>
+                                            <span class="badge bg-primary rounded-pill">{{ option.score }} {% translate "pts" %}</span>
                                         </li>
                                         {% endfor %}
                                     </ul>
@@ -63,7 +63,7 @@
 
                     <div class="mt-4">
                         <p><strong>{% translate "Formulario:" %}</strong> {{ form_obj.title }}</p>
-                        <p><strong>{% translate "Orden:" %}</strong> Pregunta #{{ question.order }}</p>
+                        <p><strong>{% translate "Orden:" %}</strong> {% translate "Pregunta #" %}{{ question.order }}</p>
                     </div>
                 </div>
                 <div class="card-footer">

@@ -10,7 +10,7 @@
             <div class="card">
                 <div class="card-header">
                     <h4 class="mb-0">
-                        <i class="bi bi-cash"></i> Actualizar Pago - Cuota #{{ payment.payment_number }}
+                        <i class="bi bi-cash"></i> {% translate "Actualizar Pago - Cuota #" %}{{ payment.payment_number }}
                     </h4>
                 </div>
                 <div class="card-body">
@@ -28,7 +28,7 @@
                                 <label for="amount" class="form-label">{% translate "Monto (€)" %} <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="amount" name="amount" 
                                     step="0.01" min="0" value="{{ payment.amount|unlocalize }}" required>
-                                <small class="text-muted">Valor actual: €{{ payment.amount }}</small>
+                                <small class="text-muted">{% translate "Valor actual: €" %}{{ payment.amount }}</small>
                             </div>
                             
                             <div class="col-md-6 mb-3">

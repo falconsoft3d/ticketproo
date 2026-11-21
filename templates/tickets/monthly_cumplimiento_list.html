@@ -63,7 +63,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">{% translate "Metas de Cumplimiento" %}</h5>
-            <span class="badge bg-secondary">{{ page_obj.paginator.count }} total</span>
+            <span class="badge bg-secondary">{{ page_obj.paginator.count }} {% translate "total" %}</span>
         </div>
         <div class="card-body">
             {% if page_obj %}
@@ -90,7 +90,7 @@
                                     {% if cumplimiento.frequency_type == 'daily' %}
                                         <span class="text-info">{% translate "Todos los días" %}</span>
                                     {% else %}
-                                        <span class="text-warning">{{ cumplimiento.target_days }} días al mes</span>
+                                        <span class="text-warning">{{ cumplimiento.target_days }} {% translate "días al mes" %}</span>
                                     {% endif %}
                                 </div>
                                 
@@ -111,13 +111,13 @@
                                         <div class="progress-bar {% if progress.percentage >= 80 %}bg-success{% elif progress.percentage >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
                                              style="width: {{ progress.percentage|floatformat:0 }}%"></div>
                                     </div>
-                                    <small class="text-muted">{{ progress.percentage|floatformat:1 }}% completado</small>
+                                    <small class="text-muted">{{ progress.percentage|floatformat:1 }}{% translate "% completado" %}</small>
                                 </div>
                                 {% endwith %}
                                 
                                 <div class="mb-2">
                                     <small class="text-muted">
-                                        <i class="bi bi-calendar"></i> Creado {{ cumplimiento.created_at|date:"d/m/Y" }}
+                                        <i class="bi bi-calendar"></i> {% translate "Creado" %} {{ cumplimiento.created_at|date:"d/m/Y" }}
                                     </small>
                                 </div>
                                 
@@ -167,7 +167,7 @@
 
                         <li class="page-item active">
                             <span class="page-link">
-                                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                {% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}
                             </span>
                         </li>
 

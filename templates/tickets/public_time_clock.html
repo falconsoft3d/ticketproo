@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Control de Horario - {{ user.get_full_name|default:user.username }}{% endblock %}
+{% block title %}{% translate "Control de Horario -" %} {{ user.get_full_name|default:user.username }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -304,7 +304,7 @@
         {% if active_entry %}
             <div class="status-display status-working">
                 <i class="fas fa-play-circle me-2"></i>
-                Trabajando desde las {{ active_entry.fecha_entrada|date:"H:i" }}
+                {% translate "Trabajando desde las" %} {{ active_entry.fecha_entrada|date:"H:i" }}
                 <div class="elapsed-time">
                     <small>{% translate "Tiempo:" %} <strong id="elapsed-time">{{ active_entry.duracion_formateada }}</strong></small>
                 </div>

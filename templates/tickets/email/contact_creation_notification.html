@@ -180,7 +180,7 @@
                 </div>
                 <div class="info-row">
                     <span class="label">{% translate "URL:" %}</span>
-                    <span class="value">/lp/{{ landing_page.slug }}/</span>
+                    <span class="value">{% translate "/lp/" %}{{ landing_page.slug }}/</span>
                 </div>
                 <div class="info-row">
                     <span class="label">{% translate "Empresa:" %}</span>
@@ -216,7 +216,7 @@
         
         <div class="footer">
             <p>{% translate "Esta notificación fue generada automáticamente por TicketProo" %}</p>
-            <p>Landing Page: {{ landing_page.nombre_producto }} | Fecha: {{ contact.fecha_creacion|date:"d/m/Y H:i" }}</p>
+            <p>{% translate "Landing Page:" %} {{ landing_page.nombre_producto }} {% translate "| Fecha:" %} {{ contact.fecha_creacion|date:"d/m/Y H:i" }}</p>
         </div>
     </div>
 </body>

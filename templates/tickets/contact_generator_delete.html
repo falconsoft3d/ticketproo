@@ -64,8 +64,8 @@
                     {% if contacts_count > 0 %}
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle me-2"></i>
-                            <strong>{% translate "Nota:" %}</strong> Al eliminar este generador, los {{ contacts_count }} contacto{{ contacts_count|pluralize }} 
-                            ya generado{{ contacts_count|pluralize }} se mantendrán en el sistema. Solo se eliminará el generador y su configuración.
+                            <strong>{% translate "Nota:" %}</strong> {% translate "Al eliminar este generador, los" %} {{ contacts_count }} {% translate "contacto" %}{{ contacts_count|pluralize }} 
+                            {% translate "ya generado" %}{{ contacts_count|pluralize }} {% translate "se mantendrán en el sistema. Solo se eliminará el generador y su configuración." %}
                         </div>
                     {% endif %}
 

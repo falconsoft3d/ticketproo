@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -214,13 +214,13 @@
                             <div>
                                 <strong>{{ absence.start_date|date:"d/m/Y" }}</strong>
                                 {% if absence.start_date != absence.end_date %}
-                                    <br><small class="text-muted">hasta {{ absence.end_date|date:"d/m/Y" }}</small>
+                                    <br><small class="text-muted">{% translate "hasta" %} {{ absence.end_date|date:"d/m/Y" }}</small>
                                 {% endif %}
                             </div>
                         </td>
                         <td>
                             <span class="badge bg-secondary">
-                                {{ absence.get_duration_days }} día{{ absence.get_duration_days|pluralize }}
+                                {{ absence.get_duration_days }} {% translate "día" %}{{ absence.get_duration_days|pluralize }}
                             </span>
                         </td>
                         <td>

@@ -255,7 +255,7 @@
                 <div class="card-body">
                     <div style="white-space: pre-wrap; background: #f8f9fa; padding: 1rem; border-radius: 5px;">{{ employee.hiring_meeting_opinion }}</div>
                     <small class="text-muted mt-2 d-block">
-                        <i class="bi bi-clock"></i> Registrado: {{ employee.updated_at|date:"d/m/Y H:i" }}
+                        <i class="bi bi-clock"></i> {% translate "Registrado:" %} {{ employee.updated_at|date:"d/m/Y H:i" }}
                     </small>
                 </div>
             </div>
@@ -320,7 +320,7 @@
                             <div class="timeline-marker bg-info"></div>
                             <div class="timeline-content">
                                 <h6><i class="bi bi-robot text-info"></i> {% translate "Evaluación IA Completada" %}</h6>
-                                <p class="text-muted mb-0">Puntuación: {{ employee.ai_score }}/10</p>
+                                <p class="text-muted mb-0">{% translate "Puntuación:" %} {{ employee.ai_score }}/10</p>
                                 <small>{% translate "Análisis automático del perfil profesional" %}</small>
                             </div>
                         </div>

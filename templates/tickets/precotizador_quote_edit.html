@@ -96,13 +96,13 @@
             <div class="col-md-8">
                 <h1 class="mb-2">
                     <i class="bi bi-pencil-square"></i>
-                    Editar Cotización #{{ quote.id }}
+                    {% translate "Editar Cotización #" %}{{ quote.id }}
                 </h1>
                 <p class="mb-0 opacity-75">
                     {{ quote.precotizador.title }}
                 </p>
                 <small class="opacity-75">
-                    Creada el {{ quote.created_at|date:"d/m/Y H:i" }}
+                    {% translate "Creada el" %} {{ quote.created_at|date:"d/m/Y H:i" }}
                 </small>
             </div>
             <div class="col-md-4 text-end">
@@ -110,7 +110,7 @@
                     {{ quote.get_formatted_cost }}
                 </div>
                 <small class="opacity-75">
-                    {{ quote.ai_estimated_hours }} horas estimadas
+                    {{ quote.ai_estimated_hours }} {% translate "horas estimadas" %}
                 </small>
             </div>
         </div>
@@ -229,7 +229,7 @@
                                 {% elif quote.status == 'accepted' %}
                                     <span class="badge bg-success fs-6">{% translate "✅ Aceptada" %}</span>
                                     <p class="small text-muted mt-2 mb-0">
-                                        Aceptada el {{ quote.client_response_date|date:"d/m/Y H:i" }}
+                                        {% translate "Aceptada el" %} {{ quote.client_response_date|date:"d/m/Y H:i" }}
                                         {% if quote.client_comments %}
                                             <br><em>"{{ quote.client_comments|truncatechars:100 }}"</em>
                                         {% endif %}
@@ -237,7 +237,7 @@
                                 {% elif quote.status == 'rejected' %}
                                     <span class="badge bg-danger fs-6">{% translate "❌ Rechazada" %}</span>
                                     <p class="small text-muted mt-2 mb-0">
-                                        Rechazada el {{ quote.client_response_date|date:"d/m/Y H:i" }}
+                                        {% translate "Rechazada el" %} {{ quote.client_response_date|date:"d/m/Y H:i" }}
                                         {% if quote.client_comments %}
                                             <br><em>"{{ quote.client_comments|truncatechars:100 }}"</em>
                                         {% endif %}

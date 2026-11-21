@@ -113,7 +113,7 @@
                             <!-- Asistencia -->
                             <div class="mt-2 ps-2 border-start">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="text-muted small fw-semibold"><i class="bi bi-people"></i> Asistencia ({{ clase.asistencias.all|length }})</span>
+                                    <span class="text-muted small fw-semibold"><i class="bi bi-people"></i> {% translate "Asistencia (" %}{{ clase.asistencias.all|length }})</span>
                                     {% if can_manage %}
                                     <button class="btn btn-sm btn-link p-0 small" data-bs-toggle="modal" data-bs-target="#modalAddAsistencia{{ clase.pk }}">
                                         <i class="bi bi-person-plus"></i> {% translate "Registrar asistencia" %}
@@ -163,7 +163,7 @@
                             <!-- Solicitudes de cambio -->
                             {% if clase.solicitudes.all %}
                             <div class="mt-2 ps-2 border-start">
-                                <span class="text-muted small fw-semibold"><i class="bi bi-pencil-square"></i> Solicitudes de cambio ({{ clase.solicitudes.all|length }})</span>
+                                <span class="text-muted small fw-semibold"><i class="bi bi-pencil-square"></i> {% translate "Solicitudes de cambio (" %}{{ clase.solicitudes.all|length }})</span>
                                 <ul class="list-unstyled small mb-0 mt-1">
                                     {% for solicitud in clase.solicitudes.all %}
                                     <li class="mb-2 {% if solicitud.atendida %}text-muted{% endif %}">
@@ -209,7 +209,7 @@
                             <!-- Comentarios -->
                             {% if clase.comentarios.all %}
                             <div class="mt-2 ps-2 border-start">
-                                <span class="text-muted small fw-semibold"><i class="bi bi-chat-left-text"></i> Comentarios ({{ clase.comentarios.all|length }})</span>
+                                <span class="text-muted small fw-semibold"><i class="bi bi-chat-left-text"></i> {% translate "Comentarios (" %}{{ clase.comentarios.all|length }})</span>
                                 <ul class="list-unstyled small mb-0 mt-1">
                                     {% for comentario in clase.comentarios.all %}
                                     <li class="mb-2">
@@ -302,11 +302,11 @@
                     <h6 class="text-muted fw-semibold mb-2"><i class="bi bi-info-circle"></i> {% translate "Información" %}</h6>
                     <ul class="list-unstyled mb-0 small">
                         <li class="mb-1">
-                            <i class="bi bi-calendar3"></i> Creada: {{ cap.created_at|date:"d/m/Y H:i" }}
+                            <i class="bi bi-calendar3"></i> {% translate "Creada:" %} {{ cap.created_at|date:"d/m/Y H:i" }}
                         </li>
                         {% if cap.created_by %}
                         <li class="mb-1">
-                            <i class="bi bi-person"></i> Por: {{ cap.created_by.get_full_name|default:cap.created_by.username }}
+                            <i class="bi bi-person"></i> {% translate "Por:" %} {{ cap.created_by.get_full_name|default:cap.created_by.username }}
                         </li>
                         {% endif %}
                         <li class="mb-1">
@@ -473,7 +473,7 @@
                 <input type="hidden" name="action" value="add_asistencia">
                 <input type="hidden" name="clase_id" value="{{ clase.pk }}">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-person-plus"></i> Registrar Asistencia – {{ clase.titulo }}</h5>
+                    <h5 class="modal-title"><i class="bi bi-person-plus"></i> {% translate "Registrar Asistencia –" %} {{ clase.titulo }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -567,7 +567,7 @@
                 <input type="hidden" name="action" value="edit_resumen">
                 <input type="hidden" name="clase_id" value="{{ clase.pk }}">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-journal-text"></i> Resumen – {{ clase.titulo }}</h5>
+                    <h5 class="modal-title"><i class="bi bi-journal-text"></i> {% translate "Resumen –" %} {{ clase.titulo }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">

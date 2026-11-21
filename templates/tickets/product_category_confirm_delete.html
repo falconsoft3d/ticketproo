@@ -13,8 +13,7 @@
             {% if count > 0 %}
             <div class="alert alert-warning">
                 <i class="bi bi-exclamation-circle"></i>
-                {% translate "Esta categoría tiene" %} <strong>{{ count }} producto{{ count|pluralize }}</strong> asignado{{ count|pluralize }}.
-                Al eliminarla, esos productos quedarán sin categoría.
+                {% translate "Esta categoría tiene" %} <strong>{{ count }} {% translate "producto" %}{{ count|pluralize }}</strong> {% translate "asignado" %}{{ count|pluralize }}{% translate ". Al eliminarla, esos productos quedarán sin categoría." %}
             </div>
             {% endif %}
             {% endwith %}

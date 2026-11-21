@@ -46,13 +46,13 @@
                             <div class="col-md-6">
                                 <small class="text-muted">
                                     <i class="bi bi-list-check"></i> 
-                                    {{ session.get_total_tasks }} tarea(s) total
+                                    {{ session.get_total_tasks }} {% translate "tarea(s) total" %}
                                 </small>
                             </div>
                             <div class="col-md-6">
                                 <small class="text-muted">
                                     <i class="bi bi-check-circle"></i> 
-                                    {{ session.get_completed_tasks }} completada(s)
+                                    {{ session.get_completed_tasks }} {% translate "completada(s)" %}
                                 </small>
                             </div>
                         </div>
@@ -96,7 +96,7 @@
                         <div class="list-group-item bg-light">
                             <small class="text-muted">
                                 <i class="bi bi-three-dots"></i> 
-                                Y {{ session.daily_task_items.count|add:"-5" }} tarea(s) más...
+                                Y {{ session.daily_task_items.count|add:"-5" }} {% translate "tarea(s) más..." %}
                             </small>
                         </div>
                         {% endif %}

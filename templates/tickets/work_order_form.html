@@ -236,8 +236,8 @@
                                             <small class="text-muted ms-2">({{ attachment.get_file_size_display }})</small>
                                         </div>
                                         <small class="text-muted">
-                                            Subido por {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}
-                                            el {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
+                                            {% translate "Subido por" %} {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}
+                                            {% translate "el" %} {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
                                         </small>
                                     </div>
                                     {% endfor %}

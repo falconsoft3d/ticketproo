@@ -184,7 +184,7 @@
     <div style="margin-top:1rem;">
       {% for cap in capacitaciones_empresa %}
       <a href="{% url 'capacitacion_public' cap.public_token %}" class="btn btn-light btn-sm me-2 mb-2">
-        <i class="bi bi-journal-check me-1"></i>Ver capacitación: {{ cap.titulo }}
+        <i class="bi bi-journal-check me-1"></i>{% translate "Ver capacitación:" %} {{ cap.titulo }}
       </a>
       {% endfor %}
     </div>
@@ -230,7 +230,7 @@
           <div class="cat-card-header">
             <span class="cat-dot-sm"></span>
             {% if category %}{{ category.name }}{% else %}{% translate "Sin categoría" %}{% endif %}
-            <span class="ms-auto opacity-75" style="font-size:.72rem;font-weight:400;">{{ cat_lines|length }} ítem{% if cat_lines|length != 1 %}{% translate "s" %}{% endif %}</span>
+            <span class="ms-auto opacity-75" style="font-size:.72rem;font-weight:400;">{{ cat_lines|length }} {% translate "ítem" %}{% if cat_lines|length != 1 %}{% translate "s" %}{% endif %}</span>
           </div>
           {% for line in cat_lines %}
           <div class="line-item">
@@ -250,7 +250,7 @@
               {% if line.body %}<div>{{ line.body|trim }}</div>{% else %}<div class="text-muted fst-italic">{% translate "Sin descripción." %}</div>{% endif %}
               {% with line_comments=line.comments.all %}
               {% if line_comments %}
-              <div class="line-comments-header"><i class="bi bi-chat-left-text me-1"></i>Comentarios ({{ line_comments|length }})</div>
+              <div class="line-comments-header"><i class="bi bi-chat-left-text me-1"></i>{% translate "Comentarios (" %}{{ line_comments|length }})</div>
               {% for c in line_comments %}
               <div class="pub-comment">
                 <span class="c-author">{{ c.display_name }}</span>
@@ -281,7 +281,7 @@
           <div class="cat-card-header">
             <span class="cat-dot-sm"></span>
             {% if category %}{{ category.name }}{% else %}{% translate "Sin categoría" %}{% endif %}
-            <span class="ms-auto opacity-75" style="font-size:.72rem;font-weight:400;">{{ cat_lines|length }} ítem{% if cat_lines|length != 1 %}{% translate "s" %}{% endif %}</span>
+            <span class="ms-auto opacity-75" style="font-size:.72rem;font-weight:400;">{{ cat_lines|length }} {% translate "ítem" %}{% if cat_lines|length != 1 %}{% translate "s" %}{% endif %}</span>
           </div>
           {% for line in cat_lines %}
           <div class="line-item">
@@ -301,7 +301,7 @@
               {% if line.body %}<div>{{ line.body|trim }}</div>{% else %}<div class="text-muted fst-italic">{% translate "Sin descripción." %}</div>{% endif %}
               {% with line_comments=line.comments.all %}
               {% if line_comments %}
-              <div class="line-comments-header"><i class="bi bi-chat-left-text me-1"></i>Comentarios ({{ line_comments|length }})</div>
+              <div class="line-comments-header"><i class="bi bi-chat-left-text me-1"></i>{% translate "Comentarios (" %}{{ line_comments|length }})</div>
               {% for c in line_comments %}
               <div class="pub-comment">
                 <span class="c-author">{{ c.display_name }}</span>
@@ -362,7 +362,7 @@
   </div>
   {% endif %}
 
-  <footer>Información de Proyecto · {{ project.folio }}</footer>
+  <footer>{% translate "Información de Proyecto ·" %} {{ project.folio }}</footer>
 </div>
 
 <script>

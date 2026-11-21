@@ -73,7 +73,7 @@
                                     <i class="bi bi-exclamation-circle"></i> 
                                     {% translate "¿Estás seguro de que quieres eliminar esta solicitud?" %}
                                 </p>
-                                <small class="text-muted">Esta acción eliminará permanentemente la solicitud #{{ request_instance.sequence }}.</small>
+                                <small class="text-muted">{% translate "Esta acción eliminará permanentemente la solicitud #" %}{{ request_instance.sequence }}.</small>
                             </div>
                             <div>
                                 <a href="{% url 'employee_request_detail' request_instance.pk %}" class="btn btn-outline-secondary me-2">

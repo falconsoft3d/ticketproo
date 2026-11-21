@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}Eliminar Libro - {{ book.title }} - TicketProo{% endblock %}
+{% block title %}{% translate "Eliminar Libro -" %} {{ book.title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
@@ -35,16 +35,16 @@
                                     {{ book.get_status_display }}
                                 </span>
                                 <span class="badge bg-secondary ms-2">
-                                    <i class="bi bi-list-ol"></i> {{ book.get_total_chapters }} capítulo{{ book.get_total_chapters|pluralize }}
+                                    <i class="bi bi-list-ol"></i> {{ book.get_total_chapters }} {% translate "capítulo" %}{{ book.get_total_chapters|pluralize }}
                                 </span>
                                 {% if book.get_completed_chapters > 0 %}
                                 <span class="badge bg-success ms-2">
-                                    <i class="bi bi-check-circle"></i> {{ book.get_completed_chapters }} completado{{ book.get_completed_chapters|pluralize }}
+                                    <i class="bi bi-check-circle"></i> {{ book.get_completed_chapters }} {% translate "completado" %}{{ book.get_completed_chapters|pluralize }}
                                 </span>
                                 {% endif %}
                             </p>
                             <p class="card-text small text-muted mb-0">
-                                <i class="bi bi-calendar3"></i> Creado: {{ book.created_at|date:"d/m/Y H:i" }}
+                                <i class="bi bi-calendar3"></i> {% translate "Creado:" %} {{ book.created_at|date:"d/m/Y H:i" }}
                             </p>
                         </div>
                     </div>
@@ -53,7 +53,7 @@
                         <h6>{% translate "Se eliminará:" %}</h6>
                         <ul>
                             <li>{% translate "El libro y toda su información" %}</li>
-                            <li>Todos los capítulos ({{ book.get_total_chapters }})</li>
+                            <li>{% translate "Todos los capítulos (" %}{{ book.get_total_chapters }})</li>
                             <li>{% translate "Todo el contenido generado" %}</li>
                             <li>{% translate "Resúmenes y contenido de todos los capítulos" %}</li>
                         </ul>

@@ -21,7 +21,7 @@
                         {% else %}
                             <span class="badge bg-secondary me-2">{% translate "Privado" %}</span>
                         {% endif %}
-                        <span class="text-muted">por {{ exam.created_by.get_full_name|default:exam.created_by.username }}</span>
+                        <span class="text-muted">{% translate "por" %} {{ exam.created_by.get_full_name|default:exam.created_by.username }}</span>
                     </div>
                 </div>
             </div>
@@ -78,13 +78,13 @@
                             {% if questions.count > 0 %}
                                 <h5 class="mb-1">{% translate "¿Listo para tomar el examen?" %}</h5>
                                 <p class="text-muted mb-2">
-                                    El examen tiene {{ questions.count }} pregunta{{ questions.count|pluralize }} 
+                                    {% translate "El examen tiene" %} {{ questions.count }} {% translate "pregunta" %}{{ questions.count|pluralize }} 
                                     {% if exam.time_limit %}
-                                    y debes completarlo en {{ exam.time_limit }} minutos.
+                                    {% translate "y debes completarlo en" %} {{ exam.time_limit }} {% translate "minutos." %}
                                     {% else %}
                                     {% translate "sin límite de tiempo." %}
                                     {% endif %}
-                                    Necesitas {{ exam.passing_score }}% para aprobar.
+                                    {% translate "Necesitas" %} {{ exam.passing_score }}{% translate "% para aprobar." %}
                                 </p>
                                 
                                 {% if user_last_attempt %}
@@ -100,7 +100,7 @@
                                             {% endif %}
                                             <br>
                                             <small class="text-muted">
-                                                Realizado el {{ user_last_attempt.completed_at|date:"d/m/Y H:i" }}
+                                                {% translate "Realizado el" %} {{ user_last_attempt.completed_at|date:"d/m/Y H:i" }}
                                                 {% if not user_last_attempt.passed %}
                                                 {% translate "- Puedes volver a intentar" %}
                                                 {% endif %}

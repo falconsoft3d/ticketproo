@@ -63,9 +63,9 @@
                     
                     <div class="mb-3">
                         <small class="text-muted">
-                            <i class="bi bi-list-ol"></i> {{ book.get_total_chapters }} capítulos
+                            <i class="bi bi-list-ol"></i> {{ book.get_total_chapters }} {% translate "capítulos" %}
                             {% if book.get_total_chapters > 0 %}
-                                ({{ book.get_completed_chapters }} completados)
+                                ({{ book.get_completed_chapters }} {% translate "completados)" %}
                             {% endif %}
                         </small>
                     </div>
@@ -134,7 +134,7 @@
             {% endif %}
             
             <li class="page-item active">
-                <span class="page-link">Página {{ books.number }} de {{ books.paginator.num_pages }}</span>
+                <span class="page-link">{% translate "Página" %} {{ books.number }} {% translate "de" %} {{ books.paginator.num_pages }}</span>
             </li>
             
             {% if books.has_next %}

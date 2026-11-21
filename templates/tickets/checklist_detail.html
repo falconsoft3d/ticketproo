@@ -78,11 +78,11 @@
                                  aria-valuenow="{{ checklist.get_completion_percentage }}" 
                                  aria-valuemin="0" 
                                  aria-valuemax="100">
-                                {{ checklist.get_completion_percentage }}% Completado
+                                {{ checklist.get_completion_percentage }}{% translate "% Completado" %}
                             </div>
                         </div>
                         <small class="text-muted">
-                            {{ completed_items }} de {{ total_items }} tareas completadas
+                            {{ completed_items }} {% translate "de" %} {{ total_items }} {% translate "tareas completadas" %}
                         </small>
                     </div>
 
@@ -237,7 +237,7 @@
                                 
                                 {% if item.is_completed and item.completed_at %}
                                 <small class="text-success">
-                                    <i class="bi bi-check-circle-fill"></i> Completada el {{ item.completed_at|date:"d/m/Y H:i" }}
+                                    <i class="bi bi-check-circle-fill"></i> {% translate "Completada el" %} {{ item.completed_at|date:"d/m/Y H:i" }}
                                 </small>
                                 {% endif %}
                             </div>

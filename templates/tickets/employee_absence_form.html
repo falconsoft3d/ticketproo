@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -212,7 +212,7 @@
                         <small class="text-info">{% translate "(Requiere doc.)" %}</small>
                         {% endif %}
                         {% if type.max_days_per_year %}
-                        <small class="text-muted">(Max: {{ type.max_days_per_year }} días/año)</small>
+                        <small class="text-muted">{% translate "(Max:" %} {{ type.max_days_per_year }} {% translate "días/año)" %}</small>
                         {% endif %}
                     </div>
                     {% endfor %}

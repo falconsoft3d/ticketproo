@@ -344,7 +344,7 @@
                     <i class="bi bi-layers"></i> TANDAS
                 </div>
                 <div class="counter-display" id="setsDisplay">{{ exercise.current_sets }}</div>
-                <div class="counter-target">de {{ exercise.sets_target }}</div>
+                <div class="counter-target">{% translate "de" %} {{ exercise.sets_target }}</div>
                 {% if exercise.status in 'in_progress,paused' %}
                 <div class="tap-hint">
                     <i class="bi bi-hand-index"></i> {% translate "Toca para completar tanda" %}
@@ -364,7 +364,7 @@
                     <i class="bi bi-arrow-repeat"></i> {% translate "REPETICIONES" %}
                 </div>
                 <div class="counter-display" id="repsDisplay">{{ exercise.current_reps }}</div>
-                <div class="counter-target">de {{ exercise.reps_target }}</div>
+                <div class="counter-target">{% translate "de" %} {{ exercise.reps_target }}</div>
                 {% if exercise.status in 'in_progress,paused' %}
                 <div class="tap-hint">
                     <i class="bi bi-hand-index"></i> {% translate "Toca para añadir repetición" %}

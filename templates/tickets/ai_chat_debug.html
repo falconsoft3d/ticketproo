@@ -10,8 +10,8 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
-                    <h5>Debug Chat IA - Sesión {{ session.title }}</h5>
-                    <small>Usuario: {{ session.user.username }} | Modelo: {{ session.ai_model }}</small>
+                    <h5>{% translate "Debug Chat IA - Sesión" %} {{ session.title }}</h5>
+                    <small>{% translate "Usuario:" %} {{ session.user.username }} {% translate "| Modelo:" %} {{ session.ai_model }}</small>
                 </div>
                 <div class="card-body">
                     <!-- Mensajes -->

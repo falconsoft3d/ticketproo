@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container">
   <h1>{% translate "Eliminar Generador" %}</h1>
-  <p>¿Estás seguro de eliminar el generador "{{ generator.title }}"? Se han enviado {{ requests_count }} solicitudes.</p>
+  <p>{% translate '¿Estás seguro de eliminar el generador "' %}{{ generator.title }}{% translate '"? Se han enviado' %} {{ requests_count }} {% translate "solicitudes." %}</p>
   <form method="post">
     {% csrf_token %}
     <button class="btn btn-danger" type="submit">{% translate "Eliminar" %}</button>

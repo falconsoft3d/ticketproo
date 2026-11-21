@@ -121,7 +121,7 @@
                                         </td>
                                         <td>
                                             {% if log.execution_time_seconds %}
-                                                <span class="text-muted">{{ log.execution_time_seconds|floatformat:2 }}s</span>
+                                                <span class="text-muted">{{ log.execution_time_seconds|floatformat:2 }}{% translate "s" %}</span>
                                             {% else %}
                                                 <span class="text-muted">-</span>
                                             {% endif %}
@@ -204,7 +204,7 @@
 
                                 <li class="page-item active">
                                     <span class="page-link">
-                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                        {% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}
                                     </span>
                                 </li>
 

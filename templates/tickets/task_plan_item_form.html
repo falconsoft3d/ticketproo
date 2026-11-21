@@ -12,13 +12,13 @@
                     <h4 class="mb-0">
                         <i class="bi bi-list-task"></i>
                         {% if form.instance.pk %}
-                            Editar Tarea: {{ form.instance.title }}
+                            {% translate "Editar Tarea:" %} {{ form.instance.title }}
                         {% else %}
                             {% translate "Agregar Nueva Tarea" %}
                         {% endif %}
                     </h4>
                     {% if day %}
-                    <small class="text-muted">Para: {{ day.title }}</small>
+                    <small class="text-muted">{% translate "Para:" %} {{ day.title }}</small>
                     {% endif %}
                 </div>
                 <div class="card-body">

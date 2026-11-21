@@ -39,7 +39,7 @@
                     {% endif %}
                     <div class="mt-2 d-flex flex-wrap gap-1">
                         <span class="badge bg-light text-dark border">
-                            <i class="bi bi-list-task"></i> {{ cap.lineas.count }} línea{{ cap.lineas.count|pluralize }}
+                            <i class="bi bi-list-task"></i> {{ cap.lineas.count }} {% translate "línea" %}{{ cap.lineas.count|pluralize }}
                         </span>
                         {% if not cap.is_active %}
                         <span class="badge bg-secondary"><i class="bi bi-pause-circle"></i> {% translate "Inactiva" %}</span>

@@ -134,7 +134,7 @@
                                 <h6>{% translate "Horas estimadas" %}</h6>
                                 <p class="mb-1">
                                     <i class="bi bi-clock me-1"></i>
-                                    {{ work_order.estimated_hours }} hora{{ work_order.estimated_hours|pluralize }}
+                                    {{ work_order.estimated_hours }} {% translate "hora" %}{{ work_order.estimated_hours|pluralize }}
                                 </p>
                             {% endif %}
                         </div>
@@ -169,7 +169,7 @@
                                 <h6 class="mb-1">{% translate "Orden creada" %}</h6>
                                 <p class="text-muted mb-0">
                                     <small>
-                                        {{ work_order.created_at|date:"d/m/Y H:i" }} por 
+                                        {{ work_order.created_at|date:"d/m/Y H:i" }} {% translate "por" %} 
                                         {{ work_order.created_by.get_full_name|default:work_order.created_by.username }}
                                     </small>
                                 </p>
@@ -195,7 +195,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="bi bi-paperclip me-1"></i>Adjuntos ({{ attachments.count }})
+                        <i class="bi bi-paperclip me-1"></i>{% translate "Adjuntos (" %}{{ attachments.count }})
                     </h6>
                 </div>
                 <div class="card-body">
@@ -211,11 +211,11 @@
                                         </a>
                                     </h6>
                                     <p class="mb-1 text-muted small">
-                                        Tamaño: {{ attachment.get_file_size_display }}
+                                        {% translate "Tamaño:" %} {{ attachment.get_file_size_display }}
                                     </p>
                                     <small class="text-muted">
-                                        Subido por {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}
-                                        el {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
+                                        {% translate "Subido por" %} {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}
+                                        {% translate "el" %} {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
                                     </small>
                                 </div>
                                 <a href="{{ attachment.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">

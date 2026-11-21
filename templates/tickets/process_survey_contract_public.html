@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% if survey.contract_title %}{{ survey.contract_title }}{% else %}Contrato — {{ survey.name }}{% endif %}</title>
+  <title>{% if survey.contract_title %}{{ survey.contract_title }}{% else %}{% translate "Contrato —" %} {{ survey.name }}{% endif %}</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <style>
@@ -267,7 +267,7 @@
         {% if survey.contract_title %}
           {{ survey.contract_title }}
         {% else %}
-          Contrato — {{ survey.name }}
+          {% translate "Contrato —" %} {{ survey.name }}
         {% endif %}
       </h1>
       <div class="meta d-flex flex-wrap gap-3 mt-2">
@@ -311,14 +311,14 @@
 
         {# Proveedor #}
         <p class="mb-3">
-          <strong>Don/Doña {{ p.created_by.get_full_name|default:p.created_by.username }}</strong>{% if p.provider_nationality %}, mayor de edad, nacionalidad {{ p.provider_nationality }}{% endif %}{% if p.provider_civil_status %}, de estado civil {{ p.provider_civil_status }}{% endif %}{% if p.provider_nif %}{% translate ", con NIF:" %} <strong>{{ p.provider_nif }}</strong>{% endif %}{% if p.provider_occupation %}, {{ p.provider_occupation }}{% endif %}{% if p.provider_address %}, con domicilio en {{ p.provider_address }}{% elif p.created_by.profile.city %}{% with pr=p.created_by.profile %}{% translate ", con domicilio en" %} {% if pr.city %}{{ pr.city }}{% endif %}{% if pr.country %}, {{ pr.country }}{% endif %}{% endwith %}{% endif %}{% if p.created_by.email %}{% translate ", email:" %} <strong>{{ p.created_by.email }}</strong>{% endif %}{% translate ", en lo sucesivo denominado como" %} <strong>{% translate '"EL EJECUTOR"' %}</strong>
+          <strong>{% translate "Don/Doña" %} {{ p.created_by.get_full_name|default:p.created_by.username }}</strong>{% if p.provider_nationality %}{% translate ", mayor de edad, nacionalidad" %} {{ p.provider_nationality }}{% endif %}{% if p.provider_civil_status %}{% translate ", de estado civil" %} {{ p.provider_civil_status }}{% endif %}{% if p.provider_nif %}{% translate ", con NIF:" %} <strong>{{ p.provider_nif }}</strong>{% endif %}{% if p.provider_occupation %}, {{ p.provider_occupation }}{% endif %}{% if p.provider_address %}{% translate ", con domicilio en" %} {{ p.provider_address }}{% elif p.created_by.profile.city %}{% with pr=p.created_by.profile %}{% translate ", con domicilio en" %} {% if pr.city %}{{ pr.city }}{% endif %}{% if pr.country %}, {{ pr.country }}{% endif %}{% endwith %}{% endif %}{% if p.created_by.email %}{% translate ", email:" %} <strong>{{ p.created_by.email }}</strong>{% endif %}{% translate ", en lo sucesivo denominado como" %} <strong>{% translate '"EL EJECUTOR"' %}</strong>
         </p>
 
         {# Cliente #}
         {% if p.client_rep_name or p.client_signed_name or p.company %}
         <p class="mb-3">
           Y <strong>{{ p.client_rep_name|default:p.client_signed_name|default:"___________________________" }}</strong>{% if p.client_rep_id %}{% translate ", con ID:" %} <strong>{{ p.client_rep_id }}</strong>{% endif %}{% if p.client_rep_role %}, {{ p.client_rep_role }}{% endif %}{% if p.client_signed_email %}{% translate ", email:" %} <strong>{{ p.client_signed_email }}</strong>{% endif %}
-          {% if p.company %} {% translate "en representación de la empresa" %} <strong>{{ p.company.name }}</strong>{% if p.company.tax_id %}{% translate ", CIF:" %} <strong>{{ p.company.tax_id }}</strong>{% endif %}{% if p.company.email %}{% translate ", email:" %} <strong>{{ p.company.email }}</strong>{% endif %}{% if p.company.address or p.company.city or p.company.country %}, con domicilio en {{ p.company.address }}{% if p.company.address and p.company.city %}, {% endif %}{{ p.company.city }}{% if p.company.city and p.company.country %}, {% endif %}{{ p.company.country }}{% endif %}{% endif %}{% translate ", en lo sucesivo denominado como" %} <strong>{% translate '"EL CLIENTE"' %}</strong>
+          {% if p.company %} {% translate "en representación de la empresa" %} <strong>{{ p.company.name }}</strong>{% if p.company.tax_id %}{% translate ", CIF:" %} <strong>{{ p.company.tax_id }}</strong>{% endif %}{% if p.company.email %}{% translate ", email:" %} <strong>{{ p.company.email }}</strong>{% endif %}{% if p.company.address or p.company.city or p.company.country %}{% translate ", con domicilio en" %} {{ p.company.address }}{% if p.company.address and p.company.city %}, {% endif %}{{ p.company.city }}{% if p.company.city and p.company.country %}, {% endif %}{{ p.company.country }}{% endif %}{% endif %}{% translate ", en lo sucesivo denominado como" %} <strong>{% translate '"EL CLIENTE"' %}</strong>
         </p>
         {% endif %}
 
@@ -341,7 +341,7 @@
               {% if clause.title %}
               <span class="clause-title">{{ clause.title }}</span>
               {% else %}
-              <span class="clause-title text-muted fw-normal text-uppercase" style="font-size:.8rem;">Cláusula {{ forloop.counter }}</span>
+              <span class="clause-title text-muted fw-normal text-uppercase" style="font-size:.8rem;">{% translate "Cláusula" %} {{ forloop.counter }}</span>
               {% endif %}
             </div>
             <div class="d-flex gap-1 no-print">
@@ -362,9 +362,9 @@
           <div class="pub-clause-view" id="pub-clause-view-{{ clause.pk }}">
             <div class="clause-body">{{ clause.body }}</div>
             <div class="d-flex gap-3 mt-2 no-print" style="font-size:.72rem;color:#adb5bd;">
-              <span><i class="bi bi-calendar-plus me-1"></i>Creado: {{ clause.created_at|date:"d/m/Y H:i" }}</span>
+              <span><i class="bi bi-calendar-plus me-1"></i>{% translate "Creado:" %} {{ clause.created_at|date:"d/m/Y H:i" }}</span>
               {% if clause.updated_at != clause.created_at %}
-              <span id="pub-clause-updated-{{ clause.pk }}"><i class="bi bi-pencil me-1"></i>Editado: {{ clause.updated_at|date:"d/m/Y H:i" }}</span>
+              <span id="pub-clause-updated-{{ clause.pk }}"><i class="bi bi-pencil me-1"></i>{% translate "Editado:" %} {{ clause.updated_at|date:"d/m/Y H:i" }}</span>
               {% else %}
               <span id="pub-clause-updated-{{ clause.pk }}" class="d-none"></span>
               {% endif %}
@@ -415,8 +415,7 @@
           <div style="height:2px;flex:1;background:linear-gradient(270deg,#0f3460,transparent);"></div>
         </div>
         <p class="text-muted small mb-3">
-          El siguiente listado de requerimientos y procesos forma parte integral del presente contrato
-          como Anexo A (Versión {{ max_version }}).
+          {% translate "El siguiente listado de requerimientos y procesos forma parte integral del presente contrato como Anexo A (Versión" %} {{ max_version }}).
         </p>
 
         {% if lines_grouped %}
@@ -426,7 +425,7 @@
             <span class="anexo-category-dot" style="background:{{ category.color }};"></span>
             <span class="anexo-category-label">{{ category.name }}</span>
             <span class="anexo-category-line"></span>
-            <span class="text-muted" style="font-size:.75rem;white-space:nowrap;">{{ cat_lines|length }} proceso{% if cat_lines|length != 1 %}{% translate "s" %}{% endif %}</span>
+            <span class="text-muted" style="font-size:.75rem;white-space:nowrap;">{{ cat_lines|length }} {% translate "proceso" %}{% if cat_lines|length != 1 %}{% translate "s" %}{% endif %}</span>
           </div>
           {% else %}
           {% if lines_grouped|length > 1 %}
@@ -434,7 +433,7 @@
             <span class="anexo-category-dot" style="background:#adb5bd;"></span>
             <span class="anexo-category-label" style="color:#6c757d;">{% translate "Sin categoría" %}</span>
             <span class="anexo-category-line"></span>
-            <span class="text-muted" style="font-size:.75rem;white-space:nowrap;">{{ cat_lines|length }} proceso{% if cat_lines|length != 1 %}{% translate "s" %}{% endif %}</span>
+            <span class="text-muted" style="font-size:.75rem;white-space:nowrap;">{{ cat_lines|length }} {% translate "proceso" %}{% if cat_lines|length != 1 %}{% translate "s" %}{% endif %}</span>
           </div>
           {% endif %}
           {% endif %}
@@ -488,7 +487,7 @@
           <div class="signature-box"></div>
           {% endif %}
           <p class="small text-muted mt-1 mb-0">{{ provider_name|default:"_______________________________" }}</p>
-          <p class="small text-muted mb-0">Fecha: {{ survey.contract_date|date:"d/m/Y"|default:"_________________________________" }}</p>
+          <p class="small text-muted mb-0">{% translate "Fecha:" %} {{ survey.contract_date|date:"d/m/Y"|default:"_________________________________" }}</p>
         </div>
         {% endif %}
         <div class="col-6">
@@ -499,7 +498,7 @@
                    style="max-width:100%;max-height:80px;object-fit:contain;display:block;margin:auto;">
             </div>
             <p class="small text-muted mt-1 mb-0">{{ survey.client_signed_name|default:"_______________________________" }}</p>
-            <p class="small text-muted mb-0">Fecha: {{ survey.client_signed_at|date:"d/m/Y"|default:"_______________" }}</p>
+            <p class="small text-muted mb-0">{% translate "Fecha:" %} {{ survey.client_signed_at|date:"d/m/Y"|default:"_______________" }}</p>
             {% if not signature_locked %}
             <button type="button" class="btn btn-outline-secondary btn-sm mt-2 no-print" onclick="document.getElementById('sigClientPanel').classList.toggle('d-none')">
               <i class="bi bi-pencil"></i> {% translate "Cambiar firma" %}
@@ -545,7 +544,7 @@
 
   {# ── Pie de página ── #}
   <p class="text-center text-white-50 small mt-3 no-print">
-    Documento generado desde el sistema de levantamiento de procesos ·
+    {% translate "Documento generado desde el sistema de levantamiento de procesos ·" %}
     {{ survey.folio }}
   </p>
 </div>

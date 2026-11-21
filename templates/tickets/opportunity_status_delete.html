@@ -36,8 +36,7 @@
                         <div class="alert alert-warning">
                             <i class="bi bi-exclamation-triangle"></i>
                             <strong>{% translate "No se puede eliminar este estado" %}</strong><br>
-                            Hay {{ status.opportunities.count }} oportunidad(es) usando este estado.
-                            Debes cambiar el estado de todas las oportunidades antes de eliminarlo.
+                            {% translate "Hay" %} {{ status.opportunities.count }} {% translate "oportunidad(es) usando este estado. Debes cambiar el estado de todas las oportunidades antes de eliminarlo." %}
                         </div>
                         
                         <div class="d-flex justify-content-center">

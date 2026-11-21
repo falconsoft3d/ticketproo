@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ exam.title }} - Examen Público{% endblock %}
+{% block title %}{{ exam.title }} {% translate "- Examen Público" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -118,7 +118,7 @@
                                     <i class="bi bi-question-circle fs-4 text-primary me-3"></i>
                                     <div>
                                         <strong>{% translate "Total de Preguntas" %}</strong>
-                                        <div class="text-muted">{{ exam.questions.count }} preguntas</div>
+                                        <div class="text-muted">{{ exam.questions.count }} {% translate "preguntas" %}</div>
                                     </div>
                                 </div>
                             </div>
@@ -129,7 +129,7 @@
                                     <i class="bi bi-trophy fs-4 text-success me-3"></i>
                                     <div>
                                         <strong>{% translate "Puntuación Mínima" %}</strong>
-                                        <div class="text-muted">{{ exam.passing_score }}% para aprobar</div>
+                                        <div class="text-muted">{{ exam.passing_score }}{% translate "% para aprobar" %}</div>
                                     </div>
                                 </div>
                             </div>
@@ -144,7 +144,7 @@
                                     <i class="bi bi-clock fs-4 text-warning me-3"></i>
                                     <div>
                                         <strong>{% translate "Tiempo Límite" %}</strong>
-                                        <div class="text-muted">{{ exam.time_limit }} minutos</div>
+                                        <div class="text-muted">{{ exam.time_limit }} {% translate "minutos" %}</div>
                                     </div>
                                 </div>
                             </div>
@@ -176,10 +176,10 @@
                         <li class="mb-2"><i class="bi bi-check text-success me-2"></i> {% translate "Selecciona una opción por pregunta (A, B o C)" %}</li>
                         <li class="mb-2"><i class="bi bi-check text-success me-2"></i> {% translate "Puedes navegar entre preguntas usando los botones" %}</li>
                         {% if exam.time_limit %}
-                        <li class="mb-2"><i class="bi bi-clock text-warning me-2"></i> Tienes {{ exam.time_limit }} minutos para completar el examen</li>
+                        <li class="mb-2"><i class="bi bi-clock text-warning me-2"></i> {% translate "Tienes" %} {{ exam.time_limit }} {% translate "minutos para completar el examen" %}</li>
                         {% endif %}
                         <li class="mb-2"><i class="bi bi-exclamation-triangle text-warning me-2"></i> {% translate "Una vez enviado, no podrás modificar tus respuestas" %}</li>
-                        <li class="mb-0"><i class="bi bi-award text-info me-2"></i> Necesitas {{ exam.passing_score }}% para aprobar</li>
+                        <li class="mb-0"><i class="bi bi-award text-info me-2"></i> {% translate "Necesitas" %} {{ exam.passing_score }}{% translate "% para aprobar" %}</li>
                     </ul>
                 </div>
             </div>
@@ -196,15 +196,15 @@
                     <div class="question-preview">
                         <h6><span class="badge bg-primary me-2">{{ question.order }}</span>{{ question.question_text }}</h6>
                         <div class="row mt-2">
-                            <div class="col-md-4"><small class="text-muted">A) {{ question.option_a }}</small></div>
-                            <div class="col-md-4"><small class="text-muted">B) {{ question.option_b }}</small></div>
-                            <div class="col-md-4"><small class="text-muted">C) {{ question.option_c }}</small></div>
+                            <div class="col-md-4"><small class="text-muted">{% translate "A)" %} {{ question.option_a }}</small></div>
+                            <div class="col-md-4"><small class="text-muted">{% translate "B)" %} {{ question.option_b }}</small></div>
+                            <div class="col-md-4"><small class="text-muted">{% translate "C)" %} {{ question.option_c }}</small></div>
                         </div>
                     </div>
                     {% endfor %}
                     {% if exam.questions.count > preview_questions|length %}
                     <div class="text-center text-muted mt-3">
-                        <small>... y {{ exam.questions.count|add:"-3" }} preguntas más</small>
+                        <small>{% translate "... y" %} {{ exam.questions.count|add:"-3" }} {% translate "preguntas más" %}</small>
                     </div>
                     {% endif %}
                 </div>

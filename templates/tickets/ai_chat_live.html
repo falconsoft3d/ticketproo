@@ -3,7 +3,7 @@
 {% load static %}
 
 <!-- NUEVO DISEÑO WHATSAPP ACTUALIZADO 2025-10-07 23:22 -->
-{% block title %}{{ session.title }} - Chat IA{% endblock %}
+{% block title %}{{ session.title }} {% translate "- Chat IA" %}{% endblock %}
 
 {% block extra_css %}
 <!-- CACHE BUSTER v3.0 - WhatsApp Style Fixed Template - 2025-10-07 23:36 -->
@@ -388,7 +388,7 @@ body, html {
                                 </div>
                                 <div>
                                     <h6 class="mb-0">{{ session.title }}</h6>
-                                    <small class="text-white opacity-75 ">Asistente IA • {{ session.ai_model }}</small>
+                                    <small class="text-white opacity-75 ">{% translate "Asistente IA •" %} {{ session.ai_model }}</small>
                                 </div>
                             </div>
                         </div>
@@ -443,7 +443,7 @@ body, html {
                             </div>
                             <div class="d-flex justify-content-between chat-stats">
                                 <small class="text-muted">{% translate "Ctrl+Enter para enviar" %}</small>
-                                <small class="text-muted">{{ messages_list|length }} mensajes</small>
+                                <small class="text-muted">{{ messages_list|length }} {% translate "mensajes" %}</small>
                             </div>
                         </form>
                     </div>

@@ -107,7 +107,7 @@
                                     </td>
                                     <td class="text-end">
                                         <strong class="text-primary">${{ report.total_amount|floatformat:2 }}</strong>
-                                        <small class="text-muted d-block">{{ report.expense_items.count }} gasto{{ report.expense_items.count|pluralize }}</small>
+                                        <small class="text-muted d-block">{{ report.expense_items.count }} {% translate "gasto" %}{{ report.expense_items.count|pluralize }}</small>
                                     </td>
                                     <td class="text-end">
                                         {% if ingreso %}
@@ -169,7 +169,7 @@
                                 <!-- Totales página actual -->
                                 <tr class="table-secondary fw-semibold">
                                     <td colspan="3" class="text-end text-muted small">
-                                        <i class="fas fa-layer-group me-1"></i>Totales página ({{ expense_reports.paginator.count }} rendición{{ expense_reports.paginator.count|pluralize }}):
+                                        <i class="fas fa-layer-group me-1"></i>{% translate "Totales página (" %}{{ expense_reports.paginator.count }} {% translate "rendición" %}{{ expense_reports.paginator.count|pluralize }}):
                                     </td>
                                     <td class="text-end text-primary">${{ page_total_expenses|floatformat:2 }}</td>
                                     <td class="text-end text-success">${{ page_total_funds|floatformat:2 }}</td>
@@ -215,7 +215,7 @@
                             
                             <li class="page-item active">
                                 <span class="page-link">
-                                    Página {{ expense_reports.number }} de {{ expense_reports.paginator.num_pages }}
+                                    {% translate "Página" %} {{ expense_reports.number }} {% translate "de" %} {{ expense_reports.paginator.num_pages }}
                                 </span>
                             </li>
                             

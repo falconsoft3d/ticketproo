@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -454,11 +454,11 @@
                     <div class="row">
                         <div class="col-md-6">
                             <p class="mb-1"><strong>{% translate "Total de Tickets:" %}</strong></p>
-                            <p class="text-muted">{{ company.get_active_tickets_count }} tickets activos</p>
+                            <p class="text-muted">{{ company.get_active_tickets_count }} {% translate "tickets activos" %}</p>
                         </div>
                         <div class="col-md-6">
                             <p class="mb-1"><strong>{% translate "Total de Usuarios:" %}</strong></p>
-                            <p class="text-muted">{{ company.get_users_count }} usuarios asociados</p>
+                            <p class="text-muted">{{ company.get_users_count }} {% translate "usuarios asociados" %}</p>
                         </div>
                     </div>
                 </div>

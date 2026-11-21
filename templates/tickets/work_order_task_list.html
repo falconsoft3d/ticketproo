@@ -40,7 +40,7 @@
                                 <div class="col-6">
                                     <div class="card bg-light">
                                         <div class="card-body p-2">
-                                            <h6 class="mb-1">{{ total_estimated_hours|floatformat:1 }}h</h6>
+                                            <h6 class="mb-1">{{ total_estimated_hours|floatformat:1 }}{% translate "h" %}</h6>
                                             <small class="text-muted">{% translate "Estimado" %}</small>
                                         </div>
                                     </div>
@@ -48,7 +48,7 @@
                                 <div class="col-6">
                                     <div class="card bg-light">
                                         <div class="card-body p-2">
-                                            <h6 class="mb-1">{{ total_logged_hours|floatformat:1 }}h</h6>
+                                            <h6 class="mb-1">{{ total_logged_hours|floatformat:1 }}{% translate "h" %}</h6>
                                             <small class="text-muted">{% translate "Trabajado" %}</small>
                                         </div>
                                     </div>
@@ -68,7 +68,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="fas fa-list"></i> Tareas ({{ tasks|length }})
+                        <i class="fas fa-list"></i> {% translate "Tareas (" %}{{ tasks|length }})
                     </h5>
                 </div>
                 <div class="card-body p-0">
@@ -118,9 +118,9 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>{{ task.estimated_hours|default:"--"|floatformat:1 }}h</td>
+                                        <td>{{ task.estimated_hours|default:"--"|floatformat:1 }}{% translate "h" %}</td>
                                         <td>
-                                            <span id="task-time-{{ task.id }}">{{ task.get_total_time_logged|floatformat:1 }}h</span>
+                                            <span id="task-time-{{ task.id }}">{{ task.get_total_time_logged|floatformat:1 }}{% translate "h" %}</span>
                                         </td>
                                         <td>
                                             {% if task.estimated_hours %}

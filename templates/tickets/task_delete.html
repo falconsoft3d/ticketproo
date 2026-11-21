@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}Eliminar Tarea: {{ task.title }} - TicketProo{% endblock %}
+{% block title %}{% translate "Eliminar Tarea:" %} {{ task.title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -33,7 +33,7 @@
                             </span>
                         </div>
                         <small class="text-muted d-block mt-2">
-                            Creado por: {{ task.created_by.get_full_name|default:task.created_by.username }}
+                            {% translate "Creado por:" %} {{ task.created_by.get_full_name|default:task.created_by.username }}
                         </small>
                     </div>
                 </div>

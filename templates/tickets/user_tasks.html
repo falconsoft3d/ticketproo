@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Tareas de {{ user_obj.get_full_name|default:user_obj.username }}{% endblock %}
+{% block title %}{% translate "Tareas de" %} {{ user_obj.get_full_name|default:user_obj.username }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -12,7 +12,7 @@
                 <div>
                     <h2>
                         <i class="bi bi-clipboard-check text-primary"></i>
-                        Tareas Pendientes de {{ user_obj.get_full_name|default:user_obj.username }}
+                        {% translate "Tareas Pendientes de" %} {{ user_obj.get_full_name|default:user_obj.username }}
                     </h2>
                     <p class="text-muted mb-0">
                         <i class="bi bi-envelope me-1"></i>{{ user_obj.email }}
@@ -142,15 +142,15 @@
                                     <td>
                                         {% if item.days_assigned > 7 %}
                                             <span class="badge bg-danger fs-6">
-                                                <i class="bi bi-calendar-x"></i> {{ item.days_assigned }} días
+                                                <i class="bi bi-calendar-x"></i> {{ item.days_assigned }} {% translate "días" %}
                                             </span>
                                         {% elif item.days_assigned > 3 %}
                                             <span class="badge bg-warning text-dark fs-6">
-                                                <i class="bi bi-calendar-event"></i> {{ item.days_assigned }} días
+                                                <i class="bi bi-calendar-event"></i> {{ item.days_assigned }} {% translate "días" %}
                                             </span>
                                         {% else %}
                                             <span class="badge bg-success fs-6">
-                                                <i class="bi bi-calendar-check"></i> {{ item.days_assigned }} días
+                                                <i class="bi bi-calendar-check"></i> {{ item.days_assigned }} {% translate "días" %}
                                             </span>
                                         {% endif %}
                                     </td>

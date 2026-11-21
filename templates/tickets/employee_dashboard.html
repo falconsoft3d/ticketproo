@@ -155,9 +155,9 @@
                 </h1>
                 <p class="mb-0 mt-2">
                     {% if selected_employee.id == current_user.id %}
-                        Hola {{ current_user.get_full_name|default:current_user.username }}, aquí tienes un resumen de tu productividad
+                        {% translate "Hola" %} {{ current_user.get_full_name|default:current_user.username }}{% translate ", aquí tienes un resumen de tu productividad" %}
                     {% else %}
-                        Dashboard de {{ selected_employee.get_full_name|default:selected_employee.username }}
+                        {% translate "Dashboard de" %} {{ selected_employee.get_full_name|default:selected_employee.username }}
                     {% endif %}
                 </p>
             </div>
@@ -171,7 +171,7 @@
                                     <i class="{{ weather_info.icon }}"></i>
                                 </div>
                                 <div class="weather-temp">
-                                    {{ weather_info.temperature }}°C
+                                    {{ weather_info.temperature }}{% translate "°C" %}
                                 </div>
                                 <div class="weather-desc">
                                     {{ weather_info.description }}
@@ -180,7 +180,7 @@
                                     <i class="bi bi-geo-alt"></i> {{ weather_info.city }}
                                     {% if weather_info.humidity %}
                                         <br><i class="bi bi-droplet"></i> {{ weather_info.humidity }}% 
-                                        <i class="bi bi-wind ms-2"></i> {{ weather_info.wind_speed }} km/h
+                                        <i class="bi bi-wind ms-2"></i> {{ weather_info.wind_speed }} {% translate "km/h" %}
                                     {% endif %}
                                 </div>
                             {% else %}
@@ -367,7 +367,7 @@
                     <div class="metric-value">{{ hours_week }}</div>
                     <p class="metric-label text-white-50">{% translate "Horas Esta Semana" %}</p>
                     <div class="period-info text-white-50">
-                        Desde {{ week_start|date:"d/m" }}
+                        {% translate "Desde" %} {{ week_start|date:"d/m" }}
                     </div>
                 </div>
             </div>
@@ -382,7 +382,7 @@
                     <div class="metric-value">{{ hours_month }}</div>
                     <p class="metric-label text-white-50">{% translate "Horas Este Mes" %}</p>
                     <div class="period-info text-white-50">
-                        Desde {{ month_start|date:"d/m" }}
+                        {% translate "Desde" %} {{ month_start|date:"d/m" }}
                     </div>
                 </div>
             </div>
@@ -404,7 +404,7 @@
                     <div class="metric-value">{{ absence_hours_week }}</div>
                     <p class="metric-label text-white-50">{% translate "Ausencias de la Semana (Horas)" %}</p>
                     <div class="period-info text-white-50">
-                        Desde {{ week_start|date:"d/m" }}
+                        {% translate "Desde" %} {{ week_start|date:"d/m" }}
                     </div>
                 </div>
             </div>
@@ -419,7 +419,7 @@
                     <div class="metric-value">{{ absence_hours_month }}</div>
                     <p class="metric-label text-white-50">{% translate "Ausencias del Mes (Horas)" %}</p>
                     <div class="period-info text-white-50">
-                        Desde {{ month_start|date:"d/m" }}
+                        {% translate "Desde" %} {{ month_start|date:"d/m" }}
                     </div>
                 </div>
             </div>

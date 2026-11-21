@@ -15,7 +15,7 @@
                         {% if action == 'create' %}
                             {% translate "Nueva Conexión Odoo" %}
                         {% else %}
-                            Editar Conexión: {{ connection.name }}
+                            {% translate "Editar Conexión:" %} {{ connection.name }}
                         {% endif %}
                     </h4>
                 </div>

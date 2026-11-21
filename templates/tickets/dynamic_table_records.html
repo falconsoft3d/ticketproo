@@ -3,13 +3,13 @@
 {% load static %}
 {% load tickets_tags %}
 
-{% block title %}Registros - {{ table.name }}{% endblock %}
+{% block title %}{% translate "Registros -" %} {{ table.name }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row mb-4">
         <div class="col">
-            <h2><i class="fas fa-database"></i> Registros de {{ table.name }}</h2>
+            <h2><i class="fas fa-database"></i> {% translate "Registros de" %} {{ table.name }}</h2>
             <nav aria-label="{% translate 'breadcrumb' %}">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{% url 'dynamic_table_list' %}">{% translate "Tablas API" %}</a></li>
@@ -40,7 +40,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
                         <i class="fas fa-list"></i> 
-                        {{ records|length }} registro{{ records|length|pluralize }}
+                        {{ records|length }} {% translate "registro" %}{{ records|length|pluralize }}
                     </h5>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRecordModal">
                         <i class="fas fa-plus"></i> {% translate "Agregar Registro" %}
@@ -56,7 +56,7 @@
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <h6 class="mb-0">
-                                                <span class="badge bg-secondary">ID: {{ record.id }}</span>
+                                                <span class="badge bg-secondary">{% translate "ID:" %} {{ record.id }}</span>
                                                 <small class="text-muted ms-2">
                                                     <i class="fas fa-calendar"></i> {{ record.created_at|date:"d/m/Y H:i" }}
                                                 </small>
@@ -128,7 +128,7 @@
                                         <div class="modal-dialog modal-lg">
                                             <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title">Registro #{{ record.id }}</h5>
+                                                    <h5 class="modal-title">{% translate "Registro #" %}{{ record.id }}</h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                 </div>
                                                 <div class="modal-body">
@@ -175,7 +175,7 @@
                                                 <form method="post" action="{% url 'dynamic_table_record_update' table.pk record.pk %}">
                                                     {% csrf_token %}
                                                     <div class="modal-header">
-                                                        <h5 class="modal-title">Editar Registro #{{ record.id }}</h5>
+                                                        <h5 class="modal-title">{% translate "Editar Registro #" %}{{ record.id }}</h5>
                                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                     </div>
                                                     <div class="modal-body">

@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Eliminar Proyecto - {{ block.super }}{% endblock %}
+{% block title %}{% translate "Eliminar Proyecto -" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -17,8 +17,8 @@
                     
                     <div class="alert alert-warning">
                         <h5>{{ project.title }}</h5>
-                        <p class="mb-0">Total de artículos: {{ project.get_total_articles }}</p>
-                        <p class="mb-0">Artículos generados: {{ project.get_completed_articles }}</p>
+                        <p class="mb-0">{% translate "Total de artículos:" %} {{ project.get_total_articles }}</p>
+                        <p class="mb-0">{% translate "Artículos generados:" %} {{ project.get_completed_articles }}</p>
                     </div>
 
                     <p class="text-danger">

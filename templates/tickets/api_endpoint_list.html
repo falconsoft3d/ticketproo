@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -64,13 +64,13 @@
                                                 <div class="col-auto me-4">
                                                     <small class="text-muted">
                                                         <i class="bi bi-person-gear text-success me-1"></i>
-                                                        Por {{ api_endpoint.created_by.get_full_name|default:api_endpoint.created_by.username }}
+                                                        {% translate "Por" %} {{ api_endpoint.created_by.get_full_name|default:api_endpoint.created_by.username }}
                                                     </small>
                                                 </div>
                                                 <div class="col-auto">
                                                     <small class="text-muted">
                                                         <i class="bi bi-clock me-1"></i>
-                                                        {{ api_endpoint.created_at|timesince }} atrás
+                                                        {{ api_endpoint.created_at|timesince }} {% translate "atrás" %}
                                                     </small>
                                                 </div>
                                             </div>

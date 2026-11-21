@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - Vista Pública{% endblock %}
+{% block title %}{{ page_title }} {% translate "- Vista Pública" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -139,8 +139,8 @@
                         </div>
                     </div>
                     <div class="d-flex justify-content-between mt-2">
-                        <small class="text-muted">{{ document.get_approved_count }} de {{ document.get_total_count }} aprobados</small>
-                        <small class="text-muted">{{ document.get_pending_count }} pendientes</small>
+                        <small class="text-muted">{{ document.get_approved_count }} {% translate "de" %} {{ document.get_total_count }} {% translate "aprobados" %}</small>
+                        <small class="text-muted">{{ document.get_pending_count }} {% translate "pendientes" %}</small>
                     </div>
                 </div>
             </div>
@@ -156,7 +156,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
                         <span class="badge bg-secondary me-2">#{{ req.number }}</span>
-                        Requerimiento {{ req.number }}
+                        {% translate "Requerimiento" %} {{ req.number }}
                     </h5>
                     {% if req.is_approved %}
                         <span class="badge bg-success">
@@ -244,7 +244,7 @@
                             <i class="bi bi-check-circle me-1"></i>{% translate "Aprobar" %}
                         </button>
                         <button type="button" class="btn btn-info" data-bs-toggle="collapse" data-bs-target="#commentsReq{{ req.id }}">
-                            <i class="bi bi-chat-left-text me-1"></i>Comentarios ({{ req.comments.count }})
+                            <i class="bi bi-chat-left-text me-1"></i>{% translate "Comentarios (" %}{{ req.comments.count }})
                         </button>
                     </div>
                     {% endif %}
@@ -432,7 +432,7 @@
                     <small class="text-muted">
                         {% translate "Esta es una vista pública del Documento de Requerimientos Funcionales." %}<br>
                         {% translate "Puede editar y aprobar cada requerimiento individualmente." %}<br>
-                        Última actualización: {{ document.updated_at|date:"d/m/Y H:i" }}
+                        {% translate "Última actualización:" %} {{ document.updated_at|date:"d/m/Y H:i" }}
                     </small>
                 </div>
             </div>

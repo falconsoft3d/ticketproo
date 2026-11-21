@@ -126,10 +126,10 @@
                             <div class="alert alert-info mb-0">
                                 <i class="bi bi-clock"></i>
                                 <strong>{% translate "Importante:" %}</strong> {% translate "Este enlace de descarga es válido por" %} 
-                                <strong class="text-primary">{{ hours_remaining }} horas</strong> {% translate "más." %}
+                                <strong class="text-primary">{{ hours_remaining }} {% translate "horas" %}</strong> {% translate "más." %}
                                 <br>
                                 <small class="text-muted">
-                                    Expira el: {{ link.download_token_expires_at|date:"d/m/Y H:i" }}
+                                    {% translate "Expira el:" %} {{ link.download_token_expires_at|date:"d/m/Y H:i" }}
                                 </small>
                             </div>
                             
@@ -152,7 +152,7 @@
                             <div class="alert alert-warning">
                                 <strong>{% translate "El período de descarga de 72 horas ha expirado." %}</strong>
                                 <br>
-                                El enlace expiró el: {{ link.download_token_expires_at|date:"d/m/Y H:i" }}
+                                {% translate "El enlace expiró el:" %} {{ link.download_token_expires_at|date:"d/m/Y H:i" }}
                             </div>
                             
                             <p class="text-muted mb-3">

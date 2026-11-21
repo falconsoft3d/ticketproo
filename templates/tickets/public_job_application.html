@@ -37,7 +37,7 @@
 </style>
 {% endblock %}
 
-{% block title %}Aplicar a: {{ token.job_title }} - {{ token.company.name }}{% endblock %}
+{% block title %}{% translate "Aplicar a:" %} {{ token.job_title }} - {{ token.company.name }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -51,7 +51,7 @@
                     <p class="mb-0">
                         <i class="bi bi-geo-alt"></i> {% translate "Posición disponible" %}
                         {% if token.proposed_salary_euros %}
-                        | <i class="bi bi-currency-euro"></i> €{{ token.proposed_salary_euros|floatformat:0 }} anuales
+                        | <i class="bi bi-currency-euro"></i> €{{ token.proposed_salary_euros|floatformat:0 }} {% translate "anuales" %}
                         {% endif %}
                     </p>
                 </div>

@@ -146,7 +146,7 @@
                     <div class="card mb-4">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h6 class="mb-0">
-                                <i class="bi bi-list-ol"></i> Casos de Ejemplo ({{ examples.count }})
+                                <i class="bi bi-list-ol"></i> {% translate "Casos de Ejemplo (" %}{{ examples.count }})
                             </h6>
                         </div>
                         <div class="card-body">
@@ -162,7 +162,7 @@
                                                     </h6>
                                                     <div class="text-end">
                                                         <div class="fw-bold text-success">
-                                                            {{ example.estimated_hours }} hrs
+                                                            {{ example.estimated_hours }} {% translate "hrs" %}
                                                         </div>
                                                         <small class="text-muted">
                                                             {{ example.get_formatted_cost }}
@@ -187,11 +187,11 @@
                                         <div class="col-md-4">
                                             <strong>{% translate "Horas promedio:" %}</strong> 
                                             {% widthratio examples.count 1 10 as avg_hours %}
-                                            ~{{ avg_hours|floatformat:1 }} hrs/caso
+                                            ~{{ avg_hours|floatformat:1 }} {% translate "hrs/caso" %}
                                         </div>
                                         <div class="col-md-4">
                                             <strong>{% translate "Rango de horas:" %}</strong> 
-                                            {{ examples.first.estimated_hours }}-{{ examples.last.estimated_hours }} hrs
+                                            {{ examples.first.estimated_hours }}-{{ examples.last.estimated_hours }} {% translate "hrs" %}
                                         </div>
                                     </div>
                                     {% endwith %}
@@ -238,13 +238,13 @@
                                                     {% if quote.status != 'pending' %}
                                                         <small class="text-muted">
                                                             <i class="bi bi-clock"></i>
-                                                            Respondida: {{ quote.client_response_date|date:"d/m/Y H:i" }}
+                                                            {% translate "Respondida:" %} {{ quote.client_response_date|date:"d/m/Y H:i" }}
                                                         </small>
                                                     {% endif %}
                                                 </td>
                                                 <td>
                                                     <span class="fw-bold text-primary">
-                                                        {{ quote.ai_estimated_hours }} hrs
+                                                        {{ quote.ai_estimated_hours }} {% translate "hrs" %}
                                                     </span>
                                                 </td>
                                                 <td>

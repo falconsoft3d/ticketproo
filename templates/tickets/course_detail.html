@@ -20,7 +20,7 @@
                 <h1 class="h3 mb-0 text-primary">
                     <i class="bi bi-collection"></i> {{ course.title }}
                 </h1>
-                <p class="text-muted mb-0">Instructor: {{ course.created_by.get_full_name|default:course.created_by.username }}</p>
+                <p class="text-muted mb-0">{% translate "Instructor:" %} {{ course.created_by.get_full_name|default:course.created_by.username }}</p>
                 <div class="mt-2">
                     {% if course.company %}
                         <span class="badge bg-info">
@@ -126,7 +126,7 @@
                                     {% endif %}
                                     {% if class.duration_minutes %}
                                         <small class="text-muted ms-2">
-                                            <i class="bi bi-clock"></i> {{ class.duration_minutes }} min
+                                            <i class="bi bi-clock"></i> {{ class.duration_minutes }} {% translate "min" %}
                                         </small>
                                     {% endif %}
                                     {% if user_has_viewed %}
@@ -147,7 +147,7 @@
                                 <div class="mb-2">
                                     <small class="text-info">
                                         <i class="bi bi-people"></i> 
-                                        {{ view_count }} usuario{{ view_count|pluralize }} ha{{ view_count|pluralize:"n" }} visto esta clase
+                                        {{ view_count }} {% translate "usuario" %}{{ view_count|pluralize }} {% translate "ha" %}{{ view_count|pluralize:"n" }} {% translate "visto esta clase" %}
                                     </small>
                                 </div>
                                 
@@ -205,7 +205,7 @@
                                     {% endif %}
                                 </div>
                                 <small class="text-muted">
-                                    Creado {{ class.created_at|date:"d/m/Y" }}
+                                    {% translate "Creado" %} {{ class.created_at|date:"d/m/Y" }}
                                 </small>
                             </div>
                         </div>
@@ -380,7 +380,7 @@
                 <h5 class="mb-0">
                     <i class="bi bi-chat-dots"></i> {% translate "Comentarios del Curso" %}
                     {% if total_pending_comments > 0 %}
-                        <span class="badge bg-warning text-dark">{{ total_pending_comments }} pendiente{{ total_pending_comments|pluralize }}</span>
+                        <span class="badge bg-warning text-dark">{{ total_pending_comments }} {% translate "pendiente" %}{{ total_pending_comments|pluralize }}</span>
                     {% endif %}
                 </h5>
             </div>
@@ -398,7 +398,7 @@
                                                 {{ comment.get_status_display }}
                                             </span>
                                             <small class="text-muted ms-2">
-                                                Clase: {{ comment.course_class.title }}
+                                                {% translate "Clase:" %} {{ comment.course_class.title }}
                                             </small>
                                         </div>
                                         <small class="text-muted me-3">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
@@ -420,7 +420,7 @@
                                             </div>
                                             {% if comment.status == 'resuelto' %}
                                                 <div class="alert alert-success">
-                                                    <i class="bi bi-check-circle"></i> Resuelto por {{ comment.resolved_by.get_full_name|default:comment.resolved_by.username }} el {{ comment.resolved_at|date:"d/m/Y H:i" }}
+                                                    <i class="bi bi-check-circle"></i> {% translate "Resuelto por" %} {{ comment.resolved_by.get_full_name|default:comment.resolved_by.username }} {% translate "el" %} {{ comment.resolved_at|date:"d/m/Y H:i" }}
                                                     {% if comment.solution_link or comment.solution_note %}
                                                         <hr>
                                                         {% if comment.solution_link %}

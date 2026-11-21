@@ -43,7 +43,7 @@
         <div class="col-md-3">
             <div class="card border-info">
                 <div class="card-body text-center">
-                    <h4 class="text-info">{{ total_hours }}h</h4>
+                    <h4 class="text-info">{{ total_hours }}{% translate "h" %}</h4>
                     <small class="text-muted">{% translate "Total Horas" %}</small>
                 </div>
             </div>
@@ -53,7 +53,7 @@
                 <div class="card-body text-center">
                     <h4 class="text-warning mb-0">
                         {% if avg_hours_per_session %}
-                            {{ avg_hours_per_session|floatformat:1 }}h
+                            {{ avg_hours_per_session|floatformat:1 }}{% translate "h" %}
                         {% else %}
                             {% translate "0h" %}
                         {% endif %}
@@ -266,7 +266,7 @@
 
                                 <li class="page-item active">
                                     <span class="page-link">
-                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                        {% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}
                                     </span>
                                 </li>
 

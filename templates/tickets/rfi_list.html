@@ -75,7 +75,7 @@
                         </td>
                         <td class="text-center">
                             <span class="badge {% if rfi.days_since_request >= 7 %}bg-danger{% elif rfi.days_since_request >= 3 %}bg-warning text-dark{% else %}bg-success{% endif %}">
-                                {{ rfi.days_since_request }} día{{ rfi.days_since_request|pluralize }}
+                                {{ rfi.days_since_request }} {% translate "día" %}{{ rfi.days_since_request|pluralize }}
                             </span>
                         </td>
                         <td class="text-center">

@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Tareas de {{ user_obj.get_full_name|default:user_obj.username }}{% endblock %}
+{% block title %}{% translate "Tareas de" %} {{ user_obj.get_full_name|default:user_obj.username }}{% endblock %}
 
 {% block content %}
 <div class="container my-5">

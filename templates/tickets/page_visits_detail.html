@@ -130,12 +130,12 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <span class="text-muted">
-                Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ page_obj.paginator.count }} visitas
+                {% translate "Mostrando" %} {{ page_obj.start_index }} - {{ page_obj.end_index }} {% translate "de" %} {{ page_obj.paginator.count }} {% translate "visitas" %}
             </span>
         </div>
         <div>
             {% if page_obj.has_other_pages %}
-                <span class="text-muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                <span class="text-muted">{% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}</span>
             {% endif %}
         </div>
     </div>

@@ -100,9 +100,9 @@
                         <div class="alert alert-info">
                             <small>
                                 <i class="bi bi-info-circle me-1"></i>
-                                Creado el {{ invoice.created_at|date:"d/m/Y H:i" }}
+                                {% translate "Creado el" %} {{ invoice.created_at|date:"d/m/Y H:i" }}
                                 {% if invoice.uploaded_by %}
-                                por {{ invoice.uploaded_by.get_full_name|default:invoice.uploaded_by.username }}
+                                {% translate "por" %} {{ invoice.uploaded_by.get_full_name|default:invoice.uploaded_by.username }}
                                 {% endif %}
                             </small>
                         </div>

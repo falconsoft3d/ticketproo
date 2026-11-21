@@ -466,7 +466,7 @@ def register_view(request):
             # Asignar automáticamente al grupo de Usuarios
             assign_user_to_group(user, 'Usuarios')
             
-            messages.success(request, f'Cuenta creada para {username}. Ya puedes iniciar sesión.')
+            messages.success(request, gettext('Cuenta creada para %(username)s. Ya puedes iniciar sesión.') % {'username': username})
             return redirect('login')
     else:
         form = UserCreationForm()
@@ -1264,7 +1264,7 @@ def ticket_import_view(request):
                     file_content = excel_file.read()
                     df = pd.read_excel(io.BytesIO(file_content))
                 except Exception as e:
-                    messages.error(request, f'Error al leer el archivo Excel: {str(e)}')
+                    messages.error(request, gettext('Error al leer el archivo Excel: %(valor)s') % {'valor': str(e)})
                     return render(request, 'tickets/ticket_import.html', {'form': form})
                 
                 # Validar que las columnas necesarias existen
@@ -1272,7 +1272,7 @@ def ticket_import_view(request):
                 missing_columns = [col for col in required_columns if col not in df.columns]
                 
                 if missing_columns:
-                    messages.error(request, f'Faltan las siguientes columnas en el Excel: {", ".join(missing_columns)}')
+                    messages.error(request, gettext('Faltan las siguientes columnas en el Excel: %(valor)s') % {'valor': ', '.join(missing_columns)})
                     return render(request, 'tickets/ticket_import.html', {'form': form})
                 
                 # Procesar cada fila y crear tickets
@@ -1315,7 +1315,7 @@ def ticket_import_view(request):
                 error_count = len(errors)
                 
                 if success_count > 0:
-                    messages.success(request, f'Se importaron exitosamente {success_count} tickets.')
+                    messages.success(request, gettext('Se importaron exitosamente %(success_count)s tickets.') % {'success_count': success_count})
                 
                 if error_count > 0:
                     error_message = f'Se encontraron {error_count} errores:\n' + '\n'.join(errors[:10])
@@ -1328,7 +1328,7 @@ def ticket_import_view(request):
                     return redirect('ticket_list')
                     
             except Exception as e:
-                messages.error(request, f'Error durante la importación: {str(e)}')
+                messages.error(request, gettext('Error durante la importación: %(valor)s') % {'valor': str(e)})
     else:
         form = TicketImportForm()
     
@@ -1450,7 +1450,7 @@ def ticket_detail_view(request, pk):
     if request.method == 'POST' and 'assign_to_me' in request.POST and is_agent(request.user):
         ticket.assigned_to = request.user
         ticket.save()
-        messages.success(request, f'Te has asignado el ticket #{ticket.pk}.')
+        messages.success(request, gettext('Te has asignado el ticket #%(pk)s.') % {'pk': ticket.pk})
         return redirect('ticket_detail', pk=pk)
     
     # Manejar activar compartir público (solo agentes)
@@ -1501,7 +1501,7 @@ def ticket_detail_view(request, pk):
                 content=f'🔄 Estado cambiado de **{old_label}** → **{new_label}** por {nombre}',
                 is_system=True,
             )
-            messages.success(request, f'Estado actualizado a "{new_label}".')
+            messages.success(request, gettext('Estado actualizado a "%(new_label)s".') % {'new_label': new_label})
         return redirect('ticket_detail', pk=pk)
 
     # Actualizar horas estimadas (solo agentes)
@@ -1789,14 +1789,14 @@ def ticket_approve_view(request, pk):
         if action == 'approve':
             if not ticket.is_approved:
                 ticket.approve_ticket(request.user)
-                messages.success(request, f'Ticket #{ticket.ticket_number} aprobado exitosamente.')
+                messages.success(request, gettext('Ticket #%(ticket_number)s aprobado exitosamente.') % {'ticket_number': ticket.ticket_number})
             else:
                 messages.info(request, gettext('Este ticket ya estaba aprobado.'))
         
         elif action == 'unapprove':
             if ticket.is_approved:
                 ticket.unapprove_ticket()
-                messages.success(request, f'Aprobación del ticket #{ticket.ticket_number} removida.')
+                messages.success(request, gettext('Aprobación del ticket #%(ticket_number)s removida.') % {'ticket_number': ticket.ticket_number})
             else:
                 messages.info(request, gettext('Este ticket no estaba aprobado.'))
         
@@ -1952,7 +1952,7 @@ def user_create_view(request):
         if form.is_valid():
             user = form.save()
             role = form.cleaned_data['role']
-            messages.success(request, f'Usuario "{user.username}" creado exitosamente como {role[:-1]}.')
+            messages.success(request, gettext('Usuario "%(username)s" creado exitosamente como %(valor)s.') % {'username': user.username, 'valor': role[:-1]})
             return redirect('user_management')
     else:
         form = UserManagementForm()
@@ -1979,7 +1979,7 @@ def user_edit_view(request, user_id):
             except Group.DoesNotExist:
                 pass
             
-            messages.success(request, f'Usuario "{user.username}" actualizado exitosamente.')
+            messages.success(request, gettext('Usuario "%(username)s" actualizado exitosamente.') % {'username': user.username})
             return redirect('user_management')
     else:
         form = UserEditForm(instance=user_to_edit)
@@ -2022,7 +2022,7 @@ def user_toggle_status_view(request, user_id):
         user_to_toggle.save()
         
         status = "activado" if user_to_toggle.is_active else "desactivado"
-        messages.success(request, f'Usuario "{user_to_toggle.username}" {status} exitosamente.')
+        messages.success(request, gettext('Usuario "%(username)s" %(status)s exitosamente.') % {'username': user_to_toggle.username, 'status': status})
     
     return redirect('user_management')
 
@@ -2140,7 +2140,7 @@ def unassign_ticket_view(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
     ticket.assigned_to = None
     ticket.save()
-    messages.success(request, f'Ticket #{ticket.pk} desasignado exitosamente.')
+    messages.success(request, gettext('Ticket #%(pk)s desasignado exitosamente.') % {'pk': ticket.pk})
     return redirect('ticket_detail', pk=pk)
 
 
@@ -2173,7 +2173,7 @@ def category_create_view(request):
         form = CategoryForm(request.POST)
         if form.is_valid():
             category = form.save()
-            messages.success(request, f'Categoría "{category.name}" creada exitosamente.')
+            messages.success(request, gettext('Categoría "%(name)s" creada exitosamente.') % {'name': category.name})
             return redirect('category_list')
     else:
         form = CategoryForm()
@@ -2196,7 +2196,7 @@ def category_edit_view(request, pk):
         form = CategoryForm(request.POST, instance=category)
         if form.is_valid():
             category = form.save()
-            messages.success(request, f'Categoría "{category.name}" actualizada exitosamente.')
+            messages.success(request, gettext('Categoría "%(name)s" actualizada exitosamente.') % {'name': category.name})
             return redirect('category_list')
     else:
         form = CategoryForm(instance=category)
@@ -2220,7 +2220,7 @@ def category_delete_view(request, pk):
     if request.method == 'POST':
         category_name = category.name
         category.delete()
-        messages.success(request, f'Categoría "{category_name}" eliminada exitosamente.')
+        messages.success(request, gettext('Categoría "%(category_name)s" eliminada exitosamente.') % {'category_name': category_name})
         return redirect('category_list')
     
     context = {
@@ -2247,7 +2247,7 @@ def category_detail_view(request, pk):
         'category': category,
         'tickets': page_obj,
         'ticket_count': tickets.count(),
-        'page_title': f'Categoría: {category.name}'
+        'page_title': gettext('Categoría: %(name)s') % {'name': category.name}
     }
     return render(request, 'tickets/category_detail.html', context)
 
@@ -2285,7 +2285,7 @@ def public_ticket_view(request, token):
         'has_approval': has_approval,
         'approval': ticket.client_approval if has_approval else None,
         'token': token,
-        'page_title': f'Ticket Público: {ticket.ticket_number}',
+        'page_title': gettext('Ticket Público: %(ticket_number)s') % {'ticket_number': ticket.ticket_number},
         'hour_lines': hour_lines,
         'hour_lines_total': hour_lines_total,
     }
@@ -2373,7 +2373,7 @@ def public_ticket_approve(request, token):
             return redirect('public_ticket', token=token)
             
         except Exception as e:
-            messages.error(request, f'Error al procesar la aprobación: {str(e)}')
+            messages.error(request, gettext('Error al procesar la aprobación: %(valor)s') % {'valor': str(e)})
             return redirect('public_ticket', token=token)
     
     # Si es GET, redirigir al ticket público
@@ -2505,7 +2505,7 @@ def public_ticket_survey(request, token):
             return redirect('public_ticket', token=token)
             
         except Exception as e:
-            messages.error(request, f'Error al procesar la encuesta: {str(e)}')
+            messages.error(request, gettext('Error al procesar la encuesta: %(valor)s') % {'valor': str(e)})
             return redirect('public_ticket_survey', token=token)
     
     # Si es GET, mostrar el formulario de encuesta
@@ -2562,13 +2562,13 @@ def public_ticket_upload(request, token):
             for file in files:
                 # Validar tamaño
                 if file.size > max_file_size:
-                    messages.error(request, f'El archivo "{file.name}" excede el tamaño máximo permitido (10MB).')
+                    messages.error(request, gettext('El archivo "%(name)s" excede el tamaño máximo permitido (10MB).') % {'name': file.name})
                     return redirect('public_ticket_upload', token=token)
                 
                 # Validar extensión
                 file_extension = os.path.splitext(file.name.lower())[1]
                 if file_extension not in allowed_extensions:
-                    messages.error(request, f'El archivo "{file.name}" tiene una extensión no permitida. Extensiones permitidas: {", ".join(allowed_extensions)}')
+                    messages.error(request, gettext('El archivo "%(name)s" tiene una extensión no permitida. Extensiones permitidas: %(valor)s') % {'name': file.name, 'valor': ', '.join(allowed_extensions)})
                     return redirect('public_ticket_upload', token=token)
             
             # Obtener IP del cliente
@@ -2613,13 +2613,13 @@ def public_ticket_upload(request, token):
             
             messages.success(
                 request, 
-                f'¡Gracias {client_name}! Se {"ha" if len(uploaded_files) == 1 else "han"} subido {len(uploaded_files)} archivo{"" if len(uploaded_files) == 1 else "s"} exitosamente al ticket.'
+                gettext('¡Gracias %(client_name)s! Archivos subidos al ticket: %(count)s.') % {'client_name': client_name, 'count': len(uploaded_files)}
             )
             
             return redirect('public_ticket', token=token)
             
         except Exception as e:
-            messages.error(request, f'Error al subir los archivos: {str(e)}')
+            messages.error(request, gettext('Error al subir los archivos: %(valor)s') % {'valor': str(e)})
             return redirect('public_ticket_upload', token=token)
     
     # Si es GET, mostrar el formulario de subida
@@ -2837,7 +2837,7 @@ def note_detail_view(request, note_id):
     
     context = {
         'note': note,
-        'page_title': f'Nota: {note.title}',
+        'page_title': gettext('Nota: %(title)s') % {'title': note.title},
         'can_edit': note.can_edit(request.user)
     }
     return render(request, 'tickets/note_detail.html', context)
@@ -2877,7 +2877,7 @@ def note_create_view(request):
                     'note_id': note.id
                 })
             
-            messages.success(request, f'Nota "{note.title}" creada exitosamente.')
+            messages.success(request, gettext('Nota "%(title)s" creada exitosamente.') % {'title': note.title})
             return redirect('note_detail', note_id=note.id)
         else:
             # Si hay errores en el formulario y es AJAX
@@ -2944,7 +2944,7 @@ def note_edit_view(request, note_id):
             
             updated_note.save()
             form.save_m2m()  # Guardar relaciones many-to-many
-            messages.success(request, f'Nota "{updated_note.title}" actualizada exitosamente.')
+            messages.success(request, gettext('Nota "%(title)s" actualizada exitosamente.') % {'title': updated_note.title})
             return redirect('note_detail', note_id=updated_note.id)
     else:
         form = UserNoteForm(instance=note, current_user=request.user)
@@ -2952,7 +2952,7 @@ def note_edit_view(request, note_id):
     context = {
         'form': form,
         'note': note,
-        'page_title': f'Editar Nota: {note.title}'
+        'page_title': gettext('Editar Nota: %(title)s') % {'title': note.title}
     }
     return render(request, 'tickets/note_form.html', context)
 
@@ -2980,12 +2980,12 @@ def note_delete_view(request, note_id):
     if request.method == 'POST':
         note_title = note.title
         note.delete()
-        messages.success(request, f'Nota "{note_title}" eliminada exitosamente.')
+        messages.success(request, gettext('Nota "%(note_title)s" eliminada exitosamente.') % {'note_title': note_title})
         return redirect('notes_list')
     
     context = {
         'note': note,
-        'page_title': f'Eliminar Nota: {note.title}'
+        'page_title': gettext('Eliminar Nota: %(title)s') % {'title': note.title}
     }
     return render(request, 'tickets/note_delete.html', context)
 
@@ -3208,7 +3208,7 @@ def shared_note_view(request, token):
     context = {
         'note': note,
         'token': token,
-        'page_title': f'Nota Compartida: {note.title}',
+        'page_title': gettext('Nota Compartida: %(title)s') % {'title': note.title},
     }
     return render(request, 'tickets/shared_note.html', context)
 
@@ -3355,7 +3355,7 @@ def user_notes_view(request, user_id=None):
         'page_obj': page_obj,
         'is_own_notes': request.user == target_user,
         'can_create_notes': is_agent(request.user),
-        'page_title': f'Notas de {target_user.get_full_name() or target_user.username}'
+        'page_title': gettext('Notas de %(valor)s') % {'valor': target_user.get_full_name() or target_user.username}
     }
     return render(request, 'tickets/user_notes.html', context)
 
@@ -3536,7 +3536,7 @@ def time_end_work(request):
                 duracion = active_entry.duracion_formateada
                 reason_display = dict(form.fields['end_reason'].choices)[end_reason]
                 messages.success(request, 
-                    f'¡Jornada finalizada! Duración total: {duracion} horas. Causa: {reason_display}')
+                    gettext('¡Jornada finalizada! Duración total: %(duracion)s horas. Causa: %(reason_display)s') % {'duracion': duracion, 'reason_display': reason_display})
                 return redirect('time_clock')
             except ValueError as e:
                 messages.error(request, str(e))
@@ -3779,7 +3779,7 @@ def time_entry_detail(request, entry_id):
     
     context = {
         'entry': entry,
-        'page_title': f'Registro del {entry.fecha_entrada.strftime("%d/%m/%Y")}'
+        'page_title': gettext('Registro del %(valor)s') % {'valor': entry.fecha_entrada.strftime('%d/%m/%Y')}
     }
     
     return render(request, 'tickets/time_entry_detail.html', context)
@@ -3815,7 +3815,7 @@ def time_entry_edit(request, entry_id):
         'form': form,
         'entry': entry,
         'audit_logs': audit_logs,
-        'page_title': f'Editar Registro del {entry.fecha_entrada.strftime("%d/%m/%Y")}'
+        'page_title': gettext('Editar Registro del %(valor)s') % {'valor': entry.fecha_entrada.strftime('%d/%m/%Y')}
     }
     
     return render(request, 'tickets/time_entry_edit.html', context)
@@ -3839,7 +3839,7 @@ def time_entry_audit_log(request, entry_id):
     context = {
         'entry': entry,
         'audit_logs': audit_logs,
-        'page_title': f'Historial de Cambios - Registro del {entry.fecha_entrada.strftime("%d/%m/%Y")}'
+        'page_title': gettext('Historial de Cambios - Registro del %(valor)s') % {'valor': entry.fecha_entrada.strftime('%d/%m/%Y')}
     }
     
     return render(request, 'tickets/time_entry_audit_log.html', context)
@@ -4055,7 +4055,7 @@ def public_time_access_create(request, user_id):
     
     # Verificar si ya existe un acceso para este usuario
     if hasattr(user, 'public_time_access'):
-        messages.warning(request, f'{user.get_full_name() or user.username} ya tiene un acceso público configurado.')
+        messages.warning(request, gettext('%(valor)s ya tiene un acceso público configurado.') % {'valor': user.get_full_name() or user.username})
         return redirect('public_time_access_list')
     
     if request.method == 'POST':
@@ -4065,7 +4065,7 @@ def public_time_access_create(request, user_id):
             access.user = user
             access.save()
             
-            messages.success(request, f'Acceso público creado para {user.get_full_name() or user.username}')
+            messages.success(request, gettext('Acceso público creado para %(valor)s') % {'valor': user.get_full_name() or user.username})
             return redirect('public_time_access_list')
     else:
         form = PublicTimeAccessForm()
@@ -4073,7 +4073,7 @@ def public_time_access_create(request, user_id):
     context = {
         'form': form,
         'user': user,
-        'page_title': f'Crear Acceso Público para {user.get_full_name() or user.username}'
+        'page_title': gettext('Crear Acceso Público para %(valor)s') % {'valor': user.get_full_name() or user.username}
     }
     
     return render(request, 'tickets/public_time_access_form.html', context)
@@ -4090,7 +4090,7 @@ def public_time_access_edit(request, access_id):
         form = PublicTimeAccessForm(request.POST, instance=access)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Acceso público actualizado para {access.user.get_full_name() or access.user.username}')
+            messages.success(request, gettext('Acceso público actualizado para %(valor)s') % {'valor': access.user.get_full_name() or access.user.username})
             return redirect('public_time_access_list')
     else:
         form = PublicTimeAccessForm(instance=access)
@@ -4098,7 +4098,7 @@ def public_time_access_edit(request, access_id):
     context = {
         'form': form,
         'access': access,
-        'page_title': f'Editar Acceso Público - {access.user.get_full_name() or access.user.username}'
+        'page_title': gettext('Editar Acceso Público - %(valor)s') % {'valor': access.user.get_full_name() or access.user.username}
     }
     
     return render(request, 'tickets/public_time_access_form.html', context)
@@ -4114,7 +4114,7 @@ def public_time_access_delete(request, access_id):
     if request.method == 'POST':
         user_name = access.user.get_full_name() or access.user.username
         access.delete()
-        messages.success(request, f'Acceso público eliminado para {user_name}')
+        messages.success(request, gettext('Acceso público eliminado para %(user_name)s') % {'user_name': user_name})
         return redirect('public_time_access_list')
     
     context = {
@@ -4177,7 +4177,7 @@ def project_create(request):
         form = ProjectForm(request.POST)
         if form.is_valid():
             project = form.save(created_by=request.user)
-            messages.success(request, f'Proyecto "{project.name}" creado exitosamente.')
+            messages.success(request, gettext('Proyecto "%(name)s" creado exitosamente.') % {'name': project.name})
             return redirect('project_list')
     else:
         form = ProjectForm()
@@ -4206,13 +4206,13 @@ def project_edit(request, project_id):
         form = ProjectForm(request.POST, instance=project)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Proyecto "{project.name}" actualizado exitosamente.')
+            messages.success(request, gettext('Proyecto "%(name)s" actualizado exitosamente.') % {'name': project.name})
             return redirect('project_list')
     else:
         form = ProjectForm(instance=project)
     
     context = {
-        'page_title': f'Editar Proyecto: {project.name}',
+        'page_title': gettext('Editar Proyecto: %(name)s') % {'name': project.name},
         'form': form,
         'project': project,
         'action': 'edit'
@@ -4238,7 +4238,7 @@ def project_detail(request, project_id):
     ).select_related('user')
     
     context = {
-        'page_title': f'Proyecto: {project.name}',
+        'page_title': gettext('Proyecto: %(name)s') % {'name': project.name},
         'project': project,
         'time_entries': time_entries,
         'active_workers': active_workers,
@@ -4271,11 +4271,11 @@ def project_delete(request, project_id):
     if request.method == 'POST':
         project_name = project.name
         project.delete()
-        messages.success(request, f'Proyecto "{project_name}" eliminado exitosamente.')
+        messages.success(request, gettext('Proyecto "%(project_name)s" eliminado exitosamente.') % {'project_name': project_name})
         return redirect('project_list')
     
     context = {
-        'page_title': f'Eliminar Proyecto: {project.name}',
+        'page_title': gettext('Eliminar Proyecto: %(name)s') % {'name': project.name},
         'project': project,
     }
     
@@ -4391,12 +4391,12 @@ def project_duplicate(request, project_id):
             return redirect('project_detail', project_id=duplicated_project.id)
             
         except Exception as e:
-            messages.error(request, f'Error al duplicar el proyecto: {str(e)}')
+            messages.error(request, gettext('Error al duplicar el proyecto: %(valor)s') % {'valor': str(e)})
             return redirect('project_detail', project_id=project_id)
     
     # Si es GET, mostrar confirmación
     context = {
-        'page_title': f'Duplicar Proyecto: {original_project.name}',
+        'page_title': gettext('Duplicar Proyecto: %(name)s') % {'name': original_project.name},
         'project': original_project,
         'schedules_count': TaskSchedule.objects.filter(project=original_project).count(),
         'total_tasks_count': ScheduleTask.objects.filter(schedule__project=original_project).count(),
@@ -4492,7 +4492,7 @@ def cart_add(request, product_id):
         }
     request.session['cart'] = cart
     request.session.modified = True
-    messages.success(request, f'"{product.name}" agregado al carrito.')
+    messages.success(request, gettext('"%(name)s" agregado al carrito.') % {'name': product.name})
     next_url = request.POST.get('next') or request.META.get('HTTP_REFERER') or '/'
     return redirect(next_url)
 
@@ -4927,7 +4927,7 @@ def product_category_edit(request, pk):
     else:
         form = ProductCategoryForm(instance=category)
     return render(request, 'tickets/product_category_form.html', {
-        'page_title': f'Editar: {category.name}',
+        'page_title': gettext('Editar: %(name)s') % {'name': category.name},
         'form': form,
         'category': category,
     })
@@ -4941,7 +4941,7 @@ def product_category_delete(request, pk):
     if request.method == 'POST':
         name = category.name
         category.delete()
-        messages.success(request, f'Categoría "{name}" eliminada.')
+        messages.success(request, gettext('Categoría "%(name)s" eliminada.') % {'name': name})
         return redirect('product_category_list')
     return render(request, 'tickets/product_category_confirm_delete.html', {
         'page_title': gettext('Eliminar Categoría'),
@@ -5020,7 +5020,7 @@ def product_create(request):
             product = form.save(commit=False)
             product.created_by = request.user
             product.save()
-            messages.success(request, f'Producto "{product.name}" creado exitosamente.')
+            messages.success(request, gettext('Producto "%(name)s" creado exitosamente.') % {'name': product.name})
             return redirect('product_list')
     else:
         form = ProductForm()
@@ -5050,13 +5050,13 @@ def product_edit(request, product_id):
         form = ProductForm(request.POST, instance=product)
         if form.is_valid():
             product = form.save()
-            messages.success(request, f'Producto "{product.name}" actualizado exitosamente.')
+            messages.success(request, gettext('Producto "%(name)s" actualizado exitosamente.') % {'name': product.name})
             return redirect('product_list')
     else:
         form = ProductForm(instance=product)
     
     context = {
-        'page_title': f'Editar Producto: {product.name}',
+        'page_title': gettext('Editar Producto: %(name)s') % {'name': product.name},
         'form': form,
         'product': product,
         'currency_symbol': currency_symbol,
@@ -5077,7 +5077,7 @@ def product_detail(request, product_id):
     currency_symbol = config.get_currency_symbol() if config else '€'
     
     context = {
-        'page_title': f'Producto: {product.name}',
+        'page_title': gettext('Producto: %(name)s') % {'name': product.name},
         'product': product,
         'currency_symbol': currency_symbol,
         'videos': product.videos.all(),
@@ -5126,11 +5126,11 @@ def product_delete(request, product_id):
     if request.method == 'POST':
         product_name = product.name
         product.delete()
-        messages.success(request, f'Producto "{product_name}" eliminado exitosamente.')
+        messages.success(request, gettext('Producto "%(product_name)s" eliminado exitosamente.') % {'product_name': product_name})
         return redirect('product_list')
     
     context = {
-        'page_title': f'Eliminar Producto: {product.name}',
+        'page_title': gettext('Eliminar Producto: %(name)s') % {'name': product.name},
         'product': product,
     }
     return render(request, 'tickets/product_delete.html', context)
@@ -5289,7 +5289,7 @@ def company_create_view(request):
         form = CompanyForm(request.POST, request.FILES)
         if form.is_valid():
             company = form.save()
-            messages.success(request, f'La empresa "{company.name}" ha sido creada exitosamente.')
+            messages.success(request, gettext('La empresa "%(name)s" ha sido creada exitosamente.') % {'name': company.name})
             return redirect('company_list')
     else:
         form = CompanyForm()
@@ -5327,7 +5327,7 @@ def company_detail_view(request, company_id):
             business_objectives = request.POST.get('business_objectives', '').strip()
             company.business_objectives = business_objectives
             company.save()
-            messages.success(request, f'✅ Objetivos empresariales de "{company.name}" actualizados exitosamente.')
+            messages.success(request, gettext('✅ Objetivos empresariales de "%(name)s" actualizados exitosamente.') % {'name': company.name})
         else:
             messages.error(request, gettext('❌ No tienes permisos para modificar esta empresa.'))
         return redirect('company_detail', company_id=company.id)
@@ -5359,7 +5359,7 @@ def company_detail_view(request, company_id):
     )
     
     context = {
-        'page_title': f'Empresa: {company.name}',
+        'page_title': gettext('Empresa: %(name)s') % {'name': company.name},
         'company': company,
         'total_tickets': total_tickets,
         'open_tickets': open_tickets,
@@ -5388,13 +5388,13 @@ def company_edit_view(request, company_id):
         form = CompanyForm(request.POST, request.FILES, instance=company)
         if form.is_valid():
             form.save()
-            messages.success(request, f'La empresa "{company.name}" ha sido actualizada exitosamente.')
+            messages.success(request, gettext('La empresa "%(name)s" ha sido actualizada exitosamente.') % {'name': company.name})
             return redirect('company_detail', company_id=company.id)
     else:
         form = CompanyForm(instance=company)
     
     context = {
-        'page_title': f'Editar Empresa: {company.name}',
+        'page_title': gettext('Editar Empresa: %(name)s') % {'name': company.name},
         'form': form,
         'company': company,
         'is_create': False,
@@ -5423,11 +5423,11 @@ def company_delete_view(request, company_id):
         else:
             company_name = company.name
             company.delete()
-            messages.success(request, f'La empresa "{company_name}" ha sido eliminada exitosamente.')
+            messages.success(request, gettext('La empresa "%(company_name)s" ha sido eliminada exitosamente.') % {'company_name': company_name})
             return redirect('company_list')
     
     context = {
-        'page_title': f'Eliminar Empresa: {company.name}',
+        'page_title': gettext('Eliminar Empresa: %(name)s') % {'name': company.name},
         'company': company,
         'has_tickets': has_tickets,
         'has_users': has_users,
@@ -5499,7 +5499,7 @@ def system_configuration_view(request):
                     messages.error(request, gettext('❌ Error enviando el email de prueba. Revisa la configuración.'))
                     
             except Exception as e:
-                messages.error(request, f'❌ Error en la prueba de email: {str(e)}')
+                messages.error(request, gettext('❌ Error en la prueba de email: %(valor)s') % {'valor': str(e)})
             
             return redirect('system_configuration')
         
@@ -5605,7 +5605,7 @@ def document_create_view(request):
             document = form.save(commit=False)
             document.created_by = request.user
             document.save()
-            messages.success(request, f'El documento "{document.title}" ha sido creado exitosamente.')
+            messages.success(request, gettext('El documento "%(title)s" ha sido creado exitosamente.') % {'title': document.title})
             return redirect('document_list')
     else:
         form = DocumentForm()
@@ -5626,7 +5626,7 @@ def document_detail_view(request, document_id):
     document = get_object_or_404(Document, id=document_id)
     
     context = {
-        'page_title': f'Documento: {document.title}',
+        'page_title': gettext('Documento: %(title)s') % {'title': document.title},
         'document': document,
     }
     
@@ -5643,13 +5643,13 @@ def document_edit_view(request, document_id):
         form = DocumentForm(request.POST, request.FILES, instance=document)
         if form.is_valid():
             form.save()
-            messages.success(request, f'El documento "{document.title}" ha sido actualizado exitosamente.')
+            messages.success(request, gettext('El documento "%(title)s" ha sido actualizado exitosamente.') % {'title': document.title})
             return redirect('document_detail', document_id=document.id)
     else:
         form = DocumentForm(instance=document)
     
     context = {
-        'page_title': f'Editar Documento: {document.title}',
+        'page_title': gettext('Editar Documento: %(title)s') % {'title': document.title},
         'form': form,
         'document': document,
         'is_create': False,
@@ -5670,11 +5670,11 @@ def document_delete_view(request, document_id):
         if document.file:
             document.file.delete(save=False)
         document.delete()
-        messages.success(request, f'El documento "{document_title}" ha sido eliminado exitosamente.')
+        messages.success(request, gettext('El documento "%(document_title)s" ha sido eliminado exitosamente.') % {'document_title': document_title})
         return redirect('document_list')
     
     context = {
-        'page_title': f'Eliminar Documento: {document.title}',
+        'page_title': gettext('Eliminar Documento: %(title)s') % {'title': document.title},
         'document': document,
     }
     
@@ -5687,7 +5687,7 @@ def document_public_view(request, token):
     
     context = {
         'document': document,
-        'page_title': f'Documento Compartido: {document.title}',
+        'page_title': gettext('Documento Compartido: %(title)s') % {'title': document.title},
     }
     
     return render(request, 'tickets/document_public.html', context)
@@ -5811,7 +5811,7 @@ def url_manager_create_view(request):
             url_manager.created_by = request.user
             url_manager.save()
             
-            messages.success(request, f'URL "{url_manager.title}" creada exitosamente.')
+            messages.success(request, gettext('URL "%(title)s" creada exitosamente.') % {'title': url_manager.title})
             return redirect('url_manager_list')
     else:
         form = UrlManagerForm()
@@ -5838,7 +5838,7 @@ def url_manager_edit_view(request, url_id):
         form = UrlManagerForm(request.POST, instance=url_manager)
         if form.is_valid():
             form.save()
-            messages.success(request, f'URL "{url_manager.title}" actualizada exitosamente.')
+            messages.success(request, gettext('URL "%(title)s" actualizada exitosamente.') % {'title': url_manager.title})
             return redirect('url_manager_list')
     else:
         form = UrlManagerForm(instance=url_manager)
@@ -5846,7 +5846,7 @@ def url_manager_edit_view(request, url_id):
     context = {
         'form': form,
         'url_manager': url_manager,
-        'page_title': f'Editar URL: {url_manager.title}',
+        'page_title': gettext('Editar URL: %(title)s') % {'title': url_manager.title},
         'action': 'Actualizar'
     }
     
@@ -5866,7 +5866,7 @@ def url_manager_detail_view(request, url_id):
     
     context = {
         'url_manager': url_manager,
-        'page_title': f'Detalles: {url_manager.title}'
+        'page_title': gettext('Detalles: %(title)s') % {'title': url_manager.title}
     }
     
     return render(request, 'tickets/url_manager_detail.html', context)
@@ -5883,12 +5883,12 @@ def url_manager_delete_view(request, url_id):
     if request.method == 'POST':
         title = url_manager.title
         url_manager.delete()
-        messages.success(request, f'URL "{title}" eliminada exitosamente.')
+        messages.success(request, gettext('URL "%(title)s" eliminada exitosamente.') % {'title': title})
         return redirect('url_manager_list')
     
     context = {
         'url_manager': url_manager,
-        'page_title': f'Eliminar URL: {url_manager.title}'
+        'page_title': gettext('Eliminar URL: %(title)s') % {'title': url_manager.title}
     }
     
     return render(request, 'tickets/url_manager_delete.html', context)
@@ -5957,7 +5957,7 @@ def api_endpoint_create_view(request):
             api_endpoint.created_by = request.user
             api_endpoint.save()
 
-            messages.success(request, f'API "{api_endpoint.name}" creada exitosamente.')
+            messages.success(request, gettext('API "%(name)s" creada exitosamente.') % {'name': api_endpoint.name})
             return redirect('api_endpoint_detail', pk=api_endpoint.pk)
     else:
         form = ApiEndpointForm()
@@ -5983,7 +5983,7 @@ def api_endpoint_edit_view(request, pk):
         form = ApiEndpointForm(request.POST, instance=api_endpoint)
         if form.is_valid():
             form.save()
-            messages.success(request, f'API "{api_endpoint.name}" actualizada exitosamente.')
+            messages.success(request, gettext('API "%(name)s" actualizada exitosamente.') % {'name': api_endpoint.name})
             return redirect('api_endpoint_detail', pk=api_endpoint.pk)
     else:
         form = ApiEndpointForm(instance=api_endpoint)
@@ -5991,7 +5991,7 @@ def api_endpoint_edit_view(request, pk):
     context = {
         'form': form,
         'api_endpoint': api_endpoint,
-        'page_title': f'Editar API: {api_endpoint.name}',
+        'page_title': gettext('Editar API: %(name)s') % {'name': api_endpoint.name},
         'action': 'Actualizar',
     }
     return render(request, 'tickets/api_endpoint_form.html', context)
@@ -6008,7 +6008,7 @@ def api_endpoint_detail_view(request, pk):
     context = {
         'api_endpoint': api_endpoint,
         'api_url': api_endpoint.get_absolute_api_url(request),
-        'page_title': f'API: {api_endpoint.name}',
+        'page_title': gettext('API: %(name)s') % {'name': api_endpoint.name},
     }
     return render(request, 'tickets/api_endpoint_detail.html', context)
 
@@ -6024,12 +6024,12 @@ def api_endpoint_delete_view(request, pk):
     if request.method == 'POST':
         name = api_endpoint.name
         api_endpoint.delete()
-        messages.success(request, f'API "{name}" eliminada exitosamente.')
+        messages.success(request, gettext('API "%(name)s" eliminada exitosamente.') % {'name': name})
         return redirect('api_endpoint_list')
 
     context = {
         'api_endpoint': api_endpoint,
-        'page_title': f'Eliminar API: {api_endpoint.name}',
+        'page_title': gettext('Eliminar API: %(name)s') % {'name': api_endpoint.name},
     }
     return render(request, 'tickets/api_endpoint_delete.html', context)
 
@@ -6121,7 +6121,7 @@ def work_order_create_view(request):
             work_order = form.save(commit=False)
             work_order.created_by = request.user
             work_order.save()
-            messages.success(request, f'Orden de trabajo "{work_order.title}" creada exitosamente.')
+            messages.success(request, gettext('Orden de trabajo "%(title)s" creada exitosamente.') % {'title': work_order.title})
             return redirect('work_order_detail', pk=work_order.pk)
     else:
         form = WorkOrderForm(user=request.user)
@@ -6143,7 +6143,7 @@ def work_order_detail_view(request, pk):
     context = {
         'work_order': work_order,
         'attachments': work_order.attachments.all(),
-        'page_title': f'Orden: {work_order.order_number}'
+        'page_title': gettext('Orden: %(order_number)s') % {'order_number': work_order.order_number}
     }
     
     return render(request, 'tickets/work_order_detail.html', context)
@@ -6164,7 +6164,7 @@ def work_order_edit_view(request, pk):
         form = WorkOrderForm(request.POST, request.FILES, instance=work_order, user=request.user)
         if form.is_valid():
             work_order = form.save()
-            messages.success(request, f'Orden de trabajo "{work_order.title}" actualizada exitosamente.')
+            messages.success(request, gettext('Orden de trabajo "%(title)s" actualizada exitosamente.') % {'title': work_order.title})
             return redirect('work_order_detail', pk=work_order.pk)
     else:
         form = WorkOrderForm(instance=work_order, user=request.user)
@@ -6172,7 +6172,7 @@ def work_order_edit_view(request, pk):
     context = {
         'form': form,
         'work_order': work_order,
-        'page_title': f'Editar: {work_order.order_number}'
+        'page_title': gettext('Editar: %(order_number)s') % {'order_number': work_order.order_number}
     }
     
     return render(request, 'tickets/work_order_form.html', context)
@@ -6192,12 +6192,12 @@ def work_order_delete_view(request, pk):
     if request.method == 'POST':
         title = work_order.title
         work_order.delete()
-        messages.success(request, f'Orden de trabajo "{title}" eliminada exitosamente.')
+        messages.success(request, gettext('Orden de trabajo "%(title)s" eliminada exitosamente.') % {'title': title})
         return redirect('work_order_list')
     
     context = {
         'work_order': work_order,
-        'page_title': f'Eliminar: {work_order.order_number}'
+        'page_title': gettext('Eliminar: %(order_number)s') % {'order_number': work_order.order_number}
     }
     
     return render(request, 'tickets/work_order_delete.html', context)
@@ -6224,7 +6224,7 @@ def work_order_change_status_view(request, pk):
             work_order.save()
             
             new_status_display = work_order.get_status_display()
-            messages.success(request, f'Estado de la orden cambiado de "{old_status}" a "{new_status_display}".')
+            messages.success(request, gettext('Estado de la orden cambiado de "%(old_status)s" a "%(new_status_display)s".') % {'old_status': old_status, 'new_status_display': new_status_display})
             
             return JsonResponse({
                 'success': True,
@@ -6308,7 +6308,7 @@ def work_order_public_view(request, token):
         'rating_form': rating_form,
         'comment_form': comment_form,
         'create_form': create_form,
-        'page_title': f'Orden: {work_order.order_number}',
+        'page_title': gettext('Orden: %(order_number)s') % {'order_number': work_order.order_number},
         'is_public_view': True
     }
     
@@ -6750,7 +6750,7 @@ def task_create_view(request):
             task.save()
             form.save_m2m()  # Para guardar los ManyToMany
             
-            messages.success(request, f'Tarea "{task.title}" creada exitosamente.')
+            messages.success(request, gettext('Tarea "%(title)s" creada exitosamente.') % {'title': task.title})
             return redirect('task_detail', pk=task.pk)
     else:
         form = TaskForm()
@@ -6789,7 +6789,7 @@ def task_edit_view(request, pk):
             task = form.save(commit=False)
             task.save()
             form.save_m2m()  # Para guardar los ManyToMany
-            messages.success(request, f'Tarea "{task.title}" actualizada exitosamente.')
+            messages.success(request, gettext('Tarea "%(title)s" actualizada exitosamente.') % {'title': task.title})
             return redirect('task_detail', pk=task.pk)
     else:
         form = TaskForm(instance=task)
@@ -6797,7 +6797,7 @@ def task_edit_view(request, pk):
     context = {
         'form': form,
         'task': task,
-        'title': f'Editar Tarea: {task.title}'
+        'title': gettext('Editar Tarea: %(title)s') % {'title': task.title}
     }
     return render(request, 'tickets/task_form.html', context)
 
@@ -6815,7 +6815,7 @@ def task_delete_view(request, pk):
     if request.method == 'POST':
         task_title = task.title
         task.delete()
-        messages.success(request, f'Tarea "{task_title}" eliminada exitosamente.')
+        messages.success(request, gettext('Tarea "%(task_title)s" eliminada exitosamente.') % {'task_title': task_title})
         return redirect('task_list')
     
     context = {
@@ -6842,7 +6842,7 @@ def task_toggle_status_view(request, pk):
             
             task.save()
             
-            messages.success(request, f'Estado de la tarea "{task.title}" cambiado de {old_status} a {task.get_status_display()}.')
+            messages.success(request, gettext('Estado de la tarea "%(title)s" cambiado de %(old_status)s a %(valor)s.') % {'title': task.title, 'old_status': old_status, 'valor': task.get_status_display()})
     
     return redirect('task_detail', pk=task.pk)
 
@@ -6985,7 +6985,7 @@ def create_task_session(request):
             
             messages.success(
                 request, 
-                f'Nueva gestión de tareas creada con {assigned_tasks.count()} tareas cargadas.'
+                gettext('Nueva gestión de tareas creada con %(valor)s tareas cargadas.') % {'valor': assigned_tasks.count()}
             )
             return redirect('view_task_session', session_id=session.id)
         else:
@@ -7034,7 +7034,7 @@ def delete_task_session(request, session_id):
             session_date = session.date.strftime('%d/%m/%Y')
             session_user = session.user.get_full_name() or session.user.username
             session.delete()
-            messages.success(request, f'Gestión de tareas del {session_date} de {session_user} eliminada correctamente.')
+            messages.success(request, gettext('Gestión de tareas del %(session_date)s de %(session_user)s eliminada correctamente.') % {'session_date': session_date, 'session_user': session_user})
             return redirect('daily_task_management')
         
         context = {
@@ -7075,7 +7075,7 @@ def add_task_to_daily_session(request):
                     order=max_order + 1
                 )
                 
-                messages.success(request, f'Tarea "{task.title}" agregada a tu plan del día.')
+                messages.success(request, gettext('Tarea "%(title)s" agregada a tu plan del día.') % {'title': task.title})
             else:
                 messages.warning(request, gettext('Esta tarea ya está en tu plan del día.'))
                 
@@ -7096,10 +7096,10 @@ def toggle_daily_task_completion(request, item_id):
         
         if item.completed:
             item.mark_pending()
-            messages.info(request, f'Tarea "{item.task.title}" marcada como pendiente.')
+            messages.info(request, gettext('Tarea "%(title)s" marcada como pendiente.') % {'title': item.task.title})
         else:
             item.mark_completed()
-            messages.success(request, f'¡Excelente! Tarea "{item.task.title}" completada.')
+            messages.success(request, gettext('¡Excelente! Tarea "%(title)s" completada.') % {'title': item.task.title})
         
         # Redirigir a la vista de la sesión específica
         return redirect('view_task_session', session_id=item.session.id)
@@ -7119,7 +7119,7 @@ def remove_task_from_daily_session(request, item_id):
         )
         task_title = item.task.title
         item.delete()
-        messages.info(request, f'Tarea "{task_title}" removida de tu plan del día.')
+        messages.info(request, gettext('Tarea "%(task_title)s" removida de tu plan del día.') % {'task_title': task_title})
         
     except DailyTaskItem.DoesNotExist:
         messages.error(request, gettext('Item no encontrado.'))
@@ -7260,7 +7260,7 @@ def refresh_daily_tasks(request):
         if tasks_added > 0:
             messages.success(
                 request, 
-                f'Se agregaron {tasks_added} tarea(s) relevante(s) a tu plan del día.'
+                gettext('Se agregaron %(tasks_added)s tarea(s) relevante(s) a tu plan del día.') % {'tasks_added': tasks_added}
             )
         else:
             messages.info(
@@ -7335,7 +7335,7 @@ def task_control_complete(request, pk):
         
         messages.success(
             request,
-            f'¡Excelente! Has completado la tarea "{task.title}".'
+            gettext('¡Excelente! Has completado la tarea "%(title)s".') % {'title': task.title}
         )
     
     return redirect('task_control_dashboard')
@@ -7358,7 +7358,7 @@ def task_control_start(request, pk):
             
             messages.success(
                 request,
-                f'Has comenzado a trabajar en la tarea "{task.title}".'
+                gettext('Has comenzado a trabajar en la tarea "%(title)s".') % {'title': task.title}
             )
         else:
             messages.warning(request, gettext('Esta tarea ya está en progreso o completada.'))
@@ -7383,7 +7383,7 @@ def task_control_pause(request, pk):
             
             messages.info(
                 request,
-                f'Has pausado la tarea "{task.title}". Puedes retomarla cuando quieras.'
+                gettext('Has pausado la tarea "%(title)s". Puedes retomarla cuando quieras.') % {'title': task.title}
             )
         else:
             messages.warning(request, gettext('Solo puedes pausar tareas que estén en progreso.'))
@@ -7574,7 +7574,7 @@ def chat_room_view(request, room_id):
         'room': room,
         'messages': messages,
         'form': form,
-        'page_title': f'Chat - {room}',
+        'page_title': gettext('Chat - %(room)s') % {'room': room},
     }
     
     return render(request, 'tickets/chat_room.html', context)
@@ -7613,7 +7613,7 @@ def chat_create_group(request):
         form = ChatRoomForm(request.POST, user=request.user)
         if form.is_valid():
             room = form.save()
-            messages.success(request, f'Grupo "{room}" creado exitosamente.')
+            messages.success(request, gettext('Grupo "%(room)s" creado exitosamente.') % {'room': room})
             return redirect('chat_room', room_id=room.id)
     else:
         form = ChatRoomForm(user=request.user)
@@ -7760,7 +7760,7 @@ def pdf_get_pages_view(request):
             # Validar que las páginas estén en el rango válido
             for page_num in pages_to_extract:
                 if page_num < 1 or page_num > total_pages:
-                    messages.error(request, f'La página {page_num} no existe. El PDF tiene {total_pages} páginas.')
+                    messages.error(request, gettext('La página %(page_num)s no existe. El PDF tiene %(total_pages)s páginas.') % {'page_num': page_num, 'total_pages': total_pages})
                     return render(request, 'tickets/pdf_get_pages.html')
             
             # Crear nuevo PDF con las páginas seleccionadas
@@ -7782,13 +7782,13 @@ def pdf_get_pages_view(request):
             response = HttpResponse(output.read(), content_type='application/pdf')
             response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
             
-            messages.success(request, f'PDF generado exitosamente con las páginas: {pages_input}')
+            messages.success(request, gettext('PDF generado exitosamente con las páginas: %(pages_input)s') % {'pages_input': pages_input})
             return response
             
         except ValueError as e:
-            messages.error(request, f'Error en el formato de páginas: {str(e)}. Use formato como "1,3,5-7".')
+            messages.error(request, gettext('Error en el formato de páginas: %(valor)s. Use formato como "1,3,5-7".') % {'valor': str(e)})
         except Exception as e:
-            messages.error(request, f'Error al procesar el PDF: {str(e)}')
+            messages.error(request, gettext('Error al procesar el PDF: %(valor)s') % {'valor': str(e)})
         
         return render(request, 'tickets/pdf_get_pages.html')
     
@@ -7813,7 +7813,7 @@ def pdf_join_view(request):
         # Validar que todos los archivos sean PDF
         for pdf_file in pdf_files:
             if not pdf_file.name.lower().endswith('.pdf'):
-                messages.error(request, f'El archivo "{pdf_file.name}" no es un PDF válido.')
+                messages.error(request, gettext('El archivo "%(name)s" no es un PDF válido.') % {'name': pdf_file.name})
                 return render(request, 'tickets/pdf_join.html')
         
         try:
@@ -7834,7 +7834,7 @@ def pdf_join_view(request):
                         pdf_writer.add_page(page)
                         
                 except Exception as e:
-                    messages.error(request, f'Error al procesar el archivo "{pdf_file.name}": {str(e)}')
+                    messages.error(request, gettext('Error al procesar el archivo "%(name)s": %(valor)s') % {'name': pdf_file.name, 'valor': str(e)})
                     return render(request, 'tickets/pdf_join.html')
             
             # Crear respuesta HTTP con el PDF unido
@@ -7849,11 +7849,11 @@ def pdf_join_view(request):
             response = HttpResponse(output.read(), content_type='application/pdf')
             response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
             
-            messages.success(request, f'PDF unido exitosamente. Se combinaron {len(pdf_files)} archivos.')
+            messages.success(request, gettext('PDF unido exitosamente. Se combinaron %(valor)s archivos.') % {'valor': len(pdf_files)})
             return response
             
         except Exception as e:
-            messages.error(request, f'Error al unir los PDFs: {str(e)}')
+            messages.error(request, gettext('Error al unir los PDFs: %(valor)s') % {'valor': str(e)})
         
         return render(request, 'tickets/pdf_join.html')
     
@@ -7928,11 +7928,11 @@ def pdf_split_view(request):
             response = HttpResponse(zip_buffer.read(), content_type='application/zip')
             response['Content-Disposition'] = f'attachment; filename="{zip_filename}"'
             
-            messages.success(request, f'PDF dividido exitosamente en {total_pages} archivos individuales.')
+            messages.success(request, gettext('PDF dividido exitosamente en %(total_pages)s archivos individuales.') % {'total_pages': total_pages})
             return response
             
         except Exception as e:
-            messages.error(request, f'Error al dividir el PDF: {str(e)}')
+            messages.error(request, gettext('Error al dividir el PDF: %(valor)s') % {'valor': str(e)})
         
         return render(request, 'tickets/pdf_split.html')
     
@@ -8181,7 +8181,7 @@ def public_contact_form_view(request, token):
         'form': form,
         'profile': profile,
         'user_owner': profile.user,
-        'page_title': f'Formulario de Contacto - {profile.user.get_full_name() or profile.user.username}'
+        'page_title': gettext('Formulario de Contacto - %(valor)s') % {'valor': profile.user.get_full_name() or profile.user.username}
     }
     
     return render(request, 'tickets/public_contact_form.html', context)
@@ -8272,7 +8272,7 @@ def contact_submission_detail(request, pk):
     context = {
         'submission': submission,
         'form': form,
-        'page_title': f'Formulario de Contacto - {submission.company_name}'
+        'page_title': gettext('Formulario de Contacto - %(company_name)s') % {'company_name': submission.company_name}
     }
     
     return render(request, 'tickets/contact_submission_detail.html', context)
@@ -8304,17 +8304,17 @@ def contact_submission_approve(request, pk):
                 company=company
             )
             
-            messages.success(request, f'Empresa "{company.name}" creada exitosamente desde el formulario de contacto.')
+            messages.success(request, gettext('Empresa "%(name)s" creada exitosamente desde el formulario de contacto.') % {'name': company.name})
             return redirect('company_detail', company_id=company.id)
         else:
-            messages.error(request, f'Error al crear la empresa: {form.errors}')
+            messages.error(request, gettext('Error al crear la empresa: %(errors)s') % {'errors': form.errors})
     else:
         form = CompanyFromContactForm(contact_form=submission)
     
     context = {
         'submission': submission,
         'form': form,
-        'page_title': f'Crear Empresa - {submission.company_name}'
+        'page_title': gettext('Crear Empresa - %(company_name)s') % {'company_name': submission.company_name}
     }
     
     return render(request, 'tickets/contact_submission_approve.html', context)
@@ -8349,7 +8349,7 @@ def contact_submission_reject(request, pk):
     
     context = {
         'submission': submission,
-        'page_title': f'Rechazar Formulario - {submission.company_name}'
+        'page_title': gettext('Rechazar Formulario - %(company_name)s') % {'company_name': submission.company_name}
     }
     
     return render(request, 'tickets/contact_submission_reject.html', context)
@@ -8455,7 +8455,7 @@ def public_company_stats(request, token):
         'priority_filter': priority_filter or 'all',
         'ticket_statuses': ticket_statuses,
         'ticket_priorities': ticket_priorities,
-        'page_title': f'Estadísticas - {company.name}',
+        'page_title': gettext('Estadísticas - %(name)s') % {'name': company.name},
         # Horas consumidas = líneas de horas (ticket.hours es la estimación/presupuesto)
         'total_hours': TicketHourLine.objects.filter(
             ticket__company=company
@@ -8513,7 +8513,7 @@ def public_company_hours(request, token):
         'hours_by_status': hours_by_status,
         'status_filter': status_filter,
         'status_label': status_labels.get(status_filter, ''),
-        'page_title': f'Horas consumidas - {company.name}',
+        'page_title': gettext('Horas consumidas - %(name)s') % {'name': company.name},
     }
 
     return render(request, 'tickets/public_company_hours.html', context)
@@ -8678,7 +8678,7 @@ def opportunity_detail(request, pk):
         'notes': notes,
         'history': history,
         'can_be_edited': can_be_edited,
-        'page_title': f'Oportunidad: {opportunity.name}'
+        'page_title': gettext('Oportunidad: %(name)s') % {'name': opportunity.name}
     }
     
     return render(request, 'tickets/opportunity_detail.html', context)
@@ -8737,7 +8737,7 @@ def opportunity_create(request):
             return redirect('opportunity_detail', pk=opportunity.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al crear la oportunidad: {str(e)}')
+            messages.error(request, gettext('Error al crear la oportunidad: %(valor)s') % {'valor': str(e)})
     
     # Para GET request
     companies = Company.objects.all()
@@ -8854,7 +8854,7 @@ def opportunity_edit(request, pk):
         'statuses': statuses,
         'users': users,
         'probability_choices': probability_choices,
-        'page_title': f'Editar: {opportunity.name}'
+        'page_title': gettext('Editar: %(name)s') % {'name': opportunity.name}
     }
     
     return render(request, 'tickets/opportunity_form.html', context)
@@ -8878,7 +8878,7 @@ def opportunity_delete(request, pk):
     
     context = {
         'opportunity': opportunity,
-        'page_title': f'Eliminar: {opportunity.name}'
+        'page_title': gettext('Eliminar: %(name)s') % {'name': opportunity.name}
     }
     
     return render(request, 'tickets/opportunity_delete.html', context)
@@ -8931,7 +8931,7 @@ def opportunity_status_create(request):
             messages.success(request, gettext('Estado creado exitosamente.'))
             return redirect('opportunity_status_list')
         except Exception as e:
-            messages.error(request, f'Error al crear el estado: {str(e)}')
+            messages.error(request, gettext('Error al crear el estado: %(valor)s') % {'valor': str(e)})
     
     context = {
         'page_title': gettext('Nuevo Estado')
@@ -8967,7 +8967,7 @@ def opportunity_status_edit(request, pk):
     
     context = {
         'status': status,
-        'page_title': f'Editar: {status.name}'
+        'page_title': gettext('Editar: %(name)s') % {'name': status.name}
     }
     
     return render(request, 'tickets/opportunity_status_form.html', context)
@@ -8992,7 +8992,7 @@ def opportunity_status_delete(request, pk):
     
     context = {
         'status': status,
-        'page_title': f'Eliminar: {status.name}'
+        'page_title': gettext('Eliminar: %(name)s') % {'name': status.name}
     }
     
     return render(request, 'tickets/opportunity_status_delete.html', context)
@@ -9055,7 +9055,7 @@ def opportunity_activity_create(request, opportunity_id):
             activity.created_by = request.user
             activity.save()
             
-            messages.success(request, f'Actividad "{activity.title}" creada exitosamente.')
+            messages.success(request, gettext('Actividad "%(title)s" creada exitosamente.') % {'title': activity.title})
             return redirect('opportunity_detail', pk=opportunity_id)
     else:
         form = OpportunityActivityForm(opportunity=opportunity, current_user=request.user)
@@ -9063,7 +9063,7 @@ def opportunity_activity_create(request, opportunity_id):
     context = {
         'form': form,
         'opportunity': opportunity,
-        'page_title': f'Nueva Actividad - {opportunity.name}'
+        'page_title': gettext('Nueva Actividad - %(name)s') % {'name': opportunity.name}
     }
     
     return render(request, 'tickets/opportunity_activity_form.html', context)
@@ -9097,7 +9097,7 @@ def opportunity_activity_list(request, opportunity_id):
     context = {
         'opportunity': opportunity,
         'activities': activities,
-        'page_title': f'Actividades - {opportunity.name}'
+        'page_title': gettext('Actividades - %(name)s') % {'name': opportunity.name}
     }
     
     return render(request, 'tickets/opportunity_activity_list.html', context)
@@ -9120,7 +9120,7 @@ def opportunity_activity_detail(request, pk):
     
     context = {
         'activity': activity,
-        'page_title': f'Actividad: {activity.title}'
+        'page_title': gettext('Actividad: %(title)s') % {'title': activity.title}
     }
     
     return render(request, 'tickets/opportunity_activity_detail.html', context)
@@ -9155,7 +9155,7 @@ def opportunity_activity_edit(request, pk):
         'form': form,
         'activity': activity,
         'opportunity': activity.opportunity,
-        'page_title': f'Editar: {activity.title}'
+        'page_title': gettext('Editar: %(title)s') % {'title': activity.title}
     }
     
     return render(request, 'tickets/opportunity_activity_form.html', context)
@@ -9190,7 +9190,7 @@ def opportunity_activity_complete(request, pk):
     context = {
         'form': form,
         'activity': activity,
-        'page_title': f'Completar: {activity.title}'
+        'page_title': gettext('Completar: %(title)s') % {'title': activity.title}
     }
     
     return render(request, 'tickets/opportunity_activity_complete.html', context)
@@ -9214,7 +9214,7 @@ def opportunity_activity_delete(request, pk):
     if request.method == 'POST':
         activity_title = activity.title
         activity.delete()
-        messages.success(request, f'Actividad "{activity_title}" eliminada exitosamente.')
+        messages.success(request, gettext('Actividad "%(activity_title)s" eliminada exitosamente.') % {'activity_title': activity_title})
         
         # Redirigir a la oportunidad si existe, sino al dashboard de CRM
         if opportunity_id:
@@ -9224,7 +9224,7 @@ def opportunity_activity_delete(request, pk):
     
     context = {
         'activity': activity,
-        'page_title': f'Eliminar: {activity.title}'
+        'page_title': gettext('Eliminar: %(title)s') % {'title': activity.title}
     }
     
     return render(request, 'tickets/opportunity_activity_delete.html', context)
@@ -9300,7 +9300,7 @@ def activity_create_standalone(request):
             activity.created_by = request.user
             activity.save()
             
-            messages.success(request, f'Actividad "{activity.title}" creada exitosamente.')
+            messages.success(request, gettext('Actividad "%(title)s" creada exitosamente.') % {'title': activity.title})
             return redirect('my_activities_dashboard')
     else:
         form = OpportunityActivityStandaloneForm(current_user=request.user)
@@ -9342,7 +9342,7 @@ def activity_create_from_contact(request, contact_id):
             activity.contact = contact  # Asociar automáticamente el contacto
             activity.save()
             
-            messages.success(request, f'Actividad "{activity.title}" creada exitosamente para {contact.name}.')
+            messages.success(request, gettext('Actividad "%(title)s" creada exitosamente para %(name)s.') % {'title': activity.title, 'name': contact.name})
             return redirect('contact_detail', pk=contact.pk)
     else:
         form = OpportunityActivityStandaloneForm(current_user=request.user)
@@ -9354,7 +9354,7 @@ def activity_create_from_contact(request, contact_id):
     context = {
         'form': form,
         'contact': contact,
-        'page_title': f'Nueva Actividad para {contact.name}'
+        'page_title': gettext('Nueva Actividad para %(name)s') % {'name': contact.name}
     }
     
     return render(request, 'tickets/activity_from_contact_form.html', context)
@@ -9900,7 +9900,7 @@ def meeting_create_view(request):
             meeting = form.save(commit=False)
             meeting.organizer = request.user
             meeting.save()
-            messages.success(request, f'Reunión "{meeting.title}" creada exitosamente.')
+            messages.success(request, gettext('Reunión "%(title)s" creada exitosamente.') % {'title': meeting.title})
             return redirect('meeting_detail', pk=meeting.pk)
     else:
         form = MeetingForm(user=request.user)
@@ -9946,7 +9946,7 @@ def meeting_detail_view(request, pk):
     }
     
     context = {
-        'page_title': f'Reunión: {meeting.title}',
+        'page_title': gettext('Reunión: %(title)s') % {'title': meeting.title},
         'meeting': meeting,
         'attendees': attendees,
         'questions': questions,
@@ -9978,7 +9978,7 @@ def meeting_print_view(request, pk):
     }
     
     context = {
-        'page_title': f'Informe: {meeting.title}',
+        'page_title': gettext('Informe: %(title)s') % {'title': meeting.title},
         'meeting': meeting,
         'attendees': attendees,
         'questions': questions,
@@ -10000,13 +10000,13 @@ def meeting_edit_view(request, pk):
         form = MeetingForm(request.POST, instance=meeting, user=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Reunión "{meeting.title}" actualizada exitosamente.')
+            messages.success(request, gettext('Reunión "%(title)s" actualizada exitosamente.') % {'title': meeting.title})
             return redirect('meeting_detail', pk=meeting.pk)
     else:
         form = MeetingForm(instance=meeting, user=request.user)
     
     context = {
-        'page_title': f'Editar: {meeting.title}',
+        'page_title': gettext('Editar: %(title)s') % {'title': meeting.title},
         'form': form,
         'meeting': meeting,
     }
@@ -10098,11 +10098,11 @@ def meeting_delete_view(request, pk):
     if request.method == 'POST':
         meeting_title = meeting.title
         meeting.delete()
-        messages.success(request, f'Reunión "{meeting_title}" eliminada exitosamente.')
+        messages.success(request, gettext('Reunión "%(meeting_title)s" eliminada exitosamente.') % {'meeting_title': meeting_title})
         return redirect('meeting_list')
     
     context = {
-        'page_title': f'Eliminar: {meeting.title}',
+        'page_title': gettext('Eliminar: %(title)s') % {'title': meeting.title},
         'meeting': meeting,
     }
     return render(request, 'tickets/meeting_delete.html', context)
@@ -10123,7 +10123,7 @@ def meeting_questions_view(request, pk):
         questions = questions.filter(status=status)
     
     context = {
-        'page_title': f'Preguntas: {meeting.title}',
+        'page_title': gettext('Preguntas: %(title)s') % {'title': meeting.title},
         'meeting': meeting,
         'questions': questions,
         'current_status': status,
@@ -10141,7 +10141,7 @@ def meeting_attendees_view(request, pk):
     attendees = meeting.meetingattendee_set.all().order_by('registered_at')
     
     context = {
-        'page_title': f'Asistentes: {meeting.title}',
+        'page_title': gettext('Asistentes: %(title)s') % {'title': meeting.title},
         'meeting': meeting,
         'attendees': attendees,
     }
@@ -10273,7 +10273,7 @@ def meeting_public_view(request, token):
             pass
     
     context = {
-        'page_title': f'Reunión: {meeting.title}',
+        'page_title': gettext('Reunión: %(title)s') % {'title': meeting.title},
         'meeting': meeting,
         'user_registered': user_registered,
         'user_attendee': user_attendee,
@@ -10315,7 +10315,7 @@ def meeting_register_view(request, token):
         form = MeetingAttendeeForm(meeting=meeting)
     
     context = {
-        'page_title': f'Registrarse: {meeting.title}',
+        'page_title': gettext('Registrarse: %(title)s') % {'title': meeting.title},
         'meeting': meeting,
         'form': form,
     }
@@ -10335,7 +10335,7 @@ def meeting_questions_public_view(request, token):
     questions = meeting.meetingquestion_set.filter(status__in=['pending', 'answered']).order_by('-asked_at')
     
     context = {
-        'page_title': f'Preguntas: {meeting.title}',
+        'page_title': gettext('Preguntas: %(title)s') % {'title': meeting.title},
         'meeting': meeting,
         'questions': questions,
     }
@@ -10387,7 +10387,7 @@ def meeting_ask_question_view(request, token):
         form = MeetingQuestionForm()
     
     context = {
-        'page_title': f'Hacer Pregunta: {meeting.title}',
+        'page_title': gettext('Hacer Pregunta: %(title)s') % {'title': meeting.title},
         'meeting': meeting,
         'form': form,
     }
@@ -10494,7 +10494,7 @@ def meeting_rate_view(request, token):
     return redirect('meeting_public', token=token)
     
     context = {
-        'page_title': f'Hacer Pregunta: {meeting.title}',
+        'page_title': gettext('Hacer Pregunta: %(title)s') % {'title': meeting.title},
         'meeting': meeting,
         'form': form,
     }
@@ -10614,7 +10614,7 @@ def support_meeting_create(request):
             meeting = form.save(commit=False)
             meeting.created_by = request.user
             meeting.save()
-            messages.success(request, f'Reunión de soporte #{meeting.sequence} creada exitosamente.')
+            messages.success(request, gettext('Reunión de soporte #%(sequence)s creada exitosamente.') % {'sequence': meeting.sequence})
             return redirect('support_meeting_detail', pk=meeting.pk)
     else:
         form = SupportMeetingForm()
@@ -10684,7 +10684,7 @@ def support_meeting_detail(request, pk):
     }
     
     context = {
-        'page_title': f'Reunión #{meeting.sequence} - {meeting.company.name}',
+        'page_title': gettext('Reunión #%(sequence)s - %(name)s') % {'sequence': meeting.sequence, 'name': meeting.company.name},
         'meeting': meeting,
         'points': points,
         'point_form': point_form,
@@ -10706,13 +10706,13 @@ def support_meeting_edit(request, pk):
         form = SupportMeetingForm(request.POST, instance=meeting)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Reunión #{meeting.sequence} actualizada exitosamente.')
+            messages.success(request, gettext('Reunión #%(sequence)s actualizada exitosamente.') % {'sequence': meeting.sequence})
             return redirect('support_meeting_detail', pk=meeting.pk)
     else:
         form = SupportMeetingForm(instance=meeting)
     
     context = {
-        'page_title': f'Editar Reunión #{meeting.sequence}',
+        'page_title': gettext('Editar Reunión #%(sequence)s') % {'sequence': meeting.sequence},
         'form': form,
         'meeting': meeting,
     }
@@ -10730,11 +10730,11 @@ def support_meeting_delete(request, pk):
     if request.method == 'POST':
         meeting_info = f"#{meeting.sequence} - {meeting.company.name}"
         meeting.delete()
-        messages.success(request, f'Reunión {meeting_info} eliminada exitosamente.')
+        messages.success(request, gettext('Reunión %(meeting_info)s eliminada exitosamente.') % {'meeting_info': meeting_info})
         return redirect('support_meeting_list')
     
     context = {
-        'page_title': f'Eliminar Reunión #{meeting.sequence}',
+        'page_title': gettext('Eliminar Reunión #%(sequence)s') % {'sequence': meeting.sequence},
         'meeting': meeting,
     }
     return render(request, 'tickets/support_meeting_delete.html', context)
@@ -10773,14 +10773,14 @@ def support_meeting_create_tickets(request, pk):
             
             tickets_created += 1
         
-        messages.success(request, f'{tickets_created} tickets creados exitosamente desde los puntos seleccionados.')
+        messages.success(request, gettext('%(tickets_created)s tickets creados exitosamente desde los puntos seleccionados.') % {'tickets_created': tickets_created})
         return redirect('support_meeting_detail', pk=meeting.pk)
     
     # Obtener puntos seleccionados para confirmación
     selected_points = meeting.support_meeting_points.filter(is_selected=True)
     
     context = {
-        'page_title': f'Crear Tickets - Reunión #{meeting.sequence}',
+        'page_title': gettext('Crear Tickets - Reunión #%(sequence)s') % {'sequence': meeting.sequence},
         'meeting': meeting,
         'selected_points': selected_points,
     }
@@ -10823,11 +10823,11 @@ def support_meeting_generate_public_link(request, pk):
                 'message': 'Enlace público generado exitosamente'
             })
         
-        messages.success(request, f'Enlace público generado: {public_url}')
+        messages.success(request, gettext('Enlace público generado: %(public_url)s') % {'public_url': public_url})
         return redirect('support_meeting_detail', pk=meeting.pk)
     
     context = {
-        'page_title': f'Generar Enlace Público - Reunión #{meeting.sequence}',
+        'page_title': gettext('Generar Enlace Público - Reunión #%(sequence)s') % {'sequence': meeting.sequence},
         'meeting': meeting,
     }
     return render(request, 'tickets/support_meeting_generate_link.html', context)
@@ -10945,7 +10945,7 @@ def support_meeting_public(request, token):
     }
     
     context = {
-        'page_title': f'Reunión #{meeting.sequence} - {meeting.company.name}',
+        'page_title': gettext('Reunión #%(sequence)s - %(name)s') % {'sequence': meeting.sequence, 'name': meeting.company.name},
         'meeting': meeting,
         'points': points,
         'stats': stats,
@@ -11030,7 +11030,7 @@ def support_meeting_point_edit(request, meeting_pk, point_pk):
         form = SupportMeetingPointForm(instance=point)
     
     context = {
-        'page_title': f'Editar Punto - Reunión #{meeting.sequence}',
+        'page_title': gettext('Editar Punto - Reunión #%(sequence)s') % {'sequence': meeting.sequence},
         'meeting': meeting,
         'point': point,
         'form': form,
@@ -11068,11 +11068,11 @@ def support_meeting_point_delete(request, meeting_pk, point_pk):
             # POST normal
             point_info = point.description[:100] + "..." if len(point.description) > 100 else point.description
             point.delete()
-            messages.success(request, f'Punto "{point_info}" eliminado exitosamente.')
+            messages.success(request, gettext('Punto "%(point_info)s" eliminado exitosamente.') % {'point_info': point_info})
             return redirect('support_meeting_detail', pk=meeting.pk)
     
     context = {
-        'page_title': f'Eliminar Punto - Reunión #{meeting.sequence}',
+        'page_title': gettext('Eliminar Punto - Reunión #%(sequence)s') % {'sequence': meeting.sequence},
         'meeting': meeting,
         'point': point,
     }
@@ -11146,7 +11146,7 @@ def course_generate_public_token(request, pk):
             'message': 'Enlace público generado exitosamente'
         })
     
-    messages.success(request, f'Enlace público generado: {public_url}')
+    messages.success(request, gettext('Enlace público generado: %(public_url)s') % {'public_url': public_url})
     return redirect('course_detail', pk=pk)
 
 @login_required
@@ -11245,7 +11245,7 @@ def course_public(request, token):
     context = {
         'course': course,
         'classes_with_views': classes_with_views,
-        'page_title': f'Curso: {course.title}',
+        'page_title': gettext('Curso: %(title)s') % {'title': course.title},
         'is_public_view': True,
         'days_since_creation': days_since_creation,
         'total_comments': total_comments,
@@ -11586,7 +11586,7 @@ def client_request_create(request):
                     pass
             
             client_request.save()
-            messages.success(request, f'Solicitud "{client_request.sequence}" creada exitosamente.')
+            messages.success(request, gettext('Solicitud "%(sequence)s" creada exitosamente.') % {'sequence': client_request.sequence})
             return redirect('client_request_detail', pk=client_request.pk)
     else:
         form = ClientRequestForm()
@@ -11658,7 +11658,7 @@ def client_request_detail(request, pk):
         'has_response': has_response,
         'response_form': response_form,
         'is_agent': is_agent,
-        'page_title': f'Solicitud {client_request.sequence}'
+        'page_title': gettext('Solicitud %(sequence)s') % {'sequence': client_request.sequence}
     }
     
     return render(request, 'tickets/client_request_detail.html', context)
@@ -11694,7 +11694,7 @@ def client_request_edit(request, pk):
     context = {
         'form': form,
         'client_request': client_request,
-        'page_title': f'Editar {client_request.sequence}'
+        'page_title': gettext('Editar %(sequence)s') % {'sequence': client_request.sequence}
     }
     
     return render(request, 'tickets/client_request_form.html', context)
@@ -11720,12 +11720,12 @@ def client_request_delete(request, pk):
     if request.method == 'POST':
         sequence = client_request.sequence
         client_request.delete()
-        messages.success(request, f'Solicitud {sequence} eliminada exitosamente.')
+        messages.success(request, gettext('Solicitud %(sequence)s eliminada exitosamente.') % {'sequence': sequence})
         return redirect('client_request_list')
     
     context = {
         'client_request': client_request,
-        'page_title': f'Eliminar {client_request.sequence}'
+        'page_title': gettext('Eliminar %(sequence)s') % {'sequence': client_request.sequence}
     }
     
     return render(request, 'tickets/client_request_delete.html', context)
@@ -11931,7 +11931,7 @@ def public_client_requests(request, token):
         'in_progress_requests': in_progress_requests,
         'token': token,
         'show_all': show_all,
-        'page_title': f'Solicitudes - {company.name}'
+        'page_title': gettext('Solicitudes - %(name)s') % {'name': company.name}
     }
     
     return render(request, 'tickets/public_client_requests.html', context)
@@ -12013,7 +12013,7 @@ def client_request_template_create(request):
             template = form.save(commit=False)
             template.created_by = request.user
             template.save()
-            messages.success(request, f'Plantilla "{template.name}" creada exitosamente.')
+            messages.success(request, gettext('Plantilla "%(name)s" creada exitosamente.') % {'name': template.name})
             return redirect('client_request_template_detail', pk=template.pk)
     else:
         form = ClientRequestTemplateForm()
@@ -12063,7 +12063,7 @@ def client_request_template_edit(request, pk):
     context = {
         'form': form,
         'template': template,
-        'page_title': f'Editar {template.name}'
+        'page_title': gettext('Editar %(name)s') % {'name': template.name}
     }
     
     return render(request, 'tickets/client_request_template_form.html', context)
@@ -12079,12 +12079,12 @@ def client_request_template_delete(request, pk):
     if request.method == 'POST':
         name = template.name
         template.delete()
-        messages.success(request, f'Plantilla "{name}" eliminada exitosamente.')
+        messages.success(request, gettext('Plantilla "%(name)s" eliminada exitosamente.') % {'name': name})
         return redirect('client_request_template_list')
     
     context = {
         'template': template,
-        'page_title': f'Eliminar {template.name}'
+        'page_title': gettext('Eliminar %(name)s') % {'name': template.name}
     }
     
     return render(request, 'tickets/client_request_template_delete.html', context)
@@ -12115,7 +12115,7 @@ def client_request_template_item_create(request, template_pk):
     context = {
         'form': form,
         'template': template,
-        'page_title': f'Agregar Item a {template.name}'
+        'page_title': gettext('Agregar Item a %(name)s') % {'name': template.name}
     }
     
     return render(request, 'tickets/client_request_template_item_form.html', context)
@@ -12148,7 +12148,7 @@ def client_request_template_item_edit(request, pk):
         'form': form,
         'item': item,
         'template': template,
-        'page_title': f'Editar Item'
+        'page_title': gettext('Editar Item')
     }
     
     return render(request, 'tickets/client_request_template_item_form.html', context)
@@ -12215,7 +12215,7 @@ def client_request_template_execute(request, pk):
                 )
                 created_count += 1
             
-            messages.success(request, f'Se crearon {created_count} solicitudes para {company.name}.')
+            messages.success(request, gettext('Se crearon %(created_count)s solicitudes para %(name)s.') % {'created_count': created_count, 'name': company.name})
             return redirect('client_request_list')
     else:
         form = ExecuteTemplateForm()
@@ -12224,7 +12224,7 @@ def client_request_template_execute(request, pk):
         'form': form,
         'template': template,
         'items': template.items.all().order_by('order', 'id'),
-        'page_title': f'Ejecutar Plantilla: {template.name}'
+        'page_title': gettext('Ejecutar Plantilla: %(name)s') % {'name': template.name}
     }
     
     return render(request, 'tickets/client_request_template_execute.html', context)
@@ -12310,7 +12310,7 @@ def course_detail(request, pk):
         'classes': classes,
         'classes_with_views': classes_with_views,
         'can_manage_courses': can_manage,
-        'page_title': f'Curso: {course.title}',
+        'page_title': gettext('Curso: %(title)s') % {'title': course.title},
         'total_pending_comments': total_pending_comments,
         'all_comments': all_comments
     }
@@ -12389,7 +12389,7 @@ def course_create(request):
             course = form.save(commit=False)
             course.created_by = request.user
             course.save()
-            messages.success(request, f'Curso "{course.title}" creado exitosamente.')
+            messages.success(request, gettext('Curso "%(title)s" creado exitosamente.') % {'title': course.title})
             return redirect('course_detail', pk=course.pk)
     else:
         form = CourseForm()
@@ -12419,7 +12419,7 @@ def course_edit(request, pk):
         form = CourseForm(request.POST, instance=course)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Curso "{course.title}" actualizado exitosamente.')
+            messages.success(request, gettext('Curso "%(title)s" actualizado exitosamente.') % {'title': course.title})
             return redirect('course_detail', pk=pk)
     else:
         form = CourseForm(instance=course)
@@ -12427,7 +12427,7 @@ def course_edit(request, pk):
     context = {
         'form': form,
         'course': course,
-        'page_title': f'Editar: {course.title}'
+        'page_title': gettext('Editar: %(title)s') % {'title': course.title}
     }
     
     return render(request, 'tickets/course_form.html', context)
@@ -12448,12 +12448,12 @@ def course_delete(request, pk):
     if request.method == 'POST':
         course_title = course.title
         course.delete()
-        messages.success(request, f'Curso "{course_title}" eliminado exitosamente.')
+        messages.success(request, gettext('Curso "%(course_title)s" eliminado exitosamente.') % {'course_title': course_title})
         return redirect('course_list')
     
     context = {
         'course': course,
-        'page_title': f'Eliminar: {course.title}'
+        'page_title': gettext('Eliminar: %(title)s') % {'title': course.title}
     }
     
     return render(request, 'tickets/course_delete.html', context)
@@ -12479,7 +12479,7 @@ def course_class_create(request, course_id):
             course_class.course = course
             course_class.created_by = request.user
             course_class.save()
-            messages.success(request, f'Clase "{course_class.title}" agregada exitosamente.')
+            messages.success(request, gettext('Clase "%(title)s" agregada exitosamente.') % {'title': course_class.title})
             return redirect('course_detail', pk=course_id)
     else:
         # Sugerir el siguiente número de orden
@@ -12489,7 +12489,7 @@ def course_class_create(request, course_id):
     context = {
         'form': form,
         'course': course,
-        'page_title': f'Nueva Clase - {course.title}'
+        'page_title': gettext('Nueva Clase - %(title)s') % {'title': course.title}
     }
     
     return render(request, 'tickets/course_class_form.html', context)
@@ -12513,7 +12513,7 @@ def course_class_edit(request, course_id, pk):
         form = CourseClassForm(request.POST, instance=course_class)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Clase "{course_class.title}" actualizada exitosamente.')
+            messages.success(request, gettext('Clase "%(title)s" actualizada exitosamente.') % {'title': course_class.title})
             return redirect('course_detail', pk=course_id)
     else:
         form = CourseClassForm(instance=course_class)
@@ -12522,7 +12522,7 @@ def course_class_edit(request, course_id, pk):
         'form': form,
         'course': course,
         'course_class': course_class,
-        'page_title': f'Editar: {course_class.title}'
+        'page_title': gettext('Editar: %(title)s') % {'title': course_class.title}
     }
     
     return render(request, 'tickets/course_class_form.html', context)
@@ -12544,13 +12544,13 @@ def course_class_delete(request, course_id, pk):
     if request.method == 'POST':
         class_title = course_class.title
         course_class.delete()
-        messages.success(request, f'Clase "{class_title}" eliminada exitosamente.')
+        messages.success(request, gettext('Clase "%(class_title)s" eliminada exitosamente.') % {'class_title': class_title})
         return redirect('course_detail', pk=course_id)
     
     context = {
         'course': course,
         'course_class': course_class,
-        'page_title': f'Eliminar: {course_class.title}'
+        'page_title': gettext('Eliminar: %(title)s') % {'title': course_class.title}
     }
     
     return render(request, 'tickets/course_class_delete.html', context)
@@ -13288,7 +13288,7 @@ def contact_create(request):
                 contact.assigned_to = request.user
             contact.save()
             
-            messages.success(request, f'Contacto "{contact.name}" creado exitosamente.')
+            messages.success(request, gettext('Contacto "%(name)s" creado exitosamente.') % {'name': contact.name})
             return redirect('contact_detail', pk=contact.pk)
     else:
         form = ContactForm(user=request.user)
@@ -13671,7 +13671,7 @@ def contact_detail(request, pk):
         'attachment_form': attachment_form,
         'previous_contact': previous_contact,
         'next_contact': next_contact,
-        'page_title': f'Contacto: {contact.name}'
+        'page_title': gettext('Contacto: %(name)s') % {'name': contact.name}
     }
     
     return render(request, 'tickets/contact_detail.html', context)
@@ -13689,7 +13689,7 @@ def contact_edit(request, pk):
         if form.is_valid():
             form.save()
             
-            messages.success(request, f'Contacto "{contact.name}" actualizado exitosamente.')
+            messages.success(request, gettext('Contacto "%(name)s" actualizado exitosamente.') % {'name': contact.name})
             return redirect('contact_detail', pk=contact.pk)
     else:
         form = ContactForm(instance=contact, user=request.user)
@@ -13697,7 +13697,7 @@ def contact_edit(request, pk):
     context = {
         'form': form,
         'contact': contact,
-        'page_title': f'Editar: {contact.name}'
+        'page_title': gettext('Editar: %(name)s') % {'name': contact.name}
     }
     
     return render(request, 'tickets/contact_form.html', context)
@@ -13710,7 +13710,7 @@ def convert_contact_to_company(request, pk):
     
     # Verificar si ya tiene empresa vinculada
     if contact.linked_company:
-        messages.warning(request, f'Este contacto ya está vinculado a la empresa "{contact.linked_company.name}".')
+        messages.warning(request, gettext('Este contacto ya está vinculado a la empresa "%(name)s".') % {'name': contact.linked_company.name})
         return redirect('contact_detail', pk=contact.pk)
     
     if request.method == 'POST':
@@ -13724,7 +13724,7 @@ def convert_contact_to_company(request, pk):
                 # Vincular a la empresa existente
                 contact.linked_company = existing_company
                 contact.save()
-                messages.success(request, f'Contacto vinculado a la empresa existente "{existing_company.name}".')
+                messages.success(request, gettext('Contacto vinculado a la empresa existente "%(name)s".') % {'name': existing_company.name})
                 return redirect('contact_detail', pk=contact.pk)
             
             # Crear nueva empresa
@@ -13742,18 +13742,18 @@ def convert_contact_to_company(request, pk):
             contact.linked_company = new_company
             contact.save()
             
-            messages.success(request, f'¡Empresa "{new_company.name}" creada y vinculada exitosamente!')
+            messages.success(request, gettext('¡Empresa "%(name)s" creada y vinculada exitosamente!') % {'name': new_company.name})
             return redirect('contact_detail', pk=contact.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al crear la empresa: {str(e)}')
+            messages.error(request, gettext('Error al crear la empresa: %(valor)s') % {'valor': str(e)})
             return redirect('contact_detail', pk=contact.pk)
     
     # GET request - mostrar confirmación
     context = {
         'contact': contact,
         'company_name': contact.company if contact.company else contact.name,
-        'page_title': f'Convertir contacto: {contact.name}'
+        'page_title': gettext('Convertir contacto: %(name)s') % {'name': contact.name}
     }
     
     return render(request, 'tickets/contact_convert_confirm.html', context)
@@ -13767,12 +13767,12 @@ def contact_delete(request, pk):
     if request.method == 'POST':
         contact_name = contact.name
         contact.delete()
-        messages.success(request, f'Contacto "{contact_name}" eliminado exitosamente.')
+        messages.success(request, gettext('Contacto "%(contact_name)s" eliminado exitosamente.') % {'contact_name': contact_name})
         return redirect('contact_list')
     
     context = {
         'contact': contact,
-        'page_title': f'Eliminar: {contact.name}'
+        'page_title': gettext('Eliminar: %(name)s') % {'name': contact.name}
     }
     
     return render(request, 'tickets/contact_delete.html', context)
@@ -13790,9 +13790,9 @@ def contact_delete_all(request):
         # Eliminar todos los contactos
         Contact.objects.all().delete()
         
-        messages.success(request, f'✅ Se eliminaron exitosamente {total_contacts} contactos.')
+        messages.success(request, gettext('✅ Se eliminaron exitosamente %(total_contacts)s contactos.') % {'total_contacts': total_contacts})
     except Exception as e:
-        messages.error(request, f'❌ Error al eliminar contactos: {str(e)}')
+        messages.error(request, gettext('❌ Error al eliminar contactos: %(valor)s') % {'valor': str(e)})
     
     return redirect('contact_list')
 
@@ -13829,7 +13829,7 @@ def contact_attachment_delete(request, pk):
     if request.method == 'POST':
         filename = attachment.original_filename
         attachment.delete()
-        messages.success(request, f'Archivo "{filename}" eliminado exitosamente.')
+        messages.success(request, gettext('Archivo "%(filename)s" eliminado exitosamente.') % {'filename': filename})
         return redirect('contact_detail', pk=contact.pk)
     
     return redirect('contact_detail', pk=contact.pk)
@@ -14075,7 +14075,7 @@ def contact_individual_stage_tracking(request, pk):
         stages_data.append(stage_info)
     
     context = {
-        'page_title': f'Pipeline de {contact.name}',
+        'page_title': gettext('Pipeline de %(name)s') % {'name': contact.name},
         'contact': contact,
         'stages_data': stages_data,
     }
@@ -14605,7 +14605,7 @@ def contact_attachment_download(request, pk):
         else:
             raise Http404("El archivo no existe")
     except Exception as e:
-        messages.error(request, f'Error al descargar el archivo: {str(e)}')
+        messages.error(request, gettext('Error al descargar el archivo: %(valor)s') % {'valor': str(e)})
         return redirect('contact_detail', pk=attachment.contact.pk)
 
 
@@ -14686,7 +14686,7 @@ def sales_plan_edit(request, pk):
     context = {
         'form': form,
         'plan': plan,
-        'page_title': f'Editar Plan de {plan.user.get_full_name() or plan.user.username}'
+        'page_title': gettext('Editar Plan de %(valor)s') % {'valor': plan.user.get_full_name() or plan.user.username}
     }
     
     return render(request, 'tickets/sales_plan_form.html', context)
@@ -14707,12 +14707,12 @@ def sales_plan_delete(request, pk):
     if request.method == 'POST':
         user_name = plan.user.get_full_name() or plan.user.username
         plan.delete()
-        messages.success(request, f'Plan de {user_name} eliminado exitosamente.')
+        messages.success(request, gettext('Plan de %(user_name)s eliminado exitosamente.') % {'user_name': user_name})
         return redirect('sales_plan_list')
     
     context = {
         'plan': plan,
-        'page_title': f'Eliminar Plan de {plan.user.get_full_name() or plan.user.username}'
+        'page_title': gettext('Eliminar Plan de %(valor)s') % {'valor': plan.user.get_full_name() or plan.user.username}
     }
     
     return render(request, 'tickets/sales_plan_delete.html', context)
@@ -14861,12 +14861,12 @@ def blog_category_create(request):
                 category.save()
                 print(f"Categoría creada: {category.name} - {category.slug}")
                 
-                messages.success(request, f'Categoría "{category.name}" creada exitosamente.')
+                messages.success(request, gettext('Categoría "%(name)s" creada exitosamente.') % {'name': category.name})
                 return redirect('blog_category_list')
                 
             except Exception as e:
                 print(f"Exception al crear categoría: {str(e)}")
-                messages.error(request, f'Error al crear la categoría: {str(e)}')
+                messages.error(request, gettext('Error al crear la categoría: %(valor)s') % {'valor': str(e)})
         else:
             messages.error(request, gettext('Por favor corrige los errores en el formulario.'))
     else:
@@ -14931,7 +14931,7 @@ def blog_post_create(request):
             post.created_by = request.user
             post.save()
             
-            messages.success(request, f'Artículo "{post.title}" creado exitosamente.')
+            messages.success(request, gettext('Artículo "%(title)s" creado exitosamente.') % {'title': post.title})
             return redirect('blog_post_detail_admin', pk=post.pk)
     else:
         form = BlogPostForm()
@@ -14957,7 +14957,7 @@ def blog_post_detail_admin(request, pk):
         'post': post,
         'pending_comments': pending_comments,
         'approved_comments': approved_comments,
-        'page_title': f'Artículo: {post.title}'
+        'page_title': gettext('Artículo: %(title)s') % {'title': post.title}
     }
     
     return render(request, 'tickets/blog_post_detail_admin.html', context)
@@ -15003,7 +15003,7 @@ def blog_post_edit(request, pk):
                 post.published_at = timezone.now()
             
             post.save()
-            messages.success(request, f'Artículo "{post.title}" actualizado exitosamente.')
+            messages.success(request, gettext('Artículo "%(title)s" actualizado exitosamente.') % {'title': post.title})
             return redirect('blog_post_detail_admin', pk=post.pk)
     else:
         form = BlogPostForm(instance=post)
@@ -15011,7 +15011,7 @@ def blog_post_edit(request, pk):
     context = {
         'form': form,
         'post': post,
-        'page_title': f'Editar: {post.title}',
+        'page_title': gettext('Editar: %(title)s') % {'title': post.title},
         'action': 'Actualizar'
     }
     
@@ -15026,13 +15026,13 @@ def blog_post_toggle_status(request, pk):
     if post.status == 'published':
         post.status = 'draft'
         post.published_at = None
-        messages.success(request, f'Artículo "{post.title}" despublicado.')
+        messages.success(request, gettext('Artículo "%(title)s" despublicado.') % {'title': post.title})
     else:
         post.status = 'published'
         if not post.published_at:
             from django.utils import timezone
             post.published_at = timezone.now()
-        messages.success(request, f'Artículo "{post.title}" publicado exitosamente.')
+        messages.success(request, gettext('Artículo "%(title)s" publicado exitosamente.') % {'title': post.title})
     
     post.save()
     return redirect('blog_post_detail_admin', pk=post.pk)
@@ -15046,12 +15046,12 @@ def blog_post_delete(request, pk):
     if request.method == 'POST':
         title = post.title
         post.delete()
-        messages.success(request, f'Artículo "{title}" eliminado exitosamente.')
+        messages.success(request, gettext('Artículo "%(title)s" eliminado exitosamente.') % {'title': title})
         return redirect('blog_post_list_admin')
     
     context = {
         'post': post,
-        'page_title': f'Eliminar: {post.title}'
+        'page_title': gettext('Eliminar: %(title)s') % {'title': post.title}
     }
     
     return render(request, 'tickets/blog_post_delete.html', context)
@@ -15116,7 +15116,7 @@ def ai_chat_list_view(request):
             session = form.save(commit=False)
             session.user = request.user
             session.save()
-            messages.success(request, f'Nueva conversación creada: {session.title}')
+            messages.success(request, gettext('Nueva conversación creada: %(title)s') % {'title': session.title})
             return redirect('ai_chat_live', session_id=session.id)
     else:
         form = AIChatSessionForm(initial={'ai_model': config.openai_model})
@@ -15189,7 +15189,7 @@ def ai_chat_session_view(request, session_id):
                 
             except Exception as e:
                 print(f"DEBUG: Error en OpenAI API: {str(e)}")
-                messages.error(request, f'Error al comunicarse con la IA: {str(e)}')
+                messages.error(request, gettext('Error al comunicarse con la IA: %(valor)s') % {'valor': str(e)})
             
             return redirect('ai_chat_session', session_id=session.id)
         else:
@@ -15218,7 +15218,7 @@ def ai_chat_delete_session_view(request, session_id):
     if request.method == 'POST':
         session.is_active = False
         session.save()
-        messages.success(request, f'Conversación "{session.title}" eliminada.')
+        messages.success(request, gettext('Conversación "%(title)s" eliminada.') % {'title': session.title})
         return redirect('ai_chat_list')
     
     context = {
@@ -15276,7 +15276,7 @@ def ai_chat_debug_view(request, session_id):
                 
             except Exception as e:
                 print(f"DEBUG: Error en OpenAI API: {str(e)}")
-                messages.error(request, f'Error al comunicarse con la IA: {str(e)}')
+                messages.error(request, gettext('Error al comunicarse con la IA: %(valor)s') % {'valor': str(e)})
             
             return redirect('ai_chat_debug', session_id=session.id)
         else:
@@ -15288,7 +15288,7 @@ def ai_chat_debug_view(request, session_id):
         'session': session,
         'messages_list': messages_list,
         'form': form,
-        'page_title': f'Debug Chat IA - {session.title}',
+        'page_title': gettext('Debug Chat IA - %(title)s') % {'title': session.title},
     }
     
     return render(request, 'tickets/ai_chat_debug.html', context)
@@ -15343,7 +15343,7 @@ def ai_chat_simple_view(request, session_id):
                 
             except Exception as e:
                 print(f"Error: {e}")
-                messages.error(request, f'Error: {str(e)}')
+                messages.error(request, gettext('Error: %(valor)s') % {'valor': str(e)})
         else:
             messages.error(request, gettext('El mensaje debe tener al menos 5 caracteres.'))
     
@@ -15354,7 +15354,7 @@ def ai_chat_simple_view(request, session_id):
         'session': session,
         'messages_list': messages_list,
         'form': form,
-        'page_title': f'Chat Simple - {session.title}',
+        'page_title': gettext('Chat Simple - %(title)s') % {'title': session.title},
     }
     
     return render(request, 'tickets/ai_chat_simple.html', context)
@@ -15481,7 +15481,7 @@ def ai_chat_live_view(request, session_id):
     context = {
         'session': session,
         'messages_list': messages_list,
-        'page_title': f'{session.title} - Chat IA',
+        'page_title': gettext('%(title)s - Chat IA') % {'title': session.title},
     }
     
     return render(request, 'tickets/ai_chat_live.html', context)
@@ -15510,7 +15510,7 @@ def ai_chat_modern_view(request, session_id):
     context = {
         'session': session,
         'messages': messages_list,  # Cambio de nombre para el template moderno
-        'page_title': f'{session.title} - Chat IA',
+        'page_title': gettext('%(title)s - Chat IA') % {'title': session.title},
     }
     
     return render(request, 'tickets/ai_chat_modern.html', context)
@@ -16475,7 +16475,7 @@ def concept_create_view(request):
             concept = form.save(commit=False)
             concept.created_by = request.user
             concept.save()
-            messages.success(request, f'Concepto "{concept.term}" creado exitosamente.')
+            messages.success(request, gettext('Concepto "%(term)s" creado exitosamente.') % {'term': concept.term})
             return redirect('concept_list')
     else:
         form = ConceptForm()
@@ -16497,7 +16497,7 @@ def concept_edit_view(request, pk):
         form = ConceptForm(request.POST, instance=concept)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Concepto "{concept.term}" actualizado exitosamente.')
+            messages.success(request, gettext('Concepto "%(term)s" actualizado exitosamente.') % {'term': concept.term})
             return redirect('concept_list')
     else:
         form = ConceptForm(instance=concept)
@@ -16519,7 +16519,7 @@ def concept_delete_view(request, pk):
     if request.method == 'POST':
         concept_term = concept.term
         concept.delete()
-        messages.success(request, f'Concepto "{concept_term}" eliminado exitosamente.')
+        messages.success(request, gettext('Concepto "%(concept_term)s" eliminado exitosamente.') % {'concept_term': concept_term})
         return redirect('concept_list')
     
     context = {
@@ -16536,7 +16536,7 @@ def concept_detail_view(request, pk):
     
     context = {
         'concept': concept,
-        'title': f'Concepto: {concept.term}'
+        'title': gettext('Concepto: %(term)s') % {'term': concept.term}
     }
     return render(request, 'tickets/concept_detail.html', context)
 
@@ -16830,7 +16830,7 @@ def exam_create(request):
             created_by=request.user
         )
         
-        messages.success(request, f'Examen "{exam.title}" creado exitosamente')
+        messages.success(request, gettext('Examen "%(title)s" creado exitosamente') % {'title': exam.title})
         return redirect('exam_detail', pk=exam.pk)
     
     return render(request, 'tickets/exam_form.html')
@@ -16909,7 +16909,7 @@ def exam_delete(request, pk):
     if request.method == 'POST':
         exam_title = exam.title
         exam.delete()
-        messages.success(request, f'Examen "{exam_title}" eliminado exitosamente')
+        messages.success(request, gettext('Examen "%(exam_title)s" eliminado exitosamente') % {'exam_title': exam_title})
         return redirect('exam_list')
     
     context = {'exam': exam}
@@ -17730,7 +17730,7 @@ def contacto_web_detail(request, pk):
     
     context = {
         'contacto': contacto,
-        'page_title': f'Contacto: {contacto.nombre}'
+        'page_title': gettext('Contacto: %(nombre)s') % {'nombre': contacto.nombre}
     }
     
     return render(request, 'tickets/contacto_web_detail.html', context)
@@ -17783,7 +17783,7 @@ def public_upload_url_create(request):
         
         upload_url.save()
         
-        messages.success(request, f'URL pública creada exitosamente. Token: {upload_url.upload_token}')
+        messages.success(request, gettext('URL pública creada exitosamente. Token: %(upload_token)s') % {'upload_token': upload_url.upload_token})
         return redirect('public_upload_url_detail', pk=upload_url.pk)
     
     companies = Company.objects.all()
@@ -17814,7 +17814,7 @@ def public_upload_url_detail(request, pk):
         'upload_url': upload_url,
         'uploaded_documents': uploaded_documents,
         'public_url': public_url,
-        'page_title': f'URL Pública: {upload_url.title}'
+        'page_title': gettext('URL Pública: %(title)s') % {'title': upload_url.title}
     }
     
     return render(request, 'tickets/public_upload_url_detail.html', context)
@@ -17830,7 +17830,7 @@ def public_upload_url_toggle(request, pk):
     upload_url.save()
     
     status = "activada" if upload_url.is_active else "desactivada"
-    messages.success(request, f'URL pública {status} exitosamente')
+    messages.success(request, gettext('URL pública %(status)s exitosamente') % {'status': status})
     
     return redirect('public_upload_url_detail', pk=pk)
 
@@ -17890,11 +17890,11 @@ def public_document_upload(request, token):
                 return render(request, 'tickets/public_upload_success.html', context)
                 
             except Exception as e:
-                messages.error(request, f'Error al subir el archivo: {str(e)}')
+                messages.error(request, gettext('Error al subir el archivo: %(valor)s') % {'valor': str(e)})
     
     context = {
         'upload_url': upload_url,
-        'page_title': f'Subir Documento: {upload_url.title}'
+        'page_title': gettext('Subir Documento: %(title)s') % {'title': upload_url.title}
     }
     
     return render(request, 'tickets/public_upload_form.html', context)
@@ -17944,12 +17944,12 @@ def course_generate_registration_token(request, pk):
             max_registrations=max_regs
         )
         
-        messages.success(request, f'Token de registro creado exitosamente.')
+        messages.success(request, gettext('Token de registro creado exitosamente.'))
         return redirect('course_detail', pk=pk)
     
     context = {
         'course': course,
-        'page_title': f'Generar Token de Registro - {course.title}'
+        'page_title': gettext('Generar Token de Registro - %(title)s') % {'title': course.title}
     }
     
     return render(request, 'tickets/course_generate_registration_token.html', context)
@@ -17991,7 +17991,7 @@ def course_public_register(request, token):
     # Verificar si el token es válido
     is_valid, message = registration_token.is_valid()
     if not is_valid:
-        messages.error(request, f'Token no válido: {message}')
+        messages.error(request, gettext('Token no válido: %(message)s') % {'message': message})
         return redirect('course_public')
     
     course = registration_token.course
@@ -18070,16 +18070,16 @@ def course_public_register(request, token):
                 # Iniciar sesión automáticamente
                 login(request, user)
                 
-                messages.success(request, f'¡Registro exitoso! Bienvenido al curso "{course.title}".')
+                messages.success(request, gettext('¡Registro exitoso! Bienvenido al curso "%(title)s".') % {'title': course.title})
                 return redirect('course_detail', pk=course.pk)
                 
             except Exception as e:
-                messages.error(request, f'Error al crear el usuario: {str(e)}')
+                messages.error(request, gettext('Error al crear el usuario: %(valor)s') % {'valor': str(e)})
     
     context = {
         'course': course,
         'token': registration_token,
-        'page_title': f'Registro para {course.title}'
+        'page_title': gettext('Registro para %(title)s') % {'title': course.title}
     }
     
     return render(request, 'tickets/course_public_register.html', context)
@@ -18102,7 +18102,7 @@ def course_registration_tokens_list(request, pk):
     context = {
         'course': course,
         'tokens': tokens,
-        'page_title': f'Tokens de Registro - {course.title}'
+        'page_title': gettext('Tokens de Registro - %(title)s') % {'title': course.title}
     }
     
     return render(request, 'tickets/course_registration_tokens_list.html', context)
@@ -18234,12 +18234,12 @@ def employee_detail(request, pk):
             messages.success(request, gettext("Análisis de IA completado y guardado correctamente."))
             
         except Exception as e:
-            messages.error(request, f"Error al analizar con IA: {str(e)}")
+            messages.error(request, gettext('Error al analizar con IA: %(valor)s') % {'valor': str(e)})
             
         return redirect('employee_detail', pk=pk)
     context = {
         'employee': employee,
-        'page_title': f'Empleado: {employee.get_full_name()}',
+        'page_title': gettext('Empleado: %(valor)s') % {'valor': employee.get_full_name()},
         'config': SystemConfiguration.objects.first()
     }
     return render(request, 'tickets/employee_detail.html', context)
@@ -18266,7 +18266,7 @@ def employee_change_status(request, pk):
         if new_status in ['candidate', 'in_process', 'employee', 'not_employee']:
             employee.status = new_status
             employee.save()
-            messages.success(request, f'Estado actualizado a {employee.get_status_display()}')
+            messages.success(request, gettext('Estado actualizado a %(valor)s') % {'valor': employee.get_status_display()})
             return redirect('employee_detail', pk=pk)
         else:
             messages.error(request, gettext('Estado no válido.'))
@@ -18309,7 +18309,7 @@ def employee_edit_hiring_opinion(request, pk):
     context = {
         'form': form,
         'employee': employee,
-        'page_title': f'Editar Opinión de Reunión - {employee.get_full_name()}',
+        'page_title': gettext('Editar Opinión de Reunión - %(valor)s') % {'valor': employee.get_full_name()},
     }
     
     return render(request, 'tickets/employee_edit_hiring_opinion.html', context)
@@ -18337,7 +18337,7 @@ def employee_payroll_list(request, pk):
     context = {
         'employee': employee,
         'payrolls': payrolls,
-        'page_title': f'Nóminas - {employee.get_full_name()}',
+        'page_title': gettext('Nóminas - %(valor)s') % {'valor': employee.get_full_name()},
     }
     
     return render(request, 'tickets/employee_payroll_list.html', context)
@@ -18367,13 +18367,13 @@ def employee_payroll_create(request, pk):
             payroll.created_by = request.user
             try:
                 payroll.save()
-                messages.success(request, f'Nómina de {payroll.get_period_display()} agregada correctamente.')
+                messages.success(request, gettext('Nómina de %(valor)s agregada correctamente.') % {'valor': payroll.get_period_display()})
                 return redirect('employee_payroll_list', pk=employee.pk)
             except Exception as e:
                 if 'UNIQUE constraint failed' in str(e) or 'unique_together' in str(e):
-                    messages.error(request, f'Ya existe una nómina para {payroll.get_period_display()}.')
+                    messages.error(request, gettext('Ya existe una nómina para %(valor)s.') % {'valor': payroll.get_period_display()})
                 else:
-                    messages.error(request, f'Error al guardar la nómina: {str(e)}')
+                    messages.error(request, gettext('Error al guardar la nómina: %(valor)s') % {'valor': str(e)})
         else:
             messages.error(request, gettext('Por favor, corrige los errores en el formulario.'))
     else:
@@ -18382,7 +18382,7 @@ def employee_payroll_create(request, pk):
     context = {
         'form': form,
         'employee': employee,
-        'page_title': f'Nueva Nómina - {employee.get_full_name()}',
+        'page_title': gettext('Nueva Nómina - %(valor)s') % {'valor': employee.get_full_name()},
     }
     
     return render(request, 'tickets/employee_payroll_form.html', context)
@@ -18408,7 +18408,7 @@ def employee_payroll_detail(request, employee_pk, payroll_pk):
     context = {
         'employee': employee,
         'payroll': payroll,
-        'page_title': f'Nómina {payroll.get_period_display()} - {employee.get_full_name()}',
+        'page_title': gettext('Nómina %(valor)s - %(valor2)s') % {'valor': payroll.get_period_display(), 'valor2': employee.get_full_name()},
     }
     
     return render(request, 'tickets/employee_payroll_detail.html', context)
@@ -18441,11 +18441,11 @@ def employee_payroll_edit(request, employee_pk, payroll_pk):
             try:
                 saved_payroll = form.save()
                 print(f"DEBUG - Nómina guardada - Comprobante: {saved_payroll.payment_receipt}")
-                messages.success(request, f'Nómina de {payroll.get_period_display()} actualizada correctamente.')
+                messages.success(request, gettext('Nómina de %(valor)s actualizada correctamente.') % {'valor': payroll.get_period_display()})
                 return redirect('employee_payroll_detail', employee_pk=employee.pk, payroll_pk=payroll.pk)
             except Exception as e:
                 print(f"DEBUG - Error al guardar: {str(e)}")
-                messages.error(request, f'Error al actualizar la nómina: {str(e)}')
+                messages.error(request, gettext('Error al actualizar la nómina: %(valor)s') % {'valor': str(e)})
         else:
             print(f"DEBUG - Errores del formulario: {form.errors}")
             messages.error(request, gettext('Por favor, corrige los errores en el formulario.'))
@@ -18456,7 +18456,7 @@ def employee_payroll_edit(request, employee_pk, payroll_pk):
         'form': form,
         'employee': employee,
         'payroll': payroll,
-        'page_title': f'Editar Nómina {payroll.get_period_display()} - {employee.get_full_name()}',
+        'page_title': gettext('Editar Nómina %(valor)s - %(valor2)s') % {'valor': payroll.get_period_display(), 'valor2': employee.get_full_name()},
     }
     
     return render(request, 'tickets/employee_payroll_form.html', context)
@@ -18482,13 +18482,13 @@ def employee_payroll_delete(request, employee_pk, payroll_pk):
     if request.method == 'POST':
         period_display = payroll.get_period_display()
         payroll.delete()
-        messages.success(request, f'Nómina de {period_display} eliminada correctamente.')
+        messages.success(request, gettext('Nómina de %(period_display)s eliminada correctamente.') % {'period_display': period_display})
         return redirect('employee_payroll_list', pk=employee.pk)
     
     context = {
         'employee': employee,
         'payroll': payroll,
-        'page_title': f'Eliminar Nómina {payroll.get_period_display()} - {employee.get_full_name()}',
+        'page_title': gettext('Eliminar Nómina %(valor)s - %(valor2)s') % {'valor': payroll.get_period_display(), 'valor2': employee.get_full_name()},
     }
     
     return render(request, 'tickets/employee_payroll_delete.html', context)
@@ -18613,13 +18613,13 @@ def candidate_detail(request, pk):
             messages.success(request, gettext("Análisis de IA completado y guardado correctamente."))
             
         except Exception as e:
-            messages.error(request, f"Error al analizar con IA: {str(e)}")
+            messages.error(request, gettext('Error al analizar con IA: %(valor)s') % {'valor': str(e)})
             
         return redirect('candidate_detail', pk=pk)
     
     context = {
         'employee': employee,
-        'page_title': f'Candidato: {employee.get_full_name()}',
+        'page_title': gettext('Candidato: %(valor)s') % {'valor': employee.get_full_name()},
         'config': SystemConfiguration.objects.first(),
         'section': 'candidates'
     }
@@ -18687,7 +18687,7 @@ def active_employee_detail(request, pk):
     
     context = {
         'employee': employee,
-        'page_title': f'Empleado: {employee.get_full_name()}',
+        'page_title': gettext('Empleado: %(valor)s') % {'valor': employee.get_full_name()},
         'config': SystemConfiguration.objects.first(),
         'section': 'employees'
     }
@@ -18758,11 +18758,11 @@ def job_application_token_create(request):
                 created_by=request.user
             )
             
-            messages.success(request, f'Enlace de aplicación creado exitosamente para "{job_title}".')
+            messages.success(request, gettext('Enlace de aplicación creado exitosamente para "%(job_title)s".') % {'job_title': job_title})
             return redirect('job_application_token_detail', pk=token.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al crear el enlace: {str(e)}')
+            messages.error(request, gettext('Error al crear el enlace: %(valor)s') % {'valor': str(e)})
     
     context = {
         'page_title': gettext('Crear Enlace de Aplicación de Empleo')
@@ -18796,7 +18796,7 @@ def job_application_token_detail(request, pk):
     context = {
         'token': token,
         'applications': applications,
-        'page_title': f'Enlace: {token.job_title}'
+        'page_title': gettext('Enlace: %(job_title)s') % {'job_title': token.job_title}
     }
     
     return render(request, 'tickets/job_application_token_detail.html', context)
@@ -18837,7 +18837,7 @@ def public_job_application(request, token):
                 messages.error(request, gettext('Todos los campos marcados con * son obligatorios.'))
                 return render(request, 'tickets/public_job_application.html', {
                     'token': application_token,
-                    'page_title': f'Aplicar a: {application_token.job_title}'
+                    'page_title': gettext('Aplicar a: %(job_title)s') % {'job_title': application_token.job_title}
                 })
             
             # Verificar que el email no exista ya
@@ -18845,7 +18845,7 @@ def public_job_application(request, token):
                 messages.error(request, gettext('Ya existe una aplicación con este correo electrónico.'))
                 return render(request, 'tickets/public_job_application.html', {
                     'token': application_token,
-                    'page_title': f'Aplicar a: {application_token.job_title}'
+                    'page_title': gettext('Aplicar a: %(job_title)s') % {'job_title': application_token.job_title}
                 })
             
             # Crear el empleado/aplicante
@@ -18879,11 +18879,11 @@ def public_job_application(request, token):
             })
             
         except Exception as e:
-            messages.error(request, f'Error al enviar la aplicación: {str(e)}')
+            messages.error(request, gettext('Error al enviar la aplicación: %(valor)s') % {'valor': str(e)})
     
     context = {
         'token': application_token,
-        'page_title': f'Aplicar a: {application_token.job_title}'
+        'page_title': gettext('Aplicar a: %(job_title)s') % {'job_title': application_token.job_title}
     }
     
     return render(request, 'tickets/public_job_application.html', context)
@@ -19050,7 +19050,7 @@ def agreement_create(request):
                     messages.warning(request, gettext('No se pudo generar contenido con IA. Verifica la configuración.'))
             
             agreement.save()
-            messages.success(request, f'Acuerdo "{agreement.title}" creado correctamente.')
+            messages.success(request, gettext('Acuerdo "%(title)s" creado correctamente.') % {'title': agreement.title})
             return redirect('agreement_detail', pk=agreement.pk)
         else:
             messages.error(request, gettext('Por favor, corrige los errores en el formulario.'))
@@ -19086,7 +19086,7 @@ def agreement_detail(request, pk):
     context = {
         'agreement': agreement,
         'signatures': signatures,
-        'page_title': f'Acuerdo - {agreement.title}',
+        'page_title': gettext('Acuerdo - %(title)s') % {'title': agreement.title},
     }
     
     return render(request, 'tickets/agreement_detail.html', context)
@@ -19130,7 +19130,7 @@ def agreement_edit(request, pk):
                 else:
                     messages.warning(request, gettext('No se pudo generar contenido con IA.'))
             
-            messages.success(request, f'Acuerdo "{agreement.title}" actualizado correctamente.')
+            messages.success(request, gettext('Acuerdo "%(title)s" actualizado correctamente.') % {'title': agreement.title})
             return redirect('agreement_detail', pk=agreement.pk)
         else:
             messages.error(request, gettext('Por favor, corrige los errores en el formulario.'))
@@ -19140,7 +19140,7 @@ def agreement_edit(request, pk):
     context = {
         'form': form,
         'agreement': agreement,
-        'page_title': f'Editar - {agreement.title}',
+        'page_title': gettext('Editar - %(title)s') % {'title': agreement.title},
     }
     
     return render(request, 'tickets/agreement_form.html', context)
@@ -19165,12 +19165,12 @@ def agreement_delete(request, pk):
     if request.method == 'POST':
         title = agreement.title
         agreement.delete()
-        messages.success(request, f'Acuerdo "{title}" eliminado correctamente.')
+        messages.success(request, gettext('Acuerdo "%(title)s" eliminado correctamente.') % {'title': title})
         return redirect('agreement_list')
     
     context = {
         'agreement': agreement,
-        'page_title': f'Eliminar - {agreement.title}',
+        'page_title': gettext('Eliminar - %(title)s') % {'title': agreement.title},
     }
     
     return render(request, 'tickets/agreement_delete.html', context)
@@ -19199,8 +19199,8 @@ def agreement_publish(request, pk):
             agreement.published_at = timezone.now()
             agreement.save()
             
-            messages.success(request, f'Acuerdo "{agreement.title}" publicado correctamente.')
-            messages.info(request, f'URL pública: {agreement.get_public_url(request)}')
+            messages.success(request, gettext('Acuerdo "%(title)s" publicado correctamente.') % {'title': agreement.title})
+            messages.info(request, gettext('URL pública: %(valor)s') % {'valor': agreement.get_public_url(request)})
             
             # TODO: Enviar notificaciones por email si está configurado
             email_list = form.cleaned_data.get('email_list', [])
@@ -19217,7 +19217,7 @@ def agreement_publish(request, pk):
     context = {
         'form': form,
         'agreement': agreement,
-        'page_title': f'Publicar - {agreement.title}',
+        'page_title': gettext('Publicar - %(title)s') % {'title': agreement.title},
     }
     
     return render(request, 'tickets/agreement_publish.html', context)
@@ -19244,7 +19244,7 @@ def public_agreement_sign(request, token):
         context = {
             'agreement': agreement,
             'error_message': error_msg,
-            'page_title': f'Acuerdo - {agreement.title}',
+            'page_title': gettext('Acuerdo - %(title)s') % {'title': agreement.title},
         }
         return render(request, 'tickets/public_agreement_error.html', context)
     
@@ -19277,7 +19277,7 @@ def public_agreement_sign(request, token):
         'agreement': agreement,
         'form': form,
         'signatures_count': agreement.signature_count,
-        'page_title': f'Firmar - {agreement.title}',
+        'page_title': gettext('Firmar - %(title)s') % {'title': agreement.title},
     }
     
     return render(request, 'tickets/public_agreement_sign.html', context)
@@ -19292,7 +19292,7 @@ def public_agreement_success(request, token, signature_id):
         'agreement': agreement,
         'signature': signature,
         'download_url': signature.get_download_url(request),
-        'page_title': f'Firmado - {agreement.title}',
+        'page_title': gettext('Firmado - %(title)s') % {'title': agreement.title},
     }
     
     return render(request, 'tickets/public_agreement_success.html', context)
@@ -19402,7 +19402,7 @@ def landing_page_create(request):
             # Agregar errores del formulario a los mensajes
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.error(request, f'Error en {field}: {error}')
+                    messages.error(request, gettext('Error en %(field)s: %(error)s') % {'field': field, 'error': error})
     else:
         form = LandingPageForm()
     
@@ -19426,7 +19426,7 @@ def landing_page_detail(request, pk):
     submissions = landing_page.submissions.filter(processed=False).order_by('-created_at')[:20]
     
     context = {
-        'page_title': f'Landing Page: {landing_page.nombre_producto}',
+        'page_title': gettext('Landing Page: %(nombre_producto)s') % {'nombre_producto': landing_page.nombre_producto},
         'landing_page': landing_page,
         'submissions': submissions,
     }
@@ -19450,7 +19450,7 @@ def landing_page_edit(request, pk):
         form = LandingPageForm(instance=landing_page)
     
     context = {
-        'page_title': f'Editar Landing Page: {landing_page.nombre_producto}',
+        'page_title': gettext('Editar Landing Page: %(nombre_producto)s') % {'nombre_producto': landing_page.nombre_producto},
         'form': form,
         'landing_page': landing_page,
     }
@@ -19470,7 +19470,7 @@ def landing_page_delete(request, pk):
         return redirect('landing_page_list')
     
     context = {
-        'page_title': f'Eliminar Landing Page: {landing_page.nombre_producto}',
+        'page_title': gettext('Eliminar Landing Page: %(nombre_producto)s') % {'nombre_producto': landing_page.nombre_producto},
         'landing_page': landing_page,
     }
     
@@ -19900,7 +19900,7 @@ def landing_page_submissions(request, pk):
         submission.existing_contact = existing_contact
     
     context = {
-        'page_title': f'Envíos: {landing_page.nombre_producto}',
+        'page_title': gettext('Envíos: %(nombre_producto)s') % {'nombre_producto': landing_page.nombre_producto},
         'landing_page': landing_page,
         'submissions': submissions,
     }
@@ -19922,7 +19922,7 @@ def landing_page_submission_detail(request, submission_id):
     ).first()
     
     context = {
-        'page_title': f'Detalle del Envío #{submission.id}',
+        'page_title': gettext('Detalle del Envío #%(id)s') % {'id': submission.id},
         'submission': submission,
         'landing_page': submission.landing_page,
         'existing_contact': existing_contact,
@@ -19942,7 +19942,7 @@ def create_contact_from_submission_view(request, submission_id):
     if request.method == 'POST':
         try:
             contact = create_contact_from_submission(submission, submission.landing_page, created_by=request.user)
-            messages.success(request, f'Contacto creado exitosamente para {contact.name}')
+            messages.success(request, gettext('Contacto creado exitosamente para %(name)s') % {'name': contact.name})
             
             # Enviar notificación
             try:
@@ -19952,7 +19952,7 @@ def create_contact_from_submission_view(request, submission_id):
                 messages.warning(request, gettext('Contacto creado pero no se pudo enviar la notificación por email.'))
                 
         except Exception as e:
-            messages.error(request, f'Error al crear el contacto: {str(e)}')
+            messages.error(request, gettext('Error al crear el contacto: %(valor)s') % {'valor': str(e)})
     
     return redirect('landing_page_submissions', pk=submission.landing_page.pk)
 
@@ -20171,7 +20171,7 @@ def spam_submission_mark_valid(request, submission_id):
     except Exception as e:
         logger.error(f"Error enviando Telegram al recuperar spam {submission.pk}: {e}")
 
-    messages.success(request, f'Envío #{submission.pk} de {submission.email} marcado como correcto.')
+    messages.success(request, gettext('Envío #%(pk)s de %(email)s marcado como correcto.') % {'pk': submission.pk, 'email': submission.email})
     return redirect('landing_page_submission_detail', submission_id=submission.pk)
 
 
@@ -20381,7 +20381,7 @@ def registro_entrada_edit(request, pk):
             return redirect('registro_entrada_list')
 
     return render(request, 'tickets/registro_entrada_form.html', {
-        'page_title': f'Editar Registro — {registro.nombre} {registro.apellido}',
+        'page_title': gettext('Editar Registro — %(nombre)s %(apellido)s') % {'nombre': registro.nombre, 'apellido': registro.apellido},
         'action': 'edit',
         'registro': registro,
         'errors': errors,
@@ -20640,7 +20640,7 @@ def work_order_task_list_view(request, work_order_pk):
     context = {
         'work_order': work_order,
         'tasks': tasks,
-        'page_title': f'Tareas - {work_order.order_number}',
+        'page_title': gettext('Tareas - %(order_number)s') % {'order_number': work_order.order_number},
         'total_estimated_hours': sum(task.estimated_hours or 0 for task in tasks),
         'total_logged_hours': work_order.get_total_hours_logged(),
         'progress_percentage': work_order.get_progress_percentage(),
@@ -20663,7 +20663,7 @@ def work_order_task_create_view(request, work_order_pk):
             task.work_order = work_order
             task.created_by = request.user
             task.save()
-            messages.success(request, f'Tarea "{task.title}" creada exitosamente.')
+            messages.success(request, gettext('Tarea "%(title)s" creada exitosamente.') % {'title': task.title})
             return redirect('work_order_task_list', work_order_pk=work_order.pk)
     else:
         from .forms import WorkOrderTaskForm
@@ -20672,7 +20672,7 @@ def work_order_task_create_view(request, work_order_pk):
     context = {
         'form': form,
         'work_order': work_order,
-        'page_title': f'Nueva Tarea - {work_order.order_number}'
+        'page_title': gettext('Nueva Tarea - %(order_number)s') % {'order_number': work_order.order_number}
     }
     
     return render(request, 'tickets/work_order_task_form.html', context)
@@ -20691,7 +20691,7 @@ def work_order_task_edit_view(request, work_order_pk, task_pk):
         form = WorkOrderTaskForm(request.POST, instance=task)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Tarea "{task.title}" actualizada exitosamente.')
+            messages.success(request, gettext('Tarea "%(title)s" actualizada exitosamente.') % {'title': task.title})
             return redirect('work_order_task_list', work_order_pk=work_order.pk)
     else:
         from .forms import WorkOrderTaskForm
@@ -20701,7 +20701,7 @@ def work_order_task_edit_view(request, work_order_pk, task_pk):
         'form': form,
         'work_order': work_order,
         'task': task,
-        'page_title': f'Editar Tarea - {task.title}'
+        'page_title': gettext('Editar Tarea - %(title)s') % {'title': task.title}
     }
     
     return render(request, 'tickets/work_order_task_form.html', context)
@@ -20718,13 +20718,13 @@ def work_order_task_delete_view(request, work_order_pk, task_pk):
     if request.method == 'POST':
         title = task.title
         task.delete()
-        messages.success(request, f'Tarea "{title}" eliminada exitosamente.')
+        messages.success(request, gettext('Tarea "%(title)s" eliminada exitosamente.') % {'title': title})
         return redirect('work_order_task_list', work_order_pk=work_order.pk)
     
     context = {
         'work_order': work_order,
         'task': task,
-        'page_title': f'Eliminar Tarea - {task.title}'
+        'page_title': gettext('Eliminar Tarea - %(title)s') % {'title': task.title}
     }
     
     return render(request, 'tickets/work_order_task_delete.html', context)
@@ -20757,7 +20757,7 @@ def work_order_task_bulk_create_view(request, work_order_pk):
                     )
                     tasks_created += 1
             
-            messages.success(request, f'{tasks_created} tareas creadas exitosamente.')
+            messages.success(request, gettext('%(tasks_created)s tareas creadas exitosamente.') % {'tasks_created': tasks_created})
             return redirect('work_order_task_list', work_order_pk=work_order.pk)
     else:
         from .forms import WorkOrderTaskBulkForm
@@ -20766,7 +20766,7 @@ def work_order_task_bulk_create_view(request, work_order_pk):
     context = {
         'form': form,
         'work_order': work_order,
-        'page_title': f'Crear Tareas Múltiples - {work_order.order_number}'
+        'page_title': gettext('Crear Tareas Múltiples - %(order_number)s') % {'order_number': work_order.order_number}
     }
     
     return render(request, 'tickets/work_order_task_bulk_form.html', context)
@@ -20971,7 +20971,7 @@ def work_order_public_task_view(request, token):
                 work_order.update_actual_hours()
                 
                 new_status_display = task.get_status_display()
-                messages.success(request, f'Tarea "{task.title}" actualizada de "{old_status}" a "{new_status_display}".')
+                messages.success(request, gettext('Tarea "%(title)s" actualizada de "%(old_status)s" a "%(new_status_display)s".') % {'title': task.title, 'old_status': old_status, 'new_status_display': new_status_display})
             except WorkOrderTask.DoesNotExist:
                 messages.error(request, gettext('Tarea no encontrada.'))
         
@@ -20980,7 +20980,7 @@ def work_order_public_task_view(request, token):
     context = {
         'work_order': work_order,
         'tasks': tasks,
-        'page_title': f'Tareas - {work_order.order_number}',
+        'page_title': gettext('Tareas - %(order_number)s') % {'order_number': work_order.order_number},
         'is_public_view': True,
         'total_estimated_hours': sum(task.estimated_hours or 0 for task in tasks),
         'total_logged_hours': work_order.get_total_hours_logged(),
@@ -21149,7 +21149,7 @@ def landing_submission_detail_view(request, submission_id):
     submission = get_object_or_404(LandingPageSubmission, id=submission_id)
     
     context = {
-        'page_title': f'Evaluación: {submission.nombre} {submission.apellido}',
+        'page_title': gettext('Evaluación: %(nombre)s %(apellido)s') % {'nombre': submission.nombre, 'apellido': submission.apellido},
         'submission': submission,
     }
     
@@ -21168,11 +21168,11 @@ def evaluate_submission_ai_view(request, submission_id):
         try:
             success = submission.evaluate_with_ai()
             if success:
-                messages.success(request, f'Evaluación IA completada. Puntuación: {submission.ai_overall_score}/10')
+                messages.success(request, gettext('Evaluación IA completada. Puntuación: %(ai_overall_score)s/10') % {'ai_overall_score': submission.ai_overall_score})
             else:
                 messages.error(request, gettext('Error al evaluar con IA'))
         except Exception as e:
-            messages.error(request, f'Error: {str(e)}')
+            messages.error(request, gettext('Error: %(valor)s') % {'valor': str(e)})
     
     return redirect('landing_submission_detail', submission_id=submission.id)
 
@@ -21188,15 +21188,15 @@ def landing_submission_delete_view(request, submission_id):
     if request.method == 'POST':
         try:
             submission.delete()
-            messages.success(request, f'Submission de "{submission.nombre} {submission.apellido}" eliminada correctamente.')
+            messages.success(request, gettext('Submission de "%(nombre)s %(apellido)s" eliminada correctamente.') % {'nombre': submission.nombre, 'apellido': submission.apellido})
             return redirect('landing_submissions_list')
         except Exception as e:
-            messages.error(request, f'Error al eliminar la submission: {str(e)}')
+            messages.error(request, gettext('Error al eliminar la submission: %(valor)s') % {'valor': str(e)})
             return redirect('landing_submission_detail', submission_id=submission.id)
     
     context = {
         'submission': submission,
-        'page_title': f'Eliminar Submission - {submission.nombre} {submission.apellido}',
+        'page_title': gettext('Eliminar Submission - %(nombre)s %(apellido)s') % {'nombre': submission.nombre, 'apellido': submission.apellido},
     }
     
     return render(request, 'tickets/landing_submission_delete.html', context)
@@ -21215,17 +21215,17 @@ def batch_evaluate_submissions_view(request):
             
             messages.success(
                 request, 
-                f'Evaluación completada: {results["processed"]} procesados, {results["errors"]} errores'
+                gettext('Evaluación completada: %(valor)s procesados, %(valor2)s errores') % {'valor': results['processed'], 'valor2': results['errors']}
             )
             
             # Mostrar detalles de errores si los hay
             if results["errors"] > 0:
                 error_details = [r for r in results["results"] if r["status"] == "error"]
                 for error in error_details[:3]:  # Mostrar máximo 3 errores
-                    messages.warning(request, f'Error en ID {error["id"]}: {error["error"]}')
+                    messages.warning(request, gettext('Error en ID %(valor)s: %(valor2)s') % {'valor': error['id'], 'valor2': error['error']})
                     
         except Exception as e:
-            messages.error(request, f'Error en evaluación en lote: {str(e)}')
+            messages.error(request, gettext('Error en evaluación en lote: %(valor)s') % {'valor': str(e)})
     
     return redirect('landing_submissions_list')
 
@@ -21401,7 +21401,7 @@ def shared_file_detail_view(request, file_id):
             return redirect('shared_files_list')
     
     context = {
-        'page_title': f'Archivo: {shared_file.title}',
+        'page_title': gettext('Archivo: %(title)s') % {'title': shared_file.title},
         'shared_file': shared_file,
     }
     
@@ -21465,7 +21465,7 @@ def public_file_upload_view(request):
                 if hasattr(existing_user, 'userprofile') and existing_user.userprofile.company:
                     messages.success(
                         request, 
-                        f'Archivo subido exitosamente y asignado automáticamente a la empresa: {existing_user.userprofile.company.name}. Gracias por compartir.'
+                        gettext('Archivo subido exitosamente y asignado automáticamente a la empresa: %(name)s. Gracias por compartir.') % {'name': existing_user.userprofile.company.name}
                     )
                 else:
                     messages.success(
@@ -21675,7 +21675,7 @@ def recording_upload_view(request):
                     return redirect('recordings_list')
                     
                 except Exception as e:
-                    messages.error(request, f'Error al procesar la grabación: {str(e)}')
+                    messages.error(request, gettext('Error al procesar la grabación: %(valor)s') % {'valor': str(e)})
             else:
                 messages.error(request, gettext('No se recibieron datos de audio.'))
     else:
@@ -21721,7 +21721,7 @@ def recording_detail_view(request, recording_id):
     )
     
     context = {
-        'page_title': f'Grabación: {recording.title}',
+        'page_title': gettext('Grabación: %(title)s') % {'title': recording.title},
         'recording': recording,
         'is_agent': is_agent(request.user),
     }
@@ -21841,7 +21841,7 @@ def public_recording_upload_view(request):
                         if hasattr(existing_user, 'userprofile') and existing_user.userprofile.company:
                             messages.success(
                                 request, 
-                                f'Grabación guardada exitosamente y asignada automáticamente a la empresa: {existing_user.userprofile.company.name}. La transcripción se procesará automáticamente.'
+                                gettext('Grabación guardada exitosamente y asignada automáticamente a la empresa: %(name)s. La transcripción se procesará automáticamente.') % {'name': existing_user.userprofile.company.name}
                             )
                         else:
                             messages.success(
@@ -21857,7 +21857,7 @@ def public_recording_upload_view(request):
                     return redirect('public_recording_upload')
                     
                 except Exception as e:
-                    messages.error(request, f'Error al procesar la grabación: {str(e)}')
+                    messages.error(request, gettext('Error al procesar la grabación: %(valor)s') % {'valor': str(e)})
             else:
                 messages.error(request, gettext('No se recibieron datos de audio.'))
     else:
@@ -22012,7 +22012,7 @@ def recording_detail_view(request, recording_id):
                         if result['success']:
                             messages.success(request, gettext('Transcripción generada exitosamente con IA.'))
                         else:
-                            messages.error(request, f'Error al generar transcripción: {result["error"]}')
+                            messages.error(request, gettext('Error al generar transcripción: %(valor)s') % {'valor': result['error']})
                     
                     elif action == 'improve':
                         # Mejorar transcripción existente
@@ -22039,7 +22039,7 @@ def recording_detail_view(request, recording_id):
                     return redirect('recording_detail', recording_id=recording.id)
                     
                 except Exception as e:
-                    messages.error(request, f'Error procesando con IA: {str(e)}')
+                    messages.error(request, gettext('Error procesando con IA: %(valor)s') % {'valor': str(e)})
     
     # Obtener estadísticas de reproducción
     playback_count = recording.playbacks.count()
@@ -22052,7 +22052,7 @@ def recording_detail_view(request, recording_id):
         bitrate_kbps = round(recording.file_size / recording.duration_seconds / 128, 0)
     
     context = {
-        'page_title': f'Grabación: {recording.title}',
+        'page_title': gettext('Grabación: %(title)s') % {'title': recording.title},
         'recording': recording,
         'transcription_form': transcription_form,
         'action_form': action_form,
@@ -22673,11 +22673,11 @@ def ai_blog_configurator_create_view(request):
                 default_category_id=request.POST.get('default_category') or None,
             )
             
-            messages.success(request, f'Configurador "{configurator.name}" creado exitosamente.')
+            messages.success(request, gettext('Configurador "%(name)s" creado exitosamente.') % {'name': configurator.name})
             return redirect('ai_blog_configurators_list')
             
         except Exception as e:
-            messages.error(request, f'Error creando configurador: {str(e)}')
+            messages.error(request, gettext('Error creando configurador: %(valor)s') % {'valor': str(e)})
     
     # Para el formulario
     categories = BlogCategory.objects.filter(is_active=True).order_by('name')
@@ -22713,11 +22713,11 @@ def ai_blog_configurator_edit_view(request, pk):
             configurator.default_category_id = request.POST.get('default_category') or None
             configurator.save()
             
-            messages.success(request, f'Configurador "{configurator.name}" actualizado exitosamente.')
+            messages.success(request, gettext('Configurador "%(name)s" actualizado exitosamente.') % {'name': configurator.name})
             return redirect('ai_blog_configurators_list')
             
         except Exception as e:
-            messages.error(request, f'Error actualizando configurador: {str(e)}')
+            messages.error(request, gettext('Error actualizando configurador: %(valor)s') % {'valor': str(e)})
     
     # Para el formulario
     categories = BlogCategory.objects.filter(is_active=True).order_by('name')
@@ -22741,7 +22741,7 @@ def ai_blog_configurator_delete_view(request, pk):
     configurator_name = configurator.name
     configurator.delete()
     
-    messages.success(request, f'Configurador "{configurator_name}" eliminado exitosamente.')
+    messages.success(request, gettext('Configurador "%(configurator_name)s" eliminado exitosamente.') % {'configurator_name': configurator_name})
     return redirect('ai_blog_configurators_list')
 
 
@@ -22756,7 +22756,7 @@ def ai_blog_configurator_toggle_view(request, pk):
     configurator.save()
     
     status = 'activado' if configurator.is_active else 'desactivado'
-    messages.success(request, f'Configurador "{configurator.name}" {status} exitosamente.')
+    messages.success(request, gettext('Configurador "%(name)s" %(status)s exitosamente.') % {'name': configurator.name, 'status': status})
     
     return redirect('ai_blog_configurators_list')
 
@@ -22777,12 +22777,12 @@ def ai_blog_configurator_run_now_view(request, pk):
         result = run_ai_blog_generation(configurator, force=True)
         
         if result['success']:
-            messages.success(request, f'✅ Generación exitosa: {result["posts_created"]} post(s) creado(s)')
+            messages.success(request, gettext('✅ Generación exitosa: %(valor)s post(s) creado(s)') % {'valor': result['posts_created']})
         else:
-            messages.error(request, f'❌ Error en generación: {result["error"]}')
+            messages.error(request, gettext('❌ Error en generación: %(valor)s') % {'valor': result['error']})
             
     except Exception as e:
-        messages.error(request, f'Error ejecutando configurador: {str(e)}')
+        messages.error(request, gettext('Error ejecutando configurador: %(valor)s') % {'valor': str(e)})
     
     return redirect('ai_blog_configurators_list')
 
@@ -22809,7 +22809,7 @@ def ai_blog_generation_logs_view(request, pk):
     page_obj = paginator.get_page(page_number)
     
     context = {
-        'page_title': f'Logs de Generación - {configurator.name}',
+        'page_title': gettext('Logs de Generación - %(name)s') % {'name': configurator.name},
         'configurator': configurator,
         'page_obj': page_obj,
         'stats': {
@@ -22867,7 +22867,7 @@ def multiple_documentation_create_view(request):
             documentation.created_by = request.user
             documentation.save()
             
-            messages.success(request, f'Documentación "{documentation.title}" creada correctamente.')
+            messages.success(request, gettext('Documentación "%(title)s" creada correctamente.') % {'title': documentation.title})
             return redirect('multiple_documentation_detail', pk=documentation.pk)
     else:
         form = MultipleDocumentationForm()
@@ -22891,7 +22891,7 @@ def multiple_documentation_detail_view(request, pk):
     items = documentation.items.all().order_by('number')
     
     context = {
-        'page_title': f'Documentación: {documentation.title}',
+        'page_title': gettext('Documentación: %(title)s') % {'title': documentation.title},
         'documentation': documentation,
         'items': items,
     }
@@ -22912,13 +22912,13 @@ def multiple_documentation_edit_view(request, pk):
         form = MultipleDocumentationForm(request.POST, instance=documentation)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Documentación "{documentation.title}" actualizada correctamente.')
+            messages.success(request, gettext('Documentación "%(title)s" actualizada correctamente.') % {'title': documentation.title})
             return redirect('multiple_documentation_detail', pk=documentation.pk)
     else:
         form = MultipleDocumentationForm(instance=documentation)
     
     context = {
-        'page_title': f'Editar: {documentation.title}',
+        'page_title': gettext('Editar: %(title)s') % {'title': documentation.title},
         'documentation': documentation,
         'form': form,
         'is_create': False,
@@ -22939,15 +22939,15 @@ def multiple_documentation_delete_view(request, pk):
         try:
             title = documentation.title
             documentation.delete()
-            messages.success(request, f'Documentación "{title}" eliminada correctamente.')
+            messages.success(request, gettext('Documentación "%(title)s" eliminada correctamente.') % {'title': title})
             return redirect('multiple_documentation_list')
             
         except Exception as e:
-            messages.error(request, f'Error al eliminar la documentación: {str(e)}')
+            messages.error(request, gettext('Error al eliminar la documentación: %(valor)s') % {'valor': str(e)})
             return redirect('multiple_documentation_detail', pk=pk)
     
     context = {
-        'page_title': f'Eliminar: {documentation.title}',
+        'page_title': gettext('Eliminar: %(title)s') % {'title': documentation.title},
         'documentation': documentation,
     }
     
@@ -22987,18 +22987,18 @@ def multiple_documentation_add_item_view(request, pk):
                 expiration_date=exp_date
             )
             
-            messages.success(request, f'Documento "{item.name}" agregado correctamente.')
+            messages.success(request, gettext('Documento "%(name)s" agregado correctamente.') % {'name': item.name})
             return redirect('multiple_documentation_detail', pk=documentation.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al agregar el documento: {str(e)}')
+            messages.error(request, gettext('Error al agregar el documento: %(valor)s') % {'valor': str(e)})
     
     # Obtener el siguiente número sugerido
     last_item = documentation.items.order_by('-number').first()
     suggested_number = (last_item.number + 1) if last_item else 1
     
     context = {
-        'page_title': f'Agregar Documento - {documentation.title}',
+        'page_title': gettext('Agregar Documento - %(title)s') % {'title': documentation.title},
         'documentation': documentation,
         'suggested_number': suggested_number,
     }
@@ -23038,14 +23038,14 @@ def multiple_documentation_edit_item_view(request, pk, item_id):
             
             item.save()
             
-            messages.success(request, f'Documento "{item.name}" actualizado correctamente.')
+            messages.success(request, gettext('Documento "%(name)s" actualizado correctamente.') % {'name': item.name})
             return redirect('multiple_documentation_detail', pk=documentation.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al actualizar el documento: {str(e)}')
+            messages.error(request, gettext('Error al actualizar el documento: %(valor)s') % {'valor': str(e)})
     
     context = {
-        'page_title': f'Editar Documento - {item.name}',
+        'page_title': gettext('Editar Documento - %(name)s') % {'name': item.name},
         'documentation': documentation,
         'item': item,
     }
@@ -23070,14 +23070,14 @@ def multiple_documentation_delete_item_view(request, pk, item_id):
                 item.file.delete(save=False)
             item.delete()
             
-            messages.success(request, f'Documento "{name}" eliminado correctamente.')
+            messages.success(request, gettext('Documento "%(name)s" eliminado correctamente.') % {'name': name})
             return redirect('multiple_documentation_detail', pk=documentation.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al eliminar el documento: {str(e)}')
+            messages.error(request, gettext('Error al eliminar el documento: %(valor)s') % {'valor': str(e)})
     
     context = {
-        'page_title': f'Eliminar Documento - {item.name}',
+        'page_title': gettext('Eliminar Documento - %(name)s') % {'name': item.name},
         'documentation': documentation,
         'item': item,
     }
@@ -23118,7 +23118,7 @@ def multiple_documentation_public_view(request, token):
                 
                 # Mostrar formulario de contraseña
                 context = {
-                    'page_title': f'Acceso a {documentation.title}',
+                    'page_title': gettext('Acceso a %(title)s') % {'title': documentation.title},
                     'documentation': documentation,
                     'form': form,
                 }
@@ -23370,7 +23370,7 @@ def multiple_documentation_stats_view(request, pk):
     ).select_related('item').order_by('-timestamp')[:10]
     
     context = {
-        'page_title': f'Estadísticas - {documentation.title}',
+        'page_title': gettext('Estadísticas - %(title)s') % {'title': documentation.title},
         'documentation': documentation,
         'stats': stats,
         'items_stats': items_stats,
@@ -23649,7 +23649,7 @@ def task_schedule_export(request, pk):
         messages.error(request, gettext('La funcionalidad de exportación requiere la instalación de pandas. Contacta al administrador.'))
         return redirect('task_schedule_detail', pk=pk)
     except Exception as e:
-        messages.error(request, f'Error al exportar: {str(e)}')
+        messages.error(request, gettext('Error al exportar: %(valor)s') % {'valor': str(e)})
         return redirect('task_schedule_detail', pk=pk)
 
 
@@ -23674,7 +23674,7 @@ def task_schedule_edit(request, pk):
         form.fields['company'].queryset = get_user_companies_queryset(request.user)
     
     context = {
-        'page_title': f'Editar - {schedule.title}',
+        'page_title': gettext('Editar - %(title)s') % {'title': schedule.title},
         'form': form,
         'schedule': schedule,
         'auto_dates_info': True,
@@ -23699,7 +23699,7 @@ def task_schedule_delete(request, pk):
         return redirect('task_schedule_list')
     
     context = {
-        'page_title': f'Eliminar - {schedule.title}',
+        'page_title': gettext('Eliminar - %(title)s') % {'title': schedule.title},
         'schedule': schedule,
     }
     
@@ -23758,19 +23758,19 @@ def task_schedule_duplicate(request, pk):
             
             messages.success(
                 request, 
-                f'Cronograma "{duplicated_schedule.title}" duplicado exitosamente con {len(task_map)} tareas.'
+                gettext('Cronograma "%(title)s" duplicado exitosamente con %(valor)s tareas.') % {'title': duplicated_schedule.title, 'valor': len(task_map)}
             )
             
             # Redirigir al nuevo cronograma duplicado
             return redirect('task_schedule_detail', pk=duplicated_schedule.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al duplicar el cronograma: {str(e)}')
+            messages.error(request, gettext('Error al duplicar el cronograma: %(valor)s') % {'valor': str(e)})
             return redirect('task_schedule_detail', pk=pk)
     
     # Si es GET, mostrar confirmación
     context = {
-        'page_title': f'Duplicar Cronograma: {original_schedule.title}',
+        'page_title': gettext('Duplicar Cronograma: %(title)s') % {'title': original_schedule.title},
         'schedule': original_schedule,
         'total_tasks_count': ScheduleTask.objects.filter(schedule=original_schedule).count(),
     }
@@ -23833,7 +23833,7 @@ def task_schedule_reschedule(request, pk):
         except ValueError:
             messages.error(request, gettext('Formato de fecha inválido.'))
         except Exception as e:
-            messages.error(request, f'Error al reprogramar el cronograma: {str(e)}')
+            messages.error(request, gettext('Error al reprogramar el cronograma: %(valor)s') % {'valor': str(e)})
     
     return redirect('task_schedule_detail', pk=pk)
 
@@ -23919,7 +23919,7 @@ def schedule_task_create(request, schedule_pk):
         form = ScheduleTaskForm(initial=initial, schedule=schedule)
     
     context = {
-        'page_title': f'Nueva Tarea - {schedule.title}',
+        'page_title': gettext('Nueva Tarea - %(title)s') % {'title': schedule.title},
         'form': form,
         'schedule': schedule,
     }
@@ -23948,7 +23948,7 @@ def schedule_task_edit(request, pk):
         form = ScheduleTaskForm(instance=task, schedule=schedule)
     
     context = {
-        'page_title': f'Editar Tarea - {task.title}',
+        'page_title': gettext('Editar Tarea - %(title)s') % {'title': task.title},
         'form': form,
         'schedule': schedule,
         'task': task,
@@ -23974,7 +23974,7 @@ def schedule_task_delete(request, pk):
         return redirect('task_schedule_detail', pk=schedule.pk)
     
     context = {
-        'page_title': f'Eliminar Tarea - {task.title}',
+        'page_title': gettext('Eliminar Tarea - %(title)s') % {'title': task.title},
         'task': task,
         'schedule': schedule,
     }
@@ -24083,7 +24083,7 @@ def task_schedule_public_gantt(request, token):
     }
     
     context = {
-        'page_title': f'Vista Gantt - {schedule.title}',
+        'page_title': gettext('Vista Gantt - %(title)s') % {'title': schedule.title},
         'schedule': schedule,
         'gantt_data': json.dumps(gantt_data),
         'kpis': kpis,
@@ -24223,7 +24223,7 @@ def financial_action_create_view(request):
         form = FinancialActionForm(request.POST)
         if form.is_valid():
             action = form.save()
-            messages.success(request, f'Acción financiera "{action.symbol}" creada exitosamente.')
+            messages.success(request, gettext('Acción financiera "%(symbol)s" creada exitosamente.') % {'symbol': action.symbol})
             return redirect('financial_actions_list')
         else:
             messages.error(request, gettext('Por favor, corrige los errores en el formulario.'))
@@ -24269,7 +24269,7 @@ def financial_action_edit_view(request, pk):
                     setattr(action, field, value)
             
             action.save()
-            messages.success(request, f'Acción financiera "{action.symbol}" actualizada exitosamente.')
+            messages.success(request, gettext('Acción financiera "%(symbol)s" actualizada exitosamente.') % {'symbol': action.symbol})
             return redirect('financial_actions_list')
         else:
             messages.error(request, gettext('Por favor, corrige los errores en el formulario.'))
@@ -24281,7 +24281,7 @@ def financial_action_edit_view(request, pk):
     suggested_order = (last_action.order + 1) if last_action else 1
     
     context = {
-        'page_title': f'Editar - {action.symbol}',
+        'page_title': gettext('Editar - %(symbol)s') % {'symbol': action.symbol},
         'action': action,
         'form': form,
         'suggested_order': suggested_order,
@@ -24303,15 +24303,15 @@ def financial_action_delete_view(request, pk):
         try:
             symbol = action.symbol
             action.delete()
-            messages.success(request, f'Acción financiera "{symbol}" eliminada exitosamente.')
+            messages.success(request, gettext('Acción financiera "%(symbol)s" eliminada exitosamente.') % {'symbol': symbol})
             return redirect('financial_actions_list')
             
         except Exception as e:
-            messages.error(request, f'Error eliminando acción financiera: {str(e)}')
+            messages.error(request, gettext('Error eliminando acción financiera: %(valor)s') % {'valor': str(e)})
             return redirect('financial_actions_list')
     
     context = {
-        'page_title': f'Eliminar - {action.symbol}',
+        'page_title': gettext('Eliminar - %(symbol)s') % {'symbol': action.symbol},
         'action': action,
     }
     
@@ -24329,7 +24329,7 @@ def financial_action_toggle_view(request, pk):
     action.save()
     
     status = 'activada' if action.is_active else 'desactivada'
-    messages.success(request, f'Acción financiera "{action.symbol}" {status} exitosamente.')
+    messages.success(request, gettext('Acción financiera "%(symbol)s" %(status)s exitosamente.') % {'symbol': action.symbol, 'status': status})
     
     return redirect('financial_actions_list')
 
@@ -24820,7 +24820,7 @@ def meeting_pdf_download_view(request, pk):
         return response
         
     except Exception as e:
-        messages.error(request, f'Error al generar PDF: {str(e)}')
+        messages.error(request, gettext('Error al generar PDF: %(valor)s') % {'valor': str(e)})
         return redirect('meeting_edit', pk=pk)
 
 
@@ -25360,7 +25360,7 @@ def client_assistance_create(request):
         form = ClientProjectAccessForm(request.POST)
         if form.is_valid():
             access = form.save()
-            messages.success(request, f'Acceso público creado exitosamente para el proyecto "{access.project.name}"')
+            messages.success(request, gettext('Acceso público creado exitosamente para el proyecto "%(name)s"') % {'name': access.project.name})
             return redirect('client_assistance_list')
     else:
         form = ClientProjectAccessForm()
@@ -25393,7 +25393,7 @@ def client_assistance_edit(request, pk):
     context = {
         'form': form,
         'access': access,
-        'title': f'Editar Acceso - {access.project.name}'
+        'title': gettext('Editar Acceso - %(name)s') % {'name': access.project.name}
     }
     return render(request, 'tickets/client_assistance_form.html', context)
 
@@ -25476,7 +25476,7 @@ def client_time_entry_form(request, token):
         'form': form,
         'access': access,
         'project': access.project,
-        'title': f'Registrar Horas - {access.project.name}'
+        'title': gettext('Registrar Horas - %(name)s') % {'name': access.project.name}
     }
     return render(request, 'tickets/client_time_entry_public.html', context)
 
@@ -25492,7 +25492,7 @@ def client_assistance_toggle(request, pk):
     access.save()
     
     status = 'activado' if access.is_active else 'desactivado'
-    messages.success(request, f'Acceso público {status} exitosamente')
+    messages.success(request, gettext('Acceso público %(status)s exitosamente') % {'status': status})
     
     return redirect('client_assistance_list')
 
@@ -25508,12 +25508,12 @@ def client_assistance_delete(request, pk):
     if request.method == 'POST':
         project_name = access.project.name
         access.delete()
-        messages.success(request, f'Acceso público para "{project_name}" eliminado exitosamente')
+        messages.success(request, gettext('Acceso público para "%(project_name)s" eliminado exitosamente') % {'project_name': project_name})
         return redirect('client_assistance_list')
     
     context = {
         'access': access,
-        'title': f'Eliminar Acceso - {access.project.name}'
+        'title': gettext('Eliminar Acceso - %(name)s') % {'name': access.project.name}
     }
     return render(request, 'tickets/client_assistance_delete.html', context)
 
@@ -25961,7 +25961,7 @@ def client_dashboard_public(request, token):
         'access': access,
         'project': access.project,
         'client_name': client_name,
-        'title': f'Dashboard - {access.project.name}',
+        'title': gettext('Dashboard - %(name)s') % {'name': access.project.name},
         
         # KPIs principales solicitados
         'total_hours_this_month': total_hours_this_month,
@@ -26033,7 +26033,7 @@ def short_url_create(request):
             ).first()
             
             if existing:
-                messages.info(request, f'Ya existe una URL corta para esta dirección: {existing.get_short_url(request)}')
+                messages.info(request, gettext('Ya existe una URL corta para esta dirección: %(valor)s') % {'valor': existing.get_short_url(request)})
                 return redirect('short_url_list')
             
             # Crear nueva URL corta
@@ -26055,7 +26055,7 @@ def short_url_create(request):
             
             short_url.save()
             
-            messages.success(request, f'URL corta creada exitosamente: {short_url.get_short_url(request)}')
+            messages.success(request, gettext('URL corta creada exitosamente: %(valor)s') % {'valor': short_url.get_short_url(request)})
             return redirect('short_url_list')
         else:
             messages.error(request, gettext('La URL es requerida.'))
@@ -26089,7 +26089,7 @@ def short_url_edit(request, pk):
         if new_short_code and new_short_code != short_url.short_code:
             # Verificar que el nuevo código no esté en uso
             if ShortUrl.objects.filter(short_code=new_short_code).exclude(pk=pk).exists():
-                messages.error(request, f'El código "{new_short_code}" ya está en uso.')
+                messages.error(request, gettext('El código "%(new_short_code)s" ya está en uso.') % {'new_short_code': new_short_code})
                 return redirect('short_url_edit', pk=pk)
             short_url.short_code = new_short_code
         
@@ -26467,7 +26467,7 @@ def short_url_stats(request, pk):
     last_clicks = clicks.order_by('-clicked_at')[:20]
     
     context = {
-        'page_title': f'Estadísticas - {short_url.title or short_url.short_code}',
+        'page_title': gettext('Estadísticas - %(valor)s') % {'valor': short_url.title or short_url.short_code},
         'short_url': short_url,
         'total_clicks': total_clicks,
         'unique_ips': unique_ips,
@@ -26528,7 +26528,7 @@ def product_set_create(request):
             formset.instance = product_set
             formset.save()
             
-            messages.success(request, f'Conjunto de productos "{product_set.title}" creado exitosamente.')
+            messages.success(request, gettext('Conjunto de productos "%(title)s" creado exitosamente.') % {'title': product_set.title})
             return redirect('product_set_detail', pk=product_set.pk)
     else:
         form = ProductSetForm()
@@ -26551,7 +26551,7 @@ def product_set_detail(request, pk):
     products = product_set.products.all().order_by('order', 'name')
     
     context = {
-        'page_title': f'Conjunto: {product_set.title}',
+        'page_title': gettext('Conjunto: %(title)s') % {'title': product_set.title},
         'product_set': product_set,
         'products': products,
     }
@@ -26572,14 +26572,14 @@ def product_set_edit(request, pk):
             form.save()
             formset.save()
             
-            messages.success(request, f'Conjunto de productos "{product_set.title}" actualizado exitosamente.')
+            messages.success(request, gettext('Conjunto de productos "%(title)s" actualizado exitosamente.') % {'title': product_set.title})
             return redirect('product_set_detail', pk=product_set.pk)
     else:
         form = ProductSetForm(instance=product_set)
         formset = ProductItemFormSet(instance=product_set)
     
     context = {
-        'page_title': f'Editar: {product_set.title}',
+        'page_title': gettext('Editar: %(title)s') % {'title': product_set.title},
         'form': form,
         'formset': formset,
         'product_set': product_set,
@@ -26595,11 +26595,11 @@ def product_set_delete(request, pk):
     
     if request.method == 'POST':
         product_set.delete()
-        messages.success(request, f'Conjunto de productos "{product_set.title}" eliminado exitosamente.')
+        messages.success(request, gettext('Conjunto de productos "%(title)s" eliminado exitosamente.') % {'title': product_set.title})
         return redirect('product_set_list')
     
     context = {
-        'page_title': f'Eliminar: {product_set.title}',
+        'page_title': gettext('Eliminar: %(title)s') % {'title': product_set.title},
         'product_set': product_set,
     }
     
@@ -26615,7 +26615,7 @@ def product_set_toggle_public(request, pk):
     product_set.save()
     
     status = "público" if product_set.is_public else "privado"
-    messages.success(request, f'Conjunto "{product_set.title}" marcado como {status}.')
+    messages.success(request, gettext('Conjunto "%(title)s" marcado como %(status)s.') % {'title': product_set.title, 'status': status})
     
     return redirect('product_set_detail', pk=product_set.pk)
 
@@ -26654,7 +26654,7 @@ def product_set_stats(request, pk):
     views_per_day = product_set.view_count / days_active if product_set.view_count > 0 else 0
     
     context = {
-        'page_title': f'Estadísticas - {product_set.title}',
+        'page_title': gettext('Estadísticas - %(title)s') % {'title': product_set.title},
         'product_set': product_set,
         'days_active': days_active,
         'views_per_day': views_per_day,
@@ -26719,7 +26719,7 @@ def precotizador_detail(request, pk):
     quotes = precotizador.quotes.all()[:10]  # Últimas 10 cotizaciones
     
     context = {
-        'page_title': f'Precotizador - {precotizador.title}',
+        'page_title': gettext('Precotizador - %(title)s') % {'title': precotizador.title},
         'precotizador': precotizador,
         'examples': examples,
         'quotes': quotes,
@@ -26752,7 +26752,7 @@ def precotizador_edit(request, pk):
         formset = PrecotizadorExampleFormSet(instance=precotizador)
     
     context = {
-        'page_title': f'Editar - {precotizador.title}',
+        'page_title': gettext('Editar - %(title)s') % {'title': precotizador.title},
         'form': form,
         'formset': formset,
         'precotizador': precotizador,
@@ -26771,7 +26771,7 @@ def precotizador_delete(request, pk):
         return redirect('precotizador_list')
     
     context = {
-        'page_title': f'Eliminar - {precotizador.title}',
+        'page_title': gettext('Eliminar - %(title)s') % {'title': precotizador.title},
         'precotizador': precotizador,
     }
     
@@ -26911,7 +26911,7 @@ Importante: Responde en texto plano, NO uses JSON. Sé específico y detallado.
         form = PrecotizadorQuoteForm()
     
     context = {
-        'page_title': f'Generar Cotización - {precotizador.title}',
+        'page_title': gettext('Generar Cotización - %(title)s') % {'title': precotizador.title},
         'precotizador': precotizador,
         'examples': precotizador.examples.all(),
         'form': form,
@@ -26926,7 +26926,7 @@ def precotizador_quote_detail(request, pk):
     quote = get_object_or_404(PrecotizadorQuote, pk=pk, precotizador__created_by=request.user)
     
     context = {
-        'page_title': f'Cotización #{quote.id}',
+        'page_title': gettext('Cotización #%(id)s') % {'id': quote.id},
         'quote': quote,
     }
     
@@ -26980,14 +26980,14 @@ def precotizador_quote_edit(request, pk):
             quote.save(update_fields=['client_request', 'ai_detailed_description', 'ai_reasoning', 'status'])
             if old_status != new_status:
                 status_names = {'pending': 'Pendiente', 'accepted': 'Aceptada', 'rejected': 'Rechazada'}
-                messages.success(request, f'Cotización actualizada. Estado cambiado de "{status_names[old_status]}" a "{status_names[new_status]}".')
+                messages.success(request, gettext('Cotización actualizada. Estado cambiado de "%(valor)s" a "%(valor2)s".') % {'valor': status_names[old_status], 'valor2': status_names[new_status]})
             else:
                 messages.success(request, gettext('Cotización actualizada exitosamente.'))
         
         return redirect('precotizador_quote_detail', pk=quote.pk)
     
     context = {
-        'page_title': f'Editar Cotización #{quote.id}',
+        'page_title': gettext('Editar Cotización #%(id)s') % {'id': quote.id},
         'quote': quote,
     }
     
@@ -27006,7 +27006,7 @@ def precotizador_quote_delete(request, pk):
         return redirect('precotizador_detail', pk=quote.precotizador.pk)
     
     context = {
-        'page_title': f'Eliminar Cotización #{quote.id}',
+        'page_title': gettext('Eliminar Cotización #%(id)s') % {'id': quote.id},
         'quote': quote,
     }
     
@@ -27029,7 +27029,7 @@ def precotizador_quote_share(request, pk):
         return redirect('precotizador_quote_detail', pk=quote.pk)
     
     context = {
-        'page_title': f'Compartir Cotización #{quote.id}',
+        'page_title': gettext('Compartir Cotización #%(id)s') % {'id': quote.id},
         'quote': quote,
     }
     
@@ -27061,12 +27061,12 @@ def precotizador_quote_public(request, token):
         except ValueError as e:
             messages.error(request, str(e))
         except Exception as e:
-            messages.error(request, f'Error inesperado: {str(e)}')
+            messages.error(request, gettext('Error inesperado: %(valor)s') % {'valor': str(e)})
         
         return redirect('precotizador_quote_public', token=token)
     
     context = {
-        'page_title': f'Cotización #{quote.id} - {quote.precotizador.title}',
+        'page_title': gettext('Cotización #%(id)s - %(title)s') % {'id': quote.id, 'title': quote.precotizador.title},
         'quote': quote,
         'can_respond': quote.can_be_responded(),
     }
@@ -27113,7 +27113,7 @@ def precotizador_public_request(request, token):
         return render(request, 'tickets/precotizador_loading.html', context)
     
     context = {
-        'page_title': f'Solicitar Cotización - {precotizador.title}',
+        'page_title': gettext('Solicitar Cotización - %(title)s') % {'title': precotizador.title},
         'precotizador': precotizador,
     }
     
@@ -27331,7 +27331,7 @@ def company_documentation_detail(request, pk):
     context = {
         'documentation': documentation,
         'urls': urls,
-        'page_title': f'Documentación - {documentation.title}',
+        'page_title': gettext('Documentación - %(title)s') % {'title': documentation.title},
         'section': 'documentation'
     }
     
@@ -27360,7 +27360,7 @@ def company_documentation_edit(request, pk):
         'form': form,
         'formset': formset,
         'documentation': documentation,
-        'page_title': f'Editar - {documentation.title}',
+        'page_title': gettext('Editar - %(title)s') % {'title': documentation.title},
         'section': 'documentation'
     }
     
@@ -27387,7 +27387,7 @@ def company_documentation_delete(request, pk):
     
     context = {
         'documentation': documentation,
-        'page_title': f'Eliminar - {documentation.title}',
+        'page_title': gettext('Eliminar - %(title)s') % {'title': documentation.title},
         'section': 'documentation'
     }
     
@@ -27467,7 +27467,7 @@ def company_documentation_url_create(request, doc_pk):
             url_obj.order = max_order + 1
             
             url_obj.save()
-            messages.success(request, f'Enlace "{url_obj.title}" agregado exitosamente.')
+            messages.success(request, gettext('Enlace "%(title)s" agregado exitosamente.') % {'title': url_obj.title})
             return redirect('company_documentation_detail', pk=doc_pk)
     else:
         form = CompanyDocumentationURLForm()
@@ -27475,7 +27475,7 @@ def company_documentation_url_create(request, doc_pk):
     context = {
         'form': form,
         'documentation': documentation,
-        'page_title': f'Agregar Enlace - {documentation.title}',
+        'page_title': gettext('Agregar Enlace - %(title)s') % {'title': documentation.title},
         'section': 'documentation',
         'action': 'create'
     }
@@ -27501,7 +27501,7 @@ def company_documentation_url_edit(request, doc_pk, url_pk):
         form = CompanyDocumentationURLForm(request.POST, instance=url_obj)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Enlace "{url_obj.title}" actualizado exitosamente.')
+            messages.success(request, gettext('Enlace "%(title)s" actualizado exitosamente.') % {'title': url_obj.title})
             return redirect('company_documentation_detail', pk=doc_pk)
     else:
         form = CompanyDocumentationURLForm(instance=url_obj)
@@ -27510,7 +27510,7 @@ def company_documentation_url_edit(request, doc_pk, url_pk):
         'form': form,
         'documentation': documentation,
         'url_obj': url_obj,
-        'page_title': f'Editar Enlace - {url_obj.title}',
+        'page_title': gettext('Editar Enlace - %(title)s') % {'title': url_obj.title},
         'section': 'documentation',
         'action': 'edit'
     }
@@ -27535,13 +27535,13 @@ def company_documentation_url_delete(request, doc_pk, url_pk):
     if request.method == 'POST':
         title = url_obj.title
         url_obj.delete()
-        messages.success(request, f'Enlace "{title}" eliminado exitosamente.')
+        messages.success(request, gettext('Enlace "%(title)s" eliminado exitosamente.') % {'title': title})
         return redirect('company_documentation_detail', pk=doc_pk)
     
     context = {
         'documentation': documentation,
         'url_obj': url_obj,
-        'page_title': f'Eliminar Enlace - {url_obj.title}',
+        'page_title': gettext('Eliminar Enlace - %(title)s') % {'title': url_obj.title},
         'section': 'documentation'
     }
     
@@ -27567,7 +27567,7 @@ def company_documentation_url_toggle(request, doc_pk, url_pk):
         url_obj.save()
         
         status = 'activado' if url_obj.is_active else 'desactivado'
-        messages.success(request, f'Enlace "{url_obj.title}" {status} exitosamente.')
+        messages.success(request, gettext('Enlace "%(title)s" %(status)s exitosamente.') % {'title': url_obj.title, 'status': status})
     
     return redirect('company_documentation_detail', pk=doc_pk)
 
@@ -27607,7 +27607,7 @@ def terms_of_use_create(request):
             term = form.save(commit=False)
             term.created_by = request.user
             term.save()
-            messages.success(request, f'Condición de uso "{term.title}" creada exitosamente.')
+            messages.success(request, gettext('Condición de uso "%(title)s" creada exitosamente.') % {'title': term.title})
             return redirect('terms_of_use_detail', pk=term.pk)
     else:
         form = TermsOfUseForm()
@@ -27633,7 +27633,7 @@ def terms_of_use_detail(request, pk):
     
     context = {
         'term': term,
-        'page_title': f'Condición de Uso: {term.title}',
+        'page_title': gettext('Condición de Uso: %(title)s') % {'title': term.title},
         'section': 'documentation'
     }
     
@@ -27653,7 +27653,7 @@ def terms_of_use_edit(request, pk):
         form = TermsOfUseForm(request.POST, instance=term)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Condición de uso "{term.title}" actualizada exitosamente.')
+            messages.success(request, gettext('Condición de uso "%(title)s" actualizada exitosamente.') % {'title': term.title})
             return redirect('terms_of_use_detail', pk=term.pk)
     else:
         form = TermsOfUseForm(instance=term)
@@ -27661,7 +27661,7 @@ def terms_of_use_edit(request, pk):
     context = {
         'form': form,
         'term': term,
-        'page_title': f'Editar: {term.title}',
+        'page_title': gettext('Editar: %(title)s') % {'title': term.title},
         'section': 'documentation',
         'action': 'edit'
     }
@@ -27681,12 +27681,12 @@ def terms_of_use_delete(request, pk):
     if request.method == 'POST':
         title = term.title
         term.delete()
-        messages.success(request, f'Condición de uso "{title}" eliminada exitosamente.')
+        messages.success(request, gettext('Condición de uso "%(title)s" eliminada exitosamente.') % {'title': title})
         return redirect('terms_of_use_list')
     
     context = {
         'term': term,
-        'page_title': f'Eliminar: {term.title}',
+        'page_title': gettext('Eliminar: %(title)s') % {'title': term.title},
         'section': 'documentation'
     }
     
@@ -27705,7 +27705,7 @@ def terms_of_use_toggle(request, pk):
     term.save()
     
     status = 'activada' if term.is_active else 'desactivada'
-    messages.success(request, f'Condición de uso "{term.title}" {status} exitosamente.')
+    messages.success(request, gettext('Condición de uso "%(title)s" %(status)s exitosamente.') % {'title': term.title, 'status': status})
     
     return redirect('terms_of_use_list')
 
@@ -27756,7 +27756,7 @@ def contact_generator_create(request):
             generator.created_by = request.user
             generator.save()
             
-            messages.success(request, f'Generador de contactos "{generator.title}" creado correctamente.')
+            messages.success(request, gettext('Generador de contactos "%(title)s" creado correctamente.') % {'title': generator.title})
             return redirect('contact_generator_detail', pk=generator.pk)
     else:
         form = ContactGeneratorForm(user=request.user)
@@ -27800,7 +27800,7 @@ def contact_generator_detail(request, pk):
         'generator': generator,
         'recent_contacts': recent_contacts,
         'contacts_count': generator.get_contacts_count(),
-        'page_title': f'Generador: {generator.title}'
+        'page_title': gettext('Generador: %(title)s') % {'title': generator.title}
     }
     
     return render(request, 'tickets/contact_generator_detail.html', context)
@@ -27830,7 +27830,7 @@ def contact_generator_edit(request, pk):
         form = ContactGeneratorForm(request.POST, instance=generator, user=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Generador "{generator.title}" actualizado correctamente.')
+            messages.success(request, gettext('Generador "%(title)s" actualizado correctamente.') % {'title': generator.title})
             return redirect('contact_generator_detail', pk=generator.pk)
     else:
         form = ContactGeneratorForm(instance=generator, user=request.user)
@@ -27838,7 +27838,7 @@ def contact_generator_edit(request, pk):
     context = {
         'form': form,
         'generator': generator,
-        'page_title': f'Editar: {generator.title}',
+        'page_title': gettext('Editar: %(title)s') % {'title': generator.title},
         'form_title': f'Editar Generador: {generator.title}'
     }
     
@@ -27868,12 +27868,12 @@ def contact_generator_delete(request, pk):
     if request.method == 'POST':
         generator_title = generator.title
         generator.delete()
-        messages.success(request, f'Generador "{generator_title}" eliminado correctamente.')
+        messages.success(request, gettext('Generador "%(generator_title)s" eliminado correctamente.') % {'generator_title': generator_title})
         return redirect('contact_generator_list')
     
     context = {
         'generator': generator,
-        'page_title': f'Eliminar: {generator.title}',
+        'page_title': gettext('Eliminar: %(title)s') % {'title': generator.title},
         'contacts_count': generator.get_contacts_count()
     }
     
@@ -27904,9 +27904,9 @@ def contact_generator_toggle_active(request, pk):
     generator.save()
     
     if generator.is_active:
-        messages.success(request, f'Generador "{generator.title}" activado. El formulario público está disponible.')
+        messages.success(request, gettext('Generador "%(title)s" activado. El formulario público está disponible.') % {'title': generator.title})
     else:
-        messages.warning(request, f'Generador "{generator.title}" desactivado. El formulario público no está disponible.')
+        messages.warning(request, gettext('Generador "%(title)s" desactivado. El formulario público no está disponible.') % {'title': generator.title})
     
     return redirect('contact_generator_detail', pk=generator.pk)
 
@@ -27988,7 +27988,7 @@ def company_request_generator_create(request):
             generator = form.save(commit=False)
             generator.created_by = request.user
             generator.save()
-            messages.success(request, f'Generador "{generator.title}" creado correctamente.')
+            messages.success(request, gettext('Generador "%(title)s" creado correctamente.') % {'title': generator.title})
             return redirect('company_request_generator_detail', pk=generator.pk)
     else:
         form = CompanyRequestGeneratorForm(user=request.user)
@@ -28025,7 +28025,7 @@ def company_request_generator_detail(request, pk):
         'generator': generator,
         'recent_requests': recent_requests,
         'requests_count': generator.get_requests_count(),
-        'page_title': f'Generador: {generator.title}'
+        'page_title': gettext('Generador: %(title)s') % {'title': generator.title}
     }
     return render(request, 'tickets/company_request_generator_detail.html', context)
 
@@ -28052,7 +28052,7 @@ def company_request_generator_edit(request, pk):
         form = CompanyRequestGeneratorForm(request.POST, instance=generator, user=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Generador "{generator.title}" actualizado correctamente.')
+            messages.success(request, gettext('Generador "%(title)s" actualizado correctamente.') % {'title': generator.title})
             return redirect('company_request_generator_detail', pk=generator.pk)
     else:
         form = CompanyRequestGeneratorForm(instance=generator, user=request.user)
@@ -28060,7 +28060,7 @@ def company_request_generator_edit(request, pk):
     context = {
         'form': form,
         'generator': generator,
-        'page_title': f'Editar: {generator.title}',
+        'page_title': gettext('Editar: %(title)s') % {'title': generator.title},
         'form_title': f'Editar Generador: {generator.title}'
     }
     return render(request, 'tickets/company_request_generator_form.html', context)
@@ -28087,12 +28087,12 @@ def company_request_generator_delete(request, pk):
     if request.method == 'POST':
         title = generator.title
         generator.delete()
-        messages.success(request, f'Generador "{title}" eliminado correctamente.')
+        messages.success(request, gettext('Generador "%(title)s" eliminado correctamente.') % {'title': title})
         return redirect('company_request_generator_list')
 
     context = {
         'generator': generator,
-        'page_title': f'Eliminar: {generator.title}',
+        'page_title': gettext('Eliminar: %(title)s') % {'title': generator.title},
         'requests_count': generator.get_requests_count()
     }
     return render(request, 'tickets/company_request_generator_delete.html', context)
@@ -28119,9 +28119,9 @@ def company_request_generator_toggle_active(request, pk):
     generator.is_active = not generator.is_active
     generator.save()
     if generator.is_active:
-        messages.success(request, f'Generador "{generator.title}" activado.')
+        messages.success(request, gettext('Generador "%(title)s" activado.') % {'title': generator.title})
     else:
-        messages.warning(request, f'Generador "{generator.title}" desactivado.')
+        messages.warning(request, gettext('Generador "%(title)s" desactivado.') % {'title': generator.title})
 
     return redirect('company_request_generator_detail', pk=generator.pk)
 
@@ -28226,7 +28226,7 @@ def company_request_list(request, generator_pk):
         'status_filter': status_filter,
         'date_from': date_from,
         'date_to': date_to,
-        'page_title': f'Solicitudes de {generator.title}'
+        'page_title': gettext('Solicitudes de %(title)s') % {'title': generator.title}
     }
     
     return render(request, 'tickets/company_request_list.html', context)
@@ -28369,7 +28369,7 @@ def form_detail(request, pk):
         'total_responses': total_responses,
         'average_score': average_score,
         'recent_responses': recent_responses,
-        'page_title': f'Formulario: {form_obj.title}'
+        'page_title': gettext('Formulario: %(title)s') % {'title': form_obj.title}
     }
     return render(request, 'tickets/form_detail.html', context)
 
@@ -28589,7 +28589,7 @@ def form_edit(request, pk):
     context = {
         'form': form,
         'form_obj': form_obj,
-        'page_title': f'Editar: {form_obj.title}'
+        'page_title': gettext('Editar: %(title)s') % {'title': form_obj.title}
     }
     return render(request, 'tickets/form_form.html', context)
 
@@ -28602,12 +28602,12 @@ def form_delete(request, pk):
     if request.method == 'POST':
         form_title = form_obj.title
         form_obj.delete()
-        messages.success(request, f'Formulario "{form_title}" eliminado exitosamente')
+        messages.success(request, gettext('Formulario "%(form_title)s" eliminado exitosamente') % {'form_title': form_title})
         return redirect('form_list')
     
     context = {
         'form': form_obj,
-        'page_title': f'Eliminar: {form_obj.title}'
+        'page_title': gettext('Eliminar: %(title)s') % {'title': form_obj.title}
     }
     return render(request, 'tickets/form_delete.html', context)
 
@@ -28694,7 +28694,7 @@ def form_responses(request, pk):
         'page_obj': page_obj,
         'total_responses': form_obj.get_total_responses(),
         'average_score': form_obj.get_average_score(),
-        'page_title': f'Respuestas - {form_obj.title}'
+        'page_title': gettext('Respuestas - %(title)s') % {'title': form_obj.title}
     }
     return render(request, 'tickets/form_responses.html', context)
 
@@ -28741,7 +28741,7 @@ def form_response_detail(request, form_pk, response_pk):
         'form': form_obj,
         'response': response,
         'questions_with_answers': questions_with_answers,
-        'page_title': f'Detalle de Respuesta - {form_obj.title}'
+        'page_title': gettext('Detalle de Respuesta - %(title)s') % {'title': form_obj.title}
     }
     return render(request, 'tickets/form_response_detail.html', context)
 
@@ -29001,7 +29001,7 @@ def license_create(request):
                 })
         
         license_obj.save()
-        messages.success(request, f'Licencia {license_obj.license_key} creada exitosamente.')
+        messages.success(request, gettext('Licencia %(license_key)s creada exitosamente.') % {'license_key': license_obj.license_key})
         return redirect('license_detail', pk=license_obj.pk)
     
     companies = Company.objects.all()
@@ -29024,7 +29024,7 @@ def license_detail(request, pk):
     context = {
         'license': license_obj,
         'qr_url': qr_url,
-        'title': f'Licencia {license_obj.license_key}'
+        'title': gettext('Licencia %(license_key)s') % {'license_key': license_obj.license_key}
     }
     
     return render(request, 'tickets/license_detail.html', context)
@@ -29055,25 +29055,25 @@ def license_edit(request, pk):
                     return render(request, 'tickets/license_edit.html', {
                         'license': license_obj,
                         'companies': Company.objects.all(),
-                        'title': f'Editar Licencia {license_obj.license_key}'
+                        'title': gettext('Editar Licencia %(license_key)s') % {'license_key': license_obj.license_key}
                     })
             else:
                 messages.error(request, gettext('La clave debe tener exactamente 12 caracteres alfanuméricos.'))
                 return render(request, 'tickets/license_edit.html', {
                     'license': license_obj,
                     'companies': Company.objects.all(),
-                    'title': f'Editar Licencia {license_obj.license_key}'
+                    'title': gettext('Editar Licencia %(license_key)s') % {'license_key': license_obj.license_key}
                 })
         
         license_obj.save()
-        messages.success(request, f'Licencia {license_obj.license_key} actualizada exitosamente.')
+        messages.success(request, gettext('Licencia %(license_key)s actualizada exitosamente.') % {'license_key': license_obj.license_key})
         return redirect('license_detail', pk=license_obj.pk)
     
     companies = Company.objects.all()
     context = {
         'license': license_obj,
         'companies': companies,
-        'title': f'Editar Licencia {license_obj.license_key}'
+        'title': gettext('Editar Licencia %(license_key)s') % {'license_key': license_obj.license_key}
     }
     
     return render(request, 'tickets/license_edit.html', context)
@@ -29087,12 +29087,12 @@ def license_delete(request, pk):
     if request.method == 'POST':
         license_key = license_obj.license_key
         license_obj.delete()
-        messages.success(request, f'Licencia {license_key} eliminada exitosamente.')
+        messages.success(request, gettext('Licencia %(license_key)s eliminada exitosamente.') % {'license_key': license_key})
         return redirect('license_list')
     
     context = {
         'license': license_obj,
-        'title': f'Eliminar Licencia {license_obj.license_key}'
+        'title': gettext('Eliminar Licencia %(license_key)s') % {'license_key': license_obj.license_key}
     }
     
     return render(request, 'tickets/license_delete.html', context)
@@ -29104,7 +29104,7 @@ def license_public(request, uuid):
     
     context = {
         'license': license_obj,
-        'title': f'Licencia {license_obj.license_key}',
+        'title': gettext('Licencia %(license_key)s') % {'license_key': license_obj.license_key},
         'is_public_view': True
     }
     
@@ -29119,7 +29119,7 @@ def license_qr_view(request, pk):
     context = {
         'license': license_obj,
         'qr_url': qr_url,
-        'title': f'QR - Licencia {license_obj.license_key}'
+        'title': gettext('QR - Licencia %(license_key)s') % {'license_key': license_obj.license_key}
     }
     
     return render(request, 'tickets/license_qr.html', context)
@@ -29173,7 +29173,7 @@ def form_ai_analysis_history(request, pk):
     context = {
         'form': form_obj,
         'analyses': analyses,
-        'title': f'Historial de Análisis - {form_obj.title}'
+        'title': gettext('Historial de Análisis - %(title)s') % {'title': form_obj.title}
     }
     
     return render(request, 'tickets/form_ai_analysis_history.html', context)
@@ -29188,7 +29188,7 @@ def form_ai_analysis_detail(request, form_pk, analysis_pk):
     context = {
         'form': form_obj,
         'analysis': analysis,
-        'title': f'Análisis del {analysis.created_at.strftime("%d/%m/%Y %H:%M")}'
+        'title': gettext('Análisis del %(valor)s') % {'valor': analysis.created_at.strftime('%d/%m/%Y %H:%M')}
     }
     
     return render(request, 'tickets/form_ai_analysis_detail.html', context)
@@ -29529,7 +29529,7 @@ def whatsapp_keyword_create(request):
             priority=priority
         )
         
-        messages.success(request, f'Palabra clave "{keyword}" creada exitosamente')
+        messages.success(request, gettext('Palabra clave "%(keyword)s" creada exitosamente') % {'keyword': keyword})
         return redirect('whatsapp_dashboard')
     
     context = {
@@ -29614,7 +29614,7 @@ def whatsapp_connect(request):
         else:
             connection.status = 'error'
             connection.save()
-            messages.error(request, f'❌ Error al conectar: {response.text}')
+            messages.error(request, gettext('❌ Error al conectar: %(text)s') % {'text': response.text})
             
     except requests.exceptions.ConnectionError:
         connection.status = 'error'
@@ -29623,7 +29623,7 @@ def whatsapp_connect(request):
     except Exception as e:
         connection.status = 'error'
         connection.save()
-        messages.error(request, f'❌ Error inesperado: {str(e)}')
+        messages.error(request, gettext('❌ Error inesperado: %(valor)s') % {'valor': str(e)})
     
     return redirect('whatsapp_dashboard')
 
@@ -29649,7 +29649,7 @@ def whatsapp_disconnect(request):
             connection.save()
             messages.success(request, gettext('✅ Desconectado de WhatsApp exitosamente'))
         else:
-            messages.error(request, f'❌ Error al desconectar: {response.text}')
+            messages.error(request, gettext('❌ Error al desconectar: %(text)s') % {'text': response.text})
             
     except requests.exceptions.ConnectionError:
         # Si el servidor no responde, marcar como desconectado de todas formas
@@ -29659,7 +29659,7 @@ def whatsapp_disconnect(request):
         connection.save()
         messages.warning(request, gettext('⚠️ Servidor WhatsApp no disponible. Conexión marcada como desconectada.'))
     except Exception as e:
-        messages.error(request, f'❌ Error inesperado: {str(e)}')
+        messages.error(request, gettext('❌ Error inesperado: %(valor)s') % {'valor': str(e)})
     
     return redirect('whatsapp_dashboard')
 
@@ -29872,7 +29872,7 @@ def image_prompt_create(request):
             return redirect('image_prompt_detail', pk=image_prompt.pk)
             
         except Exception as e:
-            messages.warning(request, f'Imagen guardada, pero hubo un error al generar el prompt: {str(e)}')
+            messages.warning(request, gettext('Imagen guardada, pero hubo un error al generar el prompt: %(valor)s') % {'valor': str(e)})
             return redirect('image_prompt_detail', pk=image_prompt.pk)
     
     context = {
@@ -29888,7 +29888,7 @@ def image_prompt_detail(request, pk):
     
     context = {
         'image_prompt': image_prompt,
-        'page_title': f'Prompt: {image_prompt.title}'
+        'page_title': gettext('Prompt: %(title)s') % {'title': image_prompt.title}
     }
     return render(request, 'tickets/image_prompt_detail.html', context)
 
@@ -29910,7 +29910,7 @@ def image_prompt_edit(request, pk):
     
     context = {
         'image_prompt': image_prompt,
-        'page_title': f'Editar: {image_prompt.title}'
+        'page_title': gettext('Editar: %(title)s') % {'title': image_prompt.title}
     }
     return render(request, 'tickets/image_prompt_edit.html', context)
 
@@ -29923,12 +29923,12 @@ def image_prompt_delete(request, pk):
     if request.method == 'POST':
         title = image_prompt.title
         image_prompt.delete()
-        messages.success(request, f'Prompt "{title}" eliminado exitosamente')
+        messages.success(request, gettext('Prompt "%(title)s" eliminado exitosamente') % {'title': title})
         return redirect('image_prompt_list')
     
     context = {
         'image_prompt': image_prompt,
-        'page_title': f'Eliminar: {image_prompt.title}'
+        'page_title': gettext('Eliminar: %(title)s') % {'title': image_prompt.title}
     }
     return render(request, 'tickets/image_prompt_delete.html', context)
 
@@ -29967,7 +29967,7 @@ def public_image_prompt_detail(request, pk):
     
     context = {
         'image_prompt': image_prompt,
-        'page_title': f'Prompt: {image_prompt.title}'
+        'page_title': gettext('Prompt: %(title)s') % {'title': image_prompt.title}
     }
     return render(request, 'tickets/public_image_prompt_detail.html', context)
 
@@ -30043,7 +30043,7 @@ def ai_manager_create(request):
                 telegram_chat_id=telegram_chat_id,
                 created_by=request.user
             )
-            messages.success(request, f'Gerente IA "{name}" creado exitosamente')
+            messages.success(request, gettext('Gerente IA "%(name)s" creado exitosamente') % {'name': name})
             return redirect('ai_manager_list')
     
     context = {
@@ -30126,7 +30126,7 @@ def ai_manager_edit(request, pk):
     
     context = {
         'manager': manager,
-        'page_title': f'Editar: {manager.name}'
+        'page_title': gettext('Editar: %(name)s') % {'name': manager.name}
     }
     return render(request, 'tickets/ai_manager_edit.html', context)
 
@@ -30146,7 +30146,7 @@ def ai_manager_delete(request, pk):
     if request.method == 'POST':
         name = manager.name
         manager.delete()
-        messages.success(request, f'Gerente IA "{name}" eliminado exitosamente')
+        messages.success(request, gettext('Gerente IA "%(name)s" eliminado exitosamente') % {'name': name})
         return redirect('ai_manager_list')
     
     # Estadísticas para la página de confirmación
@@ -30160,7 +30160,7 @@ def ai_manager_delete(request, pk):
     context = {
         'manager': manager,
         'stats': stats,
-        'page_title': f'Eliminar: {manager.name}'
+        'page_title': gettext('Eliminar: %(name)s') % {'name': manager.name}
     }
     return render(request, 'tickets/ai_manager_delete.html', context)
 
@@ -30202,17 +30202,17 @@ def ai_manager_meeting_create(request, pk):
                     )
                     user_input = transcription.text
             except Exception as e:
-                messages.error(request, f'Error al transcribir audio: {str(e)}')
+                messages.error(request, gettext('Error al transcribir audio: %(valor)s') % {'valor': str(e)})
                 return render(request, 'tickets/ai_manager_meeting_form.html', {
                     'manager': manager,
-                    'page_title': f'Nueva Reunión con {manager.name}'
+                    'page_title': gettext('Nueva Reunión con %(name)s') % {'name': manager.name}
                 })
         
         if not title or not user_input:
             messages.error(request, gettext('Por favor completa todos los campos requeridos'))
             return render(request, 'tickets/ai_manager_meeting_form.html', {
                 'manager': manager,
-                'page_title': f'Nueva Reunión con {manager.name}'
+                'page_title': gettext('Nueva Reunión con %(name)s') % {'name': manager.name}
             })
         
         # Procesar archivos adjuntos para incluir en el contexto de IA
@@ -30399,22 +30399,22 @@ IMPORTANTE:
                     
                     messages.success(request, gettext('Reunión registrada, análisis generado y enviado por Telegram exitosamente'))
                 except Exception as telegram_error:
-                    messages.success(request, f'Reunión registrada exitosamente (Telegram: {str(telegram_error)})')
+                    messages.success(request, gettext('Reunión registrada exitosamente (Telegram: %(valor)s)') % {'valor': str(telegram_error)})
             else:
                 messages.success(request, gettext('Reunión registrada y análisis generado exitosamente'))
             
             return redirect('ai_manager_meeting_detail', pk=meeting.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al procesar la reunión: {str(e)}')
+            messages.error(request, gettext('Error al procesar la reunión: %(valor)s') % {'valor': str(e)})
             return render(request, 'tickets/ai_manager_meeting_form.html', {
                 'manager': manager,
-                'page_title': f'Nueva Reunión con {manager.name}'
+                'page_title': gettext('Nueva Reunión con %(name)s') % {'name': manager.name}
             })
     
     context = {
         'manager': manager,
-        'page_title': f'Nueva Reunión con {manager.name}'
+        'page_title': gettext('Nueva Reunión con %(name)s') % {'name': manager.name}
     }
     return render(request, 'tickets/ai_manager_meeting_form.html', context)
 
@@ -30481,7 +30481,7 @@ def ai_manager_meetings(request, pk):
         'is_paginated': page_obj.has_other_pages(),
         'stats': stats,
         'users': users,
-        'page_title': f'Reuniones - {manager.name}'
+        'page_title': gettext('Reuniones - %(name)s') % {'name': manager.name}
     }
     return render(request, 'tickets/ai_manager_meetings.html', context)
 
@@ -30690,14 +30690,14 @@ Por favor genera el resumen ejecutivo completo."""
                         messages.warning(request, gettext('Resumen generado pero no se pudo enviar por Telegram'))
                     
                 except Exception as telegram_error:
-                    messages.warning(request, f'Resumen generado pero error al enviar por Telegram: {str(telegram_error)}')
+                    messages.warning(request, gettext('Resumen generado pero error al enviar por Telegram: %(valor)s') % {'valor': str(telegram_error)})
             else:
                 messages.success(request, gettext('Resumen ejecutivo generado exitosamente'))
             
             return redirect('ai_manager_detail', pk=pk)
             
         except Exception as e:
-            messages.error(request, f'Error al generar resumen: {str(e)}')
+            messages.error(request, gettext('Error al generar resumen: %(valor)s') % {'valor': str(e)})
             return redirect('ai_manager_detail', pk=pk)
     
     # GET: Mostrar formulario
@@ -30713,7 +30713,7 @@ Por favor genera el resumen ejecutivo completo."""
         'manager': manager,
         'stats': stats,
         'today': date.today().isoformat(),
-        'page_title': f'Generar Resumen - {manager.name}'
+        'page_title': gettext('Generar Resumen - %(name)s') % {'name': manager.name}
     }
     return render(request, 'tickets/ai_manager_summary_form.html', context)
 
@@ -30732,7 +30732,7 @@ def ai_manager_summary_detail(request, pk):
     
     context = {
         'summary': summary,
-        'page_title': f'Resumen Ejecutivo - {summary.ai_manager.name}'
+        'page_title': gettext('Resumen Ejecutivo - %(name)s') % {'name': summary.ai_manager.name}
     }
     return render(request, 'tickets/ai_manager_summary_detail.html', context)
 
@@ -30856,7 +30856,7 @@ def company_ai_dashboard_detail(request, pk):
         'total_meetings': total_meetings,
         'total_participants': total_participants,
         'total_tokens': total_tokens,
-        'page_title': f'Dashboard - {company.name}'
+        'page_title': gettext('Dashboard - %(name)s') % {'name': company.name}
     }
     return render(request, 'tickets/company_ai_dashboard_detail.html', context)
 
@@ -31104,7 +31104,7 @@ FORMATO:
             return redirect('company_ai_summary_detail', pk=summary.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al generar resumen: {str(e)}')
+            messages.error(request, gettext('Error al generar resumen: %(valor)s') % {'valor': str(e)})
             return redirect('company_ai_dashboard_detail', pk=pk)
     
     # GET: Mostrar formulario
@@ -31123,7 +31123,7 @@ FORMATO:
         'company': company,
         'stats': stats,
         'today': date.today().isoformat(),
-        'page_title': f'Generar Resumen Empresarial - {company.name}'
+        'page_title': gettext('Generar Resumen Empresarial - %(name)s') % {'name': company.name}
     }
     return render(request, 'tickets/company_ai_summary_form.html', context)
 
@@ -31142,7 +31142,7 @@ def company_ai_summary_detail(request, pk):
     
     context = {
         'summary': summary,
-        'page_title': f'Resumen Empresarial - {summary.company.name}'
+        'page_title': gettext('Resumen Empresarial - %(name)s') % {'name': summary.company.name}
     }
     return render(request, 'tickets/company_ai_summary_detail.html', context)
 
@@ -31229,7 +31229,7 @@ def user_ai_performance_detail(request, user_id):
         'evaluations': evaluations,
         'stats': stats,
         'chart_data': chart_data,
-        'page_title': f'Desempeño de {user.get_full_name()}'
+        'page_title': gettext('Desempeño de %(valor)s') % {'valor': user.get_full_name()}
     }
     return render(request, 'tickets/user_ai_performance_detail.html', context)
 
@@ -31424,11 +31424,11 @@ Proporciona recomendaciones concretas (nombres de cursos, temas, plataformas). N
                 generated_by=request.user
             )
             
-            messages.success(request, f'Evaluación generada exitosamente. Puntuación: {overall_score}/100')
+            messages.success(request, gettext('Evaluación generada exitosamente. Puntuación: %(overall_score)s/100') % {'overall_score': overall_score})
             return redirect('user_ai_performance_detail', user_id=user_id)
             
         except Exception as e:
-            messages.error(request, f'Error al generar evaluación: {str(e)}')
+            messages.error(request, gettext('Error al generar evaluación: %(valor)s') % {'valor': str(e)})
             return redirect('user_ai_performance_detail', user_id=user_id)
     
     return redirect('user_ai_performance_detail', user_id=user_id)
@@ -31491,11 +31491,11 @@ def website_tracker_create(request):
                 error_message=result['error_message'] or ''
             )
             
-            messages.success(request, f'Rastreo completado exitosamente para {target}')
+            messages.success(request, gettext('Rastreo completado exitosamente para %(target)s') % {'target': target})
             return redirect('website_tracker_detail', pk=tracker.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al realizar el rastreo: {str(e)}')
+            messages.error(request, gettext('Error al realizar el rastreo: %(valor)s') % {'valor': str(e)})
             return redirect('website_tracker_list')
     
     return redirect('website_tracker_list')
@@ -31508,7 +31508,7 @@ def website_tracker_detail(request, pk):
     
     context = {
         'tracker': tracker,
-        'page_title': f'Rastreo - {tracker.target}'
+        'page_title': gettext('Rastreo - %(target)s') % {'target': tracker.target}
     }
     return render(request, 'tickets/website_tracker_detail.html', context)
 
@@ -31521,12 +31521,12 @@ def website_tracker_delete(request, pk):
     if request.method == 'POST':
         target = tracker.target
         tracker.delete()
-        messages.success(request, f'Rastreo de {target} eliminado exitosamente')
+        messages.success(request, gettext('Rastreo de %(target)s eliminado exitosamente') % {'target': target})
         return redirect('website_tracker_list')
     
     context = {
         'tracker': tracker,
-        'page_title': f'Eliminar rastreo - {tracker.target}'
+        'page_title': gettext('Eliminar rastreo - %(target)s') % {'target': tracker.target}
     }
     return render(request, 'tickets/website_tracker_delete.html', context)
 
@@ -31592,7 +31592,7 @@ def legal_contract_create(request):
             return redirect('legal_contract_detail', pk=contract.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al crear el contrato: {str(e)}')
+            messages.error(request, gettext('Error al crear el contrato: %(valor)s') % {'valor': str(e)})
     
     companies = Company.objects.filter(is_active=True).order_by('name')
     
@@ -31614,7 +31614,7 @@ def legal_contract_detail(request, pk):
     
     context = {
         'contract': contract,
-        'page_title': f'Contrato - {contract.name}'
+        'page_title': gettext('Contrato - %(name)s') % {'name': contract.name}
     }
     return render(request, 'tickets/legal_contract_detail.html', context)
 
@@ -31642,14 +31642,14 @@ def legal_contract_edit(request, pk):
             return redirect('legal_contract_detail', pk=contract.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al actualizar el contrato: {str(e)}')
+            messages.error(request, gettext('Error al actualizar el contrato: %(valor)s') % {'valor': str(e)})
     
     companies = Company.objects.filter(is_active=True).order_by('name')
     
     context = {
         'contract': contract,
         'companies': companies,
-        'page_title': f'Editar - {contract.name}'
+        'page_title': gettext('Editar - %(name)s') % {'name': contract.name}
     }
     return render(request, 'tickets/legal_contract_form.html', context)
 
@@ -31662,12 +31662,12 @@ def legal_contract_delete(request, pk):
     if request.method == 'POST':
         name = contract.name
         contract.delete()
-        messages.success(request, f'Contrato "{name}" eliminado exitosamente')
+        messages.success(request, gettext('Contrato "%(name)s" eliminado exitosamente') % {'name': name})
         return redirect('legal_contract_list')
     
     context = {
         'contract': contract,
-        'page_title': f'Eliminar - {contract.name}'
+        'page_title': gettext('Eliminar - %(name)s') % {'name': contract.name}
     }
     return render(request, 'tickets/legal_contract_delete.html', context)
 
@@ -31689,7 +31689,7 @@ def legal_contract_update_content(request, pk):
             
             messages.success(request, gettext('Contenido del contrato actualizado exitosamente'))
         except Exception as e:
-            messages.error(request, f'Error al actualizar el contenido: {str(e)}')
+            messages.error(request, gettext('Error al actualizar el contenido: %(valor)s') % {'valor': str(e)})
     
     return redirect('legal_contract_detail', pk=contract.pk)
 
@@ -31704,7 +31704,7 @@ def legal_contract_generate(request, pk):
             contract.generate_with_ai()
             messages.success(request, gettext('Contrato generado exitosamente con IA'))
         except Exception as e:
-            messages.error(request, f'Error al generar el contrato: {str(e)}')
+            messages.error(request, gettext('Error al generar el contrato: %(valor)s') % {'valor': str(e)})
         
         return redirect('legal_contract_detail', pk=contract.pk)
     
@@ -31895,7 +31895,7 @@ def legal_contract_toggle_public(request, pk):
         contract.save()
         
         status = 'activado' if contract.is_public else 'desactivado'
-        messages.success(request, f'Acceso público {status} para el contrato')
+        messages.success(request, gettext('Acceso público %(status)s para el contrato') % {'status': status})
         
         return redirect('legal_contract_detail', pk=contract.pk)
     
@@ -32148,7 +32148,7 @@ def supplier_contract_review_create(request):
             return redirect('supplier_contract_review_detail', pk=review.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al guardar el contrato: {str(e)}')
+            messages.error(request, gettext('Error al guardar el contrato: %(valor)s') % {'valor': str(e)})
     
     companies = Company.objects.filter(is_active=True).order_by('name')
     
@@ -32198,14 +32198,14 @@ def supplier_contract_review_edit(request, pk):
             return redirect('supplier_contract_review_detail', pk=review.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al actualizar el contrato: {str(e)}')
+            messages.error(request, gettext('Error al actualizar el contrato: %(valor)s') % {'valor': str(e)})
     
     companies = Company.objects.filter(is_active=True).order_by('name')
     
     context = {
         'review': review,
         'companies': companies,
-        'page_title': f'Editar - {review.name}'
+        'page_title': gettext('Editar - %(name)s') % {'name': review.name}
     }
     return render(request, 'tickets/supplier_contract_review_form.html', context)
 
@@ -32220,12 +32220,12 @@ def supplier_contract_review_delete(request, pk):
     if request.method == 'POST':
         name = review.name
         review.delete()
-        messages.success(request, f'Revisión "{name}" eliminada exitosamente')
+        messages.success(request, gettext('Revisión "%(name)s" eliminada exitosamente') % {'name': name})
         return redirect('supplier_contract_review_list')
     
     context = {
         'review': review,
-        'page_title': f'Eliminar - {review.name}'
+        'page_title': gettext('Eliminar - %(name)s') % {'name': review.name}
     }
     return render(request, 'tickets/supplier_contract_review_delete.html', context)
 
@@ -32242,7 +32242,7 @@ def supplier_contract_review_generate(request, pk):
             review.review_with_ai()
             messages.success(request, gettext('Revisión generada exitosamente con IA'))
         except Exception as e:
-            messages.error(request, f'Error al generar revisión: {str(e)}')
+            messages.error(request, gettext('Error al generar revisión: %(valor)s') % {'valor': str(e)})
     
     return redirect('supplier_contract_review_detail', pk=review.pk)
 
@@ -32259,7 +32259,7 @@ def supplier_contract_review_update_status(request, pk):
         if new_status in dict(SupplierContractReview.REVIEW_STATUS_CHOICES).keys():
             review.status = new_status
             review.save()
-            messages.success(request, f'Estado actualizado a {review.get_status_display()}')
+            messages.success(request, gettext('Estado actualizado a %(valor)s') % {'valor': review.get_status_display()})
         else:
             messages.error(request, gettext('Estado inválido'))
     
@@ -32428,11 +32428,11 @@ def paypal_link_create(request):
             link.notes = request.POST.get('notes', '')
             link.save()
             
-            messages.success(request, f'Enlace de pago creado exitosamente. URL: {link.public_url}')
+            messages.success(request, gettext('Enlace de pago creado exitosamente. URL: %(public_url)s') % {'public_url': link.public_url})
             return redirect('paypal_link_detail', pk=link.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al crear el enlace: {str(e)}')
+            messages.error(request, gettext('Error al crear el enlace: %(valor)s') % {'valor': str(e)})
     
     companies = Company.objects.filter(is_active=True).order_by('name')
     
@@ -32496,14 +32496,14 @@ def paypal_link_edit(request, pk):
             return redirect('paypal_link_detail', pk=link.pk)
             
         except Exception as e:
-            messages.error(request, f'Error al actualizar el enlace: {str(e)}')
+            messages.error(request, gettext('Error al actualizar el enlace: %(valor)s') % {'valor': str(e)})
     
     companies = Company.objects.filter(is_active=True).order_by('name')
     
     context = {
         'link': link,
         'companies': companies,
-        'page_title': f'Editar - {link.product_name}'
+        'page_title': gettext('Editar - %(product_name)s') % {'product_name': link.product_name}
     }
     return render(request, 'tickets/paypal_link_form.html', context)
 
@@ -32523,12 +32523,12 @@ def paypal_link_delete(request, pk):
     if request.method == 'POST':
         product_name = link.product_name
         link.delete()
-        messages.success(request, f'Enlace "{product_name}" eliminado exitosamente')
+        messages.success(request, gettext('Enlace "%(product_name)s" eliminado exitosamente') % {'product_name': product_name})
         return redirect('paypal_link_list')
     
     context = {
         'link': link,
-        'page_title': f'Eliminar - {link.product_name}'
+        'page_title': gettext('Eliminar - %(product_name)s') % {'product_name': link.product_name}
     }
     return render(request, 'tickets/paypal_link_delete.html', context)
 
@@ -32545,7 +32545,7 @@ def paypal_link_cancel(request, pk):
         link.save()
         messages.success(request, gettext('Enlace cancelado exitosamente'))
     else:
-        messages.warning(request, f'No se puede cancelar un enlace con estado {link.get_status_display()}')
+        messages.warning(request, gettext('No se puede cancelar un enlace con estado %(valor)s') % {'valor': link.get_status_display()})
     
     return redirect('paypal_link_detail', pk=link.pk)
 
@@ -32569,7 +32569,7 @@ def paypal_generate_public_catalog_token(request):
             f'/public/products/{new_token}/'
         )
         
-        messages.success(request, f'Token público generado exitosamente. URL: {public_url}')
+        messages.success(request, gettext('Token público generado exitosamente. URL: %(public_url)s') % {'public_url': public_url})
         return JsonResponse({
             'success': True,
             'token': str(new_token),
@@ -33448,7 +33448,7 @@ def ai_book_create(request):
             status='draft'
         )
         
-        messages.success(request, f'Libro "{book.title}" creado exitosamente')
+        messages.success(request, gettext('Libro "%(title)s" creado exitosamente') % {'title': book.title})
         return redirect('ai_book_propose_chapters', pk=book.pk)
     
     companies = Company.objects.filter(is_active=True)
@@ -33681,7 +33681,7 @@ def ai_book_edit(request, pk):
                 book.company = None
             
             book.save()
-            messages.success(request, f'Libro "{book.title}" actualizado exitosamente')
+            messages.success(request, gettext('Libro "%(title)s" actualizado exitosamente') % {'title': book.title})
             return redirect('ai_book_detail', pk=book.pk)
     
     companies = Company.objects.all().order_by('name')
@@ -34397,7 +34397,7 @@ def ai_book_delete(request, pk):
     
     if request.method == 'POST':
         book.delete()
-        messages.success(request, f'Libro "{book.title}" eliminado exitosamente')
+        messages.success(request, gettext('Libro "%(title)s" eliminado exitosamente') % {'title': book.title})
         return redirect('ai_book_list')
     
     context = {
@@ -34472,7 +34472,7 @@ def ai_article_project_create(request):
             status='draft'
         )
         
-        messages.success(request, f'Proyecto "{project.title}" creado exitosamente.')
+        messages.success(request, gettext('Proyecto "%(title)s" creado exitosamente.') % {'title': project.title})
         return redirect('ai_article_project_proposals', pk=project.pk)
     
     companies = Company.objects.filter(is_active=True).order_by('name')
@@ -34777,7 +34777,7 @@ def ai_article_project_edit(request, pk):
         project.company_id = company_id if company_id else None
         project.save()
         
-        messages.success(request, f'Proyecto "{project.title}" actualizado exitosamente.')
+        messages.success(request, gettext('Proyecto "%(title)s" actualizado exitosamente.') % {'title': project.title})
         return redirect('ai_article_project_proposals', pk=project.pk)
     
     companies = Company.objects.filter(is_active=True).order_by('name')
@@ -34800,7 +34800,7 @@ def ai_article_project_delete(request, pk):
     if request.method == 'POST':
         title = project.title
         project.delete()
-        messages.success(request, f'Proyecto "{title}" eliminado exitosamente.')
+        messages.success(request, gettext('Proyecto "%(title)s" eliminado exitosamente.') % {'title': title})
         return redirect('ai_article_project_list')
     
     context = {
@@ -34924,7 +34924,7 @@ def employee_request_create(request):
             request_instance = form.save(commit=False)
             request_instance.created_by = request.user
             request_instance.save()
-            messages.success(request, f'Solicitud #{request_instance.sequence} creada correctamente.')
+            messages.success(request, gettext('Solicitud #%(sequence)s creada correctamente.') % {'sequence': request_instance.sequence})
             return redirect('employee_request_detail', pk=request_instance.pk)
     else:
         form = EmployeeRequestForm(user=request.user)
@@ -34954,7 +34954,7 @@ def employee_request_detail(request, pk):
     
     context = {
         'request_instance': employee_request,
-        'page_title': f'Solicitud #{employee_request.sequence}',
+        'page_title': gettext('Solicitud #%(sequence)s') % {'sequence': employee_request.sequence},
     }
     
     return render(request, 'tickets/employee_request_detail.html', context)
@@ -34983,7 +34983,7 @@ def employee_request_edit(request, pk):
         form = EmployeeRequestForm(request.POST, instance=employee_request, user=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Solicitud #{employee_request.sequence} actualizada correctamente.')
+            messages.success(request, gettext('Solicitud #%(sequence)s actualizada correctamente.') % {'sequence': employee_request.sequence})
             return redirect('employee_request_detail', pk=pk)
     else:
         form = EmployeeRequestForm(instance=employee_request, user=request.user)
@@ -34991,7 +34991,7 @@ def employee_request_edit(request, pk):
     context = {
         'form': form,
         'request_instance': employee_request,
-        'page_title': f'Editar Solicitud #{employee_request.sequence}',
+        'page_title': gettext('Editar Solicitud #%(sequence)s') % {'sequence': employee_request.sequence},
         'is_create': False,
     }
     
@@ -35019,12 +35019,12 @@ def employee_request_delete(request, pk):
     if request.method == 'POST':
         sequence = employee_request.sequence
         employee_request.delete()
-        messages.success(request, f'Solicitud #{sequence} eliminada correctamente.')
+        messages.success(request, gettext('Solicitud #%(sequence)s eliminada correctamente.') % {'sequence': sequence})
         return redirect('employee_request_list')
     
     context = {
         'request_instance': employee_request,
-        'page_title': f'Eliminar Solicitud #{employee_request.sequence}',
+        'page_title': gettext('Eliminar Solicitud #%(sequence)s') % {'sequence': employee_request.sequence},
     }
     
     return render(request, 'tickets/employee_request_delete.html', context)
@@ -35238,7 +35238,7 @@ def employee_dashboard(request):
         }
     
     context = {
-        'page_title': f'Dashboard de Empleado - {selected_employee.get_full_name() or selected_employee.username}',
+        'page_title': gettext('Dashboard de Empleado - %(valor)s') % {'valor': selected_employee.get_full_name() or selected_employee.username},
         'hours_today': round(hours_today, 2),
         'hours_week': round(hours_week, 2),
         'hours_month': round(hours_month, 2),
@@ -35352,7 +35352,7 @@ def internal_agreement_create(request):
             agreement = form.save(commit=False)
             agreement.created_by = request.user
             agreement.save()
-            messages.success(request, f'Acuerdo Interno #{agreement.sequence} creado correctamente.')
+            messages.success(request, gettext('Acuerdo Interno #%(sequence)s creado correctamente.') % {'sequence': agreement.sequence})
             return redirect('internal_agreement_detail', pk=agreement.pk)
     else:
         form = InternalAgreementForm(user=request.user)
@@ -35387,7 +35387,7 @@ def internal_agreement_detail(request, pk):
     context = {
         'agreement': agreement,
         'tags_list': tags_list,
-        'page_title': f'Acuerdo #{agreement.sequence}',
+        'page_title': gettext('Acuerdo #%(sequence)s') % {'sequence': agreement.sequence},
         'can_edit': agreement.can_edit(request.user),
         'can_delete': agreement.can_delete(request.user),
         'can_sign_user': (agreement.signer_1 == request.user and not agreement.signer_1_date) or 
@@ -35432,7 +35432,7 @@ def internal_agreement_edit(request, pk):
                 agreement.approved_date = None
                 agreement.save()
             
-            messages.success(request, f'Acuerdo #{agreement.sequence} actualizado correctamente.')
+            messages.success(request, gettext('Acuerdo #%(sequence)s actualizado correctamente.') % {'sequence': agreement.sequence})
             return redirect('internal_agreement_detail', pk=pk)
     else:
         form = InternalAgreementForm(instance=agreement, user=request.user)
@@ -35440,7 +35440,7 @@ def internal_agreement_edit(request, pk):
     context = {
         'form': form,
         'agreement': agreement,
-        'page_title': f'Editar Acuerdo #{agreement.sequence}',
+        'page_title': gettext('Editar Acuerdo #%(sequence)s') % {'sequence': agreement.sequence},
         'is_create': False,
     }
     
@@ -35462,12 +35462,12 @@ def internal_agreement_delete(request, pk):
     if request.method == 'POST':
         sequence = agreement.sequence
         agreement.delete()
-        messages.success(request, f'Acuerdo #{sequence} eliminado correctamente.')
+        messages.success(request, gettext('Acuerdo #%(sequence)s eliminado correctamente.') % {'sequence': sequence})
         return redirect('internal_agreement_list')
     
     context = {
         'agreement': agreement,
-        'page_title': f'Eliminar Acuerdo #{agreement.sequence}',
+        'page_title': gettext('Eliminar Acuerdo #%(sequence)s') % {'sequence': agreement.sequence},
     }
     
     return render(request, 'tickets/internal_agreement_confirm_delete.html', context)
@@ -35527,7 +35527,7 @@ def internal_agreement_sign(request, pk):
             if agreement.is_fully_signed():
                 messages.info(
                     request,
-                    f'🎉 ¡El acuerdo está completamente firmado! Todos los firmantes requeridos han confirmado su firma.'
+                    gettext('🎉 ¡El acuerdo está completamente firmado! Todos los firmantes requeridos han confirmado su firma.')
                 )
         else:
             messages.error(request, gettext('No se pudo completar la firma. Verifica que tengas permisos.'))
@@ -35753,7 +35753,7 @@ def ticket_print_pdf(request, pk):
         messages.error(request, gettext('Ticket no encontrado.'))
         return redirect('ticket_list')
     except Exception as e:
-        messages.error(request, f'Error al generar el PDF: {str(e)}')
+        messages.error(request, gettext('Error al generar el PDF: %(valor)s') % {'valor': str(e)})
         return redirect('ticket_detail', pk=pk)
 
 
@@ -35930,7 +35930,7 @@ def tickets_export_pdf(request):
         return response
         
     except Exception as e:
-        messages.error(request, f'Error al generar el PDF: {str(e)}')
+        messages.error(request, gettext('Error al generar el PDF: %(valor)s') % {'valor': str(e)})
         return redirect('ticket_list')
 
 
@@ -36098,7 +36098,7 @@ def training_plan_detail(request, pk):
         'total_links': total_links,
         'user_progress_percent': user_progress_percent,
         'is_completed': is_completed,
-        'page_title': f'Plan de Capacitación #{plan.sequence}',
+        'page_title': gettext('Plan de Capacitación #%(sequence)s') % {'sequence': plan.sequence},
         'debug_completed_count': completed_links_count,  # Para debug
     }
     
@@ -36131,7 +36131,7 @@ def training_link_complete(request, pk):
         if not created and notes:
             link_progress.notes = notes
         
-        messages.success(request, f'Enlace "{link.title}" marcado como completado.')
+        messages.success(request, gettext('Enlace "%(title)s" marcado como completado.') % {'title': link.title})
         return redirect('training_plan_detail', pk=link.plan.pk)
     
     return redirect('training_plan_list')
@@ -36148,7 +36148,7 @@ def training_link_uncomplete(request, pk):
         try:
             progress = EmployeeLinkProgress.objects.get(employee=request.user, link=link)
             progress.delete()
-            messages.info(request, f'Marcado como pendiente: {link.title}')
+            messages.info(request, gettext('Marcado como pendiente: %(title)s') % {'title': link.title})
         except EmployeeLinkProgress.DoesNotExist:
             pass
         
@@ -36231,7 +36231,7 @@ def training_plan_create(request):
                 description=description,
                 created_by=request.user
             )
-            messages.success(request, f'Plan de capacitación #{plan.sequence} creado exitosamente.')
+            messages.success(request, gettext('Plan de capacitación #%(sequence)s creado exitosamente.') % {'sequence': plan.sequence})
             return redirect('training_plan_detail', pk=plan.pk)
         else:
             messages.error(request, gettext('Título y descripción son requeridos.'))
@@ -36266,14 +36266,14 @@ def training_plan_edit(request, pk):
             plan.description = description
             plan.is_active = is_active
             plan.save()
-            messages.success(request, f'Plan de capacitación #{plan.sequence} actualizado exitosamente.')
+            messages.success(request, gettext('Plan de capacitación #%(sequence)s actualizado exitosamente.') % {'sequence': plan.sequence})
             return redirect('training_plan_detail', pk=plan.pk)
         else:
             messages.error(request, gettext('Título y descripción son requeridos.'))
     
     context = {
         'plan': plan,
-        'page_title': f'Editar Plan #{plan.sequence}',
+        'page_title': gettext('Editar Plan #%(sequence)s') % {'sequence': plan.sequence},
     }
     
     return render(request, 'tickets/training_plan_form.html', context)
@@ -36320,14 +36320,14 @@ def training_link_create(request, plan_pk):
                 order=order,
                 estimated_hours=estimated_hours
             )
-            messages.success(request, f'Enlace "{title}" agregado al plan exitosamente.')
+            messages.success(request, gettext('Enlace "%(title)s" agregado al plan exitosamente.') % {'title': title})
             return redirect('training_plan_detail', pk=plan.pk)
         else:
             messages.error(request, gettext('Título y URL son requeridos.'))
     
     context = {
         'plan': plan,
-        'page_title': f'Agregar URL al Plan #{plan.sequence}',
+        'page_title': gettext('Agregar URL al Plan #%(sequence)s') % {'sequence': plan.sequence},
     }
     
     return render(request, 'tickets/training_url_form.html', context)
@@ -36372,7 +36372,7 @@ def training_link_edit(request, pk):
             training_link.order = order
             training_link.estimated_hours = estimated_hours
             training_link.save()
-            messages.success(request, f'Enlace "{title}" actualizado exitosamente.')
+            messages.success(request, gettext('Enlace "%(title)s" actualizado exitosamente.') % {'title': title})
             return redirect('training_plan_detail', pk=training_link.plan.pk)
         else:
             messages.error(request, gettext('Título y URL son requeridos.'))
@@ -36380,7 +36380,7 @@ def training_link_edit(request, pk):
     context = {
         'training_link': training_link,
         'plan': training_link.plan,
-        'page_title': f'Editar Enlace: {training_link.title}',
+        'page_title': gettext('Editar Enlace: %(title)s') % {'title': training_link.title},
     }
     
     return render(request, 'tickets/training_link_form.html', context)
@@ -36403,12 +36403,12 @@ def training_link_delete(request, pk):
     if request.method == 'POST':
         title = training_link.title
         training_link.delete()
-        messages.success(request, f'Enlace "{title}" eliminado exitosamente.')
+        messages.success(request, gettext('Enlace "%(title)s" eliminado exitosamente.') % {'title': title})
         return redirect('training_plan_detail', pk=plan_pk)
     
     context = {
         'training_url': training_url,
-        'page_title': f'Eliminar URL: {training_url.title}',
+        'page_title': gettext('Eliminar URL: %(title)s') % {'title': training_url.title},
     }
     
     return render(request, 'tickets/training_url_delete.html', context)
@@ -36446,7 +36446,7 @@ def ai_recommendation_create(request):
                 context_text=context_text,
                 created_by=request.user
             )
-            messages.success(request, f'Recomendación "{title}" creada exitosamente.')
+            messages.success(request, gettext('Recomendación "%(title)s" creada exitosamente.') % {'title': title})
             return redirect('ai_recommendation_list')
         else:
             messages.error(request, gettext('Por favor, completa todos los campos requeridos.'))
@@ -36474,12 +36474,12 @@ def ai_recommendation_edit(request, pk):
         recommendation.context_text = request.POST.get('context_text', recommendation.context_text)
         recommendation.save()
         
-        messages.success(request, f'Recomendación "{recommendation.title}" actualizada exitosamente.')
+        messages.success(request, gettext('Recomendación "%(title)s" actualizada exitosamente.') % {'title': recommendation.title})
         return redirect('ai_recommendation_list')
     
     context = {
         'recommendation': recommendation,
-        'page_title': f'Editar Recomendación: {recommendation.title}',
+        'page_title': gettext('Editar Recomendación: %(title)s') % {'title': recommendation.title},
     }
     
     return render(request, 'tickets/ai_recommendation_form.html', context)
@@ -36554,7 +36554,7 @@ Responde únicamente con la sugerencia de respuesta, sin explicaciones adicional
                     messages.error(request, gettext('Error al procesar la respuesta de la IA.'))
                     ai_response = "Error al generar la respuesta. Por favor, intenta nuevamente."
             else:
-                messages.error(request, f'Error de IA: {result["error"]}')
+                messages.error(request, gettext('Error de IA: %(valor)s') % {'valor': result['error']})
                 ai_response = "Error al conectar con el servicio de IA. Verifica la configuración."
         else:
             messages.error(request, gettext('Por favor, ingresa el caso del cliente.'))
@@ -36569,7 +36569,7 @@ Responde únicamente con la sugerencia de respuesta, sin explicaciones adicional
         'ai_response': ai_response,
         'client_case': client_case,
         'recent_usage': recent_usage,
-        'page_title': f'Asistente IA: {recommendation.title}',
+        'page_title': gettext('Asistente IA: %(title)s') % {'title': recommendation.title},
     }
     
     return render(request, 'tickets/ai_recommendation_detail.html', context)
@@ -36589,12 +36589,12 @@ def ai_recommendation_delete(request, pk):
     if request.method == 'POST':
         title = recommendation.title
         recommendation.delete()
-        messages.success(request, f'Recomendación "{title}" eliminada exitosamente.')
+        messages.success(request, gettext('Recomendación "%(title)s" eliminada exitosamente.') % {'title': title})
         return redirect('ai_recommendation_list')
     
     context = {
         'recommendation': recommendation,
-        'page_title': f'Eliminar Recomendación: {recommendation.title}',
+        'page_title': gettext('Eliminar Recomendación: %(title)s') % {'title': recommendation.title},
     }
     
     return render(request, 'tickets/ai_recommendation_delete.html', context)
@@ -36724,13 +36724,13 @@ def employee_absence_create(request):
                 documentation_file=documentation_file
             )
             
-            messages.success(request, f'Ausencia registrada para {employee.get_full_name() or employee.username}.')
+            messages.success(request, gettext('Ausencia registrada para %(valor)s.') % {'valor': employee.get_full_name() or employee.username})
             return redirect('employee_absence_list')
             
         except (User.DoesNotExist, AbsenceType.DoesNotExist) as e:
             messages.error(request, gettext('Error en los datos seleccionados.'))
         except Exception as e:
-            messages.error(request, f'Error al crear la ausencia: {str(e)}')
+            messages.error(request, gettext('Error al crear la ausencia: %(valor)s') % {'valor': str(e)})
     
     # Obtener empleados y tipos de ausencias
     employees = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
@@ -36760,7 +36760,7 @@ def employee_absence_detail(request, pk):
     
     context = {
         'absence': absence,
-        'page_title': f'Ausencia de {absence.employee.get_full_name() or absence.employee.username}',
+        'page_title': gettext('Ausencia de %(valor)s') % {'valor': absence.employee.get_full_name() or absence.employee.username},
     }
     
     return render(request, 'tickets/employee_absence_detail.html', context)
@@ -36800,7 +36800,7 @@ def employee_absence_edit(request, pk):
             messages.success(request, gettext('Ausencia actualizada exitosamente.'))
             return redirect('employee_absence_detail', pk=absence.pk)
         except Exception as e:
-            messages.error(request, f'Error al actualizar la ausencia: {str(e)}')
+            messages.error(request, gettext('Error al actualizar la ausencia: %(valor)s') % {'valor': str(e)})
     
     # Obtener empleados y tipos de ausencias
     employees = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
@@ -36810,7 +36810,7 @@ def employee_absence_edit(request, pk):
         'absence': absence,
         'employees': employees,
         'absence_types': absence_types,
-        'page_title': f'Editar Ausencia de {absence.employee.get_full_name() or absence.employee.username}',
+        'page_title': gettext('Editar Ausencia de %(valor)s') % {'valor': absence.employee.get_full_name() or absence.employee.username},
     }
     
     return render(request, 'tickets/employee_absence_form.html', context)
@@ -36832,13 +36832,13 @@ def employee_absence_approve(request, pk):
         
         if action == 'approve':
             absence.approve(request.user)
-            messages.success(request, f'Ausencia de {absence.employee.get_full_name() or absence.employee.username} aprobada.')
+            messages.success(request, gettext('Ausencia de %(valor)s aprobada.') % {'valor': absence.employee.get_full_name() or absence.employee.username})
         
         elif action == 'reject':
             rejection_reason = request.POST.get('rejection_reason', '')
             if rejection_reason:
                 absence.reject(rejection_reason, request.user)
-                messages.success(request, f'Ausencia de {absence.employee.get_full_name() or absence.employee.username} rechazada.')
+                messages.success(request, gettext('Ausencia de %(valor)s rechazada.') % {'valor': absence.employee.get_full_name() or absence.employee.username})
             else:
                 messages.error(request, gettext('Debes proporcionar un motivo para el rechazo.'))
                 return redirect('employee_absence_detail', pk=pk)
@@ -36862,12 +36862,12 @@ def employee_absence_delete(request, pk):
     if request.method == 'POST':
         employee_name = absence.employee.get_full_name() or absence.employee.username
         absence.delete()
-        messages.success(request, f'Ausencia de {employee_name} eliminada exitosamente.')
+        messages.success(request, gettext('Ausencia de %(employee_name)s eliminada exitosamente.') % {'employee_name': employee_name})
         return redirect('employee_absence_list')
     
     context = {
         'absence': absence,
-        'page_title': f'Eliminar Ausencia de {absence.employee.get_full_name() or absence.employee.username}',
+        'page_title': gettext('Eliminar Ausencia de %(valor)s') % {'valor': absence.employee.get_full_name() or absence.employee.username},
     }
     
     return render(request, 'tickets/employee_absence_delete.html', context)
@@ -36935,7 +36935,7 @@ def employee_absence_calendar(request):
         'prev_year': prev_year,
         'next_month': next_month,
         'next_year': next_year,
-        'page_title': f'Calendario de Ausencias - {calendar.month_name[month]} {year}',
+        'page_title': gettext('Calendario de Ausencias - %(valor)s %(year)s') % {'valor': calendar.month_name[month], 'year': year},
     }
     
     return render(request, 'tickets/employee_absence_calendar.html', context)
@@ -37288,13 +37288,13 @@ def company_protocol_create(request):
                     created_by=request.user
                 )
                 
-                messages.success(request, f'Protocolo "{protocol.title}" creado exitosamente.')
+                messages.success(request, gettext('Protocolo "%(title)s" creado exitosamente.') % {'title': protocol.title})
                 return redirect('company_protocol_detail', pk=protocol.pk)
                 
             except Company.DoesNotExist:
                 messages.error(request, gettext('La empresa seleccionada no existe.'))
             except Exception as e:
-                messages.error(request, f'Error al crear el protocolo: {str(e)}')
+                messages.error(request, gettext('Error al crear el protocolo: %(valor)s') % {'valor': str(e)})
     
     # Obtener todas las empresas para el formulario
     companies = Company.objects.all().order_by('name')
@@ -37320,7 +37320,7 @@ def company_protocol_detail(request, pk):
     
     context = {
         'protocol': protocol,
-        'page_title': f'Protocolo: {protocol.title}',
+        'page_title': gettext('Protocolo: %(title)s') % {'title': protocol.title},
     }
     
     return render(request, 'tickets/company_protocol_detail.html', context)
@@ -37352,7 +37352,7 @@ def company_protocol_edit(request, pk):
                 return render(request, 'tickets/company_protocol_form.html', {
                     'protocol': protocol,
                     'companies': Company.objects.all().order_by('name'),
-                    'page_title': f'Editar Protocolo: {protocol.title}',
+                    'page_title': gettext('Editar Protocolo: %(title)s') % {'title': protocol.title},
                 })
         
         try:
@@ -37360,7 +37360,7 @@ def company_protocol_edit(request, pk):
             messages.success(request, gettext('Protocolo actualizado exitosamente.'))
             return redirect('company_protocol_detail', pk=protocol.pk)
         except Exception as e:
-            messages.error(request, f'Error al actualizar el protocolo: {str(e)}')
+            messages.error(request, gettext('Error al actualizar el protocolo: %(valor)s') % {'valor': str(e)})
     
     # Obtener todas las empresas para el formulario
     companies = Company.objects.all().order_by('name')
@@ -37368,7 +37368,7 @@ def company_protocol_edit(request, pk):
     context = {
         'protocol': protocol,
         'companies': companies,
-        'page_title': f'Editar Protocolo: {protocol.title}',
+        'page_title': gettext('Editar Protocolo: %(title)s') % {'title': protocol.title},
     }
     
     return render(request, 'tickets/company_protocol_form.html', context)
@@ -37388,12 +37388,12 @@ def company_protocol_delete(request, pk):
     if request.method == 'POST':
         protocol_title = protocol.title
         protocol.delete()
-        messages.success(request, f'Protocolo "{protocol_title}" eliminado exitosamente.')
+        messages.success(request, gettext('Protocolo "%(protocol_title)s" eliminado exitosamente.') % {'protocol_title': protocol_title})
         return redirect('company_protocol_list')
     
     context = {
         'protocol': protocol,
-        'page_title': f'Eliminar Protocolo: {protocol.title}',
+        'page_title': gettext('Eliminar Protocolo: %(title)s') % {'title': protocol.title},
     }
     
     return render(request, 'tickets/company_protocol_delete.html', context)
@@ -37726,10 +37726,10 @@ def company_protocol_toggle_public(request, pk):
         action = request.POST.get('action')
         if action == 'make_public':
             protocol.make_public()
-            messages.success(request, f'El protocolo "{protocol.title}" ahora es público.')
+            messages.success(request, gettext('El protocolo "%(title)s" ahora es público.') % {'title': protocol.title})
         elif action == 'make_private':
             protocol.make_private()
-            messages.success(request, f'El protocolo "{protocol.title}" ahora es privado.')
+            messages.success(request, gettext('El protocolo "%(title)s" ahora es privado.') % {'title': protocol.title})
         
         return redirect('company_protocol_detail', pk=pk)
     
@@ -37754,7 +37754,7 @@ def company_protocol_public_view(request, uuid):
     
     context = {
         'protocol': protocol,
-        'page_title': f'Protocolo: {protocol.title}',
+        'page_title': gettext('Protocolo: %(title)s') % {'title': protocol.title},
         'is_public_view': True,
     }
     
@@ -37921,13 +37921,13 @@ def qa_complaint_create(request):
                     attachment=attachment
                 )
                 
-                messages.success(request, f'Reporte QA "{complaint.title}" creado exitosamente.')
+                messages.success(request, gettext('Reporte QA "%(title)s" creado exitosamente.') % {'title': complaint.title})
                 return redirect('qa_complaint_detail', pk=complaint.pk)
                 
             except Company.DoesNotExist:
                 messages.error(request, gettext('La empresa seleccionada no existe.'))
             except Exception as e:
-                messages.error(request, f'Error al crear el reporte: {str(e)}')
+                messages.error(request, gettext('Error al crear el reporte: %(valor)s') % {'valor': str(e)})
     
     companies = Company.objects.all().order_by('name')
     
@@ -37980,7 +37980,7 @@ def qa_complaint_detail(request, pk):
     context = {
         'complaint': complaint,
         'users': users,
-        'page_title': f'Reporte QA: {complaint.title}',
+        'page_title': gettext('Reporte QA: %(title)s') % {'title': complaint.title},
     }
     
     return render(request, 'tickets/qa_complaint_detail.html', context)
@@ -38023,7 +38023,7 @@ def qa_complaint_edit(request, pk):
                     'type_choices': QAComplaint.TYPE_CHOICES,
                     'priority_choices': QAComplaint.PRIORITY_CHOICES,
                     'status_choices': QAComplaint.STATUS_CHOICES,
-                    'page_title': f'Editar Reporte QA: {complaint.title}',
+                    'page_title': gettext('Editar Reporte QA: %(title)s') % {'title': complaint.title},
                 })
         
         # Asignación
@@ -38045,7 +38045,7 @@ def qa_complaint_edit(request, pk):
             messages.success(request, gettext('Reporte QA actualizado exitosamente.'))
             return redirect('qa_complaint_detail', pk=complaint.pk)
         except Exception as e:
-            messages.error(request, f'Error al actualizar el reporte: {str(e)}')
+            messages.error(request, gettext('Error al actualizar el reporte: %(valor)s') % {'valor': str(e)})
     
     companies = Company.objects.all().order_by('name')
     users = User.objects.filter(
@@ -38059,7 +38059,7 @@ def qa_complaint_edit(request, pk):
         'type_choices': QAComplaint.TYPE_CHOICES,
         'priority_choices': QAComplaint.PRIORITY_CHOICES,
         'status_choices': QAComplaint.STATUS_CHOICES,
-        'page_title': f'Editar Reporte QA: {complaint.title}',
+        'page_title': gettext('Editar Reporte QA: %(title)s') % {'title': complaint.title},
     }
     
     return render(request, 'tickets/qa_complaint_form.html', context)
@@ -38084,12 +38084,12 @@ def qa_complaint_delete(request, pk):
     if request.method == 'POST':
         title = complaint.title
         complaint.delete()
-        messages.success(request, f'Reporte QA "{title}" eliminado exitosamente.')
+        messages.success(request, gettext('Reporte QA "%(title)s" eliminado exitosamente.') % {'title': title})
         return redirect('qa_complaint_list')
     
     context = {
         'complaint': complaint,
-        'page_title': f'Eliminar Reporte QA: {complaint.title}',
+        'page_title': gettext('Eliminar Reporte QA: %(title)s') % {'title': complaint.title},
     }
     
     return render(request, 'tickets/qa_complaint_delete.html', context)
@@ -38542,7 +38542,7 @@ def qa_rating_detail(request, pk):
     
     context = {
         'rating': rating,
-        'page_title': f'Calificación #{rating.pk}',
+        'page_title': gettext('Calificación #%(pk)s') % {'pk': rating.pk},
     }
     
     return render(request, 'tickets/qa_rating_detail.html', context)
@@ -38655,7 +38655,7 @@ def asset_detail(request, pk):
     context = {
         'asset': asset,
         'history': history,
-        'title': f'Activo: {asset.name}'
+        'title': gettext('Activo: %(name)s') % {'name': asset.name}
     }
     
     return render(request, 'tickets/asset_detail.html', context)
@@ -38680,7 +38680,7 @@ def asset_create(request):
                 performed_by=request.user
             )
             
-            messages.success(request, f'Activo "{asset.name}" creado exitosamente.')
+            messages.success(request, gettext('Activo "%(name)s" creado exitosamente.') % {'name': asset.name})
             return redirect('asset_detail', pk=asset.pk)
     else:
         form = AssetForm()
@@ -38736,7 +38736,7 @@ def asset_edit(request, pk):
                 changes.append('asignación')
             
             if changes:
-                messages.success(request, f'Activo actualizado exitosamente. Cambios: {", ".join(changes)}.')
+                messages.success(request, gettext('Activo actualizado exitosamente. Cambios: %(valor)s.') % {'valor': ', '.join(changes)})
             else:
                 messages.success(request, gettext('Activo actualizado exitosamente.'))
             
@@ -38747,7 +38747,7 @@ def asset_edit(request, pk):
     context = {
         'form': form,
         'asset': asset,
-        'title': f'Editar Activo: {asset.name}',
+        'title': gettext('Editar Activo: %(name)s') % {'name': asset.name},
         'submit_text': 'Actualizar Activo'
     }
     
@@ -38762,12 +38762,12 @@ def asset_delete(request, pk):
     if request.method == 'POST':
         asset_name = asset.name
         asset.delete()
-        messages.success(request, f'Activo "{asset_name}" eliminado exitosamente.')
+        messages.success(request, gettext('Activo "%(asset_name)s" eliminado exitosamente.') % {'asset_name': asset_name})
         return redirect('asset_list')
     
     context = {
         'asset': asset,
-        'title': f'Eliminar Activo: {asset.name}'
+        'title': gettext('Eliminar Activo: %(name)s') % {'name': asset.name}
     }
     
     return render(request, 'tickets/asset_delete.html', context)
@@ -38816,7 +38816,7 @@ def asset_assign(request, pk):
     context = {
         'form': form,
         'asset': asset,
-        'title': f'Asignar Activo: {asset.name}'
+        'title': gettext('Asignar Activo: %(name)s') % {'name': asset.name}
     }
     
     return render(request, 'tickets/asset_assign.html', context)
@@ -38836,7 +38836,7 @@ def asset_history(request, pk):
     context = {
         'asset': asset,
         'history': history_page,
-        'title': f'Historial: {asset.name}'
+        'title': gettext('Historial: %(name)s') % {'name': asset.name}
     }
     
     return render(request, 'tickets/asset_history.html', context)
@@ -38868,12 +38868,12 @@ def asset_maintenance(request, pk):
             performed_by=request.user
         )
         
-        messages.success(request, f'Activo "{asset.name}" enviado a mantenimiento.')
+        messages.success(request, gettext('Activo "%(name)s" enviado a mantenimiento.') % {'name': asset.name})
         return redirect('asset_detail', pk=asset.pk)
     
     context = {
         'asset': asset,
-        'title': f'Enviar a Mantenimiento: {asset.name}'
+        'title': gettext('Enviar a Mantenimiento: %(name)s') % {'name': asset.name}
     }
     
     return render(request, 'tickets/asset_maintenance.html', context)
@@ -38961,7 +38961,7 @@ def ai_tutor_create(request):
             tutor.created_by = request.user
             tutor.save()
             
-            messages.success(request, f'Tutor IA "{tutor.title}" creado exitosamente.')
+            messages.success(request, gettext('Tutor IA "%(title)s" creado exitosamente.') % {'title': tutor.title})
             print(f"DEBUG: Tutor created with ID: {tutor.pk}")
             return redirect('ai_tutor_detail', pk=tutor.pk)
     else:
@@ -38995,7 +38995,7 @@ def ai_tutor_detail(request, pk):
         'tutor': tutor,
         'progress_reports': progress_reports,
         'tutor_attachments': tutor_attachments,
-        'title': f'Tutor IA: {tutor.title}'
+        'title': gettext('Tutor IA: %(title)s') % {'title': tutor.title}
     }
     
     return render(request, 'tickets/ai_tutor_detail.html', context)
@@ -39021,7 +39021,7 @@ def ai_tutor_edit(request, pk):
             
         if form.is_valid():
             form.save()
-            messages.success(request, f'Tutor IA "{tutor.title}" actualizado exitosamente.')
+            messages.success(request, gettext('Tutor IA "%(title)s" actualizado exitosamente.') % {'title': tutor.title})
             print(f"DEBUG EDIT: Tutor updated with ID: {tutor.pk}")
             return redirect('ai_tutor_detail', pk=tutor.pk)
     else:
@@ -39030,7 +39030,7 @@ def ai_tutor_edit(request, pk):
     context = {
         'form': form,
         'tutor': tutor,
-        'title': f'Editar Tutor: {tutor.title}'
+        'title': gettext('Editar Tutor: %(title)s') % {'title': tutor.title}
     }
     
     return render(request, 'tickets/ai_tutor_form.html', context)
@@ -39049,12 +39049,12 @@ def ai_tutor_delete(request, pk):
     if request.method == 'POST':
         tutor_title = tutor.title
         tutor.delete()
-        messages.success(request, f'Tutor IA "{tutor_title}" eliminado exitosamente.')
+        messages.success(request, gettext('Tutor IA "%(tutor_title)s" eliminado exitosamente.') % {'tutor_title': tutor_title})
         return redirect('ai_tutor_list')
     
     context = {
         'tutor': tutor,
-        'title': f'Eliminar Tutor: {tutor.title}'
+        'title': gettext('Eliminar Tutor: %(title)s') % {'title': tutor.title}
     }
     
     return render(request, 'tickets/ai_tutor_delete.html', context)
@@ -39106,7 +39106,7 @@ def ai_tutor_progress_report(request, pk):
         'form': form,
         'attachment_form': attachment_form,
         'tutor': tutor,
-        'title': f'Reportar Progreso: {tutor.title}'
+        'title': gettext('Reportar Progreso: %(title)s') % {'title': tutor.title}
     }
     
     return render(request, 'tickets/ai_tutor_progress_form.html', context)
@@ -39142,7 +39142,7 @@ def ai_tutor_upload_attachment(request, pk):
     context = {
         'form': form,
         'tutor': tutor,
-        'title': f'Subir Archivo: {tutor.title}'
+        'title': gettext('Subir Archivo: %(title)s') % {'title': tutor.title}
     }
     
     return render(request, 'tickets/ai_tutor_attachment_form.html', context)
@@ -39645,7 +39645,7 @@ def expense_report_detail(request, pk):
         'balance': balance,
         'comments': comments,
         'comment_form': comment_form,
-        'title': f'Rendición: {expense_report.title}',
+        'title': gettext('Rendición: %(title)s') % {'title': expense_report.title},
         'is_agent': is_agent(request.user),
         'can_edit': expense_report.can_edit() and (
             expense_report.employee == request.user or is_agent(request.user)
@@ -39683,7 +39683,7 @@ def expense_report_edit(request, pk):
     context = {
         'form': form,
         'expense_report': expense_report,
-        'title': f'Editar: {expense_report.title}',
+        'title': gettext('Editar: %(title)s') % {'title': expense_report.title},
         'action': 'Actualizar'
     }
     
@@ -39711,7 +39711,7 @@ def expense_report_delete(request, pk):
     
     context = {
         'expense_report': expense_report,
-        'title': f'Eliminar: {expense_report.title}'
+        'title': gettext('Eliminar: %(title)s') % {'title': expense_report.title}
     }
     
     return render(request, 'tickets/expense_report_delete.html', context)
@@ -39737,7 +39737,7 @@ def expense_report_submit(request, pk):
     
     context = {
         'expense_report': expense_report,
-        'title': f'Enviar: {expense_report.title}'
+        'title': gettext('Enviar: %(title)s') % {'title': expense_report.title}
     }
     
     return render(request, 'tickets/expense_report_submit.html', context)
@@ -39767,7 +39767,7 @@ def expense_report_approve(request, pk):
     
     context = {
         'expense_report': expense_report,
-        'title': f'Aprobar: {expense_report.title}'
+        'title': gettext('Aprobar: %(title)s') % {'title': expense_report.title}
     }
     
     return render(request, 'tickets/expense_report_approve.html', context)
@@ -39801,7 +39801,7 @@ def expense_report_reject(request, pk):
     
     context = {
         'expense_report': expense_report,
-        'title': f'Rechazar: {expense_report.title}'
+        'title': gettext('Rechazar: %(title)s') % {'title': expense_report.title}
     }
     
     return render(request, 'tickets/expense_report_reject.html', context)
@@ -39832,7 +39832,7 @@ def expense_report_mark_paid(request, pk):
     
     context = {
         'expense_report': expense_report,
-        'title': f'Marcar como Pagado: {expense_report.title}'
+        'title': gettext('Marcar como Pagado: %(title)s') % {'title': expense_report.title}
     }
     
     return render(request, 'tickets/expense_report_mark_paid.html', context)
@@ -39873,7 +39873,7 @@ def expense_item_create(request, report_pk):
     context = {
         'form': form,
         'expense_report': expense_report,
-        'title': f'Agregar Gasto - {expense_report.title}',
+        'title': gettext('Agregar Gasto - %(title)s') % {'title': expense_report.title},
         'action': 'Agregar'
     }
     
@@ -39908,7 +39908,7 @@ def expense_item_edit(request, pk):
         'form': form,
         'expense_item': expense_item,
         'expense_report': expense_report,
-        'title': f'Editar Gasto - {expense_item.description}',
+        'title': gettext('Editar Gasto - %(description)s') % {'description': expense_item.description},
         'action': 'Actualizar'
     }
     
@@ -39938,7 +39938,7 @@ def expense_item_delete(request, pk):
     context = {
         'expense_item': expense_item,
         'expense_report': expense_report,
-        'title': f'Eliminar Gasto - {expense_item.description}'
+        'title': gettext('Eliminar Gasto - %(description)s') % {'description': expense_item.description}
     }
     
     return render(request, 'tickets/expense_item_delete.html', context)
@@ -39995,7 +39995,7 @@ def expense_fund_create(request, report_pk):
     context = {
         'form': form,
         'expense_report': expense_report,
-        'title': f'Agregar Fondo - {expense_report.title}',
+        'title': gettext('Agregar Fondo - %(title)s') % {'title': expense_report.title},
         'action': 'Agregar',
     }
     return render(request, 'tickets/expense_fund_form.html', context)
@@ -40024,7 +40024,7 @@ def expense_fund_edit(request, pk):
         'form': form,
         'fund': fund,
         'expense_report': expense_report,
-        'title': f'Editar Fondo - {fund.source_name}',
+        'title': gettext('Editar Fondo - %(source_name)s') % {'source_name': fund.source_name},
         'action': 'Actualizar',
     }
     return render(request, 'tickets/expense_fund_form.html', context)
@@ -40048,7 +40048,7 @@ def expense_fund_delete(request, pk):
     context = {
         'fund': fund,
         'expense_report': expense_report,
-        'title': f'Eliminar Fondo - {fund.source_name}',
+        'title': gettext('Eliminar Fondo - %(source_name)s') % {'source_name': fund.source_name},
     }
     return render(request, 'tickets/expense_fund_delete.html', context)
 
@@ -40213,7 +40213,7 @@ def video_meeting_detail(request, pk):
                         'La transcripción y análisis se realizarán en segundo plano.'
                     )
                 except Exception as e:
-                    messages.error(request, f'Error al iniciar el procesamiento: {str(e)}')
+                    messages.error(request, gettext('Error al iniciar el procesamiento: %(valor)s') % {'valor': str(e)})
             else:
                 messages.error(request, gettext('No hay archivos para transcribir.'))
             
@@ -40306,7 +40306,7 @@ def video_meeting_edit(request, pk):
     context = {
         'form': form,
         'meeting': meeting,
-        'title': f'Editar - {meeting.title}',
+        'title': gettext('Editar - %(title)s') % {'title': meeting.title},
         'action': 'Guardar Cambios',
         'is_create': False
     }
@@ -40344,7 +40344,7 @@ def video_meeting_transcription(request, pk):
     context = {
         'form': form,
         'meeting': meeting,
-        'title': f'Transcripción - {meeting.title}',
+        'title': gettext('Transcripción - %(title)s') % {'title': meeting.title},
     }
     
     return render(request, 'tickets/video_meeting_transcription.html', context)
@@ -40373,12 +40373,12 @@ def video_meeting_delete(request, pk):
                 pass
         
         meeting.delete()
-        messages.success(request, f'Reunión "{meeting_title}" eliminada exitosamente.')
+        messages.success(request, gettext('Reunión "%(meeting_title)s" eliminada exitosamente.') % {'meeting_title': meeting_title})
         return redirect('video_meeting_list')
     
     context = {
         'meeting': meeting,
-        'title': f'Eliminar Reunión - {meeting.title}',
+        'title': gettext('Eliminar Reunión - %(title)s') % {'title': meeting.title},
     }
     
     return render(request, 'tickets/video_meeting_delete.html', context)
@@ -40563,10 +40563,10 @@ def quote_generator_create(request):
             success = generate_quotes_with_ai(generator)
             
             if success:
-                messages.success(request, f'Generador "{generator.title}" creado exitosamente. Se generaron las citas automáticamente.')
+                messages.success(request, gettext('Generador "%(title)s" creado exitosamente. Se generaron las citas automáticamente.') % {'title': generator.title})
                 return redirect('quote_generator_detail', pk=generator.pk)
             else:
-                messages.warning(request, f'Generador "{generator.title}" creado, pero hubo un error al generar las citas. Puedes intentar generar nuevamente.')
+                messages.warning(request, gettext('Generador "%(title)s" creado, pero hubo un error al generar las citas. Puedes intentar generar nuevamente.') % {'title': generator.title})
                 return redirect('quote_generator_detail', pk=generator.pk)
     else:
         form = QuoteGeneratorForm(user=request.user)
@@ -40600,7 +40600,7 @@ def quote_generator_detail(request, pk):
     return render(request, 'tickets/quote_generator_detail.html', {
         'generator': generator,
         'quotes_list': quotes_list,
-        'page_title': f'Generador: {generator.title}'
+        'page_title': gettext('Generador: %(title)s') % {'title': generator.title}
     })
 
 
@@ -40646,11 +40646,11 @@ def quote_generator_edit(request, pk):
             if old_topic != generator.topic:
                 success = generate_quotes_with_ai(generator)
                 if success:
-                    messages.success(request, f'Generador "{generator.title}" actualizado exitosamente. Se regeneraron las citas automáticamente debido al cambio de tema.')
+                    messages.success(request, gettext('Generador "%(title)s" actualizado exitosamente. Se regeneraron las citas automáticamente debido al cambio de tema.') % {'title': generator.title})
                 else:
-                    messages.warning(request, f'Generador "{generator.title}" actualizado, pero hubo un error al regenerar las citas.')
+                    messages.warning(request, gettext('Generador "%(title)s" actualizado, pero hubo un error al regenerar las citas.') % {'title': generator.title})
             else:
-                messages.success(request, f'Generador "{generator.title}" actualizado exitosamente.')
+                messages.success(request, gettext('Generador "%(title)s" actualizado exitosamente.') % {'title': generator.title})
             
             return redirect('quote_generator_detail', pk=generator.pk)
     else:
@@ -40659,7 +40659,7 @@ def quote_generator_edit(request, pk):
     return render(request, 'tickets/quote_generator_form.html', {
         'form': form,
         'generator': generator,
-        'page_title': f'Editar Generador: {generator.title}',
+        'page_title': gettext('Editar Generador: %(title)s') % {'title': generator.title},
         'submit_text': 'Actualizar Generador'
     })
 
@@ -40834,7 +40834,7 @@ def countdown_timer_create(request):
                 countdown.company = request.user.profile.company
             
             countdown.save()
-            messages.success(request, f'Cuenta regresiva "{countdown.title}" creada exitosamente.')
+            messages.success(request, gettext('Cuenta regresiva "%(title)s" creada exitosamente.') % {'title': countdown.title})
             return redirect('countdown_timer_list')
     else:
         form = CountdownTimerForm(user=request.user)
@@ -40870,7 +40870,7 @@ def countdown_timer_detail(request, pk):
     
     return render(request, 'tickets/countdown_timer_detail.html', {
         'countdown': countdown,
-        'page_title': f'Cuenta Regresiva: {countdown.title}'
+        'page_title': gettext('Cuenta Regresiva: %(title)s') % {'title': countdown.title}
     })
 
 
@@ -40891,7 +40891,7 @@ def countdown_timer_edit(request, pk):
         form = CountdownTimerForm(request.POST, user=request.user, instance=countdown)
         if form.is_valid():
             countdown = form.save()
-            messages.success(request, f'Cuenta regresiva "{countdown.title}" actualizada exitosamente.')
+            messages.success(request, gettext('Cuenta regresiva "%(title)s" actualizada exitosamente.') % {'title': countdown.title})
             return redirect('countdown_timer_detail', pk=countdown.pk)
     else:
         form = CountdownTimerForm(user=request.user, instance=countdown)
@@ -40899,7 +40899,7 @@ def countdown_timer_edit(request, pk):
     return render(request, 'tickets/countdown_timer_form.html', {
         'form': form,
         'countdown': countdown,
-        'page_title': f'Editar: {countdown.title}',
+        'page_title': gettext('Editar: %(title)s') % {'title': countdown.title},
         'submit_text': 'Actualizar Cuenta Regresiva'
     })
 
@@ -40919,12 +40919,12 @@ def countdown_timer_delete(request, pk):
     if request.method == 'POST':
         title = countdown.title
         countdown.delete()
-        messages.success(request, f'Cuenta regresiva "{title}" eliminada exitosamente.')
+        messages.success(request, gettext('Cuenta regresiva "%(title)s" eliminada exitosamente.') % {'title': title})
         return redirect('countdown_timer_list')
     
     return render(request, 'tickets/countdown_timer_delete.html', {
         'countdown': countdown,
-        'page_title': f'Eliminar: {countdown.title}'
+        'page_title': gettext('Eliminar: %(title)s') % {'title': countdown.title}
     })
 
 
@@ -40962,7 +40962,7 @@ def absence_type_create(request):
         form = AbsenceTypeForm(request.POST)
         if form.is_valid():
             absence_type = form.save()
-            messages.success(request, f'Tipo de ausencia "{absence_type.name}" creado exitosamente.')
+            messages.success(request, gettext('Tipo de ausencia "%(name)s" creado exitosamente.') % {'name': absence_type.name})
             return redirect('absence_type_list')
     else:
         form = AbsenceTypeForm()
@@ -40986,7 +40986,7 @@ def absence_type_edit(request, pk):
         form = AbsenceTypeForm(request.POST, instance=absence_type)
         if form.is_valid():
             absence_type = form.save()
-            messages.success(request, f'Tipo de ausencia "{absence_type.name}" actualizado exitosamente.')
+            messages.success(request, gettext('Tipo de ausencia "%(name)s" actualizado exitosamente.') % {'name': absence_type.name})
             return redirect('absence_type_list')
     else:
         form = AbsenceTypeForm(instance=absence_type)
@@ -40994,7 +40994,7 @@ def absence_type_edit(request, pk):
     return render(request, 'tickets/absence_type_form.html', {
         'form': form,
         'absence_type': absence_type,
-        'page_title': f'Editar: {absence_type.name}',
+        'page_title': gettext('Editar: %(name)s') % {'name': absence_type.name},
         'submit_text': 'Actualizar Tipo de Ausencia'
     })
 
@@ -41012,17 +41012,17 @@ def absence_type_delete(request, pk):
     
     if request.method == 'POST':
         if usage_count > 0:
-            messages.error(request, f'No se puede eliminar el tipo "{absence_type.name}" porque tiene {usage_count} ausencias asociadas.')
+            messages.error(request, gettext('No se puede eliminar el tipo "%(name)s" porque tiene %(usage_count)s ausencias asociadas.') % {'name': absence_type.name, 'usage_count': usage_count})
         else:
             name = absence_type.name
             absence_type.delete()
-            messages.success(request, f'Tipo de ausencia "{name}" eliminado exitosamente.')
+            messages.success(request, gettext('Tipo de ausencia "%(name)s" eliminado exitosamente.') % {'name': name})
         return redirect('absence_type_list')
     
     return render(request, 'tickets/absence_type_delete.html', {
         'absence_type': absence_type,
         'usage_count': usage_count,
-        'page_title': f'Eliminar: {absence_type.name}'
+        'page_title': gettext('Eliminar: %(name)s') % {'name': absence_type.name}
     })
 
 
@@ -41037,7 +41037,7 @@ def absence_type_toggle_active(request, pk):
     absence_type.save()
     
     status = "activado" if absence_type.is_active else "desactivado"
-    messages.success(request, f'Tipo de ausencia "{absence_type.name}" {status} exitosamente.')
+    messages.success(request, gettext('Tipo de ausencia "%(name)s" %(status)s exitosamente.') % {'name': absence_type.name, 'status': status})
     
     return redirect('absence_type_list')
 
@@ -41095,7 +41095,7 @@ def procedure_create(request):
             procedure.sequence = (max_sequence + 1) if max_sequence else 1
             
             procedure.save()
-            messages.success(request, f'Procedimiento "{procedure.title}" creado exitosamente.')
+            messages.success(request, gettext('Procedimiento "%(title)s" creado exitosamente.') % {'title': procedure.title})
             return redirect('procedure_list')
     else:
         form = ProcedureForm()
@@ -41121,7 +41121,7 @@ def procedure_edit(request, pk):
         form = ProcedureForm(request.POST, request.FILES, instance=procedure)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Procedimiento "{procedure.title}" actualizado exitosamente.')
+            messages.success(request, gettext('Procedimiento "%(title)s" actualizado exitosamente.') % {'title': procedure.title})
             return redirect('procedure_list')
     else:
         form = ProcedureForm(instance=procedure)
@@ -41129,7 +41129,7 @@ def procedure_edit(request, pk):
     context = {
         'form': form,
         'procedure': procedure,
-        'page_title': f'Editar: {procedure.title}'
+        'page_title': gettext('Editar: %(title)s') % {'title': procedure.title}
     }
     
     return render(request, 'tickets/procedure_form.html', context)
@@ -41161,12 +41161,12 @@ def procedure_delete(request, pk):
     if request.method == 'POST':
         title = procedure.title
         procedure.delete()
-        messages.success(request, f'Procedimiento "{title}" eliminado exitosamente.')
+        messages.success(request, gettext('Procedimiento "%(title)s" eliminado exitosamente.') % {'title': title})
         return redirect('procedure_list')
     
     context = {
         'procedure': procedure,
-        'page_title': f'Eliminar: {procedure.title}'
+        'page_title': gettext('Eliminar: %(title)s') % {'title': procedure.title}
     }
     
     return render(request, 'tickets/procedure_delete.html', context)
@@ -41183,7 +41183,7 @@ def procedure_toggle_active(request, pk):
     procedure.save()
     
     status = "activado" if procedure.is_active else "desactivado"
-    messages.success(request, f'Procedimiento "{procedure.title}" {status} exitosamente.')
+    messages.success(request, gettext('Procedimiento "%(title)s" %(status)s exitosamente.') % {'title': procedure.title, 'status': status})
     
     return redirect('procedure_list')
 
@@ -41241,7 +41241,7 @@ def monthly_cumplimiento_create(request):
             cumplimiento.created_by = request.user
             cumplimiento.save()
             
-            messages.success(request, f'Cumplimiento mensual "{cumplimiento.name}" creado exitosamente.')
+            messages.success(request, gettext('Cumplimiento mensual "%(name)s" creado exitosamente.') % {'name': cumplimiento.name})
             return redirect('monthly_cumplimiento_detail', pk=cumplimiento.pk)
     else:
         form = MonthlyCumplimientoForm()
@@ -41288,7 +41288,7 @@ def monthly_cumplimiento_detail(request, pk):
         'cumplimiento': cumplimiento,
         'progress': progress,
         'days_in_month': days_in_month,
-        'page_title': f'Cumplimiento - {cumplimiento.name}',
+        'page_title': gettext('Cumplimiento - %(name)s') % {'name': cumplimiento.name},
         'section': 'qa'
     }
     
@@ -41308,7 +41308,7 @@ def monthly_cumplimiento_edit(request, pk):
         form = MonthlyCumplimientoForm(request.POST, instance=cumplimiento)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Cumplimiento mensual "{cumplimiento.name}" actualizado exitosamente.')
+            messages.success(request, gettext('Cumplimiento mensual "%(name)s" actualizado exitosamente.') % {'name': cumplimiento.name})
             return redirect('monthly_cumplimiento_detail', pk=cumplimiento.pk)
     else:
         form = MonthlyCumplimientoForm(instance=cumplimiento)
@@ -41316,7 +41316,7 @@ def monthly_cumplimiento_edit(request, pk):
     context = {
         'form': form,
         'cumplimiento': cumplimiento,
-        'page_title': f'Editar - {cumplimiento.name}',
+        'page_title': gettext('Editar - %(name)s') % {'name': cumplimiento.name},
         'section': 'qa'
     }
     
@@ -41334,12 +41334,12 @@ def monthly_cumplimiento_delete(request, pk):
     if request.method == 'POST':
         name = cumplimiento.name
         cumplimiento.delete()
-        messages.success(request, f'Cumplimiento mensual "{name}" eliminado exitosamente.')
+        messages.success(request, gettext('Cumplimiento mensual "%(name)s" eliminado exitosamente.') % {'name': name})
         return redirect('monthly_cumplimiento_list')
     
     context = {
         'cumplimiento': cumplimiento,
-        'page_title': f'Eliminar - {cumplimiento.name}',
+        'page_title': gettext('Eliminar - %(name)s') % {'name': cumplimiento.name},
         'section': 'qa'
     }
     
@@ -41357,7 +41357,7 @@ def monthly_cumplimiento_toggle(request, pk):
     cumplimiento.save()
     
     status = "activado" if cumplimiento.is_active else "desactivado"
-    messages.success(request, f'Cumplimiento mensual "{cumplimiento.name}" {status} exitosamente.')
+    messages.success(request, gettext('Cumplimiento mensual "%(name)s" %(status)s exitosamente.') % {'name': cumplimiento.name, 'status': status})
     
     return redirect('monthly_cumplimiento_detail', pk=cumplimiento.pk)
 
@@ -41503,7 +41503,7 @@ def user_cumplimientos_menu(request, uuid):
         'user': primary_cumplimiento.user,
         'cumplimientos': user_cumplimientos,
         'primary_uuid': uuid,
-        'page_title': f'Cumplimientos de {primary_cumplimiento.user.get_full_name() or primary_cumplimiento.user.username}'
+        'page_title': gettext('Cumplimientos de %(valor)s') % {'valor': primary_cumplimiento.user.get_full_name() or primary_cumplimiento.user.username}
     }
     
     return render(request, 'tickets/user_cumplimientos_menu.html', context)
@@ -41552,7 +41552,7 @@ def qr_create(request):
             qr_code = form.save(commit=False)
             qr_code.created_by = request.user
             qr_code.save()
-            messages.success(request, f'Código QR "{qr_code.title}" creado exitosamente.')
+            messages.success(request, gettext('Código QR "%(title)s" creado exitosamente.') % {'title': qr_code.title})
             return redirect('qr_detail', pk=qr_code.pk)
     else:
         form = QRCodeForm(user=request.user)
@@ -41575,7 +41575,7 @@ def qr_detail(request, pk):
     
     context = {
         'qr_code': qr_code,
-        'page_title': f'QR: {qr_code.title}',
+        'page_title': gettext('QR: %(title)s') % {'title': qr_code.title},
         'section': 'training'
     }
     
@@ -41594,7 +41594,7 @@ def qr_edit(request, pk):
         form = QRCodeForm(request.POST, instance=qr_code, user=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Código QR "{qr_code.title}" actualizado exitosamente.')
+            messages.success(request, gettext('Código QR "%(title)s" actualizado exitosamente.') % {'title': qr_code.title})
             return redirect('qr_detail', pk=qr_code.pk)
     else:
         form = QRCodeForm(instance=qr_code, user=request.user)
@@ -41602,7 +41602,7 @@ def qr_edit(request, pk):
     context = {
         'form': form,
         'qr_code': qr_code,
-        'page_title': f'Editar QR: {qr_code.title}',
+        'page_title': gettext('Editar QR: %(title)s') % {'title': qr_code.title},
         'section': 'training'
     }
     
@@ -41619,12 +41619,12 @@ def qr_delete(request, pk):
     if request.method == 'POST':
         title = qr_code.title
         qr_code.delete()
-        messages.success(request, f'Código QR "{title}" eliminado exitosamente.')
+        messages.success(request, gettext('Código QR "%(title)s" eliminado exitosamente.') % {'title': title})
         return redirect('qr_generator')
     
     context = {
         'qr_code': qr_code,
-        'page_title': f'Eliminar QR: {qr_code.title}',
+        'page_title': gettext('Eliminar QR: %(title)s') % {'title': qr_code.title},
         'section': 'training'
     }
     
@@ -41648,7 +41648,7 @@ def qr_toggle_public(request, pk):
         qr_code.save()
         
         status = "público" if qr_code.is_public else "privado"
-        messages.success(request, f'QR "{qr_code.title}" ahora es {status}.')
+        messages.success(request, gettext('QR "%(title)s" ahora es %(status)s.') % {'title': qr_code.title, 'status': status})
         
         return JsonResponse({
             'success': True,
@@ -41671,7 +41671,7 @@ def qr_public(request, token):
     
     context = {
         'qr_code': qr_code,
-        'page_title': f'QR: {qr_code.title}',
+        'page_title': gettext('QR: %(title)s') % {'title': qr_code.title},
         'is_public_view': True
     }
     
@@ -41911,11 +41911,11 @@ def database_backup(request):
                             arc_path = os.path.relpath(file_path, settings.BASE_DIR)
                             zipf.write(file_path, arc_path)
             
-            messages.success(request, f'Respaldo creado exitosamente: {backup_filename}')
+            messages.success(request, gettext('Respaldo creado exitosamente: %(backup_filename)s') % {'backup_filename': backup_filename})
             return redirect('database_backup')
             
         except Exception as e:
-            messages.error(request, f'Error al crear respaldo: {str(e)}')
+            messages.error(request, gettext('Error al crear respaldo: %(valor)s') % {'valor': str(e)})
     
     context = {
         'backups': backups,
@@ -42096,11 +42096,11 @@ def database_restore(request):
                     if os.path.exists(temp_extract_dir):
                         shutil.rmtree(temp_extract_dir)
             
-            messages.success(request, f'Base de datos restaurada exitosamente desde {backup_filename}')
-            messages.info(request, f'Se creó un respaldo de seguridad en {current_backup}')
+            messages.success(request, gettext('Base de datos restaurada exitosamente desde %(backup_filename)s') % {'backup_filename': backup_filename})
+            messages.info(request, gettext('Se creó un respaldo de seguridad en %(current_backup)s') % {'current_backup': current_backup})
             
         except Exception as e:
-            messages.error(request, f'Error al restaurar: {str(e)}')
+            messages.error(request, gettext('Error al restaurar: %(valor)s') % {'valor': str(e)})
         
         return redirect('database_restore')
     
@@ -42151,9 +42151,9 @@ def delete_backup(request, filename):
         if os.path.exists(backup_path) and filename.endswith('.zip'):
             try:
                 os.remove(backup_path)
-                messages.success(request, f'Respaldo {filename} eliminado exitosamente')
+                messages.success(request, gettext('Respaldo %(filename)s eliminado exitosamente') % {'filename': filename})
             except Exception as e:
-                messages.error(request, f'Error al eliminar respaldo: {str(e)}')
+                messages.error(request, gettext('Error al eliminar respaldo: %(valor)s') % {'valor': str(e)})
         else:
             messages.error(request, gettext('Archivo de respaldo no encontrado'))
     
@@ -42308,12 +42308,12 @@ def quotation_create_view(request):
                 quotation.service_end_date = service_end_date
             
             quotation.save()
-            messages.success(request, f'Cotización {quotation.sequence} creada exitosamente')
+            messages.success(request, gettext('Cotización %(sequence)s creada exitosamente') % {'sequence': quotation.sequence})
             return redirect('quotation_list')
         except Exception as e:
             import traceback
             traceback.print_exc()  # Imprimir stack trace completo en la consola
-            messages.error(request, f'Error al crear la cotización: {str(e)}')
+            messages.error(request, gettext('Error al crear la cotización: %(valor)s') % {'valor': str(e)})
     
     return render(request, 'tickets/quotation_form.html', get_form_context())
 
@@ -42340,7 +42340,7 @@ def quotation_detail_view(request, quotation_id):
     recent_views = quotation.views.all()[:10]
     
     context = {
-        'page_title': f'Cotización {quotation.sequence}',
+        'page_title': gettext('Cotización %(sequence)s') % {'sequence': quotation.sequence},
         'quotation': quotation,
         'currency_symbol': currency_symbol,
         'total_views': total_views,
@@ -42387,7 +42387,7 @@ def quotation_edit_view(request, quotation_id):
                 quotation.client_response_email = ''
                 quotation.client_response_comments = ''
                 quotation.client_response_date = None
-                messages.info(request, f'Estado del cliente cambiado a "Pendiente". Se habilitó nuevamente la respuesta pública.')
+                messages.info(request, gettext('Estado del cliente cambiado a "Pendiente". Se habilitó nuevamente la respuesta pública.'))
             
             quotation.client_status = new_client_status
             quotation.description = request.POST.get('description', '')
@@ -42410,13 +42410,13 @@ def quotation_edit_view(request, quotation_id):
             
             # Mensaje especial cuando se aprueba
             if quotation.status == 'approved':
-                messages.success(request, f'¡Excelente! La cotización {quotation.sequence} ha sido APROBADA exitosamente 🎉')
+                messages.success(request, gettext('¡Excelente! La cotización %(sequence)s ha sido APROBADA exitosamente 🎉') % {'sequence': quotation.sequence})
             else:
-                messages.success(request, f'Cotización {quotation.sequence} actualizada exitosamente')
+                messages.success(request, gettext('Cotización %(sequence)s actualizada exitosamente') % {'sequence': quotation.sequence})
                 
             return redirect('quotation_detail', quotation_id=quotation.id)
         except Exception as e:
-            messages.error(request, f'Error al actualizar la cotización: {str(e)}')
+            messages.error(request, gettext('Error al actualizar la cotización: %(valor)s') % {'valor': str(e)})
     
     companies = Company.objects.filter(is_active=True).order_by('name')
     salespeople = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
@@ -42428,7 +42428,7 @@ def quotation_edit_view(request, quotation_id):
     currency_symbol = config.get_currency_symbol() if config else '€'
     
     context = {
-        'page_title': f'Editar Cotización {quotation.sequence}',
+        'page_title': gettext('Editar Cotización %(sequence)s') % {'sequence': quotation.sequence},
         'quotation': quotation,
         'companies': companies,
         'salespeople': salespeople,
@@ -42474,14 +42474,14 @@ def quotation_duplicate_view(request, quotation_id):
         
         messages.success(
             request, 
-            f'Cotización duplicada exitosamente. Nueva cotización: {new_quotation.sequence}'
+            gettext('Cotización duplicada exitosamente. Nueva cotización: %(sequence)s') % {'sequence': new_quotation.sequence}
         )
         
         # Redirigir a la edición de la nueva cotización
         return redirect('quotation_edit', quotation_id=new_quotation.id)
         
     except Exception as e:
-        messages.error(request, f'Error al duplicar la cotización: {str(e)}')
+        messages.error(request, gettext('Error al duplicar la cotización: %(valor)s') % {'valor': str(e)})
         return redirect('quotation_detail', quotation_id=quotation_id)
 
 
@@ -42495,11 +42495,11 @@ def quotation_delete_view(request, quotation_id):
     if request.method == 'POST':
         sequence = quotation.sequence
         quotation.delete()
-        messages.success(request, f'Cotización {sequence} eliminada exitosamente')
+        messages.success(request, gettext('Cotización %(sequence)s eliminada exitosamente') % {'sequence': sequence})
         return redirect('quotation_list')
     
     context = {
-        'page_title': f'Eliminar Cotización {quotation.sequence}',
+        'page_title': gettext('Eliminar Cotización %(sequence)s') % {'sequence': quotation.sequence},
         'quotation': quotation,
     }
     
@@ -43299,7 +43299,7 @@ def quotation_template_create_new_view(request):
                     is_active=True
                 )
                 
-                messages.success(request, f'Plantilla "{title}" creada exitosamente.')
+                messages.success(request, gettext('Plantilla "%(title)s" creada exitosamente.') % {'title': title})
                 return redirect('quotation_template_detail', template_id=template.id)
                 
             except Quotation.DoesNotExist:
@@ -43347,7 +43347,7 @@ def quotation_template_edit_view(request, template_id):
                 template.is_active = is_active
                 template.save()
                 
-                messages.success(request, f'Plantilla "{title}" actualizada exitosamente.')
+                messages.success(request, gettext('Plantilla "%(title)s" actualizada exitosamente.') % {'title': title})
                 return redirect('quotation_template_detail', template_id=template.id)
                 
             except Quotation.DoesNotExist:
@@ -43359,7 +43359,7 @@ def quotation_template_edit_view(request, template_id):
     ).order_by('-created_at')[:50]  # Últimas 50
     
     context = {
-        'page_title': f'Editar Plantilla: {template.title}',
+        'page_title': gettext('Editar Plantilla: %(title)s') % {'title': template.title},
         'template': template,
         'quotations': quotations,
     }
@@ -43378,7 +43378,7 @@ def quotation_template_delete_view(request, template_id):
     if request.method == 'POST':
         template_title = template.title
         template.delete()
-        messages.success(request, f'Plantilla "{template_title}" eliminada exitosamente.')
+        messages.success(request, gettext('Plantilla "%(template_title)s" eliminada exitosamente.') % {'template_title': template_title})
         return redirect('quotation_template_list')
     
     # Si no es POST, redirigir a la lista
@@ -43401,10 +43401,10 @@ def quotation_template_create_view(request, quotation_id):
                 created_by=request.user
             )
             
-            messages.success(request, f'Plantilla pública creada exitosamente. Token: {template.public_token}')
+            messages.success(request, gettext('Plantilla pública creada exitosamente. Token: %(public_token)s') % {'public_token': template.public_token})
             return redirect('quotation_template_detail', template_id=template.id)
         except Exception as e:
-            messages.error(request, f'Error al crear la plantilla: {str(e)}')
+            messages.error(request, gettext('Error al crear la plantilla: %(valor)s') % {'valor': str(e)})
     
     # Obtener configuración del sistema para la moneda
     from .models import SystemConfiguration
@@ -43412,7 +43412,7 @@ def quotation_template_create_view(request, quotation_id):
     currency_symbol = config.get_currency_symbol() if config else '€'
     
     context = {
-        'page_title': f'Crear Plantilla Pública - {quotation.sequence}',
+        'page_title': gettext('Crear Plantilla Pública - %(sequence)s') % {'sequence': quotation.sequence},
         'quotation': quotation,
         'currency_symbol': currency_symbol,
     }
@@ -43474,7 +43474,7 @@ def quotation_template_detail_view(request, template_id):
     currency_symbol = config.get_currency_symbol() if config else '€'
     
     context = {
-        'page_title': f'Plantilla: {template.title}',
+        'page_title': gettext('Plantilla: %(title)s') % {'title': template.title},
         'template': template,
         'recent_requests': recent_requests,
         'currency_symbol': currency_symbol,
@@ -43521,7 +43521,7 @@ def quotation_template_public_form_view(request, token):
             return redirect('quotation_public_view', token=new_quotation.public_token)
             
         except Exception as e:
-            messages.error(request, f'Error al procesar su solicitud: {str(e)}')
+            messages.error(request, gettext('Error al procesar su solicitud: %(valor)s') % {'valor': str(e)})
     
     # Obtener configuración del sistema para la moneda
     from .models import SystemConfiguration
@@ -43547,7 +43547,7 @@ def quotation_template_toggle_active_view(request, template_id):
         template.save()
         
         status = "activada" if template.is_active else "desactivada"
-        messages.success(request, f'Plantilla {status} exitosamente')
+        messages.success(request, gettext('Plantilla %(status)s exitosamente') % {'status': status})
     
     return redirect('quotation_template_detail', template_id=template_id)
 
@@ -43778,9 +43778,9 @@ def crm_question_create(request):
             
             # Mensaje según el estado inicial
             if has_valid_answer:
-                messages.success(request, f'Pregunta #{question.sequence} creada y respondida exitosamente.')
+                messages.success(request, gettext('Pregunta #%(sequence)s creada y respondida exitosamente.') % {'sequence': question.sequence})
             else:
-                messages.success(request, f'Pregunta #{question.sequence} creada exitosamente (pendiente de respuesta).')
+                messages.success(request, gettext('Pregunta #%(sequence)s creada exitosamente (pendiente de respuesta).') % {'sequence': question.sequence})
             
             return redirect('crm_questions_list')
     else:
@@ -43805,7 +43805,7 @@ def crm_question_detail(request, pk):
         raise Http404("Pregunta no encontrada")
     
     context = {
-        'page_title': f'Pregunta #{question.sequence}',
+        'page_title': gettext('Pregunta #%(sequence)s') % {'sequence': question.sequence},
         'question': question,
     }
     
@@ -43850,21 +43850,21 @@ def crm_question_edit(request, pk):
             # Mensaje según la acción realizada
             if has_valid_answer:
                 if not was_answered_before:
-                    messages.success(request, f'Pregunta #{question.sequence} respondida exitosamente.')
+                    messages.success(request, gettext('Pregunta #%(sequence)s respondida exitosamente.') % {'sequence': question.sequence})
                 else:
-                    messages.success(request, f'Respuesta de la pregunta #{question.sequence} actualizada exitosamente.')
+                    messages.success(request, gettext('Respuesta de la pregunta #%(sequence)s actualizada exitosamente.') % {'sequence': question.sequence})
             else:
                 if was_answered_before:
-                    messages.warning(request, f'Pregunta #{question.sequence} marcada como pendiente (respuesta eliminada).')
+                    messages.warning(request, gettext('Pregunta #%(sequence)s marcada como pendiente (respuesta eliminada).') % {'sequence': question.sequence})
                 else:
-                    messages.success(request, f'Pregunta #{question.sequence} actualizada exitosamente.')
+                    messages.success(request, gettext('Pregunta #%(sequence)s actualizada exitosamente.') % {'sequence': question.sequence})
             
             return redirect('crm_questions_list')
     else:
         form = CrmQuestionForm(instance=question, user=request.user)
     
     context = {
-        'page_title': f'Editar Pregunta #{question.sequence}',
+        'page_title': gettext('Editar Pregunta #%(sequence)s') % {'sequence': question.sequence},
         'form': form,
         'question': question,
         'action': 'edit'
@@ -43885,11 +43885,11 @@ def crm_question_delete(request, pk):
     if request.method == 'POST':
         question_number = question.sequence
         question.delete()
-        messages.success(request, f'Pregunta #{question_number} eliminada exitosamente.')
+        messages.success(request, gettext('Pregunta #%(question_number)s eliminada exitosamente.') % {'question_number': question_number})
         return redirect('crm_questions_list')
     
     context = {
-        'page_title': f'Eliminar Pregunta #{question.sequence}',
+        'page_title': gettext('Eliminar Pregunta #%(sequence)s') % {'sequence': question.sequence},
         'question': question,
     }
     
@@ -43908,7 +43908,7 @@ def public_crm_questions(request, company_uuid):
     questions = CrmQuestion.objects.filter(company=company).order_by('-created_at')
     
     context = {
-        'page_title': f'Preguntas y Respuestas - {company.name}',
+        'page_title': gettext('Preguntas y Respuestas - %(name)s') % {'name': company.name},
         'company': company,
         'questions': questions,
     }
@@ -43938,7 +43938,7 @@ def public_crm_question_create(request, company_uuid):
         form = PublicCrmQuestionForm(company=company)
     
     context = {
-        'page_title': f'Enviar Pregunta - {company.name}',
+        'page_title': gettext('Enviar Pregunta - %(name)s') % {'name': company.name},
         'company': company,
         'form': form,
     }
@@ -44049,7 +44049,7 @@ def scheduled_task_delete(request, pk):
     if request.method == 'POST':
         task_name = task.name
         task.delete()
-        messages.success(request, f'Tarea programada "{task_name}" eliminada exitosamente.')
+        messages.success(request, gettext('Tarea programada "%(task_name)s" eliminada exitosamente.') % {'task_name': task_name})
         return redirect('scheduled_task_list')
     
     context = {
@@ -44067,7 +44067,7 @@ def scheduled_task_toggle_active(request, pk):
     task.save()
     
     status = "activada" if task.is_active else "desactivada"
-    messages.success(request, f'Tarea "{task.name}" {status} exitosamente.')
+    messages.success(request, gettext('Tarea "%(name)s" %(status)s exitosamente.') % {'name': task.name, 'status': status})
     
     return redirect('scheduled_task_list')
 
@@ -44131,7 +44131,7 @@ def scheduled_task_execute(request, pk):
             task.error_count += 1
             task.save()
             
-            messages.error(request, f'Error ejecutando la tarea: {error_message}')
+            messages.error(request, gettext('Error ejecutando la tarea: %(error_message)s') % {'error_message': error_message})
     
     return redirect('scheduled_task_detail', pk=pk)
 
@@ -44200,7 +44200,7 @@ def game_counter_create(request):
             except Company.DoesNotExist:
                 pass
         
-        messages.success(request, f'Juego "{name}" creado exitosamente.')
+        messages.success(request, gettext('Juego "%(name)s" creado exitosamente.') % {'name': name})
         return redirect('game_counter_detail', pk=game.pk)
     
     # GET request
@@ -44223,7 +44223,7 @@ def game_counter_detail(request, pk):
     
     context = {
         'game': game,
-        'page_title': f'Juego: {game.name}',
+        'page_title': gettext('Juego: %(name)s') % {'name': game.name},
     }
     
     return render(request, 'tickets/game_counter_detail.html', context)
@@ -44239,12 +44239,12 @@ def game_counter_delete(request, pk):
     if request.method == 'POST':
         game_name = game.name
         game.delete()
-        messages.success(request, f'Juego "{game_name}" eliminado exitosamente.')
+        messages.success(request, gettext('Juego "%(game_name)s" eliminado exitosamente.') % {'game_name': game_name})
         return redirect('game_counter_list')
     
     context = {
         'game': game,
-        'page_title': f'Eliminar: {game.name}',
+        'page_title': gettext('Eliminar: %(name)s') % {'name': game.name},
     }
     
     return render(request, 'tickets/game_counter_delete.html', context)
@@ -44258,7 +44258,7 @@ def game_counter_public(request, uuid):
     
     context = {
         'game': game,
-        'page_title': f'{game.player1_name} vs {game.player2_name}',
+        'page_title': gettext('%(player1_name)s vs %(player2_name)s') % {'player1_name': game.player1_name, 'player2_name': game.player2_name},
     }
     
     return render(request, 'tickets/game_counter_public.html', context)
@@ -44439,7 +44439,7 @@ def exercise_counter_create(request):
             except Company.DoesNotExist:
                 pass
         
-        messages.success(request, f'Ejercicio "{title}" creado exitosamente.')
+        messages.success(request, gettext('Ejercicio "%(title)s" creado exitosamente.') % {'title': title})
         return redirect('exercise_counter_detail', pk=exercise.pk)
     
     # GET request
@@ -44466,7 +44466,7 @@ def exercise_counter_detail(request, pk):
     context = {
         'exercise': exercise,
         'public_url': public_url,
-        'page_title': f'Ejercicio: {exercise.title}',
+        'page_title': gettext('Ejercicio: %(title)s') % {'title': exercise.title},
     }
     
     return render(request, 'tickets/exercise_counter_detail.html', context)
@@ -44486,7 +44486,7 @@ def exercise_counter_delete(request, pk):
     
     context = {
         'exercise': exercise,
-        'page_title': f'Eliminar: {exercise.title}',
+        'page_title': gettext('Eliminar: %(title)s') % {'title': exercise.title},
     }
     
     return render(request, 'tickets/exercise_counter_delete.html', context)
@@ -44725,7 +44725,7 @@ def sport_goal_create(request):
         
         sport_goal.save()
         
-        messages.success(request, f'Objetivo "{title}" creado exitosamente.')
+        messages.success(request, gettext('Objetivo "%(title)s" creado exitosamente.') % {'title': title})
         return redirect('sport_goal_detail', pk=sport_goal.pk)
     
     return render(request, 'tickets/sport_goal_create.html')
@@ -44785,7 +44785,7 @@ def sport_goal_delete(request, pk):
     
     if request.method == 'POST':
         sport_goal.delete()
-        messages.success(request, f'Objetivo "{sport_goal.title}" eliminado exitosamente.')
+        messages.success(request, gettext('Objetivo "%(title)s" eliminado exitosamente.') % {'title': sport_goal.title})
         return redirect('sport_goal_list')
     
     context = {'sport_goal': sport_goal}
@@ -44986,7 +44986,7 @@ def event_detail(request, pk):
     
     context = {
         'event': event,
-        'page_title': f'Evento: {event.title}',
+        'page_title': gettext('Evento: %(title)s') % {'title': event.title},
     }
     
     return render(request, 'tickets/event_detail.html', context)
@@ -45198,7 +45198,7 @@ def trip_edit(request, pk):
     context = {
         'form': form,
         'trip': trip,
-        'page_title': f'Editar {trip.title}',
+        'page_title': gettext('Editar %(title)s') % {'title': trip.title},
     }
     
     return render(request, 'tickets/trip_form.html', context)
@@ -45218,7 +45218,7 @@ def trip_delete(request, pk):
     
     context = {
         'trip': trip,
-        'page_title': f'Eliminar {trip.title}',
+        'page_title': gettext('Eliminar %(title)s') % {'title': trip.title},
     }
     
     return render(request, 'tickets/trip_delete.html', context)
@@ -45502,7 +45502,7 @@ def web_counter_create(request):
             domain=domain
         )
         
-        messages.success(request, f'Contador "{counter.title}" creado exitosamente')
+        messages.success(request, gettext('Contador "%(title)s" creado exitosamente') % {'title': counter.title})
         return redirect('web_counter_detail', pk=counter.pk)
     
     context = {
@@ -45583,7 +45583,7 @@ def web_counter_detail(request, pk):
         'last_30_days': json.dumps(last_30_days),
         'recent_visits': recent_visits,
         'script_code': counter.get_script_html(request),
-        'page_title': f'Contador: {counter.title}',
+        'page_title': gettext('Contador: %(title)s') % {'title': counter.title},
     }
     return render(request, 'tickets/web_counter_detail.html', context)
 
@@ -45606,7 +45606,7 @@ def web_counter_edit(request, pk):
     
     context = {
         'counter': counter,
-        'page_title': f'Editar: {counter.title}',
+        'page_title': gettext('Editar: %(title)s') % {'title': counter.title},
     }
     return render(request, 'tickets/web_counter_form.html', context)
 
@@ -45621,12 +45621,12 @@ def web_counter_delete(request, pk):
     if request.method == 'POST':
         title = counter.title
         counter.delete()
-        messages.success(request, f'Contador "{title}" eliminado exitosamente')
+        messages.success(request, gettext('Contador "%(title)s" eliminado exitosamente') % {'title': title})
         return redirect('web_counter_list')
     
     context = {
         'counter': counter,
-        'page_title': f'Eliminar: {counter.title}',
+        'page_title': gettext('Eliminar: %(title)s') % {'title': counter.title},
     }
     return render(request, 'tickets/web_counter_delete.html', context)
 
@@ -45640,7 +45640,7 @@ def web_counter_test_page(request, token):
     context = {
         'counter': counter,
         'script_code': counter.get_script_html(request),
-        'page_title': f'Prueba: {counter.title}',
+        'page_title': gettext('Prueba: %(title)s') % {'title': counter.title},
     }
     return render(request, 'tickets/web_counter_test_page.html', context)
 
@@ -45800,7 +45800,7 @@ def quick_quote_detail(request, pk):
     context = {
         'quote': quote,
         'public_url': quote.get_public_url(request),
-        'page_title': f'Cotización: {quote.title}',
+        'page_title': gettext('Cotización: %(title)s') % {'title': quote.title},
         'total_views': total_views,
         'unique_ips': unique_ips,
         'recent_views': recent_views,
@@ -45840,7 +45840,7 @@ def quick_quote_edit(request, pk):
     context = {
         'quote': quote,
         'days_remaining': days_remaining,
-        'page_title': f'Editar: {quote.title}',
+        'page_title': gettext('Editar: %(title)s') % {'title': quote.title},
     }
     return render(request, 'tickets/quick_quote_form.html', context)
 
@@ -45855,12 +45855,12 @@ def quick_quote_delete(request, pk):
     if request.method == 'POST':
         title = quote.title
         quote.delete()
-        messages.success(request, f'Cotización "{title}" eliminada exitosamente')
+        messages.success(request, gettext('Cotización "%(title)s" eliminada exitosamente') % {'title': title})
         return redirect('quick_quote_list')
     
     context = {
         'quote': quote,
-        'page_title': f'Eliminar: {quote.title}',
+        'page_title': gettext('Eliminar: %(title)s') % {'title': quote.title},
     }
     return render(request, 'tickets/quick_quote_delete.html', context)
 
@@ -45952,7 +45952,7 @@ def quick_quote_public(request, token):
             
             messages.success(
                 request, 
-                f'Cotización {"aceptada" if action == "accept" else "rechazada"} exitosamente'
+                gettext('Cotización %(valor)s exitosamente') % {'valor': 'aceptada' if action == 'accept' else 'rechazada'}
             )
     
     # Obtener otras cotizaciones del mismo cliente
@@ -45984,7 +45984,7 @@ def quick_quote_public(request, token):
     
     context = {
         'quote': quote,
-        'page_title': f'Cotización: {quote.title}',
+        'page_title': gettext('Cotización: %(title)s') % {'title': quote.title},
         'other_quotes': other_quotes,
         'comments': comments,
     }
@@ -46058,7 +46058,7 @@ def quick_quote_public_list(request, client_name):
         'accepted_quotes': accepted_quotes,
         'rejected_quotes': rejected_quotes,
         'expired_quotes': expired_quotes,
-        'page_title': f'Cotizaciones de {client_name_decoded}',
+        'page_title': gettext('Cotizaciones de %(client_name_decoded)s') % {'client_name_decoded': client_name_decoded},
     }
     return render(request, 'tickets/quick_quote_public_list.html', context)
 
@@ -46182,7 +46182,7 @@ def support_contract_detail(request, pk):
         'overdue_payments': overdue_payments,
         'total_paid': total_paid,
         'total_pending': total_pending,
-        'page_title': f'Contrato: {contract.sequence_number}',
+        'page_title': gettext('Contrato: %(sequence_number)s') % {'sequence_number': contract.sequence_number},
     }
     return render(request, 'tickets/support_contract_detail.html', context)
 
@@ -46218,7 +46218,7 @@ def support_contract_edit(request, pk):
     context = {
         'contract': contract,
         'companies': companies,
-        'page_title': f'Editar: {contract.sequence_number}',
+        'page_title': gettext('Editar: %(sequence_number)s') % {'sequence_number': contract.sequence_number},
     }
     return render(request, 'tickets/support_contract_form.html', context)
 
@@ -46318,12 +46318,12 @@ def support_contract_delete(request, pk):
     if request.method == 'POST':
         sequence_number = contract.sequence_number
         contract.delete()
-        messages.success(request, f'Contrato "{sequence_number}" eliminado exitosamente')
+        messages.success(request, gettext('Contrato "%(sequence_number)s" eliminado exitosamente') % {'sequence_number': sequence_number})
         return redirect('support_contract_list')
     
     context = {
         'contract': contract,
-        'page_title': f'Eliminar: {contract.sequence_number}',
+        'page_title': gettext('Eliminar: %(sequence_number)s') % {'sequence_number': contract.sequence_number},
     }
     return render(request, 'tickets/support_contract_delete.html', context)
 
@@ -46348,13 +46348,13 @@ def support_contract_payment_update(request, pk, payment_id):
         
         payment.save()
         
-        messages.success(request, f'Pago actualizado exitosamente')
+        messages.success(request, gettext('Pago actualizado exitosamente'))
         return redirect('support_contract_detail', pk=contract.pk)
     
     context = {
         'contract': contract,
         'payment': payment,
-        'page_title': f'Actualizar Pago - Cuota {payment.payment_number}',
+        'page_title': gettext('Actualizar Pago - Cuota %(payment_number)s') % {'payment_number': payment.payment_number},
     }
     return render(request, 'tickets/support_contract_payment_form.html', context)
 
@@ -46388,7 +46388,7 @@ def support_contract_public(request, token):
     context = {
         'contract': contract,
         'payments': payments,
-        'page_title': f'Contrato: {contract.sequence_number}',
+        'page_title': gettext('Contrato: %(sequence_number)s') % {'sequence_number': contract.sequence_number},
     }
     return render(request, 'tickets/support_contract_public.html', context)
 
@@ -46820,7 +46820,7 @@ def multi_measurement_detail(request, pk):
         'measurement': measurement,
         'records': records,
         'chart_data': json.dumps(chart_data),
-        'page_title': f'Medición: {measurement.title}',
+        'page_title': gettext('Medición: %(title)s') % {'title': measurement.title},
     }
     return render(request, 'tickets/multi_measurement_detail.html', context)
 
@@ -46910,7 +46910,7 @@ def multi_measurement_public(request, token):
     context = {
         'measurement': measurement,
         'last_record': last_record,
-        'page_title': f'Registro de Mediciones: {measurement.title}',
+        'page_title': gettext('Registro de Mediciones: %(title)s') % {'title': measurement.title},
     }
     return render(request, 'tickets/multi_measurement_public.html', context)
 
@@ -46978,7 +46978,7 @@ def multi_measurement_public_chart(request, token):
         'measurement': measurement,
         'records': records,
         'chart_data': json.dumps(chart_data),
-        'page_title': f'{measurement.title} - Gráfico',
+        'page_title': gettext('%(title)s - Gráfico') % {'title': measurement.title},
     }
     return render(request, 'tickets/multi_measurement_public_chart.html', context)
 
@@ -47013,7 +47013,7 @@ def budget_create(request):
             budget = form.save(commit=False)
             budget.user = request.user
             budget.save()
-            messages.success(request, f'Presupuesto "{budget.name}" creado exitosamente.')
+            messages.success(request, gettext('Presupuesto "%(name)s" creado exitosamente.') % {'name': budget.name})
             return redirect('budget_detail', pk=budget.pk)
     else:
         form = PersonalBudgetForm()
@@ -47159,7 +47159,7 @@ def budget_edit(request, pk):
         form = PersonalBudgetForm(request.POST, instance=budget)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Presupuesto "{budget.name}" actualizado exitosamente.')
+            messages.success(request, gettext('Presupuesto "%(name)s" actualizado exitosamente.') % {'name': budget.name})
             return redirect('budget_detail', pk=budget.pk)
     else:
         form = PersonalBudgetForm(instance=budget)
@@ -47167,7 +47167,7 @@ def budget_edit(request, pk):
     context = {
         'form': form,
         'budget': budget,
-        'page_title': f'Editar Presupuesto: {budget.name}',
+        'page_title': gettext('Editar Presupuesto: %(name)s') % {'name': budget.name},
     }
     return render(request, 'tickets/budget_form.html', context)
 
@@ -47180,12 +47180,12 @@ def budget_delete(request, pk):
     if request.method == 'POST':
         budget_name = budget.name
         budget.delete()
-        messages.success(request, f'Presupuesto "{budget_name}" eliminado exitosamente.')
+        messages.success(request, gettext('Presupuesto "%(budget_name)s" eliminado exitosamente.') % {'budget_name': budget_name})
         return redirect('budget_list')
     
     context = {
         'budget': budget,
-        'page_title': f'Eliminar Presupuesto: {budget.name}',
+        'page_title': gettext('Eliminar Presupuesto: %(name)s') % {'name': budget.name},
     }
     return render(request, 'tickets/budget_delete.html', context)
 
@@ -47201,7 +47201,7 @@ def budget_income_item_create(request, budget_pk):
             item = form.save(commit=False)
             item.budget = budget
             item.save()
-            messages.success(request, f'Partida de ingreso "{item.name}" agregada.')
+            messages.success(request, gettext('Partida de ingreso "%(name)s" agregada.') % {'name': item.name})
             return redirect('budget_detail', pk=budget.pk)
     else:
         form = BudgetIncomeItemForm()
@@ -47210,7 +47210,7 @@ def budget_income_item_create(request, budget_pk):
         'form': form,
         'budget': budget,
         'item_type': 'ingreso',
-        'page_title': f'Agregar Ingreso - {budget.name}',
+        'page_title': gettext('Agregar Ingreso - %(name)s') % {'name': budget.name},
     }
     return render(request, 'tickets/budget_item_form.html', context)
 
@@ -47226,7 +47226,7 @@ def budget_expense_item_create(request, budget_pk):
             item = form.save(commit=False)
             item.budget = budget
             item.save()
-            messages.success(request, f'Partida de egreso "{item.name}" agregada.')
+            messages.success(request, gettext('Partida de egreso "%(name)s" agregada.') % {'name': item.name})
             return redirect('budget_detail', pk=budget.pk)
     else:
         form = BudgetExpenseItemForm()
@@ -47235,7 +47235,7 @@ def budget_expense_item_create(request, budget_pk):
         'form': form,
         'budget': budget,
         'item_type': 'egreso',
-        'page_title': f'Agregar Egreso - {budget.name}',
+        'page_title': gettext('Agregar Egreso - %(name)s') % {'name': budget.name},
     }
     return render(request, 'tickets/budget_item_form.html', context)
 
@@ -47250,7 +47250,7 @@ def budget_income_item_edit(request, budget_pk, item_pk):
         form = BudgetIncomeItemForm(request.POST, instance=item)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Partida de ingreso "{item.name}" actualizada.')
+            messages.success(request, gettext('Partida de ingreso "%(name)s" actualizada.') % {'name': item.name})
             return redirect('budget_detail', pk=budget.pk)
     else:
         form = BudgetIncomeItemForm(instance=item)
@@ -47260,7 +47260,7 @@ def budget_income_item_edit(request, budget_pk, item_pk):
         'budget': budget,
         'item': item,
         'item_type': 'ingreso',
-        'page_title': f'Editar Ingreso - {item.name}',
+        'page_title': gettext('Editar Ingreso - %(name)s') % {'name': item.name},
     }
     return render(request, 'tickets/budget_item_form.html', context)
 
@@ -47275,7 +47275,7 @@ def budget_expense_item_edit(request, budget_pk, item_pk):
         form = BudgetExpenseItemForm(request.POST, instance=item)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Partida de egreso "{item.name}" actualizada.')
+            messages.success(request, gettext('Partida de egreso "%(name)s" actualizada.') % {'name': item.name})
             return redirect('budget_detail', pk=budget.pk)
     else:
         form = BudgetExpenseItemForm(instance=item)
@@ -47285,7 +47285,7 @@ def budget_expense_item_edit(request, budget_pk, item_pk):
         'budget': budget,
         'item': item,
         'item_type': 'egreso',
-        'page_title': f'Editar Egreso - {item.name}',
+        'page_title': gettext('Editar Egreso - %(name)s') % {'name': item.name},
     }
     return render(request, 'tickets/budget_item_form.html', context)
 
@@ -47299,7 +47299,7 @@ def budget_income_item_delete(request, budget_pk, item_pk):
     if request.method == 'POST':
         item_name = item.name
         item.delete()
-        messages.success(request, f'Partida de ingreso "{item_name}" eliminada.')
+        messages.success(request, gettext('Partida de ingreso "%(item_name)s" eliminada.') % {'item_name': item_name})
         return redirect('budget_detail', pk=budget.pk)
     
     return redirect('budget_detail', pk=budget.pk)
@@ -47314,7 +47314,7 @@ def budget_expense_item_delete(request, budget_pk, item_pk):
     if request.method == 'POST':
         item_name = item.name
         item.delete()
-        messages.success(request, f'Partida de egreso "{item_name}" eliminada.')
+        messages.success(request, gettext('Partida de egreso "%(item_name)s" eliminada.') % {'item_name': item_name})
         return redirect('budget_detail', pk=budget.pk)
     
     return redirect('budget_detail', pk=budget.pk)
@@ -47333,7 +47333,7 @@ def budget_transaction_create(request, budget_pk):
             transaction.save()
             
             trans_type = 'ingreso' if transaction.transaction_type == 'income' else 'egreso'
-            messages.success(request, f'Transacción de {trans_type} registrada por ${transaction.amount}.')
+            messages.success(request, gettext('Transacción de %(trans_type)s registrada por $%(amount)s.') % {'trans_type': trans_type, 'amount': transaction.amount})
             return redirect('budget_detail', pk=budget.pk)
     else:
         form = BudgetTransactionForm(budget=budget)
@@ -47341,7 +47341,7 @@ def budget_transaction_create(request, budget_pk):
     context = {
         'form': form,
         'budget': budget,
-        'page_title': f'Registrar Transacción - {budget.name}',
+        'page_title': gettext('Registrar Transacción - %(name)s') % {'name': budget.name},
     }
     return render(request, 'tickets/budget_transaction_form.html', context)
 
@@ -47356,7 +47356,7 @@ def budget_transaction_delete(request, budget_pk, trans_pk):
         trans_type = 'ingreso' if transaction.transaction_type == 'income' else 'egreso'
         amount = transaction.amount
         transaction.delete()
-        messages.success(request, f'Transacción de {trans_type} por ${amount} eliminada.')
+        messages.success(request, gettext('Transacción de %(trans_type)s por $%(amount)s eliminada.') % {'trans_type': trans_type, 'amount': amount})
         return redirect('budget_detail', pk=budget.pk)
     
     return redirect('budget_detail', pk=budget.pk)
@@ -47390,7 +47390,7 @@ def dynamic_table_create(request):
             table = form.save(commit=False)
             table.created_by = request.user
             table.save()
-            messages.success(request, f'Tabla "{table.name}" creada exitosamente.')
+            messages.success(request, gettext('Tabla "%(name)s" creada exitosamente.') % {'name': table.name})
             return redirect('dynamic_table_detail', pk=table.pk)
     else:
         form = DynamicTableForm()
@@ -47424,7 +47424,7 @@ def dynamic_table_edit(request, pk):
         form = DynamicTableForm(request.POST, instance=table)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Tabla "{table.name}" actualizada exitosamente.')
+            messages.success(request, gettext('Tabla "%(name)s" actualizada exitosamente.') % {'name': table.name})
             return redirect('dynamic_table_detail', pk=table.pk)
     else:
         form = DynamicTableForm(instance=table)
@@ -47443,7 +47443,7 @@ def dynamic_table_delete(request, pk):
     if request.method == 'POST':
         name = table.display_name
         table.delete()
-        messages.success(request, f'Tabla "{name}" eliminada exitosamente.')
+        messages.success(request, gettext('Tabla "%(name)s" eliminada exitosamente.') % {'name': name})
         return redirect('dynamic_table_list')
     
     return redirect('dynamic_table_detail', pk=pk)
@@ -47458,7 +47458,7 @@ def dynamic_table_regenerate_token(request, pk):
     
     if request.method == 'POST':
         table.regenerate_token()
-        messages.success(request, f'Token regenerado para "{table.display_name}".')
+        messages.success(request, gettext('Token regenerado para "%(display_name)s".') % {'display_name': table.display_name})
         return redirect('dynamic_table_detail', pk=pk)
     
     return redirect('dynamic_table_detail', pk=pk)
@@ -47478,7 +47478,7 @@ def dynamic_table_field_create(request, table_pk):
             field = form.save(commit=False)
             field.table = table
             field.save()
-            messages.success(request, f'Campo "{field.name}" creado exitosamente.')
+            messages.success(request, gettext('Campo "%(name)s" creado exitosamente.') % {'name': field.name})
             return redirect('dynamic_table_detail', pk=table.pk)
     else:
         form = DynamicTableFieldForm()
@@ -47500,7 +47500,7 @@ def dynamic_table_field_edit(request, table_pk, field_pk):
         form = DynamicTableFieldForm(request.POST, instance=field)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Campo "{field.name}" actualizado exitosamente.')
+            messages.success(request, gettext('Campo "%(name)s" actualizado exitosamente.') % {'name': field.name})
             return redirect('dynamic_table_detail', pk=table.pk)
     else:
         form = DynamicTableFieldForm(instance=field)
@@ -47520,7 +47520,7 @@ def dynamic_table_field_delete(request, table_pk, field_pk):
     if request.method == 'POST':
         name = field.display_name
         field.delete()
-        messages.success(request, f'Campo "{name}" eliminado exitosamente.')
+        messages.success(request, gettext('Campo "%(name)s" eliminado exitosamente.') % {'name': name})
         return redirect('dynamic_table_detail', pk=table.pk)
     
     return redirect('dynamic_table_detail', pk=table.pk)
@@ -47803,7 +47803,7 @@ def dynamic_table_record_delete(request, table_pk, record_pk):
     
     if request.method == 'POST':
         record.delete()
-        messages.success(request, f'Registro #{record_pk} eliminado exitosamente.')
+        messages.success(request, gettext('Registro #%(record_pk)s eliminado exitosamente.') % {'record_pk': record_pk})
         return redirect('dynamic_table_records', table_pk=table.pk)
     
     return redirect('dynamic_table_records', table_pk=table.pk)
@@ -47884,7 +47884,7 @@ def dynamic_table_record_create(request, table_pk):
                 data=data,
                 created_by_ip=ip
             )
-            messages.success(request, f'Registro #{record.id} creado exitosamente.')
+            messages.success(request, gettext('Registro #%(id)s creado exitosamente.') % {'id': record.id})
         
         return redirect('dynamic_table_records', table_pk=table.pk)
     
@@ -47957,7 +47957,7 @@ def dynamic_table_record_update(request, table_pk, record_pk):
             # Actualizar registro
             record.data = data
             record.save()
-            messages.success(request, f'Registro #{record.id} actualizado exitosamente.')
+            messages.success(request, gettext('Registro #%(id)s actualizado exitosamente.') % {'id': record.id})
         
         return redirect('dynamic_table_records', table_pk=table.pk)
 
@@ -48753,7 +48753,7 @@ def frd_create_view(request):
             # Generar secuencia automática
             document.sequence = FunctionalRequirementDocument.generate_sequence()
             document.save()
-            messages.success(request, f'Documento {document.sequence} "{document.title}" creado exitosamente.')
+            messages.success(request, gettext('Documento %(sequence)s "%(title)s" creado exitosamente.') % {'sequence': document.sequence, 'title': document.title})
             return redirect('frd_detail', pk=document.pk)
     else:
         form = FunctionalRequirementDocumentForm()
@@ -48796,7 +48796,7 @@ def frd_detail_view(request, pk):
         requirement.title = request.POST.get('title', requirement.title)
         requirement.description = request.POST.get('description', requirement.description)
         requirement.save()
-        messages.success(request, f'Requerimiento #{requirement.number} actualizado.')
+        messages.success(request, gettext('Requerimiento #%(number)s actualizado.') % {'number': requirement.number})
         return redirect('frd_detail', pk=document.pk)
     
     # Manejar edición de descripción general
@@ -48817,7 +48817,7 @@ def frd_detail_view(request, pk):
             requirement.approved_by_name = ''
             requirement.approved_by_email = ''
             requirement.save()
-            messages.info(request, f'Requerimiento #{requirement.number} marcado como no aprobado.')
+            messages.info(request, gettext('Requerimiento #%(number)s marcado como no aprobado.') % {'number': requirement.number})
         else:
             # Aprobar
             requirement.is_approved = True
@@ -48825,7 +48825,7 @@ def frd_detail_view(request, pk):
             requirement.approved_by_name = request.user.get_full_name() or request.user.username
             requirement.approved_by_email = request.user.email
             requirement.save()
-            messages.success(request, f'Requerimiento #{requirement.number} aprobado.')
+            messages.success(request, gettext('Requerimiento #%(number)s aprobado.') % {'number': requirement.number})
         return redirect('frd_detail', pk=document.pk)
     else:
         form = FunctionalRequirementForm()
@@ -48836,7 +48836,7 @@ def frd_detail_view(request, pk):
         'document': document,
         'requirements': requirements,
         'form': form,
-        'page_title': f'DRF: {document.sequence}',
+        'page_title': gettext('DRF: %(sequence)s') % {'sequence': document.sequence},
         'submenu': get_crm_submenu(request, 'frd')
     }
     
@@ -48928,7 +48928,7 @@ def public_frd_view(request, token):
                     name=approval_form.cleaned_data['approver_name'],
                     email=approval_form.cleaned_data['approver_email']
                 )
-                messages.success(request, f'Requerimiento #{requirement.number} aprobado exitosamente.')
+                messages.success(request, gettext('Requerimiento #%(number)s aprobado exitosamente.') % {'number': requirement.number})
                 return redirect('public_frd', token=token)
         
         # Manejar edición de descripción general
@@ -48946,7 +48946,7 @@ def public_frd_view(request, token):
             edit_form = FunctionalRequirementPublicEditForm(request.POST, instance=requirement)
             if edit_form.is_valid():
                 edit_form.save()
-                messages.success(request, f'Requerimiento #{requirement.number} editado exitosamente.')
+                messages.success(request, gettext('Requerimiento #%(number)s editado exitosamente.') % {'number': requirement.number})
                 return redirect('public_frd', token=token)
         
         # Manejar comentario
@@ -48963,7 +48963,7 @@ def public_frd_view(request, token):
                     author_email=comment_form.cleaned_data['author_email'],
                     comment=comment_form.cleaned_data['comment']
                 )
-                messages.success(request, f'Comentario agregado al Requerimiento #{requirement.number}.')
+                messages.success(request, gettext('Comentario agregado al Requerimiento #%(number)s.') % {'number': requirement.number})
                 return redirect('public_frd', token=token)
     
     approval_form = FunctionalRequirementApprovalForm()
@@ -48976,7 +48976,7 @@ def public_frd_view(request, token):
         'approval_form': approval_form,
         'review_form': review_form,
         'comment_form': comment_form,
-        'page_title': f'DRF: {document.sequence}',
+        'page_title': gettext('DRF: %(sequence)s') % {'sequence': document.sequence},
         'is_public_view': True
     }
     
@@ -49119,14 +49119,14 @@ def frd_requirement_create_ticket(request, requirement_pk):
         # Generar número de ticket
         ticket.generate_ticket_number()
         
-        messages.success(request, f'Ticket {ticket.ticket_number} creado exitosamente desde el requerimiento #{requirement.number}.')
+        messages.success(request, gettext('Ticket %(ticket_number)s creado exitosamente desde el requerimiento #%(number)s.') % {'ticket_number': ticket.ticket_number, 'number': requirement.number})
         return redirect('ticket_detail', pk=ticket.id)
     
     # GET - Mostrar formulario de confirmación
     context = {
         'requirement': requirement,
         'document': document,
-        'page_title': f'Crear Ticket desde Requerimiento #{requirement.number}'
+        'page_title': gettext('Crear Ticket desde Requerimiento #%(number)s') % {'number': requirement.number}
     }
     
     return render(request, 'tickets/frd_requirement_create_ticket.html', context)
@@ -49159,7 +49159,7 @@ def access_group_create(request):
             created_by=request.user
         )
         
-        messages.success(request, f'Grupo "{group.title}" creado exitosamente')
+        messages.success(request, gettext('Grupo "%(title)s" creado exitosamente') % {'title': group.title})
         return redirect('access_group_detail', pk=group.id)
     
     context = {
@@ -49177,7 +49177,7 @@ def access_group_detail(request, pk):
     context = {
         'group': group,
         'links': links,
-        'page_title': f'Grupo: {group.title}'
+        'page_title': gettext('Grupo: %(title)s') % {'title': group.title}
     }
     return render(request, 'tickets/access_group_detail.html', context)
 
@@ -49192,12 +49192,12 @@ def access_group_edit(request, pk):
         group.description = request.POST.get('description', '')
         group.save()
         
-        messages.success(request, f'Grupo "{group.title}" actualizado exitosamente')
+        messages.success(request, gettext('Grupo "%(title)s" actualizado exitosamente') % {'title': group.title})
         return redirect('access_group_detail', pk=group.id)
     
     context = {
         'group': group,
-        'page_title': f'Editar: {group.title}'
+        'page_title': gettext('Editar: %(title)s') % {'title': group.title}
     }
     return render(request, 'tickets/access_group_form.html', context)
 
@@ -49210,12 +49210,12 @@ def access_group_delete(request, pk):
     if request.method == 'POST':
         title = group.title
         group.delete()
-        messages.success(request, f'Grupo "{title}" eliminado exitosamente')
+        messages.success(request, gettext('Grupo "%(title)s" eliminado exitosamente') % {'title': title})
         return redirect('access_group_list')
     
     context = {
         'group': group,
-        'page_title': f'Eliminar Grupo'
+        'page_title': gettext('Eliminar Grupo')
     }
     return render(request, 'tickets/access_group_delete.html', context)
 
@@ -49230,7 +49230,7 @@ def access_group_toggle_public(request, pk):
         group.save()
         
         status = 'público' if group.is_public else 'privado'
-        messages.success(request, f'Grupo "{group.title}" ahora es {status}')
+        messages.success(request, gettext('Grupo "%(title)s" ahora es %(status)s') % {'title': group.title, 'status': status})
     
     return redirect('access_group_detail', pk=group.id)
 
@@ -49256,12 +49256,12 @@ def access_link_create(request, group_pk):
             color=color
         )
         
-        messages.success(request, f'Enlace "{link.title}" agregado exitosamente')
+        messages.success(request, gettext('Enlace "%(title)s" agregado exitosamente') % {'title': link.title})
         return redirect('access_group_detail', pk=group.id)
     
     context = {
         'group': group,
-        'page_title': f'Agregar Enlace a {group.title}'
+        'page_title': gettext('Agregar Enlace a %(title)s') % {'title': group.title}
     }
     return render(request, 'tickets/access_link_form.html', context)
 
@@ -49279,13 +49279,13 @@ def access_link_edit(request, pk):
         link.color = request.POST.get('color', 'primary')
         link.save()
         
-        messages.success(request, f'Enlace "{link.title}" actualizado exitosamente')
+        messages.success(request, gettext('Enlace "%(title)s" actualizado exitosamente') % {'title': link.title})
         return redirect('access_group_detail', pk=link.group.id)
     
     context = {
         'link': link,
         'group': link.group,
-        'page_title': f'Editar Enlace'
+        'page_title': gettext('Editar Enlace')
     }
     return render(request, 'tickets/access_link_form.html', context)
 
@@ -49299,7 +49299,7 @@ def access_link_delete(request, pk):
     if request.method == 'POST':
         title = link.title
         link.delete()
-        messages.success(request, f'Enlace "{title}" eliminado exitosamente')
+        messages.success(request, gettext('Enlace "%(title)s" eliminado exitosamente') % {'title': title})
         return redirect('access_group_detail', pk=group_id)
     
     context = {
@@ -49346,7 +49346,7 @@ def task_plan_create(request):
             plan = form.save(commit=False)
             plan.created_by = request.user
             plan.save()
-            messages.success(request, f'Plan "{plan.title}" creado exitosamente')
+            messages.success(request, gettext('Plan "%(title)s" creado exitosamente') % {'title': plan.title})
             return redirect('task_plan_detail', pk=plan.id)
     else:
         form = TaskPlanForm()
@@ -49367,7 +49367,7 @@ def task_plan_detail(request, pk):
     context = {
         'plan': plan,
         'days': days,
-        'page_title': f'Plan: {plan.title}'
+        'page_title': gettext('Plan: %(title)s') % {'title': plan.title}
     }
     return render(request, 'tickets/task_plan_detail.html', context)
 
@@ -49382,12 +49382,12 @@ def task_plan_edit(request, pk):
         plan.description = request.POST.get('description', '')
         plan.save()
         
-        messages.success(request, f'Plan "{plan.title}" actualizado exitosamente')
+        messages.success(request, gettext('Plan "%(title)s" actualizado exitosamente') % {'title': plan.title})
         return redirect('task_plan_detail', pk=plan.id)
     
     context = {
         'plan': plan,
-        'page_title': f'Editar: {plan.title}'
+        'page_title': gettext('Editar: %(title)s') % {'title': plan.title}
     }
     return render(request, 'tickets/task_plan_form.html', context)
 
@@ -49400,7 +49400,7 @@ def task_plan_delete(request, pk):
     if request.method == 'POST':
         title = plan.title
         plan.delete()
-        messages.success(request, f'Plan "{title}" eliminado exitosamente')
+        messages.success(request, gettext('Plan "%(title)s" eliminado exitosamente') % {'title': title})
         return redirect('task_plan_list')
     
     context = {
@@ -49420,7 +49420,7 @@ def task_plan_toggle_public(request, pk):
         plan.save()
         
         status = 'activada' if plan.is_public else 'desactivada'
-        messages.success(request, f'Vista pública {status}')
+        messages.success(request, gettext('Vista pública %(status)s') % {'status': status})
     
     return redirect('task_plan_detail', pk=plan.id)
 
@@ -49439,7 +49439,7 @@ def task_plan_day_create(request, plan_pk):
             last_order = plan.days.aggregate(models.Max('order'))['order__max'] or 0
             day.order = last_order + 1
             day.save()
-            messages.success(request, f'Día "{day.title}" agregado exitosamente')
+            messages.success(request, gettext('Día "%(title)s" agregado exitosamente') % {'title': day.title})
             return redirect('task_plan_detail', pk=plan.id)
     else:
         form = TaskPlanDayForm()
@@ -49447,7 +49447,7 @@ def task_plan_day_create(request, plan_pk):
     context = {
         'form': form,
         'plan': plan,
-        'page_title': f'Agregar Día a {plan.title}'
+        'page_title': gettext('Agregar Día a %(title)s') % {'title': plan.title}
     }
     return render(request, 'tickets/task_plan_day_form.html', context)
 
@@ -49461,7 +49461,7 @@ def task_plan_day_edit(request, pk):
         form = TaskPlanDayForm(request.POST, instance=day)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Día "{day.title}" actualizado exitosamente')
+            messages.success(request, gettext('Día "%(title)s" actualizado exitosamente') % {'title': day.title})
             return redirect('task_plan_detail', pk=day.plan.id)
     else:
         form = TaskPlanDayForm(instance=day)
@@ -49470,7 +49470,7 @@ def task_plan_day_edit(request, pk):
         'form': form,
         'day': day,
         'plan': day.plan,
-        'page_title': f'Editar Día'
+        'page_title': gettext('Editar Día')
     }
     return render(request, 'tickets/task_plan_day_form.html', context)
 
@@ -49496,7 +49496,7 @@ def task_plan_day_delete(request, pk):
     if request.method == 'POST':
         title = day.title
         day.delete()
-        messages.success(request, f'Día "{title}" eliminado exitosamente')
+        messages.success(request, gettext('Día "%(title)s" eliminado exitosamente') % {'title': title})
         return redirect('task_plan_detail', pk=plan_id)
     
     context = {
@@ -49520,7 +49520,7 @@ def task_plan_item_create(request, day_pk):
             last_order = day.tasks.aggregate(models.Max('order'))['order__max'] or 0
             task.order = last_order + 1
             task.save()
-            messages.success(request, f'Tarea "{task.title}" agregada exitosamente')
+            messages.success(request, gettext('Tarea "%(title)s" agregada exitosamente') % {'title': task.title})
             return redirect('task_plan_detail', pk=day.plan.id)
     else:
         form = TaskPlanItemForm()
@@ -49529,7 +49529,7 @@ def task_plan_item_create(request, day_pk):
         'form': form,
         'day': day,
         'plan': day.plan,
-        'page_title': f'Agregar Tarea a {day.title}'
+        'page_title': gettext('Agregar Tarea a %(title)s') % {'title': day.title}
     }
     return render(request, 'tickets/task_plan_item_form.html', context)
 
@@ -49543,7 +49543,7 @@ def task_plan_item_edit(request, pk):
         form = TaskPlanItemForm(request.POST, instance=task)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Tarea "{task.title}" actualizada exitosamente')
+            messages.success(request, gettext('Tarea "%(title)s" actualizada exitosamente') % {'title': task.title})
             return redirect('task_plan_detail', pk=task.day.plan.id)
     else:
         form = TaskPlanItemForm(instance=task)
@@ -49553,7 +49553,7 @@ def task_plan_item_edit(request, pk):
         'task': task,
         'day': task.day,
         'plan': task.day.plan,
-        'page_title': f'Editar Tarea'
+        'page_title': gettext('Editar Tarea')
     }
     return render(request, 'tickets/task_plan_item_form.html', context)
 
@@ -49567,7 +49567,7 @@ def task_plan_item_delete(request, pk):
     if request.method == 'POST':
         title = task.title
         task.delete()
-        messages.success(request, f'Tarea "{title}" eliminada exitosamente')
+        messages.success(request, gettext('Tarea "%(title)s" eliminada exitosamente') % {'title': title})
         return redirect('task_plan_detail', pk=plan_id)
     
     context = {
@@ -49654,7 +49654,7 @@ def checklist_create(request):
             checklist = form.save(commit=False)
             checklist.created_by = request.user
             checklist.save()
-            messages.success(request, f'Checklist "{checklist.title}" creado exitosamente')
+            messages.success(request, gettext('Checklist "%(title)s" creado exitosamente') % {'title': checklist.title})
             return redirect('checklist_detail', pk=checklist.id)
     else:
         form = ChecklistForm()
@@ -49709,7 +49709,7 @@ def checklist_edit(request, pk):
         form = ChecklistForm(request.POST, instance=checklist)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Checklist "{checklist.title}" actualizado exitosamente')
+            messages.success(request, gettext('Checklist "%(title)s" actualizado exitosamente') % {'title': checklist.title})
             return redirect('checklist_detail', pk=checklist.id)
     else:
         form = ChecklistForm(instance=checklist)
@@ -49717,7 +49717,7 @@ def checklist_edit(request, pk):
     context = {
         'form': form,
         'checklist': checklist,
-        'page_title': f'Editar {checklist.title}'
+        'page_title': gettext('Editar %(title)s') % {'title': checklist.title}
     }
     return render(request, 'tickets/checklist_form.html', context)
 
@@ -49733,7 +49733,7 @@ def checklist_delete(request, pk):
     if request.method == 'POST':
         title = checklist.title
         checklist.delete()
-        messages.success(request, f'Checklist "{title}" eliminado exitosamente')
+        messages.success(request, gettext('Checklist "%(title)s" eliminado exitosamente') % {'title': title})
         return redirect('checklist_list')
     
     context = {
@@ -49772,7 +49772,7 @@ def checklist_duplicate(request, pk):
             order=item.order
         )
     
-    messages.success(request, f'Checklist duplicado exitosamente como "{new_checklist.title}"')
+    messages.success(request, gettext('Checklist duplicado exitosamente como "%(title)s"') % {'title': new_checklist.title})
     return redirect('checklist_detail', pk=new_checklist.id)
 
 
@@ -49786,7 +49786,7 @@ def checklist_toggle_public(request, pk):
         checklist.save()
         
         status = 'público' if checklist.is_public else 'privado'
-        messages.success(request, f'Checklist marcado como {status}')
+        messages.success(request, gettext('Checklist marcado como %(status)s') % {'status': status})
     
     return redirect('checklist_detail', pk=checklist.id)
 
@@ -49805,7 +49805,7 @@ def checklist_item_create(request, checklist_pk):
             last_order = checklist.items.aggregate(models.Max('order'))['order__max'] or 0
             item.order = last_order + 1
             item.save()
-            messages.success(request, f'Tarea "{item.title}" agregada exitosamente')
+            messages.success(request, gettext('Tarea "%(title)s" agregada exitosamente') % {'title': item.title})
             return redirect('checklist_detail', pk=checklist.id)
     else:
         form = ChecklistItemForm()
@@ -49813,7 +49813,7 @@ def checklist_item_create(request, checklist_pk):
     context = {
         'form': form,
         'checklist': checklist,
-        'page_title': f'Agregar Tarea a {checklist.title}'
+        'page_title': gettext('Agregar Tarea a %(title)s') % {'title': checklist.title}
     }
     return render(request, 'tickets/checklist_item_form.html', context)
 
@@ -49827,7 +49827,7 @@ def checklist_item_edit(request, pk):
         form = ChecklistItemForm(request.POST, instance=item)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Tarea "{item.title}" actualizada exitosamente')
+            messages.success(request, gettext('Tarea "%(title)s" actualizada exitosamente') % {'title': item.title})
             return redirect('checklist_detail', pk=item.checklist.id)
     else:
         form = ChecklistItemForm(instance=item)
@@ -49836,7 +49836,7 @@ def checklist_item_edit(request, pk):
         'form': form,
         'item': item,
         'checklist': item.checklist,
-        'page_title': f'Editar {item.title}'
+        'page_title': gettext('Editar %(title)s') % {'title': item.title}
     }
     return render(request, 'tickets/checklist_item_form.html', context)
 
@@ -49850,7 +49850,7 @@ def checklist_item_delete(request, pk):
     if request.method == 'POST':
         title = item.title
         item.delete()
-        messages.success(request, f'Tarea "{title}" eliminada exitosamente')
+        messages.success(request, gettext('Tarea "%(title)s" eliminada exitosamente') % {'title': title})
         return redirect('checklist_detail', pk=checklist_id)
     
     context = {
@@ -50005,7 +50005,7 @@ def transaction_create(request):
         
         # Verificar que el código no exista
         if Transaction.objects.filter(code=code).exists():
-            messages.error(request, f'Ya existe una transacción con el código {code}.')
+            messages.error(request, gettext('Ya existe una transacción con el código %(code)s.') % {'code': code})
             return redirect('transaction_create')
         
         transaction = Transaction.objects.create(
@@ -50018,7 +50018,7 @@ def transaction_create(request):
             created_by=request.user
         )
         
-        messages.success(request, f'Transacción {transaction.code} creada exitosamente.')
+        messages.success(request, gettext('Transacción %(code)s creada exitosamente.') % {'code': transaction.code})
         return redirect('transaction_list')
     
     return render(request, 'tickets/transaction_form.html', {'action': 'Crear'})
@@ -50050,7 +50050,7 @@ def transaction_edit(request, pk):
         
         # Verificar que el código no exista en otra transacción
         if Transaction.objects.filter(code=code).exclude(id=pk).exists():
-            messages.error(request, f'Ya existe otra transacción con el código {code}.')
+            messages.error(request, gettext('Ya existe otra transacción con el código %(code)s.') % {'code': code})
             return redirect('transaction_edit', pk=pk)
         
         transaction.code = code
@@ -50062,7 +50062,7 @@ def transaction_edit(request, pk):
         transaction.is_active = is_active
         transaction.save()
         
-        messages.success(request, f'Transacción {transaction.code} actualizada exitosamente.')
+        messages.success(request, gettext('Transacción %(code)s actualizada exitosamente.') % {'code': transaction.code})
         return redirect('transaction_list')
     
     context = {
@@ -50087,7 +50087,7 @@ def transaction_delete(request, pk):
     if request.method == 'POST':
         code = transaction.code
         transaction.delete()
-        messages.success(request, f'Transacción {code} eliminada exitosamente.')
+        messages.success(request, gettext('Transacción %(code)s eliminada exitosamente.') % {'code': code})
         return redirect('transaction_list')
     
     context = {
@@ -50207,7 +50207,7 @@ def knowledge_base_create(request):
             created_by=request.user
         )
         
-        messages.success(request, f'Base de conocimiento "{title}" creada exitosamente.')
+        messages.success(request, gettext('Base de conocimiento "%(title)s" creada exitosamente.') % {'title': title})
         return redirect('knowledge_base_detail', pk=knowledge_base.id)
     
     context = {
@@ -50266,7 +50266,7 @@ def knowledge_base_delete(request, pk):
     if request.method == 'POST':
         title = knowledge_base.title
         knowledge_base.delete()
-        messages.success(request, f'Base de conocimiento "{title}" eliminada exitosamente.')
+        messages.success(request, gettext('Base de conocimiento "%(title)s" eliminada exitosamente.') % {'title': title})
         return redirect('knowledge_base_list')
     
     context = {
@@ -50373,7 +50373,7 @@ def translation_tool(request):
                 })
                 
             except Exception as e:
-                messages.error(request, f'Error al traducir: {str(e)}')
+                messages.error(request, gettext('Error al traducir: %(valor)s') % {'valor': str(e)})
     
     # Cargar traducciones recientes del usuario
     recent_translations = Translation.objects.filter(created_by=request.user).order_by('-created_at')[:10]
@@ -50627,7 +50627,7 @@ def sql_query_tool(request):
                             created_by=request.user,
                             last_executed_at=timezone.now()
                         )
-                        messages.success(request, f'Consulta "{name}" guardada exitosamente. <a href="/sql-queries/list/" class="alert-link">Ver consultas guardadas</a>')
+                        messages.success(request, gettext('Consulta "%(name)s" guardada exitosamente. <a href="/sql-queries/list/" class="alert-link">Ver consultas guardadas</a>') % {'name': name})
                 
             except Exception as e:
                 error = str(e)
@@ -50820,7 +50820,7 @@ def odoo_connection_create(request):
             created_by=request.user
         )
         
-        messages.success(request, f'Conexión {connection.name} creada exitosamente')
+        messages.success(request, gettext('Conexión %(name)s creada exitosamente') % {'name': connection.name})
         return redirect('odoo_connection_list')
     
     return render(request, 'tickets/odoo_connection_form.html', {'action': 'create'})
@@ -50845,7 +50845,7 @@ def odoo_connection_edit(request, pk):
             connection.password = password
         connection.save()
         
-        messages.success(request, f'Conexión {connection.name} actualizada')
+        messages.success(request, gettext('Conexión %(name)s actualizada') % {'name': connection.name})
         return redirect('odoo_connection_list')
     
     context = {
@@ -50866,7 +50866,7 @@ def odoo_connection_delete(request, pk):
     if request.method == 'POST':
         name = connection.name
         connection.delete()
-        messages.success(request, f'Conexión {name} eliminada')
+        messages.success(request, gettext('Conexión %(name)s eliminada') % {'name': name})
         return redirect('odoo_connection_list')
     
     context = {
@@ -50929,7 +50929,7 @@ def odoo_rpc_table_create(request, connection_id):
         
         # Verificar que no exista ya
         if OdooRPCTable.objects.filter(connection=connection, odoo_model=odoo_model).exists():
-            messages.error(request, f'Ya existe una tabla para el modelo {odoo_model}')
+            messages.error(request, gettext('Ya existe una tabla para el modelo %(odoo_model)s') % {'odoo_model': odoo_model})
             return redirect('odoo_rpc_table_create', connection_id=connection.id)
         
         table = OdooRPCTable.objects.create(
@@ -50939,7 +50939,7 @@ def odoo_rpc_table_create(request, connection_id):
             description=description
         )
         
-        messages.success(request, f'Tabla {table.name} creada exitosamente')
+        messages.success(request, gettext('Tabla %(name)s creada exitosamente') % {'name': table.name})
         return redirect('odoo_rpc_table_detail', pk=table.id)
     
     context = {
@@ -51473,7 +51473,7 @@ def odoo_rpc_table_edit(request, pk):
         table.description = request.POST.get('description', '')
         table.save()
         
-        messages.success(request, f'Tabla {table.name} actualizada')
+        messages.success(request, gettext('Tabla %(name)s actualizada') % {'name': table.name})
         return redirect('odoo_rpc_table_detail', pk=table.id)
     
     context = {
@@ -51496,7 +51496,7 @@ def odoo_rpc_table_delete(request, pk):
     if request.method == 'POST':
         name = table.name
         table.delete()
-        messages.success(request, f'Tabla {name} eliminada')
+        messages.success(request, gettext('Tabla %(name)s eliminada') % {'name': name})
         return redirect('odoo_rpc_table_list', connection_id=connection.id)
     
     context = {
@@ -51529,7 +51529,7 @@ def odoo_rpc_field_create(request, table_id):
         
         # Verificar que no exista ya
         if OdooRPCField.objects.filter(table=table, odoo_field_name=odoo_field_name).exists():
-            messages.error(request, f'Ya existe un campo para {odoo_field_name}')
+            messages.error(request, gettext('Ya existe un campo para %(odoo_field_name)s') % {'odoo_field_name': odoo_field_name})
             return redirect('odoo_rpc_field_create', table_id=table.id)
         
         field = OdooRPCField.objects.create(
@@ -51542,7 +51542,7 @@ def odoo_rpc_field_create(request, table_id):
             help_text=help_text
         )
         
-        messages.success(request, f'Campo {field.name} creado exitosamente')
+        messages.success(request, gettext('Campo %(name)s creado exitosamente') % {'name': field.name})
         return redirect('odoo_rpc_table_detail', pk=table.id)
     
     # Obtener el siguiente número de orden
@@ -51575,7 +51575,7 @@ def odoo_rpc_field_edit(request, pk):
         field.help_text = request.POST.get('help_text', '')
         field.save()
         
-        messages.success(request, f'Campo {field.name} actualizado')
+        messages.success(request, gettext('Campo %(name)s actualizado') % {'name': field.name})
         return redirect('odoo_rpc_table_detail', pk=field.table.id)
     
     context = {
@@ -51599,7 +51599,7 @@ def odoo_rpc_field_delete(request, pk):
     if request.method == 'POST':
         name = field.name
         field.delete()
-        messages.success(request, f'Campo {name} eliminado')
+        messages.success(request, gettext('Campo %(name)s eliminado') % {'name': name})
         return redirect('odoo_rpc_table_detail', pk=table.id)
     
     context = {
@@ -52060,10 +52060,10 @@ def odoo_rpc_data_execute(request, table_id):
     if failed_count > 0:
         messages.warning(
             request,
-            f'Procesamiento completado: {success_count} exitosos, {failed_count} fallidos'
+            gettext('Procesamiento completado: %(success_count)s exitosos, %(failed_count)s fallidos') % {'success_count': success_count, 'failed_count': failed_count}
         )
     else:
-        messages.success(request, f'Se procesaron {success_count} registros exitosamente')
+        messages.success(request, gettext('Se procesaron %(success_count)s registros exitosamente') % {'success_count': success_count})
     
     return redirect('odoo_rpc_table_detail', pk=table.id)
 
@@ -52175,7 +52175,7 @@ def odoo_rpc_search_odoo(request, table_id):
                 
                 logger.info(f'[Odoo Search] Guardados: {saved_count} nuevos, {updated_count} actualizados')
                 if saved_count > 0 or updated_count > 0:
-                    messages.success(request, f'Se guardaron {saved_count} nuevos registros y se actualizaron {updated_count}')
+                    messages.success(request, gettext('Se guardaron %(saved_count)s nuevos registros y se actualizaron %(updated_count)s') % {'saved_count': saved_count, 'updated_count': updated_count})
             
             # Guardar en sesión para la vista de resultados
             logger.info(f'[Odoo Search] Guardando resultados en sesión...')
@@ -52187,12 +52187,12 @@ def odoo_rpc_search_odoo(request, table_id):
             }
             logger.info(f'[Odoo Search] Búsqueda completada exitosamente')
             
-            messages.success(request, f'Se encontraron {len(records)} registros en Odoo')
+            messages.success(request, gettext('Se encontraron %(valor)s registros en Odoo') % {'valor': len(records)})
             return redirect('odoo_rpc_search_results', table_id=table.id)
             
         except Exception as e:
             logger.error(f'[Odoo Search] Error: {str(e)}', exc_info=True)
-            messages.error(request, f'Error al buscar en Odoo: {str(e)}')
+            messages.error(request, gettext('Error al buscar en Odoo: %(valor)s') % {'valor': str(e)})
             return redirect('odoo_rpc_table_detail', pk=table.id)
     
     context = {
@@ -52513,11 +52513,11 @@ def odoo_rpc_public_form(request, token):
                 
                 record_id = create_record(table.connection, table.odoo_model, values)
                 
-                messages.success(request, f'Registro creado exitosamente con ID {record_id}')
+                messages.success(request, gettext('Registro creado exitosamente con ID %(record_id)s') % {'record_id': record_id})
                 return redirect('odoo_rpc_public_form', token=token)
                 
             except Exception as e:
-                messages.error(request, f'Error al crear registro: {str(e)}')
+                messages.error(request, gettext('Error al crear registro: %(valor)s') % {'valor': str(e)})
         
         fields = OdooRPCField.objects.filter(table=table).order_by('order', 'name')
         
@@ -53530,15 +53530,15 @@ def odoo_connection_backup(request, pk):
                 filename = f"{connection.database}_backup.{backup_format}"
                 response['Content-Disposition'] = f'attachment; filename="{filename}"'
                 
-                messages.success(request, f'Backup descargado exitosamente: {filename}')
+                messages.success(request, gettext('Backup descargado exitosamente: %(filename)s') % {'filename': filename})
                 return response
             else:
                 logger.error(f'[Odoo Backup] Error: {message}')
-                messages.error(request, f'Error al crear backup: {message}')
+                messages.error(request, gettext('Error al crear backup: %(message)s') % {'message': message})
                 
         except Exception as e:
             logger.error(f'[Odoo Backup] Excepción: {str(e)}', exc_info=True)
-            messages.error(request, f'Error inesperado: {str(e)}')
+            messages.error(request, gettext('Error inesperado: %(valor)s') % {'valor': str(e)})
     
     context = {
         'connection': connection
@@ -53616,7 +53616,7 @@ def odoo_rpc_export_odoo_data(request, table_id):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     wb.save(response)
     
-    messages.success(request, f'Se exportaron {len(records)} registros a Excel')
+    messages.success(request, gettext('Se exportaron %(valor)s registros a Excel') % {'valor': len(records)})
     
     return response
 
@@ -53761,7 +53761,7 @@ def chatbot_create(request):
             chatbot = form.save(commit=False)
             chatbot.created_by = request.user
             chatbot.save()
-            messages.success(request, f'Chatbot "{chatbot.title}" creado exitosamente.')
+            messages.success(request, gettext('Chatbot "%(title)s" creado exitosamente.') % {'title': chatbot.title})
             return redirect('chatbot_list')
         else:
             messages.error(request, gettext('Por favor corrige los errores en el formulario.'))
@@ -53883,7 +53883,7 @@ def chatbot_conversations(request, pk):
     context = {
         'chatbot': chatbot,
         'conversations': conversations,
-        'page_title': f'Conversaciones - {chatbot.title}',
+        'page_title': gettext('Conversaciones - %(title)s') % {'title': chatbot.title},
         'module': 'GT',
         'submenu_active': 'chatbots'
     }
@@ -53905,7 +53905,7 @@ def chatbot_conversation_detail(request, pk, conversation_id):
         'chatbot': chatbot,
         'conversation': conversation,
         'messages': messages,
-        'page_title': f'Conversación {conversation.session_id[:8]}',
+        'page_title': gettext('Conversación %(valor)s') % {'valor': conversation.session_id[:8]},
         'module': 'GT',
         'submenu_active': 'chatbots'
     }
@@ -53925,7 +53925,7 @@ def chatbot_conversation_delete(request, pk, conversation_id):
     session_id = conversation.session_id[:8]
     conversation.delete()
     
-    messages.success(request, f'Conversación {session_id} eliminada correctamente.')
+    messages.success(request, gettext('Conversación %(session_id)s eliminada correctamente.') % {'session_id': session_id})
     return redirect('chatbot_conversations', pk=pk)
 
 
@@ -53942,7 +53942,7 @@ def chatbot_conversation_toggle_hide(request, pk, conversation_id):
     conversation.save()
     
     status = 'ocultado' if conversation.hide_chat else 'visible'
-    messages.success(request, f'Chat {status} para esta sesión.')
+    messages.success(request, gettext('Chat %(status)s para esta sesión.') % {'status': status})
     return redirect('chatbot_conversations', pk=pk)
 
 
@@ -53966,7 +53966,7 @@ def chatbot_conversation_toggle_reviewed(request, pk, conversation_id):
     conversation.save()
     
     status = 'revisada' if conversation.reviewed else 'no revisada'
-    messages.success(request, f'Conversación marcada como {status}.')
+    messages.success(request, gettext('Conversación marcada como %(status)s.') % {'status': status})
     return redirect('chatbot_conversation_detail', pk=pk, conversation_id=conversation_id)
 
 
@@ -54140,7 +54140,7 @@ def chatbot_edit(request, pk):
         form = ChatbotForm(request.POST, instance=chatbot)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Chatbot "{chatbot.title}" actualizado exitosamente.')
+            messages.success(request, gettext('Chatbot "%(title)s" actualizado exitosamente.') % {'title': chatbot.title})
             return redirect('chatbot_detail', pk=chatbot.pk)
     else:
         form = ChatbotForm(instance=chatbot)
@@ -54148,7 +54148,7 @@ def chatbot_edit(request, pk):
     context = {
         'form': form,
         'chatbot': chatbot,
-        'page_title': f'Editar {chatbot.title}',
+        'page_title': gettext('Editar %(title)s') % {'title': chatbot.title},
         'module': 'GT',
         'submenu_active': 'chatbots'
     }
@@ -54166,12 +54166,12 @@ def chatbot_delete(request, pk):
     if request.method == 'POST':
         title = chatbot.title
         chatbot.delete()
-        messages.success(request, f'Chatbot "{title}" eliminado exitosamente.')
+        messages.success(request, gettext('Chatbot "%(title)s" eliminado exitosamente.') % {'title': title})
         return redirect('chatbot_list')
     
     context = {
         'chatbot': chatbot,
-        'page_title': f'Eliminar {chatbot.title}',
+        'page_title': gettext('Eliminar %(title)s') % {'title': chatbot.title},
         'module': 'GT',
         'submenu_active': 'chatbots'
     }
@@ -54201,7 +54201,7 @@ def chatbot_question_create(request, pk):
     context = {
         'form': form,
         'chatbot': chatbot,
-        'page_title': f'Nueva Pregunta - {chatbot.title}',
+        'page_title': gettext('Nueva Pregunta - %(title)s') % {'title': chatbot.title},
         'module': 'GT',
         'submenu_active': 'chatbots'
     }
@@ -54231,7 +54231,7 @@ def chatbot_question_edit(request, pk, question_id):
         'form': form,
         'chatbot': chatbot,
         'question': question,
-        'page_title': f'Editar Pregunta - {chatbot.title}',
+        'page_title': gettext('Editar Pregunta - %(title)s') % {'title': chatbot.title},
         'module': 'GT',
         'submenu_active': 'chatbots'
     }
@@ -54675,7 +54675,7 @@ def email_template_create(request):
             template.created_by = request.user
             template.save()
             
-            messages.success(request, f'Plantilla "{template.title}" creada exitosamente.')
+            messages.success(request, gettext('Plantilla "%(title)s" creada exitosamente.') % {'title': template.title})
             return redirect('email_template_detail', pk=template.pk)
     else:
         form = EmailTemplateForm()
@@ -54697,7 +54697,7 @@ def email_template_detail(request, pk):
     history = template.history.all()[:20]  # Últimos 20 cambios
     
     context = {
-        'page_title': f'Plantilla: {template.title}',
+        'page_title': gettext('Plantilla: %(title)s') % {'title': template.title},
         'template': template,
         'history': history,
     }
@@ -54728,13 +54728,13 @@ def email_template_edit(request, pk):
             )
             
             form.save()
-            messages.success(request, f'Plantilla "{template.title}" actualizada exitosamente.')
+            messages.success(request, gettext('Plantilla "%(title)s" actualizada exitosamente.') % {'title': template.title})
             return redirect('email_template_detail', pk=template.pk)
     else:
         form = EmailTemplateForm(instance=template)
     
     context = {
-        'page_title': f'Editar: {template.title}',
+        'page_title': gettext('Editar: %(title)s') % {'title': template.title},
         'form': form,
         'template': template,
     }
@@ -54752,11 +54752,11 @@ def email_template_delete(request, pk):
     if request.method == 'POST':
         title = template.title
         template.delete()
-        messages.success(request, f'Plantilla "{title}" eliminada exitosamente.')
+        messages.success(request, gettext('Plantilla "%(title)s" eliminada exitosamente.') % {'title': title})
         return redirect('email_template_list')
     
     context = {
-        'page_title': f'Eliminar: {template.title}',
+        'page_title': gettext('Eliminar: %(title)s') % {'title': template.title},
         'template': template,
     }
     return render(request, 'tickets/email_template_delete.html', context)
@@ -54833,7 +54833,7 @@ def counter_create(request):
             counter.user = request.user
             counter.save()
             
-            messages.success(request, f'Contador "{counter.title}" creado exitosamente.')
+            messages.success(request, gettext('Contador "%(title)s" creado exitosamente.') % {'title': counter.title})
             return redirect('counter_list')
     else:
         form = CounterForm()
@@ -54873,7 +54873,7 @@ def counter_detail(request, pk):
                 counter.value = value
                 counter.save()
                 
-                messages.success(request, f'Valor {value} agregado exitosamente al historial.')
+                messages.success(request, gettext('Valor %(value)s agregado exitosamente al historial.') % {'value': value})
                 return redirect('counter_detail', pk=counter.pk)
             except ValueError:
                 messages.error(request, gettext('El valor debe ser un número válido.'))
@@ -54888,7 +54888,7 @@ def counter_detail(request, pk):
     total_entries = history.count()
     
     context = {
-        'page_title': f'Contador: {counter.title}',
+        'page_title': gettext('Contador: %(title)s') % {'title': counter.title},
         'counter': counter,
         'history': history,
         'last_change': last_change,
@@ -54915,13 +54915,13 @@ def counter_edit(request, pk):
         form = CounterForm(request.POST, instance=counter)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Contador "{counter.title}" actualizado exitosamente.')
+            messages.success(request, gettext('Contador "%(title)s" actualizado exitosamente.') % {'title': counter.title})
             return redirect('counter_detail', pk=counter.pk)
     else:
         form = CounterForm(instance=counter)
     
     context = {
-        'page_title': f'Editar: {counter.title}',
+        'page_title': gettext('Editar: %(title)s') % {'title': counter.title},
         'form': form,
         'counter': counter,
     }
@@ -54944,11 +54944,11 @@ def counter_delete(request, pk):
     if request.method == 'POST':
         title = counter.title
         counter.delete()
-        messages.success(request, f'Contador "{title}" eliminado exitosamente.')
+        messages.success(request, gettext('Contador "%(title)s" eliminado exitosamente.') % {'title': title})
         return redirect('counter_list')
     
     context = {
-        'page_title': f'Eliminar: {counter.title}',
+        'page_title': gettext('Eliminar: %(title)s') % {'title': counter.title},
         'counter': counter,
     }
     return render(request, 'tickets/counter_delete.html', context)
@@ -55015,7 +55015,7 @@ def ocr_invoice_create(request):
             invoice.uploaded_by = request.user
             invoice.save()
             
-            messages.success(request, f'Factura "{invoice.number}" creada exitosamente.')
+            messages.success(request, gettext('Factura "%(number)s" creada exitosamente.') % {'number': invoice.number})
             return redirect('ocr_invoice_detail', pk=invoice.pk)
     else:
         form = OCRInvoiceForm()
@@ -55056,7 +55056,7 @@ def ocr_invoice_detail(request, pk):
     api_url = request.build_absolute_uri(invoice.get_api_url())
     
     context = {
-        'page_title': f'Factura: {invoice.number}',
+        'page_title': gettext('Factura: %(number)s') % {'number': invoice.number},
         'invoice': invoice,
         'public_url': public_url,
         'api_url': api_url,
@@ -55075,7 +55075,7 @@ def ocr_invoice_delete(request, pk):
     if request.method == 'POST':
         invoice_number = invoice.number or invoice.sequence_number
         invoice.delete()
-        messages.success(request, f'Factura "{invoice_number}" eliminada exitosamente.')
+        messages.success(request, gettext('Factura "%(invoice_number)s" eliminada exitosamente.') % {'invoice_number': invoice_number})
         return redirect('ocr_invoice_list')
     
     context = {
@@ -55098,13 +55098,13 @@ def ocr_invoice_edit(request, pk):
         form = OCRInvoiceForm(request.POST, request.FILES, instance=invoice)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Factura "{invoice.number}" actualizada exitosamente.')
+            messages.success(request, gettext('Factura "%(number)s" actualizada exitosamente.') % {'number': invoice.number})
             return redirect('ocr_invoice_detail', pk=invoice.pk)
     else:
         form = OCRInvoiceForm(instance=invoice)
     
     context = {
-        'page_title': f'Editar: {invoice.number}',
+        'page_title': gettext('Editar: %(number)s') % {'number': invoice.number},
         'form': form,
         'invoice': invoice,
     }
@@ -55122,11 +55122,11 @@ def ocr_invoice_delete(request, pk):
     if request.method == 'POST':
         number = invoice.number
         invoice.delete()
-        messages.success(request, f'Factura "{number}" eliminada exitosamente.')
+        messages.success(request, gettext('Factura "%(number)s" eliminada exitosamente.') % {'number': number})
         return redirect('ocr_invoice_list')
     
     context = {
-        'page_title': f'Eliminar: {invoice.number}',
+        'page_title': gettext('Eliminar: %(number)s') % {'number': invoice.number},
         'invoice': invoice,
     }
     return render(request, 'tickets/ocr_invoice_delete.html', context)
@@ -55276,7 +55276,7 @@ Responde SOLO con el JSON válido, sin bloques de código ni texto adicional."""
         return redirect('ocr_invoice_detail', pk=invoice.pk)
         
     except Exception as e:
-        messages.error(request, f'Error al procesar factura: {str(e)}')
+        messages.error(request, gettext('Error al procesar factura: %(valor)s') % {'valor': str(e)})
         return redirect('ocr_invoice_detail', pk=invoice.pk)
 
 
@@ -55457,7 +55457,7 @@ Responde SOLO con el JSON válido, sin bloques de código ni texto adicional."""
                     messages.success(request, gettext('¡Factura creada exitosamente!'))
             except Exception as e:
                 invoice.save()
-                messages.warning(request, f'Factura creada pero no se pudo procesar con OCR: {str(e)}')
+                messages.warning(request, gettext('Factura creada pero no se pudo procesar con OCR: %(valor)s') % {'valor': str(e)})
             
             # Redirigir con token si existe
             if token:
@@ -55620,7 +55620,7 @@ def privacy_policy_create(request):
             policy = form.save(commit=False)
             policy.created_by = request.user
             policy.save()
-            messages.success(request, f'Política "{policy.title}" creada exitosamente.')
+            messages.success(request, gettext('Política "%(title)s" creada exitosamente.') % {'title': policy.title})
             return redirect('privacy_policy_list')
     else:
         form = PrivacyPolicyForm()
@@ -55647,7 +55647,7 @@ def privacy_policy_edit(request, pk):
         form = PrivacyPolicyForm(request.POST, instance=policy)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Política "{policy.title}" actualizada exitosamente.')
+            messages.success(request, gettext('Política "%(title)s" actualizada exitosamente.') % {'title': policy.title})
             return redirect('privacy_policy_list')
     else:
         form = PrivacyPolicyForm(instance=policy)
@@ -55673,7 +55673,7 @@ def privacy_policy_delete(request, pk):
     if request.method == 'POST':
         title = policy.title
         policy.delete()
-        messages.success(request, f'Política "{title}" eliminada exitosamente.')
+        messages.success(request, gettext('Política "%(title)s" eliminada exitosamente.') % {'title': title})
         return redirect('privacy_policy_list')
     
     context = {
@@ -55835,7 +55835,7 @@ def invoice_create(request):
                     line_number=i + 1
                 )
         
-        messages.success(request, f'Factura {invoice.sequence} creada exitosamente.')
+        messages.success(request, gettext('Factura %(sequence)s creada exitosamente.') % {'sequence': invoice.sequence})
         return redirect('invoice_detail', pk=invoice.pk)
     
     companies = Company.objects.filter(is_active=True).order_by('name')
@@ -55903,7 +55903,7 @@ def invoice_update(request, pk):
                     line_number=i + 1
                 )
         
-        messages.success(request, f'Factura {invoice.sequence} actualizada exitosamente.')
+        messages.success(request, gettext('Factura %(sequence)s actualizada exitosamente.') % {'sequence': invoice.sequence})
         return redirect('invoice_detail', pk=invoice.pk)
     
     companies = Company.objects.filter(is_active=True).order_by('name')
@@ -55932,7 +55932,7 @@ def invoice_delete(request, pk):
     if request.method == 'POST':
         sequence = invoice.sequence
         invoice.delete()
-        messages.success(request, f'Factura {sequence} eliminada exitosamente.')
+        messages.success(request, gettext('Factura %(sequence)s eliminada exitosamente.') % {'sequence': sequence})
         return redirect('invoice_list')
     
     context = {
@@ -56263,7 +56263,7 @@ def invoice_duplicate(request, pk):
             tax_rate=line.tax_rate
         )
     
-    messages.success(request, f'Factura duplicada exitosamente. Nueva factura: {new_invoice.sequence}')
+    messages.success(request, gettext('Factura duplicada exitosamente. Nueva factura: %(sequence)s') % {'sequence': new_invoice.sequence})
     return redirect('invoice_detail', pk=new_invoice.pk)
 
 @login_required
@@ -56293,7 +56293,7 @@ def user_change_password(request, user_id):
             if user_to_edit == request.user:
                 update_session_auth_hash(request, user_to_edit)
             
-            messages.success(request, f'Contraseña actualizada exitosamente para el usuario "{user_to_edit.username}".')
+            messages.success(request, gettext('Contraseña actualizada exitosamente para el usuario "%(username)s".') % {'username': user_to_edit.username})
             return redirect('user_edit', user_id=user_id)
     
     return redirect('user_edit', user_id=user_id)
@@ -56365,7 +56365,7 @@ def manual_create(request):
                 description=description,
                 created_by=request.user,
             )
-            messages.success(request, f'Manual "{title}" creado exitosamente')
+            messages.success(request, gettext('Manual "%(title)s" creado exitosamente') % {'title': title})
             return redirect('manual_list')
 
     return render(request, 'tickets/manual_form.html')
@@ -56417,7 +56417,7 @@ def manual_delete(request, pk):
     if request.method == 'POST':
         title = manual.title
         manual.delete()
-        messages.success(request, f'Manual "{title}" eliminado exitosamente')
+        messages.success(request, gettext('Manual "%(title)s" eliminado exitosamente') % {'title': title})
         return redirect('manual_list')
 
     context = {'manual': manual}
@@ -56519,7 +56519,7 @@ def rfi_create(request):
                 company=company,
                 assigned_user=assigned_user,
             )
-            messages.success(request, f'RFI "{title}" creado exitosamente')
+            messages.success(request, gettext('RFI "%(title)s" creado exitosamente') % {'title': title})
             return redirect('rfi_list')
 
     context = {
@@ -56579,7 +56579,7 @@ def rfi_delete(request, pk):
     if request.method == 'POST':
         title = rfi.title
         rfi.delete()
-        messages.success(request, f'RFI "{title}" eliminado exitosamente')
+        messages.success(request, gettext('RFI "%(title)s" eliminado exitosamente') % {'title': title})
         return redirect('rfi_list')
 
     context = {'rfi': rfi}
@@ -56639,7 +56639,7 @@ def rfi_close(request, pk):
         if not rfi.is_closed:
             rfi.closed_at = timezone.now()
             rfi.save(update_fields=['closed_at'])
-            messages.success(request, f'RFI {rfi.code} cerrado exitosamente')
+            messages.success(request, gettext('RFI %(code)s cerrado exitosamente') % {'code': rfi.code})
         return redirect('rfi_detail', pk=pk)
 
     return redirect('rfi_detail', pk=pk)
@@ -56656,7 +56656,7 @@ def rfi_reopen(request, pk):
         if rfi.is_closed:
             rfi.closed_at = None
             rfi.save(update_fields=['closed_at'])
-            messages.success(request, f'RFI {rfi.code} reabierto exitosamente')
+            messages.success(request, gettext('RFI %(code)s reabierto exitosamente') % {'code': rfi.code})
         return redirect('rfi_detail', pk=pk)
 
     return redirect('rfi_detail', pk=pk)
@@ -56942,7 +56942,7 @@ def project_book_create(request):
                 tags=tags,
                 created_by=request.user,
             )
-            messages.success(request, f'Libro "{book.title}" creado exitosamente.')
+            messages.success(request, gettext('Libro "%(title)s" creado exitosamente.') % {'title': book.title})
             return redirect('project_book_detail', pk=book.pk)
 
     context = {
@@ -57056,7 +57056,7 @@ def project_book_delete(request, pk):
     if request.method == 'POST':
         book.is_active = False
         book.save()
-        messages.success(request, f'Libro "{book.title}" eliminado.')
+        messages.success(request, gettext('Libro "%(title)s" eliminado.') % {'title': book.title})
         return redirect('project_book_list')
 
     return render(request, 'tickets/project_book_delete.html', {'book': book})
@@ -57163,7 +57163,7 @@ def capacitacion_create(request):
                 cap.assigned_users.set(User.objects.filter(pk__in=user_ids))
             if company_ids:
                 cap.assigned_companies.set(companies.filter(pk__in=company_ids))
-            messages.success(request, f"Capacitación \"{titulo}\" creada exitosamente.")
+            messages.success(request, gettext('Capacitación "%(titulo)s" creada exitosamente.') % {'titulo': titulo})
             return redirect("capacitacion_detail", pk=cap.pk)
     return render(request, "tickets/capacitacion_form.html", {
         "companies": companies,
@@ -57435,7 +57435,7 @@ def capacitacion_duplicate(request, pk):
                 clase=clase_map.get(linea.clase_id),
             )
 
-        messages.success(request, f'Capacitación duplicada como "{new_cap.titulo}".')
+        messages.success(request, gettext('Capacitación duplicada como "%(titulo)s".') % {'titulo': new_cap.titulo})
         return redirect("capacitacion_detail", pk=new_cap.pk)
     return redirect("capacitacion_detail", pk=pk)
 
@@ -57451,7 +57451,7 @@ def capacitacion_delete(request, pk):
     if request.method == "POST":
         titulo = cap.titulo
         cap.delete()
-        messages.success(request, f"Capacitación \"{titulo}\" eliminada.")
+        messages.success(request, gettext('Capacitación "%(titulo)s" eliminada.') % {'titulo': titulo})
         return redirect("capacitacion_list")
     return render(request, "tickets/capacitacion_delete.html", {"cap": cap})
 
@@ -57952,7 +57952,7 @@ def process_survey_create(request):
                     is_hidden=is_hidden,
                     category_id=category_id,
                 )
-            messages.success(request, f'Levantamiento "{survey.name}" creado exitosamente.')
+            messages.success(request, gettext('Levantamiento "%(name)s" creado exitosamente.') % {'name': survey.name})
             # Procesar URLs
             url_labels = request.POST.getlist('url_label')
             url_values = request.POST.getlist('url_value')
@@ -58037,7 +58037,7 @@ def process_survey_duplicate(request, pk):
             body=clause.body,
         )
 
-    messages.success(request, f'Levantamiento duplicado correctamente: {new_survey.folio}')
+    messages.success(request, gettext('Levantamiento duplicado correctamente: %(folio)s') % {'folio': new_survey.folio})
     return redirect('process_survey_detail', pk=new_survey.pk)
 
 
@@ -58221,7 +58221,7 @@ def process_survey_new_version(request, pk):
             version=new_version,
         )
 
-    messages.success(request, f'Versión {new_version} creada con {source_lines.count()} líneas copiadas.')
+    messages.success(request, gettext('Versión %(new_version)s creada con %(valor)s líneas copiadas.') % {'new_version': new_version, 'valor': source_lines.count()})
     return redirect('process_survey_detail', pk=pk)
 
 
@@ -58289,7 +58289,7 @@ def process_survey_lines_to_tickets(request, pk):
         )
         created_count += 1
 
-    messages.success(request, f'Se crearon {created_count} ticket{"s" if created_count != 1 else ""} correctamente.')
+    messages.success(request, gettext('Se crearon %(created_count)s ticket%(valor)s correctamente.') % {'created_count': created_count, 'valor': 's' if created_count != 1 else ''})
     return redirect('process_survey_detail', pk=pk)
 
 
@@ -58302,7 +58302,7 @@ def process_survey_page_views(request, pk):
         raise Http404
     views = survey.page_views.all()
     context = {
-        'page_title': f'Aperturas – {survey.name}',
+        'page_title': gettext('Aperturas – %(name)s') % {'name': survey.name},
         'survey': survey,
         'views': views,
         'submenu': get_crm_submenu(request, active_item='process_surveys'),
@@ -58402,7 +58402,7 @@ def process_survey_edit(request, pk):
                     category_id=category_id,
                     version=max_version,
                 )
-            messages.success(request, f'Levantamiento "{survey.name}" actualizado (versión {max_version}).')
+            messages.success(request, gettext('Levantamiento "%(name)s" actualizado (versión %(max_version)s).') % {'name': survey.name, 'max_version': max_version})
             # Procesar URLs
             survey.urls.all().delete()
             url_labels = request.POST.getlist('url_label')
@@ -58419,7 +58419,7 @@ def process_survey_edit(request, pk):
     users = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
     from .models import ProcessSurveyLineCategory
     context = {
-        'page_title': f'Editar: {survey.name}',
+        'page_title': gettext('Editar: %(name)s') % {'name': survey.name},
         'action': 'edit',
         'survey': survey,
         'lines': survey.lines.filter(version=max_version).select_related('category'),
@@ -58444,11 +58444,11 @@ def process_survey_delete(request, pk):
     if request.method == 'POST':
         name = survey.name
         survey.delete()
-        messages.success(request, f'Levantamiento "{name}" eliminado.')
+        messages.success(request, gettext('Levantamiento "%(name)s" eliminado.') % {'name': name})
         return redirect('process_survey_list')
 
     context = {
-        'page_title': f'Eliminar: {survey.name}',
+        'page_title': gettext('Eliminar: %(name)s') % {'name': survey.name},
         'survey': survey,
         'submenu': get_crm_submenu(request, active_item='process_surveys'),
     }
@@ -58782,7 +58782,7 @@ def process_survey_intake(request):
             requester_company_name=company_name,
         )
         from django.contrib import messages
-        messages.success(request, f'¡Bienvenido/a {name}! Ya puedes comenzar a agregar tus procesos.')
+        messages.success(request, gettext('¡Bienvenido/a %(name)s! Ya puedes comenzar a agregar tus procesos.') % {'name': name})
         from django.shortcuts import redirect
         return redirect('public_process_survey', token=survey.public_share_token)
 
@@ -58898,7 +58898,7 @@ def public_process_survey_view(request, token):
                 survey.rejection_reason = ''
                 survey.save(update_fields=['status', 'rejection_reason'])
                 label = 'Aceptado' if new_status == 'aceptado' else 'En proceso'
-                messages.success(request, f'El levantamiento fue marcado como {label}.')
+                messages.success(request, gettext('El levantamiento fue marcado como %(label)s.') % {'label': label})
             elif new_status == 'rechazado':
                 reason = request.POST.get('rejection_reason', '').strip()
                 if not reason:
@@ -58937,7 +58937,7 @@ def public_process_survey_view(request, token):
                 signature_data=signature_data,
                 ip_address=ip or None,
             )
-            messages.success(request, f'Firma de "{signer_name}" registrada correctamente.')
+            messages.success(request, gettext('Firma de "%(signer_name)s" registrada correctamente.') % {'signer_name': signer_name})
             return redirect('public_process_survey', token=token)
 
         # ── Agregar nueva línea desde vista pública ────────────────────────
@@ -58966,7 +58966,7 @@ def public_process_survey_view(request, token):
                     author_email=proposer_email,
                     body='Proceso propuesto desde la vista pública.',
                 )
-            messages.success(request, f'Proceso "{new_title}" agregado. Quedará pendiente de revisión.')
+            messages.success(request, gettext('Proceso "%(new_title)s" agregado. Quedará pendiente de revisión.') % {'new_title': new_title})
             return redirect('public_process_survey', token=token)
 
         # ── Aceptar / Rechazar línea ──────────────────────────────────────
@@ -58982,7 +58982,7 @@ def public_process_survey_view(request, token):
             line.status = new_status
             line.save(update_fields=['status'])
             label = 'Aceptado' if action == 'accept' else 'Rechazado'
-            messages.success(request, f'Punto "{line.title}" marcado como {label}.')
+            messages.success(request, gettext('Punto "%(title)s" marcado como %(label)s.') % {'title': line.title, 'label': label})
             return redirect('public_process_survey', token=token)
 
         # ── Editar línea desde vista pública ──────────────────────────────
@@ -59016,7 +59016,7 @@ def public_process_survey_view(request, token):
                 line.title = new_title
                 line.description = new_description
                 line.save(update_fields=['title', 'description'])
-                messages.success(request, f'Línea actualizada. Los valores anteriores quedaron guardados como comentario.')
+                messages.success(request, gettext('Línea actualizada. Los valores anteriores quedaron guardados como comentario.'))
             else:
                 messages.info(request, gettext('No se detectaron cambios.'))
             return redirect('public_process_survey', token=token)
@@ -59039,7 +59039,7 @@ def public_process_survey_view(request, token):
                 messages.error(request, gettext('El archivo supera el tamaño máximo de 10 MB.'))
                 return redirect('public_process_survey', token=token)
             if ext not in allowed:
-                messages.error(request, f'Tipo de archivo no permitido ({ext}).')
+                messages.error(request, gettext('Tipo de archivo no permitido (%(ext)s).') % {'ext': ext})
                 return redirect('public_process_survey', token=token)
 
         ProcessSurveyLineComment.objects.create(
@@ -59991,7 +59991,7 @@ def project_info_create(request):
                 created_by=request.user,
             )
             _save_project_info_lines(request.POST, project)
-            messages.success(request, f'Proyecto "{project.name}" creado.')
+            messages.success(request, gettext('Proyecto "%(name)s" creado.') % {'name': project.name})
             return redirect('project_info_detail', pk=project.pk)
 
     companies = Company.objects.filter(is_active=True).order_by('name')
@@ -60068,12 +60068,12 @@ def project_info_edit(request, pk):
             project.save()
             project.lines.all().delete()
             _save_project_info_lines(request.POST, project)
-            messages.success(request, f'Proyecto "{project.name}" actualizado.')
+            messages.success(request, gettext('Proyecto "%(name)s" actualizado.') % {'name': project.name})
             return redirect('project_info_detail', pk=project.pk)
 
     companies = Company.objects.filter(is_active=True).order_by('name')
     context = {
-        'page_title': f'Editar: {project.name}',
+        'page_title': gettext('Editar: %(name)s') % {'name': project.name},
         'action': 'edit',
         'project': project,
         'lines': project.lines.select_related('category').all(),
@@ -60095,10 +60095,10 @@ def project_info_delete(request, pk):
     if request.method == 'POST':
         name = project.name
         project.delete()
-        messages.success(request, f'Proyecto "{name}" eliminado.')
+        messages.success(request, gettext('Proyecto "%(name)s" eliminado.') % {'name': name})
         return redirect('project_info_list')
     context = {
-        'page_title': f'Eliminar: {project.name}',
+        'page_title': gettext('Eliminar: %(name)s') % {'name': project.name},
         'project': project,
         'submenu': get_crm_submenu(request, active_item='project_info'),
     }
@@ -60140,7 +60140,7 @@ def project_info_duplicate(request, pk):
             defaults={'role_override': r.role_override},
         )
 
-    messages.success(request, f'Proyecto duplicado como "{new_project.name}" ({new_project.folio}).')
+    messages.success(request, gettext('Proyecto duplicado como "%(name)s" (%(folio)s).') % {'name': new_project.name, 'folio': new_project.folio})
     return redirect('project_info_detail', pk=new_project.pk)
 
 

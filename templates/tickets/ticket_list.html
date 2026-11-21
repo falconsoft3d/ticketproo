@@ -83,7 +83,7 @@
             {% if user.groups.all and user.groups.first.name == 'Agentes' %}
                 {% translate "Todos los Tickets" %}
             {% else %}
-                {% translate "Mis Tickets" %}{% if user.profile.company %} y de {{ user.profile.company.name }}{% endif %}
+                {% translate "Mis Tickets" %}{% if user.profile.company %} {% translate "y de" %} {{ user.profile.company.name }}{% endif %}
             {% endif %}
         </h1>
         {% if not user.groups.all or user.groups.first.name != 'Agentes' %}
@@ -157,9 +157,9 @@
 <div class="alert alert-warning border-warning d-flex align-items-center gap-3 mb-4 shadow-sm" role="alert" style="border-left: 5px solid #ffc107;">
     <i class="bi bi-exclamation-triangle-fill fs-3 text-warning flex-shrink-0"></i>
     <div>
-        <strong>Tienes {{ rfi_open_count }} RFI{{ rfi_open_count|pluralize }} abierto{{ rfi_open_count|pluralize }}</strong> pendiente{{ rfi_open_count|pluralize }} de completar.
+        <strong>{% translate "Tienes" %} {{ rfi_open_count }} RFI{{ rfi_open_count|pluralize }} {% translate "abierto" %}{{ rfi_open_count|pluralize }}</strong> {% translate "pendiente" %}{{ rfi_open_count|pluralize }} {% translate "de completar." %}
         {% if rfi_oldest_days > 0 %}
-        {% translate "La más antigua lleva" %} <strong>{{ rfi_oldest_days }} día{{ rfi_oldest_days|pluralize }}</strong> {% translate "sin cerrar." %}
+        {% translate "La más antigua lleva" %} <strong>{{ rfi_oldest_days }} {% translate "día" %}{{ rfi_oldest_days|pluralize }}</strong> {% translate "sin cerrar." %}
         {% endif %}
         <a href="{% url 'rfi_my_list' %}" class="alert-link ms-2">
             <i class="bi bi-arrow-right-circle"></i> {% translate "Ver mis RFI" %}
@@ -312,7 +312,7 @@
                         </td>
                         <td class="col-hours text-center" data-column="hours">
                             {% if ticket.total_hour_lines %}
-                                <span class="badge bg-info text-dark">{{ ticket.total_hour_lines }} h</span>
+                                <span class="badge bg-info text-dark">{{ ticket.total_hour_lines }} {% translate "h" %}</span>
                             {% else %}
                                 <span class="text-muted">-</span>
                             {% endif %}
@@ -326,7 +326,7 @@
                             <i class="bi bi-clock-history me-1"></i> {% translate "Total de horas (todos los resultados):" %}
                         </td>
                         <td class="text-center">
-                            <span class="badge bg-primary">{{ total_hours_all }} h</span>
+                            <span class="badge bg-primary">{{ total_hours_all }} {% translate "h" %}</span>
                         </td>
                     </tr>
                 </tfoot>
@@ -354,7 +354,7 @@
                 
                 <li class="page-item active">
                     <span class="page-link">
-                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        {% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}
                     </span>
                 </li>
                 
@@ -421,11 +421,11 @@
                         <td>{{ rfi.company|default:"—" }}</td>
                         <td>
                             {% if rfi.days_since_request > 7 %}
-                            <span class="badge bg-danger">{{ rfi.days_since_request }} días</span>
+                            <span class="badge bg-danger">{{ rfi.days_since_request }} {% translate "días" %}</span>
                             {% elif rfi.days_since_request > 3 %}
-                            <span class="badge bg-warning text-dark">{{ rfi.days_since_request }} días</span>
+                            <span class="badge bg-warning text-dark">{{ rfi.days_since_request }} {% translate "días" %}</span>
                             {% else %}
-                            <span class="badge bg-secondary">{{ rfi.days_since_request }} días</span>
+                            <span class="badge bg-secondary">{{ rfi.days_since_request }} {% translate "días" %}</span>
                             {% endif %}
                         </td>
                         <td>
@@ -792,7 +792,7 @@ function toggleFiltros() {
                                 {{ kpi_tickets_pending }}
                             </div>
                             <div class="text-white" style="font-size:1.1rem;opacity:0.75;">
-                                de {{ kpi_tickets_total }} total{{ kpi_tickets_total|pluralize:"es" }}
+                                {% translate "de" %} {{ kpi_tickets_total }} {% translate "total" %}{{ kpi_tickets_total|pluralize:"es" }}
                             </div>
                             <div class="mt-3">
                                 {% if kpi_tickets_total > 0 %}
@@ -814,7 +814,7 @@ function toggleFiltros() {
                                 {{ kpi_rfi_open }}
                             </div>
                             <div class="text-white" style="font-size:1.1rem;opacity:0.75;">
-                                de {{ kpi_rfi_total }} total{{ kpi_rfi_total|pluralize:"es" }}
+                                {% translate "de" %} {{ kpi_rfi_total }} {% translate "total" %}{{ kpi_rfi_total|pluralize:"es" }}
                             </div>
                             <div class="mt-3">
                                 {% if kpi_rfi_total > 0 %}

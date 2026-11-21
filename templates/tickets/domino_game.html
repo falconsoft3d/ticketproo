@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Dominó - {{ game.name }} - TicketProo{% endblock %}
+{% block title %}{% translate "Dominó -" %} {{ game.name }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -647,13 +647,13 @@
                 <div class="col-md-6">
                     <h2><i class="bi bi-dice-6"></i> {{ game.name }}</h2>
                     <p class="mb-0">
-                        <i class="bi bi-person"></i> Creado por: {{ game.created_by.username }} | 
-                        <i class="bi bi-clock"></i> {{ game.created_at|timesince }} ago
+                        <i class="bi bi-person"></i> {% translate "Creado por:" %} {{ game.created_by.username }} | 
+                        <i class="bi bi-clock"></i> {{ game.created_at|timesince }} {% translate "ago" %}
                     </p>
                 </div>
                 <div class="col-md-6 text-md-end">
                     <span class="badge bg-primary fs-6 me-2">
-                        <i class="bi bi-people"></i> {{ players|length }}/{{ game.max_players }} jugadores
+                        <i class="bi bi-people"></i> {{ players|length }}/{{ game.max_players }} {% translate "jugadores" %}
                     </span>
                     <span class="badge bg-info fs-6">
                         {{ game.get_status_display }}
@@ -737,14 +737,14 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                <span class="score-points">{{ result.final_score }} puntos</span>
+                                                <span class="score-points">{{ result.final_score }} {% translate "puntos" %}</span>
                                             </td>
                                             <td>{{ result.remaining_tiles }}</td>
                                             <td>
                                                 {% if result.final_score == 0 %}
                                                     <span class="badge bg-success">{% translate "Sin fichas" %}</span>
                                                 {% else %}
-                                                    <span class="badge bg-info">{{ result.final_score }} pts</span>
+                                                    <span class="badge bg-info">{{ result.final_score }} {% translate "pts" %}</span>
                                                 {% endif %}
                                             </td>
                                         </tr>
@@ -769,14 +769,14 @@
                             <div class="stat-card">
                                 <i class="bi bi-people"></i>
                                 <h5>{% translate "Jugadores" %}</h5>
-                                <p>{{ players.count }} participantes</p>
+                                <p>{{ players.count }} {% translate "participantes" %}</p>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="stat-card">
                                 <i class="bi bi-joystick"></i>
                                 <h5>{% translate "Jugadas" %}</h5>
-                                <p>{{ recent_moves.count }} movimientos</p>
+                                <p>{{ recent_moves.count }} {% translate "movimientos" %}</p>
                             </div>
                         </div>
                     </div>
@@ -828,7 +828,7 @@
                             {% if current_player.user == user %}
                                 <i class="bi bi-arrow-right-circle"></i> {% translate "¡Es tu turno!" %}
                             {% else %}
-                                <i class="bi bi-hourglass"></i> Turno de {{ current_player.user.username }}
+                                <i class="bi bi-hourglass"></i> {% translate "Turno de" %} {{ current_player.user.username }}
                             {% endif %}
                         </div>
                     {% endif %}
@@ -881,7 +881,7 @@
                             </button>
                             {% if current_player %}
                                 <small class="text-muted d-block mt-2">
-                                    Esperando turno de {{ current_player.user.username }}
+                                    {% translate "Esperando turno de" %} {{ current_player.user.username }}
                                 </small>
                             {% endif %}
                         </div>
@@ -890,10 +890,10 @@
                     <!-- Tu Mano -->
                     {% if user_player %}
                         <div class="player-hand">
-                            <h5><i class="bi bi-hand-thumbs-up"></i> Tu Mano ({{ user_tiles.count }} fichas)</h5>
+                            <h5><i class="bi bi-hand-thumbs-up"></i> {% translate "Tu Mano (" %}{{ user_tiles.count }} {% translate "fichas)" %}</h5>
                             <!-- Debug info -->
                             {% if user_tiles.count == 0 %}
-                                <p class="text-warning">DEBUG: No se encontraron fichas para {{ user.username }}</p>
+                                <p class="text-warning">{% translate "DEBUG: No se encontraron fichas para" %} {{ user.username }}</p>
                             {% endif %}
                             
                             <div class="hand-tiles" id="player-hand">
@@ -909,7 +909,7 @@
                                 {% empty %}
                                     <p class="text-muted">
                                         <i class="bi bi-exclamation-triangle"></i> 
-                                        No se encontraron fichas. Estado del juego: {{ game.status }}
+                                        {% translate "No se encontraron fichas. Estado del juego:" %} {{ game.status }}
                                     </p>
                                 {% endfor %}
                             </div>
@@ -927,7 +927,7 @@
                     <!-- Información de Jugadores -->
                     <div class="game-card">
                         <div class="game-card-header">
-                            <i class="bi bi-people"></i> Jugadores ({{ players|length }}/{{ game.max_players }})
+                            <i class="bi bi-people"></i> {% translate "Jugadores (" %}{{ players|length }}/{{ game.max_players }})
                         </div>
                         <div class="game-card-body p-2">
                             {% for player in players %}
@@ -940,13 +940,13 @@
                                         {% if player == current_player %}<span class="badge bg-warning">TURNO</span>{% endif %}
                                     </div>
                                     <div class="player-stats">
-                                        <i class="bi bi-collection"></i> Fichas: {{ player.tiles_count }}<br>
-                                        <i class="bi bi-star"></i> Puntos: {{ player.score }}<br>
+                                        <i class="bi bi-collection"></i> {% translate "Fichas:" %} {{ player.tiles_count }}<br>
+                                        <i class="bi bi-star"></i> {% translate "Puntos:" %} {{ player.score }}<br>
                                         <i class="bi bi-clock-history"></i> 
                                         {% if player.user == user %}
                                             {% translate "Última conexión: Ahora" %}
                                         {% else %}
-                                            Última conexión: {{ player.last_seen|timesince }} ago
+                                            {% translate "Última conexión:" %} {{ player.last_seen|timesince }} {% translate "ago" %}
                                         {% endif %}
                                     </div>
                                 </div>
@@ -966,11 +966,11 @@
                                         <div class="message {% if move.player.user == user %}player{% else %}system{% endif %}">
                                             <strong>{{ move.player.user.username }}</strong>: 
                                             {% if move.tile %}
-                                                Jugó [{{ move.tile.left }}|{{ move.tile.right }}]
+                                                {% translate "Jugó [" %}{{ move.tile.left }}|{{ move.tile.right }}]
                                             {% else %}
                                                 {% translate "Pasó su turno" %}
                                             {% endif %}
-                                            <small class="text-muted d-block">({{ move.created_at|timesince }} ago)</small>
+                                            <small class="text-muted d-block">({{ move.created_at|timesince }} {% translate "ago)" %}</small>
                                         </div>
                                     {% empty %}
                                         <div class="message system">

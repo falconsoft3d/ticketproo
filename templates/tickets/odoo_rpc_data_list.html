@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load i18n %}
-{% block title %}Datos Importados - {{ table.name }} - Ticket System{% endblock %}
+{% block title %}{% translate "Datos Importados -" %} {{ table.name }} {% translate "- Ticket System" %}{% endblock %}
 {% block content %}
 <div class="container-fluid mt-4">
     <nav aria-label="{% translate 'breadcrumb' %}">

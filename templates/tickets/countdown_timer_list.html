@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -41,7 +41,7 @@
                         <strong>{% translate "Fecha objetivo:" %}</strong><br>
                         <span class="text-muted">
                             <i class="bi bi-calendar3"></i> 
-                            {{ countdown.target_date|date:"d/m/Y" }} a las {{ countdown.target_date|date:"H:i" }}
+                            {{ countdown.target_date|date:"d/m/Y" }} {% translate "a las" %} {{ countdown.target_date|date:"H:i" }}
                         </span>
                     </div>
                     

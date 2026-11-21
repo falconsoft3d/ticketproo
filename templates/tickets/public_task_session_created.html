@@ -93,7 +93,7 @@
                                                     {{ item.task.get_priority_display }}
                                                 </span>
                                                 {% if item.task.due_date %}
-                                                    - Vence: {{ item.task.due_date|date:"d/m/Y" }}
+                                                    {% translate "- Vence:" %} {{ item.task.due_date|date:"d/m/Y" }}
                                                 {% endif %}
                                             </small>
                                         </div>

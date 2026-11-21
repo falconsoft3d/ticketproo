@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Generación de Artículos con IA - {{ block.super }}{% endblock %}
+{% block title %}{% translate "Generación de Artículos con IA -" %} {{ block.super }}{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -95,7 +95,7 @@
                             <div>
                                 <p class="text-muted mb-1 small">{% translate "Artículos Generados" %}</p>
                                 <h3 class="mb-0 text-success">{{ generated_articles }}</h3>
-                                <small class="text-muted">{{ generation_percentage }}% completado</small>
+                                <small class="text-muted">{{ generation_percentage }}{% translate "% completado" %}</small>
                             </div>
                             <i class="fas fa-check-circle metric-icon text-info"></i>
                         </div>
@@ -109,8 +109,8 @@
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <p class="text-muted mb-1 small">{% translate "Total Palabras" %}</p>
-                                <h3 class="mb-0">{{ total_words|floatformat:0 }}k</h3>
-                                <small class="text-muted">{{ avg_words_per_article|floatformat:0 }} palabras/art.</small>
+                                <h3 class="mb-0">{{ total_words|floatformat:0 }}{% translate "k" %}</h3>
+                                <small class="text-muted">{{ avg_words_per_article|floatformat:0 }} {% translate "palabras/art." %}</small>
                             </div>
                             <i class="fas fa-chart-line metric-icon text-warning"></i>
                         </div>
@@ -124,7 +124,7 @@
             <h4 class="mb-0">{% translate "Mis Proyectos" %}</h4>
             <div class="btn-group" role="group">
                 <button type="button" class="btn btn-sm btn-outline-secondary active" data-filter="all">
-                    Todos ({{ projects.count }})
+                    {% translate "Todos (" %}{{ projects.count }})
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-filter="in_progress">
                     {% translate "En Progreso" %}

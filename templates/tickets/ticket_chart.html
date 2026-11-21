@@ -18,19 +18,19 @@
             <div class="alert alert-info">
                 <strong><i class="bi bi-funnel"></i> {% translate "Filtros aplicados:" %}</strong>
                 {% if request.GET.search %}
-                    <span class="badge bg-primary">Búsqueda: {{ request.GET.search }}</span>
+                    <span class="badge bg-primary">{% translate "Búsqueda:" %} {{ request.GET.search }}</span>
                 {% endif %}
                 {% if request.GET.status %}
-                    <span class="badge bg-secondary">Estado: {{ request.GET.status }}</span>
+                    <span class="badge bg-secondary">{% translate "Estado:" %} {{ request.GET.status }}</span>
                 {% endif %}
                 {% if request.GET.priority %}
-                    <span class="badge bg-warning">Prioridad: {{ request.GET.priority }}</span>
+                    <span class="badge bg-warning">{% translate "Prioridad:" %} {{ request.GET.priority }}</span>
                 {% endif %}
                 {% if request.GET.company %}
-                    <span class="badge bg-success">Empresa ID: {{ request.GET.company }}</span>
+                    <span class="badge bg-success">{% translate "Empresa ID:" %} {{ request.GET.company }}</span>
                 {% endif %}
                 {% if request.GET.assigned_to %}
-                    <span class="badge bg-dark">Asignado a: {{ request.GET.assigned_to }}</span>
+                    <span class="badge bg-dark">{% translate "Asignado a:" %} {{ request.GET.assigned_to }}</span>
                 {% endif %}
             </div>
         </div>
@@ -45,7 +45,7 @@
                     <h5 class="mb-0">
                         <i class="bi bi-graph-up text-primary"></i> {% translate "Actividad de Creación de Tickets" %}
                     </h5>
-                    <small class="text-muted">{{ activity_total }} ticket{{ activity_total|pluralize }} creado{{ activity_total|pluralize }} en el último año</small>
+                    <small class="text-muted">{{ activity_total }} {% translate "ticket" %}{{ activity_total|pluralize }} {% translate "creado" %}{{ activity_total|pluralize }} {% translate "en el último año" %}</small>
                 </div>
                 <div class="card-body">
                     <div class="contribution-graph-wrapper">

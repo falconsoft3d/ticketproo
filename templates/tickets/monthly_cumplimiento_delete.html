@@ -31,7 +31,7 @@
                             {% if cumplimiento.frequency_type == 'daily' %}
                                 {% translate "Todos los días" %}
                             {% else %}
-                                {{ cumplimiento.target_days }} días al mes
+                                {{ cumplimiento.target_days }} {% translate "días al mes" %}
                             {% endif %}
                         </p>
                         <p class="mb-0"><strong>{% translate "Creado:" %}</strong> {{ cumplimiento.created_at|date:"d/m/Y" }}</p>
@@ -42,7 +42,7 @@
                         <strong>{% translate "Datos que se eliminarán:" %}</strong>
                         <ul class="mb-0 mt-2">
                             <li>{% translate "La meta de cumplimiento" %}</li>
-                            <li>Todos los registros diarios asociados ({{ cumplimiento.daily_cumplimientos.count }} registros)</li>
+                            <li>{% translate "Todos los registros diarios asociados (" %}{{ cumplimiento.daily_cumplimientos.count }} {% translate "registros)" %}</li>
                             <li>{% translate "El acceso público móvil" %}</li>
                         </ul>
                     </div>

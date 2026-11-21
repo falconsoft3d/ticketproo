@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -252,7 +252,7 @@
                                 <div>
                                     <h6 class="mb-1">{{ game.name }}</h6>
                                     <small class="text-muted">
-                                        Creado por: {{ game.created_by.username }}
+                                        {% translate "Creado por:" %} {{ game.created_by.username }}
                                         {% if game.created_by == user %}<span class="badge bg-primary">TU</span>{% endif %}
                                     </small>
                                 </div>
@@ -295,9 +295,9 @@
                                 <div>
                                     <h6 class="mb-1">{{ game.name }}</h6>
                                     <small class="text-muted">
-                                        Creado por: {{ game.created_by.username }}
+                                        {% translate "Creado por:" %} {{ game.created_by.username }}
                                         <br>
-                                        <i class="bi bi-clock"></i> {{ game.created_at|timesince }} ago
+                                        <i class="bi bi-clock"></i> {{ game.created_at|timesince }} {% translate "ago" %}
                                     </small>
                                 </div>
                                 <div class="text-end">

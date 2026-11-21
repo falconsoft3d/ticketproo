@@ -8,7 +8,7 @@
   {% if success %}
     <div class="alert alert-success">{{ success_message }}</div>
     <p>{% translate "Tu solicitud:" %} <strong>{{ request_obj.sequence }}</strong></p>
-    <p>Fecha: {{ request_obj.request_date }}</p>
+    <p>{% translate "Fecha:" %} {{ request_obj.request_date }}</p>
   {% else %}
     <form method="post">
       {% csrf_token %}

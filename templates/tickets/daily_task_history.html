@@ -112,8 +112,7 @@
                                 {{ session.date|date:"l, d \d\e F \d\e Y" }}
                             </h5>
                             <small class="text-muted">
-                                Sesión creada: {{ session.created_at|date:"H:i" }} • 
-                                Última actualización: {{ session.updated_at|date:"H:i" }}
+                                {% translate "Sesión creada:" %} {{ session.created_at|date:"H:i" }} {% translate "• Última actualización:" %} {{ session.updated_at|date:"H:i" }}
                             </small>
                         </div>
                         <div class="text-end">
@@ -122,7 +121,7 @@
                                     {{ session.get_completion_percentage }}%
                                 </span>
                                 <small class="text-muted">
-                                    {{ session.get_completed_tasks }}/{{ session.get_total_tasks }} tareas
+                                    {{ session.get_completed_tasks }}/{{ session.get_total_tasks }} {% translate "tareas" %}
                                 </small>
                             </div>
                         </div>
@@ -202,7 +201,7 @@
                     
                     <li class="page-item active">
                         <span class="page-link">
-                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            {% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}
                         </span>
                     </li>
                     

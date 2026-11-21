@@ -107,7 +107,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h1 class="h3 mb-0">{% translate "📊 Analytics de Páginas Públicas" %}</h1>
-                    <p class="text-muted">Análisis de visitas del {{ start_date|date:"d/m/Y" }} al {{ end_date|date:"d/m/Y" }}</p>
+                    <p class="text-muted">{% translate "Análisis de visitas del" %} {{ start_date|date:"d/m/Y" }} {% translate "al" %} {{ end_date|date:"d/m/Y" }}</p>
                 </div>
                 <div>
                     <a href="{% url 'page_visits_detail' %}" class="btn btn-outline-primary me-2">
@@ -126,7 +126,7 @@
         <div class="alert alert-info mb-3">
             <i class="fas fa-info-circle"></i> 
             <strong>{% translate "Período seleccionado:" %}</strong> {{ start_date|date:"d/m/Y" }} - {{ end_date|date:"d/m/Y" }} 
-            ({{ total_visits }} visitas en total)
+            ({{ total_visits }} {% translate "visitas en total)" %}
         </div>
         <form method="get" class="row g-3">
             <div class="col-md-3">
@@ -270,7 +270,7 @@
                 <div class="mb-3">
                     <div class="d-flex justify-content-between">
                         <span class="badge badge-page-type bg-primary">{{ page.page_type|upper }}</span>
-                        <strong>{{ page.count }} visitas</strong>
+                        <strong>{{ page.count }} {% translate "visitas" %}</strong>
                     </div>
                     <div class="progress progress-bar-custom mt-1">
                         <div class="progress-bar bg-primary" style="width: {% widthratio page.count visits_by_page.0.count 100 %}%"></div>
@@ -290,7 +290,7 @@
                         <span class="location-badge">
                             {{ country.country_code|upper }} {{ country.country }}
                         </span>
-                        <strong>{{ country.count }} visitas</strong>
+                        <strong>{{ country.count }} {% translate "visitas" %}</strong>
                     </div>
                     <div class="progress progress-bar-custom mt-1">
                         <div class="progress-bar bg-success" style="width: {% widthratio country.count top_countries.0.count 100 %}%"></div>
@@ -341,7 +341,7 @@
                     <div class="mb-2">
                         <div class="d-flex justify-content-between">
                             <span class="badge bg-info">{{ utm.utm_source }}</span>
-                            <small>{{ utm.count }} visitas</small>
+                            <small>{{ utm.count }} {% translate "visitas" %}</small>
                         </div>
                         <div class="progress progress-bar-custom mt-1" style="height: 4px;">
                             <div class="progress-bar bg-info" style="width: {% widthratio utm.count landing_utm_sources.0.count 100 %}%"></div>
@@ -365,7 +365,7 @@
                 <div class="mb-3">
                     <div class="d-flex justify-content-between">
                         <span class="device-badge">{{ browser.browser }}</span>
-                        <strong>{{ browser.count }} visitas</strong>
+                        <strong>{{ browser.count }} {% translate "visitas" %}</strong>
                     </div>
                     <div class="progress progress-bar-custom mt-1">
                         <div class="progress-bar bg-info" style="width: {% widthratio browser.count top_browsers.0.count 100 %}%"></div>
@@ -389,7 +389,7 @@
                                 {% translate "Acceso directo" %}
                             {% endif %}
                         </span>
-                        <strong>{{ referrer.count }} visitas</strong>
+                        <strong>{{ referrer.count }} {% translate "visitas" %}</strong>
                     </div>
                     <div class="progress progress-bar-custom mt-1">
                         <div class="progress-bar bg-warning" style="width: {% widthratio referrer.count referrers.0.count 100 %}%"></div>

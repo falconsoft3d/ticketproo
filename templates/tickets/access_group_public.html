@@ -157,7 +157,7 @@
         <!-- Footer -->
         <div class="footer-info">
             <i class="bi bi-shield-check"></i>
-            Acceso proporcionado por {{ group.created_by.get_full_name|default:group.created_by.username }}
+            {% translate "Acceso proporcionado por" %} {{ group.created_by.get_full_name|default:group.created_by.username }}
         </div>
     </div>
 

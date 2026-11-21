@@ -10,7 +10,7 @@
                 <p class="lead">{% translate "¿Eliminar la tabla" %} <strong>{{ table.name }}</strong>?</p>
                 <div class="alert alert-danger">
                     <strong>{% translate "Se eliminarán:" %}</strong>
-                    <ul class="mb-0"><li>{{ fields_count }} campos</li><li>{{ data_count }} registros de datos</li></ul>
+                    <ul class="mb-0"><li>{{ fields_count }} {% translate "campos" %}</li><li>{{ data_count }} {% translate "registros de datos" %}</li></ul>
                 </div>
                 <form method="post">{% csrf_token %}
                     <div class="d-flex justify-content-between">

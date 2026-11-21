@@ -291,7 +291,7 @@
                     <i class="bi bi-ticket-perforated text-primary me-2"></i>
                     <div>
                         <div class="fw-bold">{% translate "Tickets Creados" %}</div>
-                        <small class="text-muted">{{ user.created_tickets.count }} total</small>
+                        <small class="text-muted">{{ user.created_tickets.count }} {% translate "total" %}</small>
                     </div>
                 </div>
                 
@@ -299,7 +299,7 @@
                     <i class="bi bi-chat-dots text-success me-2"></i>
                     <div>
                         <div class="fw-bold">{% translate "Comentarios" %}</div>
-                        <small class="text-muted">{{ user.ticketcomment_set.count }} total</small>
+                        <small class="text-muted">{{ user.ticketcomment_set.count }} {% translate "total" %}</small>
                     </div>
                 </div>
                 
@@ -307,7 +307,7 @@
                     <i class="bi bi-journal-text text-info me-2"></i>
                     <div>
                         <div class="fw-bold">{% translate "Notas Asociadas" %}</div>
-                        <small class="text-muted">{{ user.notes.count }} total</small>
+                        <small class="text-muted">{{ user.notes.count }} {% translate "total" %}</small>
                     </div>
                 </div>
                 
@@ -316,7 +316,7 @@
                     <i class="bi bi-person-check text-warning me-2"></i>
                     <div>
                         <div class="fw-bold">{% translate "Tickets Asignados" %}</div>
-                        <small class="text-muted">{{ user.assigned_tickets.count }} total</small>
+                        <small class="text-muted">{{ user.assigned_tickets.count }} {% translate "total" %}</small>
                     </div>
                 </div>
                 
@@ -324,7 +324,7 @@
                     <i class="bi bi-journal-plus text-primary me-2"></i>
                     <div>
                         <div class="fw-bold">{% translate "Notas Creadas" %}</div>
-                        <small class="text-muted">{{ user.created_notes.count }} total</small>
+                        <small class="text-muted">{{ user.created_notes.count }} {% translate "total" %}</small>
                     </div>
                 </div>
                 {% endif %}

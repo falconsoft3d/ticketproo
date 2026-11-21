@@ -175,7 +175,7 @@
                             <div class="d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">{{ ticket.title|truncatechars:30 }}</div>
-                                    <small class="text-muted">{{ ticket.created_at|timesince }} ago</small>
+                                    <small class="text-muted">{{ ticket.created_at|timesince }} {% translate "ago" %}</small>
                                 </div>
                                 <span class="badge bg-{% if ticket.status == 'open' %}warning{% elif ticket.status == 'closed' %}success{% else %}secondary{% endif %} rounded-pill">
                                     {{ ticket.get_status_display }}

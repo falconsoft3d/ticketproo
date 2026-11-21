@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{{ chapter.title }} - {{ book.title }} - TicketProo{% endblock %}
+{% block title %}{{ chapter.title }} - {{ book.title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <style>
@@ -49,19 +49,19 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'ai_book_list' %}">{% translate "Libros" %}</a></li>
             <li class="breadcrumb-item"><a href="{% url 'ai_book_detail' book.pk %}">{{ book.title|truncatechars:30 }}</a></li>
-            <li class="breadcrumb-item active">Capítulo {{ chapter.order }}</li>
+            <li class="breadcrumb-item active">{% translate "Capítulo" %} {{ chapter.order }}</li>
         </ol>
     </nav>
 
     <div class="row mb-4">
         <div class="col-md-12">
-            <h2><i class="bi bi-file-text"></i> Capítulo {{ chapter.order }}: {{ chapter.title }}</h2>
+            <h2><i class="bi bi-file-text"></i> {% translate "Capítulo" %} {{ chapter.order }}: {{ chapter.title }}</h2>
             <span class="badge {{ chapter.get_status_badge_class }} fs-6">
                 {{ chapter.get_status_display }}
             </span>
             {% if chapter.word_count > 0 %}
             <span class="badge bg-info ms-2">
-                <i class="bi bi-file-text"></i> {{ chapter.word_count }} palabras
+                <i class="bi bi-file-text"></i> {{ chapter.word_count }} {% translate "palabras" %}
             </span>
             {% endif %}
         </div>

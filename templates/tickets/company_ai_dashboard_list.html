@@ -107,7 +107,7 @@
                         {% if company_data.total_summaries > 0 %}
                         <div class="mt-3">
                             <span class="badge bg-info">
-                                <i class="bi bi-file-text"></i> {{ company_data.total_summaries }} Resumen{{ company_data.total_summaries|pluralize:"es" }} Empresarial{{ company_data.total_summaries|pluralize:"es" }}
+                                <i class="bi bi-file-text"></i> {{ company_data.total_summaries }} {% translate "Resumen" %}{{ company_data.total_summaries|pluralize:"es" }} {% translate "Empresarial" %}{{ company_data.total_summaries|pluralize:"es" }}
                             </span>
                         </div>
                         {% endif %}

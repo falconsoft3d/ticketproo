@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Eliminar Reunión - {{ meeting.title }}{% endblock %}
+{% block title %}{% translate "Eliminar Reunión -" %} {{ meeting.title }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -47,8 +47,8 @@
                             {% translate "Al eliminar esta reunión también se eliminarán:" %}
                         </p>
                         <ul class="text-muted">
-                            <li>Todos los asistentes registrados ({{ meeting.get_attendees_count }})</li>
-                            <li>Todas las preguntas y respuestas ({{ meeting.get_questions_count }})</li>
+                            <li>{% translate "Todos los asistentes registrados (" %}{{ meeting.get_attendees_count }})</li>
+                            <li>{% translate "Todas las preguntas y respuestas (" %}{{ meeting.get_questions_count }})</li>
                             <li>{% translate "El link público de acceso" %}</li>
                         </ul>
                     </div>

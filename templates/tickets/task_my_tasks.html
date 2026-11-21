@@ -205,9 +205,9 @@
                                 <div class="text-muted small">
                                     <i class="bi bi-clock me-1"></i>
                                     {% if task.actual_hours %}
-                                        {{ task.actual_hours }}/{{ task.estimated_hours }} horas
+                                        {{ task.actual_hours }}/{{ task.estimated_hours }} {% translate "horas" %}
                                     {% else %}
-                                        {{ task.estimated_hours }} horas estimadas
+                                        {{ task.estimated_hours }} {% translate "horas estimadas" %}
                                     {% endif %}
                                 </div>
                                 {% endif %}
@@ -249,7 +249,7 @@
                         
                         <li class="page-item active">
                             <span class="page-link">
-                                Página {{ tasks.number }} de {{ tasks.paginator.num_pages }}
+                                {% translate "Página" %} {{ tasks.number }} {% translate "de" %} {{ tasks.paginator.num_pages }}
                             </span>
                         </li>
                         

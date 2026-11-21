@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Eliminar Catálogo - {{ block.super }}{% endblock %}
+{% block title %}{% translate "Eliminar Catálogo -" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -15,7 +15,7 @@
                 <div class="card-body text-center py-4">
                     <p class="fs-5">{% translate "¿Estás seguro de que deseas eliminar el catálogo" %}</p>
                     <p class="fs-4 fw-bold text-danger">{{ catalog.name }}</p>
-                    <p class="text-muted">Se eliminarán también todas sus líneas ({{ catalog.get_total_products }} productos). Esta acción no se puede deshacer.</p>
+                    <p class="text-muted">{% translate "Se eliminarán también todas sus líneas (" %}{{ catalog.get_total_products }} {% translate "productos). Esta acción no se puede deshacer." %}</p>
                     <div class="d-flex justify-content-center gap-3 mt-4">
                         <form method="post">
                             {% csrf_token %}

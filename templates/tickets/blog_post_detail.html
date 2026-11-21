@@ -1,7 +1,7 @@
 {% extends "blog_base.html" %}
 {% load i18n %}
 
-{% block title %}{{ post.title }} - Blog TicketProo{% endblock %}
+{% block title %}{{ post.title }} {% translate "- Blog TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -32,11 +32,11 @@
                     </span>
                     <span class="me-3">
                         <i class="fas fa-eye"></i> 
-                        {{ post.views }} vistas
+                        {{ post.views }} {% translate "vistas" %}
                     </span>
                     <span>
                         <i class="fas fa-comments"></i> 
-                        {{ comments.count }} comentarios
+                        {{ comments.count }} {% translate "comentarios" %}
                     </span>
                 </div>
                 
@@ -87,7 +87,7 @@
         <section id="comments">
             <h3 class="mb-4">
                 <i class="fas fa-comments"></i> 
-                Comentarios ({{ comments.count }})
+                {% translate "Comentarios (" %}{{ comments.count }})
             </h3>
             
             <!-- Formulario de comentarios -->
@@ -198,7 +198,7 @@
                     <i class="fas fa-arrow-left"></i> {% translate "Volver al Blog" %}
                 </a>
                 <a href="?category={{ post.category.slug }}" class="btn btn-outline-secondary btn-sm d-block">
-                    <i class="fas fa-tags"></i> Más de {{ post.category.name }}
+                    <i class="fas fa-tags"></i> {% translate "Más de" %} {{ post.category.name }}
                 </a>
             </div>
         </div>

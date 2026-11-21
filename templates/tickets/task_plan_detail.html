@@ -179,7 +179,7 @@
                         <div class="mt-2">
                             <small>
                                 <i class="bi bi-list-check"></i>
-                                {{ day.tasks.count }} tarea{{ day.tasks.count|pluralize:",s" }}
+                                {{ day.tasks.count }} {% translate "tarea" %}{{ day.tasks.count|pluralize:",s" }}
                             </small>
                         </div>
                     </div>
@@ -236,7 +236,7 @@
                                         
                                         {% if task.estimated_hours %}
                                         <span class="badge bg-light text-dark priority-badge">
-                                            <i class="bi bi-clock-fill"></i> {{ task.estimated_hours }}h
+                                            <i class="bi bi-clock-fill"></i> {{ task.estimated_hours }}{% translate "h" %}
                                         </span>
                                         {% endif %}
                                     </div>

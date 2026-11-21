@@ -47,7 +47,7 @@
                                 {% for option in question.options.all %}
                                 <div class="list-group-item d-flex justify-content-between align-items-center">
                                     <span>{{ option.order }}. {{ option.option_text }}</span>
-                                    <span class="badge bg-primary rounded-pill">{{ option.score }} pts</span>
+                                    <span class="badge bg-primary rounded-pill">{{ option.score }} {% translate "pts" %}</span>
                                 </div>
                                 {% endfor %}
                             </div>

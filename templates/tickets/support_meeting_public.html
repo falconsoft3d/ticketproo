@@ -144,7 +144,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <h4 class="mb-0">
                             <i class="fas fa-calendar-alt me-2"></i>
-                            Reunión #{{ meeting.sequence }}
+                            {% translate "Reunión #" %}{{ meeting.sequence }}
                         </h4>
                         <span class="badge meeting-badge">
                             {{ meeting.date|date:"d/m/Y" }}
@@ -303,7 +303,7 @@
                                     {% if company_kpis.support_meetings.recent > 0 %}
                                         <small class="d-block mt-1">
                                             <i class="fas fa-calendar-alt me-1"></i>
-                                            {{ company_kpis.support_meetings.recent }} en 6 meses
+                                            {{ company_kpis.support_meetings.recent }} {% translate "en 6 meses" %}
                                         </small>
                                     {% endif %}
                                 </div>
@@ -322,7 +322,7 @@
                                     {% if company_kpis.tickets.resolution_rate > 0 %}
                                         <small class="d-block mt-1">
                                             <i class="fas fa-check-circle me-1"></i>
-                                            {{ company_kpis.tickets.resolution_rate }}% resueltos
+                                            {{ company_kpis.tickets.resolution_rate }}{% translate "% resueltos" %}
                                         </small>
                                     {% endif %}
                                 </div>
@@ -341,7 +341,7 @@
                                     {% if company_kpis.projects.active > 0 %}
                                         <small class="d-block mt-1">
                                             <i class="fas fa-play-circle me-1"></i>
-                                            {{ company_kpis.projects.active }} activos
+                                            {{ company_kpis.projects.active }} {% translate "activos" %}
                                         </small>
                                     {% endif %}
                                 </div>
@@ -359,7 +359,7 @@
                                     {% if company_kpis.engagement.meetings_frequency > 0 %}
                                         <small class="d-block mt-1">
                                             <i class="fas fa-calendar-week me-1"></i>
-                                            {{ company_kpis.engagement.meetings_frequency }} reuniones/mes
+                                            {{ company_kpis.engagement.meetings_frequency }} {% translate "reuniones/mes" %}
                                         </small>
                                     {% endif %}
                                 </div>
@@ -508,10 +508,10 @@
                                 <div class="flex-grow-1">
                                     <a href="{% url 'support_meeting_public' other_meeting.public_link.token %}" 
                                        class="meeting-link">
-                                        <h6 class="mb-1">Reunión #{{ other_meeting.sequence }}</h6>
+                                        <h6 class="mb-1">{% translate "Reunión #" %}{{ other_meeting.sequence }}</h6>
                                         <small class="text-muted">
                                             {{ other_meeting.date|date:"d/m/Y" }} • 
-                                            {{ other_meeting.points_count }} puntos
+                                            {{ other_meeting.points_count }} {% translate "puntos" %}
                                         </small>
                                     </a>
                                 </div>
@@ -522,8 +522,7 @@
                             <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
                             <p class="mb-0 text-muted small">
                                 {% if total_company_meetings > 0 %}
-                                    <strong>{{ total_company_meetings }}</strong> reunión{{ total_company_meetings|pluralize:"es" }} adicional{{ total_company_meetings|pluralize:"es" }} disponible{{ total_company_meetings|pluralize:"s" }}, 
-                                    pero sin enlace público activo.
+                                    <strong>{{ total_company_meetings }}</strong> {% translate "reunión" %}{{ total_company_meetings|pluralize:"es" }} {% translate "adicional" %}{{ total_company_meetings|pluralize:"es" }} {% translate "disponible" %}{{ total_company_meetings|pluralize:"s" }}{% translate ", pero sin enlace público activo." %}
                                 {% else %}
                                     {% translate "No hay otras reuniones disponibles para mostrar." %}
                                 {% endif %}
@@ -543,8 +542,7 @@
             <div class="col-12 text-center">
                 <small class="text-muted">
                     <i class="fas fa-calendar-alt me-1"></i>
-                    Sistema de Reuniones de Soporte • 
-                    Generado el {{ public_link.created_at|date:"d/m/Y" }}
+                    {% translate "Sistema de Reuniones de Soporte • Generado el" %} {{ public_link.created_at|date:"d/m/Y" }}
                 </small>
             </div>
         </div>

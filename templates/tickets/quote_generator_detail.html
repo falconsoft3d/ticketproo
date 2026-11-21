@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -80,7 +80,7 @@
                     {% if generator.updated_at != generator.created_at %}
                     <small class="text-muted">
                         <i class="bi bi-clock-history"></i> 
-                        Última actualización: {{ generator.updated_at|date:"d/m/Y H:i" }}
+                        {% translate "Última actualización:" %} {{ generator.updated_at|date:"d/m/Y H:i" }}
                     </small>
                     {% endif %}
                 </div>
@@ -94,7 +94,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-chat-square-quote"></i> Citas Generadas ({{ quotes_list|length }})
+                        <i class="bi bi-chat-square-quote"></i> {% translate "Citas Generadas (" %}{{ quotes_list|length }})
                     </h5>
                 </div>
                 <div class="card-body">

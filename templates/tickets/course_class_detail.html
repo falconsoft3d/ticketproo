@@ -185,7 +185,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <small class="text-muted">{% translate "Visualizaciones:" %}</small>
-                    <span class="badge bg-info">{{ course_class.get_view_count }} usuario{{ course_class.get_view_count|pluralize }}</span>
+                    <span class="badge bg-info">{{ course_class.get_view_count }} {% translate "usuario" %}{{ course_class.get_view_count|pluralize }}</span>
                 </div>
                 
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -206,7 +206,7 @@
                     <small class="text-muted">{% translate "Duración:" %}</small>
                     <span>
                         {% if course_class.duration_minutes %}
-                            {{ course_class.duration_minutes }} minutos
+                            {{ course_class.duration_minutes }} {% translate "minutos" %}
                         {% else %}
                             {% translate "No especificada" %}
                         {% endif %}

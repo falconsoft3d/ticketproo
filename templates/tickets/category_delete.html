@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -44,7 +44,7 @@
                                 {% endif %}
                             </li>
                             <li><strong>{% translate "Tickets asociados:" %}</strong> 
-                                <span class="badge bg-info">{{ ticket_count }} tickets</span>
+                                <span class="badge bg-info">{{ ticket_count }} {% translate "tickets" %}</span>
                             </li>
                         </ul>
                     </div>
@@ -55,7 +55,7 @@
                             <i class="fas fa-info-circle me-2"></i>{% translate "Tickets asociados" %}
                         </h6>
                         <p class="mb-0">
-                            {% translate "Esta categoría tiene" %} <strong>{{ ticket_count }} tickets</strong> {% translate "asociados. Al eliminar la categoría, estos tickets perderán su categoría asignada." %}
+                            {% translate "Esta categoría tiene" %} <strong>{{ ticket_count }} {% translate "tickets" %}</strong> {% translate "asociados. Al eliminar la categoría, estos tickets perderán su categoría asignada." %}
                         </p>
                     </div>
                     {% endif %}

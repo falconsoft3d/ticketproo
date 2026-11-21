@@ -142,7 +142,7 @@
                 <div class="col-md-2">
                     <div class="card kpi-card text-center">
                         <div class="card-body">
-                            <div class="kpi-number text-primary">{{ total_hours|floatformat:1 }}h</div>
+                            <div class="kpi-number text-primary">{{ total_hours|floatformat:1 }}{% translate "h" %}</div>
                             <div class="kpi-label">{% translate "Total Horas" %}</div>
                         </div>
                     </div>
@@ -150,7 +150,7 @@
                 <div class="col-md-2">
                     <div class="card kpi-card text-center">
                         <div class="card-body">
-                            <div class="kpi-number text-success">{{ week_hours|floatformat:1 }}h</div>
+                            <div class="kpi-number text-success">{{ week_hours|floatformat:1 }}{% translate "h" %}</div>
                             <div class="kpi-label">{% translate "Esta Semana" %}</div>
                             {% if week_growth != 0 %}
                                 <small class="{% if week_growth > 0 %}growth-positive{% else %}growth-negative{% endif %}">
@@ -164,7 +164,7 @@
                 <div class="col-md-2">
                     <div class="card kpi-card text-center">
                         <div class="card-body">
-                            <div class="kpi-number text-info">{{ month_hours|floatformat:1 }}h</div>
+                            <div class="kpi-number text-info">{{ month_hours|floatformat:1 }}{% translate "h" %}</div>
                             <div class="kpi-label">{% translate "Este Mes" %}</div>
                         </div>
                     </div>
@@ -172,7 +172,7 @@
                 <div class="col-md-2">
                     <div class="card kpi-card text-center">
                         <div class="card-body">
-                            <div class="kpi-number text-warning">{{ avg_daily_hours }}h</div>
+                            <div class="kpi-number text-warning">{{ avg_daily_hours }}{% translate "h" %}</div>
                             <div class="kpi-label">{% translate "Promedio Diario" %}</div>
                             <small class="text-muted">{% translate "(30 días)" %}</small>
                         </div>
@@ -231,7 +231,7 @@
                                                     <strong>{{ category.category|title }}</strong>
                                                 </td>
                                                 <td>
-                                                    <span class="text-success fw-bold">{{ category.hours|floatformat:1 }} hrs</span>
+                                                    <span class="text-success fw-bold">{{ category.hours|floatformat:1 }} {% translate "hrs" %}</span>
                                                 </td>
                                                 <td>
                                                     <span class="badge bg-info">{{ category.entries_count }}</span>
@@ -245,7 +245,7 @@
                                                             {% elif category.category == 'uso' %}bg-info
                                                             {% endif %}" 
                                                              style="width: {% widthratio category.hours total_hours 100 %}%">
-                                                            {{ category.hours|floatformat:1 }}h
+                                                            {{ category.hours|floatformat:1 }}{% translate "h" %}
                                                         </div>
                                                     </div>
                                                 </td>
@@ -255,7 +255,7 @@
                                         <tfoot class="table-light">
                                             <tr>
                                                 <th>TOTAL</th>
-                                                <th class="text-success">{{ total_hours|floatformat:1 }} hrs</th>
+                                                <th class="text-success">{{ total_hours|floatformat:1 }} {% translate "hrs" %}</th>
                                                 <th>{{ total_entries }}</th>
                                                 
                                                 <th>
@@ -297,8 +297,8 @@
                                             <strong class="ms-2">{{ user.client_name }}</strong>
                                         </div>
                                         <div class="text-end">
-                                            <div class="fw-bold text-primary">{{ user.total_hours|floatformat:1 }}h</div>
-                                            <small class="text-muted">{{ user.total_entries }} entradas</small>
+                                            <div class="fw-bold text-primary">{{ user.total_hours|floatformat:1 }}{% translate "h" %}</div>
+                                            <small class="text-muted">{{ user.total_entries }} {% translate "entradas" %}</small>
                                         </div>
                                     </div>
                                 </div>
@@ -327,8 +327,8 @@
                                             <strong class="ms-2">{{ user.client_name|truncatechars:20 }}</strong>
                                         </div>
                                         <div class="text-end">
-                                            <div class="fw-bold text-success">{{ user.week_hours|floatformat:1 }}h</div>
-                                            <small class="text-muted">{{ user.week_entries }} entradas</small>
+                                            <div class="fw-bold text-success">{{ user.week_hours|floatformat:1 }}{% translate "h" %}</div>
+                                            <small class="text-muted">{{ user.week_entries }} {% translate "entradas" %}</small>
                                         </div>
                                     </div>
                                 </div>

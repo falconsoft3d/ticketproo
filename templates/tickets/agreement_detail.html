@@ -93,10 +93,10 @@
                         {% endif %}
                     </div>
                     <div class="d-flex flex-wrap gap-3 mt-2">
-                        <small><i class="bi bi-person"></i> Creado por: {{ agreement.created_by.get_full_name|default:agreement.created_by.username }}</small>
+                        <small><i class="bi bi-person"></i> {% translate "Creado por:" %} {{ agreement.created_by.get_full_name|default:agreement.created_by.username }}</small>
                         <small><i class="bi bi-calendar"></i> {{ agreement.created_at|date:"d/m/Y H:i" }}</small>
                         {% if agreement.expires_at %}
-                            <small><i class="bi bi-clock"></i> Expira: {{ agreement.expires_at|date:"d/m/Y H:i" }}</small>
+                            <small><i class="bi bi-clock"></i> {% translate "Expira:" %} {{ agreement.expires_at|date:"d/m/Y H:i" }}</small>
                         {% endif %}
                     </div>
                 </div>
@@ -141,7 +141,7 @@
                     <div class="card-header">
                         <h5 class="mb-0">
                             <i class="bi bi-pen"></i> 
-                            Firmas ({{ agreement.signature_count }} / {{ agreement.max_signers }})
+                            {% translate "Firmas (" %}{{ agreement.signature_count }} / {{ agreement.max_signers }})
                         </h5>
                     </div>
                     <div class="card-body">
@@ -174,9 +174,9 @@
                                             </div>
                                             <div class="col-md-6">
                                                 <small class="text-muted">
-                                                    <i class="bi bi-globe"></i> IP: {{ signature.ip_address }}<br>
+                                                    <i class="bi bi-globe"></i> {% translate "IP:" %} {{ signature.ip_address }}<br>
                                                     <i class="bi bi-device-hdd"></i> {{ signature.user_agent|truncatechars:50 }}<br>
-                                                    <i class="bi bi-download"></i> Descargas: {{ signature.download_count }}
+                                                    <i class="bi bi-download"></i> {% translate "Descargas:" %} {{ signature.download_count }}
                                                 </small>
                                             </div>
                                         </div>
@@ -230,7 +230,7 @@
                                         <div class="progress-bar bg-success" 
                                              style="width: {{ progress_percent }}%"></div>
                                     </div>
-                                    <small class="text-muted">{{ progress_percent }}% completado</small>
+                                    <small class="text-muted">{{ progress_percent }}{% translate "% completado" %}</small>
                                 </div>
                             </div>
                         </div>

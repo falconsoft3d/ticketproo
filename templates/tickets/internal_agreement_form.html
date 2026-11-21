@@ -15,7 +15,7 @@
                         {{ page_title }}
                     </h2>
                     {% if not is_create and agreement %}
-                        <p class="text-muted">Acuerdo #{{ agreement.sequence }}</p>
+                        <p class="text-muted">{% translate "Acuerdo #" %}{{ agreement.sequence }}</p>
                     {% endif %}
                 </div>
                 <div>

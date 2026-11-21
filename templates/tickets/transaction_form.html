@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ action }} Transacción - {{ block.super }}{% endblock %}
+{% block title %}{{ action }} {% translate "Transacción -" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -22,7 +22,7 @@
         <div class="col-12 col-lg-8 mx-auto">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> {{ action }} Transacción</h5>
+                    <h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> {{ action }} {% translate "Transacción" %}</h5>
                 </div>
                 <div class="card-body">
                     <form method="post">

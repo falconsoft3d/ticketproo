@@ -26,7 +26,7 @@
           <p class="text-muted small mb-0"><i class="bi bi-calendar3 me-1"></i>{{ survey.contract_date|date:"d/m/Y" }}</p>
         {% endif %}
         {% if survey.contract_expiration_date %}
-          <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i>Vence el {{ survey.contract_expiration_date|date:"d/m/Y" }}</p>
+          <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i>{% translate "Vence el" %} {{ survey.contract_expiration_date|date:"d/m/Y" }}</p>
         {% endif %}
       {% else %}
         <p class="text-muted small mb-0 fst-italic">{% translate "Sin título ni fecha asignados." %}</p>
@@ -178,16 +178,16 @@
           <div class="col-md-6">
             <p class="fw-semibold text-uppercase text-muted mb-1" style="font-size:.7rem;">{% translate "EL EJECUTOR" %}</p>
             {% if survey.created_by %}<p class="mb-0"><strong>{{ survey.created_by.get_full_name|default:survey.created_by.username }}</strong></p>{% endif %}
-            {% if survey.provider_nif %}<p class="mb-0 text-muted">NIF: {{ survey.provider_nif }}</p>{% endif %}
-            {% if survey.provider_nationality %}<p class="mb-0 text-muted">Nacionalidad: {{ survey.provider_nationality }}</p>{% endif %}
-            {% if survey.provider_civil_status %}<p class="mb-0 text-muted">Estado civil: {{ survey.provider_civil_status }}</p>{% endif %}
+            {% if survey.provider_nif %}<p class="mb-0 text-muted">{% translate "NIF:" %} {{ survey.provider_nif }}</p>{% endif %}
+            {% if survey.provider_nationality %}<p class="mb-0 text-muted">{% translate "Nacionalidad:" %} {{ survey.provider_nationality }}</p>{% endif %}
+            {% if survey.provider_civil_status %}<p class="mb-0 text-muted">{% translate "Estado civil:" %} {{ survey.provider_civil_status }}</p>{% endif %}
             {% if survey.provider_occupation %}<p class="mb-0 text-muted">{{ survey.provider_occupation }}</p>{% endif %}
             {% if survey.provider_address %}<p class="mb-0 text-muted">{{ survey.provider_address }}</p>{% endif %}
           </div>
           <div class="col-md-6">
             <p class="fw-semibold text-uppercase text-muted mb-1" style="font-size:.7rem;">{% translate "EL CLIENTE" %}</p>
             {% if survey.company %}<p class="mb-0"><strong>{{ survey.company.name }}</strong>{% if survey.company.tax_id %} · {{ survey.company.tax_id }}{% endif %}</p>{% endif %}
-            {% if survey.client_rep_name %}<p class="mb-0 text-muted">Rep.: {{ survey.client_rep_name }}{% if survey.client_rep_id %} ({{ survey.client_rep_id }}){% endif %}</p>{% endif %}
+            {% if survey.client_rep_name %}<p class="mb-0 text-muted">{% translate "Rep.:" %} {{ survey.client_rep_name }}{% if survey.client_rep_id %} ({{ survey.client_rep_id }}){% endif %}</p>{% endif %}
             {% if survey.client_rep_role %}<p class="mb-0 text-muted">{{ survey.client_rep_role }}</p>{% endif %}
           </div>
         </div>
@@ -364,9 +364,9 @@
       <div class="card-body py-3 px-3 clause-view-mode">
         <p class="mb-0 small" style="white-space:pre-wrap;">{{ clause.body }}</p>
         <div class="d-flex gap-3 mt-2" style="font-size:.72rem;color:#adb5bd;">
-          <span><i class="bi bi-calendar-plus me-1"></i>Creado: {{ clause.created_at|date:"d/m/Y H:i" }}</span>
+          <span><i class="bi bi-calendar-plus me-1"></i>{% translate "Creado:" %} {{ clause.created_at|date:"d/m/Y H:i" }}</span>
           {% if clause.updated_at != clause.created_at %}
-          <span><i class="bi bi-pencil me-1"></i>Editado: {{ clause.updated_at|date:"d/m/Y H:i" }}</span>
+          <span><i class="bi bi-pencil me-1"></i>{% translate "Editado:" %} {{ clause.updated_at|date:"d/m/Y H:i" }}</span>
           {% endif %}
         </div>
       </div>
@@ -406,7 +406,7 @@
       {# Panel IA (oculto por defecto) #}
       <div class="card-body py-3 px-3 clause-ai-mode d-none border-top border-primary border-opacity-25"
            id="clause-ai-{{ clause.pk }}" style="background:#f0f4ff;">
-        <p class="fw-semibold small text-primary mb-2"><i class="bi bi-stars me-1"></i>Asistente IA — Cláusula {{ forloop.counter }}</p>
+        <p class="fw-semibold small text-primary mb-2"><i class="bi bi-stars me-1"></i>{% translate "Asistente IA — Cláusula" %} {{ forloop.counter }}</p>
         <div class="mb-2">
           <label class="form-label small mb-1">{% translate "¿Qué quieres hacer con esta cláusula?" %}</label>
           <textarea id="ai-instruction-{{ clause.pk }}" class="form-control form-control-sm" rows="2"

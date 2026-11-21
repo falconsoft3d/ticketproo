@@ -213,7 +213,7 @@
         <div class="content">
             <div class="landing-page-info">
                 <h2 style="margin: 0 0 10px; color: {{ landing_page.color_primario }};">
-                    📊 Landing Page: {{ landing_page.nombre_producto }}
+                    {% translate "📊 Landing Page:" %} {{ landing_page.nombre_producto }}
                 </h2>
                 <p style="margin: 0; color: #6c757d;">
                     {{ landing_page.descripcion }}
@@ -266,13 +266,13 @@
             <div class="utm-info">
                 <h4>{% translate "📈 Información de Campaña (UTM)" %}</h4>
                 {% if submission.utm_source %}
-                    <span class="utm-tag">Fuente: {{ submission.utm_source }}</span>
+                    <span class="utm-tag">{% translate "Fuente:" %} {{ submission.utm_source }}</span>
                 {% endif %}
                 {% if submission.utm_medium %}
-                    <span class="utm-tag">Medio: {{ submission.utm_medium }}</span>
+                    <span class="utm-tag">{% translate "Medio:" %} {{ submission.utm_medium }}</span>
                 {% endif %}
                 {% if submission.utm_campaign %}
-                    <span class="utm-tag">Campaña: {{ submission.utm_campaign }}</span>
+                    <span class="utm-tag">{% translate "Campaña:" %} {{ submission.utm_campaign }}</span>
                 {% endif %}
             </div>
             {% endif %}
@@ -314,8 +314,7 @@ Saludos cordiales," class="btn">
         <div class="footer">
             <p style="margin: 0;">
                 {% translate "Esta notificación fue generada automáticamente por el sistema de Landing Pages." %}<br>
-                <strong>{{ landing_page.nombre_producto }}</strong> | 
-                Envío recibido el {{ submission.created_at|date:"d/m/Y" }} a las {{ submission.created_at|date:"H:i" }}
+                <strong>{{ landing_page.nombre_producto }}</strong> {% translate "| Envío recibido el" %} {{ submission.created_at|date:"d/m/Y" }} {% translate "a las" %} {{ submission.created_at|date:"H:i" }}
             </p>
         </div>
     </div>

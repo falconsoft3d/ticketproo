@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}Checklist - {{ session.date|date:"d/m/Y" }} - TicketProo{% endblock %}
+{% block title %}{% translate "Checklist -" %} {{ session.date|date:"d/m/Y" }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -34,7 +34,7 @@
                     <div>
                         <h5 class="mb-1">{% translate "Progreso de la Gestión" %}</h5>
                         <small class="text-muted">
-                            {{ session.get_completed_tasks }} de {{ session.get_total_tasks }} tareas completadas
+                            {{ session.get_completed_tasks }} {% translate "de" %} {{ session.get_total_tasks }} {% translate "tareas completadas" %}
                         </small>
                     </div>
                     <div class="text-end">
@@ -90,7 +90,7 @@
             <div class="card-header">
                 <h5 class="mb-0">
                     <i class="bi bi-list-check"></i> {% translate "Lista de Tareas" %}
-                    <span class="badge bg-primary ms-2">{{ session_items.count }} tareas</span>
+                    <span class="badge bg-primary ms-2">{{ session_items.count }} {% translate "tareas" %}</span>
                 </h5>
             </div>
             <div class="card-body">
@@ -139,21 +139,21 @@
                                         {% if item.task.due_date %}
                                             <small class="text-muted">
                                                 <i class="bi bi-calendar"></i> 
-                                                Vence: {{ item.task.due_date|date:"d/m/Y" }}
+                                                {% translate "Vence:" %} {{ item.task.due_date|date:"d/m/Y" }}
                                             </small>
                                         {% endif %}
                                         
                                         {% if item.task.assigned_users.count > 1 %}
                                             <small class="text-muted">
                                                 <i class="bi bi-people"></i> 
-                                                {{ item.task.assigned_users.count }} asignados
+                                                {{ item.task.assigned_users.count }} {% translate "asignados" %}
                                             </small>
                                         {% endif %}
                                         
                                         {% if item.completed_at %}
                                             <small class="text-success">
                                                 <i class="bi bi-check-circle-fill"></i> 
-                                                Completada: {{ item.completed_at|date:"d/m/Y H:i" }}
+                                                {% translate "Completada:" %} {{ item.completed_at|date:"d/m/Y H:i" }}
                                             </small>
                                         {% endif %}
                                     </div>

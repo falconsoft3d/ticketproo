@@ -44,7 +44,7 @@
                 <div>
                     <span class="badge bg-success fs-6">
                         <i class="bi bi-check-circle"></i> 
-                        {{ employees|length }} empleado{{ employees|length|pluralize:",s" }}
+                        {{ employees|length }} {% translate "empleado" %}{{ employees|length|pluralize:",s" }}
                     </span>
                 </div>
             </div>
@@ -120,7 +120,7 @@
                             
                             <div class="mb-2">
                                 <i class="bi bi-calendar-check text-muted me-2"></i>
-                                <small>Contratado: {{ employee.created_at|date:"d/m/Y" }}</small>
+                                <small>{% translate "Contratado:" %} {{ employee.created_at|date:"d/m/Y" }}</small>
                             </div>
 
                             {% if employee.ai_score %}
@@ -203,7 +203,7 @@
                     <i class="bi bi-people display-1 text-muted mb-3"></i>
                     <h4>{% translate "No hay empleados activos" %}</h4>
                     {% if search %}
-                    <p class="text-muted">No se encontraron empleados que coincidan con "{{ search }}"</p>
+                    <p class="text-muted">{% translate 'No se encontraron empleados que coincidan con "' %}{{ search }}"</p>
                     <a href="{% url 'active_employee_list' %}" class="btn btn-primary">{% translate "Ver todos los empleados" %}</a>
                     {% else %}
                     <p class="text-muted">{% translate "Aún no hay empleados contratados en el sistema." %}</p>

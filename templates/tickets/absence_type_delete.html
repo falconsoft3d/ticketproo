@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
@@ -151,7 +151,7 @@
                                     </li>
                                     <li><strong>{% translate "Límite anual:" %}</strong> 
                                         {% if absence_type.max_days_per_year %}
-                                            {{ absence_type.max_days_per_year }} días
+                                            {{ absence_type.max_days_per_year }} {% translate "días" %}
                                         {% else %}
                                             <span class="text-muted">{% translate "Sin límite" %}</span>
                                         {% endif %}

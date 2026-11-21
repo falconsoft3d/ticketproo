@@ -46,7 +46,7 @@
                                     <td>{{ measurement.title }}</td>
                                     <td>{{ measurement.created_at|date:"d/m/Y H:i" }}</td>
                                     <td>
-                                        <span class="badge bg-info">{{ measurement.records.count }} registros</span>
+                                        <span class="badge bg-info">{{ measurement.records.count }} {% translate "registros" %}</span>
                                     </td>
                                     <td>
                                         {% if measurement.is_active %}

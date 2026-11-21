@@ -32,7 +32,7 @@
                     <p class="text-muted small mb-2">{{ cat.description }}</p>
                     {% endif %}
                     <p class="small text-muted mb-3">
-                        <i class="bi bi-box-seam"></i> {{ cat.products.count }} producto{{ cat.products.count|pluralize }}
+                        <i class="bi bi-box-seam"></i> {{ cat.products.count }} {% translate "producto" %}{{ cat.products.count|pluralize }}
                     </p>
                     <div class="d-flex gap-2">
                         <a href="{% url 'product_category_edit' cat.pk %}" class="btn btn-outline-secondary btn-sm">

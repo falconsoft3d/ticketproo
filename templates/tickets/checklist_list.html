@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Checklists - {{ block.super }}{% endblock %}
+{% block title %}{% translate "Checklists -" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -51,7 +51,7 @@
                             </div>
                         </div>
                         <small class="text-muted">
-                            {{ data.completed_items }} de {{ data.total_items }} completadas
+                            {{ data.completed_items }} {% translate "de" %} {{ data.total_items }} {% translate "completadas" %}
                         </small>
                     </div>
                     

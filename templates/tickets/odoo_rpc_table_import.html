@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load i18n %}
-{% block title %}Importar Datos - {{ table.name }} - Ticket System{% endblock %}
+{% block title %}{% translate "Importar Datos -" %} {{ table.name }} {% translate "- Ticket System" %}{% endblock %}
 {% block content %}
 <div class="container mt-4">
     <div class="col-lg-10 offset-lg-1">
@@ -195,7 +195,7 @@
                 </div>
 
                 <div class="card mb-3">
-                    <div class="card-header"><h6 class="mb-0">Campos Configurados ({{ fields.count }})</h6></div>
+                    <div class="card-header"><h6 class="mb-0">{% translate "Campos Configurados (" %}{{ fields.count }})</h6></div>
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-sm">

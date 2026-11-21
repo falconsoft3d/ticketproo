@@ -1,7 +1,7 @@
 {% extends 'public_base.html' %}
 {% load i18n %}
 
-{% block title %}TicketProo - {% translate "Sistema Profesional de Gestión de Tickets" %}{% endblock %}
+{% block title %}{% translate "TicketProo -" %} {% translate "Sistema Profesional de Gestión de Tickets" %}{% endblock %}
 
 {% block body_class %}{% translate "ap-home" %}{% endblock %}
 
@@ -549,7 +549,7 @@
                     <div class="ap-m-head">
                         <div>
                             <div class="ap-m-date" id="ap-m-date" data-lang="{{ CURRENT_LANG }}">{% now "d/m/Y" %}</div>
-                            <div class="ap-m-hello">{% translate "Buenas tardes" %}, Ana.</div>
+                            <div class="ap-m-hello">{% translate "Buenas tardes" %}{% translate ", Ana." %}</div>
                         </div>
                         <div class="ap-m-btns">
                             <span class="ap-m-btn primary"><i class="bi bi-plus-lg"></i> {% translate "Crear ticket" %}</span>
@@ -788,7 +788,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="ap-price">{{ line.product.price_with_currency }}</span>
                             {% if line.quantity > 1 %}
-                            <span class="ap-pill blue">x{{ line.quantity }}</span>
+                            <span class="ap-pill blue">{% translate "x" %}{{ line.quantity }}</span>
                             {% endif %}
                         </div>
 

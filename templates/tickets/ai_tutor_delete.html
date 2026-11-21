@@ -140,8 +140,8 @@
                         {% translate "Datos que se eliminarán permanentemente:" %}
                     </h6>
                     <ul class="mb-0">
-                        <li>El tutor IA "{{ tutor.title }}"</li>
-                        <li>Todos los reportes de progreso ({{ tutor.progress_reports.count }})</li>
+                        <li>{% translate 'El tutor IA "' %}{{ tutor.title }}"</li>
+                        <li>{% translate "Todos los reportes de progreso (" %}{{ tutor.progress_reports.count }})</li>
                         <li>{% translate "Todos los archivos adjuntos" %}</li>
                         <li>{% translate "Todo el feedback y recomendaciones de IA generadas" %}</li>
                         <li>{% translate "El historial completo de aprendizaje" %}</li>

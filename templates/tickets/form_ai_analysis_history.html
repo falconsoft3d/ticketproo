@@ -96,7 +96,7 @@
                                             <i class="bi bi-calendar3"></i> 
                                             {{ analysis.created_at|date:"d/m/Y H:i" }}
                                         </h6>
-                                        <small class="text-muted">por {{ analysis.created_by.get_full_name|default:analysis.created_by.username }}</small>
+                                        <small class="text-muted">{% translate "por" %} {{ analysis.created_by.get_full_name|default:analysis.created_by.username }}</small>
                                     </div>
                                     <span class="badge bg-{{ analysis.get_score_color }} score-badge">
                                         {{ analysis.overall_score }}/10
@@ -137,7 +137,7 @@
                                                     <span class="badge bg-success bg-opacity-25 text-success">{{ strength }}</span>
                                                 {% endfor %}
                                                 {% if analysis.strengths|length > 3 %}
-                                                    <span class="badge bg-secondary">+{{ analysis.strengths|length|add:"-3" }} más</span>
+                                                    <span class="badge bg-secondary">+{{ analysis.strengths|length|add:"-3" }} {% translate "más" %}</span>
                                                 {% endif %}
                                             </div>
                                         </div>

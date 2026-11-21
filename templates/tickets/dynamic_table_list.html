@@ -57,12 +57,12 @@
                                         <td>{{ table.description|default:"-"|truncatewords:10 }}</td>
                                         <td>
                                             <span class="badge bg-info">
-                                                {{ table.fields.count }} campo{{ table.fields.count|pluralize }}
+                                                {{ table.fields.count }} {% translate "campo" %}{{ table.fields.count|pluralize }}
                                             </span>
                                         </td>
                                         <td>
                                             <span class="badge bg-secondary">
-                                                {{ table.records.count }} registro{{ table.records.count|pluralize }}
+                                                {{ table.records.count }} {% translate "registro" %}{{ table.records.count|pluralize }}
                                             </span>
                                         </td>
                                         <td>

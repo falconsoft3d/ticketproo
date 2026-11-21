@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Imprimir Ticket #{{ ticket.id }}</title>
+    <title>{% translate "Imprimir Ticket #" %}{{ ticket.id }}</title>
     <style>
         @page {
             size: A4;
@@ -191,7 +191,7 @@
 
     <!-- Encabezado -->
     <div class="print-header">
-        <h1>TICKET #{{ ticket.id }}</h1>
+        <h1>{% translate "TICKET #" %}{{ ticket.id }}</h1>
         <div class="company">{% translate "Sistema de Tickets - TicketPro" %}</div>
     </div>
 
@@ -251,9 +251,7 @@
     <!-- Pie de página -->
     <div class="print-footer">
         <div>
-            Documento generado el {{ "now"|date:"d/m/Y" }} a las {{ "now"|date:"H:i" }} | 
-            Usuario: {{ user.get_full_name|default:user.username }} | 
-            Sistema TicketPro v1.0
+            {% translate "Documento generado el" %} {{ "now"|date:"d/m/Y" }} {% translate "a las" %} {{ "now"|date:"H:i" }} {% translate "| Usuario:" %} {{ user.get_full_name|default:user.username }} {% translate "| Sistema TicketPro v1.0" %}
         </div>
     </div>
 

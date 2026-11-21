@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -106,7 +106,7 @@
                                                 <div class="col-auto me-4">
                                                     <small class="text-muted">
                                                         <i class="bi bi-person-gear text-success me-1"></i>
-                                                        Por {{ note.created_by.get_full_name|default:note.created_by.username }}
+                                                        {% translate "Por" %} {{ note.created_by.get_full_name|default:note.created_by.username }}
                                                     </small>
                                                 </div>
                                                 {% if note.get_related_tickets_count > 0 %}
@@ -120,7 +120,7 @@
                                                 <div class="col-auto">
                                                     <small class="text-muted">
                                                         <i class="bi bi-clock me-1"></i>
-                                                        {{ note.created_at|timesince }} atrás
+                                                        {{ note.created_at|timesince }} {% translate "atrás" %}
                                                     </small>
                                                 </div>
                                             </div>
@@ -165,7 +165,7 @@
                                         
                                         <li class="page-item active">
                                             <span class="page-link">
-                                                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                                {% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}
                                             </span>
                                         </li>
                                         

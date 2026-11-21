@@ -206,7 +206,7 @@
                     </div>
                     <div class="d-flex justify-content-between small text-dark">
                         <span>0%</span>
-                        <span class="fw-bold">{{ exam.passing_score }}% (mínimo)</span>
+                        <span class="fw-bold">{{ exam.passing_score }}{% translate "% (mínimo)" %}</span>
                         <span>100%</span>
                     </div>
                 </div>
@@ -363,8 +363,8 @@
                 <h5 class="text-dark">{% translate "Certificado de Participación" %}</h5>
                 <p class="text-dark">{% translate "Se certifica que" %} <strong>{{ attempt.participant_name }}</strong> 
                 {% if attempt.passed %}{% translate "completó satisfactoriamente" %}{% else %}{% translate "participó en" %}{% endif %} 
-                el examen "{{ exam.title }}" con una puntuación de {{ attempt.score|floatformat:1 }}%.</p>
-                <p><small class="text-dark">Fecha: {{ attempt.completed_at|date:"d de F de Y" }}</small></p>
+                {% translate 'el examen "' %}{{ exam.title }}{% translate '" con una puntuación de' %} {{ attempt.score|floatformat:1 }}%.</p>
+                <p><small class="text-dark">{% translate "Fecha:" %} {{ attempt.completed_at|date:"d de F de Y" }}</small></p>
             </div>
         </div>
     </div>

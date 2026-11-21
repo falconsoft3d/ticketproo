@@ -113,7 +113,7 @@
                     <h5 class="mb-4">
                         <i class="bi bi-journal-text text-primary"></i> 
                         {% translate "Historial Completo de Actividades" %}
-                        <small class="text-muted">({{ history.paginator.count }} registro{{ history.paginator.count|pluralize }})</small>
+                        <small class="text-muted">({{ history.paginator.count }} {% translate "registro" %}{{ history.paginator.count|pluralize }})</small>
                     </h5>
 
                     <div class="history-timeline">

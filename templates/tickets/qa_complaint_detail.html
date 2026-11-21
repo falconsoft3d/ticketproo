@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Reporte QA: {{ complaint.title }}{% endblock %}
+{% block title %}{% translate "Reporte QA:" %} {{ complaint.title }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -253,9 +253,9 @@
                         <p class="mb-2">{{ complaint.resolution|linebreaks }}</p>
                         <small class="text-muted">
                             <i class="fas fa-clock"></i> 
-                            Resuelto el {{ complaint.resolution_date|date:"d/m/Y H:i" }}
+                            {% translate "Resuelto el" %} {{ complaint.resolution_date|date:"d/m/Y H:i" }}
                             {% if complaint.resolved_by %}
-                                por {{ complaint.resolved_by.get_full_name|default:complaint.resolved_by.username }}
+                                {% translate "por" %} {{ complaint.resolved_by.get_full_name|default:complaint.resolved_by.username }}
                             {% endif %}
                         </small>
                     </div>

@@ -84,7 +84,7 @@
                     <h6 class="mb-0"><i class="bi bi-bar-chart"></i> {% translate "Esta Semana" %}</h6>
                 </div>
                 <div class="card-body text-center">
-                    <h3 class="text-info">{{ total_horas_semana }}h</h3>
+                    <h3 class="text-info">{{ total_horas_semana }}{% translate "h" %}</h3>
                     <small class="text-muted">{% translate "Total trabajadas" %}</small>
                 </div>
             </div>
@@ -130,7 +130,7 @@
                                     </a>
                                     {% if public_access.last_used %}
                                         <small class="text-muted">
-                                            Último uso: {{ public_access.last_used|date:"d/m/Y H:i" }}
+                                            {% translate "Último uso:" %} {{ public_access.last_used|date:"d/m/Y H:i" }}
                                         </small>
                                     {% endif %}
                                 </div>

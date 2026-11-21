@@ -115,7 +115,7 @@
 </style>
 {% endblock %}
 
-{% block title %}Eliminar Nómina - {{ page_title }}{% endblock %}
+{% block title %}{% translate "Eliminar Nómina -" %} {{ page_title }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -125,7 +125,7 @@
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <h1><i class="bi bi-exclamation-triangle"></i> {% translate "Confirmar Eliminación" %}</h1>
-                    <h4>Nómina {{ payroll.get_period_display }}</h4>
+                    <h4>{% translate "Nómina" %} {{ payroll.get_period_display }}</h4>
                     <p class="mb-0">{{ employee.get_full_name }} - {{ employee.position }}</p>
                 </div>
                 <div class="col-md-4 text-end">
@@ -247,7 +247,7 @@
                     <i class="bi bi-exclamation-circle"></i> {% translate "Al confirmar la eliminación:" %}
                 </h6>
                 <ul>
-                    <li>Se eliminará permanentemente el registro de nómina del {{ payroll.get_period_display }}</li>
+                    <li>{% translate "Se eliminará permanentemente el registro de nómina del" %} {{ payroll.get_period_display }}</li>
                     <li>{% translate "Se borrará el archivo PDF de la nómina del servidor" %}</li>
                     {% if payroll.payment_receipt %}
                         <li>{% translate "Se eliminará el comprobante de pago adjunto" %}</li>

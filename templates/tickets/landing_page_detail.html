@@ -194,7 +194,7 @@
                                                     <td>{{ submission.empresa|default:"-" }}</td>
                                                     <td>
                                                         <span title="{{ submission.created_at }}">
-                                                            {{ submission.created_at|timesince }} ago
+                                                            {{ submission.created_at|timesince }} {% translate "ago" %}
                                                         </span>
                                                     </td>
                                                     <td>

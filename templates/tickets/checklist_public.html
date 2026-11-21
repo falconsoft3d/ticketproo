@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ checklist.title }} - Checklist</title>
+    <title>{{ checklist.title }} {% translate "- Checklist" %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
@@ -169,7 +169,7 @@
                         {% if item.is_completed and item.completed_at %}
                         <small class="text-success">
                             <i class="bi bi-check-circle-fill"></i> 
-                            Completada el {{ item.completed_at|date:"d/m/Y H:i" }}
+                            {% translate "Completada el" %} {{ item.completed_at|date:"d/m/Y H:i" }}
                         </small>
                         {% endif %}
                     </div>

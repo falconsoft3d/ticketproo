@@ -27,7 +27,7 @@
                             <li><strong>{% translate "Empleado:" %}</strong> {{ expense_report.employee.get_full_name|default:expense_report.employee.username }}</li>
                             <li><strong>{% translate "Título:" %}</strong> {{ expense_report.title }}</li>
                             <li><strong>{% translate "Total:" %}</strong> ${{ expense_report.total_amount|floatformat:2 }}</li>
-                            <li><strong>{% translate "Gastos:" %}</strong> {{ expense_report.expense_items.count }} item{{ expense_report.expense_items.count|pluralize }}</li>
+                            <li><strong>{% translate "Gastos:" %}</strong> {{ expense_report.expense_items.count }} {% translate "item" %}{{ expense_report.expense_items.count|pluralize }}</li>
                             <li><strong>{% translate "Enviado:" %}</strong> {{ expense_report.submitted_at|date:"d/m/Y H:i" }}</li>
                         </ul>
                     </div>

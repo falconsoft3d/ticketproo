@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Dashboard - {{ project.name }}{% endblock %}
+{% block title %}{% translate "Dashboard -" %} {{ project.name }}{% endblock %}
 
 {% block extra_head %}
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -98,10 +98,10 @@
         <h2>{{ project.name }}</h2>
         {% if client_name %}
         <div class="client-info mt-3">
-            <h5><i class="fas fa-user"></i> Cliente: {{ client_name }}</h5>
+            <h5><i class="fas fa-user"></i> {% translate "Cliente:" %} {{ client_name }}</h5>
         </div>
         {% endif %}
-        <p class="mb-0">Dashboard actualizado en tiempo real - {{ today|date:"d/m/Y" }}</p>
+        <p class="mb-0">{% translate "Dashboard actualizado en tiempo real -" %} {{ today|date:"d/m/Y" }}</p>
     </div>
 
     <!-- KPIs Principales Solicitados -->
@@ -112,7 +112,7 @@
                 <div class="stat-number">{{ total_hours_this_month|floatformat:1 }}</div>
                 <div class="stat-label">{% translate "Total Horas Este Mes" %}</div>
                 <div class="stat-description">
-                    <i class="fas fa-calendar-month"></i> Horas trabajadas en {{ month_start|date:"F Y" }}
+                    <i class="fas fa-calendar-month"></i> {% translate "Horas trabajadas en" %} {{ month_start|date:"F Y" }}
                 </div>
             </div>
         </div>
@@ -158,7 +158,7 @@
                 <div class="stat-number">{{ week_hours|floatformat:1 }}</div>
                 <div class="stat-label">{% translate "Horas Esta Semana" %}</div>
                 <div class="stat-description">
-                    <i class="fas fa-calendar-week"></i> Desde {{ week_start|date:"d/m" }}
+                    <i class="fas fa-calendar-week"></i> {% translate "Desde" %} {{ week_start|date:"d/m" }}
                 </div>
             </div>
         </div>
@@ -244,7 +244,7 @@
                                 <td>
                                     <strong>{{ category.category|title }}</strong>
                                 </td>
-                                <td>{{ category.total_hours|floatformat:1 }} hrs</td>
+                                <td>{{ category.total_hours|floatformat:1 }} {% translate "hrs" %}</td>
                                 <td>{{ category.total_entries }}</td>
                                 <td>
                                     {% widthratio category.total_hours total_project_hours 100 %}%
@@ -292,7 +292,7 @@
                                 </td>
                                 <td><strong>{{ client.client_name }}</strong></td>
                                 <td><small class="text-muted">{{ client.client_email }}</small></td>
-                                <td>{{ client.total_hours|floatformat:1 }} hrs</td>
+                                <td>{{ client.total_hours|floatformat:1 }} {% translate "hrs" %}</td>
                                 <td>{{ client.total_entries }}</td>
                                 <td>
                                     <div class="progress">

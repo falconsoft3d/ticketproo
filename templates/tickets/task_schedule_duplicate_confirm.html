@@ -78,7 +78,7 @@
                     <div class="alert alert-success">
                         <h6 class="alert-heading">
                             <i class="fas fa-check-circle"></i> 
-                            "Copia de {{ schedule.title }}"
+                            {% translate '"Copia de' %} {{ schedule.title }}"
                         </h6>
                         <p class="mb-0">
                             {% translate "Se creará un nuevo cronograma con todas las tareas del original." %}
@@ -90,7 +90,7 @@
                             <h6>{% translate "Lo que se duplicará:" %}</h6>
                             <ul class="list-unstyled">
                                 <li><i class="fas fa-check text-success"></i> {% translate "Información básica del cronograma" %}</li>
-                                <li><i class="fas fa-check text-success"></i> {{ total_tasks_count }} tarea(s)</li>
+                                <li><i class="fas fa-check text-success"></i> {{ total_tasks_count }} {% translate "tarea(s)" %}</li>
                                 <li><i class="fas fa-check text-success"></i> {% translate "Dependencias entre tareas" %}</li>
                                 <li><i class="fas fa-check text-success"></i> {% translate "Asignaciones de usuarios" %}</li>
                                 <li><i class="fas fa-check text-success"></i> {% translate "Prioridades y fechas" %}</li>

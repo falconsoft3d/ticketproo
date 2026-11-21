@@ -34,7 +34,7 @@
 </style>
 {% endblock %}
 
-{% block title %}Eliminar Acuerdo - {{ agreement.title }}{% endblock %}
+{% block title %}{% translate "Eliminar Acuerdo -" %} {{ agreement.title }}{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -113,7 +113,7 @@
                         <div class="alert alert-danger d-flex align-items-center">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
                             <div>
-                                <strong>{% translate "¡Atención!" %}</strong> {% translate "Este acuerdo tiene" %} <strong>{{ agreement.signature_count }} firma(s)</strong>{% translate ". Al eliminarlo, también se eliminarán todas las firmas digitales asociadas." %}
+                                <strong>{% translate "¡Atención!" %}</strong> {% translate "Este acuerdo tiene" %} <strong>{{ agreement.signature_count }} {% translate "firma(s)" %}</strong>{% translate ". Al eliminarlo, también se eliminarán todas las firmas digitales asociadas." %}
                             </div>
                         </div>
                     {% endif %}
@@ -139,7 +139,7 @@
                         <div class="col-md-4">
                             <div class="p-3 bg-light rounded">
                                 <i class="bi bi-pen display-4 text-muted"></i>
-                                <h6>{{ agreement.signature_count }} Firma(s)</h6>
+                                <h6>{{ agreement.signature_count }} {% translate "Firma(s)" %}</h6>
                                 <small class="text-muted">{% translate "Datos de firmas digitales" %}</small>
                             </div>
                         </div>

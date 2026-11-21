@@ -51,9 +51,9 @@
 
                 </h1>                </h1>
 
-                <p class="text-muted mb-0">Curso: {{ course.title }}</p>                <p class="text-muted mb-0">Curso: {{ course.title }}</p>
+                <p class="text-muted mb-0">{% translate "Curso:" %} {{ course.title }}</p>                <p class="text-muted mb-0">{% translate "Curso:" %} {{ course.title }}</p>
 
-                <p class="text-muted mb-0">Instructor: {{ course.created_by.get_full_name|default:course.created_by.username }}</p>                <p class="text-muted mb-0">Instructor: {{ course.created_by.get_full_name|default:course.created_by.username }}</p>
+                <p class="text-muted mb-0">{% translate "Instructor:" %} {{ course.created_by.get_full_name|default:course.created_by.username }}</p>                <p class="text-muted mb-0">{% translate "Instructor:" %} {{ course.created_by.get_full_name|default:course.created_by.username }}</p>
 
             </div>            </div>
 

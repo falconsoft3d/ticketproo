@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load i18n %}
-{% block title %}Portal Público - {{ connection.name }} - Ticket System{% endblock %}
+{% block title %}{% translate "Portal Público -" %} {{ connection.name }} {% translate "- Ticket System" %}{% endblock %}
 {% block content %}
 <div class="container-fluid mt-4">
     <!-- Breadcrumb -->
@@ -16,7 +16,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2><i class="bi bi-globe"></i> {% translate "Portal Público Completo" %}</h2>
-            <p class="text-muted">{{ connection.name }} - {{ tables_count }} tabla(s)</p>
+            <p class="text-muted">{{ connection.name }} - {{ tables_count }} {% translate "tabla(s)" %}</p>
         </div>
         <div>
             <a href="{% url 'odoo_connection_list' %}" class="btn btn-secondary">

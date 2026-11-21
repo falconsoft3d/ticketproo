@@ -17,7 +17,7 @@
                     </h1>
                     <p class="mb-0">
                         {% if is_edit %}
-                            Modifica la política "{{ policy.title }}"
+                            {% translate 'Modifica la política "' %}{{ policy.title }}"
                         {% else %}
                             {% translate "Crea una nueva política de privacidad" %}
                         {% endif %}

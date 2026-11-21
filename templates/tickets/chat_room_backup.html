@@ -438,7 +438,7 @@
                 <div class="participants-section">
                     <h6>
                         <i class="fas fa-users me-2"></i>
-                        Participantes ({{ room.participants.count }})
+                        {% translate "Participantes (" %}{{ room.participants.count }})
                     </h6>
                     {% for participant in room.participants.all %}
                         <div class="participant">
@@ -475,7 +475,7 @@
                         </div>
                         <div class="chat-info">
                             <i class="fas fa-users me-1"></i>
-                            {{ room.participants.count }} participante{{ room.participants.count|pluralize }}
+                            {{ room.participants.count }} {% translate "participante" %}{{ room.participants.count|pluralize }}
                         </div>
                     </div>
                     

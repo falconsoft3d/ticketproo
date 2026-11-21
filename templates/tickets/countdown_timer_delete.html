@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -46,18 +46,18 @@
                             <div class="text-muted">
                                 <small>
                                     <i class="bi bi-calendar3"></i> 
-                                    Fecha objetivo: {{ countdown.target_date|date:"d/m/Y H:i" }}
+                                    {% translate "Fecha objetivo:" %} {{ countdown.target_date|date:"d/m/Y H:i" }}
                                 </small>
                                 <br>
                                 <small>
                                     <i class="bi bi-person"></i> 
-                                    Creado por: {{ countdown.created_by.get_full_name|default:countdown.created_by.username }}
+                                    {% translate "Creado por:" %} {{ countdown.created_by.get_full_name|default:countdown.created_by.username }}
                                 </small>
                                 {% if countdown.company %}
                                 <br>
                                 <small>
                                     <i class="bi bi-building"></i> 
-                                    Empresa: {{ countdown.company.name }}
+                                    {% translate "Empresa:" %} {{ countdown.company.name }}
                                 </small>
                                 {% endif %}
                             </div>

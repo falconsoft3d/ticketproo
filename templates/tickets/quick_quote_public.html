@@ -124,7 +124,7 @@
                             {% endif %}
                         </h4>
                         {% if quote.response_date %}
-                            <p class="mb-0">Fecha de respuesta: {{ quote.response_date|date:"d/m/Y H:i" }}</p>
+                            <p class="mb-0">{% translate "Fecha de respuesta:" %} {{ quote.response_date|date:"d/m/Y H:i" }}</p>
                         {% endif %}
                     </div>
                     
@@ -142,11 +142,11 @@
                     <!-- Cotización pendiente -->
                     {% if quote.is_expired %}
                         <div class="alert alert-warning">
-                            <i class="bi bi-exclamation-triangle"></i> Esta cotización ha expirado el {{ quote.valid_until|date:"d/m/Y" }}
+                            <i class="bi bi-exclamation-triangle"></i> {% translate "Esta cotización ha expirado el" %} {{ quote.valid_until|date:"d/m/Y" }}
                         </div>
                     {% else %}
                         <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> Esta cotización es válida hasta el {{ quote.valid_until|date:"d/m/Y" }}
+                            <i class="bi bi-info-circle"></i> {% translate "Esta cotización es válida hasta el" %} {{ quote.valid_until|date:"d/m/Y" }}
                         </div>
                     {% endif %}
                 {% endif %}
@@ -158,7 +158,7 @@
                         
                         <div class="detail-row">
                             <span><strong>{% translate "Cantidad de Horas:" %}</strong></span>
-                            <span>{{ quote.hours }} hrs</span>
+                            <span>{{ quote.hours }} {% translate "hrs" %}</span>
                         </div>
                         
                         <div class="detail-row">
@@ -218,7 +218,7 @@
                 {% if other_quotes %}
                     <div class="card mt-4">
                         <div class="card-header">
-                            <strong><i class="bi bi-file-earmark-text-fill"></i> {% translate "Otras Cotizaciones" %}{% if quote.company %} de {{ quote.company.name }}{% elif quote.client_name %} de {{ quote.client_name }}{% endif %}</strong>
+                            <strong><i class="bi bi-file-earmark-text-fill"></i> {% translate "Otras Cotizaciones" %}{% if quote.company %} {% translate "de" %} {{ quote.company.name }}{% elif quote.client_name %} {% translate "de" %} {{ quote.client_name }}{% endif %}</strong>
                         </div>
                         <div class="list-group list-group-flush">
                             {% for other in other_quotes %}
@@ -285,7 +285,7 @@
                 <!-- Comentarios -->
                 <div class="card mt-4">
                     <div class="card-header bg-info text-white">
-                        <strong><i class="bi bi-chat-left-text"></i> Comentarios ({{ comments.count }})</strong>
+                        <strong><i class="bi bi-chat-left-text"></i> {% translate "Comentarios (" %}{{ comments.count }})</strong>
                     </div>
                     <div class="card-body">
                         <!-- Lista de comentarios existentes -->
@@ -351,7 +351,7 @@
                 <!-- Información adicional -->
                 <div class="text-center mt-4 text-muted">
                     <small>
-                        <i class="bi bi-calendar"></i> Generada el {{ quote.created_at|date:"d/m/Y" }}
+                        <i class="bi bi-calendar"></i> {% translate "Generada el" %} {{ quote.created_at|date:"d/m/Y" }}
                     </small>
                 </div>
             </div>

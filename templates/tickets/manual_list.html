@@ -45,7 +45,7 @@
                             {% if manual.created_by %}
                              &mdash; {{ manual.created_by.get_full_name|default:manual.created_by.username }}
                             {% endif %}
-                            &mdash; <i class="bi bi-eye"></i> {{ manual.get_access_count }} acceso(s)
+                            &mdash; <i class="bi bi-eye"></i> {{ manual.get_access_count }} {% translate "acceso(s)" %}
                         </small>
                     </p>
                 </div>

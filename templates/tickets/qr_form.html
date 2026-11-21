@@ -24,7 +24,7 @@
             </h2>
             <p class="text-muted mb-0">
                 {% if qr_code %}
-                    Modifica los datos del código QR "{{ qr_code.title }}"
+                    {% translate 'Modifica los datos del código QR "' %}{{ qr_code.title }}"
                 {% else %}
                     {% translate "Completa la información para generar tu código QR" %}
                 {% endif %}

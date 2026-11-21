@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - Verificación Pública</title>
+    <title>{{ title }} {% translate "- Verificación Pública" %}</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -203,7 +203,7 @@
                         {% else %}
                             <div class="verification-stamp expired-stamp">
                                 <i class="bi bi-pause-circle-fill text-warning display-4"></i>
-                                <h4 class="mt-2 text-warning">LICENCIA {{ license.get_status_display|upper }}</h4>
+                                <h4 class="mt-2 text-warning">{% translate "LICENCIA" %} {{ license.get_status_display|upper }}</h4>
                                 <p class="mb-0">{% translate "Esta licencia no está activa" %}</p>
                             </div>
                         {% endif %}
@@ -242,7 +242,7 @@
 
     <!-- Footer -->
     <div class="footer">
-        <p>&copy; {{ "now"|date:"Y" }} - Sistema de Control de Licencias</p>
+        <p>&copy; {{ "now"|date:"Y" }} {% translate "- Sistema de Control de Licencias" %}</p>
         <small>{% translate "Verificación pública de licencias de software" %}</small>
     </div>
 

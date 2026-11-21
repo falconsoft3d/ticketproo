@@ -334,7 +334,7 @@
                         {% endif %}
 
                         <li class="page-item active">
-                            <span class="page-link">{{ tutors.number }} de {{ tutors.paginator.num_pages }}</span>
+                            <span class="page-link">{{ tutors.number }} {% translate "de" %} {{ tutors.paginator.num_pages }}</span>
                         </li>
 
                         {% if tutors.has_next %}

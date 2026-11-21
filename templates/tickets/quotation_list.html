@@ -255,7 +255,7 @@
                                                 {{ currency_symbol }}{{ quotation.get_total_amount|floatformat:2 }}
                                             </strong>
                                             <br><small class="text-muted">
-                                                Creada: {{ quotation.created_at|date:"d/m/Y" }}
+                                                {% translate "Creada:" %} {{ quotation.created_at|date:"d/m/Y" }}
                                             </small>
                                         </td>
                                         <td>

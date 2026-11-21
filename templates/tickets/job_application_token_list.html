@@ -209,7 +209,7 @@
                     
                     <li class="page-item active">
                         <span class="page-link">
-                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            {% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}
                         </span>
                     </li>
                     

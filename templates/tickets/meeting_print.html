@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de Reunión - {{ meeting.title }}</title>
+    <title>{% translate "Reporte de Reunión -" %} {{ meeting.title }}</title>
     <style>
         @media print {
             body { margin: 0; }
@@ -266,7 +266,7 @@
 
     <!-- Lista de asistentes -->
     <div class="section">
-        <h3>Asistentes Registrados ({{ stats.total_attendees }})</h3>
+        <h3>{% translate "Asistentes Registrados (" %}{{ stats.total_attendees }})</h3>
         {% if attendees %}
             {% for attendee in attendees %}
             <div class="attendee-item">
@@ -281,7 +281,7 @@
 
     <!-- Lista de preguntas -->
     <div class="section">
-        <h3>Preguntas y Respuestas ({{ stats.total_questions }})</h3>
+        <h3>{% translate "Preguntas y Respuestas (" %}{{ stats.total_questions }})</h3>
         {% if questions %}
             {% for question in questions %}
             <div class="question-item">
@@ -307,7 +307,7 @@
                         {% else %}
                             {{ question.answered_by.username }}
                         {% endif %}
-                        el {{ question.answered_at|date:"d/m/Y H:i" }}
+                        {% translate "el" %} {{ question.answered_at|date:"d/m/Y H:i" }}
                     </div>
                 </div>
                 {% else %}
@@ -324,7 +324,7 @@
 
     <!-- Pie de página -->
     <div class="footer">
-        <p>Reporte generado el {{ "now"|date:"d/m/Y H:i" }} por el Sistema de Gestión de Reuniones</p>
+        <p>{% translate "Reporte generado el" %} {{ "now"|date:"d/m/Y H:i" }} {% translate "por el Sistema de Gestión de Reuniones" %}</p>
         <p>{% translate "Link público de la reunión:" %} <strong>{{ request.build_absolute_uri }}</strong></p>
     </div>
 

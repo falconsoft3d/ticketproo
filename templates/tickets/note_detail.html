@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -30,7 +30,7 @@
                                 </span>
                             {% endif %}
                             <span class="text-muted small">
-                                Creada {{ note.created_at|timesince }} atrás
+                                {% translate "Creada" %} {{ note.created_at|timesince }} {% translate "atrás" %}
                             </span>
                         </div>
                     </div>
@@ -116,7 +116,7 @@
                         </div>
                         <div class="mt-1">
                             <small class="text-muted">
-                                <i class="bi bi-eye"></i> Visto {{ note.view_count }} vez{{ note.view_count|pluralize:"es" }}
+                                <i class="bi bi-eye"></i> {% translate "Visto" %} {{ note.view_count }} {% translate "vez" %}{{ note.view_count|pluralize:"es" }}
                             </small>
                         </div>
                     </div>
@@ -139,7 +139,7 @@
                     <div class="card-header">
                         <h5 class="card-title mb-0">
                             <i class="bi bi-ticket-perforated text-info"></i>
-                            Tickets Relacionados ({{ note.tickets.count }})
+                            {% translate "Tickets Relacionados (" %}{{ note.tickets.count }})
                         </h5>
                     </div>
                     <div class="card-body">
@@ -272,7 +272,7 @@
                     
                     <div class="mb-0">
                         <label class="small text-muted">{% translate "Tickets relacionados" %}</label>
-                        <div class="fw-bold">{{ note.get_related_tickets_count }} ticket{{ note.get_related_tickets_count|pluralize:"s" }}</div>
+                        <div class="fw-bold">{{ note.get_related_tickets_count }} {% translate "ticket" %}{{ note.get_related_tickets_count|pluralize:"s" }}</div>
                     </div>
                 </div>
             </div>

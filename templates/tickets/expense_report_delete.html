@@ -32,7 +32,7 @@
                                 {% endif %}
                                 <ul class="list-unstyled mb-0">
                                     <li><strong>{% translate "Total:" %}</strong> ${{ expense_report.total_amount|floatformat:2 }}</li>
-                                    <li><strong>{% translate "Gastos:" %}</strong> {{ expense_report.expense_items.count }} item{{ expense_report.expense_items.count|pluralize }}</li>
+                                    <li><strong>{% translate "Gastos:" %}</strong> {{ expense_report.expense_items.count }} {% translate "item" %}{{ expense_report.expense_items.count|pluralize }}</li>
                                     <li><strong>{% translate "Estado:" %}</strong> {{ expense_report.get_status_display }}</li>
                                     <li><strong>{% translate "Creado:" %}</strong> {{ expense_report.created_at|date:"d/m/Y H:i" }}</li>
                                 </ul>

@@ -106,13 +106,13 @@
                             </p>
                             {% if connection.last_tested_at %}
                             <p class="mb-0 text-muted small">
-                                Última prueba: {{ connection.last_tested_at|date:"d/m/Y H:i" }}
+                                {% translate "Última prueba:" %} {{ connection.last_tested_at|date:"d/m/Y H:i" }}
                             </p>
                             {% endif %}
                         </div>
                         <div class="card-footer">
                             <small class="text-muted">
-                                Creada el {{ connection.created_at|date:"d/m/Y" }}
+                                {% translate "Creada el" %} {{ connection.created_at|date:"d/m/Y" }}
                             </small>
                         </div>
                     </div>

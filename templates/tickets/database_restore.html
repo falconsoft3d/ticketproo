@@ -19,7 +19,7 @@
                         {% elif is_postgresql %}
                             <i class="bi bi-server me-1"></i>{% translate "Base de datos: PostgreSQL" %}
                         {% else %}
-                            <i class="bi bi-question-circle me-1"></i>Base de datos: {{ db_engine }}
+                            <i class="bi bi-question-circle me-1"></i>{% translate "Base de datos:" %} {{ db_engine }}
                         {% endif %}
                     </small>
                 </div>

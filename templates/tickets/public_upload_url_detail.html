@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{{ upload_url.title }} - TicketProo{% endblock %}
+{% block title %}{{ upload_url.title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -206,7 +206,7 @@
                                         </div>
                                     </div>
                                     <small class="text-muted">
-                                        {{ upload_url.upload_count }} de {{ upload_url.max_uploads }} subidas utilizadas
+                                        {{ upload_url.upload_count }} {% translate "de" %} {{ upload_url.max_uploads }} {% translate "subidas utilizadas" %}
                                     </small>
                                 </div>
                             {% endif %}
@@ -238,7 +238,7 @@
                     <div class="card-header">
                         <h5 class="card-title mb-0">
                             <i class="bi bi-files me-2"></i>
-                            Documentos Subidos ({{ uploaded_documents.count }})
+                            {% translate "Documentos Subidos (" %}{{ uploaded_documents.count }})
                         </h5>
                     </div>
                     <div class="card-body">

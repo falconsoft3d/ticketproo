@@ -101,7 +101,7 @@
                                 {{ request.build_absolute_uri }}{{ cumplimiento.get_public_url }}
                             </a>
                             <br>
-                            <small>Comparte esta URL con {{ cumplimiento.user }} para que pueda marcar sus cumplimientos desde el móvil.</small>
+                            <small>{% translate "Comparte esta URL con" %} {{ cumplimiento.user }} {% translate "para que pueda marcar sus cumplimientos desde el móvil." %}</small>
                         </div>
                         {% endif %}
 

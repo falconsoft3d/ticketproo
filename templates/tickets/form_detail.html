@@ -41,7 +41,7 @@
             <!-- Preguntas -->
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5><i class="bi bi-question-circle"></i> Preguntas ({{ form.questions.count }})</h5>
+                    <h5><i class="bi bi-question-circle"></i> {% translate "Preguntas (" %}{{ form.questions.count }})</h5>
                     <div>
                         <button type="button" class="btn btn-success btn-sm me-2" onclick="generateAIQuestions()">
                             <i class="bi bi-robot"></i> {% translate "Generar con IA" %}
@@ -202,8 +202,8 @@
                                 </div>
                                 <small class="text-muted d-block">
                                     {{ last_analysis.created_at|date:"d/m/Y H:i" }}
-                                    - {{ last_analysis.get_problems_count }} problemas, 
-                                    {{ last_analysis.get_improvements_count }} mejoras
+                                    - {{ last_analysis.get_problems_count }} {% translate "problemas," %} 
+                                    {{ last_analysis.get_improvements_count }} {% translate "mejoras" %}
                                 </small>
                             </div>
                         {% endif %}
@@ -251,7 +251,7 @@
                             </div>
                             <div class="d-flex justify-content-between">
                                 <small class="text-muted">{{ response.respondent_email|default:"Sin email" }}</small>
-                                <span class="badge bg-success">{{ response.total_score }} pts</span>
+                                <span class="badge bg-success">{{ response.total_score }} {% translate "pts" %}</span>
                             </div>
                         </div>
                         {% endfor %}

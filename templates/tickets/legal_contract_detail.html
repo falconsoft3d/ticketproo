@@ -105,7 +105,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <small class="text-muted">
-                                <i class="bi bi-person"></i> Creado por {{ contract.user.get_full_name|default:contract.user.username }}
+                                <i class="bi bi-person"></i> {% translate "Creado por" %} {{ contract.user.get_full_name|default:contract.user.username }}
                             </small>
                         </div>
                         <div class="col-md-6 text-end">
@@ -193,7 +193,7 @@
                     {% if contract.generated_at %}
                     <hr>
                     <small class="text-muted">
-                        <i class="bi bi-magic"></i> Generado con IA el {{ contract.generated_at|date:"d/m/Y H:i" }}
+                        <i class="bi bi-magic"></i> {% translate "Generado con IA el" %} {{ contract.generated_at|date:"d/m/Y H:i" }}
                     </small>
                     {% endif %}
                 </div>
@@ -257,14 +257,14 @@
                         <li class="mb-2">
                             <small>
                                 <i class="bi bi-plus-circle text-success"></i>
-                                Creado: {{ contract.created_at|date:"d/m/Y H:i" }}
+                                {% translate "Creado:" %} {{ contract.created_at|date:"d/m/Y H:i" }}
                             </small>
                         </li>
                         {% if contract.updated_at != contract.created_at %}
                         <li class="mb-2">
                             <small>
                                 <i class="bi bi-pencil text-primary"></i>
-                                Actualizado: {{ contract.updated_at|date:"d/m/Y H:i" }}
+                                {% translate "Actualizado:" %} {{ contract.updated_at|date:"d/m/Y H:i" }}
                             </small>
                         </li>
                         {% endif %}
@@ -272,7 +272,7 @@
                         <li class="mb-2">
                             <small>
                                 <i class="bi bi-magic text-info"></i>
-                                Generado: {{ contract.generated_at|date:"d/m/Y H:i" }}
+                                {% translate "Generado:" %} {{ contract.generated_at|date:"d/m/Y H:i" }}
                             </small>
                         </li>
                         {% endif %}

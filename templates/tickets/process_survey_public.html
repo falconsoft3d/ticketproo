@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ survey.name }} — Levantamiento de Procesos{% endblock %}
+{% block title %}{{ survey.name }} {% translate "— Levantamiento de Procesos" %}{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -178,7 +178,7 @@
               {% else %}
                 <i class="bi bi-layers me-1 text-muted"></i>
               {% endif %}
-              Versión {{ version_num }}
+              {% translate "Versión" %} {{ version_num }}
               <span class="badge {% if forloop.first %}bg-warning text-dark{% else %}bg-secondary{% endif %} ms-1">{{ version_lines|length }}</span>
             </button>
           </li>
@@ -193,7 +193,7 @@
             {% if not forloop.first %}
             <div class="alert alert-secondary py-2 px-3 mb-3" role="alert">
               <i class="bi bi-archive me-1"></i>
-              <strong>Versión {{ version_num }}</strong> {% translate "— Versión archivada (solo lectura)." %}
+              <strong>{% translate "Versión" %} {{ version_num }}</strong> {% translate "— Versión archivada (solo lectura)." %}
             </div>
             {% endif %}
 
@@ -212,7 +212,7 @@
                       {% else %}
                         <span class="badge badge-pending">{% translate "Pendiente" %}</span>
                       {% endif %}
-                      <span class="badge bg-light text-muted border" style="font-size:.7rem;">v{{ line.version }}</span>
+                      <span class="badge bg-light text-muted border" style="font-size:.7rem;">{% translate "v" %}{{ line.version }}</span>
                     </div>
                     {% if line.description %}
                       <div class="text-muted mt-1" style="white-space:pre-line;">{{ line.description }}</div>
@@ -252,7 +252,7 @@
                     <div class="mt-3">
                       <div class="small text-muted fw-semibold mb-2">
                         <i class="bi bi-chat-left-text me-1"></i>
-                        {{ line.comments.count }} comentario{% if line.comments.count != 1 %}{% translate "s" %}{% endif %}
+                        {{ line.comments.count }} {% translate "comentario" %}{% if line.comments.count != 1 %}{% translate "s" %}{% endif %}
                       </div>
                       <div class="d-flex flex-column gap-2">
                         {% for comment in line.comments.all %}
@@ -446,15 +446,15 @@
                     {% if line.complexity %}
                       {% if line.complexity <= 3 %}
                         <span class="badge" style="background:#198754;font-size:.75rem;white-space:nowrap;">
-                          <i class="bi bi-speedometer me-1"></i>Complejidad {{ line.complexity }}/10
+                          <i class="bi bi-speedometer me-1"></i>{% translate "Complejidad" %} {{ line.complexity }}/10
                         </span>
                       {% elif line.complexity <= 6 %}
                         <span class="badge" style="background:#fd7e14;font-size:.75rem;white-space:nowrap;">
-                          <i class="bi bi-speedometer me-1"></i>Complejidad {{ line.complexity }}/10
+                          <i class="bi bi-speedometer me-1"></i>{% translate "Complejidad" %} {{ line.complexity }}/10
                         </span>
                       {% else %}
                         <span class="badge" style="background:#dc3545;font-size:.75rem;white-space:nowrap;">
-                          <i class="bi bi-speedometer me-1"></i>Complejidad {{ line.complexity }}/10
+                          <i class="bi bi-speedometer me-1"></i>{% translate "Complejidad" %} {{ line.complexity }}/10
                         </span>
                       {% endif %}
                     {% endif %}
@@ -550,7 +550,7 @@
         <i class="bi bi-ticket-perforated me-1"></i> TicketProo
       </span>
       <span class="text-muted small">
-        Generado el {{ survey.updated_at|date:"d/m/Y" }}
+        {% translate "Generado el" %} {{ survey.updated_at|date:"d/m/Y" }}
       </span>
     </div>
   </div>
@@ -659,10 +659,10 @@
             <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
               <div class="d-flex align-items-center gap-2">
                 <span class="badge rounded-pill" style="background:#533483;">
-                  <i class="bi bi-layers me-1"></i>v{{ rec.version }}
+                  <i class="bi bi-layers me-1"></i>{% translate "v" %}{{ rec.version }}
                 </span>
                 <span class="badge rounded-pill bg-secondary">
-                  <i class="bi bi-list-ul me-1"></i>{{ rec.total_lines }} procesos
+                  <i class="bi bi-list-ul me-1"></i>{{ rec.total_lines }} {% translate "procesos" %}
                 </span>
               </div>
               <small class="text-muted">
@@ -730,7 +730,7 @@
     <div class="modal-content">
       <div class="modal-header" style="background:linear-gradient(135deg,#0f3460,#533483);">
         <h5 class="modal-title text-white" id="aiAnalysisModalLabel">
-          <i class="bi bi-stars me-2"></i>Análisis IA — {{ survey.name }}
+          <i class="bi bi-stars me-2"></i>{% translate "Análisis IA —" %} {{ survey.name }}
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>

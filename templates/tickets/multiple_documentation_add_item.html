@@ -46,7 +46,7 @@
                                            min="1"
                                            required>
                                     <div class="form-text">
-                                        Número de orden para organizar los archivos (se sugiere {{ suggested_number }})
+                                        {% translate "Número de orden para organizar los archivos (se sugiere" %} {{ suggested_number }})
                                     </div>
                                 </div>
                                 
@@ -147,7 +147,7 @@
                                     <li>{{ existing_item.number }}. {{ existing_item.name }}</li>
                                     {% endfor %}
                                     {% if documentation.items.count > 5 %}
-                                    <li class="text-muted">... y {{ documentation.items.count|add:"-5" }} más</li>
+                                    <li class="text-muted">{% translate "... y" %} {{ documentation.items.count|add:"-5" }} {% translate "más" %}</li>
                                     {% endif %}
                                 </ul>
                                 {% else %}

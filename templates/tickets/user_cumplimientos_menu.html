@@ -172,7 +172,7 @@
             </div>
             <div class="user-subtitle">
                 <i class="bi bi-target"></i>
-                {{ cumplimientos.count }} objetivo{{ cumplimientos.count|pluralize:"s" }} de cumplimiento
+                {{ cumplimientos.count }} {% translate "objetivo" %}{{ cumplimientos.count|pluralize:"s" }} {% translate "de cumplimiento" %}
             </div>
         </div>
         
@@ -193,9 +193,9 @@
                         {% else %}
                             <div class="cumplimiento-desc">
                                 {% with progress=cumplimiento.get_current_month_progress %}
-                                    📊 {{ progress.completed_days }}/{{ progress.target_days }} días completados
+                                    📊 {{ progress.completed_days }}/{{ progress.target_days }} {% translate "días completados" %}
                                     {% if progress.remaining_days > 0 %}
-                                        • {{ progress.remaining_days }} días restantes
+                                        • {{ progress.remaining_days }} {% translate "días restantes" %}
                                     {% else %}
                                         {% translate "• ¡Meta alcanzada! 🎉" %}
                                     {% endif %}
@@ -211,7 +211,7 @@
                                     </span>
                                 {% else %}
                                     <span class="frequency-badge">
-                                        <i class="bi bi-calendar-range"></i> {{ cumplimiento.target_days }} días/mes
+                                        <i class="bi bi-calendar-range"></i> {{ cumplimiento.target_days }} {% translate "días/mes" %}
                                     </span>
                                 {% endif %}
                             </div>

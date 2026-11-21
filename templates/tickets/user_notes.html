@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load django_bootstrap5 %}
 
-{% block title %}{{ page_title }} - TicketProo{% endblock %}
+{% block title %}{{ page_title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -169,7 +169,7 @@
                                                                 </a>
                                                             {% endfor %}
                                                             {% if note.tickets.count > 3 %}
-                                                                <span class="badge bg-info">+{{ note.tickets.count|add:"-3" }} más</span>
+                                                                <span class="badge bg-info">+{{ note.tickets.count|add:"-3" }} {% translate "más" %}</span>
                                                             {% endif %}
                                                         </div>
                                                     </div>
@@ -196,7 +196,7 @@
                                     
                                     <li class="page-item active">
                                         <span class="page-link">
-                                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                            {% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}
                                         </span>
                                     </li>
                                     

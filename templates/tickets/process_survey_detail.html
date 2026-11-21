@@ -30,7 +30,7 @@
       <form method="post" action="{% url 'process_survey_new_version' survey.pk %}" class="d-inline" id="new-version-form">
         {% csrf_token %}
         <button type="button" class="btn btn-warning btn-sm" onclick="confirmNewVersion()">
-          <i class="bi bi-layers me-1"></i> Crear versión {{ max_version|add:1 }}
+          <i class="bi bi-layers me-1"></i> {% translate "Crear versión" %} {{ max_version|add:1 }}
         </button>
       </form>
       {% endif %}
@@ -181,7 +181,7 @@
             {% else %}
               <i class="bi bi-layers me-1 text-muted"></i>
             {% endif %}
-            Versión {{ version_num }}
+            {% translate "Versión" %} {{ version_num }}
             <span class="badge {% if forloop.first %}bg-warning text-dark{% else %}bg-secondary{% endif %} ms-1">{{ version_lines|length }}</span>
           </button>
         </li>
@@ -207,12 +207,12 @@
         {% if forloop.first and version_num > 1 %}
         <div class="alert alert-warning alert-sm m-3 mb-0 py-2 px-3" role="alert">
           <i class="bi bi-layers-fill me-1"></i>
-          <strong>Versión {{ version_num }}</strong> {% translate "— Esta es la versión más reciente. Las versiones anteriores están en las pestañas correspondientes." %}
+          <strong>{% translate "Versión" %} {{ version_num }}</strong> {% translate "— Esta es la versión más reciente. Las versiones anteriores están en las pestañas correspondientes." %}
         </div>
         {% elif not forloop.first %}
         <div class="alert alert-secondary alert-sm m-3 mb-0 py-2 px-3" role="alert">
           <i class="bi bi-archive me-1"></i>
-          <strong>Versión {{ version_num }}</strong> {% translate "— Versión archivada (solo lectura)." %}
+          <strong>{% translate "Versión" %} {{ version_num }}</strong> {% translate "— Versión archivada (solo lectura)." %}
         </div>
         {% endif %}
 
@@ -232,7 +232,7 @@
                   {% else %}
                     <span class="badge bg-secondary">{% translate "Pendiente" %}</span>
                   {% endif %}
-                  <span class="badge bg-light text-muted border" style="font-size:.7rem;">v{{ line.version }}</span>
+                  <span class="badge bg-light text-muted border" style="font-size:.7rem;">{% translate "v" %}{{ line.version }}</span>
                   {% if line.category %}
                     <span class="badge" style="background:{{ line.category.color }};font-size:.7rem;"><i class="bi bi-tag me-1"></i>{{ line.category.name }}</span>
                   {% endif %}
@@ -279,7 +279,7 @@
                           type="button" data-bs-toggle="collapse"
                           data-bs-target="#comments-{{ line.pk }}">
                     <i class="bi bi-chat-left-text me-1"></i>
-                    {{ comments|length }} comentario{% if comments|length != 1 %}{% translate "s" %}{% endif %}
+                    {{ comments|length }} {% translate "comentario" %}{% if comments|length != 1 %}{% translate "s" %}{% endif %}
                   </button>
                   <div class="collapse mt-2" id="comments-{{ line.pk }}">
                     <div class="d-flex flex-column gap-2">
@@ -416,7 +416,7 @@
             </div>
             <div class="text-muted mt-1" style="font-size:.72rem;">
               {{ sig.signed_at|date:"d/m/Y H:i" }}
-              {% if sig.ip_address %} · IP: {{ sig.ip_address }}{% endif %}
+              {% if sig.ip_address %} {% translate "· IP:" %} {{ sig.ip_address }}{% endif %}
             </div>
           </div>
         </div>
@@ -477,7 +477,7 @@
           </div>
           <!-- Líneas de la versión más reciente -->
           <p class="fw-semibold small mb-2">
-            Líneas de la versión {{ max_version }} — selecciona las que quieres convertir:
+            {% translate "Líneas de la versión" %} {{ max_version }} {% translate "— selecciona las que quieres convertir:" %}
           </p>
           <div class="d-flex gap-2 mb-2">
             <button type="button" class="btn btn-outline-secondary btn-xs" style="font-size:.78rem;padding:2px 8px;"

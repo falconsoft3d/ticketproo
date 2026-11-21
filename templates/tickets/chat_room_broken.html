@@ -326,7 +326,7 @@ body .container-fluid > .row > .col-12:not(.chat-container .col-12) {
                                             {% endfor %}
                                         {% endif %}
                                     </h5>
-                                    <small>{{ room.participants.count }} participante{{ room.participants.count|pluralize }}</small>
+                                    <small>{{ room.participants.count }} {% translate "participante" %}{{ room.participants.count|pluralize }}</small>
                                 </div>
                             </div>
                             

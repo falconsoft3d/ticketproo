@@ -142,10 +142,10 @@
                     <ul class="mb-0">
                         <li>{% translate "El reporte QA completo" %}</li>
                         {% if complaint.comments.count > 0 %}
-                            <li>{{ complaint.comments.count }} comentario{{ complaint.comments.count|pluralize }} asociado{{ complaint.comments.count|pluralize }}</li>
+                            <li>{{ complaint.comments.count }} {% translate "comentario" %}{{ complaint.comments.count|pluralize }} {% translate "asociado" %}{{ complaint.comments.count|pluralize }}</li>
                         {% endif %}
                         {% if complaint.attachment %}
-                            <li>Archivo adjunto: {{ complaint.attachment.name }}</li>
+                            <li>{% translate "Archivo adjunto:" %} {{ complaint.attachment.name }}</li>
                         {% endif %}
                         {% if complaint.resolution %}
                             <li>{% translate "Resolución documentada" %}</li>

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{{ book.title }} - TicketProo{% endblock %}
+{% block title %}{{ book.title }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -104,7 +104,7 @@
                             <div class="d-flex justify-content-between align-items-start">
                                 <div class="flex-grow-1">
                                     <h6 class="mb-1">
-                                        Capítulo {{ chapter.order }}: {{ chapter.title }}
+                                        {% translate "Capítulo" %} {{ chapter.order }}: {{ chapter.title }}
                                     </h6>
                                     {% if chapter.summary %}
                                     <p class="mb-1 text-muted small">
@@ -113,7 +113,7 @@
                                     {% endif %}
                                     <small class="text-muted">
                                         {% if chapter.word_count > 0 %}
-                                            <i class="bi bi-file-text"></i> {{ chapter.word_count }} palabras
+                                            <i class="bi bi-file-text"></i> {{ chapter.word_count }} {% translate "palabras" %}
                                         {% else %}
                                             <i class="bi bi-file-text"></i> {% translate "Sin contenido" %}
                                         {% endif %}

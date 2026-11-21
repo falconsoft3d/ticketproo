@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ book.title }} – Libro de Proyecto</title>
+    <title>{{ book.title }} {% translate "– Libro de Proyecto" %}</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #212529; padding: 30px 40px; }
@@ -46,8 +46,7 @@
 <div class="header">
     <h1>📋 {{ book.title }}</h1>
     <div class="subtitle">
-        Libro de Proyecto &nbsp;|&nbsp;
-        Generado el {{ "now"|date:"d/m/Y H:i" }}
+        {% translate "Libro de Proyecto &nbsp;|&nbsp; Generado el" %} {{ "now"|date:"d/m/Y H:i" }}
         &nbsp;|&nbsp;
         <span class="status-badge status-{{ book.status }}">{{ book.get_status_display }}</span>
     </div>

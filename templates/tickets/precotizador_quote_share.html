@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Compartir Cotización #{{ quote.pk }}{% endblock %}
+{% block title %}{% translate "Compartir Cotización #" %}{{ quote.pk }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -44,7 +44,7 @@
                             </div>
                             <div class="row mb-3">
                                 <div class="col-sm-4"><strong>{% translate "Horas Estimadas:" %}</strong></div>
-                                <div class="col-sm-8">{{ quote.ai_estimated_hours }} hrs</div>
+                                <div class="col-sm-8">{{ quote.ai_estimated_hours }} {% translate "hrs" %}</div>
                             </div>
                             <div class="row mb-3">
                                 <div class="col-sm-4"><strong>{% translate "Costo Estimado:" %}</strong></div>
@@ -90,8 +90,7 @@
                     {% if quote.status != 'pending' %}
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle"></i>
-                        <strong>{% translate "Nota:" %}</strong> Esta cotización ya fue {{ quote.get_status_display|lower }} por el cliente.
-                        Aún puedes compartirla, pero el cliente verá el estado actual.
+                        <strong>{% translate "Nota:" %}</strong> {% translate "Esta cotización ya fue" %} {{ quote.get_status_display|lower }} {% translate "por el cliente. Aún puedes compartirla, pero el cliente verá el estado actual." %}
                     </div>
                     {% endif %}
 

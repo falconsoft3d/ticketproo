@@ -17,7 +17,7 @@
                         {{ agreement.title }}
                     </h2>
                     <p class="text-muted">
-                        Acuerdo #{{ agreement.sequence }} • {{ agreement.get_agreement_type_display }}
+                        {% translate "Acuerdo #" %}{{ agreement.sequence }} • {{ agreement.get_agreement_type_display }}
                     </p>
                 </div>
                 <div>
@@ -109,7 +109,7 @@
                                 <div class="col-12">
                                     <label class="form-label text-muted small">{% translate "Versión" %}</label>
                                     <div>
-                                        <span class="badge bg-secondary">v{{ agreement.version }}</span>
+                                        <span class="badge bg-secondary">{% translate "v" %}{{ agreement.version }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -162,7 +162,7 @@
                                                 {% if agreement.signer_1_date %}
                                                     <div class="badge bg-success">
                                                         <i class="bi bi-check-circle"></i> 
-                                                        Firmado el {{ agreement.signer_1_date|date:"d/m/Y H:i" }}
+                                                        {% translate "Firmado el" %} {{ agreement.signer_1_date|date:"d/m/Y H:i" }}
                                                     </div>
                                                 {% else %}
                                                     <div class="badge bg-warning">
@@ -185,7 +185,7 @@
                                                 {% if agreement.signer_2_date %}
                                                     <div class="badge bg-success">
                                                         <i class="bi bi-check-circle"></i> 
-                                                        Firmado el {{ agreement.signer_2_date|date:"d/m/Y H:i" }}
+                                                        {% translate "Firmado el" %} {{ agreement.signer_2_date|date:"d/m/Y H:i" }}
                                                     </div>
                                                 {% else %}
                                                     <div class="badge bg-warning">

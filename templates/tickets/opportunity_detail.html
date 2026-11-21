@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load crm_tags %}
 
-{% block title %}{{ opportunity.name }} - TicketProo{% endblock %}
+{% block title %}{{ opportunity.name }} {% translate "- TicketProo" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -296,13 +296,13 @@
                                 <small>
                                     {% if opportunity.is_overdue %}
                                         <i class="bi bi-exclamation-triangle"></i>
-                                        {{ opportunity.days_overdue }} días vencida
+                                        {{ opportunity.days_overdue }} {% translate "días vencida" %}
                                     {% elif opportunity.days_to_close == 0 %}
                                         <i class="bi bi-clock"></i> {% translate "Hoy" %}
                                     {% elif opportunity.days_to_close == 1 %}
                                         <i class="bi bi-clock"></i> {% translate "Mañana" %}
                                     {% else %}
-                                        <i class="bi bi-clock"></i> {{ opportunity.days_to_close }} días
+                                        <i class="bi bi-clock"></i> {{ opportunity.days_to_close }} {% translate "días" %}
                                     {% endif %}
                                 </small>
                             {% endif %}

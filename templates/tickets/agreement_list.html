@@ -264,7 +264,7 @@
                 <i class="bi bi-file-earmark-check display-1 text-muted mb-3"></i>
                 <h4>{% translate "No hay acuerdos creados" %}</h4>
                 {% if search %}
-                    <p class="text-muted">No se encontraron acuerdos que coincidan con "{{ search }}"</p>
+                    <p class="text-muted">{% translate 'No se encontraron acuerdos que coincidan con "' %}{{ search }}"</p>
                     <a href="{% url 'agreement_list' %}" class="btn btn-primary">{% translate "Ver todos los acuerdos" %}</a>
                 {% else %}
                     <p class="text-muted">{% translate "Aún no has creado ningún acuerdo o contrato." %}</p>

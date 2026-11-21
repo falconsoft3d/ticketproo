@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ table.name }} - Ticket System{% endblock %}
+{% block title %}{{ table.name }} {% translate "- Ticket System" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -68,7 +68,7 @@
                 {% endif %}
                 {% if table.public_url_expires_at %}
                 <small class="text-muted d-block mt-1">
-                    <i class="bi bi-calendar-x"></i> Expira: {{ table.public_url_expires_at|date:"d/m/Y H:i" }}
+                    <i class="bi bi-calendar-x"></i> {% translate "Expira:" %} {{ table.public_url_expires_at|date:"d/m/Y H:i" }}
                 </small>
                 {% endif %}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -98,7 +98,7 @@
                 {% endif %}
                 {% if table.public_form_expires_at %}
                 <small class="text-muted d-block mt-1">
-                    <i class="bi bi-calendar-x"></i> Expira: {{ table.public_form_expires_at|date:"d/m/Y H:i" }}
+                    <i class="bi bi-calendar-x"></i> {% translate "Expira:" %} {{ table.public_form_expires_at|date:"d/m/Y H:i" }}
                 </small>
                 {% endif %}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -184,7 +184,7 @@
                                 </button>
                                 {% if pending_count > 0 %}
                                 <a href="{% url 'odoo_rpc_data_execute' table.id %}" class="btn btn-primary">
-                                    <i class="bi bi-play-circle"></i> Ejecutar Inserción ({{ pending_count }})
+                                    <i class="bi bi-play-circle"></i> {% translate "Ejecutar Inserción (" %}{{ pending_count }})
                                 </a>
                                 {% endif %}
                                 {% else %}

@@ -66,12 +66,12 @@
                             <div class="row g-2">
                                 <div class="col-6">
                                     <small class="text-muted">
-                                        <i class="bi bi-list-ol"></i> {{ query.row_count }} filas
+                                        <i class="bi bi-list-ol"></i> {{ query.row_count }} {% translate "filas" %}
                                     </small>
                                 </div>
                                 <div class="col-6">
                                     <small class="text-muted">
-                                        <i class="bi bi-clock"></i> {{ query.execution_time }}s
+                                        <i class="bi bi-clock"></i> {{ query.execution_time }}{% translate "s" %}
                                     </small>
                                 </div>
                                 <div class="col-12">
@@ -82,7 +82,7 @@
                                 {% if query.last_executed_at %}
                                 <div class="col-12">
                                     <small class="text-muted">
-                                        <i class="bi bi-arrow-repeat"></i> Última ejecución: {{ query.last_executed_at|date:"d/m/Y H:i" }}
+                                        <i class="bi bi-arrow-repeat"></i> {% translate "Última ejecución:" %} {{ query.last_executed_at|date:"d/m/Y H:i" }}
                                     </small>
                                 </div>
                                 {% endif %}

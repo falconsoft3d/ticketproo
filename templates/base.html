@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- Título dinámico con nombre del usuario -->
-    <title>{% block title %}{% if user.is_authenticated %}{{ user.first_name|default:user.username }} - TicketProo{% else %}{% translate "TicketProo - Sistema de Gestión de Tickets" %}{% endif %}{% endblock %}</title>
+    <title>{% block title %}{% if user.is_authenticated %}{{ user.first_name|default:user.username }} {% translate "- TicketProo" %}{% else %}{% translate "TicketProo - Sistema de Gestión de Tickets" %}{% endif %}{% endblock %}</title>
     
     <!-- Favicon dinámico -->
     <link rel="icon" id="favicon" href="" type="image/svg+xml">
@@ -463,7 +463,7 @@
                     {% if user.is_authenticated %}
                     {% if user.is_staff or user.is_superuser or user.groups.all and user.groups.first.name == 'Agentes' %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'invoice' in request.resolver_match.url_name %}active{% endif %}" 
+                        <a class="nav-link dropdown-toggle {% if 'invoice' in request.resolver_match.url_name or 'signature' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownERP3" role="button" data-bs-toggle="dropdown">
                             ERP3
                         </a>
@@ -485,6 +485,19 @@
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'invoice_sequence_config' %}active{% endif %}" 
                                    href="{% url 'invoice_sequence_config' %}">
                                     <i class="bi bi-sliders"></i> {% translate "Configurar Secuencia" %}
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if 'signature' in request.resolver_match.url_name and request.resolver_match.url_name != 'signature_document_create' %}active{% endif %}" 
+                                   href="{% url 'signature_document_list' %}">
+                                    <i class="bi bi-pen"></i> {% translate "Firmas Digitales" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'signature_document_create' %}active{% endif %}" 
+                                   href="{% url 'signature_document_create' %}">
+                                    <i class="bi bi-file-earmark-plus"></i> {% translate "Nuevo Documento a Firmar" %}
                                 </a>
                             </li>
                         </ul>

@@ -24,7 +24,7 @@
         </h1>
         <p class="text-muted">
             {% if is_edit %}
-                Modifique los datos de la acción financiera "{{ action.symbol }}"
+                {% translate 'Modifique los datos de la acción financiera "' %}{{ action.symbol }}"
             {% else %}
                 {% translate "Configure una nueva acción para mostrar en el ticker del dashboard" %}
             {% endif %}

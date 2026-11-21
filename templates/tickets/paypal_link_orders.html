@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Órdenes de {{ link.product_name }}{% endblock %}
+{% block title %}{% translate "Órdenes de" %} {{ link.product_name }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -11,7 +11,7 @@
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">
-                        <i class="fas fa-shopping-cart"></i> Órdenes de: {{ link.product_name }}
+                        <i class="fas fa-shopping-cart"></i> {% translate "Órdenes de:" %} {{ link.product_name }}
                     </h4>
                 </div>
                 <div class="card-body">
@@ -96,7 +96,7 @@
                                             {% if order.status == 'completed' %}
                                                 {% if order.is_download_token_valid %}
                                                     <span class="badge bg-success">
-                                                        <i class="fas fa-check"></i> Válido ({{ order.get_hours_until_download_expires|floatformat:1 }}h)
+                                                        <i class="fas fa-check"></i> {% translate "Válido (" %}{{ order.get_hours_until_download_expires|floatformat:1 }}{% translate "h)" %}
                                                     </span>
                                                 {% else %}
                                                     <span class="badge bg-danger">

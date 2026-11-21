@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cotización {{ quotation.sequence }}</title>
+    <title>{% translate "Cotización" %} {{ quotation.sequence }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
@@ -76,7 +76,7 @@
                             <i class="bi bi-file-earmark-text"></i>
                             {{ quotation.sequence }}
                         </h1>
-                        <p class="lead mb-0">Cotización para {{ quotation.company.name }}</p>
+                        <p class="lead mb-0">{% translate "Cotización para" %} {{ quotation.company.name }}</p>
                     </div>
                 </div>
             </div>
@@ -98,9 +98,9 @@
                 {% if quotation.client_response_name %}
                     <div class="mt-2">
                         <small class="text-muted">
-                            Respuesta registrada por {{ quotation.client_response_name }}
+                            {% translate "Respuesta registrada por" %} {{ quotation.client_response_name }}
                             {% if quotation.client_response_date %}
-                                el {{ quotation.client_response_date|date:"d/m/Y H:i" }}
+                                {% translate "el" %} {{ quotation.client_response_date|date:"d/m/Y H:i" }}
                             {% endif %}
                         </small>
                     </div>
@@ -122,7 +122,7 @@
                             {% if seller_company %}
                                 <p class="mb-1"><strong>{{ seller_company.name }}</strong></p>
                                 {% if seller_company.tax_id %}
-                                    <p class="mb-1"><small class="text-muted">NIF/CIF: {{ seller_company.tax_id }}</small></p>
+                                    <p class="mb-1"><small class="text-muted">{% translate "NIF/CIF:" %} {{ seller_company.tax_id }}</small></p>
                                 {% endif %}
                                 {% if seller_company.address %}
                                     <p class="mb-1"><small>{{ seller_company.address }}</small></p>
@@ -205,7 +205,7 @@
                                 <div class="mt-2">
                                     <small class="text-muted">
                                         <i class="bi bi-clock"></i>
-                                        Duración estimada: {{ quotation.service_start_date|timesince:quotation.service_end_date }}
+                                        {% translate "Duración estimada:" %} {{ quotation.service_start_date|timesince:quotation.service_end_date }}
                                     </small>
                                 </div>
                                 {% endif %}
@@ -342,7 +342,7 @@
                 <p class="text-muted">
                     <small>
                         {% translate "¿Tiene preguntas sobre esta cotización?" %}<br>
-                        Contacte a {{ quotation.salesperson.get_full_name|default:quotation.salesperson.username }}
+                        {% translate "Contacte a" %} {{ quotation.salesperson.get_full_name|default:quotation.salesperson.username }}
                         {% if quotation.salesperson.email %}
                             {% translate "en" %} <a href="mailto:{{ quotation.salesperson.email }}">{{ quotation.salesperson.email }}</a>
                         {% endif %}

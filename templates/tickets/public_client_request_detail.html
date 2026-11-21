@@ -167,7 +167,7 @@
 
             <p class="mb-0 text-muted small">
                 <i class="bi bi-clock me-1"></i>
-                Respondido el {{ client_request.response.responded_at|date:"d/m/Y H:i" }}
+                {% translate "Respondido el" %} {{ client_request.response.responded_at|date:"d/m/Y H:i" }}
             </p>
         </div>
         {% else %}

@@ -50,7 +50,7 @@
                         <div class="card-header">
                             <h5 class="mb-0">
                                 <i class="bi bi-check-square"></i> 
-                                Tareas Disponibles ({{ tasks|length }})
+                                {% translate "Tareas Disponibles (" %}{{ tasks|length }})
                             </h5>
                         </div>
                         <div class="card-body">
@@ -104,7 +104,7 @@
                                         <div class="card-footer bg-transparent">
                                             <small class="text-muted">
                                                 <i class="bi bi-clock"></i> 
-                                                Creada: {{ task.created_at|date:"d/m/Y H:i" }}
+                                                {% translate "Creada:" %} {{ task.created_at|date:"d/m/Y H:i" }}
                                             </small>
                                         </div>
                                     </div>

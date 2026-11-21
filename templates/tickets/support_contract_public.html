@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Contrato de Soporte - {{ contract.sequence_number }}{% endblock %}
+{% block title %}{% translate "Contrato de Soporte -" %} {{ contract.sequence_number }}{% endblock %}
 
 {% block content %}
 <div class="container mt-5 mb-5">
@@ -87,7 +87,7 @@
                             <tbody>
                                 {% for payment in payments %}
                                 <tr>
-                                    <td><strong>Cuota #{{ payment.payment_number }}</strong></td>
+                                    <td><strong>{% translate "Cuota #" %}{{ payment.payment_number }}</strong></td>
                                     <td>{{ payment.due_date|date:"d/m/Y" }}</td>
                                     <td class="text-end"><strong>€{{ payment.amount|floatformat:2 }}</strong></td>
                                     <td class="text-center">
